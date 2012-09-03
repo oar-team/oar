@@ -78,12 +78,14 @@ let hy_iolib2hy_level_old hy_iolib =
     Hashtbl.fold (fun k v acc -> (h1_io2_h1_lvl k v)::acc) hy_iolib [];;
 
 (* let hy_iolib2hy_level hy_iolib (hy_labels: string list) = *)
-let hy_iolib2hy_level hy_iolib hy_labels =
-  let  h1_io2h1_lvl h1_io_value =
+let hy_iolib2hy_level h_value_order hy_iolib hy_labels =
+  let  h1_io2h1_lvl h1_label h1_level =
+    let h1_ordered_values = try Hashtbl.find h_value_order h1_label with Not_found -> failwith ("Can't find key in h_value_order for " ^ h1_label) in
+    let h1_rids h_value =  try Hashtbl.find h1_level h_value with Not_found -> failwith ("Can't find key in h1_level for " ^ h_value ) in
     (* list of list of res interval for  scattered block for one hy level *)
-    Hashtbl.fold (fun k1 r_ids acc1 -> (Interval.ints2intervals r_ids)::acc1) h1_io_value [] in
+    List.map (fun h_v -> (Interval.ints2intervals (h1_rids h_v) )) h1_ordered_values in
   let h1_lvls =  Array.to_list hy_iolib in
-    List.rev_map2 (fun x y -> (x,(h1_io2h1_lvl y))) hy_labels h1_lvls ;; 
+    List.map2 (fun x y -> (x,(h1_io2h1_lvl x y))) hy_labels h1_lvls ;; 
 
 (*                                                                                                        *)
 (* One a the core function                                                                                *)

@@ -44,7 +44,8 @@ let get_resource_list dbh  =
 (* label of fields must be provide for scattered hierarchy support *)
 (* returns:                                                        *)
 (*  - flat resource list: id state networks adress                 *)
-(*  - hierarchy_info array(h_labels)->hash(h_values)->list(id)     *)
+(*  - h_value_order:  hash(h_label) -> list(h_value)                *)
+(*  - hierarchy_info: array(h_labels)->hash(h_values)->list(id)     *)
 (*  - array ord2init_ids[r_order_by_id]=r_init_id                  *)
 (*  - array init2ord_ids[r_init_id]=r_order_by_id                  *) 
 
@@ -52,11 +53,9 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
   Conf.log ("SELECT resource_id, network_address, state, available_upto, " ^ 
                (Helpers.concatene_sep "," id hy_labels) ^ " FROM resources ORDER BY " ^
                scheduler_resource_order);
-  (*                                                                                        *)
   (* h_value_order hash stores for each hy label the occurence order of different hy values *)
-  (*                                                                                        *)
-  let h_value_order = Hashtbl.create 10 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;(* block value by hy_label/ TODO: why order ??? *)
-  let ord2init_ids = Array.make 200000 0 and init2ord_ids = Array.make 200000 0  in (* arrays to translate resource id intial/ordered*) 
+  let h_value_order = Hashtbl.create 10 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;
+  let ord2init_ids = Array.make 80 0 and init2ord_ids = Array.make 80 0  in (* arrays to translate resource id intial/ordered*) 
   let i = ref 0 in (* count for ordererd resourced_id *) 
 
   (*let hy_id_array = List.map (fun x -> Hashtbl.create 10) hy_labels in *)
@@ -73,26 +72,30 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
      (* populate hashes of hy_id_ary array and h_value_order hash*)
       i := !i + 1;
       for var = 4 to ((Array.length a)-1) do
+        let value = NoNStr a.(var) in
         let h_label = hy_ary_labels.(var-4) in
         let ordered_values = try Hashtbl.find h_value_order h_label with Not_found -> failwith ("Can't Hashtbl.find h_value_order for " ^ h_label) in
-        if not (List.mem a.(var) ordered_values) then
-          Hashtbl.replace h_value_order h_label (ordered_values @ [a.(var)]);
+        (* test is value for this ressource this h_label is already present else add in the list*)
+        if not (List.mem value ordered_values) then
+          Hashtbl.replace h_value_order h_label (ordered_values @ [value]);
         
         let add_res_id h value = 
           let lst_value = try Hashtbl.find h value with Not_found -> [] in
             Hashtbl.replace h value (lst_value @ [!i])
         in 
-          add_res_id (hy_id_array.(var-4)) a.(var)
+          add_res_id (hy_id_array.(var-4)) value
       done;
       ord2init_ids.(!i) <- NoN int_of_string a.(0); 
       init2ord_ids.(NoN int_of_string a.(0)) <- !i;
+      (* Conf.log ("i:"^ (string_of_int !i)); *)
+      (* Conf.log ("rid:"^(NoN id a.(0))); *)
     { ord_r_id = !i;                                (* id resulting from order_by ordering *)
       resource_id = NoN int_of_string a.(0);        (* resource_id *)
       network_address = NoNStr a.(1);               (* network_address *)
       state = NoN rstate_of_string a.(2);           (* state *)
       available_upto = NoN Int64.of_string a.(3) ;} (* available_upto *)
   in
-    ((map res get_one_resource), hy_id_array, ord2init_ids, init2ord_ids) ;;
+    ((map res get_one_resource), h_value_order, hy_id_array, ord2init_ids, init2ord_ids) ;;
 
 (*                                              *)
 (* get distinct availableupto                   *)
