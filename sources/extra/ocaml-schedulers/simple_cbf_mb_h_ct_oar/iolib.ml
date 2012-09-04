@@ -50,9 +50,6 @@ let get_resource_list dbh  =
 (*  - array init2ord_ids[r_init_id]=r_order_by_id                  *) 
 
 let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resource_order =
-  Conf.log ("SELECT resource_id, network_address, state, available_upto, " ^ 
-               (Helpers.concatene_sep "," id hy_labels) ^ " FROM resources ORDER BY " ^
-               scheduler_resource_order);
   (* h_value_order hash stores for each hy label the occurence order of different hy values *)
   let h_value_order = Hashtbl.create 10 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;
   let ord2init_ids = Array.make 80 0 and init2ord_ids = Array.make 80 0  in (* arrays to translate resource id intial/ordered*) 
@@ -76,7 +73,7 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
         let h_label = hy_ary_labels.(var-4) in
         let ordered_values = try Hashtbl.find h_value_order h_label with Not_found -> failwith ("Can't Hashtbl.find h_value_order for " ^ h_label) in
         (* test is value for this ressource this h_label is already present else add in the list*)
-        if not (List.mem value ordered_values) then
+        if (not (List.mem value ordered_values)) then
           Hashtbl.replace h_value_order h_label (ordered_values @ [value]);
         
         let add_res_id h value = 
@@ -283,7 +280,7 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
     let first_res = function
       | None -> []
       | Some first_job -> 
- (*   if not (first_res = None) then *)
+ (*   if (not (first_res = None)) then *)
           let newjob_res a = 
 (* function
            | None -> failwith "pas glop"  

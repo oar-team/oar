@@ -216,14 +216,14 @@ let _ =
     (* retreive ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
       let (potential_resources, h_value_order, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn hy_labels sched_resource_order in
       (* obtain hierarchy_levels from hierarchy_info given by get_resource_list_w_hierarchy *)
-
-      Conf.log ("ord2init_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list ord2init_ids) ) );
-      Conf.log ("init2ord_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list init2ord_ids) ) );
-
+      (*
+       Conf.log ("ord2init_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list ord2init_ids) ) );
+       Conf.log ("init2ord_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list init2ord_ids) ) );
+      *)
       let hierarchy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
-     
-      List.iter (fun x ->  Conf.log ("h_lab:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels;
-
+      (*
+       List.iter (fun x ->  Conf.log ("h_lab:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels;
+      *)
       let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now potential_resources in
@@ -235,7 +235,7 @@ let _ =
           Iolib.get_job_list_fairsharing conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids
         else
           Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag []
-      in (* TODOfalse -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
+      in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
       Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
 
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
@@ -246,21 +246,27 @@ let _ =
           
           (* fill slots with prev scheduled jobs  *)
           let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn init2ord_ids [] security_time_overhead now in (* TODO available_suspended_res_itvs *)
-          if not ( prev_scheduled_jobs = []) then
+          if (not ( prev_scheduled_jobs = [])) then
             let (h_prev_scheduled_jobs_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
             let prev_scheduled_job_ids =
-              if queue != "besteffort" then
+              if (not (queue = "besteffort")) then
                 (* exclude besteffort jobs *)
+                begin
+                (* Conf.log ("excluding besteffort jobs, queue: " ^ queue); *)
                 let besteffort_mem_remove job_id = 
                   let test_bt = List.mem_assoc "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_types job_id 
                                                               with Not_found -> failwith "Must no failed here: besteffort_mem").types in
                                                               if test_bt then Hashtbl.remove  h_prev_scheduled_jobs_types job_id else ();
                                                               test_bt  
                   in  
-                    List.filter (fun n -> not (besteffort_mem_remove n)) prev_scheduled_job_ids_tmp
+                    List.filter (fun n -> (not (besteffort_mem_remove n))) prev_scheduled_job_ids_tmp;
  (*               Conf.log ("Previous Scheduled jobs no besteffort:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs_no_bt) ); *)
+                end
               else
+                begin
+                (* Conf.log ("not excluding besteffort jobs"); *)
                 prev_scheduled_job_ids_tmp
+                end
             in
              
             (* display previous scheduled jobs 

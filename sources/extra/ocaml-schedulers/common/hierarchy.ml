@@ -10,7 +10,7 @@ let h_triplets_to_itvs h_triplets =
     | [] -> itvs
     | (x::n) -> let (orig, bk_size,nb_bk) = x in
                 let rec loop_bk i l_itv =
-                  if i = 0 then
+                  if (i = 0) then
                     h_t_itvs n l_itv
                   else
                     loop_bk (i-1) ({b = orig + bk_size * (i-1);  e = orig + bk_size * i -1;}::l_itv)
@@ -99,10 +99,10 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
   | (tops::tl_h, n0::m) ->
       let h_itv = inter_intervals tops [top] in (* ???? *)
       let available_bk = extract_no_empty_bk itv_l h_itv in
-      if (List.length available_bk) < n0 then
+      if ((List.length available_bk) < n0) then
         []
       else
-        if List.length m = 1 then
+        if (List.length m = 1) then
           (* iter sur top *)
           let rec iter_n_no_empty result n bks = match (bks,n) with
             | (_,0) -> List.rev result (* win *)
@@ -130,7 +130,7 @@ let find_resource_hierarchies itv_l hy r_rqt_l =
             | ([],_) -> [] (* failed*)
           in iter_n_find [] n0 available_bk
     in
-      if (List.length hy) = 1 then
+      if ((List.length hy) = 1) then
         extract_n_block_itv itv_l (List.hd hy) (List.hd r_rqt_l)
       else
         List.flatten (find_resource_n_h !toplevel_itv hy r_rqt_l);;
