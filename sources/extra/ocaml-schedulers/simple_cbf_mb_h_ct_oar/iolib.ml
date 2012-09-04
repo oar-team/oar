@@ -21,6 +21,7 @@ open Types
 open Interval
 open Helpers
 
+let max_nb_resources = 200000;;
 let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
 
@@ -52,7 +53,7 @@ let get_resource_list dbh  =
 let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resource_order =
   (* h_value_order hash stores for each hy label the occurence order of different hy values *)
   let h_value_order = Hashtbl.create 10 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;
-  let ord2init_ids = Array.make 80 0 and init2ord_ids = Array.make 80 0  in (* arrays to translate resource id intial/ordered*) 
+  let ord2init_ids = Array.make max_nb_resources 0 and init2ord_ids = Array.make max_nb_resources 0  in (* arrays to translate resource id intial/ordered*) 
   let i = ref 0 in (* count for ordererd resourced_id *) 
 
   (*let hy_id_array = List.map (fun x -> Hashtbl.create 10) hy_labels in *)
