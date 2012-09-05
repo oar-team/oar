@@ -130,11 +130,12 @@ let get_job_suspended_sum_duration dbh job_id now =
     in
       summation 0L (fetch res);;
 
-(*                                                                             *)
+(*                                                                                         *)
 (* get_job_list_fairsharing: retrieve jobs to schedule with important relative information *)
-(*                                                                             *)
+(*                                                                                         *)
+(*  init2ord_ids need to id convertion due to order_by support                             *)
 
-let get_job_list_fairsharing dbh default_resources queue besteffort_duration security_time_overhead fairsharing_flag fs_jobids =
+let get_job_list_fairsharing dbh default_resources queue besteffort_duration security_time_overhead fairsharing_flag fs_jobids init2ord_ids =
   let flag_besteffort = if (queue == "besteffort") then true else false in
   let jobs = Hashtbl.create 1000 in      (* Hashtbl.add jobs jid ( blabla *)
   let constraints = Hashtbl.create 10 in (* Hashtable of constraints to avoid recomputing of corresponding interval list*)
@@ -150,7 +151,7 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
           begin  
             let query = Printf.sprintf "SELECT resource_id FROM resources WHERE ( %s )"  sql_cts in
             let res = execQuery dbh query in 
-            let get_one_resource a = NoN int_of_string a.(0) in (* resource_id *)
+            let get_one_resource a = init2ord_ids.(NoN int_of_string a.(0)) in (* resource_id and convert it*)
             let matching_resources = (map res get_one_resource) in 
             let itv_cts = ints2intervals matching_resources in
               Hashtbl.add constraints sql_cts itv_cts;

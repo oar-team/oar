@@ -232,9 +232,9 @@ let _ =
   		let (waiting_j_ids,h_waiting_jobs) =
         if fairsharing_flag then
           let limited_job_ids = Iolib.get_limited_by_user_job_ids_to_schedule conn queue fairsharing_nb_job_limit in
-          Iolib.get_job_list_fairsharing conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids
+          Iolib.get_job_list_fairsharing conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids init2ord_ids
         else
-          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag []
+          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag [] init2ord_ids
       in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
       Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
 
