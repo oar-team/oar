@@ -115,6 +115,3 @@ NaturalSort::naturalsort(resource_jobs).each do |k,v|
   end
   print "\n"
 end
-
-print "For the timeline of the machine usage, please have a look at:\n"
-print " https://intranet.grid5000.fr/oar/grenoble/digitalis/drawgantt.html\n"
