@@ -35,11 +35,9 @@ Missing:
 Next:
 -----
  * performance testing
- * add memoizing for resource filtering by job
  * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
  * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
 
- * simple performance optimisation (threshold on percent of idle ressource at now and number of scheduled jobs)
  * BEST  -2 means BEST (Alive resources at the time) 
  * ALL   -1 means ALL (Alive + Absent + Suspected resources)
  * scheduler message (see perl version )
@@ -47,7 +45,6 @@ Next:
  * need to test multi-resource-type (since >= cbf_mb_h)
  * need to test multi-request with non exclusive resource selection (since >= cbf_mb_h)
  * errors logging (at least same error support as provide in perl scheduler)
- * Do we need global scheduling timeout ??? (at timeout expiration we can save succesfully scheduled job, can also be the way for incremental assignement saving...)
  * dump first k ready launchable jobs (for performance /reactivity issue)
  * nb_asked_resource = 0 raise an error (>= cbf_mb_h) 
  * unit test
@@ -62,10 +59,6 @@ ToDo:
       * production test
       * ord2init_ids, init2ord_ids  more test
 
-  * caching SQL queries (by example resource properties query per job) / memoizing
-
-
-
   * switch name to kamelot
   * test fairsharing
   * test_unit: better compilation process
@@ -78,7 +71,6 @@ Misc:
 -----
 
   * With 64 bits machine we can use ocaml's int with 63 bits instead of Int64.
-  * memoizing (see Helpers)/caching SQL queries (by example resource properties query per job)
 
 Done:
 -----

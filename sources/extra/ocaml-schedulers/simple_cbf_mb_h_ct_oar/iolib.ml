@@ -145,8 +145,8 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
       default_resources
     else
       let and_sql = if ((j_ppt = "") || (r_ppt = "")) then "" else " AND " in 
-      let sql_cts = j_ppt ^ and_sql^ r_ppt in 
-        try Hashtbl.find constraints sql_cts
+      let sql_cts = j_ppt ^ and_sql^ r_ppt in  
+        try Hashtbl.find constraints sql_cts (* cache the result, a more general/elagant approach is to use memoize function *)
         with Not_found ->
           begin  
             let query = Printf.sprintf "SELECT resource_id FROM resources WHERE ( %s )"  sql_cts in
