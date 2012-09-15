@@ -216,14 +216,10 @@ let _ =
     (* retreive ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
       let (potential_resources, h_value_order, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn hy_labels sched_resource_order in
       (* obtain hierarchy_levels from hierarchy_info given by get_resource_list_w_hierarchy *)
-      (*
        Conf.log ("ord2init_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list ord2init_ids) ) );
        Conf.log ("init2ord_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list init2ord_ids) ) );
-      *)
       let hierarchy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
-      (*
        List.iter (fun x ->  Conf.log ("h_lab:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels;
-      *)
       let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now potential_resources in

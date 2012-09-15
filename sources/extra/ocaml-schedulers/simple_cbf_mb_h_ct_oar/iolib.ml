@@ -1,5 +1,5 @@
 (*pp cpp -P -w *)
-(* previous line is to ask OcamlMakefile to preprocess this file with cpp preprocesseur *)
+(* previous line is to ask OcamlMakefile to preprocess this file with cpp preprocesseur to support/switch between mysql/postgresql *)
 
 (* Postgresql very sensitive ? "type = \"default\""    "type = 'default'" *)
 
@@ -21,7 +21,7 @@ open Types
 open Interval
 open Helpers
 
-let max_nb_resources = 200000;;
+let max_nb_resources = 200;;
 let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
 
@@ -32,10 +32,10 @@ let get_resource_list dbh  =
   let query = "SELECT resource_id, network_address, state, available_upto FROM resources" in
   let res = execQuery dbh query in
   let get_one_resource a =
-    { ord_r_id = NoN int_of_string a.(0); (* for use to suppport order_by *)
-      resource_id = NoN int_of_string a.(0); (* resource_id *)
-      network_address = NoNStr a.(1); (* network_address *)
-      state = NoN rstate_of_string a.(2); (* state *)
+    { ord_r_id = NoN int_of_string a.(0);           (* use to suppport order_by *)
+      resource_id = NoN int_of_string a.(0);        (* resource_id *)
+      network_address = NoNStr a.(1);               (* network_address *)
+      state = NoN rstate_of_string a.(2);           (* state *)
       available_upto = NoN Int64.of_string a.(3) ;} (* available_upto *)
   in
     map res get_one_resource ;;
@@ -45,8 +45,8 @@ let get_resource_list dbh  =
 (* label of fields must be provide for scattered hierarchy support *)
 (* returns:                                                        *)
 (*  - flat resource list: id state networks adress                 *)
-(*  - h_value_order:  hash(h_label) -> list(h_value)                *)
-(*  - hierarchy_info: array(h_labels)->hash(h_values)->list(id)     *)
+(*  - h_value_order:  hash(h_label) -> list(h_value)               *)
+(*  - hierarchy_info: array(h_labels)->hash(h_values)->list(id)    *)
 (*  - array ord2init_ids[r_order_by_id]=r_init_id                  *)
 (*  - array init2ord_ids[r_init_id]=r_order_by_id                  *) 
 
@@ -56,7 +56,7 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
   let ord2init_ids = Array.make max_nb_resources 0 and init2ord_ids = Array.make max_nb_resources 0  in (* arrays to translate resource id intial/ordered*) 
   let i = ref 0 in (* count for ordererd resourced_id *) 
 
-  (*let hy_id_array = List.map (fun x -> Hashtbl.create 10) hy_labels in *)
+  (* let hy_id_array = List.map (fun x -> Hashtbl.create 10) hy_labels in *)
   (* list of hashs to compute scattered hierarchy *)
 
   let hy_ary_labels = Array.of_list hy_labels in (* hy_ary_labels array need to populate h_value_order hash*) 
@@ -67,13 +67,13 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
                scheduler_resource_order in
   let res = execQuery dbh query in
   let get_one_resource a = 
-     (* populate hashes of hy_id_ary array and h_value_order hash*)
+      (* populate hashes of hy_id_ary array and h_value_order hash *)
       i := !i + 1;
       for var = 4 to ((Array.length a)-1) do
         let value = NoNStr a.(var) in
         let h_label = hy_ary_labels.(var-4) in
         let ordered_values = try Hashtbl.find h_value_order h_label with Not_found -> failwith ("Can't Hashtbl.find h_value_order for " ^ h_label) in
-        (* test is value for this ressource this h_label is already present else add in the list*)
+        (* test is value for this ressource this h_label is already present else add in the list *)
         if (not (List.mem value ordered_values)) then
           Hashtbl.replace h_value_order h_label (ordered_values @ [value]);
         
