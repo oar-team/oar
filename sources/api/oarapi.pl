@@ -830,6 +830,12 @@ SWITCH: for ($q) {
           "Bad query",
           "Oarsub command exited with status $err: $cmdRes\nCmd:\n$oarcmd"
         );
+      }elsif( $err == 52) {
+        OAR::API::ERROR(
+          401,
+          "Permission denied",
+          "Oardodo error: $err: $cmdRes\n"
+        );
       }else{
         OAR::API::ERROR(
           500,
