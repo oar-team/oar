@@ -27,13 +27,15 @@ Missing:
 --------
  * Timesharing (not planned for fisrt public version)
  * Placeholder (not planned)
- * Best / All resource expression in submission requests
+ * BEST / ALL resource expression in submission requests
  * Extensive test (no yet running on production cluster)
  * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
  * SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE (get_scheduled_jobs function is ready)
 
 Next:
 -----
+ * Support for null
+ * test hierarchy construction with different type of resource (exception raises when a field is missing)
  * performance testing
  * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
  * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
@@ -49,8 +51,6 @@ Next:
  * nb_asked_resource = 0 raise an error (>= cbf_mb_h) 
  * unit test
  * better compilation process (for unit tests)
-
-
 
 ToDo:
 -----

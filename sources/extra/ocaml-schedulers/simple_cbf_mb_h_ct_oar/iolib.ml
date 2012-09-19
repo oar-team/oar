@@ -70,18 +70,21 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
       (* populate hashes of hy_id_ary array and h_value_order hash *)
       i := !i + 1;
       for var = 4 to ((Array.length a)-1) do
-        let value = NoNStr a.(var) in
-        let h_label = hy_ary_labels.(var-4) in
-        let ordered_values = try Hashtbl.find h_value_order h_label with Not_found -> failwith ("Can't Hashtbl.find h_value_order for " ^ h_label) in
-        (* test is value for this ressource this h_label is already present else add in the list *)
-        if (not (List.mem value ordered_values)) then
-          Hashtbl.replace h_value_order h_label (ordered_values @ [value]);
+        (* For internal hierarchy level construction SQL fields are always intrepreted as string type. This have no particular impact *)
+        try (* to address null fiel whaen resource is not a part of this hierarchy level *)
+          let value = NoNStr a.(var) in 
+          let h_label = hy_ary_labels.(var-4) in
+          let ordered_values = try Hashtbl.find h_value_order h_label with Not_found -> failwith ("Can't Hashtbl.find h_value_order for " ^ h_label) in
+          (* test is value for this ressource this h_label is already present else add in the list *)
+          if (not (List.mem value ordered_values)) then
+            Hashtbl.replace h_value_order h_label (ordered_values @ [value]);
         
-        let add_res_id h value = 
-          let lst_value = try Hashtbl.find h value with Not_found -> [] in
-            Hashtbl.replace h value (lst_value @ [!i])
-        in 
-          add_res_id (hy_id_array.(var-4)) value
+          let add_res_id h value = 
+            let lst_value = try Hashtbl.find h value with Not_found -> [] in
+              Hashtbl.replace h value (lst_value @ [!i])
+          in 
+            add_res_id (hy_id_array.(var-4)) value
+         with _ -> ()
       done;
       ord2init_ids.(!i) <- NoN int_of_string a.(0); 
       init2ord_ids.(NoN int_of_string a.(0)) <- !i;
