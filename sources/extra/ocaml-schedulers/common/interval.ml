@@ -326,7 +326,7 @@ let extract_n_scattered_block_itv (itv_l_a: interval list) (lst_itvs_reference: 
   let itvs_seg = inter_intervals itv_l_a sorted_itvs in
 *)
   (* TODO optimize ???*)
-  let itvs_seg = List.flatten (List.map (fun x ->  inter_intervals x itv_l_a) lst_itvs_reference) in (* TODO optimize !!! *)
+  let itvs_seg = List.flatten (List.map (fun x -> inter_intervals x itv_l_a) lst_itvs_reference) in (* TODO optimize !!! *)
   let rec extract_n_itv residual_itvs_seg lst_itvs_ref itvs_result nb_bk = match lst_itvs_ref with
     | [] -> [] 
     | x::m -> let test_prefix, residual_itvs = test_and_sub_prefix_itvs x residual_itvs_seg in
@@ -340,6 +340,25 @@ let extract_n_scattered_block_itv (itv_l_a: interval list) (lst_itvs_reference: 
               else
                  extract_n_itv residual_itvs m itvs_result nb_bk
   in extract_n_itv itvs_seg lst_itvs_reference [] n;;
+
+
+(*                                                                     *)
+(* Extract all scattered blocks from itv_l_reference inclued initv_l_a *)
+(* scattered blocks come from ordered resources in hierarchy           *)
+(* BEST                                                                *)
+
+
+let extract_all_scattered_block_itv (itv_l_a: interval list) (lst_itvs_reference: interval list list) =
+  (* TODO optimize ???*)
+  let itvs_seg = List.flatten (List.map (fun x -> inter_intervals x itv_l_a) lst_itvs_reference) in (* TODO optimize !!! *)
+  let rec extract_n_itv residual_itvs_seg lst_itvs_ref itvs_result nb_bk = match lst_itvs_ref with
+    | [] -> (List.fast_sort itvs_compare itvs_result, nb_bk)
+    | x::m -> let test_prefix, residual_itvs = test_and_sub_prefix_itvs x residual_itvs_seg in
+              if test_prefix then
+                extract_n_itv residual_itvs m (x@itvs_result) (nb_bk+1) 
+              else
+                extract_n_itv residual_itvs m itvs_result nb_bk
+  in extract_n_itv itvs_seg lst_itvs_reference [] 0;;
 
 (*
 # let y = [[{b = 1; e = 4}; {b = 6; e = 9};]; [{b = 10; e = 17}]; [{b = 20; e = 30}]];;

@@ -195,7 +195,7 @@ let find_resource_hierarchies_scattered itv_l (hy_scat: interval list list list)
             | ([],_) -> [] (* failed*)
           in iter_n_find [] n0 available_bk
     in
-      if (List.length hy_scat) = 1 then
+      if (List.length hy_scat) = 1 then (* TODO BEST *)
         extract_n_scattered_block_itv itv_l (List.hd hy_scat) (List.hd r_rqt_l) (*   extract_n_scattered_block_itv ;)*) 
       else
         List.flatten (find_resource_n_h [!toplevel_itv] hy_scat r_rqt_l);;

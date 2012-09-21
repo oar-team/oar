@@ -1,4 +1,3 @@
-(* open Mysql *)  (* TODO *)
 open Int64
 open Interval
 type time_t = int64 (* 64 bits int because of unix_time use *)
@@ -37,10 +36,10 @@ type job =  {
 	mutable time_b : time_t;
 	mutable walltime : time_t; (* mutable need to reset besteffort's one*)
   mutable types : (string * string) list;
-	mutable hy_level_rqt : string list list;  
-  mutable hy_nb_rqt : int list list;
-  mutable constraints : set_of_resources list; 
-	mutable set_of_rs : set_of_resources;
+	mutable hy_level_rqt : string list list; (* sum of (list of hierarchiy)  or sum of sub-reservation like switch=1 + nodes=2/cpu=4 *) 
+  mutable hy_nb_rqt : int list list; (* the coresponding number or resources requested for  sum of (list of hierarchiy) *)
+  mutable constraints : set_of_resources list; (* and the coresponding list of constraint - clause SQL WHERE clause *)
+	mutable set_of_rs : set_of_resources; (* the assigned resources *)
 }
 
 (* job_required_status is used for job dependencies *)

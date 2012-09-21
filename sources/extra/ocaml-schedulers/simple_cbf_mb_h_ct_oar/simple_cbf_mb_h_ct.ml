@@ -69,7 +69,7 @@ let find_resource_hierarchies_job itv_slot job hy_levels =
       begin 
         let h = List.map (fun k -> try List.assoc k hy_levels with  Not_found -> failwith ("Can't find corresponding hierarchy level, HIERARCHY_LABELS configuration variable must be completed: "^k)) x in
         let itv_cts_slot = inter_intervals itv_slot z in
-        let sub_result = find_resource_hierarchies_scattered itv_cts_slot h y in (* TODO: to adapt*)
+        let sub_result = find_resource_hierarchies_scattered itv_cts_slot h y in
         match sub_result with
           | [] -> []
           | res -> requests_iter (res::result) n m o
