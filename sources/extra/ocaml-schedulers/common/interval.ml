@@ -1,7 +1,6 @@
 (* todo *)
 (* suppress the result list in inter_interval list argument !!! *) 
 (* need to propage in all directory !!! *)
-open Conf
 (* interval is the basic unit to construct set of resources *)
 type interval = {b : int; e : int}
 type set_of_resources = interval list
