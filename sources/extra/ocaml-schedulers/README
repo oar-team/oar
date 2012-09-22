@@ -22,12 +22,12 @@ Features:
  * job container  
  * fairesharing [TO TEST]
  * order_by on resources [TO FINISH / EVALUATE]
+ * ALL / BEST / BESTHALF for number of resources by level of hierarchy
 
 Missing:
 --------
  * Timesharing (not planned for fisrt public version)
  * Placeholder (not planned)
- * BEST / ALL resource expression in submission requests
  * Extensive test (no yet running on production cluster)
  * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
  * SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE (get_scheduled_jobs function is ready)
@@ -40,8 +40,6 @@ Next:
  * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
  * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
 
- * BEST  -2 means BEST (Alive resources at the time) 
- * ALL   -1 means ALL (Alive + Absent + Suspected resources)
  * scheduler message (see perl version )
  * job_error / job_message / scheduler message
  * need to test multi-resource-type (since >= cbf_mb_h)
@@ -64,8 +62,6 @@ ToDo:
   * test_unit: better compilation process
   * Ounit (cf archive)
     * test sub_intevals
-  * BEST  -2 means BEST (Alive resources at the time)
-  * ALL   -1 means ALL (Alive + Absent + Suspected resources)
 
 Misc:
 -----

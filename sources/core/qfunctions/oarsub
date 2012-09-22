@@ -489,6 +489,10 @@ sub parse_resource_descriptions($){
                     my $tmp = $1;
                     $tmp = $Nodes_resources if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -1 });
+                }elsif ($l =~ /^\s*(\w+)\s*=\s*BESTHALF\s*$/){
+                    my $tmp = $1;
+                    $tmp = $Nodes_resources if ($tmp eq "nodes");
+                    push(@resources_list, { resource => $tmp, value => -3 });
                 }elsif ($l =~ /^\s*(\w+)\s*=\s*BEST\s*$/){
                     my $tmp = $1;
                     $tmp = $Nodes_resources if ($tmp eq "nodes");
