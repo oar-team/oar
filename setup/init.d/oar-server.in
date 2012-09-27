@@ -1,11 +1,11 @@
-#! /bin/sh
+#!/bin/bash
 #
 # oar-server     OAR Server
 #
 #
 # --/--/----: Based on startup scripts from Bruno Bzeznik <bruno.bzeznik@imag.fr>
-# 02/09/2011: Merge RPM and Debian scripts by Philippe Le Brouster <philippe.le-brouster@imag.fr>
-#
+# 2011-09-02: Merge RPM and Debian scripts by Philippe Le Brouster <philippe.le-brouster@imag.fr>
+# 2012-09-27: Added 'status' by Matteo Guglielmi <matteo.guglielmi@epfl.ch> (patched by Bruno Bzeznik)
 
 # chkconfig: 2345 90 10
 # description: This script starts or stops the OAR resource manager
@@ -141,6 +141,109 @@ do_stop()
     return 0
 }
 
+# status functions
+__pids_var_run() {
+  local base=${1##*/}
+  local pid_file=${2:-/var/run/$base.pid}
+
+  pid=
+
+  if [ -f "$pid_file" ]; then
+    local line p
+
+    [ ! -r "$pid_file" ] && return 4 # "user had insufficient privilege"
+
+    while : ; do
+      read line
+
+      [ -z "$line" ] && break
+
+      for p in $line ; do
+        [ -z "${p//[0-9]/}" -a -d "/proc/$p" ] && pid="$pid $p"
+      done
+    done < "$pid_file"
+
+    if [ -n "$pid" ]; then
+      return 0
+    fi
+
+    return 1 # "Program is dead and /var/run pid file exists"
+  fi
+
+  return 3 # "Program is not running"
+}
+
+__pids_pidof() {
+  pidof -c -o $$ -o $PPID -o %PPID -x "$1" || \
+  pidof -c -o $$ -o $PPID -o %PPID -x "${1##*/}"
+}
+
+#
+# Function that checks the daemon/service
+#
+
+status() {
+  local base pid lock_file pid_file
+  # Test syntax
+  if [ "$#" = 0 ] ; then
+    echo $"Usage: status [-p pidfile] {program}"
+    return 1
+  fi
+
+  if [ "$1" = "-p" ]; then
+    pid_file=$2
+    shift 2
+  fi
+
+  if [ "$1" = "-l" ]; then
+    lock_file=$2
+    shift 2
+  fi
+
+  base=${1##*/}
+
+  # First try "pidof"
+  __pids_var_run "$1" "$pid_file"
+
+  RC=$?
+
+  if [ -z "$pid_file" -a -z "$pid" ]; then
+    pid="$(__pids_pidof "$1")"
+  fi
+
+  if [ -n "$pid" ]; then
+    echo $"${base} (pid $pid) is running..."
+    return 0
+  fi
+
+  case "$RC" in
+    0)
+      echo $"${base} (pid $pid) is running..."
+      return 0
+    ;;
+    1)
+      echo $"${base} dead but pid file exists"
+      return 1
+    ;;
+    4)
+      echo $"${base} status unknown due to insufficient privileges."
+      return 4
+    ;;
+  esac
+
+  if [ -z "${lock_file}" ]; then
+    lock_file=${base}
+  fi
+  # See if /var/lock/subsys/${lock_file} exists
+  if [ -f /var/lock/subsys/${lock_file} ]; then
+    echo $"${base} dead but subsys locked"
+    return 2
+  fi
+
+  echo $"${base} is stopped"
+  return 3
+}
+
 case "$1" in
     start)
         do_start
@@ -154,8 +257,13 @@ case "$1" in
             do_start
         fi
         ;;
+    status)
+      status $NAME
+      RETVAL=$?
+      exit $RETVAL
+        ;;
     *)
-        echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+        echo "Usage: $SCRIPTNAME {start|stop|restart|status|force-reload}" >&2
         exit 1
         ;;
 esac
