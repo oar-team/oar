@@ -411,13 +411,13 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }
     
     my $placeholder_name = "0";
-    if (defined($types->{allow_placeholder})){
-        if (defined($Placeholder_gantt_hash{$types->{allow_placeholder}})){
-            $gantt_to_use = $Placeholder_gantt_hash{$types->{allow_placeholder}};
-            $placeholder_name = $types->{allow_placeholder};
+    if (defined($types->{use_placeholder})){
+        if (defined($Placeholder_gantt_hash{$types->{use_placeholder}})){
+            $gantt_to_use = $Placeholder_gantt_hash{$types->{use_placeholder}};
+            $placeholder_name = $types->{use_placeholder};
             oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Using placeholder $placeholder_name\n");
         }else{
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Placeholder $types->{allow_placeholder} does not exist. So I use the default placeholder\n");
+            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Placeholder $types->{use_placeholder} does not exist. So I use the default placeholder\n");
         }
     }
     if (defined($types->{timesharing})){
@@ -464,7 +464,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
         next if ($skip_job == 1);
     }
-
     #oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Use gantt for $j->{job_id}:\n".OAR::Schedulers::GanttHoleStorage::pretty_print($gantt_to_use)."\n");
 
     my $job_properties = "\'1\'";
@@ -507,21 +506,15 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Using Gantt PARALLEL algorithm\n");
             @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($gantt_to_use, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
         }
-        
-#        print("[GANTT] 10 ".gettimeofday."\n");
         my @res_trees;
         my @resources;
         foreach my $t (@{$hole[1]}){
-#        print("[GANTT] 11 ".gettimeofday."\n");
             #my $minimal_tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($t);
-#        print("[GANTT] 12 ".gettimeofday."\n");
             push(@res_trees, $t);
             foreach my $r (OAR::Schedulers::ResourceTree::get_tree_leafs($t)){
                 push(@resources, OAR::Schedulers::ResourceTree::get_current_resource_value($r));
             }
-#        print("[GANTT] 13 ".gettimeofday."\n");
         }
-#        print("[GANTT] @resources\n");
         push(@moldable_results, {
                                     resources => \@resources,
                                     start_date => $hole[0],
@@ -533,7 +526,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     # Choose moldable job which will finish the first
     my $index_to_choose = -1;
     my $best_stop_time;
-#        print("[GANTT] 14 ".gettimeofday."\n");
     for (my $i=0; $i <= $#moldable_results; $i++){
         #my @tmp_array = @{$moldable_results[$i]->{resources}};
         if ($#{$moldable_results[$i]->{resources}} >= 0){
@@ -546,7 +538,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }
     if ($index_to_choose >= 0){
         # We can schedule the job
-#        print("[GANTT] 15 ".gettimeofday."\n");
         my $vec = '';
         foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
             vec($vec, $r, 1) = 1;
@@ -601,7 +592,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             }
         }
 
-
         #update database
         push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
         OAR::IO::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
@@ -621,7 +611,6 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
         oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] $message\n");
     }
-#        print("[GANTT] 18 ".gettimeofday."\n");
     oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] End scheduling\n");
 }
 
