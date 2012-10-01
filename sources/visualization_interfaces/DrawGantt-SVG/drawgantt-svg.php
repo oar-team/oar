@@ -10,13 +10,11 @@ $gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
 $gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
 $gantt_relative_start_date = (array_key_exists('relative_start',$_GET) or ($_GET['relative_start'] > 0))?($_GET['relative_start']):86400;
 $gantt_relative_stop_date = (array_key_exists('relative_stop',$_GET) or ($_GET['relative_stop'] > 0))?($_GET['relative_stop']):86400;
-$resource_filter = $_GET['filter'];
+$resource_filter = array_key_exists('filter', $_GET)?$_GET['filter']:"";
 
-//$mysql_server="mysql.$site.grid5000.fr";
 $mysql_server="localhost";
-$mysql_user="oarreader";
-$mysql_passwd="read";
-#$mysql_db="oar2";
+$mysql_user="oar_ro";
+$mysql_passwd="oar";
 $mysql_db="oar";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -35,11 +33,13 @@ $CONF['hierarchy_left_align'] = 110;
 $CONF['gantt_left_align'] = 160;
 $CONF['gantt_width'] = 1000;
 $CONF['gantt_min_job_width_for_label'] = 0;
-$CONF['resource_hierarchy'] = array('machine','host','cpu','core');
-$CONF['resource_properties'] = array('core', 'deploy', 'cpuset', 'besteffort', 'ip', 'disktype', 'nodemodel', 'memnode', 'ethnb', 'machine', 'cpuarch', 'cpu', 'cpucore', 'memcpu', 'network_address', 'virtual', 'host', 'rconsole', 'cputype', 'switch', 'cpufreq', 'type');
+$CONF['resource_hierarchy'] = array('cluster','host','cpu','core');
+$CONF['resource_properties'] = array('deploy', 'cpuset', 'besteffort', 'network_address', 'host', 'cpu', 'core','type');
 $CONF['resource_labels'] = array('host','cpuset');
 $CONF['state_colors'] = array('Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
-$CONF['job_colors'] = array('besteffort' => 'url(#besteffortPattern)', 'deploy' => 'url(#deployPattern)', 'container' => 'url(#containerPattern)', 'timesharing=\*,.*' => 'url(#timesharingPattern)', 'exclusive' => 'url(#exclusivePattern)', 'reboot' => 'url(#exclusivePattern)');
+$CONF['job_colors'] = array('besteffort' => 'url(#besteffortPattern)', 'deploy' => 'url(#deployPattern)', 'container' => 'url(#containerPattern)', 'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 'exclusive' => 'url(#exclusivePattern)', 'reboot' => 'url(#rebootPattern)', 'set_placeholder=\w+' => 'url(#placeholderPattern)');
+$CONF['resource_sort_key'] = 'host';
+$CONF['resource_sort_regex'] = '/^(\w+)-(\d+)\./';
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions
@@ -59,12 +59,18 @@ function date2px($date) {
 
 // sort function for resource_ids
 function resource_id_sort($r1, $r2) {
+	global $CONF;
 	$m1 = array();
 	$m2 = array();
-	$regex = '/^(\w+)-(\d+)\./';
-	preg_match($regex, $r1->resources['host']->id, $m1);
-	preg_match($regex, $r2->resources['host']->id, $m2);
-	return ($m1[1] > $m2[1]) or (($m1[1] == $m2[1]) and ($m1[2] > $m2[2])) or (($m1[1] == $m2[1]) and ($m1[2] == $m2[2]) and ($r1->cpuset > $r2->cpuset));
+	preg_match($CONF['resource_sort_regex'], $r1->resources[$CONF['resource_sort_key']]->id, $m1);
+	preg_match($CONF['resource_sort_regex'], $r2->resources[$CONF['resource_sort_key']]->id, $m2);
+	if (count($m1) >= 2) {
+		return ($m1[1] > $m2[1]) or (($m1[1] == $m2[1]) and ($m1[2] > $m2[2])) or (($m1[1] == $m2[1]) and ($m1[2] == $m2[2]) and ($r1->cpuset > $r2->cpuset));
+	} elseif (count($m1) >= 1) {
+		return ($m1[1] > $m2[1])  or (($m1[1] == $m2[1]) and ($r1->cpuset > $r2->cpuset));
+	} else {
+		return ($r1->cpuset > $r2->cpuset);
+	}
 }
 
 // display function for resource labels
@@ -242,11 +248,12 @@ class ResourceId {
 	}
 	function svg_lines($y) {
 		global $CONF;
-		$output .= '<line x1="'.$CONF['gantt_left_align'].'" y1="'.$y.'" x2="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y2="'.$y.'" stroke="'.($this->cpuset?"#888888":"#0000FF").'" stroke-width="1" />';
+		$output = '<line x1="'.$CONF['gantt_left_align'].'" y1="'.$y.'" x2="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y2="'.$y.'" stroke="'.($this->cpuset?"#888888":"#0000FF").'" stroke-width="1" />';
 		return $output;
 	}
 	function svg_states($y) {
 		global $CONF;
+		$output = '';
 		foreach ($this->states as $state) {
 			$output .= '<rect x="'.date2px($state->start).'" y="'.$y.'" width="'.(date2px($state->stop) - date2px($state->start)).'" height="'.$CONF['scale'].'" fill="'.$CONF['state_colors'][$state->value].'" stroke="#00FF00" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$state->svg_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
 		}
@@ -254,6 +261,8 @@ class ResourceId {
 	}
 	function svg_jobs($y) {
 		global $CONF, $gantt_now;
+		$output = '';
+		$labels_output = '';
 		foreach ($this->job_resource_id_groups as $grp) {
 			if($grp->job->stop_time > 0) {
 				$width = date2px($grp->job->stop_time) - date2px($grp->job->start_time);
@@ -357,7 +366,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 mysql_free_result($result);
 
 // sort resource_ids
-uasort($resource_ids, "resource_id_sort");
+//uasort($resource_ids, "resource_id_sort");
 
 // Retrieve the states of resources
 $query = <<<EOT
@@ -468,8 +477,7 @@ WHERE
 	gantt_jobs_predictions_visu.start_time < {$gantt_stop_date} AND
 	resources.resource_id = gantt_jobs_resources_visu.resource_id AND
 	gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= {$gantt_start_date} AND
-	jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' ) AND
-	job_types.job_id = jobs.job_id
+	jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' )
 ORDER BY 
 	jobs.job_id
 EOT;
@@ -524,8 +532,8 @@ function init(evt) {
 		svgDocument = window.svgDocument;
 	}
 	infobox = svgDocument.getElementById("infobox");
-  infoboxrect = svgDocument.getElementById("infoboxrect");
-  infoboxtext = svgDocument.getElementById("infoboxtext");
+	infoboxrect = svgDocument.getElementById("infoboxrect");
+	infoboxtext = svgDocument.getElementById("infoboxtext");
 	timeruler=svgDocument.getElementById("timeruler");
 	zoom = svgDocument.getElementById("zoom");
 	zoom_x1 = 0;
@@ -629,6 +637,13 @@ function mouseMove(evt) {
 </pattern> 
 <pattern id="exclusivePattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="10" y="20" fill="#888888">E</text>
+</pattern> 
+<pattern id="rebootPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="10" y="20" fill="#888888">R</text>
+</pattern> 
+<pattern id="placeholderPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<line x1="0" y1="0" x2="20" y2="20" stroke="#000000" stroke-width="2" />
+<text font-size="10" x="10" y="20" fill="#888888">P</text>
 </pattern> 
 <pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />
