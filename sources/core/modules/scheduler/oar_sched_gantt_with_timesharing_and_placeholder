@@ -160,7 +160,7 @@ foreach my $i (@{$order}){
             if (!defined($Placeholder_gantt_hash{$types->{set_placeholder}})){
                 $Placeholder_gantt_hash{$types->{set_placeholder}} = dclone($gantt_to_use);
                 $placeholder_name = $types->{placeholder};
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create gantt for the placeholder $types->{set_placeholder}\n");
+                oar_debug("[oar_sched_gantt_with_timesharing_and_placeholder] Create gantt for the placeholder $types->{set_placeholder}\n");
             }
         }
 
@@ -227,7 +227,7 @@ foreach my $r (OAR::IO::get_resources_in_state($base,"Alive")){
 # ENERGY SAVING: add fake occupations/holes from energy saving configuration 
 # CM part and Hulot part (wake up nodes in energy saving mode)
 if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))){
-    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [START] Checking EnergySaving occupation\n");
+    oar_debug("[oar_sched_gantt_with_timesharing_and_placeholder] [START] Checking EnergySaving occupation\n");
     # Check the resources that can be waked_up or shut down
     my $upto_availability = OAR::IO::get_energy_saving_resources_availability($base, $current_time);
     foreach my $t (keys(%{$upto_availability})){
@@ -238,7 +238,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
         }
         #Fill all the gantts
         foreach my $g (keys(%Container_gantt_hash)){
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Add EnergySaving occupation in container $g for available_upto = $t\n");
+            oar_debug("[oar_sched_gantt_with_timesharing_and_placeholder] Add EnergySaving occupation in container $g for available_upto = $t\n");
             OAR::Schedulers::GanttHoleStorage::set_occupation(  $Container_gantt_hash{$g},
                                                  $t,
                                                  OAR::Schedulers::GanttHoleStorage::get_infinity_value(),
@@ -258,7 +258,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
             }
         }
     }
-    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [END] Checking EnergySaving occupation\n");
+    oar_debug("[oar_sched_gantt_with_timesharing_and_placeholder] [END] Checking EnergySaving occupation\n");
 }
 # CM part
  
@@ -331,9 +331,9 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         if (defined($Placeholder_gantt_hash{$types->{use_placeholder}})){
             $gantt_to_use = $Placeholder_gantt_hash{$types->{use_placeholder}};
             $placeholder_name = $types->{use_placeholder};
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Using placeholder $placeholder_name\n");
+            oar_debug("[oar_sched_gantt_with_timesharing_and_placeholder] [$j->{job_id}] Using placeholder $placeholder_name\n");
         }else{
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Placeholder $types->{use_placeholder} does not exist. So I use the default placeholder\n");
+            oar_debug("[oar_sched_gantt_with_timesharing_and_placeholder] [$j->{job_id}] Placeholder $types->{use_placeholder} does not exist. So I use the default placeholder\n");
         }
     }
     if (defined($types->{timesharing})){
@@ -457,7 +457,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         # For placeholder
         foreach my $p (keys(%Placeholder_gantt_hash)){
             if ((!defined($types->{set_placeholder})) or ($types->{set_placeholder} ne $p)){
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Add live occupation in the placeholder $p\n");
+                oar_debug("[oar_sched_gantt_with_timesharing_and_placeholder] Add live occupation in the placeholder $p\n");
                 OAR::Schedulers::GanttHoleStorage::set_occupation( $Placeholder_gantt_hash{$p},
                                                     $moldable_results[$index_to_choose]->{start_date},
                                                     $moldable_results[$index_to_choose]->{duration},
@@ -469,7 +469,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             if (!defined($Placeholder_gantt_hash{$types->{set_placeholder}})){
                 $Placeholder_gantt_hash{$types->{set_placeholder}} = dclone($gantt_to_use);
                 $placeholder_name = $types->{placeholder};
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create gantt for the placeholder $types->{set_placeholder}\n");
+                oar_debug("[oar_sched_gantt_with_timesharing_and_placeholder] Create gantt for the placeholder $types->{set_placeholder}\n");
             }
         }
 
