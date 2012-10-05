@@ -21,7 +21,7 @@ open Types
 open Interval
 open Helpers
 
-let max_nb_resources = 200;;
+let max_nb_resources = 50000;;
 let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
 
