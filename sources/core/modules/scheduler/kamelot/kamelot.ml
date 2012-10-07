@@ -34,15 +34,13 @@ Not supported:
 * SCHEDULER_TIMEOUT
 *)
 
+(*                                                                                         *)
+(* Initialize some variables to default value or retrieve from oar.conf configuration file *)
+(*                                                                                         *)
+
 let besteffort_duration = Int64.of_int (5*60)
-
-(*
->> 2**31 => 2147483648
->> 2**31 -1 => 2147483647
-*)
-
-let max_time = 2147483648L
-let max_time_minus_one = 2147483647L
+let max_time = 2147483648L (* 2**31 *)
+let max_time_minus_one = 2147483647L (* 2**31-1 *)
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
 
@@ -298,10 +296,11 @@ let _ =
               waiting_j_ids
             in
           let ordered_waiting_j_ids =
+            (* limit the number of job to schedule in this round if correspondind variable is defined*)  
             if Conf.test_key("MAX_JOB_PER_SCHEDULING_ROUND") then
               begin
                 Conf.log ("MAX_JOB_PER_SCHEDULING_ROUND: " ^  (Conf.get_value "MAX_JOB_PER_SCHEDULING_ROUND"));
-                fst (Helpers.split_at all_ordered_waiting_j_ids (int_of_string  (Conf.get_value "MAX_JOB_PER_SCHEDULING_ROUND")))
+                Helpers.first_n all_ordered_waiting_j_ids (int_of_string  (Conf.get_value "MAX_JOB_PER_SCHEDULING_ROUND"))
               end
             else
               all_ordered_waiting_j_ids
@@ -309,7 +308,7 @@ let _ =
           (*                                                               *)
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
           (*                                                               *)
-          let (assignement_jobs, noscheduled_jids) = 
+          let (assignement_jobs, noscheduled_jids) =
             schedule_id_jobs_ct_dep h_slots h_waiting_jobs hierarchy_levels h_jobs_dependencies h_req_jobs_status ordered_waiting_j_ids security_time_overhead
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (Int64.to_string now)));
