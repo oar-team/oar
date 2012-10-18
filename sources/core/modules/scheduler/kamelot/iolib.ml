@@ -87,10 +87,10 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
             add_res_id (hy_id_array.(var-4)) value
          with _ -> ()
       done;
-(*
-      DynArray.insert ord2init_ids i (NoN int_of_string a.(0)); 
-      DynArray.insert init2ord_ids (NoN int_of_string a.(0)) i;
-*)
+
+      DynArray.insert ord2init_ids !i (NoN int_of_string a.(0)); 
+      DynArray.insert init2ord_ids (NoN int_of_string a.(0)) !i;
+
       (* Conf.log ("i:"^ (string_of_int !i)); *)
       (* Conf.log ("rid:"^(NoN id a.(0))); *)
     { ord_r_id = !i;                                (* id resulting from order_by ordering *)
