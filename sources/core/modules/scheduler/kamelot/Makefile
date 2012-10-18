@@ -1,0 +1,58 @@
+#
+# By default kamelot_mysql is built 
+# to obtain  kamelot_postgresql use:
+# > make POSTGRESQL=true
+#
+OCAMLMAKEFILE := ./common/OCamlMakefile
+
+# make POSTGRESQL=true 
+ifdef POSTGRESQL
+  PPFLAGS := -DPOSTGRESQL
+  THREADS := true
+  PACKS   := postgresql extlib
+  LIBS := str
+  SOURCES := ./common/helpers.ml ./common/conf.ml ./common/interval.ml \
+             ./common/types.ml ./common/postgresql_driver.ml iolib.ml \
+             ./common/hierarchy.ml scheduling.ml kamelot.ml
+  RESULT  := kamelot_postgresql
+else
+  PACKS   := mysql extlib oUnit
+  LIBS    := str
+  SOURCES := ./common/helpers.ml ./common/conf.ml ./common/interval.ml \
+             ./common/types.ml ./common/mysql_driver.ml iolib.ml \
+             ./common/hierarchy.ml scheduling.ml kamelot.ml
+  RESULT  := kamelot_mysql
+endif
+
+define PROJ_test_unit
+  PACKS = oUnit
+  LIBS = str 
+  SOURCES = ./common/helpers.ml ./common/interval.ml ./common/conf.ml ./common/types.ml\
+            ./common/hierarchy.ml simple_cbf_mb_h_ct.ml\
+            ./test/test_unit.ml
+  RESULT = test_unit
+endef
+export PROJ_test_unit
+
+ifndef SUBPROJS
+#  export SUBPROJS = kamelot test_unit 
+#  export SUBPROJS = test_unit
+endif
+
+#rm_iolib_build:
+#rm -f iolib.cmx 
+
+# Default target to use
+all: rm_iolib_build nc
+
+include $(OCAMLMAKEFILE)
+
+# Catch-all target will be applied to all subprojects automatically
+%:
+	@$(MAKE) -f $(OCAMLMAKEFILE) subprojs SUBTARGET=$@
+
+rm_iolib_build:
+	rm -f iolib.cmx 
+#
+
+
