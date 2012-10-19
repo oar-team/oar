@@ -288,6 +288,14 @@ describe OarApi do
         end 
       end
     end
+    context "(with finished job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+        @api.get_hash("jobs/1")
+      end
+      it_should_behave_like "Job"
+    end
+
   end
 
   describe "JOB DETAILS CHECKING: /jobs/details data structure" do

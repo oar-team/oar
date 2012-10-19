@@ -57,6 +57,11 @@ shared_examples_for "Job" do
           @api.value['start_time'].should be_a(Integer)
         end
       }
+      specify('exit_code should be an integer') {
+        if not @api.value['exit_code'].nil?
+          @api.value['exit_code'].should be_a(Integer)
+        end
+      }
 end
 
 # Resource structure minimum requirements
