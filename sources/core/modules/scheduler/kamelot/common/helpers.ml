@@ -81,22 +81,22 @@ let cheap_min f l =
   let aux (y, yv) x = let xv = f x in 
     if (compare xv yv) > 0 then (y, yv) else (x, xv) in
     match  l with
-	[] -> raise (Failure "Outils.min")
+	[] -> raise (Failure "Helpers.min")
       | x::xs -> List.fold_left aux (x, f x) xs
 	 
 let cheap_max f l = 
   let aux (y, yv) x = let xv = f x in 
     if (compare xv yv) < 0 then (y, yv) else (x, xv) in
     match  l with
-	[] -> raise (Failure "Outils.min")
+	[] -> raise (Failure "Helpers.min")
       | x::xs -> List.fold_left aux (x, f x) xs
 
 let gen_min comp = function
-    [] -> raise (Failure "Outils.gen_min")
+    [] -> raise (Failure "Helpers.gen_min")
   | x::xs -> List.fold_left (fun x y -> if (comp x y) > 0 then y else x) x xs
 
 let gen_max comp = function
-    [] -> raise (Failure "Outils.gen_min")
+    [] -> raise (Failure "Helpers.gen_max")
   | x::xs -> List.fold_left (fun x y -> if (comp x y) < 0 then y else x) x xs
 	  
 let min f l = fst (cheap_min f l)
@@ -111,12 +111,12 @@ let for_int a b =
     if p > b then List.rev buf
     else aux (p+1) (p::buf) in 
     
-    if b < a then failwith "for"
+    if b < a then failwith "Helpers.for_int"
     else aux a []
   
 let for_float a b step = 
   if b = a then [ a ]
-  else if step = 0. then failwith "for"
+  else if step = 0. then failwith "Helpers.for_float"
   else 
     let tmp = 
       let s = int_of_float ((b -. a) /. step) in for_int 0 s in
@@ -136,7 +136,6 @@ let filter_map2 f l =
 
 
 (* Be carefull: it's greedy and heavy *)
-
 let rec cross = function
     [] -> []
   | [ l ] -> List.map (fun x -> [x]) l
@@ -152,6 +151,17 @@ let rec map_wo_empty f = function
     match r with 
       [] -> map_wo_empty f l
      | x -> r :: map_wo_empty f l
+
+(* map over list with function which return pair                           *)
+(* val map_pairs : ('a -> 'b * 'c) -> 'a list -> 'b list * 'c list = <fun> *)
+let map_pairs f l =
+  let rec map_p_f accu1 accu2 = function
+    | [] -> (List.rev accu1, List.rev accu2)
+    | x::k -> let (a,b) = f x in map_p_f (a::accu1) (b::accu2) k
+  in
+    map_p_f [] [] l
+
+(*                     *)
 
 (* array manipulations *)
 
@@ -169,7 +179,6 @@ let partial_sums ?(transform = id) t =
 
 
 (* operations on float *)
-
 let logb b = let l = log b in 
   function x -> (log x) /. l
 

@@ -214,10 +214,12 @@ let _ =
     (* retreive ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
       let (potential_resources, h_value_order, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn hy_labels sched_resource_order in
       (* obtain hierarchy_levels from hierarchy_info given by get_resource_list_w_hierarchy *)
+      (*
        Conf.log ("ord2init_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list ord2init_ids) ) );
        Conf.log ("init2ord_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list init2ord_ids) ) );
+      *)
       let hierarchy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
-       List.iter (fun x ->  Conf.log ("h_lab:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels;
+       (* List.iter (fun x ->  Conf.log ("h_lab:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; *)
       let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now potential_resources in
@@ -230,7 +232,8 @@ let _ =
         else
           Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag [] init2ord_ids
       in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
-      Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
+      (* Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids)); *)
+      Conf.log ("Number of job waiting ids: "^ string_of_int (List.length waiting_j_ids));
 
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
         begin
@@ -321,7 +324,9 @@ let _ =
             (* Conf.log ("Previous Scheduled jobs:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs) ); 
 		        Conf.log ("Assigns:\n" ^  (Helpers.concatene_sep "\n\n" job_to_string assignement_jobs));
             *)
-            Conf.log ("Ids of noscheduled jobs:" ^ (Helpers.concatene_sep "," (fun n-> Printf.sprintf "%d" n) noscheduled_jids) );
+
+            (* Conf.log ("Ids of noscheduled jobs:" ^ (Helpers.concatene_sep "," (fun n-> Printf.sprintf "%d" n) noscheduled_jids) );*)
+            Conf.log ("Number of noscheduled jobs:" ^ string_of_int (List.length noscheduled_jids));
 
             (* save assignements into db *)
             Iolib.save_assigns conn assignement_jobs ord2init_ids;  

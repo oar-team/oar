@@ -9,14 +9,14 @@ OCAMLMAKEFILE := ./common/OCamlMakefile
 ifdef POSTGRESQL
   PPFLAGS := -DPOSTGRESQL
   THREADS := true
-  PACKS   := postgresql extlib
+  PACKS   := postgresql
   LIBS := str
   SOURCES := ./common/helpers.ml ./common/conf.ml ./common/interval.ml \
              ./common/types.ml ./common/postgresql_driver.ml iolib.ml \
              ./common/hierarchy.ml scheduling.ml kamelot.ml
   RESULT  := kamelot_postgresql
 else
-  PACKS   := mysql extlib oUnit
+  PACKS   := mysql oUnit
   LIBS    := str
   SOURCES := ./common/helpers.ml ./common/conf.ml ./common/interval.ml \
              ./common/types.ml ./common/mysql_driver.ml iolib.ml \
