@@ -68,6 +68,7 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
   let get_one_resource a = 
       (* populate hashes of hy_id_ary array and h_value_order hash *)
       i := !i + 1;
+      
       for var = 4 to ((Array.length a)-1) do
         (* For internal hierarchy level construction SQL fields are always intrepreted as string type. This have no particular impact *)
         try (* to address null fiel whaen resource is not a part of this hierarchy level *)
@@ -86,8 +87,7 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
          with _ -> ()
       done;
 
-      (* Conf.log ("i:"^ (string_of_int !i)); *)
-      (* Conf.log ("rid:"^(NoN id a.(0))); *)
+       (*Conf.log ("i:"^ (string_of_int !i) ^" rid:"^(NoN id a.(0)));*) 
    
     { ord_r_id = !i;                                (* id resulting from order_by ordering *)
       resource_id = NoN int_of_string a.(0);        (* resource_id *)
@@ -99,7 +99,7 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
     let res_lst_length = (List.length resources_lst) + 1 in 
     let ord2init_ids = Array.make res_lst_length 0 and init2ord_ids = Array.make res_lst_length 0 in
       List.iter(fun x -> Array.set ord2init_ids x.ord_r_id x.resource_id  ; Array.set init2ord_ids x.resource_id x.ord_r_id ) resources_lst;
-    
+      (* Conf.log("query: "^query);*)  
       (resources_lst, h_value_order, hy_id_array, ord2init_ids, init2ord_ids) ;;
 
 (*                                              *)

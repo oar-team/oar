@@ -218,7 +218,7 @@ let _ =
        Conf.log ("ord2init_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list ord2init_ids) ) );
        Conf.log ("init2ord_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list init2ord_ids) ) );
       *)
-      let hierarchy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
+       let hierarchy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
        (* List.iter (fun x ->  Conf.log ("h_lab:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; *)
       let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)

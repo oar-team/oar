@@ -33,10 +33,9 @@ let execQuery (dbh:Postgresql.connection)  q = (* TODO must be completed *)
 (* let map (q_result:Postgresql.result) f = *)
 let map (qres) f = 
   let rec loop i result_lst = match i with
-    | -1 -> result_lst
-    | _ -> loop (i-1) ((f (qres.result#get_tuple i))::result_lst)
-  in loop (qres.ntuples-1) [] ;;
-
+    | x when (x==qres.ntuples) -> result_lst
+    | _ -> loop (i+1) ((f (qres.result#get_tuple i))::result_lst)
+  in loop 0 [] ;;
 
 let fetch qres =
   if (qres.nt == qres.ntuples) then
