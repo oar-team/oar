@@ -400,7 +400,11 @@ GET /jobs
            - href: /jobs/58
              rel: self
            - href: /jobs/58/resources
-             rel: resources
+             rel: collection
+             title: resources
+           - href: /oarapi/jobs/58/nodes
+             rel: collection
+             title: nodes
          name: ~
          owner: kameleon
          queue: default
@@ -412,7 +416,11 @@ GET /jobs
            - href: /jobs/59
              rel: self
            - href: /jobs/59/resources
-             rel: resources
+             rel: collection
+             title: resources
+           - href: /oarapi/jobs/59/nodes
+             rel: collection
+             title: nodes
          name: ~
          owner: kameleon
          queue: default
@@ -456,128 +464,135 @@ GET /jobs/details
   *yaml example*:
     ::
      
-     api_timestamp: 1286896291
+     api_timestamp: 1352707511
      items:
-       - api_timestamp: 1286896291
-         array_id: 0
-         array_index: 10
-         command: ~
-         cpuset_name: kameleon_58
+       - api_timestamp: 1352707511
+         array_id: 5540
+         array_index: ~
+         command: sleep 300
+         cpuset_name: kameleon_5540
          dependencies: []
-         events:
-           - date: 1284109395
-             description: '[bipbip 58] Ask to change the job state'
-             event_id: 84
-             job_id: 58
-             to_check: NO
-             type: SWITCH_INTO_TERMINATE_STATE
+         events: []
          exit_code: ~
-         id: 58
-         initial_request: ~
-         launching_directory: ~
+         id: 5540
+         initial_request: oarsub sleep 300
+         launching_directory: /home/kameleon
          links:
-           - href: /jobs/58
+           - href: /oarapi/jobs/5540
              rel: self
-           - href: /jobs/58/resources
-             rel: resources
-         message: ~
+           - href: /oarapi/jobs/5540/resources
+             rel: collection
+             title: resources
+           - href: /oarapi/jobs/5540/nodes
+             rel: collection
+             title: nodes
+         message: Karma = 0.000
          name: ~
          nodes:
-           - api_timestamp: 1286896291
-             id: 0
+           - api_timestamp: 1352707511
              links:
-               - href: /resources/nodes/fake2
+               - href: /oarapi/resources/nodes/node1
                  rel: self
-             network_address: fake2
-         owner: kameleon
-         project: ~
-         properties: ~
-         queue: default
-         reservation: ~
-         resources:
-           - api_timestamp: 1286896291
-             id: 5
-             links:
-               - href: /resources/5
-                 rel: self
-               - href: /resources/5/jobs
-                 rel: jobs
-             resource_id: 5
+             network_address: node1
              status: assigned
-         resubmit_job_id: 0
-         scheduled_start: 0
-         start_time: 0
-         state: Terminated
-         submission_time: 1284109267
-         type: ~
+         owner: kameleon
+         project: default
+         properties: desktop_computing = 'NO'
+         queue: default
+         reservation: None
+         resources:
+           - api_timestamp: 1352707511
+             id: 1
+             links:
+               - href: /oarapi/resources/1
+                 rel: self
+               - href: /oarapi/resources/1/jobs
+                 rel: collection
+                 title: jobs
+             status: assigned
+         resubmit_job_id: ~
+         scheduled_start: 1352707488
+         start_time: 1352707488
+         state: Running
+         stderr_file: OAR.5540.stdout
+         stdout_file: OAR.5540.stderr
+         stop_time: 0
+         submission_time: 1352707487
+         type: PASSIVE
          types: []
          walltime: 7200
-         wanted_resources: "-l \"{type = 'default'}/network_address=1/core=1,walltime=2:0:0\" "
-       - api_timestamp: 1286896291
-         array_id: 0
-         array_index: 1
-         command: ~
-         cpuset_name: kameleon_59
+         wanted_resources: "-l \"{type = 'default'}/resource_id=1,walltime=2:0:0\" "
+       - api_timestamp: 1352707511
+         array_id: 5542
+         array_index: ~
+         command: sleep 300
+         cpuset_name: kameleon_5542
          dependencies: []
-         events:
-           - date: 1284109910
-             description: '[bipbip 59] Ask to change the job state'
-             event_id: 85
-             job_id: 59
-             to_check: NO
-             type: SWITCH_INTO_TERMINATE_STATE
+         events: []
          exit_code: ~
-         id: 59
-         initial_request: ~
-         launching_directory: ~
+         id: 5542
+         initial_request: oarsub -l /core=2 sleep 300
+         launching_directory: /home/kameleon
          links:
-           - href: /jobs/59
+           - href: /oarapi/jobs/5542
              rel: self
-           - href: /jobs/59/resources
-             rel: resources
-         message: ~
+           - href: /oarapi/jobs/5542/resources
+             rel: collection
+             title: resources
+           - href: /oarapi/jobs/5542/nodes
+             rel: collection
+             title: nodes
+         message: Karma = 0.000
          name: ~
          nodes:
-           - api_timestamp: 1286896291
-             id: 0
+           - api_timestamp: 1352707511
              links:
-               - href: /resources/nodes/fake2
+               - href: /oarapi/resources/nodes/node1
                  rel: self
-             network_address: fake2
-         owner: kameleon
-         project: ~
-         properties: ~
-         queue: default
-         reservation: ~
-         resources:
-           - api_timestamp: 1286896291
-             id: 5
-             links:
-               - href: /resources/5
-                 rel: self
-               - href: /resources/5/jobs
-                 rel: jobs
-             resource_id: 5
+             network_address: node1
              status: assigned
-         resubmit_job_id: 0
-         scheduled_start: 0
-         start_time: 0
-         state: Terminated
-         submission_time: 1284109846
-         type: ~
+         owner: kameleon
+         project: default
+         properties: desktop_computing = 'NO'
+         queue: default
+         reservation: None
+         resources:
+           - api_timestamp: 1352707511
+             id: 3
+             links:
+               - href: /oarapi/resources/3
+                 rel: self
+               - href: /oarapi/resources/3/jobs
+                 rel: collection
+                 title: jobs
+             status: assigned
+           - api_timestamp: 1352707511
+             id: 4
+             links:
+               - href: /oarapi/resources/4
+                 rel: self
+               - href: /oarapi/resources/4/jobs
+                 rel: collection
+                 title: jobs
+             status: assigned
+         resubmit_job_id: ~
+         scheduled_start: 1352707510
+         start_time: 1352707510
+         state: Running
+         stderr_file: OAR.5542.stdout
+         stdout_file: OAR.5542.stderr
+         stop_time: 0
+         submission_time: 1352707509
+         type: PASSIVE
          types: []
          walltime: 7200
-         wanted_resources: "-l \"{type = 'default'}/network_address=1/core=1,walltime=2:0:0\" "
+         wanted_resources: "-l \"{type = 'default'}/core=2,walltime=2:0:0\" "
      links:
-       - href: /jobs/details.yaml?state=Terminated&limit=2&offset=48
+       - href: /oarapi/jobs/details.yaml?offset=0
          rel: self
-       - href: /jobs/details.yaml?state=Terminated&limit=2&offset=50
-         rel: next
-       - href: /jobs/details.yaml?state=Terminated&limit=2&offset=46
-         rel: previous
-     offset: 48
-     total: 206
-     
+     offset: 0
+     total: 2
+
 usage example:
   ::
 
@@ -711,68 +726,65 @@ GET /jobs/<id>
   *yaml example*:
     ::
 
-     ---
-     Job_Id: 547
-     id: 547
-     uri: /jobs/547
-     array_id: 547
-     array_index: 1
-     assigned_network_address:
-       - liza-2
-     assigned_resources:
-       - 6
-     command: ''
-     cpuset_name: bzizou_547
+     api_timestamp: 1352707658
+     array_id: 5230
+     array_index: 3
+     command: /home/kameleon/cigri-3/tmp/test1.sh param48 48
+     cpuset_name: kameleon_5232
      dependencies: []
      events:
-       - date: 1245775464
-         description: User root requested to frag the job 547
-         event_id: 1315
-         job_id: 547
+       - date: 1351087783
+         description: Scheduler priority for job 5232 updated (network_address/resource_id)
+         event_id: 14454
+         job_id: 5232
          to_check: NO
-         type: FRAG_JOB_REQUEST
-       - date: 1245775464
-         description: '[sarko] Job [547] from 1245768251 with 7200; current time=1245775463 (Elapsed)'
-         event_id: 1316
-         job_id: 547
+         type: SCHEDULER_PRIORITY_UPDATED_STOP
+       - date: 1351087782
+         description: '[bipbip 5232] Ask to change the job state'
+         event_id: 14451
+         job_id: 5232
          to_check: NO
-         type: WALLTIME
-       - date: 1245775464
-         description: '[Leon] Send kill signal to oarexec on liza-2 for the job 547'
-         event_id: 1318
-         job_id: 547
+         type: SWITCH_INTO_TERMINATE_STATE
+       - date: 1351087660
+         description: Scheduler priority for job 5232 updated (network_address/resource_id)
+         event_id: 14446
+         job_id: 5232
          to_check: NO
-         type: SEND_KILL_JOB
-       - date: 1245775469
-         description: '[bipbip 547] Ask to change the job state'
-         event_id: 1320
-         job_id: 547
-         to_check: NO
-         type: SWITCH_INTO_ERROR_STATE
-     exit_code: ~
-     initial_request: ''
-     jobType: INTERACTIVE
-     job_uid: ~
-     job_user: bzizou
-     launchingDirectory: /home/bzizou
-     message: FIFO scheduling OK
+         type: SCHEDULER_PRIORITY_UPDATED_START
+     exit_code: 0
+     id: 5232
+     initial_request: oarsub --resource=core=1 --type=besteffort /home/kameleon/cigri-3/tmp/test1.sh --array-param-file=/tmp/oarapi.paramfile.7QPM0
+     launching_directory: /home/kameleon
+     links:
+       - href: /oarapi/jobs/5232
+         rel: self
+       - href: /oarapi/jobs/5232/resources
+         rel: collection
+         title: resources
+       - href: /oarapi/jobs/5232/nodes
+         rel: collection
+         title: nodes
+     message: Karma = 0.000
      name: ~
-     owner: bzizou
+     owner: kameleon
      project: default
-     properties: desktop_computing = 'NO'
-     queue: default
+     properties: (besteffort = 'YES') AND desktop_computing = 'NO'
+     queue: besteffort
      reservation: None
-     resources_uri: /jobs/547/resources
      resubmit_job_id: 0
-     scheduledStart: ~
-     startTime: 1245768251
-     state: Error
-     submissionTime: 1245768249
-     types: []
+     scheduled_start: ~
+     start_time: 1351087660
+     state: Terminated
+     stderr_file: OAR.5232.stderr
+     stdout_file: OAR.5232.stdout
+     stop_time: 1351087782
+     submission_time: 1351087659
+     type: PASSIVE
+     types:
+       - besteffort
      walltime: 7200
-     wanted_resources: "-l \"{type = 'default'}/resource_id=1,walltime=2:0:0\" "
-
-
+     wanted_resources: "-l \"{type = 'default'}/core=1,walltime=2:0:0\" "
+     
 :usage example:
   ::
 
@@ -798,20 +810,23 @@ GET /jobs/<id>/resources
   *yaml example*:
     ::
 
-     ---
-     api_timestamp: 1253279408
-     assigned_nodes:
-       - node: liza-1
-         node_uri: /resources/nodes/liza-1
-     assigned_resources:
-       - resource_id: 4
-         resource_uri: /resources/4
-       - resource_id: 5
-         resource_uri: /resources/5
-     job_id: 622
-     job_uri: /jobs/622
-     reserved_resources: []
-
+     api_timestamp: 1352707730
+     items:
+       - api_timestamp: 1352707730
+         id: 7
+         links:
+           - href: /oarapi/resources/7
+             rel: self
+           - href: /oarapi/resources/7/jobs
+             rel: collection
+             title: jobs
+         status: assigned
+     links:
+       - href: /oarapi/jobs/5232/resources.yaml
+         rel: self
+     offset: 0
+     total: 1
+     
 :usage example:
   ::
 

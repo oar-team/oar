@@ -47,6 +47,10 @@ shared_examples_for "Job" do
       specify('resources link should be correct') { 
            @api.get_link_href('resources').should == "/oarapi-priv/jobs/#{@api.value['id']}/resources"
       }
+      specify('nodes link should not be nil') { @api.get_link_href('nodes').should_not be_nil } 
+      specify('nodes link should be correct') { 
+           @api.get_link_href('nodes').should == "/oarapi-priv/jobs/#{@api.value['id']}/nodes"
+      }
       specify('array_id should be an integer') {
         if not @api.value['array_id'].nil?
           @api.value['array_id'].should be_a(Integer)

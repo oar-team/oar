@@ -221,9 +221,12 @@ sub add_job_uris($$) {
   $self=OAR::API::htmlize_uri($self,$ext);
   my $resources=OAR::API::make_uri("jobs/".$job->{id}."/resources",$ext,0);
   $resources=OAR::API::htmlize_uri($resources,$ext);
+  my $nodes=OAR::API::make_uri("jobs/".$job->{id}."/nodes",$ext,0);
+  $nodes=OAR::API::htmlize_uri($nodes,$ext);
   my $links;
   push (@$links, { href => $self, rel => "self" });
   push (@$links, { href => $resources, rel => "collection", title => "resources" });
+  push (@$links, { href => $nodes, rel => "collection", title => "nodes" });
   $job->{links}=$links;
   $job->{api_timestamp}=time();
   # Don't know why this function breaks the type of the id, so:
