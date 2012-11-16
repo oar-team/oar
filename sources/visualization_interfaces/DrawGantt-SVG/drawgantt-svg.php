@@ -8,8 +8,8 @@
 $site = array_key_exists('site',$_GET)?$_GET['site']:"grenoble";
 $gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
 $gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
-$gantt_relative_start_date = (array_key_exists('relative_start',$_GET) or ($_GET['relative_start'] > 0))?($_GET['relative_start']):86400;
-$gantt_relative_stop_date = (array_key_exists('relative_stop',$_GET) or ($_GET['relative_stop'] > 0))?($_GET['relative_stop']):86400;
+$gantt_relative_start_date = array_key_exists('relative_start',$_GET)?($_GET['relative_start']):86400;
+$gantt_relative_stop_date = array_key_exists('relative_stop',$_GET)?($_GET['relative_stop']):86400;
 $resource_filter = array_key_exists('filter', $_GET)?$_GET['filter']:"";
 
 $mysql_server="localhost";
