@@ -213,6 +213,19 @@ foreach my $i (@{$order}){
             $Container_gantt_hash{$i} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec, $All_resource_list_vec);
             $gantt_to_use = $Container_gantt_hash{$i};
         }
+
+        #Handle a job within a container
+        my $container_num = 0;
+        if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
+            if (defined($Container_gantt_hash{$1})){
+                $gantt_to_use = $Container_gantt_hash{$1};
+                $container_num = $1;
+                oar_debug("[$scheduler_name] [$i] inner job: using container $container_num\n");
+            }else{
+                oar_debug("[$scheduler_name] [$i] inner job: container $1 does not exist, use container 0.\n");
+            }
+        }
+
         my $placeholder_name = "0";
         if (defined($types->{set_placeholder})){
             if (!defined($Placeholder_gantt_hash{$types->{set_placeholder}})){
