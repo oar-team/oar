@@ -154,6 +154,17 @@ foreach my $i (@{$order}){
             $container_num = $i;
         }
 
+        #Handle a job within a container
+        my $container_num = 0;
+        if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
+            if (defined($Container_gantt_hash{$1})){
+                $gantt_to_use = $Container_gantt_hash{$1};
+                $container_num = $1;
+                oar_debug("[oar_sched_gantt_with_timesharing] [$i] inner job: using container $container_num\n");
+            }else{
+                oar_debug("[oar_sched_gantt_with_timesharing] [$i] inner job: container $1 does not exist, use container 0.\n");
+            }
+        }
         my $user;
         my $name;
         if (defined($types->{timesharing})){
