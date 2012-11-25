@@ -62,7 +62,7 @@ let token_scripts =
 (* Karma and Fairsharing stuff *)
 (*                             *)
 
-(* test if Fairsharing  is enabled*)
+(* test if Fairsharing  is enabled *)
 let fairsharing_flag = Conf.test_key("FAIRSHARING_ENABLED") 
 let fairsharing_nb_job_limit = Conf.get_default_value "SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER" "30"
 
@@ -90,7 +90,7 @@ let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
     and karma_users_asked, karma_users_used       = Iolib.get_sum_accounting_for_param dbh queue "accounting_user" start_window stop_window 
     in
       let karma j = let job = try Hashtbl.find h_jobs j  with Not_found -> failwith "Karma: not found job" in
-        let user = job.user and proj = job.project in
+        let user = job.bs.user and proj = job.bs.project in
         let karma_proj_used_j  = try Hashtbl.find karma_projects_used proj  with Not_found -> 0.0
         and karma_user_used_j  = try Hashtbl.find karma_users_used user  with Not_found -> 0.0
         and karma_user_asked_j = try Hashtbl.find karma_users_asked user  with Not_found -> 0.0
@@ -168,19 +168,24 @@ let resources_init_slots_determination dbh now potential_resources =
         in                     
         (* create corresponding job from available_up parameter of resource *) 
         let pseudo_job_av_upto a_upto res_itv =
-          { jobid=0;
-            jobstate="";
-            moldable_id=0;
-            time_b = if (a_upto<now) then now else a_upto;
-            (* walltime = Int64.sub max_time_minus_one a_upto; *)
-            walltime = if (a_upto<now) then (Int64.sub max_time_minus_one now) else (Int64.sub max_time_minus_one a_upto);
-            types = [];
-            constraints = [];
-            hy_level_rqt = [];
-            hy_nb_rqt = [];
-            set_of_rs = res_itv;
-            user = "";
-            project = "";
+          { bs={jobid=0;
+                jobstate="";
+                moldable_id=0;
+                time_b = if (a_upto<now) then now else a_upto;
+                (* time_e = Int64.sub max_time_minus_one a_upto; *)
+                w_time = if (a_upto<now) then (Int64.sub max_time_minus_one now) else (Int64.sub max_time_minus_one a_upto);
+                types = [];
+                constraints = [];
+                set_of_rs = res_itv;
+                user = "";
+                project = "";
+             };
+             rq= {
+                mlb_id = 0; 
+                walltime = Int64.zero;
+                hy_level_rqt = [];
+                hy_nb_rqt = [];
+             }
           } 
           in
         (* create pseudo_jobs from hastable which containts resources' id by distinct available upto *) 
@@ -211,7 +216,7 @@ let _ =
     let (queue,now) = argv in
     let security_time_overhead = Int64.of_string  (Conf.get_default_value "SCHEDULER_JOB_SECURITY_TIME" "60") in   (* int no for  ? *)
 		let conn = let r = Iolib.connect () in at_exit (fun () -> Iolib.disconnect r); r in
-    (* retreive ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
+    (* retrieve ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
       let (potential_resources, h_value_order, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn hy_labels sched_resource_order in
       (* obtain hierarchy_levels from hierarchy_info given by get_resource_list_w_hierarchy *)
       (*
@@ -244,16 +249,16 @@ let _ =
           (* fill slots with prev scheduled jobs  *)
           let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn init2ord_ids [] security_time_overhead now in (* TODO available_suspended_res_itvs *)
           if (not ( prev_scheduled_jobs = [])) then
-            let (h_prev_scheduled_jobs_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
+            let (h_prev_scheduled_jobs_w_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
             let prev_scheduled_job_ids =
               if (not (queue = "besteffort")) then
                 (* exclude besteffort jobs *)
                 begin
                 (* Conf.log ("excluding besteffort jobs, queue: " ^ queue); *)
                 let besteffort_mem_remove job_id = 
-                  let test_bt = List.mem_assoc "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_types job_id 
-                                                              with Not_found -> failwith "Must no failed here: besteffort_mem").types in
-                                                              if test_bt then Hashtbl.remove  h_prev_scheduled_jobs_types job_id else ();
+                  let test_bt = List.mem_assoc "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_w_types job_id 
+                                                              with Not_found -> failwith "Must no failed here: besteffort_mem").bs.types in
+                                                              if test_bt then Hashtbl.remove h_prev_scheduled_jobs_w_types job_id else ();
                                                               test_bt  
                   in  
                     List.filter (fun n -> (not (besteffort_mem_remove n))) prev_scheduled_job_ids_tmp;
@@ -276,7 +281,9 @@ let _ =
          
             Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
             *)
-             set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_types prev_scheduled_job_ids security_time_overhead;
+
+            (* fill slots function with previous scheduled jobs *)
+            set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_w_types prev_scheduled_job_ids security_time_overhead;
 
             (*             
              let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
