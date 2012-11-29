@@ -175,7 +175,6 @@ let resources_init_slots_determination dbh now potential_resources =
                 (* time_e = Int64.sub max_time_minus_one a_upto; *)
                 w_time = if (a_upto<now) then (Int64.sub max_time_minus_one now) else (Int64.sub max_time_minus_one a_upto);
                 types = [];
-                constraints = [];
                 set_of_rs = res_itv;
                 user = "";
                 project = "";
@@ -183,6 +182,7 @@ let resources_init_slots_determination dbh now potential_resources =
              rq= {
                 mlb_id = 0; 
                 walltime = Int64.zero;
+                constraints = [];
                 hy_level_rqt = [];
                 hy_nb_rqt = [];
              }

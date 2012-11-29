@@ -218,10 +218,10 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
               prev_job.rq <- {
                 mlb_id = 0; (* not used w/ no moldable support *)
                 walltime =  Int64.zero;  (* not used w/ no moldable support *)
+                constraints = cts;
                 hy_level_rqt = r_t;
                 hy_nb_rqt = r_v;
               };
-              prev_job.bs.constraints <- cts;
               (* add job to hashtable *)
               Hashtbl.add jobs prev_job.bs.jobid prev_job;
               (List.rev jids, jobs) (* return list of job_ids jobs' hashtable *)
@@ -236,11 +236,10 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
                         prev_job.rq <- {
                           mlb_id = 0; (* not used w/ no moldable support *)
                           walltime =  Int64.zero;  (* not used w/ no moldable support *)
+                          constraints = List.rev cts;
                           hy_level_rqt = List.rev r_t;
                           hy_nb_rqt = List.rev r_v;
                         };
-                        prev_job.bs.constraints <- List.rev cts;
-                       
          (*               Printf.printf "jobs: %s\n" (job_to_string prev_job);   *)
                         Hashtbl.add jobs prev_job.bs.jobid prev_job
                       end;
@@ -253,7 +252,6 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
                             time_b = Int64.zero;
                             w_time = add j_walltime security_time_overhead; (* add security_time_overhead *)
                             types = [];
-                            constraints = [];
                             set_of_rs = [];
                             user = user;
                             project = project
@@ -261,6 +259,7 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
                           rq = {
                             mlb_id = 0; (* not used w/ no moldable support *)
                             walltime =  Int64.zero; (* not used w/ no moldable support *)
+                            constraints = []; (* not used w/ no moldable support *)
                             hy_level_rqt = [];
                             hy_nb_rqt = [];
                          }
@@ -279,10 +278,168 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
                                            jids
                   end
   in  scan_res result {bs={jobid=0;jobstate="";moldable_id =0;time_b=Int64.zero;w_time=Int64.zero;
-                           types=[];constraints=[];set_of_rs =[]; user="";project=""};
-                       rq={mlb_id=0;walltime=Int64.zero;hy_level_rqt=[];hy_nb_rqt=[];}} 
+                           types=[];set_of_rs =[]; user="";project=""};
+                       rq={mlb_id=0;walltime=Int64.zero;constraints=[];hy_level_rqt=[];hy_nb_rqt=[];}} 
                0 [] [] [] [];; 
+(*                                                                                                  *)
+(* get_moldable_job_list_fairsharing: retrieve jobs to schedule with important relative information *)
+(*                                                                                                  *)
+(*  init2ord_ids need to id convertion due to order_by support                                      *)
 
+let get_moldable_job_list_fairsharing dbh default_resources queue besteffort_duration security_time_overhead fairsharing_flag fs_jobids init2ord_ids =
+  let flag_besteffort = if (queue == "besteffort") then true else false in
+  let jobs = Hashtbl.create 1000 in      (* Hashtbl.add jobs jid ( blabla *)
+  let constraints = Hashtbl.create 10 in (* Hashtable of constraints to avoid recomputing of corresponding interval list*)
+
+  let get_constraints j_ppt r_ppt = 
+    if (j_ppt = "") && ( r_ppt = "type = 'default'" || r_ppt = "" ) then
+      default_resources
+    else
+      let and_sql = if ((j_ppt = "") || (r_ppt = "")) then "" else " AND " in 
+      let sql_cts = j_ppt ^ and_sql^ r_ppt in  
+        try Hashtbl.find constraints sql_cts (*cache the result, a more general/smart approach is to use memoize function - this is OK for one occurence*)
+        with Not_found ->
+          begin  
+            let query = Printf.sprintf "SELECT resource_id FROM resources WHERE ( %s )"  sql_cts in
+            let res = execQuery dbh query in 
+            let get_one_resource a = init2ord_ids.(NoN int_of_string a.(0)) in (* resource_id and convert it*)
+            let matching_resources = (map res get_one_resource) in 
+            let itv_cts = ints2intervals matching_resources in
+              Hashtbl.add constraints sql_cts itv_cts;
+            itv_cts
+          end  
+  in 
+  let query_base = Printf.sprintf "
+    SELECT jobs.job_id, moldable_job_descriptions.moldable_walltime, jobs.properties,
+        moldable_job_descriptions.moldable_id,  
+        job_resource_descriptions.res_job_resource_type,
+        job_resource_descriptions.res_job_value,
+        job_resource_descriptions.res_job_order, 	
+        job_resource_groups.res_group_property,
+        jobs.job_user, 
+        jobs.project
+    FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
+    WHERE
+      moldable_job_descriptions.moldable_index = 'CURRENT'
+      AND job_resource_groups.res_group_index = 'CURRENT'
+      AND job_resource_descriptions.res_job_index = 'CURRENT' "
+  and query_end = "
+      AND jobs.reservation = 'None'
+      AND jobs.job_id = moldable_job_descriptions.moldable_job_id
+      AND job_resource_groups.res_group_index = 'CURRENT'
+      AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+      AND job_resource_descriptions.res_job_index = 'CURRENT'
+      AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+      ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC;"
+  in
+    let query =
+      if fairsharing_flag then
+        query_base ^ " AND jobs.job_id IN (" ^ (Helpers.concatene_sep "," id fs_jobids) ^ ") " ^ query_end 
+      else
+        query_base ^ " AND jobs.state = 'Waiting' AND jobs.queue_name = '" ^ queue ^"' "^ query_end 
+    in
+  let res = execQuery dbh query in 
+
+  let get_one_row a = ( 
+    NoN int_of_string a.(0),                          (* job_id *)
+    (if flag_besteffort then besteffort_duration else 
+      NoN Int64.of_string a.(1)),                     (* moldable_walltime *)
+      NoN int_of_string a.(3),                        (* moldable_id *)
+      NoNStr a.(2),                                   (* properties *)
+      NoNStr a.(4),                                   (* res_job_resource_type *)
+      NoN int_of_string a.(5),                        (* res_job_value *)
+      NoN int_of_string a.(6),                        (* res_job_order *)
+      NoNStr a.(7),                                   (* res_group_property *)
+      NoNStr a.(8),                                   (* job_user *)   
+      NoNStr a.(9)                                    (* job_project *)
+  )
+
+  in let result = map res get_one_row in
+  
+  (*scan result_query job mlb_id walltime res_order res_type_lst res_value_lst constraints_lst mreq job_ids_lst *)
+  let rec scan_res res_query prev_job prev_mlb_id prev_wtime r_o r_t r_v cts mreq jids = match res_query with
+      [] -> begin (* the exit where jids is returned *)
+              (* complete previous job *)
+               prev_job.mrq <- List.rev ( {
+                mlb_id = prev_mlb_id; (* not used w/ no moldable support *)
+                walltime = prev_wtime;  (* not used w/ no moldable support *)
+                constraints = cts;
+                hy_level_rqt = r_t;
+                hy_nb_rqt = r_v;
+              } :: mreq) ;
+              (* add job to hashtable *)
+              Hashtbl.add jobs prev_job.mbs.jobid prev_job;
+              (List.rev jids, jobs) (* return list of job_ids jobs' hashtable *)
+            end 
+      | row::m ->
+                let (j_id, j_walltime, j_moldable_id, properties, r_type, r_value, r_order, r_properties, user, project) = row in
+                if (prev_job.mbs.jobid != j_id) then (* next job *)
+                  begin (* next job *)
+                   (* complete prev job *)
+                    if (prev_job.mbs.jobid !=0) then 
+                      begin
+                        prev_job.mrq <- ( List.rev ( {
+                          mlb_id = prev_mlb_id; (* not used w/ no moldable support *)
+                          walltime =  prev_wtime;  (* not used w/ no moldable support *)
+                          constraints = List.rev cts;
+                          hy_level_rqt = List.rev r_t;
+                          hy_nb_rqt = List.rev r_v;
+                        } :: mreq) );
+                       
+         (*             Printf.printf "jobs: %s\n" (job_to_string prev_job);   *)
+                        Hashtbl.add jobs prev_job.mbs.jobid prev_job
+                      end;
+                    (* prepare next job *)
+                    let j = {
+                          mbs = { 
+                            jobid = j_id;
+                            jobstate = "";
+                            moldable_id = 0;
+                            time_b = Int64.zero;
+                            w_time = Int64.zero;
+                            types = [];
+                            set_of_rs = [];
+                            user = user;
+                            project = project
+                          };
+                          mrq = []
+                      } in
+
+  (* scan result_query job mlb_id walltime res_order res_type_lst res_value_lst constraints_lst mreq job_ids_lst *)
+                    scan_res m j j_moldable_id j_walltime r_order [[r_type]] [[r_value]] [(get_constraints properties r_properties)] [] (j_id::jids)
+                  end (* next job *)                   
+                else (* same job *) 
+                  if (prev_mlb_id != j_moldable_id) then (* same job,  next moldable *)
+                    begin (*same job, next moldable *)
+                      let updated_mreq = { (* set previous moldabme *)
+                                    mlb_id = prev_mlb_id; (* not used w/ no moldable support *)
+                                    walltime = prev_wtime;  (* not used w/ no moldable support *)
+                                    constraints = List.rev cts;
+                                    hy_level_rqt = List.rev r_t;
+                                    hy_nb_rqt = List.rev r_v;
+                                  } :: mreq 
+                      in
+ (* TODO *)                   
+  (* scan result_query job mlb_id walltime res_order res_type_lst res_value_lst constraints_lst mreq_lst job_ids_lst *)
+                      scan_res m prev_job j_moldable_id j_walltime r_order [[r_type]] [[r_value]] [(get_constraints properties r_properties)] updated_mreq jids
+                    end
+                  else (* same job, same moldable *)
+                    begin (* same job, same moldable*)
+                      if r_order = 0 then  (* new resource request *)
+  (* scan result_query job mlb_id walltime res_order res_type_lst res_value_lst constraints_lst mreq_lst job_ids_lst *)
+                      scan_res m prev_job j_moldable_id prev_wtime r_order ([r_type]::r_t) ([r_value]::r_v) ((get_constraints properties r_properties)::cts) mreq jids
+    
+                      else (*one hierarchy requirement to resource request*)
+                        scan_res m prev_job j_moldable_id prev_wtime r_order (((List.hd r_t) @ [r_type])::(List.tl r_t))
+                                                                             (((List.hd r_v) @ [r_value])::(List.tl r_v))
+                                                                             cts mreq jids
+                    end
+
+  (* scan result_query job mlb_id walltime res_order res_type_lst res_value_lst constraints_lst mreq_lst job_ids_lst *)
+  in  scan_res result {mbs={jobid=0;jobstate="";moldable_id =0;time_b=Int64.zero;w_time=Int64.zero;
+                           types=[];set_of_rs =[]; user="";project=""};
+                      mrq=[];} 
+                      0 Int64.zero 0 [] [] [] [] [];; 
 
 (*                                                                            *)
 (* get_scheduled_jobs_no_suspend : retrieve already previously scheduled jobs *)
@@ -323,7 +480,6 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
 	                time_b = j_start_time;
                   w_time = add j_walltime security_time_overhead; (* add security_time_overhead *)
                   types = [];
-                  constraints = [];  (* constraints irrelevant for already scheduled job *)
                   set_of_rs = [];    (* will be set when all resource_id are fetched *)
                   user = j_user;
                   project = j_project;
@@ -398,14 +554,14 @@ let get_scheduled_jobs dbh init2ord_ids available_suspended_res_itvs security_ti
 	                  time_b = j_start_time;
                     w_time = add j_walltime security_time_overhead; (* add security_time_overhead *)
 	                  types = [];
-                    constraints = []; (* constraints irrelevant fortest_container already scheduled job *)
                     set_of_rs = [];   (* will be set when all resource_id are fetched *)
                     user = j_user;
                     project = j_project;
                    };
                    rq= {
                     mlb_id = 0; (* not use in no modable case *) 
-                    walltime = Int64.zero; (* not use in no modable case *) 
+                    walltime = Int64.zero; (* not use in no modable case *)
+                    constraints = []; (* constraints irrelevant fortest_container already scheduled job *)
                     hy_level_rqt = [];
                     hy_nb_rqt = [];
                    }

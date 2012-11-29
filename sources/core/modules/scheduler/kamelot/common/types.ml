@@ -38,16 +38,15 @@ type jbase = {
   mutable w_time : time_t; (* effective walltime when attr*)
 
   mutable types : (string * string) list;
-  mutable constraints : set_of_resources list; (* and the coresponding list of constraint - clause SQL WHERE clause *)
   mutable set_of_rs : set_of_resources; (* the assigned resources *)
 }
 
-
-type jreq = { (* TODO remove mutable ??? *)
-  mlb_id : int; (* modable id *)
+type jreq = {        (* to manage the different request for each moldable id by job *)
+  mlb_id : int;      (* modable id *)
   walltime : time_t; (* mutable need to reset besteffort's one*)
-  hy_level_rqt : string list list; (* sum of (list of hierarchiy)  or sum of sub-reservation like switch=1 + nodes=2/cpu=4 *)
-  hy_nb_rqt : int list list; (* the coresponding number or resources requested for  sum of (list of hierarchiy) *)
+  constraints: set_of_resources list; (* list of constraint - clause SQL WHERE clause *)
+  hy_level_rqt : string list list;      (* sum of (list of hierarchiy)  or sum of sub-reservation like switch=1 + nodes=2/cpu=4 *)
+  hy_nb_rqt : int list list;            (* the coresponding number or resources requested for  sum of (list of hierarchiy) *)
 }
 
 type job = {
@@ -66,13 +65,7 @@ type job_required_status = {
   jr_state : string;
   jr_jtype : string; 
   jr_exit_code : int;
-(*
-  jr_start_time : time_t; (* remove ? *)
-  jr_walltime : time_t; (* remove ? *)
- *)
 }
-
-(* Pretty - printing ** TO MOVE in helpers ??? **)
 
 let job_to_string t = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e in let b = t.bs and r = t.rq in
   (Printf.sprintf "job_id: %d start_time: %s walltime: %s " b.jobid (Int64.to_string b.time_b) (Int64.to_string r.walltime)) ^ 

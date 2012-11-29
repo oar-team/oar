@@ -61,8 +61,9 @@ let find_contiguous_slots_time slot_l jbs =
 	  	find_ctg_slots slot_l [] [];;
 
 (* No exclusive hierarchy assignement  TODO why No exclusive ???*) (* TODO: to adapt for moldable *)
-let find_resource_hierarchies_job itv_slot job hy_levels =
-  let jbs = job.bs and jrq = job.rq in
+(* TODO: only need of jreq simply adaptation for moldable support ??? job -> jrq  *)
+
+let find_resource_hierarchies_job itv_slot jrq hy_levels = 
   let rec requests_iter result hys r_rqts cts = match (hys, r_rqts, cts) with
     | ([],[],[]) -> List.flatten (List.rev result) (* TODO to optimze ??? *)
     | (x::n,y::m,z::o) -> 
@@ -75,7 +76,7 @@ let find_resource_hierarchies_job itv_slot job hy_levels =
           | res -> requests_iter (res::result) n m o
       end
     | (_,_,_) -> failwith "Not possible to be here"
-  in requests_iter [] jrq.hy_level_rqt jrq.hy_nb_rqt jbs.constraints;;
+  in requests_iter [] jrq.hy_level_rqt jrq.hy_nb_rqt jrq.constraints;;
 
 let inter_slots slots =
   let rec iter_slots sls itv = match sls with
@@ -86,12 +87,14 @@ let inter_slots slots =
 (*                                              *)
 (* find_first_suitable_contiguous_slots for job *) 
 (*                                              *)
-(* TODO; to modify to support BEST -2 and ALL -1      *)
+(* TODO; to modify to support BEST -2 and ALL -1    // TODO done ???  *)
+(* TODO: to modify for moldable support *)
+
 let find_first_suitable_contiguous_slots slots j hy_levels =
 	let rec find_suitable_contiguous_slots slot_l pre_slots job =
 	   	let (next_ctg_time_slot, prev_slots, remain_slots) = find_contiguous_slots_time slot_l job.bs  in
       let itv_inter_slots = inter_slots next_ctg_time_slot in
-      let itv_res_assignement = find_resource_hierarchies_job itv_inter_slots job hy_levels in
+      let itv_res_assignement = find_resource_hierarchies_job itv_inter_slots job.rq hy_levels in
 
       match  itv_res_assignement with
         | [] -> find_suitable_contiguous_slots (List.tl next_ctg_time_slot @ remain_slots) 
