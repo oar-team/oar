@@ -280,7 +280,7 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 # policy. Default is 1 day (86400s)
 #ACCOUNTING_WINDOW="86400"
 
-##############################
+################################
 # KAMELOT Scheduler parameters #
 ###############################################################################
 # Be carefull hierarchy labels must be declare below to be use in resource 
@@ -291,6 +291,16 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 # Number of jobs which will be scheduled by scheduling round for each queue where Kamelot is used 
 # ***NOT LIMITED by default***
 #MAX_JOB_PER_SCHEDULING_ROUND=1000
+
+# Mode to get resources and generate hierarchy levels, values are following:
+# default:     all is done dynamically, does not scale very beyond 5000 resourcess
+#
+# mono:        use only one hierarchy level resource_id or core (the FIRST label in HIERARCHY_LABELS)
+#              suitable to large platform and particular performance evaluation (only for expert users)
+#
+# precomputed: NOT YET IMPLEMENTED (upto now default mode will be used)
+#
+#KAMELOT_GET_RESOURCES_HIERARCHY_MODE="default"
 
 ##############################################
 

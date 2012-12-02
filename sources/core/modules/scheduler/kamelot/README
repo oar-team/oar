@@ -8,6 +8,8 @@ The main goal of this scheduler is to provide a better scalabily in comparaison 
 
 This developement of this scheduler borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). 
 
+
+
 Features:
 ---------
  * conservative backfilling
@@ -34,7 +36,9 @@ Missing:
 
 Next:
 -----
- * Support for null
+ * Support for null ???
+ * hierarchy automatic extratction doesn't scale, need to be precomputed (in lua ???)
+   - need to serialize use of sudo apt-get install libatdgen-ocaml-dev
  * test hierarchy construction with different type of resource (exception raises when a field is missing)
  * performance testing
  * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
@@ -53,7 +57,7 @@ Next:
 ToDo:
 -----
   * ORDER_BY
-      * performance test
+      * performance test--> very bad at large scale :(
       * production test
       * ord2init_ids, init2ord_ids  more test
 

@@ -12,6 +12,7 @@ let connect () =
 	       dbname = name;
 	       dbhost = host;
 	       dbport = None;
+         dbsocket = None;
 	     } in
     try 
       log (let o = function None -> "default" | Some s -> s in 

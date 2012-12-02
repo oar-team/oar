@@ -3,6 +3,11 @@ require 'dbi'
 require 'yaml'
 require 'rest_client'
 require 'pp'
+begin
+  require 'pry'
+rescue LoadError
+  puts 'Warning: pry seems absent (catch LoadError)'
+end
 
 DEFAULT_JOB_ARGS = {
   :queue => "default",
@@ -36,6 +41,7 @@ def oar_db_connect
 	if ($db_type == "Mysql"||$db_type == "mysql")
     $PG = false
     $MYSQL = true
+    $db_type = "Mysql"
 	else 
     $PG = true
     $MYSQL = false
@@ -53,7 +59,8 @@ def oar_db_disconnect
   $dbh.disconnect
 end
 
-def get_last_insert_id
+#TODO use table variable
+def get_last_insert_id(table="jobs_job_id_seq")
   id = 0
   if ($db_type == "Mysql" || $db_type == "mysql" )
     id=$dbh.select_one("SELECT LAST_INSERT_ID()")[0]
@@ -66,9 +73,8 @@ end
 ##
 # Direct database job insertion
 # [Supported args] :queue, :user, :properties
-# [Examples]
+# @examples
 #   oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300) 
-#
 #
 #   "{ sql1 }/prop1=1/prop2=3+{sql2}/prop3=2/prop4=1/prop5=1+...,walltime=1:00:00"
 #   "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
@@ -76,7 +82,6 @@ end
 #
 #    oar_job_insert(:res=>"resource_id=2", :properties=>"network_address='node004'", :walltime=> 300) 
 #
-
 def oar_job_insert(j_args={})
   args = {}
   DEFAULT_JOB_ARGS.each do |k,v|
@@ -120,6 +125,7 @@ def oar_job_insert(j_args={})
 
   return job_id
 end
+
 ##
 #  oar_bulk_job_insert(10) {|i| [(i % max_nb_res) +1,300]} # [nb_res,walltime]
 #
@@ -245,6 +251,12 @@ def oar_sql_file(file_name)
 #  multiple_requests_execute(requests)
 end
 
+#
+# oar_resource_insert
+# @param [args={}] set number of ressources to insert by :nb_resources=> int 
+# @return Returns nothing
+# @example  
+#   oar_resource_insert(:nb_resources=>100)
 def oar_resource_insert(args={})
   if (args=={})
     $dbh.execute("insert into resources (state) values ('Alive')").finish
@@ -679,14 +691,16 @@ end
 oar_load_test_config
 oar_db_connect
 
+if defined?(Pry)=="constant"
+  binding.pry :quiet => true
+end
+
 if ($0=='irb')
   puts 'irb session detected, db connection launched'
 elsif (/oar_db_setting/ =~ $0)
   puts "oar_db_setting used as command"
   eval(ARGV[0])
 end
+
 # 50.times do |i| oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300) end
-
-
-
 

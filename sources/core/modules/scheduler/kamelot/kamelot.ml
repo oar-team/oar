@@ -216,16 +216,32 @@ let _ =
     let (queue,now) = argv in
     let security_time_overhead = Int64.of_string  (Conf.get_default_value "SCHEDULER_JOB_SECURITY_TIME" "60") in   (* int no for  ? *)
 		let conn = let r = Iolib.connect () in at_exit (fun () -> Iolib.disconnect r); r in
-    (* retrieve ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
-      let (potential_resources, h_value_order, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn hy_labels sched_resource_order in
-      (* obtain hierarchy_levels from hierarchy_info given by get_resource_list_w_hierarchy *)
-      (*
+
+    let get_resources_hierarchies x = match x with
+      | "precomputed" -> Conf.log("Iolib.get_resource_list_w_precomputed_hierarchy: mode precomputed");
+                  Iolib.get_resource_list_w_thinest_hierarchy conn (List.hd hy_labels) sched_resource_order (* TODO: MUST BE CHANGED *)
+      | "mono" -> Conf.log("Iolib.get_resource_list_w_thinest_hierarchy: mode mono");
+                  Iolib.get_resource_list_w_thinest_hierarchy conn (List.hd hy_labels) sched_resource_order 
+      (* retrieve ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
+      
+      | _ -> Conf.log("Iolib.get_resource_list_w_hierarchy: mode default");
+                  let (pot_resources, h_value_order, hierarchy_info, ord2init_id_lst, init2ord_id_lst)  = 
+                    Iolib.get_resource_list_w_hierarchy conn hy_labels sched_resource_order in
+                  let hy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
+                  (pot_resources,hy_levels,ord2init_id_lst, init2ord_id_lst)
+      in
+(*
        Conf.log ("ord2init_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list ord2init_ids) ) );
        Conf.log ("init2ord_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list init2ord_ids) ) );
-      *)
        let hierarchy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
-       (* List.iter (fun x ->  Conf.log ("h_lab:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; *)
-      let h_slots = Hashtbl.create 10 in
+       (* List.iter (fun x ->  Conf.log ("h_label:"^(fst x));Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; *)
+*)
+      let get_res_hy_mode = Conf.get_default_value "KAMELOT_GET_RESOURCES_HIERARCHY_MODE" "default" in 
+      let (potential_resources, hierarchy_levels, ord2init_ids, init2ord_ids) = get_resources_hierarchies get_res_hy_mode in
+(*
+       List.iter (fun x ->  Conf.log ("h_label:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; 
+*) 
+     let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now potential_resources in
         Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
