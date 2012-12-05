@@ -255,8 +255,12 @@ end
 # oar_resource_insert
 # @param [args={}] set number of ressources to insert by :nb_resources=> int 
 # @return Returns nothing
-# @example  
+# @example
+#   #insert 100 raw resources
 #   oar_resource_insert(:nb_resources=>100)
+#   #insert 2 network_addresses w/ 2 cpu w/ 4 cores, resulting to 2*2*4 resources
+#   oar_resource_insert(:ip_cpu_core=>[2,2,4]) #
+
 def oar_resource_insert(args={})
   if (args=={})
     $dbh.execute("insert into resources (state) values ('Alive')").finish
@@ -276,7 +280,23 @@ def oar_resource_insert(args={})
         nb_residual_ressources = ("('localhost','Alive')," * nb_residual).chop
         $dbh.execute("insert into resources (network_address, state) values #{nb_residual_ressources}").finish   
       end
+    elsif !args[:ip_cpu_core].nil?
+      q = ""
+      cpu = 0; core =0
+      values = args[:ip_cpu_core]
+      values[0].times do |ip|
+        values[1].times do 
+          values[2].times do 
+             q += "('Alive','127.0.0.#{ip+1}','#{cpu}','#{core}'),"
+             core += 1
+          end
+          cpu += 1
+        end
+      end
+      puts q
+      $dbh.execute("insert into resources (state, network_address, cpu, core) values" + q.chop ).finish
     end
+ 
   end
 end
 

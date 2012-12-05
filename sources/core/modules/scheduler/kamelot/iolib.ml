@@ -51,16 +51,22 @@ let get_resource_list dbh  =
 
 let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resource_order =
   (* h_value_order hash stores for each hy label the occurence order of different hy values *)
-  let h_value_order = Hashtbl.create 100000 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;
- 
-  let i = ref 0 in (* count for ordererd resourced_id *) 
+  
+  let h_value_order = Hashtbl.create 100 in
+  let h_value_lst_order = Hashtbl.create 100 in (* for store of values ordered in a list*)
 
-  (* let hy_id_array = List.map (fun x -> Hashtbl.create 10) hy_labels in *)
-  (* list of hashs to compute scattered hierarchy *)
+  let i = ref 0 in (* count for ordererd resourced_id *) 
+  let nb_hy = List.length hy_labels in (* nb of hierarchies *)
 
   let hy_ary_labels = Array.of_list hy_labels in (* hy_ary_labels array need to populate h_value_order hash*) 
-  let ary = Array.make (List.length hy_labels) 0 in
-  let hy_id_array = Array.map (fun x -> Hashtbl.create 100000) ary in
+  let ary = Array.make nb_hy 0 in
+  
+  let hy_values_array = Array.map (fun x -> Hashtbl.create 10000) ary in (* TODO new to test the presence of value *)
+  let hy_id_array = Array.map (fun x -> Hashtbl.create 10000) ary in
+
+  let hy_id_lst_array = Array.map (fun x -> Hashtbl.create 10000) ary in
+
+
   let query = "SELECT resource_id, network_address, state, available_upto, " ^ 
                (Helpers.concatene_sep "," id hy_labels) ^ " FROM resources ORDER BY " ^
                scheduler_resource_order in
@@ -70,19 +76,21 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
       i := !i + 1;
 
       for var = 4 to ((Array.length a)-1) do
-        (* For internal hierarchy level construction SQL fields are always intrepreted as string type. This have no particular impact *)
+        (* For internal hierarchy level construction SQL fields are always interpreted as string type. This have no particular impact *)
         try (* to address null fiel whaen resource is not a part of this hierarchy level *)
-          let value = NoNStr a.(var) in 
-          let h_label = hy_ary_labels.(var-4) in
-          let ordered_values = try Hashtbl.find h_value_order h_label with Not_found -> failwith ("Can't Hashtbl.find h_value_order for " ^ h_label) in
-          (* test is value for this resource this h_label is already present else add in the list *)
-          if (not (List.mem value ordered_values)) then
-            Hashtbl.replace h_value_order h_label (ordered_values @ [value]);
-          let add_res_id h value = 
-            let lst_value = try Hashtbl.find h value with Not_found -> [] in
-              Hashtbl.replace h value (lst_value @ [!i])
-          in 
-            add_res_id (hy_id_array.(var-4)) value
+          let j = (var-4) in
+
+          let value = NoNStr a.(var) and h_label = hy_ary_labels.(j) and hy_id = hy_id_array.(j) in 
+          let hy_values = hy_values_array.(j) in
+
+            ignore (try Hashtbl.find hy_values value with Not_found ->  
+                  Hashtbl.add h_value_order h_label value; (* for keep value order by h_label *)  (* H.add is equiv to H.push when key exists *) 
+                  Hashtbl.add hy_values value 1; (* *)
+                  1 (* *) 
+             );
+                   
+            Hashtbl.add hy_id value (!i) ; (* H.add is equiv to H.push when key exists *) 
+
          with _ -> ()
       done;
 
@@ -98,8 +106,19 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
     let res_lst_length = (List.length resources_lst) + 1 in 
     let ord2init_ids = Array.make res_lst_length 0 and init2ord_ids = Array.make res_lst_length 0 in
       List.iter(fun x -> Array.set ord2init_ids x.ord_r_id x.resource_id  ; Array.set init2ord_ids x.resource_id x.ord_r_id ) resources_lst;
-      (* Conf.log("query: "^query);*)  
-      (resources_lst, h_value_order, hy_id_array, ord2init_ids, init2ord_ids) ;;
+      (* Conf.log("query: "^query);*) 
+      (* Generate the list from hidden bindings stored in the hashtbl - see hashtlb doc sections about Hashtbl.add and Hashtbl.find_all *)
+
+      for h = 0 to (nb_hy-1) do
+        let h_label =  hy_ary_labels.(h) and hy_id = hy_id_array.(h) in
+        let lst_ordered_values = List.rev (Hashtbl.find_all h_value_order h_label) in
+          Hashtbl.add h_value_lst_order h_label lst_ordered_values;
+          let  get_res_lst vv =  List.rev (Hashtbl.find_all hy_id vv) in
+            List.iter (fun v -> let res_lst = get_res_lst v in Hashtbl.add hy_id_lst_array.(h) v res_lst) lst_ordered_values;
+      done; 
+
+      (resources_lst, h_value_lst_order, hy_id_lst_array, ord2init_ids, init2ord_ids)
+(* TODO (resources_lst, h_value_order, hy_id_array, ord2init_ids, init2ord_ids) ;; *)
 
 (*                                                                                                                         *)
 (* get_resource_list_w_mono_hierarchy                                                                                      *)

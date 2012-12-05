@@ -40,7 +40,7 @@ let slot_to_string slot = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e
 
 let slot_max nb_res = {time_s = zero; time_e = max_int; set_of_res = [{b = 1; e = nb_res}]}
 
-(*******************************************************)
+(*                                  *)
 (* find_first_contiguous_slots_time *)
 (* where job can fit in time        *)
 

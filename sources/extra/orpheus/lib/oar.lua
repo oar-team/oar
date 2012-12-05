@@ -230,6 +230,9 @@ function oar.get_hierarchy()
   return value_ordered,hy_id
 end
 
+-- ocaml (string * Interval.interval list list) list
+
+
 -- set_assigned_moldable_job
 -- sets the assigned_moldable_job field to the given value
 function oar.set_assigned_moldable_job(job_id,moldable_job_id)
