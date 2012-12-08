@@ -48,10 +48,14 @@ Exception: Failure "hd".
 let intervals2ints itv_l =
   let rec aux itvs ints = match itvs with
     | [] -> ints
-    | x::n -> let r = ref [] in 
-                for i = x.b to x.e do r := i::!r done;
-                aux n (ints @ !r)
-  in                
+    | x::n ->   let rec loop up_ints rid i =
+                  if i<0 then
+                    aux n up_ints
+                  else
+                    loop (rid::up_ints) (rid+1) (i-1)
+                in
+                loop ints x.b (x.e-x.b)
+  in
   aux itv_l [];;
 (*
 # intervals2ints  [{b = 1; e = 4}];;
