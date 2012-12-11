@@ -300,7 +300,7 @@ def oar_resource_insert(args={})
   end
 end
 
-def oar_test_insert(k,x, alter=false)
+def oar_test_insert_resources(k,x, alter=false)
   oar_truncate_resources
   puts "nb_insert: #{k}, size of insert in nb_resources: #{x}  nb_ressources: #{k*x} alter: #{alter}"
   t0 = Time.now
@@ -321,19 +321,58 @@ def oar_test_insert(k,x, alter=false)
   puts "t_total:  #{t_string+t_insert} t_string: #{t_string} t_insert: #{t_insert}"
 end
 
-def oar_test_insert_load_infile(k)
+
+def oar_test_insert(k,x, alter=false)
   oar_truncate_gantt
-  puts "nb_insert: #{k}"
+  puts "nb_insert_req: #{k}, block size: #{x},  nb_inserted_row #{k*x}"
 
   t0 = Time.now
-  f = File.open('/run/shm/massive_insert','w')
+  $dbh.execute("ALTER TABLE gantt_jobs_resources DISABLE KEYS").finish if alter
+  k.times do |i|
+    gantt_str = ""
+    x.times do |j|
+      gantt_str += "(#{1000+i},#{10000+j})," 
+    end
+    gantt_str = gantt_str.chop
+    $dbh.execute("insert into  gantt_jobs_resources (moldable_job_id, resource_id) values #{gantt_str}").finish   
+  end 
+  $dbh.execute("ALTER TABLE gantt_jobs_resources ENABLE KEYS").finish if alter
+
+  t_insert = Time.now - t0
+  puts "insert_time: #{t_insert}"
+end
+
+
+
+
+def oar_test_insert_load_infile(k,shm=true)
+  oar_truncate_gantt
+  puts "nb_insert: #{k}"
+  if shm then
+    file_name = '/run/shm/massive_insert'
+  else
+    file_name = '/tmp/oar-massive-insert'
+  end
+
+  if $PG then
+    #need to oar by a superuser for PG;
+    #sudo -u postgres /usr/bin/psql -c "ALTER ROLE oar WITH SUPERUSER;"
+    query = "COPY gantt_jobs_resources FROM '#{file_name}' WITH DELIMITER AS ','"
+  else 
+    query = "LOAD DATA LOCAL INFILE '#{file_name}' INTO TABLE gantt_jobs_resources"
+  end
+
+  t0 = Time.now
+  File.delete(file_name) if File.exist?(file_name)
+  f = File.open(file_name,'w')
   k.times do |k|
     f.write("#{k+1},#{k+1000}\n")
   end
   f.close
   t1 = Time.now 
   t_file = t1 - t0
-  $dbh.execute("LOAD DATA LOCAL INFILE '/run/shm/massive_insert' INTO TABLE gantt_jobs_resources")
+
+  $dbh.execute(query)
   t_load_data = Time.now - t1
   puts "t_file: #{t_file}"
   puts "t_load_data: #{t_load_data}"
