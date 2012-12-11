@@ -17,7 +17,7 @@ let connect () =
     try 
       log (let o = function None -> "default" | Some s -> s in 
         Printf.sprintf "Connecting as %s@%s on %s.\n" (o user) (o host) (o name)); 
-      connect conn
+      connect ~options:[OPT_LOCAL_INFILE(true)] conn
     with e -> ( Conf.error ("[MoldSched]: [Iolib] Connection Failed : "^(Printexc.to_string e)^"\n"))
 
 let disconnect = Mysql.disconnect

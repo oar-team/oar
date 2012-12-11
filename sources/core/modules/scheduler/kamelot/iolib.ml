@@ -8,11 +8,15 @@
 #ifdef POSTGRESQL
   #define DBD Postgresql_driver
   #define NoN
-  #define NoNStr  
+  #define NoNStr
+  #define PG true
+  #define MYSQL false
 #else
   #define DBD Mysql_driver
   #define NoN not_null
   #define NoNStr not_null str2ml
+  #define PG false
+  #define MYSQL true
 #endif
 
 open Int64
@@ -717,13 +721,58 @@ let save_assigns_2_rqts conn jobs ord2init_ids=
       ignore (execQuery conn query_job_resources)
 
 
+let save_gantt_jobs_predictions_from_file conn jobs =
+  let file_gt_jobs_pred = "/tmp/oar_insert_gantt_jobs_predictions.req" in
+    let oc = open_out file_gt_jobs_pred in (* create or truncate file, return channel *)
+      let query_gt_jobs_pred = if PG then
+        "COPY gantt_jobs_predictions FROM '" ^ file_gt_jobs_pred ^ "' WITH DELIMITER AS ','"
+      else
+        "LOAD DATA LOCAL INFILE '" ^ file_gt_jobs_pred ^ "' INTO TABLE gantt_jobs_predictions"
+      in
+      List.iter (fun j -> Printf.fprintf oc "%s,%s\n"  (string_of_int j.bs.moldable_id) (Int64.to_string j.bs.time_b))  jobs;
+      close_out oc; (* flush and close the channel *)
+      (* Conf.log ("[yopyop]" ^ query_gt_jobs_pred); *)
+      ignore (execQuery conn query_gt_jobs_pred)
+
+
+(*                                                   *)
+(* multiple inserts from file - the fastest way      *)
+(*                                                   *) 
+let inserts_from_file conn table filename funrow data =
+    let oc = open_out filename in (* create or truncate file, return channel *)
+      let query = 
+        if PG then
+          "COPY " ^ table ^ " FROM '" ^ filename ^ "' WITH DELIMITER AS ','"
+        else
+          "LOAD DATA LOCAL INFILE '" ^ filename ^ "' INTO TABLE " ^ table
+      in
+        List.iter (fun x -> Printf.fprintf oc "%s\n" (funrow x)) data;
+        close_out oc; (* flush and close the channel *)
+        (* Conf.log ("[yopyop]" ^ query); *)
+        ignore (execQuery conn query)
+
+let save_assigns_from_file conn jobs ord2init_ids =
+  save_gantt_jobs_predictions_from_file conn jobs;
+  (* save_gantt_jobs_resources_from_file *)
+  let table = "gantt_jobs_resources" 
+  and filename =  "/tmp/oar_insert_gantt_jobs_resources.req" 
+  and job_resource_to_value j =
+    let moldable_id = string_of_int j.bs.moldable_id in 
+      let resource_to_value res = moldable_id ^ "," ^ (string_of_int ord2init_ids.(res))  in
+        String.concat "\n" (List.map resource_to_value (intervals2ints j.bs.set_of_rs)) 
+  in 
+    inserts_from_file conn table filename job_resource_to_value jobs 
+
 (*                        *)
 (* Save jobs' assignemnts *)
 (*                        *)
 let save_assigns dbh jobs ord2init_ids =
+(* 1) no scalable *)
 (*  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; *)
-  save_assigns_2_rqts dbh jobs ord2init_ids;;
-
+(* 2) faster *)
+(* save_assigns_2_rqts dbh jobs ord2init_ids;; *)
+(* 3) more faster *)
+ save_assigns_from_file dbh jobs ord2init_ids;;
 
 (*                                                  *)
 (** retrieve job_type for all jobs in the hashtable *)
