@@ -61,17 +61,20 @@ sub new($$){
     my $empty_vec = '';
     vec($empty_vec, $max_resource_number, 1) = 0;
     
-    my $result =[
-                    [
-                        0,                              # start time of this hole
-                        [                               # ref of a structure which contains hole stop times and corresponding resources (ordered by end time)
-                            [$Infinity, $empty_vec]
-                        ],
-                        $empty_vec,                     # Store all inserted resources (Only for the first Gantt hole)
-                        $empty_vec,                     # Store empty vec with enough 0 (Only for the first hole)
-                        $minimum_hole_duration,         # minimum time for a hole
-                        [$Infinity,$Infinity]           # times that find_first_hole must not go after
-                    ]
+    my $result =[                               # Gantt structure: a Gantt is defined as the list of the biggest holes
+                    [                           # (rectange shapes) where a job could be placed (holes obviously can overlap)
+                        0,                      # Each item of this subarray is a set of holes beginning a same time: t_start
+                        [                       # The set is stored as a sub-subarray of holes sorted by end time
+                            [                   # Holes are stored as arrays of 2 elements, with:
+                                $Infinity,      # - t_end: end time for the hole
+                                $empty_vec      # - vec: resource vector for the hole
+                            ]
+                        ],                      # The next 4 fields are only set in the first hole set (apply to the gantt):
+                        $empty_vec,             # - base resources vector for the gantt
+                        $empty_vec,             # - reference empty vec (filled with 0)
+                        $minimum_hole_duration, # - minimum duration time for a hole (see oar.conf)
+                        [$Infinity,$Infinity]   # - [t_start,t_end] of the last hole inpected in the previous find_first_hole
+                    ]                           #   calls, if a timeout was triggered.
                 ];
     
     return($result);
