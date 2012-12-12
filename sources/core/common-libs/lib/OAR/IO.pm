@@ -3849,7 +3849,8 @@ sub get_energy_saving_resources_availability($$) {
                                      available_upto > $current_time)
                                     OR
                                     (state = \'Alive\' AND
-                                     available_upto < 2147483646)
+                                     available_upto < 2147483646 AND
+                                     available_upto > 0)
                             ");
     $sth->execute();
     my %res = ();
