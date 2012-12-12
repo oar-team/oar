@@ -3882,13 +3882,15 @@ sub add_resource_job_pairs($$$) {
     my $dbh = shift;
     my $moldable = shift;
     my $resources = shift;
-    
-    my query = "INSERT INTO assigned_resources (moldable_job_id,resource_id,assigned_resource_index) VALUES ";
- 
-    foreach my $r (@{$resources){
-      query += "($moldable,$r,\'CURRENT\'),";
+
+    my $query = "INSERT INTO assigned_resources (moldable_job_id,resource_id,assigned_resource_index) VALUES ";
+
+    foreach my $r (@{$resources}){
+      $query .= "($moldable,$r,\'CURRENT\'),";
     }
-    $dbh->do(chop(query);
+    #oar_debug("[OAR::IO] add_resource_job_pairs $query\n");
+    chop($query);
+    $dbh->do($query);
 }
 
 # get all jobs in a range of date
