@@ -190,9 +190,13 @@ sub get_accounting_summary_byproject($$$$);
 sub get_last_project_karma($$$$);
 
 # LOCK FUNCTIONS:
-
 sub get_lock($$$);
 sub release_lock($$);
+
+# SQL HELPER FUNCTIONS
+sub sql_count($$);
+sub sql_select($$$$);
+sub inserts_from_file($$$);
 
 # END OF PROTOTYPES
 
@@ -569,7 +573,7 @@ sub get_jobs_in_state_for_user($$$) {
     my $dbh = shift;
     my $state = $dbh->quote(shift);
     my $user = shift;
-    my $user_query="";
+    my $user_query = "";
 
     if (defined $user and "$user" ne "" ) {
       $user_query="AND job_user =" . $dbh->quote($user);
@@ -3893,6 +3897,25 @@ sub add_resource_job_pairs($$$) {
     chop($query);
     $dbh->do($query);
 }
+
+# add_resource_job_pairs_from_file
+# adds new pairs (jobid, resource) to the table assigned_resources
+# use insert from file to obtain better performance
+# parameters : base, jobid, resource id array
+# return value : /
+sub add_resource_job_pairs_from_file($$$) {
+  my $dbh = shift;
+  my $moldable = shift;
+  my $resources = shift;
+  my $values = "";
+
+  foreach my $r (@{$resources}){
+    $values .= "$moldable,$r,CURRENT\n";
+  }
+  inserts_from_file($dbh,'assigned_resources',$values);
+}
+
+
 
 # get all jobs in a range of date
 # args : base, start range, end range
@@ -7687,8 +7710,31 @@ sub sql_select($$$$){
     return(\@res);
 }
 
+# inserts_from_file
+# adds  to the table assigned_resources
+# use insert from file to obtain better performance
+# parameters : base, table, values,
+# values is a string of values delimited by commas and row delimited by \n
+# ex values: 1,5,yop\n5,6,poy\n
+# return value : /
+sub inserts_from_file($$$) {
+  my $dbh = shift;
+  my $table = shift;
+  my $values = shift;
+  my $query = "";
+  my $filename = "/tmp/oar_insert_".$table.".req";
+  open(INSERTOUTFILE, ">$filename");
+  print INSERTOUTFILE $values;
+  close(INSERTOUTFILE);
+ 
+  if ($Db_type eq "mysql") {
+    $query = "LOAD DATA LOCAL INFILE '$filename' INTO TABLE $table";
+  } else {
+    $query = "COPY $table FROM '$filename' WITH DELIMITER AS ','";
+  }
 
-
+  $dbh->do($query);
+}
 
 # END OF THE MODULE
 return 1;
