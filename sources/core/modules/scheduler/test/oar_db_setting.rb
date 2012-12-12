@@ -15,7 +15,7 @@ DEFAULT_JOB_ARGS = {
   :res => "resource_id=1",
   :properties => "",
   :type => nil,
-  :user => "toto"
+  :user =>  ENV['USER']
 }
 
 OARCONFFILE =   'export OARCONFFILE="/etc/oar/oar.conf"'

@@ -102,6 +102,8 @@ sub get_node_job($$);
 sub get_node_job_to_frag($$);
 sub get_resources_in_state($$);
 sub add_resource_job_pair($$$);
+sub add_resource_job_pairs($$$);
+sub add_resource_job_pairs_from_file($$$);
 
 # RESOURCES MANAGEMENT
 sub add_resource($$$);
@@ -3872,6 +3874,22 @@ sub add_resource_job_pair($$$) {
               VALUES ($moldable,$resource,\'CURRENT\')");
 }
 
+# add_resource_job_pairs
+# adds new pairs (jobid, resource) to the table assigned_resources
+# parameters : base, jobid, resource id array
+# return value : /
+sub add_resource_job_pairs($$$) {
+    my $dbh = shift;
+    my $moldable = shift;
+    my $resources = shift;
+    
+    my query = "INSERT INTO assigned_resources (moldable_job_id,resource_id,assigned_resource_index) VALUES ";
+ 
+    foreach my $r (@{$resources){
+      query += "($moldable,$r,\'CURRENT\'),";
+    }
+    $dbh->do(chop(query);
+}
 
 # get all jobs in a range of date
 # args : base, start range, end range
