@@ -25,6 +25,8 @@ Features:
  * fairesharing [TO TEST]
  * order_by on resources [TO FINISH / EVALUATE]
  * ALL / BEST / BESTHALF for number of resources by level of hierarchy
+ * moldable job
+
 
 Missing:
 --------
@@ -36,33 +38,27 @@ Missing:
 
 Next:
 -----
+
+ * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
  * Support for null ???
  * hierarchy automatic extratction doesn't scale, need to be precomputed (in lua ???)
    - need to serialize use of sudo apt-get install libatdgen-ocaml-dev
  * test hierarchy construction with different type of resource (exception raises when a field is missing)
  * performance testing
  * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
- * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
 
  * scheduler message (see perl version )
  * job_error / job_message / scheduler message
  * need to test multi-resource-type (since >= cbf_mb_h)
  * need to test multi-request with non exclusive resource selection (since >= cbf_mb_h)
  * errors logging (at least same error support as provide in perl scheduler)
- * dump first k ready launchable jobs (for performance /reactivity issue)
  * nb_asked_resource = 0 raise an error (>= cbf_mb_h) 
  * unit test
  * better compilation process (for unit tests)
 
 ToDo:
 -----
-  * ORDER_BY
-      * performance test--> very bad at large scale :(
-      * production test
-      * ord2init_ids, init2ord_ids  more test
 
-  * switch name to kamelot
-  * test fairsharing
   * test_unit: better compilation process
   * Ounit (cf archive)
     * test sub_intevals
@@ -71,9 +67,11 @@ Misc:
 -----
 
   * With 64 bits machine we can use ocaml's int with 63 bits instead of Int64.
+  * For json serialization  use biniou/atdegen  (sudo apt-get install libatdgen-ocaml-dev)
 
 Done:
 -----
+ * moldable job support
  * resource order_by support (usable) 
  * container
  * Support of postgresql
@@ -88,6 +86,8 @@ Remarks and misc:
 
 Bugs:
 -----
+ * BestEffort after a while remain at waiting state
+ * test scalable if with available_upto enable with very large job (> 10K resources)
 
 Debug:
 ------

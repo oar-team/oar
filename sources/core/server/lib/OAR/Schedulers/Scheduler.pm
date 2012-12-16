@@ -577,9 +577,9 @@ sub check_jobs_to_launch($){
         #    OAR::IO::add_resource_job_pair($dbh,$jobs_to_launch{$i}->[0],$r);
         #}
         #TODO option if insert_from_file is not enable:
-        #OAR::IO::add_resource_job_pairs($dbh,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
-
-        OAR::IO::add_resource_job_pairs_from_file($dbh,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
+        OAR::IO::add_resource_job_pairs($dbh,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
+      
+        #OAR::IO::add_resource_job_pairs_from_file($dbh,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
 
         OAR::IO::set_job_state($dbh, $i, "toLaunch");
         $return_code = 1;

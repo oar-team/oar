@@ -90,7 +90,7 @@ let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
     and karma_users_asked, karma_users_used       = Iolib.get_sum_accounting_for_param dbh queue "accounting_user" start_window stop_window 
     in
       let karma j = let job = try Hashtbl.find h_jobs j  with Not_found -> failwith "Karma: not found job" in
-        let user = job.bs.user and proj = job.bs.project in
+        let user = job.user and proj = job.project in
         let karma_proj_used_j  = try Hashtbl.find karma_projects_used proj  with Not_found -> 0.0
         and karma_user_used_j  = try Hashtbl.find karma_users_used user  with Not_found -> 0.0
         and karma_user_asked_j = try Hashtbl.find karma_users_asked user  with Not_found -> 0.0
@@ -168,24 +168,17 @@ let resources_init_slots_determination dbh now potential_resources =
         in                     
         (* create corresponding job from available_up parameter of resource *) 
         let pseudo_job_av_upto a_upto res_itv =
-          { bs={jobid=0;
-                jobstate="";
-                moldable_id=0;
-                time_b = if (a_upto<now) then now else a_upto;
-                (* time_e = Int64.sub max_time_minus_one a_upto; *)
-                w_time = if (a_upto<now) then (Int64.sub max_time_minus_one now) else (Int64.sub max_time_minus_one a_upto);
-                types = [];
-                set_of_rs = res_itv;
-                user = "";
-                project = "";
-             };
-             rq= {
-                mlb_id = 0; 
-                walltime = Int64.zero;
-                constraints = [];
-                hy_level_rqt = [];
-                hy_nb_rqt = [];
-             }
+          { jobid=0;
+            jobstate="";
+            moldable_id=0;
+            time_b = if (a_upto<now) then now else a_upto;
+            (* time_e = Int64.sub max_time_minus_one a_upto; *)
+            w_time = if (a_upto<now) then (Int64.sub max_time_minus_one now) else (Int64.sub max_time_minus_one a_upto);
+            types = [];
+            set_of_rs = res_itv;
+            user = "";
+            project = "";
+            rq = []
           } 
           in
         (* create pseudo_jobs from hastable which containts resources' id by distinct available upto *) 
@@ -247,14 +240,21 @@ let _ =
         Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
       
   		let (waiting_j_ids,h_waiting_jobs) =
-        if fairsharing_flag then
-          let limited_job_ids = Iolib.get_limited_by_user_job_ids_to_schedule conn queue fairsharing_nb_job_limit in
-          Iolib.get_job_list_fairsharing conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids init2ord_ids
-        else
-          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag [] init2ord_ids
+        let limited_job_ids =
+          if fairsharing_flag then
+            Iolib.get_limited_by_user_job_ids_to_schedule conn queue fairsharing_nb_job_limit
+          else []
+        in
+        (* moldable *)
+        Iolib.get_moldable_job_list_fairsharing conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids init2ord_ids
+
       in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
-      (* Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids)); *)
+
       Conf.log ("Number of job waiting ids: "^ string_of_int (List.length waiting_j_ids));
+(*
+      Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
+      Hashtbl.iter (fun k j -> Conf.log (job_to_string j)) h_waiting_jobs ; 
+*)
 
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
         begin
@@ -273,7 +273,7 @@ let _ =
                 (* Conf.log ("excluding besteffort jobs, queue: " ^ queue); *)
                 let besteffort_mem_remove job_id = 
                   let test_bt = List.mem_assoc "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_w_types job_id 
-                                                              with Not_found -> failwith "Must no failed here: besteffort_mem").bs.types in
+                                                              with Not_found -> failwith "Must no failed here: besteffort_mem").types in
                                                               if test_bt then Hashtbl.remove h_prev_scheduled_jobs_w_types job_id else ();
                                                               test_bt  
                   in  
