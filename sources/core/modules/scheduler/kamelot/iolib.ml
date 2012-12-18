@@ -87,7 +87,7 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
           let value = NoNStr a.(var) and h_label = hy_ary_labels.(j) and hy_id = hy_id_array.(j) in 
           let hy_values = hy_values_array.(j) in
 
-            ignore (try Hashtbl.find hy_values value with Not_found ->  
+            ignore (try Hashtbl.find hy_values value with Not_found ->  (* TODO replace by Hashtbl.mem, sure ???*)
                   Hashtbl.add h_value_order h_label value; (* for keep value order by h_label *)  (* H.add is equiv to H.push when key exists *) 
                   Hashtbl.add hy_values value 1; (* *)
                   1 (* *) 
@@ -121,7 +121,7 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
             List.iter (fun v -> let res_lst = get_res_lst v in Hashtbl.add hy_id_lst_array.(h) v res_lst) lst_ordered_values;
       done; 
 
-      (resources_lst, h_value_lst_order, hy_id_lst_array, ord2init_ids, init2ord_ids)
+      (res_lst_length-1,resources_lst, h_value_lst_order, hy_id_lst_array, ord2init_ids, init2ord_ids)
 (* TODO (resources_lst, h_value_order, hy_id_array, ord2init_ids, init2ord_ids) ;; *)
 
 (*                                                                                                                         *)
@@ -155,12 +155,12 @@ let get_resource_list_w_thinest_hierarchy dbh (hy_label: string) scheduler_resou
                                     [{b=x.resource_id;e=x.resource_id}]) resources_lst in 
     let mono_hierarchie = [(hy_label, th_h)] in
       (* Conf.log("query: "^query);*)  
-      (resources_lst, mono_hierarchie, ord2init_ids, init2ord_ids) ;;
+      (!i,resources_lst, mono_hierarchie, ord2init_ids, init2ord_ids) ;;
 
-(*                                              *)
-(* get distinct availableupto                   *)
-(* to remove, can be obtain from resources list *)
-(*                                              *)
+(*                                                   *)
+(* get distinct availableupto                        *)
+(* TODO to remove, can be obtain from resources list *)
+(*                                                   *)
 
 let get_group_available_uptos dbh =
   let query = "SELECT available_upto FROM resources GROUP BY available_upto" in
