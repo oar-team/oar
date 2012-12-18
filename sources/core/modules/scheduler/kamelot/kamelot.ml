@@ -141,11 +141,15 @@ let resources_init_slots_determination dbh now potential_resources =
       Conf.log "Energy Saving and Wakeup Mode are enabled";
       let hash_available_upto_by_resources =  Hashtbl.create 10 in
       let hash_available_upto_by_resources_populate r =
+(*
+        Hashtbl.add hash_available_upto_by_resources r.available_upto r.ord_r_id;
+*)          
           let res_lst = try Hashtbl.find hash_available_upto_by_resources r.available_upto
                         with Not_found -> Hashtbl.add hash_available_upto_by_resources r.available_upto [r.ord_r_id];[]
                         in
                           match res_lst with
                              [] -> ()
+(* TODO Need TO OPTIMIZE remove replace and *)
                             | x -> Hashtbl.replace hash_available_upto_by_resources r.available_upto (x @ [r.ord_r_id]) 
       in
       let resources = List.filter (fun n -> if (n.state = Alive) || (n.state = Absent) then

@@ -714,12 +714,13 @@ let save_gantt_jobs_predictions_from_file conn jobs =
       let query_gt_jobs_pred = if PG then
         "COPY gantt_jobs_predictions FROM '" ^ file_gt_jobs_pred ^ "' WITH DELIMITER AS ','"
       else
-        "LOAD DATA LOCAL INFILE '" ^ file_gt_jobs_pred ^ "' INTO TABLE gantt_jobs_predictions"
+        "LOAD DATA LOCAL INFILE '" ^ file_gt_jobs_pred ^ "' INTO TABLE gantt_jobs_predictions FIELDS TERMINATED BY ','"
       in
       List.iter (fun j -> Printf.fprintf oc "%s,%s\n"  (string_of_int j.moldable_id) (Int64.to_string j.time_b))  jobs;
       close_out oc; (* flush and close the channel *)
-      (* Conf.log ("[yopyop]" ^ query_gt_jobs_pred); *)
-      ignore (execQuery conn query_gt_jobs_pred)
+      (*Conf.log  query_gt_jobs_pred; *) 
+      ignore (execQuery conn query_gt_jobs_pred);
+      ;;
 
 
 (*                                                   *)
@@ -731,12 +732,12 @@ let inserts_from_file conn table filename funrow data =
         if PG then
           "COPY " ^ table ^ " FROM '" ^ filename ^ "' WITH DELIMITER AS ','"
         else
-          "LOAD DATA LOCAL INFILE '" ^ filename ^ "' INTO TABLE " ^ table
+          "LOAD DATA LOCAL INFILE '" ^ filename ^ "' INTO TABLE " ^ table ^ " FIELDS TERMINATED BY ','"
       in
         List.iter (fun x -> Printf.fprintf oc "%s\n" (funrow x)) data;
         close_out oc; (* flush and close the channel *)
-        (* Conf.log ("[yopyop]" ^ query); *)
-        ignore (execQuery conn query)
+        (* Conf.log query; *)
+        ignore (execQuery conn query);;
 
 let save_assigns_from_file conn jobs ord2init_ids =
   save_gantt_jobs_predictions_from_file conn jobs;
@@ -757,9 +758,18 @@ let save_assigns dbh jobs ord2init_ids =
 (* 1) no scalable *)
 (*  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; *)
 (* 2) faster *)
-save_assigns_2_rqts dbh jobs ord2init_ids;;
+(* save_assigns_2_rqts dbh jobs ord2init_ids;; *)
 (* 3) more faster *)
 (* save_assigns_from_file dbh jobs ord2init_ids;; *)
+
+  let insert_from_file = Conf.get_default_value "INSERTS_FROM_FILE" "no" in
+    if ((String.compare insert_from_file "yes")==0) then
+      begin
+        Conf.log "save_assigns_from_file";
+        save_assigns_from_file dbh jobs ord2init_ids
+      end
+    else
+      save_assigns_2_rqts dbh jobs ord2init_ids;;
 
 (*                                                  *)
 (** retrieve job_type for all jobs in the hashtable *)
