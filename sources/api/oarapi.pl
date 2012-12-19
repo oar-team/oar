@@ -2312,6 +2312,29 @@ SWITCH: for ($q) {
   };
   #}}}
   #
+  
+  ###########################################
+  # Misc
+  ###########################################
+  #
+  #{{{ GET /stress_factor/<cluster_name> : return the stress factor of the given cluster
+  #
+  $URI = qr{^/stress_factor/(\w+)\.*(yaml|json|html)*$};
+  OAR::API::GET( $_, $URI ) && do {
+        $_->path_info =~ m/$URI/;
+        my $cluster = $1;
+    my $ext = OAR::API::set_ext($q,$2);
+    (my $header, my $type) = OAR::API::set_output_format($ext);
+
+    #TODO!
+
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export($stress_factor,$ext);
+    last;
+  };
+  #}}}
+
   ###########################################
   # Anything else -> 404
   ###########################################
