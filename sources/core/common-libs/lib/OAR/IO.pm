@@ -2937,10 +2937,11 @@ sub get_jobs_on_resuming_job_resources($$){
                                     a1.assigned_resource_index = \'CURRENT\' AND
                                     a2.assigned_resource_index = \'CURRENT\' AND
                                     j1.job_id = $job_id AND
+                                    j1.job_id != j2.job_id AND
                                     a1.moldable_job_id = j1.assigned_moldable_job AND
                                     a2.resource_id = a1.resource_id AND
                                     a2.moldable_job_id = j2.assigned_moldable_job AND
-                                    j2.state NOT IN (\'Suspended\',\'Resuming\')
+                                    j2.state IN (\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Finishing\')
                             ");
     $sth->execute();
     my @res;
