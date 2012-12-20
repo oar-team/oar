@@ -87,7 +87,7 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
           let value = NoNStr a.(var) and h_label = hy_ary_labels.(j) and hy_id = hy_id_array.(j) in 
           let hy_values = hy_values_array.(j) in
 
-            ignore (try Hashtbl.find hy_values value with Not_found ->  
+            ignore (try Hashtbl.find hy_values value with Not_found ->  (* TODO replace by Hashtbl.mem, sure ???*)
                   Hashtbl.add h_value_order h_label value; (* for keep value order by h_label *)  (* H.add is equiv to H.push when key exists *) 
                   Hashtbl.add hy_values value 1; (* *)
                   1 (* *) 
@@ -121,7 +121,7 @@ let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resourc
             List.iter (fun v -> let res_lst = get_res_lst v in Hashtbl.add hy_id_lst_array.(h) v res_lst) lst_ordered_values;
       done; 
 
-      (resources_lst, h_value_lst_order, hy_id_lst_array, ord2init_ids, init2ord_ids)
+      (res_lst_length-1,resources_lst, h_value_lst_order, hy_id_lst_array, ord2init_ids, init2ord_ids)
 (* TODO (resources_lst, h_value_order, hy_id_array, ord2init_ids, init2ord_ids) ;; *)
 
 (*                                                                                                                         *)
@@ -155,12 +155,12 @@ let get_resource_list_w_thinest_hierarchy dbh (hy_label: string) scheduler_resou
                                     [{b=x.resource_id;e=x.resource_id}]) resources_lst in 
     let mono_hierarchie = [(hy_label, th_h)] in
       (* Conf.log("query: "^query);*)  
-      (resources_lst, mono_hierarchie, ord2init_ids, init2ord_ids) ;;
+      (!i,resources_lst, mono_hierarchie, ord2init_ids, init2ord_ids) ;;
 
-(*                                              *)
-(* get distinct availableupto                   *)
-(* to remove, can be obtain from resources list *)
-(*                                              *)
+(*                                                   *)
+(* get distinct availableupto                        *)
+(* TODO to remove, can be obtain from resources list *)
+(*                                                   *)
 
 let get_group_available_uptos dbh =
   let query = "SELECT available_upto FROM resources GROUP BY available_upto" in
@@ -714,12 +714,13 @@ let save_gantt_jobs_predictions_from_file conn jobs =
       let query_gt_jobs_pred = if PG then
         "COPY gantt_jobs_predictions FROM '" ^ file_gt_jobs_pred ^ "' WITH DELIMITER AS ','"
       else
-        "LOAD DATA LOCAL INFILE '" ^ file_gt_jobs_pred ^ "' INTO TABLE gantt_jobs_predictions"
+        "LOAD DATA LOCAL INFILE '" ^ file_gt_jobs_pred ^ "' INTO TABLE gantt_jobs_predictions FIELDS TERMINATED BY ','"
       in
       List.iter (fun j -> Printf.fprintf oc "%s,%s\n"  (string_of_int j.moldable_id) (Int64.to_string j.time_b))  jobs;
       close_out oc; (* flush and close the channel *)
-      (* Conf.log ("[yopyop]" ^ query_gt_jobs_pred); *)
-      ignore (execQuery conn query_gt_jobs_pred)
+      (*Conf.log  query_gt_jobs_pred; *) 
+      ignore (execQuery conn query_gt_jobs_pred);
+      ;;
 
 
 (*                                                   *)
@@ -731,12 +732,12 @@ let inserts_from_file conn table filename funrow data =
         if PG then
           "COPY " ^ table ^ " FROM '" ^ filename ^ "' WITH DELIMITER AS ','"
         else
-          "LOAD DATA LOCAL INFILE '" ^ filename ^ "' INTO TABLE " ^ table
+          "LOAD DATA LOCAL INFILE '" ^ filename ^ "' INTO TABLE " ^ table ^ " FIELDS TERMINATED BY ','"
       in
         List.iter (fun x -> Printf.fprintf oc "%s\n" (funrow x)) data;
         close_out oc; (* flush and close the channel *)
-        (* Conf.log ("[yopyop]" ^ query); *)
-        ignore (execQuery conn query)
+        (* Conf.log query; *)
+        ignore (execQuery conn query);;
 
 let save_assigns_from_file conn jobs ord2init_ids =
   save_gantt_jobs_predictions_from_file conn jobs;
@@ -757,9 +758,18 @@ let save_assigns dbh jobs ord2init_ids =
 (* 1) no scalable *)
 (*  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; *)
 (* 2) faster *)
-save_assigns_2_rqts dbh jobs ord2init_ids;;
+(* save_assigns_2_rqts dbh jobs ord2init_ids;; *)
 (* 3) more faster *)
 (* save_assigns_from_file dbh jobs ord2init_ids;; *)
+
+  let insert_from_file = Conf.get_default_value "INSERTS_FROM_FILE" "no" in
+    if ((String.compare insert_from_file "yes")==0) then
+      begin
+        Conf.log "save_assigns_from_file";
+        save_assigns_from_file dbh jobs ord2init_ids
+      end
+    else
+      save_assigns_2_rqts dbh jobs ord2init_ids;;
 
 (*                                                  *)
 (** retrieve job_type for all jobs in the hashtable *)

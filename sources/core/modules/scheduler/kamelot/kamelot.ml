@@ -128,7 +128,7 @@ let argv = if (Array.length(Sys.argv) > 2) then
 (* with or without resource availabilty (field available_upto in resources table) *)
 (*                                                                                *)
 
-let resources_init_slots_determination dbh now potential_resources =
+let resources_init_slots_determination dbh now nb_potential_resources potential_resources =
   let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") ||
                         (((compare (Conf.get_default_value "ENERGY_SAVING_INTERNAL" "no") "yes")==0) && Conf.test_key("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))
   in 
@@ -139,15 +139,31 @@ let resources_init_slots_determination dbh now potential_resources =
       (*                                                                                                             *)
     begin
       Conf.log "Energy Saving and Wakeup Mode are enabled";
-      let hash_available_upto_by_resources =  Hashtbl.create 10 in
+      let hash_available_upto_by_resources =  Hashtbl.create 100 and idx = ref 0 
+        (* available_upto_vals array containts only once occurrence of each r.available_upto, need to iterate on hash_available_upto_by_resources *)
+        and available_upto_vals = Array.make nb_potential_resources 0L in
       let hash_available_upto_by_resources_populate r =
+        if (not (Hashtbl.mem hash_available_upto_by_resources r.available_upto)) then 
+          begin
+            Array.set available_upto_vals !idx r.available_upto;
+            idx := !idx + 1;
+          end;
+        Hashtbl.add hash_available_upto_by_resources r.available_upto (r.ord_r_id:int);
+      in
+        
+
+(*          
           let res_lst = try Hashtbl.find hash_available_upto_by_resources r.available_upto
                         with Not_found -> Hashtbl.add hash_available_upto_by_resources r.available_upto [r.ord_r_id];[]
                         in
                           match res_lst with
                              [] -> ()
+(* TODO Need TO OPTIMIZE remove replace and *)
                             | x -> Hashtbl.replace hash_available_upto_by_resources r.available_upto (x @ [r.ord_r_id]) 
+
       in
+*)
+
       let resources = List.filter (fun n -> if (n.state = Alive) || (n.state = Absent) then
                                               begin 
                                                 hash_available_upto_by_resources_populate n; 
@@ -182,13 +198,30 @@ let resources_init_slots_determination dbh now potential_resources =
           } 
           in
         (* create pseudo_jobs from hastable which containts resources' id by distinct available upto *) 
-        let pseudo_jobs_resources_available_upto =  Hashtbl.fold (fun avail_upto r_set acc -> 
+
+        let pseudo_jobs_resources_available_upto =
+          let rec pseudo_jobs_av_up i p_jobs = match i with
+            | 0 -> p_jobs
+            | x  -> let avail_upto = available_upto_vals.(x-1) in 
+                      if (avail_upto < max_time_minus_one) then
+                        let res_av_up = Hashtbl.find_all hash_available_upto_by_resources avail_upto in
+                          pseudo_jobs_av_up (x-1) ((pseudo_job_av_upto avail_upto (ints2intervals res_av_up)) :: p_jobs)
+                      else
+                        pseudo_jobs_av_up (x-1) p_jobs
+          in
+            pseudo_jobs_av_up !idx [] 
+        in
+
+    (* TODO remove
+            Hashtbl.fold (fun avail_upto r_set acc -> 
             if (avail_upto < max_time_minus_one)   then
                (pseudo_job_av_upto avail_upto (ints2intervals r_set)) :: acc 
             else 
               acc
            ) hash_available_upto_by_resources []
-        in
+      *)
+
+
         (* generate initial slot with no dead and suspected resources and with resources (nodes) which can be waked up *)
         let slot_init = {time_s = now; time_e = max_time; set_of_res = resource_intervals} in
         let slots_init_available_upto_resources = split_slots_prev_scheduled_jobs [slot_init] pseudo_jobs_resources_available_upto in
@@ -218,10 +251,10 @@ let _ =
       (* retrieve ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
       
       | _ -> Conf.log("Iolib.get_resource_list_w_hierarchy: mode default");
-                  let (pot_resources, h_value_order, hierarchy_info, ord2init_id_lst, init2ord_id_lst)  = 
+                  let (nb_pot_res, pot_resources, h_value_order, hierarchy_info, ord2init_id_lst, init2ord_id_lst)  = 
                     Iolib.get_resource_list_w_hierarchy conn hy_labels sched_resource_order in
                   let hy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
-                  (pot_resources,hy_levels,ord2init_id_lst, init2ord_id_lst)
+                  (nb_pot_res, pot_resources,hy_levels,ord2init_id_lst, init2ord_id_lst)
       in
 (*
        Conf.log ("ord2init_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list ord2init_ids) ) );
@@ -230,13 +263,13 @@ let _ =
        (* List.iter (fun x ->  Conf.log ("h_label:"^(fst x));Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; *)
 *)
       let get_res_hy_mode = Conf.get_default_value "KAMELOT_GET_RESOURCES_HIERARCHY_MODE" "default" in 
-      let (potential_resources, hierarchy_levels, ord2init_ids, init2ord_ids) = get_resources_hierarchies get_res_hy_mode in
+      let (nb_potential_res,potential_resources, hierarchy_levels, ord2init_ids, init2ord_ids) = get_resources_hierarchies get_res_hy_mode in
 (*
        List.iter (fun x ->  Conf.log ("h_label:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; 
 *) 
      let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
-      let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now potential_resources in
+      let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now nb_potential_res potential_resources in
         Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
       
   		let (waiting_j_ids,h_waiting_jobs) =

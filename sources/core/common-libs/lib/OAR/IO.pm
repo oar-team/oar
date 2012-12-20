@@ -238,6 +238,7 @@ sub connect_db($$$$$$) {
     my $user = shift;
     my $pwd = shift;
     my $debug_level = shift;
+    my $dbd_opts = ""; 
     
     if($host=~m/;/){
     	my $oldHost = $host;
@@ -270,14 +271,16 @@ sub connect_db($$$$$$) {
         $type = "Pg";
     }elsif ($Db_type eq "mysql"){
         $type = "mysql";
+        $dbd_opts = ";mysql_local_infile=1"; #Mysql option to allow LOAD LOCAL INFILE
     }else{
         oar_error("[IOlib] Cannot recognize DB_TYPE tag \"$Db_type\". So we are using \"mysql\" type.\n");
         $type = "mysql";
         $Db_type = "mysql";
+        $dbd_opts = ";mysql_local_infile=1"; #Mysql option to allow LOAD LOCAL INFILE
     }
 		my $connection_string;
     if($dbport eq "" || !($dbport>1 && $dbport<65535)){
-    	$connection_string = "DBI:$type:database=$name;host=$host";
+    	$connection_string = "DBI:$type:database=$name;host=$host".$dbd_opts;
     }
     else{
     	$connection_string = "DBI:$type:database=$name;host=$host;port=$dbport";
