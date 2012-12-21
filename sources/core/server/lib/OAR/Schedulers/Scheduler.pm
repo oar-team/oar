@@ -569,7 +569,11 @@ sub check_jobs_to_launch($){
             oar_warn("[OAR::Schedulers::Scheduler] Reduce job ($i) walltime to $max_time instead of $mold->{moldable_walltime}\n");
             OAR::IO::add_new_event($dbh,"REDUCE_RESERVATION_WALLTIME",$i,"Change walltime from $mold->{moldable_walltime} to $max_time");
         }
-        OAR::IO::set_running_date_arbitrary($dbh,$i,$current_time_sec);
+        my $running_date = $current_time_sec;
+        if ($running_date < $job->{submission_time}){
+            $running_date = $job->{submission_time};
+        }
+        OAR::IO::set_running_date_arbitrary($dbh,$i,$running_date);
         OAR::IO::set_assigned_moldable_job($dbh,$i,$jobs_to_launch{$i}->[0]);
         
         #TODO: to remove
