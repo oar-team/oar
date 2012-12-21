@@ -51,6 +51,8 @@ my $base = OAR::IO::connect();
 #do it for all job in state LEON in the data base table fragJobs
 OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","event_logs","moldable_job_descriptions","job_types","job_resource_descriptions","job_resource_groups","challenges","job_dependencies","gantt_jobs_predictions"]);
 
+# Do not over notify Almighty
+OAR::Tools::inhibit_notify_tcp_socket();
 foreach my $j (OAR::IO::get_to_kill_jobs($base)){
     if (OAR::IO::is_job_desktop_computing($base,$j->{job_id})) {
         oar_debug("[Leon] Job $j->{job_id} is affected to a DesktopComputing resource, I do not handle it\n");
@@ -65,12 +67,14 @@ foreach my $j (OAR::IO::get_to_kill_jobs($base)){
         if ($j->{job_type} eq "INTERACTIVE"){
             oar_debug("[Leon] I notify oarsub in waiting mode\n");
             #answer($Jid,$refJob->{'infoType'},"JOB KILLED");
+            OAR::Tools::enable_notify_tcp_socket();
             my ($addr,$port) = split(/:/,$j->{info_type});
             if (!defined(OAR::Tools::notify_tcp_socket($addr, $port, "JOB KILLED"))){
                 oar_debug("[Leon] Notification done\n");
             }else{
                 oar_debug("[Leon] Cannot open connection to oarsub client for job $j->{job_id}, it is normal if user typed Ctrl-C !!!!!!\n");
             }
+            OAR::Tools::inhibit_notify_tcp_socket();
         }
         $Exit_code = 1;
     }elsif (($j->{state} eq "Terminated") || ($j->{state} eq "Error") || ($j->{state} eq "Finishing")){
@@ -93,6 +97,7 @@ foreach my $j (OAR::IO::get_to_kill_jobs($base)){
     }
     OAR::IO::job_arm_leon_timer($base,$j->{job_id});
 }
+OAR::Tools::enable_notify_tcp_socket();
 
 #I treate jobs in state EXTERMINATED in the table fragJobs
 foreach my $j (OAR::IO::get_to_exterminate_jobs($base)){
