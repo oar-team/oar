@@ -46,7 +46,7 @@ let slot_max nb_res = {time_s = zero; time_e = max_int; set_of_res = [{b = 1; e 
 
 (* provides contiguous_slots which fit job_walltime and retrieve slots list *)
 
-let find_contiguous_slots_time slot_l jbs =
+let find_contiguous_slots_time slot_l jbs = (* TODO optimize *)
   (*  take into account time_b *)
 	let rec find_ctg_slots slots ctg_slots prev_slots = match slots with
 		| s::n when (s.time_e >= (add (add jbs.time_b jbs.w_time) minus_one)) -> (ctg_slots @ [s], prev_slots , n)
@@ -90,11 +90,13 @@ let inter_slots slots =
 (* TODO; to modify to support BEST -2 and ALL -1    // TODO done ???  *)
 
 let find_first_suitable_contiguous_slots slots j hy_levels = (* non moldable*)
+  Conf.log ("Nb slot: " ^ (string_of_int (List.length slots))) ;  
 	let rec find_suitable_contiguous_slots slot_l pre_slots job =
 	   	let (next_ctg_time_slot, prev_slots, remain_slots) = find_contiguous_slots_time slot_l job  in
       let itv_inter_slots = inter_slots next_ctg_time_slot in
+      Conf.log ("before :  find_resource_hierarchies_job ");
       let itv_res_assignement = find_resource_hierarchies_job itv_inter_slots (List.hd job.rq) hy_levels in
-
+      Conf.log ("after :  find_resource_hierarchies_job ");
       match  itv_res_assignement with
         | [] -> find_suitable_contiguous_slots (List.tl next_ctg_time_slot @ remain_slots) 
                                                (pre_slots @ prev_slots @ [List.hd next_ctg_time_slot]) job

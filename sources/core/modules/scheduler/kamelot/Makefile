@@ -5,6 +5,10 @@
 #
 OCAMLMAKEFILE := ./common/OCamlMakefile
 
+# ocamlfind packages required
+#export PACKS = str extlib unix batteries
+#export PACKS = str batteries
+
 # make POSTGRESQL=true 
 ifdef POSTGRESQL
   PPFLAGS := -DPOSTGRESQL
