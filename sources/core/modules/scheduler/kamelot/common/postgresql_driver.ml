@@ -30,10 +30,17 @@ let execQuery (dbh:Postgresql.connection)  q = (* TODO must be completed *)
 (* TODO test status see dbi_postgresql.ml in ocamldbi *)
 ;; 
 
-(* let map (q_result:Postgresql.result) f = *)
+let iter (qres) f = 
+  let rec loop i result_lst = match i with
+    | x when (x==qres.ntuples) -> ()
+    | _ -> loop (i+1) ((f (qres.result#get_tuple i))::result_lst)
+  in loop 0 [] ;;
+
+
+(* let map (q_result:Postgresql.result) f = *) 
 let map (qres) f = 
   let rec loop i result_lst = match i with
-    | x when (x==qres.ntuples) -> result_lst
+    | x when (x==qres.ntuples) -> List.rev result_lst
     | _ -> loop (i+1) ((f (qres.result#get_tuple i))::result_lst)
   in loop 0 [] ;;
 

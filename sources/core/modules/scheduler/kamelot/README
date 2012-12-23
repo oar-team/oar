@@ -99,7 +99,13 @@ ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ./common/helpers.cmo \
             ./scheduling.cmo mysql/mysql.cma ./common/mysql_driver.cmo iolib.cmo ./kamelot.cmo
 
 ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ./common/helpers.cmo \
-            ../common/interval.cmo ./common/conf.cmo ./common/types.cmo ./common/hierarchy.cmo \
+            ./common/interval.cmo ./common/conf.cmo ./common/types.cmo ./common/hierarchy.cmo \
             ./scheduling.cmo mysql/mysql.cma ./common/mysql_driver.cmo iolib.cmo 
+
+make POSTGRESQL=true clean bc
+
+ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma bigarray.cma threads/threads.cma ./common/helpers.cmo \
+            ./common/interval.cmo ./common/conf.cmo ./common/types.cmo ./common/hierarchy.cmo \
+            ./scheduling.cmo postgresql/postgresql.cma ./common/postgresql_driver.cmo iolib.cmo
 
 rlwrap ./yop -I ./common -I .

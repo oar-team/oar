@@ -259,14 +259,18 @@ let _ =
 (*
        Conf.log ("ord2init_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list ord2init_ids) ) );
        Conf.log ("init2ord_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list init2ord_ids) ) );
-       let hierarchy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
-       (* List.iter (fun x ->  Conf.log ("h_label:"^(fst x));Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; *)
+
+        Conf.log ("Hierarchies:");
+        let hierarchy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
+          List.iter (fun x ->  Conf.log ("h_label:"^(fst x));Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; 
 *)
       let get_res_hy_mode = Conf.get_default_value "KAMELOT_GET_RESOURCES_HIERARCHY_MODE" "default" in 
       let (nb_potential_res,potential_resources, hierarchy_levels, ord2init_ids, init2ord_ids) = get_resources_hierarchies get_res_hy_mode in
 (*
-       List.iter (fun x ->  Conf.log ("h_label:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; 
-*) 
+      Conf.log ("Hierarchies:");
+      List.iter (fun x ->  Conf.log ("h_label:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; 
+*)
+
      let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now nb_potential_res potential_resources in
@@ -288,7 +292,6 @@ let _ =
       Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
       Hashtbl.iter (fun k j -> Conf.log (job_to_string j)) h_waiting_jobs ; 
 *)
-
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
         begin
           

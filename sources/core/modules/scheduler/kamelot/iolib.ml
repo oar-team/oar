@@ -28,6 +28,11 @@ open Helpers
 let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
 
+(* for quick sql test *)
+let query_sql_one dbh i q =
+  let res = execQuery dbh q in
+      map res (fun a -> Conf.log ("yop: " ^ (NoNStr a.(i)) )) ;;
+
 (*                      *)
 (* get resource from db *)
 (*                      *)
@@ -283,6 +288,11 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
             end 
       | row::m ->
                 let (j_id,j_walltime, j_moldable_id, properties, r_type, r_value, r_order, r_properties, user, project) = row in
+(*
+                Conf.log("j_id: "^(string_of_int j_id)^" moldable_id: "^(string_of_int j_moldable_id)^
+                        " r_type: " ^ r_type ^ " r_value: " ^ (string_of_int r_value)^
+                        " r_order: " ^(string_of_int r_order)^ " r_properties: " ^ r_properties);
+*)
                 if (prev_job.jobid != j_id) then (* next job *)
                   begin
                     (* complete prev job *)
@@ -375,7 +385,10 @@ let get_moldable_job_list_fairsharing dbh default_resources queue besteffort_dur
       AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
       AND job_resource_descriptions.res_job_index = 'CURRENT'
       AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-      ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC;"
+      ORDER BY job_resource_descriptions.res_job_order DESC;"
+(*
+      ORDER BY moldable_job_descriptions.moldable_id ASC, job_resource_groups.res_group_id ASC, job_resource_descriptions.res_job_order ASC;
+*)
   in
     let query =
       if fairsharing_flag then
@@ -400,7 +413,7 @@ let get_moldable_job_list_fairsharing dbh default_resources queue besteffort_dur
   )
 
   in let result = map res get_one_row in
-  
+ 
   (*scan result_query job mlb_id walltime res_order res_type_lst res_value_lst constraints_lst mreq job_ids_lst *)
   let rec scan_res res_query prev_job prev_mlb_id prev_wtime r_o r_t r_v cts mreq jids = match res_query with
       [] -> begin (* the exit where jids is returned *)
@@ -418,6 +431,12 @@ let get_moldable_job_list_fairsharing dbh default_resources queue besteffort_dur
             end 
       | row::m ->
                 let (j_id, j_walltime, j_moldable_id, properties, r_type, r_value, r_order, r_properties, user, project) = row in
+(*
+                Conf.log("j_id: "^(string_of_int j_id)^" moldable_id: "^(string_of_int j_moldable_id)^
+                         " r_value: " ^ (string_of_int r_value)^ " r_order: " ^(string_of_int r_order)^ 
+                         " r_properties: " ^ r_properties ^ " r_type: " ^ r_type );
+*)
+
                 if (prev_job.jobid != j_id) then (* next job *)
                   begin (* next job *)
                    (* complete prev job *)
@@ -454,7 +473,7 @@ let get_moldable_job_list_fairsharing dbh default_resources queue besteffort_dur
                 else (* same job *) 
                   if (prev_mlb_id != j_moldable_id) then (* same job,  next moldable *)
                     begin (*same job, next moldable *)
-                      let updated_rq = { (* set previous moldabme *)
+                      let updated_rq = { (* set previous moldable *)
                                     mlb_id = prev_mlb_id; (* not used w/ no moldable support *)
                                     walltime = add prev_wtime security_time_overhead;  (* not used w/ no moldable support *)
                                     constraints = List.rev cts;
@@ -786,7 +805,7 @@ let get_job_types dbh job_ids h_jobs =
 
         let jt = if ((List.length jt0) = 1) then (List.hd jt0)::[""] else jt0 in  
         job.types <- ((List.hd jt), (List.nth jt 1))::job.types in
-          ignore (map res add_id_types);;
+          iter res add_id_types;;
 
 (*                                                                            *)
 (* retrieve job_type for all jobs in the hashtable                            *)
@@ -808,7 +827,7 @@ let get_job_types_hash_ids dbh jobs =
 
         let jt = if ((List.length jt0) = 1) then (List.hd jt0)::[""] else jt0 in 
         job.types <- ((List.hd jt), (List.nth jt 1))::job.types in
-          ignore (map res add_id_types);
+          iter res add_id_types;
 
   (*  Conf.log ("length h_jobs:"^(string_of_int (Hashtbl.length h_jobs))); *)
   (h_jobs, job_ids);;
@@ -825,7 +844,7 @@ let get_current_jobs_dependencies dbh =
 
     let dependencies = try Hashtbl.find h_jobs_dependencies job_id with Not_found -> (Hashtbl.add h_jobs_dependencies job_id []; []) in
     Hashtbl.replace h_jobs_dependencies job_id (job_id_required::dependencies) in
-      ignore (map res get_one);
+      iter res get_one;
       h_jobs_dependencies;;
 
 (*                                                                         *)

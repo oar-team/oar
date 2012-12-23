@@ -31,6 +31,7 @@ let execQuery db q =
 		              ignore (Conf.error (" *** Query was:\n"^q));
 		              failwith "execQuery"
 
+let iter f x = ignore (Mysql.map f x)
 let map = Mysql.map 
 let fetch = Mysql.fetch
 

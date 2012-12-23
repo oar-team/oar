@@ -1,7 +1,7 @@
 #
 # By default kamelot_mysql is built 
 # to obtain  kamelot_postgresql use:
-# > make POSTGRESQL=true
+# > make clean POSTGRESQL=true all
 #
 OCAMLMAKEFILE := ./common/OCamlMakefile
 
