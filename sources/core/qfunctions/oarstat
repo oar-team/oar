@@ -89,7 +89,7 @@ GetOptions ("help|h" => \$usage,
             "yaml|Y" => \$YAML_mode,
             "json|J" => \$JSON_mode,
             "dumper|D" => \$DUMPER_mode,
-            "format" => \$text_format
+            "format=s" => \$text_format
            );
 
 if ($usage){
