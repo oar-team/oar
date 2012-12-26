@@ -320,7 +320,7 @@ sub treate_waiting_reservation_jobs($$){
         if ($current_time_sec > $start+$max ){
             oar_warn("[OAR::Schedulers::Scheduler] treate_waiting_reservation_jobs :  Reservation $job->{job_id} in ERROR\n");
             OAR::IO::set_job_state($dbh, $job->{job_id}, "Error");
-            OAR::IO::set_job_message($dbh,$job->{job_id},"[OAR::Schedulers::Scheduler] Reservation has expired and it cannot be started.");
+            OAR::IO::set_job_message($dbh,$job->{job_id},"Reservation has expired and it cannot be started.");
             $return = 1;
         }
         my @resa_alive_resources = OAR::IO::get_gantt_Alive_resources_for_job($dbh,$moldable->[2]);
@@ -422,7 +422,7 @@ sub check_reservation_jobs($$$$){
         #look if reservation is too old
         if ($current_time_sec >= ($job->{start_time} + $duration)){
             oar_warn("[OAR::Schedulers::Scheduler] check_reservation_jobs: Cancel reservation $job->{job_id}, job is too old\n");
-            OAR::IO::set_job_message($dbh, $job->{job_id}, "reservation too old");
+            OAR::IO::set_job_message($dbh, $job->{job_id}, "Reservation too old");
             OAR::IO::set_job_state($dbh, $job->{job_id}, "toError");
         }else{
             if ($job->{start_time} < $current_time_sec){

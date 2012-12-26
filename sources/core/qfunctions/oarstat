@@ -8,7 +8,7 @@ use Data::Dumper;
 #use OAR::IO;
 use Getopt::Long;
 #use OAR::Version;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use OAR::Stat;
 
 my $Old_umask = sprintf("%lo",umask());
@@ -63,7 +63,7 @@ my $events_query;
 my $properties_query;
 my $usage;
 my $version;
-
+my $text_format = get_conf_with_default_param("OARSTAT_DEFAULT_OUTPUT_FORMAT", "1");
 my $user;
 ### END Variables declaration ###
 
@@ -88,7 +88,8 @@ GetOptions ("help|h" => \$usage,
             "xml|X" => \$XML_mode,
             "yaml|Y" => \$YAML_mode,
             "json|J" => \$JSON_mode,
-            "dumper|D" => \$DUMPER_mode
+            "dumper|D" => \$DUMPER_mode,
+            "format" => \$text_format
            );
 
 if ($usage){
@@ -152,7 +153,7 @@ exit(0);
 
 sub print_usage{
     print <<EOS;
-Usage: oarstat [-X|-Y|-D|-f|-s] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array] [--compact]
+Usage: oarstat [-X|-Y|-D|-f|-s] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array] [--compact] [--format num]
        oarstat [-e|-p] [-j jobid|--array array_id] 
        oarstat [-X|-Y|-J|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
        oarstat --accounting "YYYY-MM-DD, YYYY-MM-DD"
@@ -173,6 +174,10 @@ Options:
       --accounting          show accounting informations between two dates
       --sql                 restricts display by applying the SQL where clause
                             on the table jobs (ex: "project = 'p1'")
+      --format              select the text output format. Available values
+                            are:
+                              - 1
+                              - 2
   -D, --dumper              print result in DUMPER format
   -X, --xml                 print result in XML format
   -Y, --yaml                print result in YAML format
@@ -384,48 +389,85 @@ sub print_job_data($){
                 print("\n\n");
 			}else{
 				if(defined($array_id)){
-                    if ($Printed_jobs == 0){
-                        print <<EOS;
+                    if ($text_format eq "2"){
+    					if ($Printed_jobs == 0){
+	    					print <<EOS;
+Job id     A. id      A. index S User         System message
+---------- ---------- -------- - ------------ --------------------------------
+EOS
+		    			}
+					    $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
+					    $job_info->{message} = '' if (!defined($job_info->{message}));
+    					printf("%-10.10s %-10.10s %-8.8s %1.1s %-12.12s %s\n",
+	    					$job_info->{job_id},
+                            $job_info->{'array_id'},
+                            $job_info->{'array_index'},
+					    	$hashestat{$job_info->{state}},
+			    			$job_info->{job_user},
+						    $job_info->{message}
+    					);
+                        $Printed_jobs ++;
+                    }else{
+                        if ($Printed_jobs == 0){
+                            print <<EOS;
 Job id    A. id     A. index  Name       User     Submission Date     S Queue
 --------- --------- --------- ---------- -------- ------------------- - --------
 EOS
+                        }
+                        #$job_info->{'command'} = '' if (!defined($job_info->{'command'}));                              
+                        $job_info->{job_name} = '' if (!defined($job_info->{job_name}));            
+                        printf("%-9.9s %-9.9s %-9.9s %-10.10s %-8.8s %-19.19s %1.1s %-8.8s\n",
+                            $job_info->{'job_id'},
+                            $job_info->{'array_id'},
+                            $job_info->{'array_index'},
+						    $job_info->{'job_name'},
+                            $job_info->{'job_user'},
+                            OAR::Stat::local_to_sql($job_info->{'submission_time'}),
+                            $hashestat{$job_info->{'state'}},
+                            $job_info->{'queue_name'}
+                        );                    
+                        $Printed_jobs ++;
                     }
-                    #$job_info->{'command'} = '' if (!defined($job_info->{'command'}));                              
-                    $job_info->{job_name} = '' if (!defined($job_info->{job_name}));            
-                    printf("%-9.9s %-9.9s %-9.9s %-10.10s %-8.8s %-19.19s %1.1s %-8.8s\n",
-                        $job_info->{'job_id'},
-                        $job_info->{'array_id'},
-                        $job_info->{'array_index'},
-						$job_info->{'job_name'},
-                        $job_info->{'job_user'},
-                        OAR::Stat::local_to_sql($job_info->{'submission_time'}),
-                        $hashestat{$job_info->{'state'}},
-                        $job_info->{'queue_name'}
-                    );                    
-                    $Printed_jobs ++;
 				}else{
-					if ($Printed_jobs == 0){
-						print <<EOS;
+                    if ($text_format eq "2"){
+    					if ($Printed_jobs == 0){
+	    					print <<EOS;
+Job id     S User         System message
+---------- - ------------ ----------------------------------------------------
+EOS
+		    			}
+					    $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
+					    $job_info->{message} = '' if (!defined($job_info->{message}));
+    					printf("%-10.10s %1.1s %-12.12s %s\n",
+	    					$job_info->{job_id},
+					    	$hashestat{$job_info->{state}},
+			    			$job_info->{job_user},
+						    $job_info->{message}
+    					);
+                    }else{
+    					if ($Printed_jobs == 0){
+	    					print <<EOS;
 Job id     Name           User           Submission Date     S Queue
 ---------- -------------- -------------- ------------------- - ----------
 EOS
-					}
-					
-					#$job_info->{'command'} = '' if (!defined($job_info->{'command'}));
-					$job_info->{job_name} = '' if (!defined($job_info->{job_name}));
-					printf("%-10.10s %-14.14s %-14.14s %-19.19s %1.1s %-10.10s\n",
-						$job_info->{'job_id'},
-						$job_info->{'job_name'},
-						$job_info->{'job_user'},
-						OAR::Stat::local_to_sql($job_info->{'submission_time'}),
-						$hashestat{$job_info->{'state'}},
-						$job_info->{'queue_name'}
-					);
-					$Printed_jobs ++;
-				}
-			}
-		}
-	}
+		    			}
+			    		
+				    	#$job_info->{'command'} = '' if (!defined($job_info->{'command'}));
+					    $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
+    					printf("%-10.10s %-14.14s %-14.14s %-19.19s %1.1s %-10.10s\n",
+	    					$job_info->{'job_id'},
+		    				$job_info->{'job_name'},
+			    			$job_info->{'job_user'},
+				    		OAR::Stat::local_to_sql($job_info->{'submission_time'}),
+					    	$hashestat{$job_info->{'state'}},
+						    $job_info->{'queue_name'}
+    					);
+                    }
+	    			$Printed_jobs ++;
+			    }
+		    }
+	    }
+    }
 }
 
 sub print_job_state_data($){
@@ -521,16 +563,18 @@ sub show_accounting {
             print "By project consumption:\n";
             $Consumptions=OAR::Stat::get_accounting_summary_byproject(OAR::Stat::sql_to_local($date1),OAR::Stat::sql_to_local($date2),$user);
             foreach my $project (keys %{$Consumptions}) {
-                 print "  $project:\n";
-                 $asked=$Consumptions->{$project}->{ASKED}->{$user};
-                 $used=$Consumptions->{$project}->{USED}->{$user};
-                 printf ("%-28s %s ( %s)\n","    Asked :",$asked,OAR::Stat::get_duration($asked));
-                 printf ("%-28s %s ( %s)\n","    Used :",$used,OAR::Stat::get_duration($used));
-                 if (my @last_karma=OAR::Stat::get_last_project_karma($user,$project,OAR::Stat::sql_to_local($date2))) {
-                     printf ("%-28s %s\n","    Last Karma :",$last_karma[0]);
-                 }
+                print "  $project:\n";
+                $asked=$Consumptions->{$project}->{ASKED}->{$user};
+                $used=$Consumptions->{$project}->{USED}->{$user};
+                printf ("%-28s %s ( %s)\n","    Asked :",$asked,OAR::Stat::get_duration($asked));
+                printf ("%-28s %s ( %s)\n","    Used :",$used,OAR::Stat::get_duration($used));
+                if (my @last_karma=OAR::Stat::get_last_project_karma($user,$project,OAR::Stat::sql_to_local($date2))) {
+                    if ($last_karma[0] =~ m/.*Karma\s*\=\s*(\d+\.\d+)/m){
+                        printf ("%-28s %s\n","    Last Karma :",$1);
+                    }
+                }
             }
-    
+
         # All users array output
         }else{
             print <<EOS;

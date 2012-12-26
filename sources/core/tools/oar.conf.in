@@ -559,6 +559,10 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 
 ###############################################################################
 
+# Default oarstat output format.
+# See oarstat "--format" option to know the available values
+# (default is 1)
+#OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 
 #DESKTOP_COMPUTING_ALLOW_CREATE_NODE="0"
 #DESKTOP_COMPUTING_EXPIRY="300"

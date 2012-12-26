@@ -63,7 +63,7 @@ foreach my $j (OAR::IO::get_to_kill_jobs($base)){
     if (($j->{state} eq "Waiting") || ($j->{state} eq "Hold")){
         oar_debug("[Leon] Job is not launched\n");
         OAR::IO::set_job_state($base,$j->{job_id},"Error");
-        OAR::IO::set_job_message($base,$j->{job_id},"job killed by Leon directly");
+        OAR::IO::set_job_message($base,$j->{job_id},"Job killed by Leon directly");
         if ($j->{job_type} eq "INTERACTIVE"){
             oar_debug("[Leon] I notify oarsub in waiting mode\n");
             #answer($Jid,$refJob->{'infoType'},"JOB KILLED");
@@ -107,7 +107,7 @@ foreach my $j (OAR::IO::get_to_exterminate_jobs($base)){
         OAR::IO::set_running_date($base,$j->{job_id});
     }
     OAR::IO::set_finish_date($base,$j->{job_id});
-    OAR::IO::set_job_message($base,$j->{job_id},"job exterminated by Leon");
+    OAR::IO::set_job_message($base,$j->{job_id},"Job exterminated by Leon");
     OAR::IO::job_arm_leon_timer($base,$j->{job_id});
     $Exit_code = 2;
 

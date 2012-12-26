@@ -370,17 +370,17 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                     $scheduler_init_date = $sched_tmp + (2 * $security_time_overhead);
                 }
             }else{
-                my $message = "Cannot determine scheduling time due to dependency with the job $d";
+                my $message = "Dependency problem with the job $d (job in ERROR state)";
                 OAR::IO::set_job_message($base,$j->{job_id},$message);
-                OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
+#                OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
                 oar_debug("[$scheduler_name] [$j->{job_id}] $message\n");
                 $skip_job = 1;
                 next;
             }
         }elsif (($dep_job->{job_type} eq "PASSIVE") and ($dep_job->{exit_code} != 0)){
-            my $message = "Cannot determine scheduling time due to dependency with the job $d (exit code != 0)";
+            my $message = "Dependency problem with the job $d (exit code != 0)";
             OAR::IO::set_job_message($base,$j->{job_id},$message);
-            OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
+#            OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
             oar_debug("[$scheduler_name] [$j->{job_id}] $message\n");
             $skip_job = 1;
             next;
@@ -399,7 +399,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }else{
             oar_debug("[$scheduler_name] [$j->{job_id}] container job: container $1 does not exist.\n");
             OAR::IO::set_job_message($base,$j->{job_id},"Container $1 does not exist");
-            OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Container $1 does not exist");
+#            OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Container $1 does not exist");
             next;
         }
     }
@@ -435,13 +435,13 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 if ($Token_values{$t} < $types->{token}->{$t}){
                     oar_debug("[$scheduler_name] [$j->{job_id}] No enough Tokens: $t ($Token_values{$t} < $types->{token}->{$t}).\n");
                     OAR::IO::set_job_message($base,$j->{job_id},"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
-                    OAR::IO::set_job_scheduler_info($base,$j->{job_id},"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
+#                    OAR::IO::set_job_scheduler_info($base,$j->{job_id},"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
                     $skip_job = 1;
                 }
             }else{
                 oar_debug("[$scheduler_name] [$j->{job_id}] Token value cannot be retrieved ($t).\n");
                 OAR::IO::set_job_message($base,$j->{job_id},"Token value cannot be retrieved ($t)");
-                OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Token value cannot be retrieved ($t)");
+#                OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Token value cannot be retrieved ($t)");
                 $skip_job = 1;
             }
         }
@@ -506,7 +506,8 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                                     resources => \@resources,
                                     start_date => $hole[0],
                                     duration => $duration,
-                                    moldable_id => $moldable->[2]
+                                    moldable_id => $moldable->[2],
+                                    walltime => $moldable->[1]
                                 });
     }
 
@@ -568,8 +569,12 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         #update database
         push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
         OAR::IO::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
-        OAR::IO::set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
-        OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
+
+        # Feed message job field
+        my @type_list = sort(keys(%{$types}));
+        my $message = OAR::IO::format_job_message_text($j->{job_name},$#{$moldable_results[$index_to_choose]->{resources}}+1,$moldable_results[$index_to_choose]->{walltime},$j->{job_type},$j->{reservation},$j->{queue_name},$j->{project},\@type_list,"Karma=".sprintf("%.3f",karma($j)));
+        OAR::IO::set_job_message($base,$j->{job_id},$message);
+#        OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j)));
 
         # Update Token values
         if (defined($types->{token}) and ($moldable_results[$index_to_choose]->{start_date} <= $current_time)){
@@ -581,7 +586,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }else{
         my $message = "cannot find enough resources for job $j->{job_id}";
         OAR::IO::set_job_message($base,$j->{job_id},$message);
-        OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
+#        OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
         oar_debug("[$scheduler_name] [$j->{job_id}] $message\n");
     }
 #        print("[GANTT] 18 ".gettimeofday."\n");
