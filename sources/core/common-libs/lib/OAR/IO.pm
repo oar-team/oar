@@ -1443,6 +1443,40 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
    return(\@Job_id_list);
 }
 
+# Format a string which shows the maximum useful info
+# Return string is destinated to the "message" job table field
+sub format_job_message_text($$$$$$$$$){
+    my (
+        $job_name,
+        $estimated_nb_resources,
+        $estimated_walltime,
+        $job_type,
+        $reservation,
+        $queue,
+        $project,
+        $type_list_array_ref,
+        $string
+        ) = @_;
+
+    my $job_mode = 'B';
+    if ($reservation ne 'None'){
+        $job_mode = 'R';
+    }elsif ($job_type eq 'INTERACTIVE'){
+        $job_mode = 'I';
+    }
+    my $types_to_text = '';
+    $types_to_text = "T=".join('|',@{$type_list_array_ref})."," if ($#{$type_list_array_ref} >= 0);
+    my $job_message = "R=$estimated_nb_resources,W=".duration_to_sql($estimated_walltime).",J=$job_mode,";
+    $job_message .= "N=$job_name," if ($job_name ne "");
+    $job_message .= "Q=$queue," if (($queue ne "default") and ($queue ne "besteffort"));
+    $job_message .= "P=$project," if ($project ne "default");
+    $job_message .= "$types_to_text";
+    chop($job_message);
+    $job_message .= " ($string)" if ($string ne '');
+    
+    return($job_message);
+}
+
 sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
 
@@ -1451,6 +1485,8 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
         push(@dead_resources, $r->{resource_id});
     }
+    my $estimated_nb_resources = 0;
+    my $estimated_walltime = 0;
     my $wanted_resources;
     foreach my $moldable_resource (@{$ref_resource_list}){
         if (!defined($moldable_resource->[1])){
@@ -1484,8 +1520,10 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
                 foreach my $l (@leafs){
                     vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
                 }
+                $estimated_nb_resources += $#leafs + 1 if ($estimated_walltime == 0);
             }
         }
+        $estimated_walltime = $moldable_resource->[1] if ($estimated_walltime == 0);
     }
 
     lock_table($dbh,["challenges","jobs"]);
@@ -1503,6 +1541,8 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
       warn("/!\\ Invalid username: '$user'\n");
       return(-11);
     }
+    
+    my $job_message = format_job_message_text($job_name,$estimated_nb_resources, $estimated_walltime, $jobType, $reservationField, $queue_name, $project, $type_list, '');
 
     #Insert job
     my $date = get_date($dbh);
@@ -1516,8 +1556,8 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     $project = $dbh->quote($project);
     $initial_request_string = $dbh->quote($initial_request_string);
     $dbh->do("INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project,initial_request,array_id,array_index)
-              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$job_env,$project,$initial_request_string,$array_id,$array_index)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,job_env,project,initial_request,array_id,array_index,message)
+              VALUES (\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$job_env,$project,$initial_request_string,$array_id,$array_index,\'$job_message\')
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -1654,6 +1694,8 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
         push(@dead_resources, $r->{resource_id});
     }
+    my $estimated_nb_resources = 0;
+    my $estimated_walltime = 0;
     my $wanted_resources;
     foreach my $moldable_resource (@{$ref_resource_list}){
         if (!defined($moldable_resource->[1])){
@@ -1688,9 +1730,13 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
                 foreach my $l (@leafs){
                     vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
                 }
+                $estimated_nb_resources += $#leafs + 1 if ($estimated_walltime == 0);
             }
         }
+        $estimated_walltime = $moldable_resource->[1] if ($estimated_walltime == 0);
     }
+
+    my $job_message = format_job_message_text($job_name,$estimated_nb_resources, $estimated_walltime, $jobType, $reservationField, $queue_name, $project, $type_list, '');
 
     #insert in jobs table
     #prepare parameter request
@@ -1719,14 +1765,14 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     $stderr = $dbh->quote($stderr);
 
     my $query_jobs = "INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index,message)
               VALUES ";
 
     my $nb_jobs = $#{$array_job_commands_ref}+1;
     #print "nb_jobs: $nb_jobs\n";
     foreach my $command (@{$array_job_commands_ref}){
       $command = $dbh->quote($command);
-      $query_jobs =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$stdout,$stderr,$job_env,$project,$initial_request_string,$array_id,$array_index),";
+      $query_jobs =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$stdout,$stderr,$job_env,$project,$initial_request_string,$array_id,$array_index,\'$job_message\'),";
       $array_index++;
     }
     
@@ -1901,6 +1947,8 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$)
     foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
         push(@dead_resources, $r->{resource_id});
     }
+    my $estimated_nb_resources = 0;
+    my $estimated_walltime = 0;
     my $wanted_resources;
     foreach my $moldable_resource (@{$ref_resource_list}){
         if (!defined($moldable_resource->[1])){
@@ -1935,9 +1983,13 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$)
                 foreach my $l (@leafs){
                     vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
                 }
+                $estimated_nb_resources += $#leafs + 1 if ($estimated_walltime == 0);
             }
         }
+        $estimated_walltime = $moldable_resource->[1] if ($estimated_walltime == 0);
     }
+
+    my $job_message = format_job_message_text($job_name,$estimated_nb_resources, $estimated_walltime, $jobType, $reservationField, $queue_name, $project, $type_list, '');
 
     #insert in jobs table
     #prepare parameter request
@@ -1966,11 +2018,11 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$)
     $stderr = $dbh->quote($stderr);
 
     my $query_jobs = "INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index,message)
               VALUES ";
 
     my $command = $dbh->quote(@{$array_job_commands_ref}[0]);
-    my $query_first_job =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$stdout,$stderr,$job_env,$project,$initial_request_string,$array_id,$array_index)";
+    my $query_first_job =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$stdout,$stderr,$job_env,$project,$initial_request_string,$array_id,$array_index,\'$job_message\')";
     $dbh->do($query_first_job);
     #get the job id which will be also be the array_id
     my $first_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
@@ -1981,13 +2033,13 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$)
 
     #insert remaining array jobs with array_id
     $query_jobs = "INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,               job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index)
+              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,               job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index,message)
               VALUES ";
 
     foreach my $command (@{$array_job_commands_ref}){
       if ($array_index > 1) {
         $command = $dbh->quote($command);
-        $query_jobs =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$stdout,$stderr,$job_env,$project,$initial_request_string,$array_id,$array_index),";
+        $query_jobs =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$stdout,$stderr,$job_env,$project,$initial_request_string,$array_id,$array_index,\'$job_message\'),";
       }
       $array_index++;
     }
@@ -4241,6 +4293,7 @@ sub get_gantt_waiting_interactive_prediction_date($){
          FROM jobs, moldable_job_descriptions, gantt_jobs_predictions_visu
          WHERE
              jobs.state = \'Waiting\' AND
+             jobs.job_type = \'INTERACTIVE\' AND
              jobs.reservation = \'None\' AND
              moldable_job_descriptions.moldable_index = \'CURRENT\' AND
              moldable_job_descriptions.moldable_job_id = jobs.job_id AND
@@ -7007,7 +7060,7 @@ sub get_last_project_karma($$$$) {
                                 FROM jobs
                                 WHERE
                                       job_user = $user AND
-                                      message like \'Karma = %\' AND
+                                      message like \'%Karma%\' AND
                                       project = $project AND
                                       start_time < $date
                                 ORDER BY start_time desc

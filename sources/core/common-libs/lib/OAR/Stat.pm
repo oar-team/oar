@@ -531,28 +531,21 @@ sub compact_arrays($){
 
   # Parse all the jobs to search for arrays of more than 1 job
   foreach my $job (@{$jobs}){
-    if (defined($job->{array_id}) && $job->{array_id} != $job->{job_id}) {
       if (defined($array_job->{$job->{array_id}})) {
         # New element of an array found, increasing the counter
         $array_job->{$job->{array_id}}->{n} = $array_job->{$job->{array_id}}->{n} + 1;
-      }else{
-        # New job array found. It has at least 2 elements and the state
-        # is not relevant.
-        $array_job->{$job->{array_id}}=$job;
-        $array_job->{$job->{array_id}}->{n}=2;
         $array_job->{$job->{array_id}}->{state}="NA";
+      }else{
+        $array_job->{$job->{array_id}}=$job;
+        $array_job->{$job->{array_id}}->{n}=1;
       }
-    }
-  }
-  # Create the new virtual id "n@id"
-  foreach my $ar_id (keys(%{$array_job})) {
-    $array_job->{$ar_id}->{job_id}=$array_job->{$ar_id}->{n}."@".$ar_id;
   }
   # Generate the new list of jobs
   foreach my $job (@{$jobs}){
-    if (defined($array_job->{$job->{array_id}})) {
+    if ($array_job->{$job->{array_id}}->{n} > 1) {
       # Do not output the jobs inside an array, but output the virtual job only once
       if (!defined($array_job->{$job->{array_id}}->{already_printed})) {
+        $array_job->{$job->{array_id}}->{job_id}=$array_job->{$job->{array_id}}->{n}."@".$job->{array_id};
         push (@{$newjobs}, $array_job->{$job->{array_id}});
         $array_job->{$job->{array_id}}->{already_printed}=1;
       }
