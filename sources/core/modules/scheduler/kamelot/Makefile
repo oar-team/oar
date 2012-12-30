@@ -28,19 +28,31 @@ else
   RESULT  := kamelot_mysql
 endif
 
+define PROJ_kamelot_ts
+  PACKS   := mysql oUnit
+  LIBS    := str
+  SOURCES := ./common/helpers.ml ./common/conf.ml ./common/interval.ml \
+             ./common/types_ts.ml ./common/mysql_driver.ml iolib_ts.ml \
+             ./common/hierarchy.ml scheduling_ts.ml kamelot_ts.ml
+  RESULT  := kamelot_ts_mysql
+endef
+export PROJ_kamelot_ts
+
 define PROJ_test_unit
   PACKS = oUnit
   LIBS = str 
   SOURCES = ./common/helpers.ml ./common/interval.ml ./common/conf.ml ./common/types.ml\
-            ./common/hierarchy.ml simple_cbf_mb_h_ct.ml\
+            ./common/hierarchy.ml scheduling.ml\
             ./test/test_unit.ml
   RESULT = test_unit
 endef
+
 export PROJ_test_unit
 
 ifndef SUBPROJS
 #  export SUBPROJS = kamelot test_unit 
 #  export SUBPROJS = test_unit
+export SUBPROJS = kamelot kamelot_ts
 endif
 
 #rm_iolib_build:

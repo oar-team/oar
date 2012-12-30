@@ -26,12 +26,11 @@ Features:
  * order_by on resources [TO FINISH / EVALUATE]
  * ALL / BEST / BESTHALF for number of resources by level of hierarchy
  * moldable job
-
+ * timesharing (alpha in separate version in kamelot_ts)
+ * placeholder (alpha in separate version in kamelot_ts with timesharing)
 
 Missing:
 --------
- * Timesharing (not planned for fisrt public version)
- * Placeholder (not planned)
  * Extensive test (no yet running on production cluster)
  * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
  * SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE (get_scheduled_jobs function is ready)
@@ -102,10 +101,18 @@ ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ./common/helpers.cmo \
             ./common/interval.cmo ./common/conf.cmo ./common/types.cmo ./common/hierarchy.cmo \
             ./scheduling.cmo mysql/mysql.cma ./common/mysql_driver.cmo iolib.cmo 
 
+ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ./common/helpers.cmo \
+            ./common/interval.cmo ./common/conf.cmo ./common/types_ts.cmo ./common/hierarchy.cmo \
+            ./scheduling_ts.cmo mysql/mysql.cma ./common/mysql_driver.cmo iolib_ts.cmo 
+
+
+
 make POSTGRESQL=true clean bc
 
 ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma bigarray.cma threads/threads.cma ./common/helpers.cmo \
             ./common/interval.cmo ./common/conf.cmo ./common/types.cmo ./common/hierarchy.cmo \
             ./scheduling.cmo postgresql/postgresql.cma ./common/postgresql_driver.cmo iolib.cmo
+
+
 
 rlwrap ./yop -I ./common -I .

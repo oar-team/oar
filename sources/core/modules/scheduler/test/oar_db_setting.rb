@@ -14,7 +14,7 @@ DEFAULT_JOB_ARGS = {
   :walltime => 7200,
   :res => "resource_id=1",
   :properties => "",
-  :type => nil,
+  :types => nil,
   :user =>  ENV['USER']
 }
 
@@ -78,10 +78,12 @@ end
 #
 #   "{ sql1 }/prop1=1/prop2=3+{sql2}/prop3=2/prop4=1/prop5=1+...,walltime=1:00:00"
 #   "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
+#
 #   oar_job_insert({:res=>"host=1/cpu=2/core=2+cpu=1/core=2"})
 #
-#    oar_job_insert(:res=>"resource_id=2", :properties=>"network_address='node004'", :walltime=> 300) 
+#   oar_job_insert(:res=>"resource_id=2", :properties=>"network_address='node004'", :walltime=> 300) 
 #
+#   oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300, :types=>["timesharing=*,*"])
 def oar_job_insert(j_args={})
   args = {}
   DEFAULT_JOB_ARGS.each do |k,v|
@@ -117,7 +119,8 @@ def oar_job_insert(j_args={})
 
   #job's types insertion
   if !args[:types].nil?
-    !args[:types].split(',').each do |type|
+    args[:types].each do |type|
+       puts "type: #{type}"
 #      $job_types.insert(:job_id => job_id, :type => type)
       $dbh.execute("insert into job_types (job_id, type) values (#{job_id},'#{type}')").finish
     end
@@ -325,21 +328,24 @@ end
 def oar_test_insert(k,x, alter=false)
   oar_truncate_gantt
   puts "nb_insert_req: #{k}, block size: #{x},  nb_inserted_row #{k*x}"
-
+  tq = 0
+  tq0 = 0
   t0 = Time.now
   $dbh.execute("ALTER TABLE gantt_jobs_resources DISABLE KEYS").finish if alter
   k.times do |i|
     gantt_str = ""
     x.times do |j|
-      gantt_str += "(#{1000+i},#{10000+j})," 
+      gantt_str += "(#{i},#{j})," 
     end
     gantt_str = gantt_str.chop
-    $dbh.execute("insert into  gantt_jobs_resources (moldable_job_id, resource_id) values #{gantt_str}").finish   
+    tq0 = Time.now
+    $dbh.execute("insert into  gantt_jobs_resources (moldable_job_id, resource_id) values #{gantt_str}").finish 
+    tq += Time.now - tq0
   end 
   $dbh.execute("ALTER TABLE gantt_jobs_resources ENABLE KEYS").finish if alter
 
   t_insert = Time.now - t0
-  puts "insert_time: #{t_insert}"
+  puts "total_insert_time : #{t_insert} total_query_exec : #{tq} total_string_gene: #{t_insert-tq}"
 end
 
 

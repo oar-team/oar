@@ -129,7 +129,6 @@ let x2 = [{b = 1; e = 2}; {b = 5; e = 5}]
 
 let yl1 = [{b = 5; e = 13};{b = 15; e = 16 };{b = 19; e = 19}];;
 
-
 inter_intervals [x1] [y1] [];; (* [] *)
 inter_intervals [x1] [y2] [];; (* [] *)
 inter_intervals [x1] [y3] [];; (* [{b = 12; e = 15}] *)
@@ -180,6 +179,47 @@ let sub_intervals_orig x_l y_l =
 
 	in  sub_interval_l x_l y_l [];;
 
+
+(*                                              *)
+(* compute addition of 2 resource intervals *)
+(*                                              *)
+let add_intervals itv1_l itv2_l  = 
+  let rec add_itvs itv1s itv2s accu_itvs = match (itv1s, itv2s) with
+      ([],[]) -> List.rev accu_itvs
+    | (x,[]) -> (List.rev accu_itvs) @ x
+    | ([],y) -> (List.rev accu_itvs) @ y 
+    | (x::n,y::m) ->
+      if (y.e < x.b) then add_itvs (x::n) m (y::accu_itvs) else (* y before x w/ no overlap -> add y *)
+      if (y.b > x.e) then add_itvs n (y::m) (x::accu_itvs) else (* x before y w/ no overlap -> add x *)
+      if (y.b > x.b) then (* x begin *)
+        if (y.e <  x.e) then
+          add_itvs (x::n) m accu_itvs (* x overlap totally y -> keep x and drop y *)
+        else 
+          add_itvs n ({b=x.b;e=y.e}::m) accu_itvs (* x began by overlap y and y overlop x at the end -> keep x.b y.e on y and remove x  *)
+      else (*  *) (* y begin *) 
+      if (y.e <  x.e) then (* y began by overlap x and x overlap y at the end -> keep y.b x.e on x and remove y *)
+          add_itvs ({b=y.b;e=x.e}::n) m accu_itvs
+        else
+          add_itvs n (y::m) accu_itvs (* y overlap totally x -> keep y and drop x *)
+
+    in add_itvs itv1_l itv2_l []
+(*
+add_intervals [x1] [y1] ;; [x1;y1]
+add_intervals [x1] [y2] ;; [{b = 11; e = 20}; {b = 26; e = 30}]
+add_intervals [x1] [y3] ;; [{b = 11; e = 20}]
+add_intervals [x1] [y4] ;; [{b = 11; e = 25}]
+add_intervals [x1] [y5] ;; [{b = 5; e = 20}]
+add_intervals [x1] [y6] ;; [{b = 5; e = 25}]
+add_intervals [x1] [x1] ;; [x1]
+add_intervals [x1] [];; [x1]
+add_intervals [x1] yl1 ;; [{b = 5; e = 20}]
+add_intervals [y5] [x1];;
+
+add_intervals x2 [y3];; [{b = 1; e = 2}; {b = 5; e = 5}; {b = 12; e = 15}]
+*)
+
+
+
 (*                                              *)
 (* compute substraction of 2 resource intervals *)
 (*                                              *)
@@ -195,7 +235,7 @@ let sub_intervals x_l y_l =
 					else 
 						sub_interval_l n (y::m) ({b=x.b;e=y.b-1}::sub_itv_l) (* x overlap partially y*)
 				else
-					if (y.e <  x.e) then
+					if (y.e <  x.e) then 
 						sub_interval_l ({b=y.e+1;e=x.e}::n) m sub_itv_l
 					else
 						sub_interval_l n (y::m) sub_itv_l
@@ -204,10 +244,7 @@ let sub_intervals x_l y_l =
 
 	in  sub_interval_l x_l y_l [];;
 
-
-
 (* sub_intervals [{b = 1; e = 5}] [{b = 3; e = 4}; {b = 12; e = 12}];; *)
-
 
 (*
 sub_intervals [x1] [y1] ;; [x1]

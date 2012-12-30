@@ -156,10 +156,10 @@ let str_perl_hash_to_pairs str =
 let str_perl_hash_to_pairs_w_convert str convert=
   (* ignore(Printf.sprintf "Str_perl_hash_to_pairs_w_convert: %s" str;) *)
   let str_pairs =  Helpers.split "," (Helpers.replace_regexp "{\\|}\\| " "" str) in
-    let extraxt_pair s = let str_lpair = Helpers.split "=>" s in
+    let extract_pair s = let str_lpair = Helpers.split "=>" s in
       (List.hd str_lpair), (convert (List.hd (List.tl str_lpair)))
     in
-      List.map (fun x-> extraxt_pair x) str_pairs
+      List.map (fun x-> extract_pair x) str_pairs
 
 (* float_of_string_e with exception*)
 let float_of_string_e s =
