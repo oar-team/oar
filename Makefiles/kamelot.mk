@@ -14,8 +14,12 @@ install: install_shared
 	install \
 	    $(SRCDIR)/kamelot_mysql \
 	    $(DESTDIR)$(OARDIR)/schedulers/kamelot_mysql
+	install \
+	    $(SRCDIR)/kamelot_ts_ph_mysql \
+	    $(DESTDIR)$(OARDIR)/schedulers/kamelot_ts_ph_mysql
 
 uninstall: uninstall_shared
 	rm -f $(DESTDIR)$(OARDIR)/schedulers/kamelot_mysql
+	rm -f $(DESTDIR)$(OARDIR)/schedulers/kamelot_ts_ph_mysql
 
 .PHONY: install setup uninstall build clean

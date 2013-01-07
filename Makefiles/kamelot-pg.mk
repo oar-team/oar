@@ -14,8 +14,12 @@ install: install_shared
 	install \
 	    $(SRCDIR)/kamelot_postgresql \
 	    $(DESTDIR)$(OARDIR)/schedulers/kamelot_postgresql
+	install \
+	    $(SRCDIR)/kamelot_ts_ph_postgresql \
+	    $(DESTDIR)$(OARDIR)/schedulers/kamelot_ts_ph_postgresql
 
 uninstall: uninstall_shared
 	rm -f $(DESTDIR)$(OARDIR)/schedulers/kamelot_postgresql
+	rm -f $(DESTDIR)$(OARDIR)/schedulers/kamelot_ts_ph_postgresql
 
 .PHONY: install setup uninstall build clean

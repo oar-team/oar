@@ -29,12 +29,15 @@ else
 endif
 
 define PROJ_kamelot_ts
+ifdef POSTGRESQL
+else
   PACKS   := mysql oUnit
   LIBS    := str
   SOURCES := ./common/helpers.ml ./common/conf.ml ./common/interval.ml \
              ./common/types_ts.ml ./common/mysql_driver.ml iolib_ts.ml \
              ./common/hierarchy.ml scheduling_ts.ml kamelot_ts.ml
   RESULT  := kamelot_ts_mysql
+endif
 endef
 export PROJ_kamelot_ts
 
@@ -52,7 +55,7 @@ export PROJ_test_unit
 ifndef SUBPROJS
 #  export SUBPROJS = kamelot test_unit 
 #  export SUBPROJS = test_unit
-export SUBPROJS = kamelot kamelot_ts
+  export SUBPROJS = kamelot kamelot_ts
 endif
 
 #rm_iolib_build:
