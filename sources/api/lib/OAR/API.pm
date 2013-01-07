@@ -2,7 +2,7 @@
 package OAR::API;
 require Exporter;
 
-my $VERSION="1.0.1alpha1";
+my $VERSION="1.0.2";
 
 use strict;
 #use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
@@ -166,7 +166,7 @@ sub make_uri($$$) {
   my $path = shift;
   my $ext = shift;
   my $absolute = shift; # deprecated, left here for compatibility
-  if ($ext eq "html") { $path.=".html"; }
+  if (defined($ext) && $ext eq "html") { $path.=".html"; }
   if (our $ABSOLUTE_URIS == 1) {
     return $q->url(-absolute => 1)."/".$path;
   }
@@ -221,9 +221,12 @@ sub add_job_uris($$) {
   $self=OAR::API::htmlize_uri($self,$ext);
   my $resources=OAR::API::make_uri("jobs/".$job->{id}."/resources",$ext,0);
   $resources=OAR::API::htmlize_uri($resources,$ext);
+  my $nodes=OAR::API::make_uri("jobs/".$job->{id}."/nodes",$ext,0);
+  $nodes=OAR::API::htmlize_uri($nodes,$ext);
   my $links;
   push (@$links, { href => $self, rel => "self" });
   push (@$links, { href => $resources, rel => "collection", title => "resources" });
+  push (@$links, { href => $nodes, rel => "collection", title => "nodes" });
   $job->{links}=$links;
   $job->{api_timestamp}=time();
   # Don't know why this function breaks the type of the id, so:
@@ -458,7 +461,7 @@ sub struct_empty($) {
 # OAR JOB
 sub fix_job_integers($) {
   my $job = shift;
-  foreach my $key ("resubmit_job_id","Job_Id","array_index","array_id","startTime","stopTime","submissionTime","scheduledStart") {
+  foreach my $key ("resubmit_job_id","Job_Id","array_index","array_id","startTime","stopTime","submissionTime","scheduledStart","exit_code") {
     $job->{$key}=int($job->{$key}) if defined($job->{$key});
   }
   foreach my $event (@{$job->{"events"}}) {
@@ -474,7 +477,7 @@ sub struct_job($$) {
   my $result;
   if    ($structure eq 'oar')    { return $job; }
   elsif ($structure eq 'simple') { 
-    if ($job->{(keys(%{$job}))[0]} eq "HASH") {
+    if ($job->{(keys(%{$job}))[0]}  and $job->{(keys(%{$job}))[0]} eq "HASH") {
       $job=$job->{(keys(%{$job}))[0]};
     }
     fix_job_integers($job);
@@ -591,8 +594,29 @@ sub struct_job_nodes($$) {
   my $resources=shift;
   my $structure=shift;
   my $result=[];
+  my $network_addresses={};
+  my $network_address;
   foreach my $n (@{$resources->{assigned_hostnames}}) {
-    push(@$result,{'network_address' => $n, 'id' => 0});
+    push(@$result,{'network_address' => $n, 'status' => 'assigned'});
+  }
+  if (ref($resources->{reserved_resources}) eq "HASH") {
+    foreach my $r (keys(%{$resources->{reserved_resources}})) {
+      $network_address=$resources->{reserved_resources}->{$r}->{network_address};
+      if (!defined($network_addresses->{$network_address})) {;      
+        push(@$result,{'network_address' => $network_address, 'status' => 'reserved'});
+        $network_addresses->{$network_address}=1;
+      }
+    }
+  }
+  $network_addresses={};
+  if (ref($resources->{scheduled_resources}) eq "HASH") {
+    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
+      $network_address=$resources->{scheduled_resources}->{$r}->{network_address};
+      if (!defined($network_addresses->{$network_address})) {;      
+        push(@$result,{'network_address' => $network_address, 'status' => 'scheduled'});
+        $network_addresses->{$network_address}=1;
+      }
+    }
   }
   return $result;
 }
@@ -935,6 +959,7 @@ sub get_ext($) {
   if    ($content_type eq "text/yaml")  { return "yaml"; }
   elsif ($content_type eq "text/html")  { return "html"; }
   elsif ($content_type eq "application/octet-stream")  { return "yaml"; }
+  elsif ($content_type eq "multipart/form-data")  { return "html"; }
   elsif ($content_type eq "application/json")  { return "json"; }
   elsif ($content_type eq "application/x-gzip")  { return "tgz"; }
   #elsif ($content_type eq "application/x-www-form-urlencoded")  { return "json"; }
@@ -1506,10 +1531,10 @@ sub check_admission_rule_update($$) {
     exit 0;
   }
   
-  # Admission rule must have a "method" field
-  unless ( $admission_rule->{method} ) {
+  # Admission rule must have a "method" or "rule" field
+  unless ( $admission_rule->{method} or $admission_rule->{rule} ) {
     ERROR 400, 'Missing Required Field',
-      'An admission rule update must have a "method" field!';
+      'An admission rule update must have a "method=delete" or "rule"=<rule> field!';
     exit 0;
   }
 
@@ -1937,6 +1962,32 @@ sub sign_in($$$$$) {
 
     OAR::IO::disconnect($base);
 }
+
+# Stop if the user is not authenticated
+# Args: 
+# - #1 : the user as identified by the api
+# - #2 : an informative message
+# - #3 : "undef" or "oar". If "oar", then, it means that the user must be admin
+sub authenticate_user($$$) {
+    my $authenticated_user = shift;
+    my $msg = shift;
+    my $user = shift;
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done to $msg" );
+      return 1;
+    }
+    if (defined($user)) {
+      if ( not $authenticated_user eq "$user" ) {
+        OAR::API::ERROR( 401, "Permission denied",
+          "Only the $user user can $msg" );
+        $ENV{OARDO_BECOME_USER} = "$user";
+        return 2;
+      }
+    }
+    return 0;
+}
+
 
 
 return 1;

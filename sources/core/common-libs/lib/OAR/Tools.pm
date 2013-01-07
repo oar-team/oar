@@ -30,6 +30,7 @@ my $Default_oar_ssh_authorized_keys_file = ".ssh/authorized_keys";
 my $Default_node_file_db_field = "network_address";
 my $Default_node_file_db_field_distinct_values = "resource_id";
 my $Default_runner_sliding_window_size = 5;
+my $Default_notify_tcp_socket_enabled = 1;
 
 # Prototypes
 sub get_all_process_children();
@@ -63,6 +64,8 @@ sub get_default_oar_ssh_authorized_keys_file();
 sub get_default_node_file_db_field();
 sub get_default_node_file_db_field_distinct_values();
 sub replace_jobid_tag_in_string($$);
+sub inhibit_notify_tcp_socket();
+sub enable_notify_tcp_socket();
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -213,10 +216,19 @@ sub get_one_process_children($){
     return(\@child_pids,$pid_cmd_hash->{$pid});
 }
 
+# Disable notify_tcp_socket of Almighty
+sub inhibit_notify_tcp_socket(){
+    $Default_notify_tcp_socket_enabled = 0;
+}
+# Enable notify_tcp_socket of Almighty
+sub enable_notify_tcp_socket(){
+    $Default_notify_tcp_socket_enabled = 1;
+}
 
 # Send a Tag on a socket
 # args = hostname, socket port, Tag 
 sub notify_tcp_socket($$$){
+    return(undef) if ($Default_notify_tcp_socket_enabled == 0);
     my $almighty_host = shift;
     my $almighty_port = shift;
     my $tag = shift;

@@ -3,7 +3,7 @@
 export SHELL=/bin/bash
 
 # Modules that can be builded
-MODULES = server user node monika draw-gantt doc tools api scheduler-ocaml www-conf common common-libs database  
+MODULES = server user node monika draw-gantt doc tools api scheduler-ocaml kamelot kamelot-pg www-conf common common-libs database  
 
 
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
@@ -194,4 +194,3 @@ $(P_TARGETS):
 	# scheduler-ocaml-mysql
 	#$(MAKE) -f Makefiles/scheduler-ocaml.mk $(P_ACTION) \
 	#    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql 
-

@@ -4,7 +4,7 @@
 -- TODO:
 --   postgresql support
 
-require "luasql.mysql"
+luasql = require "luasql.mysql"
 oar= {}
 log_level = 2
 log_file = "/var/log/oar.log"
@@ -27,6 +27,12 @@ function oar.print_tt(t)
     print(">>>"..k)
     oar.print_table(v)
   end
+end
+
+--
+function oar.init()
+  oar.conf_load()
+  oar.connect()
 end
 
 --
@@ -185,7 +191,7 @@ function oar.set_scheduler_message_range(j_ids,msg)
   assert (con:execute(query))
 end
 
--- retreive resource_ids by node 
+-- retrieve resource_ids by node 
 function oar.get_nodes_resources_black_maria()
   local nodes_resources = {}
   local query = "SELECT resource_id, network_address FROM resources"
@@ -200,6 +206,32 @@ function oar.get_nodes_resources_black_maria()
   end
   return nodes_resources
 end
+
+-- retrieve resource_ids by node 
+function oar.get_hierarchy()
+  local i=0
+  local id=0
+  local values={}
+  local value_ordered={}  
+  local hy_id = {} -- store list of id by value
+  local  query = "SELECT resource_id, network_address FROM resources"
+  for row in oar.rows(query) do
+    i=i+1
+    local value = row[1]
+    --print(value,row[2])
+    if not values[value] then
+      values[value] = 1 -- to remember it 
+      table.insert(value_ordered,value) -- to remember order
+      hy_id[value] = {}
+    end
+    table.insert(hy_id[value],i)
+  end
+  print(i)
+  return value_ordered,hy_id
+end
+
+-- ocaml (string * Interval.interval list list) list
+
 
 -- set_assigned_moldable_job
 -- sets the assigned_moldable_job field to the given value
@@ -491,9 +523,29 @@ function oar.deepcopy(object)
     return _copy(object)
 end
 
+-- array2itv
+function oar.array2itvs(a)
+  local b
+  local e
+  local ary_b={}
+  local ary_e={}
+  table.sort(a)
+  b=a[1]
+  e=b
+  for i,v in ipairs(a) do
+    if (v-e>1) then
+      table.insert(ary_b,b)
+      table.insert(ary_e,e)
+      b=v
+    end
+    e=v
+  end
+  table.insert(ary_b,b)
+  table.insert(ary_e,e)
+  return ary_b,ary_e
+end  
 
-
---[[ 
+--[[
 -- The Whole Enchillada
 print("\ndumptable(_G=", _G, "):")
 dumptable(_G)

@@ -90,6 +90,12 @@ DETACH_JOB_FROM_SERVER="1"
 # to this tag.
 #RUNNER_SLIDING_WINDOW_SIZE="5"
 
+# If DETACH_JOB_FROM_SERVER=1 then OAR will treate the end of each job
+# asynchronously.
+# MAX_CONCURRENT_JOB_TERMINATIONS is the maximum number of jobs treated
+# simultaneously (default is 25).
+#MAX_CONCURRENT_JOB_TERMINATIONS=25
+
 # Command to use to connect to other nodes (default is "ssh" in the PATH)
 OPENSSH_CMD="/usr/bin/ssh -p 6667"
 
@@ -274,17 +280,27 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 # policy. Default is 1 day (86400s)
 #ACCOUNTING_WINDOW="86400"
 
-##############################
-# OCAML Scheduler parameters #
+################################
+# KAMELOT Scheduler parameters #
 ###############################################################################
-# You can use hierarchy_extractor.rb to generate those variables
-#HIERARCHY_LABELS="node,cpu,core"
-#node="(1,16,2), (33,8,4)" 
-#cpu="(1,8,8)"
-#core="(1,1,64)"
+# Be carefull hierarchy labels must be declare below to be use in resource 
+# request. Labels' order does not matter here. Default value is
+# "resource_id,network_address,cpu,core" 
+#HIERARCHY_LABELS="resource_id,network_address,cpu,core" 
 
-# Number of jobs which will be scheduled by scheduling round (no limit by default)
+# Number of jobs which will be scheduled by scheduling round for each queue where Kamelot is used 
+# ***NOT LIMITED by default***
 #MAX_JOB_PER_SCHEDULING_ROUND=1000
+
+# Mode to get resources and generate hierarchy levels, values are following:
+# default:     all is done dynamically, does not scale very beyond 5000 resourcess
+#
+# mono:        use only one hierarchy level resource_id or core (the FIRST label in HIERARCHY_LABELS)
+#              suitable to large platform and particular performance evaluation (only for expert users)
+#
+# precomputed: NOT YET IMPLEMENTED (upto now default mode will be used)
+#
+#KAMELOT_GET_RESOURCES_HIERARCHY_MODE="default"
 
 ##############################################
 
@@ -479,6 +495,11 @@ ENERGY_SAVING_INTERNAL="no"
 # Timeout for the two previous scripts
 #SUSPEND_RESUME_SCRIPT_TIMEOUT="60"
 
+
+# To allow users to hold or resume their jobs. By default it's restricted to oar and
+# root users due to global scheduling impact and possible priority bypassing.  
+#USERS_ALLOWED_HOLD_RESUME="yes"
+
 ###############################################################################
 
 ################################
@@ -538,6 +559,10 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 
 ###############################################################################
 
+# Default oarstat output format.
+# See oarstat "--format" option to know the available values
+# (default is 1)
+#OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 
 #DESKTOP_COMPUTING_ALLOW_CREATE_NODE="0"
 #DESKTOP_COMPUTING_EXPIRY="300"

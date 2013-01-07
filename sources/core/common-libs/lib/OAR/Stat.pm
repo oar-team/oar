@@ -172,17 +172,6 @@ sub get_specific_admission_rule {
     return $rule;
 }
 
-sub add_admission_rule {
-	my $rule = shift;
-	my $id = OAR::IO::add_admission_rule($base,$rule);
-	return $id;
-}
-
-sub delete_specific_admission_rule {
-	my $rule_id = shift;
-	OAR::IO::delete_admission_rule($base,$rule_id);
-}
-
 sub get_duration($){
 # Converts a number of seconds in a human readable duration (years,days,hours,mins,secs)
     my $time=shift;
@@ -530,5 +519,44 @@ sub get_job_state($) {
 	#exit 0;
 	#return(\%default_job_infos);
 #}
+
+# Compact the array jobs
+# Replaces all jobs from an array by a single virtual job
+# having "N@array_id" as job_id, with N the number of jobs
+# into the array
+sub compact_arrays($){
+  my $jobs=shift;
+  my $array_job={};
+  my $newjobs=[];
+
+  # Parse all the jobs to search for arrays of more than 1 job
+  foreach my $job (@{$jobs}){
+      if (defined($array_job->{$job->{array_id}})) {
+        # New element of an array found, increasing the counter
+        $array_job->{$job->{array_id}}->{n} = $array_job->{$job->{array_id}}->{n} + 1;
+        $array_job->{$job->{array_id}}->{state}="NA";
+      }else{
+        $array_job->{$job->{array_id}}=$job;
+        $array_job->{$job->{array_id}}->{n}=1;
+      }
+  }
+  # Generate the new list of jobs
+  foreach my $job (@{$jobs}){
+    if ($array_job->{$job->{array_id}}->{n} > 1) {
+      # Do not output the jobs inside an array, but output the virtual job only once
+      if (!defined($array_job->{$job->{array_id}}->{already_printed})) {
+        $array_job->{$job->{array_id}}->{job_id}=$array_job->{$job->{array_id}}->{n}."@".$job->{array_id};
+        push (@{$newjobs}, $array_job->{$job->{array_id}});
+        $array_job->{$job->{array_id}}->{already_printed}=1;
+      }
+    }else{
+      # jobs not comming from an array are outputed normally
+      push (@{$newjobs}, $job);
+    }
+  }
+  return $newjobs;
+}
+
+
 
 1;

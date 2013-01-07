@@ -76,8 +76,7 @@ oardrmaa_get_DRM_system( fsd_drmaa_singletone_t *self )
 static const char *
 oardrmaa_get_DRMAA_implementation( fsd_drmaa_singletone_t *self )
 {
-	return PACKAGE_NAME" v. "PACKAGE_VERSION
-                                        " <http://oar.imag.fr/>";
+	return PACKAGE_NAME" v. "PACKAGE_VERSION" <http://oar.imag.fr/>";
 }
 
 
@@ -164,7 +163,7 @@ oardrmaa_wcoredump(
 		char *error_diagnosis, size_t error_diag_len
 		)
 {
-    /* TODO: Can OAR support it ? */
+  /* TODO: Can OAR support it ? */
 	*core_dumped = 0;
 	return DRMAA_ERRNO_SUCCESS;
 }
@@ -175,7 +174,7 @@ oardrmaa_wifaborted(
 		char *error_diagnosis, size_t error_diag_len
 		)
 {
-        fsd_log_info(("wifaborted(%d)>>>>", stat));
+  fsd_log_info(("wifaborted(%d)>>>>", stat));
 	fsd_log_debug(("wifaborted(%d)", stat));
 
 	if ( stat == -1 )

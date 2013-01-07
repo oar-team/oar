@@ -1,8 +1,8 @@
-oar_dramaa
-===========
+
+oar damaa-v1
+============
 
 A try to provide drmaa api for oar based on pbs-drmaa
-
 
 Main adpatation
 ================
@@ -16,13 +16,13 @@ Features
 - DRMAA_INPUT_PATH (TODO/totested)
 Limitation and not supported features
 ======================================
-- DRMAA_START_TIME (oar can do it by dependenct on advance reservation job
+- DRMAA_START_TIME (oar can do it by dependenct on advance reservation job or sumit hold job and do "at oarresume jobid" c)
 
 log
 ===
 
 oar_drmaa/Makefile.am
-modify configure.ace
+modify configure.ac
 
 autoreconf --install
 
@@ -30,7 +30,7 @@ adapt drmaa s/pbs/oar/
 
 todo
 ====
-
+* mandory job attributes see GFD-R.133 section 3.2.3 p15
 * oar_statjob (id / attrl = NULL see man pbs_statjob)
 * oar_sumbit / attributs / default attributs
 * end_time
@@ -61,27 +61,7 @@ basic tests: curl and json-glib
  json_builder_reset (builder);
 
 
-oar_drmaa file
---------------
-- in general: s/pbs/oar/
-- drmaa.c: general fonction nothing tricky)
-- session.h: remove some struct pbsdrmaa_session_s fields
-- session.c: remove PBS_PRO, comment some code to adpat later
-- job.h:
-- job.c: big function to adapt: oardrmaa_job_update
-- submit.h:
-- submit.c:
-- util.h:
-- util.c: remove pbsdrmaa_write_tmpfile, fsd_getline and fsd_getline_buffered.Todo: Maps PBS error code into DMRAA code.
-- oar.h: to replace pbs_ifl.h
-- oar_error.h: to replace pbs_error.h
-- oar.c:
 
-general:
-~~~~~~~~
-- do we need of  oar_attrib.gperf (hash between drmaa / oar attributes) .
-- OAR_ERRNO_X in oar_erroh.h
-- oar_errno (global variable ! Do we need a mutex ? Not sure, must verify that there are mutexes around oar_drmaa function 
 build system
 ------------
 -  oar_drmaa/Makefile.am

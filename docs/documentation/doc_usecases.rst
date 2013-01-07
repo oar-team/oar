@@ -142,7 +142,8 @@ Using the resource hierarchy
 
 	oarsub -I -l /cluster=1/nodes=15/cpu=2/core=1
 
-- ask for 10 cpus on 2 clusters (total = 20 cpus, information regarding the node ou core count depend on the topology of the machines) 
+- ask for 10 cpus on 2 clusters (total = 20 cpus, information regarding the
+  node ou core count depend on the topology of the machines) 
 
 ::
 
@@ -158,7 +159,8 @@ Using the resource hierarchy
 Using properties
 ~~~~~~~~~~~~~~~~
 
-See OAR properties for a description of all available properties, and watch Monika.
+See OAR properties for a description of all available properties, and watch
+Monika.
 
 -  ask for 10 cores of the cluster azur 
 
@@ -182,7 +184,9 @@ See OAR properties for a description of all available properties, and watch Moni
 Mixing every together
 ~~~~~~~~~~~~~~~~~~~~~
 
-- ask for 1 core on 2 nodes on the same cluster with 4096 GB of memory and Infiniband 10G + 1 cpu on 2 nodes on the same switch with bicore processors for a walltime of 4 hours 
+- ask for 1 core on 2 nodes on the same cluster with 4096 GB of memory and
+  Infiniband 10G + 1 cpu on 2 nodes on the same switch with bicore processors
+  for a walltime of 4 hours 
 
 ::
 
@@ -217,9 +221,11 @@ Moldable jobs
 Types of job
 ~~~~~~~~~~~~
 
-OAR2 feature the concept of job "type". Among them, the type deploy (that used to be a queue with OAR 1.6) and the type besteffort.
+OAR2 feature the concept of job "type". Among them, the type deploy (that used
+to be a queue with OAR 1.6) and the type besteffort.
 
-- ask for 4 nodes on the same cluster in order to deploy a customized environment: 
+- ask for 4 nodes on the same cluster in order to deploy a customized
+  environment: 
 
 ::
 
@@ -237,8 +243,10 @@ OAR2 feature the concept of job "type". Among them, the type deploy (that used t
 X11 forwarding
 --------------
 
-Some users complained about the lack of X11 forwarding in oarsub or oarsh. It is now enabled.
-We are using xeyes to test X: 2 big eyes should appear on your screen, and follow the moves of your mouse. 
+Some users complained about the lack of X11 forwarding in oarsub or oarsh. It
+is now enabled.
+We are using xeyes to test X: 2 big eyes should appear on your screen, and
+follow the moves of your mouse. 
 
 Shell 1
 ~~~~~~~
@@ -377,12 +385,16 @@ ___________________________________________________________
 Using MPI with OARSH
 --------------------
 
-To use MPI, you must setup your MPI stack so that it use OARSH instead of the default RSH or SSH connector. All required steps for the main different flavors of MPI are presented below. 
+To use MPI, you must setup your MPI stack so that it use OARSH instead of the
+default RSH or SSH connector. All required steps for the main different flavors
+of MPI are presented below. 
 
 MPICH1
 ~~~~~~
 
-Mpich1 connector can be changed using the P4_RSHCOMMAND environment variable. This variable must be set in the shell configuration files. For instance for bash, within ~/.bashrc
+Mpich1 connector can be changed using the P4_RSHCOMMAND environment variable.
+This variable must be set in the shell configuration files. For instance for
+bash, within ~/.bashrc
 
 ::
 
@@ -407,7 +419,8 @@ MPICH2
 
 Tested version: 1.0.5p2
 
-MPICH2 uses daemons on nodes that may be started with the "mpdboot" command. This command takes oarsh has an argument (--rsh=oarsh) and all goes well:
+MPICH2 uses daemons on nodes that may be started with the "mpdboot" command.
+This command takes oarsh has an argument (--rsh=oarsh) and all goes well:
 
 ::
 
@@ -426,12 +439,26 @@ MPICH2 uses daemons on nodes that may be started with the "mpdboot" command. Thi
 	Hello world from process 6 of 8 running on idpot2
 	Hello world from process 7 of 8 running on idpot4
 
+MVAPICH2
+~~~~~~~~
+
+You can use the hydra launcher with the options "-launcher" and
+"-launcher-exec", for example:
+
+::
+
+    mpiexec -launcher ssh -launcher-exec /usr/bin/oarsh -f hosts -n 4 ./app
+
 LAM/MPI
 ~~~~~~~
 
 Tested version: 7.1.3
 
-You can use export LAMRSH=oarsh before starting lamboot; otherwise the "lamboot" command takes -ssi boot_rsh_agent "oarsh" option has an argument (this is not in the manual!). Also note that OARSH doesn't automatically sends the environnement of the user, so, you may need to specify the path to LAM distribution on the nodes with this option: -prefix
+You can use export LAMRSH=oarsh before starting lamboot; otherwise the
+"lamboot" command takes -ssi boot_rsh_agent "oarsh" option has an argument
+(this is not in the manual!). Also note that OARSH doesn't automatically sends
+the environnement of the user, so, you may need to specify the path to LAM
+distribution on the nodes with this option: -prefix
 
 ::
 
@@ -453,7 +480,12 @@ OpenMPI
 
 Tested version: 1.1.4
 
-The magic option to use with OpenMPI and OARSH is "-mca pls_rsh_agent "oarsh"". Also note that OpenMPI works with daemons that are started on the nodes (orted), but "mpirun" starts them on-demand. The "-prefix" option can help if OpenMPI is not installed in a standard path on the cluster nodes.
+The magic option to use with OpenMPI and OARSH is "-mca pls_rsh_agent "oarsh"".
+Also note that OpenMPI works with daemons that are started on the nodes
+(orted), but "mpirun" starts them on-demand. The "-prefix" option can help if
+OpenMPI is not installed in a standard path on the cluster nodes (you can
+replace the "-prefix" option by using the absolute path when invoking the
+"mpirun" command).
 
 ::
 
@@ -469,14 +501,27 @@ The magic option to use with OpenMPI and OARSH is "-mca pls_rsh_agent "oarsh"". 
 	Hello world from process 6 of 8 running on idpot4
 	Hello world from process 7 of 8 running on idpot4
 	Hello world from process 3 of 8 running on idpot2
-	
+
+You can make the option "oarsh" automatically by adding it in a configuration
+file in the OpenMPI installation directory named
+"$OPENMPI_INSTALL_DIR/etc/openmpi-mca-params.conf"
+
+::
+
+    plm_rsh_agent=/usr/bin/oarsh
+
+So, with this configuration, this is transparent for the users.
+
+**Note**: In OpenMPI 1.6, "pls_rsh_agent" was replaced by "orte_rsh_agent".
+
 Tests of the CPUSET mechanism
 -----------------------------
 
 Processus isolation
 ~~~~~~~~~~~~~~~~~~~
 
-In this test, we run 4 yes commands in a job whose resources is only one core. (syntax tested with bash as the user's shell)
+In this test, we run 4 yes commands in a job whose resources is only one core.
+(syntax tested with bash as the user's shell)
 
 ::
 
@@ -498,7 +543,8 @@ Then we connect to the node and run top
 	yes      24.0   1
 	yes      23.0   1
 
-This shows that the 4 processus are indeed restricted to the core the job was assigned to, as expected.
+This shows that the 4 processus are indeed restricted to the core the job was
+assigned to, as expected.
 
 Don't forget to delete your job:
 
@@ -512,7 +558,9 @@ Using best effort mode jobs
 Best effort job campaign
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-OAR 2 provides a way to specify that jobs are best effort, which means that the server can delete them if room is needed to fit other jobs. One can submit such jobs using the besteffort type of job.
+OAR 2 provides a way to specify that jobs are best effort, which means that the
+server can delete them if room is needed to fit other jobs. One can submit such
+jobs using the besteffort type of job.
 
 For instance you can run a job campaign as follows:
 
@@ -522,7 +570,8 @@ For instance you can run a job campaign as follows:
 	    oarsub -t besteffort -l core=1 "./my_script.sh $param"
 	done
 
-In this example, the file ./paramlist contains a list of parameters for a parametric application.
+In this example, the file ./paramlist contains a list of parameters for a
+parametric application.
 
 The following demonstrates the mechanism. 
 
@@ -577,7 +626,8 @@ Testing the checkpointing trigger mechanism
 Writing the test script
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Here is a script feature an infinite loop and a signal handler trigged by SIGUSR2 (default signal for OAR's checkpointing mechanism).
+Here is a script feature an infinite loop and a signal handler trigged by
+SIGUSR2 (default signal for OAR's checkpointing mechanism).
 
 ::
 
@@ -596,7 +646,9 @@ Here is a script feature an infinite loop and a signal handler trigged by SIGUSR
 Running the job
 ~~~~~~~~~~~~~~~
 
-We run the job on 1 core, and a walltime of 1 hour, and ask the job to be checkpointed if it lasts (and it will indeed) more that walltime - 900 sec = 45 min.
+We run the job on 1 core, and a walltime of 1 hour, and ask the job to be
+checkpointed if it lasts (and it will indeed) more that walltime - 900 sec = 45
+min.
 
 ::
 
@@ -619,12 +671,14 @@ Taking a look at the job output:
 	Caught checkpoint signal at: Fri May  4 20:26:12 CEST 2007
 	Terminating.
 
-The checkpointing signal was sent to the job 15 minutes before the walltime as expected so that the job can finish nicely.
+The checkpointing signal was sent to the job 15 minutes before the walltime as
+expected so that the job can finish nicely.
 
 Interactive checkpointing
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The oardel command provides the capability to raise a checkpoint event interactively to a job.
+The oardel command provides the capability to raise a checkpoint event
+interactively to a job.
 
 We submit the job again
 
@@ -692,7 +746,8 @@ Then we run a second job in another Shell, with a dependence on the first one
 	Interactive mode : waiting...
 	[2007-05-04 17:59:55] Start prediction: 2007-05-04 19:59:39 (Karma = 4.469)
 
-So this second job is waiting for the first job walltime (or sooner termination) to be reached to start.
+So this second job is waiting for the first job walltime (or sooner
+termination) to be reached to start.
 
 Job dependency in action
 ~~~~~~~~~~~~~~~~~~~~~~~~

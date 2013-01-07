@@ -3,14 +3,19 @@ require 'dbi'
 require 'yaml'
 require 'rest_client'
 require 'pp'
+begin
+  require 'pry'
+rescue LoadError
+  puts 'Warning: pry seems absent (catch LoadError)'
+end
 
 DEFAULT_JOB_ARGS = {
   :queue => "default",
   :walltime => 7200,
   :res => "resource_id=1",
   :properties => "",
-  :type => nil,
-  :user => "toto"
+  :types => nil,
+  :user =>  ENV['USER']
 }
 
 OARCONFFILE =   'export OARCONFFILE="/etc/oar/oar.conf"'
@@ -33,11 +38,14 @@ def oar_load_test_config
 end
 
 def oar_db_connect
-#	if $db_type == "mysql"
-#		$db_type = "Mysql"
-#	else 
-#    $db_type = "Pg" #postgresql
-#  end
+	if ($db_type == "Mysql"||$db_type == "mysql")
+    $PG = false
+    $MYSQL = true
+    $db_type = "Mysql"
+	else 
+    $PG = true
+    $MYSQL = false
+  end
   puts  "dbi:#{$db_type}:#{$conf['DB_BASE_NAME']}:#{$conf['DB_HOSTNAME']}",
 				"#{$conf['DB_BASE_LOGIN']}","#{$conf['DB_BASE_PASSWD']}"
 
@@ -51,7 +59,8 @@ def oar_db_disconnect
   $dbh.disconnect
 end
 
-def get_last_insert_id
+#TODO use table variable
+def get_last_insert_id(table="jobs_job_id_seq")
   id = 0
   if ($db_type == "Mysql" || $db_type == "mysql" )
     id=$dbh.select_one("SELECT LAST_INSERT_ID()")[0]
@@ -64,17 +73,17 @@ end
 ##
 # Direct database job insertion
 # [Supported args] :queue, :user, :properties
-# [Examples]
+# @examples
 #   oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300) 
-#
 #
 #   "{ sql1 }/prop1=1/prop2=3+{sql2}/prop3=2/prop4=1/prop5=1+...,walltime=1:00:00"
 #   "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
+#
 #   oar_job_insert({:res=>"host=1/cpu=2/core=2+cpu=1/core=2"})
 #
-#    oar_job_insert(:res=>"resource_id=2", :properties=>"network_address='node004'", :walltime=> 300) 
+#   oar_job_insert(:res=>"resource_id=2", :properties=>"network_address='node004'", :walltime=> 300) 
 #
-
+#   oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300, :types=>["timesharing=*,*"])
 def oar_job_insert(j_args={})
   args = {}
   DEFAULT_JOB_ARGS.each do |k,v|
@@ -110,7 +119,8 @@ def oar_job_insert(j_args={})
 
   #job's types insertion
   if !args[:types].nil?
-    !args[:types].split(',').each do |type|
+    args[:types].each do |type|
+       puts "type: #{type}"
 #      $job_types.insert(:job_id => job_id, :type => type)
       $dbh.execute("insert into job_types (job_id, type) values (#{job_id},'#{type}')").finish
     end
@@ -118,6 +128,7 @@ def oar_job_insert(j_args={})
 
   return job_id
 end
+
 ##
 #  oar_bulk_job_insert(10) {|i| [(i % max_nb_res) +1,300]} # [nb_res,walltime]
 #
@@ -173,28 +184,30 @@ end
 #
 def oar_truncate_jobs
 #  DB << "
+ rst_id = ""
+ rst_id = "RESTART IDENTITY" if $PG
  requests = "
-    TRUNCATE accounting;
-    TRUNCATE assigned_resources;
-    TRUNCATE challenges;
-    TRUNCATE event_logs;
-    TRUNCATE event_log_hostnames;
-    TRUNCATE files;
-    TRUNCATE frag_jobs;
-    TRUNCATE gantt_jobs_predictions;
-    TRUNCATE gantt_jobs_predictions_log;
-    TRUNCATE gantt_jobs_predictions_visu;
-    TRUNCATE gantt_jobs_resources;
-    TRUNCATE gantt_jobs_resources_log;
-    TRUNCATE gantt_jobs_resources_visu;
-    TRUNCATE jobs;
-    TRUNCATE job_dependencies;
-    TRUNCATE job_resource_descriptions;
-    TRUNCATE job_resource_groups;
-    TRUNCATE job_state_logs;
-    TRUNCATE job_types;
-    TRUNCATE moldable_job_descriptions;
-    TRUNCATE resource_logs;
+    TRUNCATE accounting #{rst_id};
+    TRUNCATE assigned_resources #{rst_id};
+    TRUNCATE challenges #{rst_id};
+    TRUNCATE event_logs #{rst_id};
+    TRUNCATE event_log_hostnames #{rst_id};
+    TRUNCATE files #{rst_id};
+    TRUNCATE frag_jobs #{rst_id};
+    TRUNCATE gantt_jobs_predictions #{rst_id};
+    TRUNCATE gantt_jobs_predictions_log #{rst_id};
+    TRUNCATE gantt_jobs_predictions_visu #{rst_id};
+    TRUNCATE gantt_jobs_resources #{rst_id};
+    TRUNCATE gantt_jobs_resources_log #{rst_id};
+    TRUNCATE gantt_jobs_resources_visu #{rst_id};
+    TRUNCATE jobs #{rst_id};
+    TRUNCATE job_dependencies #{rst_id};
+    TRUNCATE job_resource_descriptions #{rst_id};
+    TRUNCATE job_resource_groups #{rst_id};
+    TRUNCATE job_state_logs #{rst_id};
+    TRUNCATE job_types #{rst_id};
+    TRUNCATE moldable_job_descriptions #{rst_id};
+    TRUNCATE resource_logs #{rst_id};
 "
   multiple_requests_execute(requests)
 end
@@ -217,6 +230,7 @@ end
 #
 
 def oar_truncate_gantt
+  
  requests = "
     TRUNCATE gantt_jobs_predictions;
     TRUNCATE gantt_jobs_predictions_log;
@@ -240,6 +254,16 @@ def oar_sql_file(file_name)
 #  multiple_requests_execute(requests)
 end
 
+#
+# oar_resource_insert
+# @param [args={}] set number of ressources to insert by :nb_resources=> int 
+# @return Returns nothing
+# @example
+#   #insert 100 raw resources
+#   oar_resource_insert(:nb_resources=>100)
+#   #insert 2 network_addresses w/ 2 cpu w/ 4 cores, resulting to 2*2*4 resources
+#   oar_resource_insert(:ip_cpu_core=>[2,2,4]) #
+
 def oar_resource_insert(args={})
   if (args=={})
     $dbh.execute("insert into resources (state) values ('Alive')").finish
@@ -259,11 +283,27 @@ def oar_resource_insert(args={})
         nb_residual_ressources = ("('localhost','Alive')," * nb_residual).chop
         $dbh.execute("insert into resources (network_address, state) values #{nb_residual_ressources}").finish   
       end
+    elsif !args[:ip_cpu_core].nil?
+      q = ""
+      cpu = 0; core =0
+      values = args[:ip_cpu_core]
+      values[0].times do |ip|
+        values[1].times do 
+          values[2].times do 
+             q += "('Alive','127.0.0.#{ip+1}','#{cpu}','#{core}'),"
+             core += 1
+          end
+          cpu += 1
+        end
+      end
+      puts q
+      $dbh.execute("insert into resources (state, network_address, cpu, core) values" + q.chop ).finish
     end
+ 
   end
 end
 
-def oar_test_insert(k,x, alter=false)
+def oar_test_insert_resources(k,x, alter=false)
   oar_truncate_resources
   puts "nb_insert: #{k}, size of insert in nb_resources: #{x}  nb_ressources: #{k*x} alter: #{alter}"
   t0 = Time.now
@@ -284,19 +324,61 @@ def oar_test_insert(k,x, alter=false)
   puts "t_total:  #{t_string+t_insert} t_string: #{t_string} t_insert: #{t_insert}"
 end
 
-def oar_test_insert_load_infile(k)
+
+def oar_test_insert(k,x, alter=false)
+  oar_truncate_gantt
+  puts "nb_insert_req: #{k}, block size: #{x},  nb_inserted_row #{k*x}"
+  tq = 0
+  tq0 = 0
+  t0 = Time.now
+  $dbh.execute("ALTER TABLE gantt_jobs_resources DISABLE KEYS").finish if alter
+  k.times do |i|
+    gantt_str = ""
+    x.times do |j|
+      gantt_str += "(#{i},#{j})," 
+    end
+    gantt_str = gantt_str.chop
+    tq0 = Time.now
+    $dbh.execute("insert into  gantt_jobs_resources (moldable_job_id, resource_id) values #{gantt_str}").finish 
+    tq += Time.now - tq0
+  end 
+  $dbh.execute("ALTER TABLE gantt_jobs_resources ENABLE KEYS").finish if alter
+
+  t_insert = Time.now - t0
+  puts "total_insert_time : #{t_insert} total_query_exec : #{tq} total_string_gene: #{t_insert-tq}"
+end
+
+
+
+
+def oar_test_insert_load_infile(k,shm=true)
   oar_truncate_gantt
   puts "nb_insert: #{k}"
+  if shm then
+    file_name = '/run/shm/massive_insert'
+  else
+    file_name = '/tmp/oar-massive-insert'
+  end
+
+  if $PG then
+    #need to oar by a superuser for PG;
+    #sudo -u postgres /usr/bin/psql -c "ALTER ROLE oar WITH SUPERUSER;"
+    query = "COPY gantt_jobs_resources FROM '#{file_name}' WITH DELIMITER AS ','"
+  else 
+    query = "LOAD DATA LOCAL INFILE '#{file_name}' INTO TABLE gantt_jobs_resources"
+  end
 
   t0 = Time.now
-  f = File.open('/run/shm/massive_insert','w')
+  File.delete(file_name) if File.exist?(file_name)
+  f = File.open(file_name,'w')
   k.times do |k|
     f.write("#{k+1},#{k+1000}\n")
   end
   f.close
   t1 = Time.now 
   t_file = t1 - t0
-  $dbh.execute("LOAD DATA LOCAL INFILE '/run/shm/massive_insert' INTO TABLE gantt_jobs_resources")
+
+  $dbh.execute(query)
   t_load_data = Time.now - t1
   puts "t_file: #{t_file}"
   puts "t_load_data: #{t_load_data}"
@@ -306,9 +388,11 @@ end
 
 def oar_truncate_resources
 #  DB << "
+  rst_id = ""
+  rst_id = "RESTART IDENTITY" if $PG
   requests = "
-    TRUNCATE resources;
-    TRUNCATE resource_logs;
+    TRUNCATE resources #{rst_id};
+    TRUNCATE resource_logs #{rst_id};
     "
   multiple_requests_execute(requests)
 end
@@ -672,14 +756,16 @@ end
 oar_load_test_config
 oar_db_connect
 
+if defined?(Pry)=="constant"
+  binding.pry :quiet => true
+end
+
 if ($0=='irb')
   puts 'irb session detected, db connection launched'
 elsif (/oar_db_setting/ =~ $0)
   puts "oar_db_setting used as command"
   eval(ARGV[0])
 end
+
 # 50.times do |i| oar_job_insert(:res=>"resource_id=#{i}",:walltime=> 300) end
-
-
-
 

@@ -1,5 +1,5 @@
 (*pp cpp -P -w *)
-(* previous line is to ask OcamlMakefile to preprocess this file with cpp preprocesseur *)
+(* previous line is to ask OcamlMakefile to preprocess this file with cpp preprocesseur to support/switch between mysql/postgresql *)
 
 (* Postgresql very sensitive ? "type = \"default\""    "type = 'default'" *)
 
@@ -21,21 +21,82 @@ open Types
 open Interval
 open Helpers
 
-
+let max_nb_resources = 50000;;
 let connect () = DBD.connect ();;
 let disconnect dbh = DBD.disconnect dbh;;
 
-
+(*                      *)
+(* get resource from db *)
+(*                      *)
 let get_resource_list dbh  = 
   let query = "SELECT resource_id, network_address, state, available_upto FROM resources" in
   let res = execQuery dbh query in
   let get_one_resource a =
-    { resource_id = NoN int_of_string a.(0); (* resource_id *)
-      network_address = NoNStr a.(1); (* network_address *)
-      state = NoN rstate_of_string a.(2); (* state *)
+    { ord_r_id = NoN int_of_string a.(0);           (* use to suppport order_by *)
+      resource_id = NoN int_of_string a.(0);        (* resource_id *)
+      network_address = NoNStr a.(1);               (* network_address *)
+      state = NoN rstate_of_string a.(2);           (* state *)
       available_upto = NoN Int64.of_string a.(3) ;} (* available_upto *)
   in
     map res get_one_resource ;;
+
+(*                                                                 *)
+(* get resource and return from db with hierarchy information      *)
+(* label of fields must be provide for scattered hierarchy support *)
+(* returns:                                                        *)
+(*  - flat resource list: id state networks adress                 *)
+(*  - h_value_order:  hash(h_label) -> list(h_value)               *)
+(*  - hierarchy_info: array(h_labels)->hash(h_values)->list(id)    *)
+(*  - array ord2init_ids[r_order_by_id]=r_init_id                  *)
+(*  - array init2ord_ids[r_init_id]=r_order_by_id                  *) 
+
+let get_resource_list_w_hierarchy dbh (hy_labels: string list) scheduler_resource_order =
+  (* h_value_order hash stores for each hy label the occurence order of different hy values *)
+  let h_value_order = Hashtbl.create 10 in  List.iter (fun x -> Hashtbl.add h_value_order x [] ) hy_labels;
+  let ord2init_ids = Array.make max_nb_resources 0 and init2ord_ids = Array.make max_nb_resources 0  in (* arrays to translate resource id intial/ordered*) 
+  let i = ref 0 in (* count for ordererd resourced_id *) 
+
+  (* let hy_id_array = List.map (fun x -> Hashtbl.create 10) hy_labels in *)
+  (* list of hashs to compute scattered hierarchy *)
+
+  let hy_ary_labels = Array.of_list hy_labels in (* hy_ary_labels array need to populate h_value_order hash*) 
+  let ary = Array.make (List.length hy_labels) 0 in
+  let hy_id_array = Array.map (fun x -> Hashtbl.create 10) ary in
+  let query = "SELECT resource_id, network_address, state, available_upto, " ^ 
+               (Helpers.concatene_sep "," id hy_labels) ^ " FROM resources ORDER BY " ^
+               scheduler_resource_order in
+  let res = execQuery dbh query in
+  let get_one_resource a = 
+      (* populate hashes of hy_id_ary array and h_value_order hash *)
+      i := !i + 1;
+      for var = 4 to ((Array.length a)-1) do
+        (* For internal hierarchy level construction SQL fields are always intrepreted as string type. This have no particular impact *)
+        try (* to address null fiel whaen resource is not a part of this hierarchy level *)
+          let value = NoNStr a.(var) in 
+          let h_label = hy_ary_labels.(var-4) in
+          let ordered_values = try Hashtbl.find h_value_order h_label with Not_found -> failwith ("Can't Hashtbl.find h_value_order for " ^ h_label) in
+          (* test is value for this ressource this h_label is already present else add in the list *)
+          if (not (List.mem value ordered_values)) then
+            Hashtbl.replace h_value_order h_label (ordered_values @ [value]);
+        
+          let add_res_id h value = 
+            let lst_value = try Hashtbl.find h value with Not_found -> [] in
+              Hashtbl.replace h value (lst_value @ [!i])
+          in 
+            add_res_id (hy_id_array.(var-4)) value
+         with _ -> ()
+      done;
+      ord2init_ids.(!i) <- NoN int_of_string a.(0); 
+      init2ord_ids.(NoN int_of_string a.(0)) <- !i;
+      (* Conf.log ("i:"^ (string_of_int !i)); *)
+      (* Conf.log ("rid:"^(NoN id a.(0))); *)
+    { ord_r_id = !i;                                (* id resulting from order_by ordering *)
+      resource_id = NoN int_of_string a.(0);        (* resource_id *)
+      network_address = NoNStr a.(1);               (* network_address *)
+      state = NoN rstate_of_string a.(2);           (* state *)
+      available_upto = NoN Int64.of_string a.(3) ;} (* available_upto *)
+  in
+    ((map res get_one_resource), h_value_order, hy_id_array, ord2init_ids, init2ord_ids) ;;
 
 (*                                              *)
 (* get distinct availableupto                   *)
@@ -72,11 +133,12 @@ let get_job_suspended_sum_duration dbh job_id now =
     in
       summation 0L (fetch res);;
 
-(*                                                                             *)
+(*                                                                                         *)
 (* get_job_list_fairsharing: retrieve jobs to schedule with important relative information *)
-(*                                                                             *)
+(*                                                                                         *)
+(*  init2ord_ids need to id convertion due to order_by support                             *)
 
-let get_job_list_fairsharing dbh default_resources queue besteffort_duration security_time_overhead fairsharing_flag fs_jobids =
+let get_job_list_fairsharing dbh default_resources queue besteffort_duration security_time_overhead fairsharing_flag fs_jobids init2ord_ids =
   let flag_besteffort = if (queue == "besteffort") then true else false in
   let jobs = Hashtbl.create 1000 in      (* Hashtbl.add jobs jid ( blabla *)
   let constraints = Hashtbl.create 10 in (* Hashtable of constraints to avoid recomputing of corresponding interval list*)
@@ -86,19 +148,17 @@ let get_job_list_fairsharing dbh default_resources queue besteffort_duration sec
       default_resources
     else
       let and_sql = if ((j_ppt = "") || (r_ppt = "")) then "" else " AND " in 
-      let sql_cts = j_ppt ^ and_sql^ r_ppt in 
-        try Hashtbl.find constraints sql_cts
+      let sql_cts = j_ppt ^ and_sql^ r_ppt in  
+        try Hashtbl.find constraints sql_cts (* cache the result, a more general/elagant approach is to use memoize function *)
         with Not_found ->
           begin  
             let query = Printf.sprintf "SELECT resource_id FROM resources WHERE ( %s )"  sql_cts in
             let res = execQuery dbh query in 
-            let get_one_resource a = 
-              NoN int_of_string a.(0) (* resource_id *)
-            in
+            let get_one_resource a = init2ord_ids.(NoN int_of_string a.(0)) in (* resource_id and convert it*)
             let matching_resources = (map res get_one_resource) in 
             let itv_cts = ints2intervals matching_resources in
               Hashtbl.add constraints sql_cts itv_cts;
-              itv_cts
+            itv_cts
           end  
   in 
   let query_base = Printf.sprintf "
@@ -225,7 +285,7 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
     let first_res = function
       | None -> []
       | Some first_job -> 
- (*   if not (first_res = None) then *)
+ (*   if (not (first_res = None)) then *)
           let newjob_res a = 
 (* function
            | None -> failwith "pas glop"  
@@ -287,7 +347,7 @@ let get_scheduled_jobs_no_suspend dbh security_time_overhead =
 (* with suspend jobs support                                      *)
 (* TODO Remove used field in query ??? *)
 
-let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead now =
+let get_scheduled_jobs dbh init2ord_ids available_suspended_res_itvs security_time_overhead now =
    let query = "SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended, j.project
       FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
       WHERE
@@ -311,11 +371,11 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
                     add j_walltime_init (get_job_suspended_sum_duration dbh j_id now)
                   else
                     j_walltime_init
-                and j_state = NoNStr a.(5)                         (* job state *)
-                and j_moldable_id = NoN int_of_string a.(8)        (* moldable_id *)
-                and j_nb_res = NoN int_of_string a.(3)             (*resource_id *)
-                and j_user =  NoNStr a.(4)                         (* job_user *)
-                and j_project = NoNStr a.(9) in                    (* project *)
+                and j_state = NoNStr a.(5)                          (* job state *)
+                and j_moldable_id = NoN int_of_string a.(8)         (* moldable_id *)
+                and j_r_id = init2ord_ids.(NoN int_of_string a.(3)) (* resource_id translated to order_by_resource_id *)
+                and j_user =  NoNStr a.(4)                          (* job_user *)
+                and j_project = NoNStr a.(9) in                     (* project *)
                 ( {
                   jobid = j_id;
                   jobstate =  j_state;
@@ -330,13 +390,13 @@ let get_scheduled_jobs dbh available_suspended_res_itvs security_time_overhead n
                   user = j_user;
                   project = j_project;
                 }, 
-                  [j_nb_res]) 
+                  [j_r_id]) 
        in
 
         let get_job_res a =
-          let j_id = NoN int_of_string a.(0)         (* job_id *)
-          and j_nb_res =  NoN int_of_string a.(3) in (* resource_id *)
-          (j_id, j_nb_res)
+          let j_id = NoN int_of_string a.(0)                     (* job_id *)
+          and j_r_id = init2ord_ids.(NoN int_of_string a.(3)) in (* resource_id translated to order_by_resource_id *)
+          (j_id, j_r_id)
         in   
       let job_itv_res_setting state job_res =
           let  set_res =  ints2intervals job_res in
@@ -400,7 +460,7 @@ let save_assignt_one_job dbh job =
 (* Save jobs assignements into 2 SQL request                                                 *)
 (* Be careful this does not scale after beyond 1 millions of  (moldable_job_id,start_time)   *)
 (*                                                                                           *)
-let save_assigns_2_rqts conn jobs =
+let save_assigns_2_rqts conn jobs ord2init_ids=
   let  moldable_job_id_start_time j =
     (* Printf.sprintf "(%s, %s)" (ml2int j.moldable_id) (ml642int j.time_b) in *)
     "(" ^ (string_of_int j.moldable_id) ^ "," ^ (Int64.to_string j.time_b) ^ ")" in
@@ -415,7 +475,7 @@ let save_assigns_2_rqts conn jobs =
       let moldable_id = string_of_int j.moldable_id in 
       let resource_to_value res = 
 	      (* Printf.sprintf "(%s, %s)" moldable_id (ml2int res) in *)
-        "(" ^ moldable_id ^ "," ^ (string_of_int res) ^ ")" in
+        "(" ^ moldable_id ^ "," ^ (string_of_int ord2init_ids.(res)) ^ ")" in
         String.concat ", " (List.map resource_to_value (intervals2ints j.set_of_rs)) in 
 
 	    let query_job_resources =
@@ -433,13 +493,9 @@ let save_assigns_2_rqts conn jobs =
 (*                        *)
 (* Save jobs' assignemnts *)
 (*                        *)
-let save_assigns dbh jobs =
+let save_assigns dbh jobs ord2init_ids =
 (*  List.iter (fun x -> save_assignt_one_job dbh x) jobs;; *)
-  save_assigns_2_rqts dbh jobs;;
-
-
-
-
+  save_assigns_2_rqts dbh jobs ord2init_ids;;
 
 
 (*                                                  *)

@@ -62,14 +62,14 @@ let find_contiguous_slots_time slot_l job =
 	  	find_ctg_slots slot_l [] [];;
 
 (* No exclusive hierarchy assignement *)
-let find_resource_hierarchies_job itv_slot job =
+let find_resource_hierarchies_job itv_slot job hy_levels =
   let rec requests_iter result hys r_rqts cts = match (hys, r_rqts, cts) with
     | ([],[],[]) -> List.flatten (List.rev result) (* TODO to optimze ??? *)
     | (x::n,y::m,z::o) -> 
       begin 
-        let h = List.map (fun k -> try List.assoc k !hierarchy_levels with  Not_found -> failwith ("Can't find coresponding hierarchy level: "^k)) x in
+        let h = List.map (fun k -> try List.assoc k hy_levels with  Not_found -> failwith ("Can't find corresponding hierarchy level, HIERARCHY_LABELS configuration variable must be completed: "^k)) x in
         let itv_cts_slot = inter_intervals itv_slot z in
-        let sub_result = find_resource_hierarchies itv_cts_slot h y in
+        let sub_result = find_resource_hierarchies_scattered itv_cts_slot h y in
         match sub_result with
           | [] -> []
           | res -> requests_iter (res::result) n m o
@@ -83,15 +83,17 @@ let inter_slots slots =
     | [] -> itv
   in  iter_slots (List.tl slots) (List.hd slots).set_of_res;; 
 
+(*                                              *)
 (* find_first_suitable_contiguous_slots for job *) 
-
-let find_first_suitable_contiguous_slots slots j =
+(*                                              *)
+(* TODO; to modify to support BEST -2 and ALL -1      *)
+let find_first_suitable_contiguous_slots slots j hy_levels =
 
 	let rec find_suitable_contiguous_slots slot_l pre_slots job =
  
 	   	let (next_ctg_time_slot, prev_slots, remain_slots) = find_contiguous_slots_time slot_l job in
       let itv_inter_slots = inter_slots next_ctg_time_slot in
-      let itv_res_assignement = find_resource_hierarchies_job itv_inter_slots job in
+      let itv_res_assignement = find_resource_hierarchies_job itv_inter_slots job hy_levels in
 
       match  itv_res_assignement with
 
@@ -105,16 +107,11 @@ let find_first_suitable_contiguous_slots slots j =
 (*******************************************************)
 (* split slot accordingly with job resource assignment *)
 (* new slot A + B + C (A, B and C can be null)         *)
-
-(*
- ------
-|A|B|C|
-|A|J|C|
-|A|B|C|
- ------
-*)
-
-(* TODO ??? *)
+(*  ------
+   |A|B|C|
+   |A|J|C|
+   |A|B|C|
+    ------ *)
 
 (* generate A slot *) (* slot before job's begin *)
 let slot_before_job_begin slot job = {
@@ -146,51 +143,18 @@ let split_slots slots job =
 	let split_slot slt = 
 		if job.time_b > slt.time_s then (* AAA *)
 			if  (add (add job.time_b job.walltime) minus_one) > slt.time_e then
-(*
-					if slt.nb_free_res > job.nb_res then
-  TOREMOVE
-*)
 					 (* A+B *)
 						(slot_before_job_begin slt job) :: [(slot_during_job slt job)]
-(*
- TOREMOVE
-					else
-					 (* A *)
-						[slot_before_job_begin slt job]
-*)
 			else
-(* TOREMOVE					if slt.nb_free_res > job.nb_res then *)
-
 				 		(* A+B+C *)
 						(slot_before_job_begin slt job) :: (slot_during_job slt job) :: [(slot_after_job_end slt job)]
-
-(* TOREMOVE
-					else
-						(slot_before_job_begin slt job) :: [(slot_after_job_end slt job)]
-*)
 		else
 			if (add (add job.time_b  job.walltime) minus_one) >= slt.time_e then
-(* TOREMOVE
-				if slt.nb_free_res > job.nb_res then
-*)
-				 (* B *)
 					[slot_during_job slt job]
-(* TOREMOVE
-				else
-					[]
-*)
 			else
-(*	TOREMOVE
-				if slt.nb_free_res > job.nb_res then
-*)
 				 	(* B+C *) 
 					( slot_during_job slt job) :: [(slot_after_job_end slt job )]
-(*	TOREMOVE
-				else
-					[slot_after_job_end slt job]
-*)
 	in List.flatten (List.map (fun slot -> split_slot slot ) slots) ;;
-
 
 let resources_assign_job nb_res itv_l = 
 	let rec res_assign_job r itv_l res_itv_l = match itv_l with
@@ -202,65 +166,21 @@ let resources_assign_job nb_res itv_l =
 	in
 		res_assign_job nb_res itv_l [];;
 
-let assign_resources_job_split_slots job slots = 
-	let (resource_assigned, ctg_slots, prev_slots, remain_slots) = find_first_suitable_contiguous_slots slots job in
+(*                                                                                                 *)
+(* assign_resources_job_split_slots:                                                               *)
+(* Assign resources to a job and update the list of slots accordingly by splitting concerned slots *)
+(*                                                                                                 *)
+let assign_resources_job_split_slots job slots hy_levels = 
+	let (resource_assigned, ctg_slots, prev_slots, remain_slots) = find_first_suitable_contiguous_slots slots job hy_levels in
 	  job.set_of_rs <- resource_assigned;
 		(job, prev_slots @ (split_slots ctg_slots job) @ remain_slots);;
-
-(* previous schedule function, it's not use for ct support *)
-let schedule_jobs jobs slots = 
-	let rec assign_res_jobs jobs scheduled_jobs slot_list = match jobs with
-		| [] -> List.rev scheduled_jobs
-		| j::n -> let (job, updated_slots ) = assign_resources_job_split_slots j slot_list in assign_res_jobs n  (job::scheduled_jobs) updated_slots
-	in assign_res_jobs jobs [] slots;;
-
-(* is it use ? *)
-let schedule_id_jobs jids h_jobs slots = 
-	let rec assign_res_jobs j_ids scheduled_jobs slot_list = match j_ids with
-		| [] -> List.rev scheduled_jobs
-		| j_id::n -> let j = try Hashtbl.find h_jobs j_id with  Not_found -> failwith "Can't Hashtbl.find job" in 
-                (* Printf.printf "Job:\n%s\n" (job_to_string j); *)
-                 let (job, updated_slots ) = assign_resources_job_split_slots j slot_list in assign_res_jobs n  (job::scheduled_jobs) updated_slots
-	in assign_res_jobs jids [] slots;;
-
-
-(*                                                                                                  *)
-(* Schedule loop with support for jobs container - can be recursive (recursivity has not be tested) *)
-(*                                                                                                  *)
-(* let schedule_id_jobs_ct jids h_jobs h_slots = *)
- let schedule_id_jobs_ct h_slots h_jobs jids security_time_overhead =
-
-  let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (schedule_id_jobs_ct)" in
-  let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (schedule_id_jobs_ct)" in 
-  let test_type job job_type = try (true, (List.assoc job_type job.types)) with Not_found -> (false,"") in
-
-  let rec assign_res_jobs j_ids scheduled_jobs = match j_ids with
-		| [] -> List.rev scheduled_jobs
-		| jid::n -> let j = find_job jid in
-                let (test_inner, value_in) = test_type j "inner" in
-                  let num_set_slots = if test_inner then (int_of_string value_in) else 0 in
-(*                let num_set_slots = if test_inner then (try int_of_string value with _ -> 0) else 0 in *)(* job_error *)
-                  begin
-                    let (test_container, value) = test_type j "container" in
-                      let (job, updated_slots ) = assign_resources_job_split_slots j (find_slots num_set_slots) in 
-                        Hashtbl.replace h_slots num_set_slots updated_slots;
-                      if test_container then
-                        (* create new slot / container *) (* substract j.walltime security_time_overhead *)
-                        Hashtbl.add h_slots jid [{
-                              time_s = job.time_b; 
-                              time_e =  add job.time_b (sub job.walltime security_time_overhead) ; 
-                              set_of_res = job.set_of_rs}]; 
-                      assign_res_jobs n  (job::scheduled_jobs)
-                  end 
-  in
-    assign_res_jobs jids []
 
 (*                                                                                                  *)
 (* Schedule loop with support for jobs container - can be recursive (recursivity has not be tested) *)
 (* plus dependencies support                                                                        *)
-(* let schedule_id_jobs_ct jids h_jobs h_slots = *)
+(* * actual schedule function used *                                                                *)
 
- let schedule_id_jobs_ct_dep h_slots h_jobs h_jobs_dependencies h_req_jobs_status jids security_time_overhead =
+ let schedule_id_jobs_ct_dep h_slots h_jobs hy_levels h_jobs_dependencies h_req_jobs_status jids security_time_overhead =
 
   let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (schedule_id_jobs_ct)" in
   let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (schedule_id_jobs_ct)" in 
@@ -319,7 +239,7 @@ let schedule_id_jobs jids h_jobs slots =
                   begin
                     let (test_container, value) = test_type j "container" in
                       let current_slots = find_slots num_set_slots in
-                      let (ok, ns_jids, (job, updated_slots) ) = try (true, nosched_jids, assign_resources_job_split_slots j current_slots) 
+                      let (ok, ns_jids, (job, updated_slots) ) = try (true, nosched_jids, assign_resources_job_split_slots j current_slots hy_levels) 
                                                         with _ -> (false, (jid::nosched_jids), (j_init, current_slots)) 
 
                       in
@@ -438,3 +358,60 @@ let set_slots_with_prev_scheduled_jobs h_slots h_jobs ordered_id_jobs security_t
                 end  
   in
     loop_jobs ordered_id_jobs 
+
+
+(*************************************************************************************************************************************************)
+(* Old code                                                                                                                                      *)
+(*************************************************************************************************************************************************)
+(* TODO: rm, no more used ??? *)
+(* is it use ? *)
+let schedule_id_jobs jids h_jobs slots hy_levels = 
+	let rec assign_res_jobs j_ids scheduled_jobs slot_list = match j_ids with
+		| [] -> List.rev scheduled_jobs
+		| j_id::n -> let j = try Hashtbl.find h_jobs j_id with  Not_found -> failwith "Can't Hashtbl.find job" in 
+                (* Printf.printf "Job:\n%s\n" (job_to_string j); *)
+                 let (job, updated_slots ) = assign_resources_job_split_slots j slot_list hy_levels in assign_res_jobs n  (job::scheduled_jobs) updated_slots
+	in assign_res_jobs jids [] slots;;
+
+(* previous schedule function, it's not use for ct support *)
+let schedule_jobs jobs slots hy_levels = 
+	let rec assign_res_jobs jobs scheduled_jobs slot_list = match jobs with
+		| [] -> List.rev scheduled_jobs
+		| j::n -> let (job, updated_slots ) = assign_resources_job_split_slots j slot_list hy_levels in assign_res_jobs n  (job::scheduled_jobs) updated_slots
+	in assign_res_jobs jobs [] slots;;
+
+
+
+
+(*                                                                                                  *)
+(* Schedule loop with support for jobs container - can be recursive (recursivity has not be tested) *)
+(*                                                                                                  *)
+(* let schedule_id_jobs_ct jids h_jobs h_slots = *)
+(* TODO: rm, no more used ? *)
+ let schedule_id_jobs_ct h_slots h_jobs hy_levels jids security_time_overhead =
+
+  let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (schedule_id_jobs_ct)" in
+  let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (schedule_id_jobs_ct)" in 
+  let test_type job job_type = try (true, (List.assoc job_type job.types)) with Not_found -> (false,"") in
+
+  let rec assign_res_jobs j_ids scheduled_jobs = match j_ids with
+		| [] -> List.rev scheduled_jobs
+		| jid::n -> let j = find_job jid in
+                let (test_inner, value_in) = test_type j "inner" in
+                  let num_set_slots = if test_inner then (int_of_string value_in) else 0 in
+(*                let num_set_slots = if test_inner then (try int_of_string value with _ -> 0) else 0 in *)(* job_error *)
+                  begin
+                    let (test_container, value) = test_type j "container" in
+                      let (job, updated_slots ) = assign_resources_job_split_slots j (find_slots num_set_slots) hy_levels in 
+                        Hashtbl.replace h_slots num_set_slots updated_slots;
+                      if test_container then
+                        (* create new slot / container *) (* substract j.walltime security_time_overhead *)
+                        Hashtbl.add h_slots jid [{
+                              time_s = job.time_b; 
+                              time_e =  add job.time_b (sub job.walltime security_time_overhead) ; 
+                              set_of_res = job.set_of_rs}]; 
+                      assign_res_jobs n  (job::scheduled_jobs)
+                  end 
+  in
+    assign_res_jobs jids []
+
