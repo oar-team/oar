@@ -742,7 +742,7 @@ class Rule
     end
 
     description_end = false
-    @script.each_with_index do |line,line_index|
+    @script.each_line.with_index do |line,line_index|
       if line_index == 0                   # title or object of the admission rule
         str = line[0..no_char]
         str += mark_more_text if line.length > no_char+2
