@@ -30,6 +30,11 @@ api_setup() {
         ${OARCONFDIR}/api_html_postform_rule.pl \
         0644 ${OAROWNER}
 
+    install_conffile \
+        ${EXAMPLEDIR}/stress_factor.sh \
+        ${OARCONFDIR}/stress_factor.sh \
+        0700 ${OAROWNER}
+
     # install the apache2 configuration file
     if [ -d ${APACHECONFDIR}/conf.d ]; then
         # Check if an old configuration file already exists

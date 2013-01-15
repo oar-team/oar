@@ -625,3 +625,19 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 # between "resources" and "resources/", it may not work with some libraries 
 # like "ruby Restfully".
 #API_ABSOLUTE_URIS=1
+
+# Api stress_factor script
+# This script should return at least a real value between 0 and 1 that is given by 
+# the OAR api for the "GET /stress_factor" URI.
+# Warning: this script is run by root and the output is parsed as a list of
+# variables as is!
+# - A stress_factor of 0 means that everything is fine
+# - A stress_factor of 1 (or more) means that the resources manager is under
+# stress. That generally means that it doesn't want to manage anymore jobs!
+# - Any value between 0 and 1 is allowed to define the level of stress.
+# It allows the administrator to define custom criterias to tell other systems
+# (those using the API) that they maybe should reduce or stop to query this
+# OAR system for a while. So, this script is meant to be polled regularly.
+# The script should return at least the variable "GLOBAL_STRESS=" but it
+# may also provide other custom defined values.
+#API_STRESS_FACTOR_SCRIPT="/etc/oar/stress_factor.sh"

@@ -2319,18 +2319,37 @@ SWITCH: for ($q) {
   #
   #{{{ GET /stress_factor/<cluster_name> : return the stress factor of the given cluster
   #
-  $URI = qr{^/stress_factor/(\w+)\.*(yaml|json|html)*$};
+  $URI = qr{^/stress_factor\.*(yaml|json|html)*$};
   OAR::API::GET( $_, $URI ) && do {
         $_->path_info =~ m/$URI/;
-        my $cluster = $1;
-    my $ext = OAR::API::set_ext($q,$2);
+    my $ext = OAR::API::set_ext($q,$1);
     (my $header, my $type) = OAR::API::set_output_format($ext);
 
-    #TODO!
+    my $stress_factor_script="/etc/oar/stress_factor.sh";
+    if (is_conf("API_STRESS_FACTOR_SCRIPT")){ $stress_factor_script=get_conf("API_STRESS_FACTOR_SCRIPT"); }
+
+    my $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"$stress_factor_script\"";
+    my $cmdRes = `$cmd 2>&1`;
+
+    my %output=(  "api_timestamp" => time(),
+                  "links" => [
+                      { 'rel' => 'self' ,
+                        'href' => OAR::API::htmlize_uri(OAR::API::make_uri("stress_factor",$ext,0),$ext)
+                      } ]
+               );
+
+    my @lines=split("\n",$cmdRes);
+
+    foreach my $line (@lines) {
+      if ($line =~ qr{^\s*(.+)\s*=\s*(.+)\s*}) {
+        my ($key,$val) = ($1,$2);
+        $output{$key}=$val;
+      }
+    }
 
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print OAR::API::export($stress_factor,$ext);
+    print OAR::API::export(\%output,$ext);
     last;
   };
   #}}}
