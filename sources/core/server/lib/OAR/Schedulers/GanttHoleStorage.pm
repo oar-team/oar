@@ -61,17 +61,20 @@ sub new($$){
     my $empty_vec = '';
     vec($empty_vec, $max_resource_number, 1) = 0;
     
-    my $result =[
-                    [
-                        0,                              # start time of this hole
-                        [                               # ref of a structure which contains hole stop times and corresponding resources (ordered by end time)
-                            [$Infinity, $empty_vec]
-                        ],
-                        $empty_vec,                     # Store all inserted resources (Only for the first Gantt hole)
-                        $empty_vec,                     # Store empty vec with enough 0 (Only for the first hole)
-                        $minimum_hole_duration,         # minimum time for a hole
-                        [$Infinity,$Infinity]           # times that find_first_hole must not go after
-                    ]
+    my $result =[                               # Gantt structure: a Gantt is defined as the list of the biggest holes
+                    [                           # (rectange shapes) where a job could be placed (holes obviously can overlap)
+                        0,                      # Each item of this subarray is a set of holes beginning a same time: t_start
+                        [                       # The set is stored as a sub-subarray of holes sorted by end time
+                            [                   # Holes are stored as arrays of 2 elements, with:
+                                $Infinity,      # - t_end: end time for the hole
+                                $empty_vec      # - vec: resource vector for the hole
+                            ]
+                        ],                      # The next 4 fields are only set in the first hole set (apply to the gantt):
+                        $empty_vec,             # - base resources vector for the gantt
+                        $empty_vec,             # - reference empty vec (filled with 0)
+                        $minimum_hole_duration, # - minimum duration time for a hole (see oar.conf)
+                        [$Infinity,$Infinity]   # - [t_start,t_end] of the last hole inpected in the previous find_first_hole
+                    ]                           #   calls, if a timeout was triggered.
                 ];
     
     return($result);
@@ -103,6 +106,101 @@ sub new_with_1_hole($$$$$$){
     $gantt->[1]->[1] = [[($date + $duration), $resources_vec]];
 
     return($gantt);
+}
+
+# Build a new gantt from the merger of two existing gantts
+# Algo: 
+# (1) First convert the gantts to stripes defined by the start and end times of all jobs
+#     The 2 striped gantts are then easy merged: for every jobs, gantt_stripe(t) |= stripe(job, t)
+# (2) Then convert the striped gantt back to the original gantt structure
+# arg : gantt ref1, gantt ref2
+sub merge_clone($$) {
+    my ($gantt1,$gantt2) = @_;
+    #pretty_print($gantt1);
+    #pretty_print($gantt2);
+
+    # Sanity check: are those 2 gantts compatible ?
+    if ($gantt1->[0]->[2] ne $gantt2->[0]->[2]) {
+    }
+
+    # Initialize the stipes by retrieving all jobs start and end times.
+    my $empty_vec = $gantt1->[0]->[3];
+    my $stripes = {};
+    foreach my $h (@$gantt1,@$gantt2) {
+        $stripes->{$h->[0]} =  $empty_vec;
+        foreach my $hh (@{$h->[1]}) {
+            $stripes->{$hh->[0]} = $empty_vec;
+        }
+    }
+    #foreach my $l (sort keys(%$stripes)) {
+    #   print(strftime("%F_%T",localtime($l)).": ".unpack("b*", $stripes->{$l})."\n");
+    #}
+
+    # Fill the strips with all jobs
+    foreach my $h (@$gantt1,@$gantt2) {
+        my $t0 = $h->[0];
+        foreach my $hh (@{$h->[1]}) {
+            my $t1 = $hh->[0];
+            foreach my $l (sort keys(%$stripes)) {
+                if ($t0 < $l and $l <= $t1) {
+                    #print("-> ".strftime("%F_%T",localtime($l))." in ]".strftime("%F_%T",localtime($t0)).", ".strftime("%F_%T",localtime($t1))."] = ".unpack("b*", $stripes->{$l})." | ".unpack("b*", $hh->[1])."\n");
+                    $stripes->{$l} |= ($hh->[1]);
+                    #foreach my $l (sort keys(%$stripes)) {
+                    #    print(strftime("%F_%T",localtime($l)).": ".unpack("b*", $stripes->{$l})."\n");
+                    #}
+                }
+            }
+        }
+    }
+    #print("emtpy_vec= ".unpack("b*", $empty_vec)."\n");
+    #my $t=0;
+    #foreach my $l (sort keys(%$stripes)) {
+    #    print("t=".$t++." l=".strftime("%F_%T",localtime($l)).": ".unpack("b*", $stripes->{$l})."\n");
+    #}
+    
+    # Convert the striped gantt back to the original structure
+    my $merged_gantt = [];
+    my @times=sort keys(%$stripes);
+    # Try and find new hole start time for every stripe
+    for(my $t=0;$t<$#times;$t++) {
+        my $holes = [];
+        #print("test possible hole starting at $t (".strftime("%F_%T",localtime($times[$t])).") ? : ".unpack("b*", (~ $stripes->{$times[$t]} & $stripes->{$times[$t+1]}))."\n");
+        # We have a new hole if for any resource r, vec(r,t-1)=1 and vec(r,t)=0
+        if ((~ $stripes->{$times[$t]} & $stripes->{$times[$t+1]}) ne $empty_vec) {
+            #print "YES: hole at starttime: t=$t l=".$times[$t]." (".strftime("%F_%T",localtime($times[$t])).")\n";
+            my $vec = $stripes->{$times[$t+1]};
+            # Compute all holes with this start time, as long as the hole vector is not empty
+            while ($vec ne $empty_vec) {
+                #print("vec= ".unpack("b*", $vec)." \@t=".($t+1)." l=".$times[$t+1]." (".strftime("%F_%T",localtime($times[$t+1])).")\n");
+                my $tt = $t+1;
+                # Try and extend the hole to the next stripes: ok if for any r, vec(r,current_hole) => vec(r,tt+1)
+                while (($tt < $#times) and ((~ $vec | $stripes->{$times[$tt+1]}) eq ~ $empty_vec)) {
+                    #print("ok-> ".unpack("b*", $stripes->{$times[$tt]})." tt=".($tt+1)." l=".$times[$tt+1]." (".strftime("%F_%T",localtime($times[$tt+1])).")\n");
+                    $tt++;
+                }
+                # We now reached the end time for this hole
+                #print "endtime: $tt l=".$times[$tt]." (".strftime("%F_%T",localtime($times[$tt])).")\n";
+                push @$holes, [$times[$tt], $vec];
+                # Test if we did not reach the end of the stripes
+                if ($tt < $#times) {
+                    $vec &= $stripes->{$times[$tt+1]};
+                } else {
+                    $vec = $empty_vec;
+                }
+            }
+            # Store the new start time with its holes
+            push @$merged_gantt, [$times[$t], $holes, undef, undef, undef, undef ];
+        #} else {
+        #    print "NOP: no hole at starttime: t=$t l=".$times[$t]." (".strftime("%F_%T",localtime($times[$t])).")\n";
+        }
+    }
+    # Well done, now fill the global values of the gantt and return
+    $merged_gantt->[0]->[2] = $gantt1->[0]->[2];
+    $merged_gantt->[0]->[3] = $gantt1->[0]->[3];
+    $merged_gantt->[0]->[4] = $gantt1->[0]->[4];
+    $merged_gantt->[0]->[5] = $gantt1->[0]->[5];
+    #pretty_print($merged_gantt);
+    return $merged_gantt;
 }
 
 

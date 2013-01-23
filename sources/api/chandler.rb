@@ -49,7 +49,7 @@ printf ("\033[2K")
 used_resources={}
 jobs['items'].each do |job|
   job['resources'].each do |r|
-    used_resources[r['id']]=1
+    used_resources[r['id']]=1 if r['status']=="assigned"
   end
 end
 
