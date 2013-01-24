@@ -158,7 +158,7 @@ foreach my $i (@{$order}){
             if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
                 oar_debug("[$scheduler_name] [$i] inner job: using container $inner_id\n");
             }else{
-                oar_debug("[$scheduler_name] [$i] inner job: container $inner_id does not exist, use container 0.\n");
+                oar_debug("[$scheduler_name] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
                 $inner_id = 0;
             }
         }
@@ -347,9 +347,9 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         $inner_id = $1;
         if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
-            oar_debug("[$scheduler_name] [$i] container job: using container $inner_id\n");
+            oar_debug("[$scheduler_name] [$i] inner job: using container $inner_id\n");
         }else{
-            oar_debug("[$scheduler_name] [$i] container job: container $inner_id does not exist.\n");
+            oar_debug("[$scheduler_name] [$i] inner job: container $inner_id does not exist.\n");
             OAR::IO::set_job_message($base,$i,"Container $inner_id does not exist");
             OAR::IO::set_job_scheduler_info($base,$i,"Container $inner_id does not exist");
             $inner_id=0;
@@ -357,9 +357,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
     }
     if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
-        oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,)\n");
-        $container_id = $types->{container};
-        oar_debug("[$scheduler_name] [$i] Job is a container\n");
+        oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,) and is a container\n");
     } elsif (defined($types->{set_placeholder})){ # A set_placeholder job cannot be use_placeholder or timesharing. 
         $set_placeholder_name = $types->{set_placeholder};
         oar_debug("[$scheduler_name] [$i] job is ($inner_id,s:$set_placeholder_name,,)\n");
