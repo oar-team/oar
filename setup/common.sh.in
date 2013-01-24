@@ -37,6 +37,7 @@ create_oar_user() {
                         --shell /bin/bash \
                         --password "*" \
                         ${OAROWNER} >/dev/null 2>&1
+                passwd -u ${OAROWNER} >/dev/null 2>&1 ||true
                 ;;
         esac
         echo "..done"
