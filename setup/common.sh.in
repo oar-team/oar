@@ -37,6 +37,7 @@ create_oar_user() {
                         --shell /bin/bash \
                         --password "*" \
                         ${OAROWNER} >/dev/null 2>&1
+                passwd -u ${OAROWNER} >/dev/null 2>&1 ||true
                 ;;
         esac
         echo "..done"
@@ -84,7 +85,9 @@ bash_oar() {
 }
 
 bash_oar
-EOF
+EOF 
+    touch ${OARHOMEDIR}/.bash_profile
+    touch ${OARHOMEDIR}/.bashrc
     if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bash_profile; then
         echo '' >> ${OARHOMEDIR}/.bash_profile
         echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bash_profile
