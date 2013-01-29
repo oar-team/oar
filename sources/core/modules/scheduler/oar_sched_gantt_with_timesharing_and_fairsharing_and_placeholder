@@ -201,7 +201,7 @@ foreach my $i (@{$order}){
             }
         }
         if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
-            oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,)\n");
+            oar_debug("[$scheduler_name] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
             $container_id = $i;
             oar_debug("[$scheduler_name] [$i] container job: create gantt ($container_id,,,)\n");
             $Gantt->{$container_id}->{""}->{""}->{""} = 
@@ -296,7 +296,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $j = $jobs[$job_index];
     my $i = $j->{job_id};
     $job_index ++;
-    oar_debug("[$scheduler_name] [$i] start scheduling (Karma note = ".karma($j).")\n");
+    oar_debug("[$scheduler_name] [$i] Start scheduling job (Karma note = ".karma($j).")\n");
     
     my $scheduler_init_date = $current_time;
     # Search for dependencies
@@ -353,7 +353,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
     }
     if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
-        oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,) and is a container\n");
+        oar_debug("[$scheduler_name] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
     } else {
         ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) =
             OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $j->{job_user}, $j->{job_name}, $types, $inner_id, "[$scheduler_name] [$i]");
@@ -370,7 +370,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                     chop($num);
                     if ($num =~ /^\d+$/){
                         $Token_values{$t} = $num;
-                        oar_debug("[$scheduler_name] [$i]  $Token_scripts->{$t} returns $num\n");
+                        oar_debug("[$scheduler_name] [$i] $Token_scripts->{$t} returns $num\n");
                     }else{
                         oar_warn("[$scheduler_name] [$i] The token script $Token_scripts->{$t} does not return a number ($num).\n");
                     }
@@ -420,12 +420,11 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
         my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;
         $gantt_timeout = $Minimum_timeout_per_job if ($gantt_timeout <= ($timeout / 8));
-        oar_debug("[$scheduler_name] [$i] find_first_hole in gantt ($inner_id,$use_placeholder_name,$timesharing_user,$timesharing_name) with a timeout of $gantt_timeout\n");
+        oar_debug("[$scheduler_name] [$i] Find first hole in gantt ($inner_id,$use_placeholder_name,$timesharing_user,$timesharing_name) with a timeout of $gantt_timeout\n");
         my @hole;
         if ($Max_nb_processes <= 1){
             @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$use_placeholder_name}->${$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
         }else{
-            oar_debug("[$scheduler_name] [$i] using Gantt PARALLEL algorithm\n");
             @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
         }
         my @resources;
@@ -444,7 +443,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }
 
     # Choose moldable job which will finish first
-    oar_debug("[$scheduler_name] [$i] choosing moldable job which will finish first\n");
+    oar_debug("[$scheduler_name] [$i] Choosing moldable job which will finish first\n");
     my $index_to_choose = -1;
     my $best_stop_time;
     for (my $m=0; $m <= $#moldable_results; $m++){
@@ -458,7 +457,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }
     if ($index_to_choose >= 0){
         # Job is successfully scheduled
-        oar_debug("[$scheduler_name] [$i] job is successfully scheduled\n");
+        oar_debug("[$scheduler_name] [$i] Job is successfully scheduled\n");
         my $vec = '';
         foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
             vec($vec, $r, 1) = 1;
@@ -477,6 +476,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         #update database
         push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
         OAR::IO::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
+        oar_debug("[$scheduler_name] [$i] Add job in database\n");
 
         # Feed message job field
         my @type_list = sort(keys(%{$types}));
@@ -492,13 +492,13 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             }
         }
     }else{
-        oar_debug("[$scheduler_name] [$i] job couldn't be scheduled\n");
-        my $message = "cannot find enough resources for job $i";
+        oar_debug("[$scheduler_name] [$i] Job couldn't be scheduled\n");
+        my $message = "Cannot find enough resources for job $i";
         OAR::IO::set_job_message($base,$i,$message);
         OAR::IO::set_job_scheduler_info($base,$i,$message);
         oar_debug("[$scheduler_name] [$i] $message\n");
     }
-    oar_debug("[$scheduler_name] [$i] end scheduling\n");
+    oar_debug("[$scheduler_name] [$i] End scheduling job\n");
 }
 oar_debug("[$scheduler_name] End phase 2 (waiting jobs)\n");
 
