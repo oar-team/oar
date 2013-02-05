@@ -8,13 +8,13 @@
 $site = array_key_exists('site',$_GET)?$_GET['site']:"grenoble";
 $gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
 $gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
-$gantt_relative_start_date = array_key_exists('relative_start',$_GET)?($_GET['relative_start']):86400;
-$gantt_relative_stop_date = array_key_exists('relative_stop',$_GET)?($_GET['relative_stop']):86400;
+$gantt_relative_start_date = (array_key_exists('relative_start',$_GET) or ($_GET['relative_start'] > 0))?($_GET['relative_start']):86400;
+$gantt_relative_stop_date = (array_key_exists('relative_stop',$_GET) or ($_GET['relative_stop'] > 0))?($_GET['relative_stop']):86400;
 $resource_filter = array_key_exists('filter', $_GET)?$_GET['filter']:"";
 
 $mysql_server="localhost";
-$mysql_user="oar_ro";
-$mysql_passwd="oar";
+$mysql_user="oarreader";
+$mysql_passwd="read";
 $mysql_db="oar";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -33,13 +33,13 @@ $CONF['hierarchy_left_align'] = 110;
 $CONF['gantt_left_align'] = 160;
 $CONF['gantt_width'] = 1000;
 $CONF['gantt_min_job_width_for_label'] = 0;
-$CONF['resource_hierarchy'] = array('cluster','host','cpu','core');
-$CONF['resource_properties'] = array('deploy', 'cpuset', 'besteffort', 'network_address', 'host', 'cpu', 'core','type');
+$CONF['resource_hierarchy'] = array('machine','host','cpu','core');
+$CONF['resource_properties'] = array('core', 'deploy', 'cpuset', 'besteffort', 'ip', 'disktype', 'nodemodel', 'memnode', 'ethnb', 'machine', 'cpuarch', 'cpu', 'cpucore', 'memcpu', 'network_address', 'virtual', 'host', 'rconsole', 'cputype', 'switch', 'cpufreq', 'type');
 $CONF['resource_labels'] = array('host','cpuset');
 $CONF['state_colors'] = array('Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
 $CONF['job_colors'] = array('besteffort' => 'url(#besteffortPattern)', 'deploy' => 'url(#deployPattern)', 'container' => 'url(#containerPattern)', 'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 'exclusive' => 'url(#exclusivePattern)', 'reboot' => 'url(#rebootPattern)', 'set_placeholder=\w+' => 'url(#placeholderPattern)');
-$CONF['resource_sort_key'] = 'host';
-$CONF['resource_sort_regex'] = '/^(\w+)-(\d+)\./';
+$CONF['short_hostname_regex'] = '/^([^.]+)\..*$/';
+$CONF['cmp_hostname_regex'] = '/^[^.\d]+(\d+)\..*$/';
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions
@@ -58,28 +58,16 @@ function date2px($date) {
 }
 
 // sort function for resource_ids
-function resource_id_sort($r1, $r2) {
+function resource_id_sort($r2, $r1) {
 	global $CONF;
-	$m1 = array();
-	$m2 = array();
-	preg_match($CONF['resource_sort_regex'], $r1->resources[$CONF['resource_sort_key']]->id, $m1);
-	preg_match($CONF['resource_sort_regex'], $r2->resources[$CONF['resource_sort_key']]->id, $m2);
-	if (count($m1) >= 2) {
-		return ($m1[1] > $m2[1]) or (($m1[1] == $m2[1]) and ($m1[2] > $m2[2])) or (($m1[1] == $m2[1]) and ($m1[2] == $m2[2]) and ($r1->cpuset > $r2->cpuset));
-	} elseif (count($m1) >= 1) {
-		return ($m1[1] > $m2[1])  or (($m1[1] == $m2[1]) and ($r1->cpuset > $r2->cpuset));
-	} else {
-		return ($r1->cpuset > $r2->cpuset);
+	foreach ($CONF['resource_hierarchy'] as $type) {
+		if (($cmp = $r1->resources[$type]->cmp($r2->resources[$type])) != 0) {
+			return $cmp;
+		}
 	}
+	return ($r1->cpuset - $r2->cpuset);
 }
 
-// display function for resource labels
-function custom_resource_label($r) {
-	if ($r->type == 'host') {
-		return preg_replace('/^([^.]+)\..*$/','$1',$r->id);
-	}
-	return $r->id;
-}
 ////////////////////////////////////////////////////////////////////////////////
 // Some classes to handle data
 ////////////////////////////////////////////////////////////////////////////////
@@ -223,7 +211,7 @@ class ResourceId {
 		if ($type == 'cpuset') {
 			return $this->cpuset;
 		} else {
-			return custom_resource_label($this->resources[$type]);
+			return $this->resources[$type]->label();
 		}
 	}
 	function svg_text() {
@@ -315,6 +303,30 @@ class Resource {
 		} else {
 			return $this->parent->svg_hierarchy_text()."|".$this->type.": ".$this->id;
 		}
+			
+	}
+	function label() {
+		global $CONF;
+		if ($this->type == 'host') {
+			return preg_replace($CONF['short_hostname_regex'],'$1',$this->id);
+		}
+		return $this->id;
+	}
+	function cmp($r) {
+		global $CONF;
+		if ($this->type == 'host') {
+			$v1 = preg_replace($CONF['cmp_hostname_regex'],'$1',$this->id);
+			$v2 = preg_replace($CONF['cmp_hostname_regex'],'$1',$r->id);
+		} else {
+			$v1 = $this->id;
+			$v2 = $r->id;
+		}
+		if ($v1 < $v2) {
+			return 1;
+		} elseif ($v2 < $v1) {
+			return -1;
+		}
+		return 0;
 	}
 }
 
@@ -366,7 +378,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 mysql_free_result($result);
 
 // sort resource_ids
-//uasort($resource_ids, "resource_id_sort");
+uasort($resource_ids, "resource_id_sort");
 
 // Retrieve the states of resources
 $query = <<<EOT
