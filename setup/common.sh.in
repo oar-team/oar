@@ -85,7 +85,7 @@ bash_oar() {
 }
 
 bash_oar
-EOF 
+EOF
     touch ${OARHOMEDIR}/.bash_profile
     touch ${OARHOMEDIR}/.bashrc
     if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bash_profile; then
