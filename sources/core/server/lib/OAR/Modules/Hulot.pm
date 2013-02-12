@@ -28,7 +28,6 @@ use OAR::Modules::Judas
   qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
 use OAR::WindowForker;
 use IPC::SysV qw(IPC_PRIVATE IPC_RMID IPC_CREAT S_IRUSR S_IWUSR IPC_NOWAIT);
-use OAR::Schedulers::Scheduler;
 
 #use Devel::Cycle;
 #use Devel::Peek;
