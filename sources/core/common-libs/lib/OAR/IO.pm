@@ -710,12 +710,12 @@ sub get_job_current_hostnames($$) {
 
 # get_job_current_resources
 # returns the list of resources associated to the job passed in parameter
-# parameters : base, jobid
+# parameters : base, moldable_id
 # return value : list of resources
 # side effects : /
 sub get_job_current_resources($$$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $moldable_id= shift;
     my $not_type_list = shift;
 
     my $tmp_str;
@@ -723,7 +723,7 @@ sub get_job_current_resources($$$) {
         $tmp_str = "FROM assigned_resources
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                        assigned_resources.moldable_job_id = $jobid";
+                        assigned_resources.moldable_job_id = $moldable_id";
     }else{
         my $type_str;
         foreach my $t (@{$not_type_list}){
@@ -734,7 +734,7 @@ sub get_job_current_resources($$$) {
         $tmp_str = "FROM assigned_resources,resources
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                        assigned_resources.moldable_job_id = $jobid AND
+                        assigned_resources.moldable_job_id = $moldable_id AND
                         resources.resource_id = assigned_resources.resource_id AND
                         resources.type NOT IN (".$type_str.")";
     }
@@ -752,11 +752,11 @@ sub get_job_current_resources($$$) {
 
 # get_job_cpuset_uid
 # returns the uid of the user for this job
-# parameters : base, jobid, resource type, cpuset field
+# parameters : base, moldable_id, resource type, cpuset field
 # return value : number
 sub get_job_cpuset_uid($$$$) {
     my $dbh = shift;
-    my $mjobid= shift;
+    my $moldable_id= shift;
     my $resource_type = shift;
     my $cpuset_field = shift;
 
@@ -764,7 +764,7 @@ sub get_job_cpuset_uid($$$$) {
                                 FROM jobs, resources, assigned_resources
                                 WHERE
                                     resources.type = \'$resource_type\' AND
-                                    assigned_resources.moldable_job_id = $mjobid AND
+                                    assigned_resources.moldable_job_id = $moldable_id AND
                                     assigned_resources.resource_id = resources.resource_id 
                                 ORDER BY resources.resource_id ASC
                                 LIMIT 1");
@@ -779,17 +779,17 @@ sub get_job_cpuset_uid($$$$) {
 
 # get_job_resources
 # returns the list of resources associated to the job passed in parameter
-# parameters : base, jobid
+# parameters : base, moldable_id
 # return value : list of resources
 # side effects : /
 sub get_job_resources($$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $moldable_id= shift;
 
     my $sth = $dbh->prepare("SELECT resource_id as resource
                              FROM assigned_resources
                              WHERE 
-                                moldable_job_id = $jobid
+                                moldable_job_id = $moldable_id
                              ORDER BY resource_id ASC");
     $sth->execute();
     my @res = ();
@@ -802,17 +802,17 @@ sub get_job_resources($$) {
 
 # get_job_network_address
 # returns the list of network_address associated to the job passed in parameter
-# parameters : base, jobid
+# parameters : base, moldable_id
 # return value : list of resources
 # side effects : /
 sub get_job_network_address($$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $moldable_id= shift;
 
     my $sth = $dbh->prepare("SELECT DISTINCT(resources.network_address) as hostname
                              FROM assigned_resources, resources
                              WHERE 
-                                assigned_resources.moldable_job_id = $jobid AND
+                                assigned_resources.moldable_job_id = $moldable_id AND
                                 resources.resource_id = assigned_resources.resource_id AND
                                 resources.type = \'default\'
                              ORDER BY resources.network_address ASC");
@@ -851,17 +851,17 @@ sub get_job_resources_properties($$) {
 
 # get_job_host_log
 # returns the list of hosts associated to the moldable job passed in parameter
-# parameters : base, moldablejobid
+# parameters : base, moldable_id
 # return value : list of distinct hostnames
 # side effects : /
 sub get_job_host_log($$) {
     my $dbh = shift;
-    my $moldablejobid = shift;
+    my $moldable_id = shift;
     
     my $sth = $dbh->prepare("   SELECT resources.network_address, resources.resource_id
                                 FROM assigned_resources, resources
                                 WHERE
-                                    assigned_resources.moldable_job_id = $moldablejobid AND
+                                    assigned_resources.moldable_job_id = $moldable_id AND
                                     resources.resource_id = assigned_resources.resource_id AND
                                     resources.network_address != \'\' AND
                                     resources.type = \'default\'
@@ -5691,7 +5691,7 @@ sub is_node_desktop_computing($$){
 #                   }
 #               ],
 #               walltime,
-#               moldable_job_id
+#               moldable_id
 #           ]
 sub get_resources_data_structure_current_job($$){
     my $dbh = shift;
