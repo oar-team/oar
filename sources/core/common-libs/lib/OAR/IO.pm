@@ -667,12 +667,12 @@ sub get_jobs_with_given_properties($$) {
 # side effects: /
 sub is_job_desktop_computing($$){
     my $dbh = shift;
-    my $jobid = shift;
+    my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT COUNT(desktop_computing)
                                 FROM assigned_resources, resources, jobs
                                 WHERE
-                                    jobs.job_id = $jobid AND
+                                    jobs.job_id = $job_id AND
                                     assigned_resources.moldable_job_id = jobs.assigned_moldable_job AND
                                     assigned_resources.resource_id = resources.resource_id AND
                                     resources.desktop_computing = \'YES\'
@@ -689,14 +689,14 @@ sub is_job_desktop_computing($$){
 # side effects: /
 sub is_timesharing_for_2_jobs($$$){
     my $dbh = shift;
-    my $jobid1 = shift;
-    my $jobid2 = shift;
+    my $job_id1 = shift;
+    my $job_id2 = shift;
 
     # this request returns exactly 1 row if and only if both jobs are timesharing compatible
     my $sth = $dbh->prepare("SELECT 1
                              FROM jobs j, job_types t
                              WHERE
-                               j.job_id IN ($jobid1, $jobid2) AND
+                               j.job_id IN ($job_id1, $job_id2) AND
                                j.job_id = t.job_id AND
                                t.type like 'timesharing=%'
                              GROUP BY
@@ -725,7 +725,7 @@ sub is_timesharing_for_2_jobs($$$){
 # side effects : /
 sub get_job_current_hostnames($$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $job_id= shift;
 
     my $sth = $dbh->prepare("SELECT resources.network_address as hostname
                              FROM assigned_resources, resources, moldable_job_descriptions
@@ -734,7 +734,7 @@ sub get_job_current_hostnames($$) {
                                 AND moldable_job_descriptions.moldable_index = \'CURRENT\'
                                 AND assigned_resources.resource_id = resources.resource_id
                                 AND moldable_job_descriptions.moldable_id = assigned_resources.moldable_job_id
-                                AND moldable_job_descriptions.moldable_job_id = $jobid
+                                AND moldable_job_descriptions.moldable_job_id = $job_id
                                 AND resources.network_address != \'\'
                                 AND resources.type = \'default\'
                              GROUP BY resources.network_address
@@ -750,12 +750,12 @@ sub get_job_current_hostnames($$) {
 
 # get_job_current_resources
 # returns the list of resources associated to the job passed in parameter
-# parameters : base, jobid
+# parameters : base, moldable_id
 # return value : list of resources
 # side effects : /
 sub get_job_current_resources($$$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $moldable_id= shift;
     my $not_type_list = shift;
 
     my $tmp_str;
@@ -763,7 +763,7 @@ sub get_job_current_resources($$$) {
         $tmp_str = "FROM assigned_resources
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                        assigned_resources.moldable_job_id = $jobid";
+                        assigned_resources.moldable_job_id = $moldable_id";
     }else{
         my $type_str;
         foreach my $t (@{$not_type_list}){
@@ -774,7 +774,7 @@ sub get_job_current_resources($$$) {
         $tmp_str = "FROM assigned_resources,resources
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                        assigned_resources.moldable_job_id = $jobid AND
+                        assigned_resources.moldable_job_id = $moldable_id AND
                         resources.resource_id = assigned_resources.resource_id AND
                         resources.type NOT IN (".$type_str.")";
     }
@@ -792,11 +792,11 @@ sub get_job_current_resources($$$) {
 
 # get_job_cpuset_uid
 # returns the uid of the user for this job
-# parameters : base, jobid, resource type, cpuset field
+# parameters : base, moldable_id, resource type, cpuset field
 # return value : number
 sub get_job_cpuset_uid($$$$) {
     my $dbh = shift;
-    my $mjobid= shift;
+    my $moldable_id= shift;
     my $resource_type = shift;
     my $cpuset_field = shift;
 
@@ -804,7 +804,7 @@ sub get_job_cpuset_uid($$$$) {
                                 FROM jobs, resources, assigned_resources
                                 WHERE
                                     resources.type = \'$resource_type\' AND
-                                    assigned_resources.moldable_job_id = $mjobid AND
+                                    assigned_resources.moldable_job_id = $moldable_id AND
                                     assigned_resources.resource_id = resources.resource_id 
                                 ORDER BY resources.resource_id ASC
                                 LIMIT 1");
@@ -819,17 +819,17 @@ sub get_job_cpuset_uid($$$$) {
 
 # get_job_resources
 # returns the list of resources associated to the job passed in parameter
-# parameters : base, jobid
+# parameters : base, moldable_id
 # return value : list of resources
 # side effects : /
 sub get_job_resources($$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $moldable_id= shift;
 
     my $sth = $dbh->prepare("SELECT resource_id as resource
                              FROM assigned_resources
                              WHERE 
-                                moldable_job_id = $jobid
+                                moldable_job_id = $moldable_id
                              ORDER BY resource_id ASC");
     $sth->execute();
     my @res = ();
@@ -842,17 +842,17 @@ sub get_job_resources($$) {
 
 # get_job_network_address
 # returns the list of network_address associated to the job passed in parameter
-# parameters : base, jobid
+# parameters : base, moldable_id
 # return value : list of resources
 # side effects : /
 sub get_job_network_address($$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $moldable_id= shift;
 
     my $sth = $dbh->prepare("SELECT DISTINCT(resources.network_address) as hostname
                              FROM assigned_resources, resources
                              WHERE 
-                                assigned_resources.moldable_job_id = $jobid AND
+                                assigned_resources.moldable_job_id = $moldable_id AND
                                 resources.resource_id = assigned_resources.resource_id AND
                                 resources.type = \'default\'
                              ORDER BY resources.network_address ASC");
@@ -872,12 +872,12 @@ sub get_job_network_address($$) {
 # side effects : /
 sub get_job_resources_properties($$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $job_id= shift;
 
     my $sth = $dbh->prepare("SELECT resources.*
                              FROM resources, assigned_resources, jobs
                              WHERE 
-                                jobs.job_id = $jobid AND
+                                jobs.job_id = $job_id AND
                                 jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
                                 assigned_resources.resource_id = resources.resource_id
                              ORDER BY resource_id ASC");
@@ -891,17 +891,17 @@ sub get_job_resources_properties($$) {
 
 # get_job_host_log
 # returns the list of hosts associated to the moldable job passed in parameter
-# parameters : base, moldablejobid
+# parameters : base, moldable_id
 # return value : list of distinct hostnames
 # side effects : /
 sub get_job_host_log($$) {
     my $dbh = shift;
-    my $moldablejobid = shift;
+    my $moldable_id = shift;
     
     my $sth = $dbh->prepare("   SELECT DISTINCT(resources.network_address)
                                 FROM assigned_resources, resources
                                 WHERE
-                                    assigned_resources.moldable_job_id = $moldablejobid AND
+                                    assigned_resources.moldable_job_id = $moldable_id AND
                                     resources.resource_id = assigned_resources.resource_id AND
                                     resources.network_address != \'\' AND
                                     resources.type = \'default\'
@@ -922,12 +922,12 @@ sub get_job_host_log($$) {
 # side effects : /
 sub is_tokill_job($$) {
     my $dbh = shift;
-    my $jobid = shift;
+    my $job_id = shift;
     my $sth = $dbh->prepare("   SELECT frag_id_job
                                 FROM frag_jobs
                                 WHERE
                                     frag_state = \'LEON\'
-                                    AND frag_id_job = $jobid");
+                                    AND frag_id_job = $job_id");
     $sth->execute();
     my @res = $sth->fetchrow_array();
     $sth->finish();
@@ -1013,13 +1013,13 @@ sub get_to_exterminate_jobs($) {
 # return value : /
 sub set_assigned_moldable_job($$$) {
     my $dbh = shift;
-    my $idJob = shift;
-    my $moldable = shift;
+    my $job_id = shift;
+    my $moldable_id = shift;
     
     $dbh->do("  UPDATE jobs
-                SET assigned_moldable_job = $moldable
+                SET assigned_moldable_job = $moldable_id
                 WHERE
-                    job_id = $idJob
+                    job_id = $job_id
             ");
 }
 
@@ -1032,7 +1032,7 @@ sub set_assigned_moldable_job($$$) {
 # side effects : changes the field startTime of the job in the table Jobs
 sub set_running_date($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     
     my $runningDate;
     my $date = get_date($dbh);
@@ -1046,7 +1046,7 @@ sub set_running_date($$) {
     my $sth = $dbh->prepare("   UPDATE jobs
                                 SET start_time = \'$runningDate\'
                                 WHERE
-                                    job_id = $idJob
+                                    job_id = $job_id
                             ");
     $sth->execute();
     $sth->finish();
@@ -1061,11 +1061,11 @@ sub set_running_date($$) {
 # side effects : changes the field start_time of the job in the table Jobs
 sub set_running_date_arbitrary($$$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $date = shift;
 
     $dbh->do("UPDATE jobs SET start_time = \'$date\'
-              WHERE job_id = $idJob
+              WHERE job_id = $job_id
              ");
 }
 
@@ -1079,11 +1079,11 @@ sub set_running_date_arbitrary($$$) {
 # side effects : changes the field stop_time of the job in the table Jobs
 sub set_finish_date($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     
     my $finishDate;
     my $date = get_date($dbh);
-    my $jobInfo = get_job($dbh,$idJob);
+    my $jobInfo = get_job($dbh,$job_id);
     my $minDate = $jobInfo->{'start_time'};
     if ($date < $minDate){
         $finishDate = $minDate;
@@ -1093,7 +1093,7 @@ sub set_finish_date($$) {
     my $sth = $dbh->prepare("   UPDATE jobs
                                 SET stop_time = \'$finishDate\'
                                 WHERE
-                                    job_id = $idJob
+                                    job_id = $job_id
                             ");
     $sth->execute();
     $sth->finish();
@@ -1104,13 +1104,13 @@ sub set_finish_date($$) {
 # parameters : base, jobid, exit code
 sub set_job_exit_code($$$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $exit_code = shift;
     
     $dbh->do("  UPDATE jobs
                 SET exit_code = $exit_code
                 WHERE
-                    job_id = $idJob
+                    job_id = $job_id
              ");
 }
 
@@ -2247,12 +2247,12 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$)
 # side effects : /
 sub get_job($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT *
                                 FROM jobs
                                 WHERE
-                                    job_id = $idJob
+                                    job_id = $job_id
                             ");
     $sth->execute();
 
@@ -2271,12 +2271,12 @@ sub get_job($$) {
 # side effects : /
 sub get_job_state($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     my @res = $dbh->selectrow_array("   SELECT state
                                 FROM jobs
                                 WHERE
-                                    job_id = $idJob
+                                    job_id = $job_id
                             ");
     return($res[0]);
 }
@@ -2290,13 +2290,13 @@ sub get_job_state($$) {
 # side effects : /
 sub get_current_moldable_job($$) {
     my $dbh = shift;
-    my $moldableJobId = shift;
+    my $moldable_job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT *
                                 FROM moldable_job_descriptions
                                 WHERE
                                     moldable_index = \'CURRENT\'
-                                    AND moldable_id = $moldableJobId
+                                    AND moldable_id = $moldable_job_id
                             ");
     $sth->execute();
 
@@ -2315,12 +2315,12 @@ sub get_current_moldable_job($$) {
 # side effects : /
 sub get_moldable_job($$) {
     my $dbh = shift;
-    my $moldableJobId = shift;
+    my $moldable_job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT *
                                 FROM moldable_job_descriptions
                                 WHERE
-                                    moldable_id = $moldableJobId
+                                    moldable_id = $moldable_job_id
                             ");
     $sth->execute();
 
@@ -2815,10 +2815,10 @@ sub is_job_already_resubmitted($$){
 # side effects : changes the field state of the job in the table Jobs
 sub set_job_resa_state($$$){
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $state = shift;
     my $sth = $dbh->prepare("UPDATE jobs SET reservation = \'$state\'
-                             WHERE job_id = $idJob");
+                             WHERE job_id = $job_id");
     $sth->execute();
     $sth->finish();
 }
@@ -2832,14 +2832,14 @@ sub set_job_resa_state($$$){
 # side effects : changes the field message of the job in the table Jobs
 sub set_job_message($$$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $message = shift;
 
     $message = $dbh->quote($message);
     $dbh->do("  UPDATE jobs
                 SET message = $message
                 WHERE
-                    job_id = $idJob
+                    job_id = $job_id
              ");
 }
 
@@ -2850,14 +2850,14 @@ sub set_job_message($$$) {
 # return value : /
 sub set_job_scheduler_info($$$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $message = shift;
 
     $message = $dbh->quote($message);
     $dbh->do("  UPDATE jobs
                 SET scheduler_info = $message
                 WHERE
-                    job_id = $idJob
+                    job_id = $job_id
              ");
 }
 
@@ -2871,24 +2871,24 @@ sub set_job_scheduler_info($$$) {
 # side effects : changes the field ToFrag of the job in the table Jobs
 sub frag_job($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     my $lusr= $ENV{OARDO_USER};
 
-    my $job = get_job($dbh, $idJob);
+    my $job = get_job($dbh, $job_id);
 
     if((defined($job)) && (($lusr eq $job->{job_user}) or ($lusr eq "oar") or ($lusr eq "root"))) {
         my $nbRes = $dbh->do("SELECT *
                               FROM frag_jobs
                               WHERE
-                                frag_id_job = $idJob
+                                frag_id_job = $job_id
                              ");
         if ( $nbRes < 1 ){
             my $date = get_date($dbh);
             $dbh->do("INSERT INTO frag_jobs (frag_id_job,frag_date)
-                      VALUES ($idJob,\'$date\')
+                      VALUES ($job_id,\'$date\')
                      ");
-            add_new_event($dbh,"FRAG_JOB_REQUEST",$idJob,"User $lusr requested to frag the job $idJob");
+            add_new_event($dbh,"FRAG_JOB_REQUEST",$job_id,"User $lusr requested to frag the job $job_id");
             return(0);
         }else{
             # Job already killed
@@ -2906,17 +2906,17 @@ sub frag_job($$) {
 # returns : 0 if all is good, 1 if the user cannot do this, 2 if the job is not running, 3 if the job is Interactive
 sub ask_checkpoint_job($$){
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     my $lusr= $ENV{OARDO_USER};
 
-    my $job = get_job($dbh, $idJob);
+    my $job = get_job($dbh, $job_id);
 
     return(3) if ((defined($job)) and ($job->{job_type} eq "INTERACTIVE"));
     if((defined($job)) && (($lusr eq $job->{job_user}) or ($lusr eq "oar") or ($lusr eq "root"))) {
         if ($job->{state} eq "Running"){
             #$dbh->do("LOCK TABLE event_log WRITE");
-            add_new_event($dbh,"CHECKPOINT",$idJob,"User $lusr requested a checkpoint on the job $idJob");
+            add_new_event($dbh,"CHECKPOINT",$job_id,"User $lusr requested a checkpoint on the job $job_id");
             #$dbh->do("UNLOCK TABLES");
             return(0);
         }else{
@@ -2933,20 +2933,20 @@ sub ask_checkpoint_job($$){
 # returns : 0 if all is good, 1 if the user cannot do this, 2 if the job is not running, 3 if the job is Interactive
 sub ask_signal_job($$$){
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $signal = shift;
 
     my $lusr= $ENV{OARDO_USER};
 
-    my $job = get_job($dbh, $idJob);
+    my $job = get_job($dbh, $job_id);
 
     return(3) if ((defined($job)) and ($job->{job_type} eq "INTERACTIVE"));
     if((defined($job)) && (($lusr eq $job->{job_user}) or ($lusr eq "oar") or ($lusr eq "root"))) {
         if ($job->{state} eq "Running"){
             #$dbh->do("LOCK TABLE event_log WRITE");
-            add_new_event($dbh,"SIGNAL_$signal",$idJob,"User $lusr requested the signal $signal on the job $idJob");
+            add_new_event($dbh,"SIGNAL_$signal",$job_id,"User $lusr requested the signal $signal on the job $job_id");
             #$dbh->do("UNLOCK TABLES");
-	    #oar_debug("[OAR::IO] added an event of type SIGNAL_$signal for job $idJob\n");
+	    #oar_debug("[OAR::IO] added an event of type SIGNAL_$signal for job $job_id\n");
             return(0);
         }else{
             return(2);
@@ -2965,12 +2965,12 @@ sub ask_signal_job($$$){
 # side effects : changes the field state of the job to 'Hold' in the table Jobs
 sub hold_job($$$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $waiting_and_running = shift;
 
     my $lusr = $ENV{OARDO_USER};
 
-    my $job = get_job($dbh, $idJob);
+    my $job = get_job($dbh, $job_id);
   
     my $user_allowed_hold_resume =  (lc(get_conf("USERS_ALLOWED_HOLD_RESUME")) eq "yes");
   
@@ -2981,10 +2981,10 @@ sub hold_job($$$) {
             return(-4);
         }elsif (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
             if (($job->{'state'} eq "Waiting") or ($job->{'state'} eq "Resuming")){
-                add_new_event($dbh, $event_type, $idJob, "User $lusr launched oarhold on the job $idJob");
+                add_new_event($dbh, $event_type, $job_id, "User $lusr launched oarhold on the job $job_id");
                 return 0;
             }elsif((defined($waiting_and_running)) and (($job->{state} eq "toLaunch") or ($job->{state} eq "Launching") or ($job->{state} eq "Running"))){
-                add_new_event($dbh, $event_type, $idJob, "User $lusr launched oarhold on the job $idJob");
+                add_new_event($dbh, $event_type, $job_id, "User $lusr launched oarhold on the job $job_id");
                 return 0;
             }else{
                 return(-3);
@@ -3010,11 +3010,11 @@ sub hold_job($$$) {
 #                Jobs
 sub resume_job($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     my $lusr = $ENV{OARDO_USER};
 
-    my $job = get_job($dbh, $idJob);
+    my $job = get_job($dbh, $job_id);
 
     my $user_allowed_hold_resume =  (lc(get_conf("USERS_ALLOWED_HOLD_RESUME")) eq "yes");
 
@@ -3023,7 +3023,7 @@ sub resume_job($$) {
             return(-4);
         }elsif (($lusr eq $job->{job_user}) || ($lusr eq "oar") || ($lusr eq "root")){
             if (($job->{'state'} eq "Hold") or ($job->{'state'} eq "Suspended")){
-                add_new_event($dbh, "RESUME_JOB", $idJob, "User $lusr launched oarresume on the job $idJob");
+                add_new_event($dbh, "RESUME_JOB", $job_id, "User $lusr launched oarresume on the job $job_id");
                 return(0);
             }
             return(-3);
@@ -3072,7 +3072,7 @@ sub get_jobs_on_resuming_job_resources($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT DISTINCT(j2.job_id) as jobid
+    my $sth = $dbh->prepare("   SELECT DISTINCT(j2.job_id) as job_id
                                 FROM jobs j1,jobs j2,assigned_resources a1,assigned_resources a2
                                 WHERE
                                     a1.assigned_resource_index = \'CURRENT\' AND
@@ -3087,7 +3087,7 @@ sub get_jobs_on_resuming_job_resources($$){
     $sth->execute();
     my @res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res,$ref->{jobid});
+        push(@res,$ref->{job_id});
     }
     $sth->finish();
 
@@ -3170,11 +3170,11 @@ sub resume_job_action($$) {
 # side effects : changes the field ToFrag of the job in the table Jobs
 sub job_fragged($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     $dbh->do("UPDATE frag_jobs
               SET frag_state = \'FRAGGED\'
-              WHERE frag_id_job = $idJob
+              WHERE frag_id_job = $job_id
              ");
 }
 
@@ -3186,12 +3186,12 @@ sub job_fragged($$) {
 # return value : /
 sub job_arm_leon_timer($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     $dbh->do("  UPDATE frag_jobs
                 SET frag_state = \'TIMER_ARMED\'
                 WHERE
-                    frag_id_job = $idJob
+                    frag_id_job = $job_id
              ");
 }
 
@@ -3202,10 +3202,10 @@ sub job_arm_leon_timer($$) {
 # return value : /
 sub job_refrag($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     $dbh->do("UPDATE frag_jobs SET frag_state = \'LEON\'
-              WHERE frag_id_job = $idJob
+              WHERE frag_id_job = $job_id
              ");
 }
 
@@ -3217,10 +3217,10 @@ sub job_refrag($$) {
 # return value : /
 sub job_leon_exterminate($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     $dbh->do("UPDATE frag_jobs SET frag_state = \'LEON_EXTERMINATE\'
-              WHERE frag_id_job = $idJob
+              WHERE frag_id_job = $job_id
              ");
 }
 
@@ -3232,11 +3232,11 @@ sub job_leon_exterminate($$) {
 # return value : date
 sub get_frag_date($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     my $sth = $dbh->prepare("SELECT frag_date
                              FROM frag_jobs
-                             WHERE frag_id_job = $idJob
+                             WHERE frag_id_job = $job_id
                             ");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
@@ -3392,13 +3392,13 @@ sub get_fairsharing_jobs_to_schedule($$$){
 # return a hash table with all types for the given job ID
 sub get_current_job_types($$){
     my $dbh = shift;
-    my $jobId = shift;
+    my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT type
                                 FROM job_types
                                 WHERE
                                     types_index = \'CURRENT\'
-                                    AND job_id = $jobId
+                                    AND job_id = $job_id
                             ");
     $sth->execute();
     my %res;
@@ -3421,12 +3421,12 @@ sub get_current_job_types($$){
 # return the list of types for the given job ID
 sub get_job_types($$){
     my $dbh = shift;
-    my $jobId = shift;
+    my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT type
                                 FROM job_types
                                 WHERE
-                                    job_id = $jobId
+                                    job_id = $job_id
                             ");
     $sth->execute();
     my @res;
@@ -3442,23 +3442,23 @@ sub get_job_types($$){
 # add_current_job_types
 sub add_current_job_types($$$){
     my $dbh = shift;
-    my $jobId = shift;
+    my $job_id = shift;
     my $type = shift;
 
     $dbh->do("  INSERT INTO job_types (job_id,type,types_index)
-                VALUES ($jobId,\'$type\',\'CURRENT\')
+                VALUES ($job_id,\'$type\',\'CURRENT\')
              ");
 }
 
 # remove_current_job_types
 sub remove_current_job_types($$$){
     my $dbh = shift;
-    my $jobId = shift;
+    my $job_id = shift;
     my $type = shift;
 
     $dbh->do("  DELETE FROM job_types
                 WHERE
-                    job_id = $jobId AND
+                    job_id = $job_id AND
                     type = \'$type\' AND
                     types_index = \'CURRENT\'
              ");
@@ -3469,13 +3469,13 @@ sub remove_current_job_types($$$){
 # return an array table with all dependencies for the given job ID
 sub get_current_job_dependencies($$){
     my $dbh = shift;
-    my $jobId = shift;
+    my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT job_id_required
                                 FROM job_dependencies
                                 WHERE
                                     job_dependency_index = \'CURRENT\'
-                                    AND job_id = $jobId
+                                    AND job_id = $job_id
                             ");
     $sth->execute();
     my @res;
@@ -3492,12 +3492,12 @@ sub get_current_job_dependencies($$){
 # return an array table with all dependencies for the given job ID
 sub get_job_dependencies($$){
     my $dbh = shift;
-    my $jobId = shift;
+    my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT job_id_required
                                 FROM job_dependencies
                                 WHERE
-                                    job_id = $jobId
+                                    job_id = $job_id
                             ");
     $sth->execute();
     my @res;
@@ -4537,11 +4537,11 @@ sub is_stagein_deprecated($$$) {
 # side effects: none
 sub get_job_stagein($$) {
     my $dbh = shift;
-    my $jobid = shift;
+    my $job_id = shift;
     my $sth = $dbh->prepare("   SELECT files.md5sum,files.location,files.method,files.compression,files.size
                                 FROM jobs, files
                                 WHERE	
-                                    jobs.job_id = $jobid AND
+                                    jobs.job_id = $job_id AND
                                     jobs.file_id = files.file_id
                             ");
     $sth->execute();
@@ -5032,13 +5032,13 @@ sub get_current_assigned_resources($) {
 # parameters : base, moldable id
 sub get_current_assigned_job_resources($$){
     my $dbh = shift;
-    my $mold_id = shift;
+    my $moldable_job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT resources.*
                                 FROM assigned_resources, resources
                                 WHERE
                                     assigned_resource_index = \'CURRENT\'
-                                    AND assigned_resources.moldable_job_id = $mold_id
+                                    AND assigned_resources.moldable_job_id = $moldable_job_id
                                     AND resources.resource_id = assigned_resources.resource_id
                             ");
     $sth->execute();
@@ -5243,10 +5243,10 @@ sub set_node_state($$$$) {
 sub set_resource_nextState($$$) {
     my $dbh = shift;
     my $resource = shift;
-    my $nextState = shift;
+    my $next_state = shift;
 
     my $result = $dbh->do(" UPDATE resources
-                            SET next_state = \'$nextState\', next_finaud_decision = \'NO\'
+                            SET next_state = \'$next_state\', next_finaud_decision = \'NO\'
                             WHERE resource_id = $resource
                           ");
     return($result);
@@ -5289,10 +5289,10 @@ sub set_resource_state($$$$) {
 sub set_node_nextState($$$) {
     my $dbh = shift;
     my $hostname = shift;
-    my $nextState = shift;
+    my $next_state = shift;
 
     my $result = $dbh->do(" UPDATE resources
-                            SET next_state = \'$nextState\', next_finaud_decision = \'NO\'
+                            SET next_state = \'$next_state\', next_finaud_decision = \'NO\'
                             WHERE
                                 network_address = \'$hostname\'
                           ");
@@ -5304,13 +5304,13 @@ sub set_node_nextState($$$) {
 sub set_node_nextState_if_necessary($$$) {
     my $dbh = shift;
     my $hostname = shift;
-    my $nextState = shift;
+    my $next_state = shift;
 
     my $result = $dbh->do(" UPDATE resources
-                            SET next_state = \'$nextState\', next_finaud_decision = \'NO\'
+                            SET next_state = \'$next_state\', next_finaud_decision = \'NO\'
                             WHERE
                                 network_address = \'$hostname\'
-                                AND state != \'$nextState\'
+                                AND state != \'$next_state\'
                                 AND next_state = \'UnChanged\'
                           ");
     return($result);
@@ -5322,13 +5322,13 @@ sub set_node_nextState_if_necessary($$$) {
 # parameters : base, resource_id, "YES" or "NO"
 sub update_resource_nextFinaudDecision($$$){
     my $dbh = shift;
-    my $resourceId = shift;
+    my $resource_id = shift;
     my $finaud = shift;
 
     $dbh->do("  UPDATE resources
                 SET next_finaud_decision = \'$finaud\'
                 WHERE
-                    resource_id = $resourceId
+                    resource_id = $resource_id
              ");
 }
 
@@ -5357,11 +5357,11 @@ sub update_node_nextFinaudDecision($$$){
 sub set_node_expiryDate($$$) {
     my $dbh = shift;
     my $hostname = shift;
-    my $expiryDate = shift;
+    my $expiry_date = shift;
 
     # FIX ME: check first that the expiryDate is actually in the future, return error else
     $dbh->do("  UPDATE resources
-                SET expiry_date = \'$expiryDate\'
+                SET expiry_date = \'$expiry_date\'
                 WHERE
                     network_address =\'$hostname\'
              ");
@@ -5787,7 +5787,7 @@ sub is_node_desktop_computing($$){
 #                   }
 #               ],
 #               walltime,
-#               moldable_job_id
+#               moldable_id
 #           ]
 sub get_resources_data_structure_current_job($$){
     my $dbh = shift;
@@ -5885,7 +5885,7 @@ sub get_absent_suspected_resources_for_a_timeout($$){
 sub get_cpuset_values_for_a_moldable_job($$$){
     my $dbh = shift;
     my $cpuset_field = shift;
-    my $mjob_id = shift;
+    my $moldable_job_id = shift;
 
     my $sql_where_string = "\'0\'";
     my $resources_to_always_add_type = get_conf("SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE");
@@ -5896,7 +5896,7 @@ sub get_cpuset_values_for_a_moldable_job($$$){
     my $sth = $dbh->prepare("   SELECT resources.network_address, resources.$cpuset_field
                                 FROM resources, assigned_resources
                                 WHERE
-                                    assigned_resources.moldable_job_id = $mjob_id AND
+                                    assigned_resources.moldable_job_id = $moldable_job_id AND
                                     assigned_resources.resource_id = resources.resource_id AND
                                     resources.network_address != \'\' AND
                                     (resources.type = \'default\' OR
@@ -6093,17 +6093,17 @@ sub get_gantt_visu_scheduled_jobs($){
 #return nothing
 sub add_gantt_scheduled_jobs($$$$){
     my $dbh = shift;
-    my $id_moldable_job = shift;
+    my $moldable_job_id = shift;
     my $start_time = shift;
     my $resource_list = shift;
 
     $dbh->do("INSERT INTO gantt_jobs_predictions (moldable_job_id,start_time)
-              VALUES ($id_moldable_job,\'$start_time\')
+              VALUES ($moldable_job_id,\'$start_time\')
              ");
 
     my $str = "";
     foreach my $i (@{$resource_list}){
-        $str .= "($id_moldable_job,$i),";
+        $str .= "($moldable_job_id,$i),";
     }
     chop($str);
     $dbh->do("INSERT INTO gantt_jobs_resources (moldable_job_id,resource_id)
@@ -6154,12 +6154,12 @@ sub set_gantt_job_startTime($$$){
 # args : base, job id
 sub get_gantt_job_start_time($$){
     my $dbh = shift;
-    my $job = shift;
+    my $moldable_job_id = shift;
 
     my $sth = $dbh->prepare("SELECT gantt_jobs_predictions.start_time, gantt_jobs_predictions.moldable_job_id
                              FROM gantt_jobs_predictions,moldable_job_descriptions
                              WHERE
-                                moldable_job_descriptions.moldable_job_id = $job
+                                moldable_job_descriptions.moldable_job_id = $moldable_job_id
                                 AND gantt_jobs_predictions.moldable_job_id = moldable_job_descriptions.moldable_id
                             ");
     $sth->execute();
@@ -6178,12 +6178,12 @@ sub get_gantt_job_start_time($$){
 # args : base, job id
 sub get_gantt_job_start_time_visu($$){
     my $dbh = shift;
-    my $job = shift;
+    my $moldable_job_id = shift;
 
     my $sth = $dbh->prepare("SELECT gantt_jobs_predictions_visu.start_time, gantt_jobs_predictions_visu.moldable_job_id
                              FROM gantt_jobs_predictions_visu,moldable_job_descriptions
                              WHERE
-                                moldable_job_descriptions.moldable_job_id = $job
+                                moldable_job_descriptions.moldable_job_id = $moldable_job_id
                                 AND gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id
                             ");
     $sth->execute();
@@ -6562,12 +6562,12 @@ sub get_gantt_resources_for_jobs_to_launch($$){
 #args : base, moldable job id
 sub get_gantt_resources_for_job($$){
     my $dbh = shift;
-    my $job = shift;
+    my $moldable_job_id = shift;
 
     my $sth = $dbh->prepare("SELECT g.resource_id
                              FROM gantt_jobs_resources g
                              WHERE
-                                g.moldable_job_id = $job 
+                                g.moldable_job_id = $moldable_job_id 
                             ");
     $sth->execute();
     my @res ;
@@ -6584,12 +6584,12 @@ sub get_gantt_resources_for_job($$){
 #args : base, moldable job id
 sub get_gantt_Alive_resources_for_job($$){
     my $dbh = shift;
-    my $job = shift;
+    my $moldable_job_id = shift;
 
     my $sth = $dbh->prepare("SELECT g.resource_id
                              FROM gantt_jobs_resources g, resources r
                              WHERE
-                                g.moldable_job_id = $job 
+                                g.moldable_job_id = $moldable_job_id 
                                 AND r.resource_id = g.resource_id
                                 AND r.state = \'Alive\'
                             ");
@@ -6608,12 +6608,12 @@ sub get_gantt_Alive_resources_for_job($$){
 #args : base, job id
 sub get_gantt_visu_scheduled_job_resources($$){
     my $dbh = shift;
-    my $job = shift;
+    my $moldable_job_id = shift;
 
     my $sth = $dbh->prepare("SELECT r.resource_id, r.network_address, r.state
                              FROM gantt_jobs_resources_visu g, moldable_job_descriptions m, resources r
                              WHERE
-                                m.moldable_job_id = $job
+                                m.moldable_job_id = $moldable_job_id
                                 AND m.moldable_id = g.moldable_job_id
                                 AND g.resource_id = r.resource_id
                             ");
@@ -7223,14 +7223,14 @@ sub add_new_event($$$$){
 sub add_new_event_with_host($$$$$){
     my $dbh = shift;
     my $type = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $description = substr(shift,0,254);
     my $hostnames = shift;
     
     my $date = get_date($dbh);
     #lock_table($dbh,["event_logs"]);
     $dbh->do("  INSERT INTO event_logs (type,job_id,date,description)
-                VALUES (\'$type\',$idJob,\'$date\',\'$description\')
+                VALUES (\'$type\',$job_id,\'$date\',\'$description\')
              ");
     my $event_id = get_last_insert_id($dbh,"event_logs_event_id_seq");
     #unlock_table($dbh);
@@ -7252,14 +7252,14 @@ sub add_new_event_with_host($$$$$){
 sub check_event($$$){
     my $dbh = shift;
     my $type = shift;
-    my $idJob = shift;
+    my $job_id = shift;
 
     $dbh->do("  UPDATE event_logs
                 SET to_check = \'NO\'
                 WHERE
                     to_check = \'YES\'
                     AND type = \'$type\'
-                    AND job_id = $idJob
+                    AND job_id = $job_id
              ");
 }
 
@@ -7368,12 +7368,12 @@ sub get_last_event_from_type($$){
 # args: database ref, job id
 sub get_job_events($$){
     my $dbh =shift;
-    my $jobId = shift;
+    my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT *
                                 FROM event_logs
                                 WHERE
-                                    job_id = $jobId
+                                    job_id = $job_id
                             ");
     $sth->execute();
 
@@ -7389,13 +7389,13 @@ sub get_job_events($$){
 
 sub is_an_event_exists($$$){
     my $dbh =shift;
-    my $jobId = shift;
+    my $job_id = shift;
     my $event = shift;
 
     my $sth = $dbh->prepare("   SELECT COUNT(*)
                                 FROM event_logs
                                 WHERE
-                                    job_id = $jobId AND
+                                    job_id = $job_id AND
                                     type = \'$event\'
                                 LIMIT 1
                             ");
@@ -7495,7 +7495,7 @@ sub unlock_table($){
 # check_end_job($$$){
 sub check_end_of_job($$$$$$$$$$){
     my $base = shift;
-    my $Jid = shift;
+    my $job_id = shift;
     my $exit_script_value = shift;
     my $error = shift;
     my $hosts = shift;
@@ -7507,197 +7507,197 @@ sub check_end_of_job($$$$$$$$$$){
 
     #lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
     lock_table($base,["jobs","job_state_logs","assigned_resources"]);
-    my $refJob = get_job($base,$Jid);
+    my $refJob = get_job($base,$job_id);
     if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching") or ($refJob->{'state'} eq "Suspended") or ($refJob->{'state'} eq "Resuming")){
-        OAR::Modules::Judas::oar_debug("[bipbip $Jid] Job $Jid is ended\n");
-        set_finish_date($base,$Jid);
-        set_job_state($base,$Jid,"Finishing");
-        set_job_exit_code($base,$Jid,$exit_script_value) if ($exit_script_value =~ /^\d+$/);
+        OAR::Modules::Judas::oar_debug("[bipbip $job_id] Job $job_id is ended\n");
+        set_finish_date($base,$job_id);
+        set_job_state($base,$job_id,"Finishing");
+        set_job_exit_code($base,$job_id,$exit_script_value) if ($exit_script_value =~ /^\d+$/);
         unlock_table($base);
         my @events;
         if($error == 0){
-            OAR::Modules::Judas::oar_debug("[bipbip $Jid] User Launch completed OK\n");
-            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            OAR::Modules::Judas::oar_debug("[bipbip $job_id] User Launch completed OK\n");
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 1){
             #Prologue error
-            my $strWARN = "[bipbip $Jid] error of oarexec prologue";
+            my $strWARN = "[bipbip $job_id] error of oarexec prologue";
             push(@events, {type => "PROLOGUE_ERROR", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 2){
             #Epilogue error
-            my $strWARN = "[bipbip $Jid] error of oarexec epilogue (jobId = $Jid)";
+            my $strWARN = "[bipbip $job_id] error of oarexec epilogue (job_id = $job_id)";
             push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 3){
             #Oarexec is killed by Leon normaly
-            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] the job $Jid was killed by Leon";
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] the job $job_id was killed by Leon";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-            my $types = OAR::IO::get_current_job_types($base,$Jid);
+            my $types = OAR::IO::get_current_job_types($base,$job_id);
             if ((defined($types->{besteffort})) and (defined($types->{idempotent}))){
-                if (OAR::IO::is_an_event_exists($base,$Jid,"BESTEFFORT_KILL") > 0){
-                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
-                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it is a besteffort and idempotent job.\n");
-                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] the job $Jid is a besteffort and idempotent job so we resubmit it (new id = $new_job_id)"});
+                if (OAR::IO::is_an_event_exists($base,$job_id,"BESTEFFORT_KILL") > 0){
+                    my $new_job_id = OAR::IO::resubmit_job($base,$job_id);
+                    oar_warn("[bipbip] We resubmit the job $job_id (new id = $new_job_id) because it is a besteffort and idempotent job.\n");
+                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $job_id] the job $job_id is a besteffort and idempotent job so we resubmit it (new id = $new_job_id)"});
                 }
             }
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 4){
             #Oarexec was killed by Leon and epilogue of oarexec is in error
-            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] The job $Jid was killed by Leon and oarexec epilogue was in error";
-            my $types = OAR::IO::get_current_job_types($base,$Jid);
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] The job $job_id was killed by Leon and oarexec epilogue was in error";
+            my $types = OAR::IO::get_current_job_types($base,$job_id);
             if ((defined($types->{besteffort})) and (defined($types->{idempotent}))){
-                if (OAR::IO::is_an_event_exists($base,$Jid,"BESTEFFORT_KILL") > 0){
-                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
-                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it is a besteffort and idempotent job.\n");
-                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid is a besteffort and idempotent job so we resubmit it (new id = $new_job_id)"});
+                if (OAR::IO::is_an_event_exists($base,$job_id,"BESTEFFORT_KILL") > 0){
+                    my $new_job_id = OAR::IO::resubmit_job($base,$job_id);
+                    oar_warn("[bipbip] We resubmit the job $job_id (new id = $new_job_id) because it is a besteffort and idempotent job.\n");
+                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $job_id] The job $job_id is a besteffort and idempotent job so we resubmit it (new id = $new_job_id)"});
                 }
             }
             push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 5){
             #Oarexec is not able to write in the node file
-            my $strWARN = "[bipbip $Jid] oarexec cannot create the node file";
+            my $strWARN = "[bipbip $job_id] oarexec cannot create the node file";
             push(@events, {type => "CANNOT_WRITE_NODE_FILE", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 6){
             #Oarexec can not write its pid file
-            my $strWARN = "[bipbip $Jid] oarexec cannot write its pid file";
+            my $strWARN = "[bipbip $job_id] oarexec cannot write its pid file";
             push(@events, {type => "CANNOT_WRITE_PID_FILE", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 7){
             #Can t get shell of user
-            my $strWARN = "[bipbip $Jid] Cannot get shell of user $user, so I suspect node $hosts->[0]";
+            my $strWARN = "[bipbip $job_id] Cannot get shell of user $user, so I suspect node $hosts->[0]";
             push(@events, {type => "USER_SHELL", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 8){
             #Oarexec can not create tmp directory
-            my $strWARN = "[bipbip $Jid] oarexec cannot create tmp directory on $hosts->[0] : ".OAR::Tools::get_default_oarexec_directory();
+            my $strWARN = "[bipbip $job_id] oarexec cannot create tmp directory on $hosts->[0] : ".OAR::Tools::get_default_oarexec_directory();
             push(@events, {type => "CANNOT_CREATE_TMP_DIRECTORY", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 10){
             #oarexecuser.sh can not go into working directory
-            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0]";
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0]";
             push(@events, {type => "WORKING_DIRECTORY", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 20){
             #oarexecuser.sh can not write stdout and stderr files
-            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] Cannot create .stdout and .stderr files in $launchingDirectory on the node $hosts->[0]";
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] Cannot create .stdout and .stderr files in $launchingDirectory on the node $hosts->[0]";
             push(@events, {type => "OUTPUT_FILES", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 12){
             #oarexecuser.sh can not go into working directory and epilogue is in error
-            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0] AND epilogue is in error";
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] Cannot go into the working directory $launchingDirectory of the job on node $hosts->[0] AND epilogue is in error";
             oar_warn("$strWARN\n");
             push(@events, {type => "WORKING_DIRECTORY", string => $strWARN});
             push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 22){
             #oarexecuser.sh can not create STDOUT and STDERR files and epilogue is in error
-            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] Cannot create STDOUT and STDERR files AND epilogue is in error";
+            push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] Cannot create STDOUT and STDERR files AND epilogue is in error";
             oar_warn("$strWARN\n");
             push(@events, {type => "OUTPUT_FILES", string => $strWARN});
             push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 30){
             #oarexec timeout on bipbip hashtable transfer via SSH
-            my $strWARN = "[bipbip $Jid] Timeout SSH hashtable transfer on $hosts->[0]";
+            my $strWARN = "[bipbip $job_id] Timeout SSH hashtable transfer on $hosts->[0]";
             push(@events, {type => "SSH_TRANSFER_TIMEOUT", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 31){
             #oarexec got a bad hashtable dump from bipbip
-            my $strWARN = "[bipbip $Jid] Bad hashtable dump on $hosts->[0]";
+            my $strWARN = "[bipbip $job_id] Bad hashtable dump on $hosts->[0]";
             push(@events, {type => "BAD_HASHTABLE_DUMP", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 33){
             #oarexec received a SIGUSR1 signal and there was an epilogue error
-            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal and there was an epilogue error";
-            #add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] oarexec received a SIGUSR1 signal and there was an epilogue error";
+            #add_new_event($base,"STOP_SIGNAL_RECEIVED",$job_id,"$strWARN");
             push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 34){
             #oarexec received a SIGUSR1 signal
-            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR1 signal; so INTERACTIVE job is ended";
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] oarexec received a SIGUSR1 signal; so INTERACTIVE job is ended";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-            #add_new_event($base,"STOP_SIGNAL_RECEIVED",$Jid,"$strWARN");
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            #add_new_event($base,"STOP_SIGNAL_RECEIVED",$job_id,"$strWARN");
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 50){
     	    # launching oarexec timeout
-            my $strWARN = "[bipbip $Jid] launching oarexec timeout, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected";
+            my $strWARN = "[bipbip $job_id] launching oarexec timeout, exit value = $error; the job $job_id is in Error and the node $hosts->[0] is Suspected";
             push(@events, {type => "LAUNCHING_OAREXEC_TIMEOUT", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }elsif ($error == 40){
             #oarexec received a SIGUSR2 signal
-            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal; so user process has received a checkpoint signal";
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] oarexec received a SIGUSR2 signal; so user process has received a checkpoint signal";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-#            my $types = OAR::IO::get_current_job_types($base,$Jid);
+#            my $types = OAR::IO::get_current_job_types($base,$job_id);
 #            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
 #                if ($exit_script_value == 0){
-#                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
-#                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
-#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
+#                    my $new_job_id = OAR::IO::resubmit_job($base,$job_id);
+#                    oar_warn("[bipbip] We resubmit the job $job_id (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $job_id] The job $job_id was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
 #                }else{
-#                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
-#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value"});
+#                    oar_warn("[bipbip] We cannot resubmit the job $job_id even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "The job $job_id was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value"});
 #                }
 #            }
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }elsif ($error == 42){
             #oarexec received a user signal
-            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] oarexec received a SIGURG signal; so user process has received the user defined signal";
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] oarexec received a SIGURG signal; so user process has received the user defined signal";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-#            my $types = OAR::IO::get_current_job_types($base,$Jid);
+#            my $types = OAR::IO::get_current_job_types($base,$job_id);
 #            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
 #                if ($exit_script_value == 0){
-#                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
-#                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was signaled and it is of the type 'idempotent'.\n");
-#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was signaled and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
+#                    my $new_job_id = OAR::IO::resubmit_job($base,$job_id);
+#                    oar_warn("[bipbip] We resubmit the job $job_id (new id = $new_job_id) because it was signaled and it is of the type 'idempotent'.\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $job_id] The job $job_id was signaled and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
 #                }else{
-#                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was signaled and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
-#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "The job $Jid was signaled and it is of the type 'idempotent' but its exit code is $exit_script_value"});
+#                    oar_warn("[bipbip] We cannot resubmit the job $job_id even if it was signaled and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "The job $job_id was signaled and it is of the type 'idempotent' but its exit code is $exit_script_value"});
 #                }
 #            }
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
 	}elsif ($error == 41){
             #oarexec received a SIGUSR2 signal
-            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $Jid] Ask to change the job state"});
-            my $strWARN = "[bipbip $Jid] oarexec received a SIGUSR2 signal and there was an epilogue error; so user process has received a checkpoint signal";
+            push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
+            my $strWARN = "[bipbip $job_id] oarexec received a SIGUSR2 signal and there was an epilogue error; so user process has received a checkpoint signal";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-#            my $types = OAR::IO::get_current_job_types($base,$Jid);
+#            my $types = OAR::IO::get_current_job_types($base,$job_id);
 #            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
 #                if ($exit_script_value == 0){
-#                    my $new_job_id = OAR::IO::resubmit_job($base,$Jid);
-#                    oar_warn("[bipbip] We resubmit the job $Jid (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
-#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
+#                    my $new_job_id = OAR::IO::resubmit_job($base,$job_id);
+#                    oar_warn("[bipbip] We resubmit the job $job_id (new id = $new_job_id) because it was checkpointed and it is of the type 'idempotent'.\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY", string => "[bipbip $job_id] The job $job_id was checkpointed and it is of the type 'idempotent' so we resubmit it (new id = $new_job_id)"});
 #                }else{
-#                    oar_warn("[bipbip] We cannot resubmit the job $Jid even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
-#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "[bipbip $Jid] The job $Jid was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value"});
+#                    oar_warn("[bipbip] We cannot resubmit the job $job_id even if it was checkpointed and of the type 'idempotent' because its exit code was not 0 ($exit_script_value).\n");
+#                    push(@events, {type => "RESUBMIT_JOB_AUTOMATICALLY_CANCELLED", string => "[bipbip $job_id] The job $job_id was checkpointed and it is of the type 'idempotent' but its exit code is $exit_script_value"});
 #                }
 #            }
             push(@events, {type => "EPILOGUE_ERROR", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }else{
-            my $strWARN = "[bipbip $Jid] error of oarexec, exit value = $error; the job $Jid is in Error and the node $hosts->[0] is Suspected; If this job is of type cosystem or deploy, check if the oar server is able to connect to the corresponding nodes, oar-node started";
+            my $strWARN = "[bipbip $job_id] error of oarexec, exit value = $error; the job $job_id is in Error and the node $hosts->[0] is Suspected; If this job is of type cosystem or deploy, check if the oar server is able to connect to the corresponding nodes, oar-node started";
             push(@events, {type => "EXIT_VALUE_OAREXEC", string => $strWARN});
-            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$Jid,\@events);
+            job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }
     }else{
-        OAR::Modules::Judas::oar_debug("[bipbip $Jid] I was previously killed or Terminated but I did not know that!!\n");
+        OAR::Modules::Judas::oar_debug("[bipbip $job_id] I was previously killed or Terminated but I did not know that!!\n");
         unlock_table($base);
     }
 
