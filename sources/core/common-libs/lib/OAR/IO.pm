@@ -974,13 +974,13 @@ sub get_to_exterminate_jobs($) {
 # return value : /
 sub set_assigned_moldable_job($$$) {
     my $dbh = shift;
-    my $idJob = shift;
-    my $moldable = shift;
+    my $job_id = shift;
+    my $moldable_id = shift;
     
     $dbh->do("  UPDATE jobs
-                SET assigned_moldable_job = $moldable
+                SET assigned_moldable_job = $moldable_id
                 WHERE
-                    job_id = $idJob
+                    job_id = $job_id
             ");
 }
 
@@ -993,7 +993,7 @@ sub set_assigned_moldable_job($$$) {
 # side effects : changes the field startTime of the job in the table Jobs
 sub set_running_date($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     
     my $runningDate;
     my $date = get_date($dbh);
@@ -1007,7 +1007,7 @@ sub set_running_date($$) {
     my $sth = $dbh->prepare("   UPDATE jobs
                                 SET start_time = \'$runningDate\'
                                 WHERE
-                                    job_id = $idJob
+                                    job_id = $job_id
                             ");
     $sth->execute();
     $sth->finish();
@@ -1022,11 +1022,11 @@ sub set_running_date($$) {
 # side effects : changes the field start_time of the job in the table Jobs
 sub set_running_date_arbitrary($$$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $date = shift;
 
     $dbh->do("UPDATE jobs SET start_time = \'$date\'
-              WHERE job_id = $idJob
+              WHERE job_id = $job_id
              ");
 }
 
@@ -1040,11 +1040,11 @@ sub set_running_date_arbitrary($$$) {
 # side effects : changes the field stop_time of the job in the table Jobs
 sub set_finish_date($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     
     my $finishDate;
     my $date = get_date($dbh);
-    my $jobInfo = get_job($dbh,$idJob);
+    my $jobInfo = get_job($dbh,$job_id);
     my $minDate = $jobInfo->{'start_time'};
     if ($date < $minDate){
         $finishDate = $minDate;
@@ -1054,7 +1054,7 @@ sub set_finish_date($$) {
     my $sth = $dbh->prepare("   UPDATE jobs
                                 SET stop_time = \'$finishDate\'
                                 WHERE
-                                    job_id = $idJob
+                                    job_id = $job_id
                             ");
     $sth->execute();
     $sth->finish();
@@ -1065,13 +1065,13 @@ sub set_finish_date($$) {
 # parameters : base, jobid, exit code
 sub set_job_exit_code($$$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $exit_code = shift;
     
     $dbh->do("  UPDATE jobs
                 SET exit_code = $exit_code
                 WHERE
-                    job_id = $idJob
+                    job_id = $job_id
              ");
 }
 
