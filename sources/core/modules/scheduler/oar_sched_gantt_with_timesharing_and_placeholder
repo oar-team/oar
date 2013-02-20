@@ -300,12 +300,21 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             $duration += OAR::IO::get_job_suspended_sum_duration($base,$job_to_extend->{job_id},OAR::IO::get_date($base));
         }
         oar_debug("[$scheduler_name] [$i] extension job: supposed to fit in a hole starting at " . ($job_to_extend->{start_time} + $duration + $security_time_overhead + 1) . "\n");
-        OAR::Schedulers::GanttHoleStorage::pretty_print($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name});
         my $vec = '';
         foreach my $r (@resource_list){
             vec($vec,$r,1) = 1;
         }
-#        OAR::Schedulers::GanttHoleStorage::try_and_fit_extension_in_hole($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, $job_to_extend->{start_time} + $duration + $security_time_overhead, $extension_duration, $vec);
+        if (OAR::Schedulers::GanttHoleStorage::try_and_fit_extension_in_hole($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, $job_to_extend->{start_time} + $duration + $security_time_overhead, $extension_duration, $vec)) {
+            oar_debug("[$scheduler_name] [$i] extension job: it fits ! We can extend the walltime of job " . $job_to_extend->{job_id} . "\n");
+            my $new_duration = $duration + $extension_duration;
+            OAR::IO::set_moldable_job_max_time($base, $job_to_extend->{assigned_moldable_job}, $new_duration);
+            oar_warn("[$scheduler_name] [$i] Extend walltime of job " . $job_to_extend->{job_id} . " to $new_duration (was  $duration)\n");
+            OAR::IO::add_new_event($base, "EXTEND_JOB_WALLTIME", $job_to_extend->{job_id}, "Change walltime from $duration to $new_duration (extension job $i)");
+            OAR::IO::set_job_state($base, $i, "Terminated");
+        } else {
+            oar_debug("[$scheduler_name] [$i] extension job: does not fit\n");
+        }
+            
     } else {
         my $job_properties = "\'1\'";
         if ((defined($j->{properties})) and ($j->{properties} ne "")){
