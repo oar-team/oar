@@ -1,5 +1,5 @@
 
-draw_gantt_setup() {
+drawgantt_setup() {
 
     install_conffile \
         ${EXAMPLEDIR}/drawgantt.conf \
