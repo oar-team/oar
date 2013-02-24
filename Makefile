@@ -3,7 +3,7 @@
 export SHELL=/bin/bash
 
 # Modules that can be builded
-MODULES = server user node monika drawgantt doc tools api scheduler-ocaml kamelot kamelot-pg www-conf common common-libs database  
+MODULES = server user node monika drawgantt drawgantt-svg doc tools api scheduler-ocaml kamelot kamelot-pg www-conf common common-libs database  
 
 
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
@@ -101,6 +101,12 @@ drawgantt-clean: www-conf-clean
 drawgantt-build: www-conf-build
 drawgantt-uninstall: www-conf-uninstall
 
+drawgantt-svg-setup: www-conf-setup
+drawgantt-svg-install: www-conf-install
+drawgantt-svg-clean: www-conf-clean
+drawgantt-svg-build: www-conf-build
+drawgantt-svg-uninstall: www-conf-uninstall
+
 monika-setup: www-conf-setup
 monika-install: www-conf-install
 monika-clean: www-conf-clean
@@ -169,6 +175,10 @@ $(P_TARGETS):
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
 	$(MAKE) -f Makefiles/drawgantt.mk $(P_ACTION) \
+                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
+		DOCDIR=/usr/share/doc/oar-web-status \
+		WWWDIR=/usr/share/oar-web-status
+	$(MAKE) -f Makefiles/drawgantt-svg.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
