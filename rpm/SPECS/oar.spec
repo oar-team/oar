@@ -114,19 +114,19 @@ Requires:       oar-common = %version-%release, ruby, ruby-DBI, perl(YAML)
 %description admin
 This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...) 
 
-%package desktop-computing-agent
-Summary:        OAR desktop computing agent
-Group:          System/Servers
-Requires:	oar-common = %version-%release, ruby
-%description desktop-computing-agent
-This package install the OAR batch scheduler desktop computing agent
-
-%package desktop-computing-cgi
-Summary:	OAR desktop computing HTTP proxy CGI
-Group:          System/Servers
-Requires:	perl(CGI), oar-common = %version-%release, httpd
-%description    desktop-computing-cgi	
-This package install the OAR batch scheduler desktop computing HTTP proxy CGI
+#%package desktop-computing-agent
+#Summary:        OAR desktop computing agent
+#Group:          System/Servers
+#Requires:	oar-common = %version-%release, ruby
+#%description desktop-computing-agent
+#This package install the OAR batch scheduler desktop computing agent
+#
+#%package desktop-computing-cgi
+#Summary:	OAR desktop computing HTTP proxy CGI
+#Group:          System/Servers
+#Requires:	perl(CGI), oar-common = %version-%release, httpd
+#%description    desktop-computing-cgi	
+#This package install the OAR batch scheduler desktop computing HTTP proxy CGI
 
 %package restful-api
 Summary:	OAR RESTful user API
@@ -171,7 +171,7 @@ export TARGET_DIST=redhat
 make packages-install PACKAGES_DIR=tmp
 
 # Get the file lists for every package (except those explicitely listed later)
-for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-desktop-computing-agent oar-desktop-computing-cgi oar-restful-api liboar-perl
+for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-restful-api liboar-perl
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
     | sed -e "s/\.1$/.1.gz/g" > $package.files
@@ -253,11 +253,11 @@ cp $TMP/usr/share/doc/oar-server/examples/default/oar-server \
      $TMP/etc/sysconfig/oar-server
 
 # desktop-computing-cgi
-TMP=tmp/oar-desktop-computing-cgi
-mkdir -p $TMP/etc/oar
-mkdir -p $TMP/etc/cron.hourly
-cp $TMP/usr/share/doc/oar-desktop-computing-cgi/examples/cron.hourly/oar-desktop-computing-cgi \
-     $TMP/etc/cron.hourly/oar-desktop-computing-cgi  
+#TMP=tmp/oar-desktop-computing-cgi
+#mkdir -p $TMP/etc/oar
+#mkdir -p $TMP/etc/cron.hourly
+#cp $TMP/usr/share/doc/oar-desktop-computing-cgi/examples/cron.hourly/oar-desktop-computing-cgi \
+#     $TMP/etc/cron.hourly/oar-desktop-computing-cgi  
 
 # Reconstruct the whole system
 mkdir -p $RPM_BUILD_ROOT
@@ -327,10 +327,10 @@ rm -rf tmp
 
 %files admin -f oar-admin.files
 
-%files desktop-computing-agent -f oar-desktop-computing-agent.files
-
-%files desktop-computing-cgi -f oar-desktop-computing-cgi.files
-%config %attr (0755,root,root) /etc/cron.hourly/oar-desktop-computing-cgi
+#%files desktop-computing-agent -f oar-desktop-computing-agent.files
+#
+#%files desktop-computing-cgi -f oar-desktop-computing-cgi.files
+#%config %attr (0755,root,root) /etc/cron.hourly/oar-desktop-computing-cgi
 
 %files restful-api -f oar-restful-api.files
 %config(noreplace) /etc/oar/apache-api.conf
@@ -423,9 +423,9 @@ user_setup
 
 
 ###### oar-desktop-computing-cgi scripts ######
-%post desktop-computing-cgi
-. /usr/lib/oar/setup/desktop-computing-cgi.sh
-desktop_computing_cgi_setup
+#%post desktop-computing-cgi
+#. /usr/lib/oar/setup/desktop-computing-cgi.sh
+#desktop_computing_cgi_setup
 
 
 %changelog
