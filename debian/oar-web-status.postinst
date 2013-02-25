@@ -6,7 +6,8 @@ set -e
 
 . /usr/lib/oar/setup/www-conf.sh
 . /usr/lib/oar/setup/monika.sh
-. /usr/lib/oar/setup/draw-gantt.sh
+. /usr/lib/oar/setup/drawgantt.sh
+. /usr/lib/oar/setup/drawgantt-svg.sh
 
 PACKAGE=oar-web-status
 
@@ -14,7 +15,8 @@ case "$1" in
     configure)
         www_conf_setup
         monika_setup
-        draw_gantt_setup
+        drawgantt_setup
+        drawgantt_svg_setup
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
