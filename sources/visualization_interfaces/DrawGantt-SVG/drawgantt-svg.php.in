@@ -7,10 +7,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 $CONF=array();
-$CONF['mysql_server']="localhost";
-$CONF['mysql_user']="oar_ro";
-$CONF['mysql_passwd']="oar";
-$CONF['mysql_db']="oar";
+$CONF['db_type']="mysql";
+$CONF['db_server']="localhost";
+$CONF['db_port']="3306";
+$CONF['db_name']="oarreader";
+$CONF['db_user']="read";
+$CONF['db_passwd']="oar";
 $CONF['site'] = "My OAR resources";
 $CONF['hierarchy_resource_width'] = 10;
 $CONF['scale'] = 10;
@@ -105,6 +107,74 @@ function resource_id_sort($r2, $r1) {
 		}
 	}
 	return ($r1->cpuset - $r2->cpuset);
+}
+
+class Db {
+	function __construct($backend, $server, $port, $dbname, $user, $password) {
+		$this->backend = $backend;
+		if ($this->backend == "mysql") {
+			$this->handler = mysql_connect("$server:$port", $user, $password) or die('Cound not connect Mysql server: ' . mysql_error());
+			mysql_select_db($dbname) or die('Could not select database');
+		} elseif ($this->backend == "pg") {
+			$this->handler = pg_connect("host=$server port=$port dbname=$dbname user=$user password=$password") or die('Cound not connect PostgreSQL server');
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+	}
+
+	function query($query) {
+		if ($this->backend == "mysql") {
+			$this->result = mysql_query($query, $this->handler) or die('Query failed: ' . mysql_error());
+		} elseif ($this->backend == "pg") {
+			$this->result = pg_query($this->handler, $query) or die('Query failed');
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+	}
+
+	function fetch_array() {
+		if ($this->backend == "mysql") {
+			return mysql_fetch_array($this->result, MYSQL_ASSOC);
+		} elseif ($this->backend == "pg") {
+			return pg_fetch_array($this->result, NULL, PGSQL_ASSOC);
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+	}
+
+	function free() {
+		if ($this->backend == "mysql") {
+			return mysql_free_result($this->result);
+		} elseif ($this->backend == "pg") {
+			return pg_free_result($this->result);
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+	}
+
+	function close() {
+		if ($this->backend == "mysql") {
+			return mysql_close($this->handler);
+		} elseif ($this->backend == "pg") {
+			return pg_close($this->handler);
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+	}
+
+	function get_timestamp() {
+		if ($this->backend == "mysql") {
+			$this->query('SELECT UNIX_TIMESTAMP()');
+			$array = mysql_fetch_array($this->result, MYSQL_NUM);
+		} elseif ($this->backend == "pg") {
+			$this->query('SELECT EXTRACT(EPOCH FROM current_timestamp)');
+			$array = pg_fetch_array($this->result, NULL, PGSQL_NUM);
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+		$this->free();
+		return $array[0];
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -375,17 +445,10 @@ class Resource {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Connecting, selecting database
-//$link = mysql_connect("localhost", 'oarreader', 'read')
-$link = mysql_connect($CONF['mysql_server'], $CONF['mysql_user'], $CONF['mysql_passwd'])
-    or die('Could not connect: ' . mysql_error());
-mysql_select_db($CONF['mysql_db']) or die('Could not select database');
+$db = new Db($CONF['db_type'], $CONF['db_server'], $CONF['db_port'], $CONF['db_name'], $CONF['db_user'], $CONF['db_passwd']);
 
 // Retrieve the "now" date
-$query = 'SELECT UNIX_TIMESTAMP()';
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-$array = mysql_fetch_array($result,MYSQL_NUM);
-$gantt_now = $array[0];
-mysql_free_result($result);
+$gantt_now = $db->get_timestamp();
 
 if ($gantt_start_date == 0) {
 	$gantt_start_date = $gantt_now - $gantt_relative_start_date;
@@ -399,9 +462,9 @@ $resource_root = new Resource($CONF['site'], 'site', NULL);
 $resource_ids = array();
 
 $query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE '.stripslashes($resource_filter):'');
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+$db->query($query);
 
-while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+while ($line = $db->fetch_array()) {
 	$rid = new ResourceId($line['resource_id'], $line['cpuset']);
 	foreach ($CONF['resource_properties'] as $rp) {
 		$rid->add_property($rp, $line[$rp]);
@@ -414,7 +477,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 		$r->add_resource_id($rid);
 	}
 }
-mysql_free_result($result);
+$db->free();
 
 // sort resource_ids
 uasort($resource_ids, "resource_id_sort");
@@ -436,13 +499,13 @@ WHERE
 	    date_stop >= {$gantt_start_date}
 	)
 EOT;
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+$db->query($query);
+while ($line = $db->fetch_array()) {
 	if (array_key_exists($line['resource_id'], $resource_ids)) {
 		$resource_ids[$line['resource_id']]->add_state($line['value'], $line['date_start'], $line['date_stop']);
 	}
 }
-mysql_free_result($result);
+$db->free();
 
 // Array to store jobs
 $jobs = array();
@@ -467,7 +530,7 @@ SELECT
 	resources.network_address,
 	job_types.type
 FROM 
-	(jobs, assigned_resources, moldable_job_descriptions, resources) LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)
+	(jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)), assigned_resources, moldable_job_descriptions, resources
 WHERE
 	( jobs.stop_time >= {$gantt_start_date} OR
 		( jobs.stop_time = '0' AND 
@@ -484,8 +547,8 @@ WHERE
 ORDER BY 
 	jobs.job_id
 EOT;
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+$db->query($query);
+while ($line = $db->fetch_array()) {
 	if (! array_key_exists($line['job_id'], $jobs)) {
 		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
 	}
@@ -498,7 +561,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 	$jobs[$line['job_id']]->add_network_address($line['network_address']);
 	$jobs[$line['job_id']]->add_type($line['type']);
 }
-mysql_free_result($result);
+$db->free();
 
 // Retrieve predicted jobs (future)
 $query = <<<EOT
@@ -520,7 +583,7 @@ SELECT
 	resources.network_address,
 	job_types.type
 FROM 
-	(jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources) LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)
+	(jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)), moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
 WHERE
 	gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
 	gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
@@ -532,8 +595,8 @@ WHERE
 ORDER BY 
 	jobs.job_id
 EOT;
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+$db->query($query);
+while ($line = $db->fetch_array()) {
 	if (! array_key_exists($line['job_id'], $jobs)) {
 		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
 	}
@@ -546,7 +609,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 	$jobs[$line['job_id']]->add_network_address($line['network_address']);
 	$jobs[$line['job_id']]->add_type($line['type']);
 }
-mysql_free_result($result);
+$db->free();
 
 // Split resource_ids for jobs in groups for gantt display: resources which belong to the job may be interleaved with resources which don't
 foreach ($jobs as $job) {
@@ -554,7 +617,7 @@ foreach ($jobs as $job) {
 }
 
 // Closing connection to the database
-mysql_close($link);
+$db->close();
 
 ///////////////////////////////////////////////////////////////////////////////
 // SVG document generation
