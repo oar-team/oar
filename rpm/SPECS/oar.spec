@@ -93,11 +93,11 @@ This package install the submission and query part of the OAR batch scheduler
 %package web-status
 Summary:	OAR batch scheduler web-status package
 Group:          System/Servers
-Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-GD, perl(Sort::Naturally), httpd
+Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-GD, perl(Sort::Naturally), httpd, php, (php-mysql|php_pgsql)
  # Some Ruby dependencies missing (libdbd-mysql-ruby|libdbd-pg-ruby)
-Provides:       Perl(OAR::Monika), DrawGantt
+Provides:       Perl(OAR::Monika), DrawGantt, DrawGantt-SVG
 %description web-status
-This package installs the OAR batch scheduler Gantt reservation diagram CGI: DrawGantt and the instant cluster state visualization CGI: Monika
+This package installs the OAR batch scheduler status web pages: jobs and resources status and gantt diagrams.
 
 %package doc
 Summary:	OAR batch scheduler doc package
@@ -207,6 +207,7 @@ cp $TMP/usr/share/doc/oar-restful-api/examples/api_html_header.pl \
 TMP=tmp/oar-web-status
 mkdir -p $TMP/etc/oar
 cp $TMP/usr/share/doc/oar-web-status/examples/drawgantt.conf \
+   $TMP/usr/share/doc/oar-web-status/examples/drawgantt-svg-config.inc.php \
    $TMP/usr/share/doc/oar-web-status/examples/monika.conf \
    $TMP/usr/share/doc/oar-web-status/examples/apache.conf \
      $TMP/etc/oar
@@ -319,6 +320,7 @@ rm -rf tmp
 
 %files web-status -f oar-web-status.files
 %config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt.conf
+%config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt-svg-config.inc.php
 %config(noreplace) %attr (0600,apache,root) /etc/oar/monika.conf
 %config(noreplace) %attr (0600,apache,root) /etc/oar/apache.conf
 
@@ -387,10 +389,12 @@ fi
 %post web-status
 . /usr/lib/oar/setup/www-conf.sh
 . /usr/lib/oar/setup/monika.sh
-. /usr/lib/oar/setup/draw-gantt.sh
+. /usr/lib/oar/setup/drawgantt.sh
+. /usr/lib/oar/setup/drawgantt-svg.sh
 www_conf_setup
 monika_setup
-draw_gantt_setup
+drawgantt_setup
+drawgantt_svg_setup
 service httpd reload || true
 
 %postun web-status
@@ -429,6 +433,14 @@ user_setup
 
 
 %changelog
+* Mon Feb 25 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
+- new upstream release
+- remove OAR desktop-computing packages
+- add packaging for drawgantt-svg
+
+* Wed May 23 2012 Philippe Le Brouster <philippe.le-brouster@imag.fr> 2.5.2-1.el6
+- new upstream release
+
 * Thu Jan 18 2012 Philippe Le Brouster <philippe.le-brouster@imag.fr> 2.5.1-2.el6
 - Fix require bug for oar-server and oar-user.
 - Install the file 'job_resource_manager_cgroups.pl'
