@@ -16,6 +16,11 @@ version 2.5.3:
     See OAR-DOCUMENTATION-API-USER for more informations.
   - CGROUP: handle cgroup hierarchy already mounted by the OS like in Fedora 18
     (by systemd in /sys/fs/cgroup) in job_resource_manager_cgroups.pl
+  - Bug fix oar-database: fix the reset function for mysql
+  - Add packaging for the SVG version of drawgantt
+  - Bug fix schedulers: rewrite schedulers with placeholders
+  - Rework default admission rules
+
 
 version 2.5.2:
 --------------
