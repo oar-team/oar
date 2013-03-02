@@ -226,7 +226,7 @@ let split_at l n =
           split_at_2 l n [];;
 
 (* memoize function *)
-let memo f =  
+let memoize f =  
   let h = Hashtbl.create 10 in
   fun x -> try  
     Hashtbl.find h x  

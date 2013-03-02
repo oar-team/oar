@@ -1,3 +1,5 @@
 oar_precheck:
  - mysql:
    - exec_current: ps awux |grep mysql|grep -v grep >/dev/null && echo -e "\n*** YO SHOULD STOP YOUR MYSQL SERVER! ***\n" && exit 1 || true
+ - path:
+   - exec_current: export PATH=$PATH:/usr/sbin:/usr/local/sbin

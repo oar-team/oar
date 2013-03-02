@@ -39,14 +39,6 @@
 
  */
 
-
-
-
-
-
-
-
-
 /* Conrol Job */
 /*
 *   - DRMAA_CONTROL_SUSPEND   0
@@ -83,9 +75,9 @@ struct oar_job_status {
 
 struct batch_status {
         struct batch_status *next;
-        char		    *name;
+        char	 *name;
         struct oar_job_status *status;
-        char		    *text;
+        char	 *text;
 };
 
 int oar_disconnect(int connect);

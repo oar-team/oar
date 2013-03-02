@@ -198,7 +198,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                         push(@tmp_hosts, $n) if ($i > $#bad);
                     }
                     OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
-                    OAR::IO::set_job_message($base,$Job_id,"One or several nodes are not cpuset responding correctly");
+                    OAR::IO::set_job_message($base,$Job_id,"One or several nodes are not responding correctly(CPUSET_ERROR)");
                     OAR::IO::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR cpuset suspects nodes for the job $Job_id : @bad",\@bad);
                     OAR::IO::archive_some_moldable_job_nodes($base,$job->{assigned_moldable_job},\@bad);
                     OAR::IO::unlock_table($base);

@@ -83,7 +83,7 @@ oardrmaa_exc_raise_oar( const char *function )
 	int fsd_errno;
 	const char *message = NULL;
 
-        _oar_errno = oar_errno;
+  _oar_errno = oar_errno;
 	/*
 	 * Gathering error messages differ between PBS forks.
 	 * - OpenPBS - ...
@@ -95,15 +95,15 @@ oardrmaa_exc_raise_oar( const char *function )
 	 * for given connection.
 	 */
 	/* XXX: PBSPro has some link problems with pbse_to_txt function */
-        message = oar_errno_to_txt( oar_errno );
+  
+  message = oar_errno_to_txt( oar_errno );
 
-        fsd_errno = oardrmaa_map_oar_errno( _oar_errno );
+  fsd_errno = oardrmaa_map_oar_errno( _oar_errno );
 	fsd_log_error((
-				"call to %s returned with error %d:%s mapped to %d:%s",
-				function,
-                                _oar_errno, message,
-				fsd_errno, fsd_strerror(fsd_errno)
-				));
+    "call to %s returned with error %d:%s mapped to %d:%s",
+		function,  _oar_errno, message,
+		fsd_errno, fsd_strerror(fsd_errno)
+	));
 	fsd_exc_raise_fmt( fsd_errno, "%s: %s", function, message );
 }
 

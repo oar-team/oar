@@ -14,8 +14,8 @@ Options:
   -h   print this message and exit
   -q   quiet (only write relevant information for automation to stdout)
   -u   specify the git uri to use
-  -b   specify the git treeish to use
-  -r   use a remote repository
+  -t   specify the git treeish to use
+  -r   use a remote repository (by default, the local repository in the current folder is considered.)
   -f   make the tarball even if there are uncommited changes (only for local repository)
 EOF
 exit 1
@@ -61,13 +61,13 @@ FORCE=no
 GIT_URI=git://scm.gforge.inria.fr/oar/oar.git
 GIT_TREEISH=2.5
 
-while getopts "hqrfu:b:d:" options; do
+while getopts "hqrfu:t:d:" options; do
   case $options in
     q) QUIET=yes ;;
     r) REMOTE=yes ;;
     f) FORCE=yes ;; 
     u) GIT_URI="$OPTARG";;
-    b) GIT_TREEISH="$OPTARG" ;;
+    t) GIT_TREEISH="$OPTARG" ;;
     d) TARGET_DIRECTORY="$OPTARG";;
     *) usage ;;
   esac

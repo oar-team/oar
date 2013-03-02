@@ -14,8 +14,8 @@ oar_git_install:
    
  - frontend:
    - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build
-   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install user-install draw-gantt-install monika-install www-conf-install api-install tools-install
-   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install user-setup draw-gantt-setup monika-setup www-conf-setup api-setup tools-setup
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install user-install drawgantt-install monika-install www-conf-install api-install tools-install
+   - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install user-setup drawgantt-setup monika-setup www-conf-setup api-setup tools-setup
 
  - server:
    - exec_chroot: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build

@@ -4,7 +4,7 @@ oarnotify - Multi usage command for queues and Almighty notification.
 
 =head1 SYNOPSIS
 
-B<oarnotify> [-e str] [-d str] [-E] [-D] [--add_queue str] [--remove_queue] [-l] [tag_to_Almighty]
+B<oarnotify> [-e str] [-d str] [-E] [-D] [--add_queue str] [--remove_queue str] [-l] [tag_to_Almighty]
 
 =head1 DESCRIPTION
 

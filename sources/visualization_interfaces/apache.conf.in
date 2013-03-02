@@ -2,5 +2,7 @@ ScriptAlias /monika %%CGIDIR%%/monika.cgi
 ScriptAlias /drawgantt %%CGIDIR%%/drawgantt.cgi
 Alias /monika.css %%WWWDIR%%/monika.css
 Alias /drawgantt-files %%OARHOMEDIR%%/drawgantt-files
-
-
+Alias /drawgantt-svg %%WWWDIR%%/drawgantt-svg
+<Directory %%WWWDIR%%>
+        Options Indexes FollowSymlinks
+</Directory>

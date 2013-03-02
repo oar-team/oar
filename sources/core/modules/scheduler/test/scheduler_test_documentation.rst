@@ -25,7 +25,12 @@ scheduler_test.rb:
 Usage and tips
 ---------------
 
-* irb enhancement with wirble (completion, color and so on)
+* we highly recommend you to use pry in place to irb 
+  http://pryrepl.org/
+  pry -r ./oar_db_setting.rb   
+
+
+* [alternative to pry] irb enhancement with wirble (completion, color and so on)
   http://pablotron.org/software/wirble/
 
 
@@ -37,6 +42,9 @@ Usage and tips
   => 1313765725
   >> Time.at(1313765725)
   => Fri Aug 19 16:55:25 0200 2011
+
+* launch pry with oar_db_setting.rb preloading (it uses ./oar_test_conf as oar.conf)
+ $ pry -r ./oar_db_setting.rb
 
 * launch irb with oar_db_setting.rb preloading (it uses ./oar_test_conf as oar.conf)
  $ irb -r oar_db_setting.rb

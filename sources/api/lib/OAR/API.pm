@@ -221,9 +221,12 @@ sub add_job_uris($$) {
   $self=OAR::API::htmlize_uri($self,$ext);
   my $resources=OAR::API::make_uri("jobs/".$job->{id}."/resources",$ext,0);
   $resources=OAR::API::htmlize_uri($resources,$ext);
+  my $nodes=OAR::API::make_uri("jobs/".$job->{id}."/nodes",$ext,0);
+  $nodes=OAR::API::htmlize_uri($nodes,$ext);
   my $links;
   push (@$links, { href => $self, rel => "self" });
   push (@$links, { href => $resources, rel => "collection", title => "resources" });
+  push (@$links, { href => $nodes, rel => "collection", title => "nodes" });
   $job->{links}=$links;
   $job->{api_timestamp}=time();
   # Don't know why this function breaks the type of the id, so:
@@ -458,7 +461,7 @@ sub struct_empty($) {
 # OAR JOB
 sub fix_job_integers($) {
   my $job = shift;
-  foreach my $key ("resubmit_job_id","Job_Id","array_index","array_id","startTime","stopTime","submissionTime","scheduledStart") {
+  foreach my $key ("resubmit_job_id","Job_Id","array_index","array_id","startTime","stopTime","submissionTime","scheduledStart","exit_code") {
     $job->{$key}=int($job->{$key}) if defined($job->{$key});
   }
   foreach my $event (@{$job->{"events"}}) {
@@ -474,7 +477,7 @@ sub struct_job($$) {
   my $result;
   if    ($structure eq 'oar')    { return $job; }
   elsif ($structure eq 'simple') { 
-    if ($job->{(keys(%{$job}))[0]} eq "HASH") {
+    if ($job->{(keys(%{$job}))[0]}  and $job->{(keys(%{$job}))[0]} eq "HASH") {
       $job=$job->{(keys(%{$job}))[0]};
     }
     fix_job_integers($job);
