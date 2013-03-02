@@ -11,14 +11,14 @@ ifdef POSTGRESQL
   THREADS := true
   PACKS   := postgresql
   LIBS := str
-  SOURCES := ../common/helpers.ml ../common/interval.ml ../common/conf.ml\
+  SOURCES := ../common/helpers.ml ../common/conf.ml ../common/interval.ml \
              types.ml postgresql_driver.ml iolib.ml \
              ../common/hierarchy.ml simple_cbf_mb_h_ct.ml simple_cbf_mb_h_ct_oar.ml
   RESULT  := simple_cbf_mb_h_ct_oar_postgresql
 else
   PACKS   := mysql oUnit
   LIBS    := str
-  SOURCES := ../common/helpers.ml ../common/interval.ml ../common/conf.ml\
+  SOURCES := ../common/helpers.ml ../common/conf.ml ../common/interval.ml \
              types.ml mysql_driver.ml iolib.ml \
              ../common/hierarchy.ml simple_cbf_mb_h_ct.ml simple_cbf_mb_h_ct_oar.ml
   RESULT  := simple_cbf_mb_h_ct_oar_mysql

@@ -20,7 +20,7 @@ Orpheus provides some basic IO contention simple. Up to now only one IO model is
 Limitations:
 ------------
 
- * Interactive job cannot be supported (be definition).
+ * Interactive job cannot be supported (by definition).
  * No besteffort and kill/delete job (in todo)
  * does not read oar.conf for db parameters and almighty port (hardcoded)
  * not validated/extensively tested (very experimental)

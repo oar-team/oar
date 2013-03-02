@@ -9,13 +9,14 @@ use Data::Dumper;
 use OAR::Modules::Judas qw(oar_debug oar_warn oar_error set_current_log_category);
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use OAR::Schedulers::GanttHoleStorage;
-use Storable qw(dclone);
 use Time::HiRes qw(gettimeofday);
 
 # Log category
 set_current_log_category('scheduler');
+my $scheduler_name = "oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder";
 
 init_conf($ENV{OARCONFFILE});
+
 ###############################################################################
 # Fairsharing parameters #
 ##########################
@@ -117,7 +118,7 @@ if (defined($ARGV[0]) && defined($ARGV[1]) && $ARGV[1] =~ m/\d+/m) {
     $queue = $ARGV[0];
     $current_time = $ARGV[1];
 }else{
-    oar_error("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] no queue specified on command line\n");
+    oar_error("[$scheduler_name] No queue specified on command line\n");
     exit(1);
 }
 
@@ -125,18 +126,18 @@ if (defined($ARGV[0]) && defined($ARGV[1]) && $ARGV[1] =~ m/\d+/m) {
 my $base = OAR::IO::connect();
 my $base_ro = OAR::IO::connect_ro();
 
-oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Begining of Gantt scheduler on queue $queue at time $current_time\n");
+oar_debug("[$scheduler_name] Starting scheduler for queue $queue at time $current_time\n");
 
-# First check states of resources that we must add for each job
+# First check states of resources that we must add for every job
 if (defined($Resources_to_always_add_type)){
     my $tmp_result_state_resources = OAR::IO::get_specific_resource_states($base,$Resources_to_always_add_type);
     if ($#{$tmp_result_state_resources->{"Suspected"}} >= 0){
-        oar_warn("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] There are resources that are specified in oar.conf (SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE) which are Suspected. So I cannot schedule any job now.\n");
+        oar_warn("[$scheduler_name] Some of the resources matching the SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE configuration directive are Suspected. No job can be scheduled. Exiting\n");
         exit(1);
     }else{
         if (defined($tmp_result_state_resources->{"Alive"})){
             @Resources_to_always_add = @{$tmp_result_state_resources->{"Alive"}};
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Assign these resources for each jobs: @Resources_to_always_add\n");
+            oar_debug("[$scheduler_name] The following Alive resources matching the SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE configuration directive will be added to every job: @Resources_to_always_add\n");
         }
     }
 }
@@ -152,41 +153,26 @@ foreach my $r (OAR::IO::list_resources($base)){
     $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
 }
 
-my %Container_gantt_hash;
-$Container_gantt_hash{0} = OAR::Schedulers::GanttHoleStorage::new($max_resources, $minimum_hole_time);
-OAR::Schedulers::GanttHoleStorage::add_new_resources($Container_gantt_hash{0}, $All_resource_list_vec);
-
-my %Placeholder_gantt_hash;
-
-sub parse_timesharing($$$){
-    my $str = shift;
-    my $job_user = shift;
-    my $job_name = shift;
-            
-    my $user = "*";
-    my $name = "*";
-    foreach my $s (split(',', $str)){
-        if ($s =~ m/^\s*([\w\*]+)\s*$/m){
-            if ($1 eq "user"){
-                $user = $job_user;
-            }elsif (($1 eq "name") and ($job_name ne "")){
-                $name = $job_name;
-            }
-        }
-    }
-
-    return($user,$name);
-}
+my $Gantt = {};
+$Gantt->{0}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new($max_resources, $minimum_hole_time);
+OAR::Schedulers::GanttHoleStorage::add_new_resources($Gantt->{0}->{""}->{""}->{""}, $All_resource_list_vec);
 
 # Token feature (see oar.conf)
 # Keep the track of the usage for each token
 my %Token_values;
 
+oar_debug("[$scheduler_name] Begin phase 1 (running jobs)\n");
 # Take care of currently scheduled jobs (gantt in the database)
 my ($order,%already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
 foreach my $i (@{$order}){
+    my $container_id = 0;
+    my $inner_id = 0;
+    my $set_placeholder_name = "";
+    my $use_placeholder_name = "";
+    my $timesharing_user = "";
+    my $timesharing_name = "";
     my $types = OAR::IO::get_current_job_types($base,$i);
-    # Do not take care of besteffort jobs
+    # Ignore besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
         my $job_duration = $already_scheduled_jobs{$i}->[1];
@@ -205,75 +191,33 @@ foreach my $i (@{$order}){
             vec($vec,$r,1) = 1;
         }
 
-        my $gantt_to_use = $Container_gantt_hash{0};
-        my $container_num = 0;
-        if (defined($types->{container})){
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create gantt for the container $i\n");
-            $Container_gantt_hash{$i} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec, $All_resource_list_vec);
-            $gantt_to_use = $Container_gantt_hash{$i};
-            $container_num = $i;
-        }
-        my $placeholder_name = "0";
-        if (defined($types->{set_placeholder})){
-            if (!defined($Placeholder_gantt_hash{$types->{set_placeholder}})){
-                $Placeholder_gantt_hash{$types->{set_placeholder}} = dclone($gantt_to_use);
-                $placeholder_name = $types->{placeholder};
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create gantt for the placeholder $types->{set_placeholder}\n");
+        if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
+            $inner_id = $1;
+            if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
+                oar_debug("[$scheduler_name] [$i] inner job: using container $inner_id\n");
+            }else{
+                oar_debug("[$scheduler_name] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
+                $inner_id = 0;
             }
         }
-
-        my $user;
-        my $name;
-        if (defined($types->{timesharing})){
-            ($user, $name) = parse_timesharing($types->{timesharing}, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6]);
-            if (!defined($timesharing_gantts->{$container_num}->{$placeholder_name}->{$user}->{$name})){
-                $timesharing_gantts->{$container_num}->{$placeholder_name}->{$user}->{$name} = dclone($gantt_to_use);
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create new gantt for ($user, $name)\n");
-            }
+        if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+            oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,)\n");
+            $container_id = $i;
+            oar_debug("[$scheduler_name] [$i] container job: create gantt ($container_id,,,)\n");
+            $Gantt->{$container_id}->{""}->{""}->{""} = 
+                OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec, $All_resource_list_vec);
+        } else {
+            ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
+                OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6], $types, $inner_id, "[$scheduler_name] [$i]");
         }
 
         #Fill all other gantts
-        foreach my $g (keys(%Container_gantt_hash)){
-            if ($i != $g){
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Add occupation in container $g for job $i\n");
-                OAR::Schedulers::GanttHoleStorage::set_occupation(  $Container_gantt_hash{$g},
-                                                     $already_scheduled_jobs{$i}->[0],
-                                                     $job_duration + $security_time_overhead,
-                                                     $vec
-                                                  );
-            }
-            #print("\nOOOOOOOOOO $i - $g $current_time\n");
-            #OAR::Schedulers::GanttHoleStorage::pretty_print($Container_gantt_hash{$g});
-        }
-        foreach my $c (keys(%{$timesharing_gantts})){
-            foreach my $p (keys(%{$timesharing_gantts->{$c}})){
-                foreach my $u (keys(%{$timesharing_gantts->{$c}->{$p}})){
-                    foreach my $n (keys(%{$timesharing_gantts->{$c}->{$p}->{$u}})){
-                        if ((!defined($user)) or (!defined($name)) or (($u ne $user) or ($n ne $name))){
-                            OAR::Schedulers::GanttHoleStorage::set_occupation( $timesharing_gantts->{$c}->{$p}->{$u}->{$n},
-                                                                $already_scheduled_jobs{$i}->[0],
-                                                                $job_duration + $security_time_overhead,
-                                                                $vec
-                                                              );
-                        }
-                    }
-                }
-            }
-        }
-        # For placeholder
-        foreach my $p (keys(%Placeholder_gantt_hash)){
-            if ((!defined($types->{set_placeholder})) or ($p ne $types->{set_placeholder})){
-                OAR::Schedulers::GanttHoleStorage::set_occupation( $Placeholder_gantt_hash{$p},
-                                                    $already_scheduled_jobs{$i}->[0],
-                                                    $job_duration + $security_time_overhead,
-                                                    $vec
-                                                  );
-            }
-        }
+        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec, $inner_id ,$set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[$scheduler_name] [$i]"); 
+
     }
 }
 
-oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] End gantt initialization\n");
+oar_debug("[$scheduler_name] End phase 1 (running jobs)\n");
 
 # End of the initialisation
 # Begining of the real scheduling
@@ -287,7 +231,7 @@ foreach my $r (OAR::IO::get_resources_in_state($base,"Alive")){
 # ENERGY SAVING: add fake occupations/holes from energy saving configuration 
 # CM part and Hulot part (wake up nodes in energy saving mode)
 if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))){
-    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [START] Checking EnergySaving occupation\n");
+    oar_debug("[$scheduler_name] Begin EnergySaving phase\n");
     # Check the resources that can be waked_up or shut down
     my $upto_availability = OAR::IO::get_energy_saving_resources_availability($base, $current_time);
     foreach my $t (keys(%{$upto_availability})){
@@ -297,28 +241,22 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
             vec($vec,$r,1) = 1;
         }
         #Fill all the gantts
-        foreach my $g (keys(%Container_gantt_hash)){
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] Add EnergySaving occupation in container $g for available_upto = $t\n");
-            OAR::Schedulers::GanttHoleStorage::set_occupation(  $Container_gantt_hash{$g},
+        foreach my $c (keys(%{$Gantt})){
+            foreach my $p (keys(%{$Gantt->{$c}})){
+                foreach my $u (keys(%{$Gantt->{$c}->{$p}})){
+                    foreach my $n (keys(%{$Gantt->{$c}->{$p}->{$u}})){
+                        oar_debug("[$scheduler_name] Add energy saving occupation in gantt ($c,$p,$u,$n)\n");
+                        OAR::Schedulers::GanttHoleStorage::set_occupation( $Gantt->{$c}->{$p}->{$u}->{$n},
                                                  $t,
                                                  OAR::Schedulers::GanttHoleStorage::get_infinity_value(),
                                                  $vec
                                               );
-        }
-
-        foreach my $c (keys(%{$timesharing_gantts})){
-            foreach my $u (keys(%{$timesharing_gantts->{$c}})){
-                foreach my $n (keys(%{$timesharing_gantts->{$c}->{$u}})){
-                    OAR::Schedulers::GanttHoleStorage::set_occupation( $timesharing_gantts->{$c}->{$u}->{$n},
-                                                 $t,
-                                                 OAR::Schedulers::GanttHoleStorage::get_infinity_value(),
-                                                 $vec
-                                              );
+                    }
                 }
             }
         }
     }
-    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing] [END] Checking EnergySaving occupation\n");
+    oar_debug("[$scheduler_name] End EnergySaving phase\n");
 }
 # CM part
  
@@ -327,6 +265,7 @@ foreach my $r (OAR::IO::get_resources_in_state($base,"Dead")){
     push(@Dead_resources, $r->{resource_id});
 }
 
+oar_debug("[$scheduler_name] Begin phase 2 (waiting jobs)\n");
 my @jobs = OAR::IO::get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user);
 ###############################################################################
 # Sort jobs depending on their previous usage
@@ -355,16 +294,16 @@ sub karma($){
 my $job_index = 0;
 while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $j = $jobs[$job_index];
+    my $i = $j->{job_id};
     $job_index ++;
-    
-    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Start scheduling (Karma note = ".karma($j).")\n");
+    oar_debug("[$scheduler_name] [$i] start scheduling (Karma note = ".karma($j).")\n");
     
     my $scheduler_init_date = $current_time;
     # Search for dependencies
     my $skip_job = 0;
 
     # Check the job dependencies 
-    foreach my $d (OAR::IO::get_current_job_dependencies($base,$j->{job_id})){
+    foreach my $d (OAR::IO::get_current_job_dependencies($base,$i)){
         next if ($skip_job == 1);
         my $dep_job = OAR::IO::get_job($base,$d);
         if (($dep_job->{state} ne "Terminated")){
@@ -377,96 +316,83 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 }
             }else{
                 my $message = "Cannot determine scheduling time due to dependency with the job $d";
-                OAR::IO::set_job_message($base,$j->{job_id},$message);
-                OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] $message\n");
+                OAR::IO::set_job_message($base,$i,$message);
+                OAR::IO::set_job_scheduler_info($base,$i,$message);
+                oar_debug("[$scheduler_name] [$i] $message\n");
                 $skip_job = 1;
                 next;
             }
         }elsif (($dep_job->{job_type} eq "PASSIVE") and ($dep_job->{exit_code} != 0)){
             my $message = "Cannot determine scheduling time due to dependency with the job $d (exit code != 0)";
-            OAR::IO::set_job_message($base,$j->{job_id},$message);
-            OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] $message\n");
+            OAR::IO::set_job_message($base,$i,$message);
+            OAR::IO::set_job_scheduler_info($base,$i,$message);
+            oar_debug("[$scheduler_name] [$i] $message\n");
             $skip_job = 1;
             next;
         }
     }
     next if ($skip_job == 1);
 
-    my $gantt_to_use = $Container_gantt_hash{0};
-    my $container_num = 0;
-    my $types = OAR::IO::get_current_job_types($base,$j->{job_id});
+    my $container_id = 0;
+    my $inner_id = 0;
+    my $set_placeholder_name = "";
+    my $use_placeholder_name = "";
+    my $timesharing_user = "";
+    my $timesharing_name = "";
+    my $types = OAR::IO::get_current_job_types($base,$i);
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
-        if (defined($Container_gantt_hash{$1})){
-            $gantt_to_use = $Container_gantt_hash{$1};
-            $container_num = $1;
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Using container $container_num\n");
+        $inner_id = $1;
+        if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
+            oar_debug("[$scheduler_name] [$i] inner job: using container $inner_id\n");
         }else{
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Container $1 does not exist.\n");
-            OAR::IO::set_job_message($base,$j->{job_id},"Container $1 does not exist");
-            OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Container $1 does not exist");
+            oar_debug("[$scheduler_name] [$i] inner job: container $inner_id does not exist.\n");
+            OAR::IO::set_job_message($base,$i,"Container $inner_id does not exist");
+            OAR::IO::set_job_scheduler_info($base,$i,"Container $inner_id does not exist");
+            $inner_id=0;
             next;
         }
     }
-    
-    my $placeholder_name = "0";
-    if (defined($types->{allow_placeholder})){
-        if (defined($Placeholder_gantt_hash{$types->{allow_placeholder}})){
-            $gantt_to_use = $Placeholder_gantt_hash{$types->{allow_placeholder}};
-            $placeholder_name = $types->{allow_placeholder};
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Using placeholder $placeholder_name\n");
-        }else{
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Placeholder $types->{allow_placeholder} does not exist. So I use the default placeholder\n");
-        }
-    }
-    if (defined($types->{timesharing})){
-        my ($user, $name) = parse_timesharing($types->{timesharing}, $j->{job_user}, $j->{job_name});
-        if (!defined($timesharing_gantts->{$container_num}->{$placeholder_name}->{$user}->{$name})){
-            $timesharing_gantts->{$container_num}->{$placeholder_name}->{$user}->{$name} = dclone($gantt_to_use);
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create new gantt in phase II for ($user, $name)\n");
-        }
-        $gantt_to_use = $timesharing_gantts->{$container_num}->{$placeholder_name}->{$user}->{$name};
-        oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Use gantt for ($container_num,$user,$name)\n");
+    if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+        oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,) and is a container\n");
+    } else {
+        ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) =
+            OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $j->{job_user}, $j->{job_name}, $types, $inner_id, "[$scheduler_name] [$i]");
     }
     if (defined($types->{token})){
         foreach my $t (keys(%{$types->{token}})){
             next if ($skip_job == 1);
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Check token: $t ($types->{token}->{$t}).\n");
+            oar_debug("[$scheduler_name] [$i] Check token: $t ($types->{token}->{$t}).\n");
             # Check if we must execute the corresponding script
             if ((!defined($Token_values{$t})) and (defined($Token_scripts->{$t}))){
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Execute $Token_scripts->{$t}\n");
+                oar_debug("[$scheduler_name] [$i] Execute $Token_scripts->{$t}\n");
                 if (open(TOKSCRIPT, "$Token_scripts->{$t} |")){
                     my $num = <TOKSCRIPT>;
                     chop($num);
                     if ($num =~ /^\d+$/){
                         $Token_values{$t} = $num;
-                        oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}]  $Token_scripts->{$t} returns $num\n");
+                        oar_debug("[$scheduler_name] [$i]  $Token_scripts->{$t} returns $num\n");
                     }else{
-                        oar_warn("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] The token script $Token_scripts->{$t} does not return a number ($num).\n");
+                        oar_warn("[$scheduler_name] [$i] The token script $Token_scripts->{$t} does not return a number ($num).\n");
                     }
                     close(TOKSCRIPT);
                 }
             }
             if (defined($Token_values{$t})){
                 if ($Token_values{$t} < $types->{token}->{$t}){
-                    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] No enough Tokens: $t ($Token_values{$t} < $types->{token}->{$t}).\n");
-                    OAR::IO::set_job_message($base,$j->{job_id},"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
-                    OAR::IO::set_job_scheduler_info($base,$j->{job_id},"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
+                    oar_debug("[$scheduler_name] [$i] No enough Tokens: $t ($Token_values{$t} < $types->{token}->{$t}).\n");
+                    OAR::IO::set_job_message($base,$i,"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
+#                    OAR::IO::set_job_scheduler_info($base,$i,"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
                     $skip_job = 1;
                 }
             }else{
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Token value cannot be retrieved ($t).\n");
-                OAR::IO::set_job_message($base,$j->{job_id},"Token value cannot be retrieved ($t)");
-                OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Token value cannot be retrieved ($t)");
+                oar_debug("[$scheduler_name] [$i] Token value cannot be retrieved ($t).\n");
+                OAR::IO::set_job_message($base,$i,"Token value cannot be retrieved ($t)");
+#                OAR::IO::set_job_scheduler_info($base,$i,"Token value cannot be retrieved ($t)");
                 $skip_job = 1;
             }
         }
         next if ($skip_job == 1);
     }
-
-    #oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Use gantt for $j->{job_id}:\n".OAR::Schedulers::GanttHoleStorage::pretty_print($gantt_to_use)."\n");
-
     my $job_properties = "\'1\'";
     if ((defined($j->{properties})) and ($j->{properties} ne "")){
         $job_properties = $j->{properties};
@@ -474,9 +400,8 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     
     # Choose the moldable job to schedule
     my @moldable_results;
-    my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$j->{job_id});
+    my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$i);
     foreach my $moldable (@{$job_descriptions}){
-    #my $moldable = $job_descriptions->[0];
         my $duration;
         if (defined($types->{besteffort})){
             $duration = $besteffort_duration;
@@ -492,146 +417,100 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             }
             my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
             push(@tree_list, $tmp_tree);
-            #my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
-            #foreach my $l (@leafs){
-            #    vec($resource_id_used_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-            #}
         }
         my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;
         $gantt_timeout = $Minimum_timeout_per_job if ($gantt_timeout <= ($timeout / 8));
-        oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] find_first_hole with a timeout of $gantt_timeout\n");
+        oar_debug("[$scheduler_name] [$i] find_first_hole in gantt ($inner_id,$use_placeholder_name,$timesharing_user,$timesharing_name) with a timeout of $gantt_timeout\n");
         my @hole;
         if ($Max_nb_processes <= 1){
-            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($gantt_to_use, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
+            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$use_placeholder_name}->${$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
         }else{
-            oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] Using Gantt PARALLEL algorithm\n");
-            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($gantt_to_use, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
+            oar_debug("[$scheduler_name] [$i] using Gantt PARALLEL algorithm\n");
+            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
         }
-        
-#        print("[GANTT] 10 ".gettimeofday."\n");
         my @res_trees;
         my @resources;
         foreach my $t (@{$hole[1]}){
-#        print("[GANTT] 11 ".gettimeofday."\n");
-            #my $minimal_tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($t);
-#        print("[GANTT] 12 ".gettimeofday."\n");
             push(@res_trees, $t);
             foreach my $r (OAR::Schedulers::ResourceTree::get_tree_leafs($t)){
                 push(@resources, OAR::Schedulers::ResourceTree::get_current_resource_value($r));
             }
-#        print("[GANTT] 13 ".gettimeofday."\n");
         }
-#        print("[GANTT] @resources\n");
         push(@moldable_results, {
                                     resources => \@resources,
                                     start_date => $hole[0],
                                     duration => $duration,
-                                    moldable_id => $moldable->[2]
+                                    moldable_id => $moldable->[2],
+                                    walltime => $moldable->[1]
                                 });
     }
 
-    # Choose moldable job which will finish the first
+    # Choose moldable job which will finish first
+    oar_debug("[$scheduler_name] [$i] choosing moldable job which will finish first\n");
     my $index_to_choose = -1;
     my $best_stop_time;
-#        print("[GANTT] 14 ".gettimeofday."\n");
-    for (my $i=0; $i <= $#moldable_results; $i++){
-        #my @tmp_array = @{$moldable_results[$i]->{resources}};
-        if ($#{$moldable_results[$i]->{resources}} >= 0){
-            my $tmp_stop_date = $moldable_results[$i]->{start_date} + $moldable_results[$i]->{duration};
+    for (my $m=0; $m <= $#moldable_results; $m++){
+        if ($#{$moldable_results[$m]->{resources}} >= 0){
+            my $tmp_stop_date = $moldable_results[$m]->{start_date} + $moldable_results[$m]->{duration};
             if ((!defined($best_stop_time)) or ($best_stop_time > $tmp_stop_date)){
                 $best_stop_time = $tmp_stop_date;
-                $index_to_choose = $i;
+                $index_to_choose = $m;
             }
         }
     }
     if ($index_to_choose >= 0){
-        # We can schedule the job
-#        print("[GANTT] 15 ".gettimeofday."\n");
+        # Job is successfully scheduled
+        oar_debug("[$scheduler_name] [$i] job is successfully scheduled\n");
         my $vec = '';
         foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
             vec($vec, $r, 1) = 1;
         }
-        #Fill all other gantts
-        foreach my $g (keys(%Container_gantt_hash)){
-            if ($j->{job_id} != $g){
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Add live occupation in container $g for job $j->{job_id}\n");
-                OAR::Schedulers::GanttHoleStorage::set_occupation(  $Container_gantt_hash{$g},
-                                                     $moldable_results[$index_to_choose]->{start_date},
-                                                     $moldable_results[$index_to_choose]->{duration},
-                                                     $vec
-                                                  );
-            }
-        }
+
+        # Create gantt for the new container
         if (defined($types->{container})){
-            $Container_gantt_hash{$j->{job_id}} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec, $All_resource_list_vec);
+            $container_id = $i;
+            oar_debug("[$scheduler_name] [$i] container job: create gantt ($container_id,,,)\n");
+            $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec, $All_resource_list_vec);
         }
 
-        foreach my $c (keys(%{$timesharing_gantts})){
-            foreach my $p (keys(%{$timesharing_gantts->{$c}})){
-                foreach my $u (keys(%{$timesharing_gantts->{$c}->{$p}})){
-                    foreach my $n (keys(%{$timesharing_gantts->{$c}->{$p}->{$u}})){
-                        if (($gantt_to_use != $timesharing_gantts->{$c}->{$p}->{$u}->{$n})){
-                            OAR::Schedulers::GanttHoleStorage::set_occupation( $timesharing_gantts->{$c}->{$p}->{$u}->{$n},
-                                                                $moldable_results[$index_to_choose]->{start_date},
-                                                                $moldable_results[$index_to_choose]->{duration},
-                                                                $vec
-                                                              );
-                        }
-                    }
-                }
-            }
-        }
-        
-        # For placeholder
-        foreach my $p (keys(%Placeholder_gantt_hash)){
-            if ((!defined($types->{set_placeholder})) or ($types->{set_placeholder} ne $p)){
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Add live occupation in the placeholder $p\n");
-                OAR::Schedulers::GanttHoleStorage::set_occupation( $Placeholder_gantt_hash{$p},
-                                                    $moldable_results[$index_to_choose]->{start_date},
-                                                    $moldable_results[$index_to_choose]->{duration},
-                                                    $vec
-                                                  );
-            }
-        }
-        if (defined($types->{set_placeholder})){
-            if (!defined($Placeholder_gantt_hash{$types->{set_placeholder}})){
-                $Placeholder_gantt_hash{$types->{set_placeholder}} = dclone($gantt_to_use);
-                $placeholder_name = $types->{placeholder};
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] Create gantt for the placeholder $types->{set_placeholder}\n");
-            }
-        }
-
+        #Fill all other gantts
+        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec, $inner_id, $set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[$scheduler_name] [$i]"); 
 
         #update database
         push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
         OAR::IO::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
-        OAR::IO::set_job_message($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j))." , container=$container_num , placeholder=$placeholder_name");
-        OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($j))." , container=$container_num , placeholder=$placeholder_name");
+
+        # Feed message job field
+        my @type_list = sort(keys(%{$types}));
+        my $message = OAR::IO::format_job_message_text($j->{job_name},$#{$moldable_results[$index_to_choose]->{resources}}+1,$moldable_results[$index_to_choose]->{walltime},$j->{job_type},$j->{reservation},$j->{queue_name},$j->{project},\@type_list,"Karma=".sprintf("%.3f",karma($j)." , container=$inner_id , use_placeholder=$use_placeholder_name"));
+        OAR::IO::set_job_message($base,$i,$message);
+#        OAR::IO::set_job_scheduler_info($base,$i,"Karma = ".sprintf("%.3f",karma($j))." , container=$inner_id , use_placeholder=$use_placeholder_name");
 
         # Update Token values
         if (defined($types->{token}) and ($moldable_results[$index_to_choose]->{start_date} <= $current_time)){
             foreach my $t (keys(%{$types->{token}})){
                 $Token_values{$t} = $Token_values{$t} - $types->{token}->{$t};
-                oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_fairsharing_and_placeholder] Update TOKEN $t to $Token_values{$t}\n");
+                oar_debug("[$scheduler_name] Update TOKEN $t to $Token_values{$t}\n");
             }
         }
     }else{
-        my $message = "Cannot find enough resources which fit for the job $j->{job_id}";
-        OAR::IO::set_job_message($base,$j->{job_id},$message);
-        OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
-        oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] $message\n");
+        oar_debug("[$scheduler_name] [$i] job couldn't be scheduled\n");
+        my $message = "cannot find enough resources for job $i";
+        OAR::IO::set_job_message($base,$i,$message);
+        OAR::IO::set_job_scheduler_info($base,$i,$message);
+        oar_debug("[$scheduler_name] [$i] $message\n");
     }
-#        print("[GANTT] 18 ".gettimeofday."\n");
-    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] [$j->{job_id}] End scheduling\n");
+    oar_debug("[$scheduler_name] [$i] end scheduling\n");
 }
+oar_debug("[$scheduler_name] End phase 2 (waiting jobs)\n");
 
 
 OAR::IO::disconnect($base);
 OAR::IO::disconnect($base_ro);
 
 if ($job_index <= $#jobs){
-    oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_fairsharing_and_placeholder] I am not able to schedule all waiting jobs in the specified time : $timeout s\n");
+    oar_debug("[$scheduler_name] Warning: some jobs were not scheduled because the scheduler's timeout was reached ($timeout s)\n");
 }
 
-oar_debug("[oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder] End of scheduler for queue $queue\n");
+oar_debug("[$scheduler_name] End of scheduler for queue $queue\n");
 

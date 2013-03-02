@@ -46,8 +46,11 @@ let max_time_minus_one = 2147483647L
 (* Constant duration time of a besteffort job *)
 let besteffort_duration = 300L
 
+let hy_labels = Conf.get_hierarchy_info "resource_id,network_address,cpu,core"  (* "HIERARCHY_LABELS" order doesn't matter*)
+let sched_resource_order = Conf.get_default_value "SCHEDULER_RESOURCE_ORDER" "resource_id ASC"
+
 (*                                                                                                                                   *)
-(* for TOKEN feature                                                                                                                 *)
+(* for TOKEN feature                                                                                                                *)
 (* SCHEDULER_TOKEN_SCRIPTS="{ fluent => '/usr/local/bin/check_fluent.sh arg1 arg2', soft2 => '/usr/local/bin/check_soft2.sh arg1' }" *)
 (*                                                                                                                                   *)
 let token_scripts =
@@ -108,7 +111,7 @@ let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
 (* Suspend stuff *)
 (*               *)
 
-(*
+(* TODO: to finish for SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE support
 my $sched_available_suspended_resource_type_tmp = get_conf("SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE");
 if (!defined($sched_available_suspended_resource_type_tmp)){
     push(@Sched_available_suspended_resource_type, "default");
@@ -127,8 +130,7 @@ let argv = if (Array.length(Sys.argv) > 2) then
 (* with or without resource availabilty (field available_upto in resources table) *)
 (*                                                                                *)
 
-let resources_init_slots_determination dbh now =
-  let potential_resources = Iolib.get_resource_list dbh in
+let resources_init_slots_determination dbh now potential_resources =
   let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") ||
                         (((compare (Conf.get_default_value "ENERGY_SAVING_INTERNAL" "no") "yes")==0) && Conf.test_key("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))
   in 
@@ -142,11 +144,11 @@ let resources_init_slots_determination dbh now =
       let hash_available_upto_by_resources =  Hashtbl.create 10 in
       let hash_available_upto_by_resources_populate r =
           let res_lst = try Hashtbl.find hash_available_upto_by_resources r.available_upto
-                        with Not_found -> Hashtbl.add hash_available_upto_by_resources r.available_upto [r.resource_id];[]
+                        with Not_found -> Hashtbl.add hash_available_upto_by_resources r.available_upto [r.ord_r_id];[]
                         in
                           match res_lst with
                              [] -> ()
-                            | x -> Hashtbl.replace hash_available_upto_by_resources r.available_upto (x @ [r.resource_id]) 
+                            | x -> Hashtbl.replace hash_available_upto_by_resources r.available_upto (x @ [r.ord_r_id]) 
       in
       let resources = List.filter (fun n -> if (n.state = Alive) || (n.state = Absent) then
                                               begin 
@@ -164,7 +166,7 @@ let resources_init_slots_determination dbh now =
               Conf.log "none available ressources for scheduling any jobs"; exit 0
             end
           else
-            ints2intervals (List.map (fun n -> n.resource_id) resources) 
+            ints2intervals (List.map (fun n -> n.ord_r_id) resources) 
         in                     
         (* create corresponding job from available_up parameter of resource *) 
         let pseudo_job_av_upto a_upto res_itv =
@@ -198,7 +200,7 @@ let resources_init_slots_determination dbh now =
     end
   else
       let resources = List.filter (fun n -> n.state = Alive) potential_resources in
-      let resource_intervals = ints2intervals (List.map (fun n -> n.resource_id) resources) in
+      let resource_intervals = ints2intervals (List.map (fun n -> n.ord_r_id) resources) in
         (resource_intervals,[{time_s = now; time_e = max_time; set_of_res = resource_intervals}])
 
 (*               *)
@@ -208,25 +210,31 @@ let _ =
 	try
 		Conf.log "Starting";
 
-    (* get hierarchy description from oar.conf and convert it in hierarchy levels and set master_top (toplevel interval) *)
-    Hierarchy.hierarchy_levels := Hierarchy.h_desc_to_h_levels Conf.get_hierarchy_info;
-    Hierarchy.toplevel_itv := List.hd (List.assoc "resource_id" !Hierarchy.hierarchy_levels) ; (* TODO: why *) 
-
     let (queue,now) = argv in
     let security_time_overhead = Int64.of_string  (Conf.get_default_value "SCHEDULER_JOB_SECURITY_TIME" "60") in   (* int no for  ? *)
 		let conn = let r = Iolib.connect () in at_exit (fun () -> Iolib.disconnect r); r in
+    (* retreive ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
+      let (potential_resources, h_value_order, hierarchy_info, ord2init_ids, init2ord_ids)  = Iolib.get_resource_list_w_hierarchy conn hy_labels sched_resource_order in
+      (* obtain hierarchy_levels from hierarchy_info given by get_resource_list_w_hierarchy *)
+  
+      (* 
+       Conf.log ("ord2init_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list ord2init_ids) ) );
+       Conf.log ("init2ord_ids:" ^ (Helpers.concatene_sep "," string_of_int (Array.to_list init2ord_ids) ) );
+      *)
+      let hierarchy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
+       (* List.iter (fun x ->  Conf.log ("h_lab:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels;*)
       let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
-      let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now in
+      let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now potential_resources in
         Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
       
   		let (waiting_j_ids,h_waiting_jobs) =
         if fairsharing_flag then
           let limited_job_ids = Iolib.get_limited_by_user_job_ids_to_schedule conn queue fairsharing_nb_job_limit in
-          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids
+          Iolib.get_job_list_fairsharing conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag limited_job_ids init2ord_ids
         else
-          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag []
-      in (* TODOfalse -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
+          Iolib.get_job_list_fairsharing  conn resource_intervals queue besteffort_duration security_time_overhead fairsharing_flag [] init2ord_ids
+      in (* TODO false -> alive_resource_intervals, must be also filter by type-default !!!  Are-you sure ??? *)
       Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
 
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
@@ -236,22 +244,28 @@ let _ =
           ignore (Iolib.get_job_types conn waiting_j_ids h_waiting_jobs);
           
           (* fill slots with prev scheduled jobs  *)
-          let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn [] security_time_overhead now in (* TODO available_suspended_res_itvs *)
-          if not ( prev_scheduled_jobs = []) then
+          let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn init2ord_ids [] security_time_overhead now in (* TODO available_suspended_res_itvs *)
+          if (not ( prev_scheduled_jobs = [])) then
             let (h_prev_scheduled_jobs_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
             let prev_scheduled_job_ids =
-              if queue != "besteffort" then
+              if (not (queue = "besteffort")) then
                 (* exclude besteffort jobs *)
+                begin
+                (* Conf.log ("excluding besteffort jobs, queue: " ^ queue); *)
                 let besteffort_mem_remove job_id = 
                   let test_bt = List.mem_assoc "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_types job_id 
                                                               with Not_found -> failwith "Must no failed here: besteffort_mem").types in
                                                               if test_bt then Hashtbl.remove  h_prev_scheduled_jobs_types job_id else ();
                                                               test_bt  
                   in  
-                    List.filter (fun n -> not (besteffort_mem_remove n)) prev_scheduled_job_ids_tmp
+                    List.filter (fun n -> (not (besteffort_mem_remove n))) prev_scheduled_job_ids_tmp;
  (*               Conf.log ("Previous Scheduled jobs no besteffort:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs_no_bt) ); *)
+                end
               else
+                begin
+                (* Conf.log ("not excluding besteffort jobs"); *)
                 prev_scheduled_job_ids_tmp
+                end
             in
              
             (* display previous scheduled jobs 
@@ -295,9 +309,11 @@ let _ =
             else
               all_ordered_waiting_j_ids
             in
+          (*                                                               *)
           (* now compute an assignement for waiting jobs - MAKE A SCHEDULE *)
+          (*                                                               *)
           let (assignement_jobs, noscheduled_jids) = 
-            schedule_id_jobs_ct_dep h_slots h_waiting_jobs h_jobs_dependencies h_req_jobs_status ordered_waiting_j_ids security_time_overhead
+            schedule_id_jobs_ct_dep h_slots h_waiting_jobs hierarchy_levels h_jobs_dependencies h_req_jobs_status ordered_waiting_j_ids security_time_overhead
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (Int64.to_string now)));
             (*Conf.log ("slot_init:\n  " ^  slot_to_string slot_init);*)
@@ -312,7 +328,7 @@ let _ =
             Conf.log ("Ids of noscheduled jobs:" ^ (Helpers.concatene_sep "," (fun n-> Printf.sprintf "%d" n) noscheduled_jids) );
 
             (* save assignements into db *)
-            Iolib.save_assigns conn assignement_jobs;  
+            Iolib.save_assigns conn assignement_jobs ord2init_ids;  
             Conf.log "Terminated";
  		        exit 0
           end

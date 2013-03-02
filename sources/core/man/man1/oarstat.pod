@@ -4,9 +4,7 @@ oarstat - show information about jobs
 
 =head1 SYNOPSIS
 
-B<oarstat> [-X|-Y|-J|-D|-f] [-j jobid|--array arrayid] [--sql SQL_properties] [-u user] [--array]
-
-B<oarstat> [--sql SQL_properties] [-u user] [--compact]
+B<oarstat> [-X|-Y|-J|-D|-f] [-j jobid|--array arrayid] [--sql SQL_properties] [-u user] [--array] [--compact] [--format num]
 
 B<oarstat> [-e|-p] [-j jobid | --array arrayid]
 
@@ -60,6 +58,12 @@ Prints only one line for all the jobs belonging to a same array. The id is repla
 =item B<--sql>
 
 Restricts display with the SQL where clause on the table jobs (ex: "project = 'p1'")
+
+=item B<--format>
+
+select the text output format. Available values are:
+  1: default
+  2: prints system messages
 
 =item B<-D, --DUMPER>
 

@@ -38,20 +38,46 @@ int oardrmaa_oar_attrib_by_name( const char *name );
 #define OARDRMAA_JOB_NAME       "job_name"
 #define OARDRMAA_STDOUT_FILE    "stdout"
 #define OARDRMAA_STDERR_FILE    "stderr"
-#define OARDRMAA_WALLTIME       "walltime"
+#define OARDRMAA_RESOURCE       "resource"
 #define OARDRMAA_ARGS           "args"
 #define OARDRMAA_JOB_STATE      "job_state"
 #define OARDRMAA_HOLD           "hold"
+#define OARDRMAA_PROPERTY  "property"
+#define OARDRMAA_RESERVATION    "reservation"
+#define OARDRMAA_CHECKPOINT     "checkpoint"
+#define OARDRMAA_SIGNAL         "signal"
+#define OARDRMAA_TYPE           "type"
+#define OARDRMAA_DIRECTORY      "directory"
+#define OARDRMAA_PROJECT        "project"
+#define OARDRMAA_ANTERIOR       "anterior"
+#define OARDRMAA_NOTIFY         "notify"
+#define OARDRMAA_RESUBMIT       "resubmit"
+#define OARDRMAA_I_JOB_KEY_FROM_FILE  "import-job-key-from-file"
+#define OARDRMAA_I_JOB_KEY_INLINE     "import-job-key-inline"
+#define OARDRMAA_USE_JOB_KEY          "use-job-key"
 
 typedef enum {
         OARDRMAA_ATTR_JOB_NAME,
         OARDRMAA_ATTR_STDOUT_FILE,
         OARDRMAA_ATTR_STDERR_FILE,
-        OARDRMAA_ATTR_WALLTIME,
+        OARDRMAA_ATTR_RESOURCE,
         OARDRMAA_ATTR_ARGS,
-        OARDRMAA_ATTR_JOB_STATE,
+        OARDRMAA_ATTR_JOB_STATE, 
         OARDRMAA_ATTR_HOLD,
-        OARDRMAA_N_OAR_ATTRIBUTES
+        OARDRMAA_ATTR_PROPERTY,
+        OARDRMAA_ATTR_RESERVATION,
+        OARDRMAA_ATTR_CHECKPOINT,
+        OARDRMAA_ATTR_SIGNAL,
+        OARDRMAA_ATTR_TYPE,
+        OARDRMAA_ATTR_DIRECTORY,
+        OARDRMAA_ATTR_PROJECT,
+        OARDRMAA_ATTR_ANTERIOR,
+        OARDRMAA_ATTR_NOTIFY,
+        OARDRMAA_ATTR_RESUBMIT,
+        OARDRMAA_ATTR_I_JOB_KEY_FROM_FILE,
+        OARDRMAA_ATTR_I_JOB_KEY_INLINE,
+        OARDRMAA_ATTR_USE_JOB_KEY,
+        OARDRMAA_N_OAR_ATTRIBUTES 
 } oar_attribute_t;
 
 #endif /* __OAR_DRMAA__OAR_ATTRIB_H */

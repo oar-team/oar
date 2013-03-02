@@ -128,12 +128,11 @@ sub reset_conf () {
     return 1;
 }
 
-## Changes the value of a configuration variable into the oar.conf file
+## set value to a parameter
 sub set_value ($$){
 	my $variable = shift;
 	my $value = shift;
 	my $new_file_content;
-        my $flag=0;
 
     open CONF, $file or die "Open configuration file";
     %params = ();
@@ -142,7 +141,6 @@ sub set_value ($$){
         my ($key,$val) = ($1,$2);
         if ($key eq $variable) {
         	$new_file_content .= $key."="."\"$value\""."\n";
-                $flag=1;
         }
         else {
         	$new_file_content .= $key."=".$val;
@@ -156,9 +154,6 @@ sub set_value ($$){
       		$new_file_content.= $line;
       	}
       }
-    }
-    if ($flag == 0) {
-      $new_file_content.= "#Added by OAR API:\n". $variable."="."\"$value\""."\n";
     }
     close CONF;
     

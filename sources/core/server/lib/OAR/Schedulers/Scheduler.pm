@@ -320,7 +320,7 @@ sub treate_waiting_reservation_jobs($$){
         if ($current_time_sec > $start+$max ){
             oar_warn("[OAR::Schedulers::Scheduler] treate_waiting_reservation_jobs :  Reservation $job->{job_id} in ERROR\n");
             OAR::IO::set_job_state($dbh, $job->{job_id}, "Error");
-            OAR::IO::set_job_message($dbh,$job->{job_id},"[OAR::Schedulers::Scheduler] Reservation has expired and it cannot be started.");
+            OAR::IO::set_job_message($dbh,$job->{job_id},"Reservation has expired and it cannot be started.");
             $return = 1;
         }
         my @resa_alive_resources = OAR::IO::get_gantt_Alive_resources_for_job($dbh,$moldable->[2]);
@@ -422,7 +422,7 @@ sub check_reservation_jobs($$$$){
         #look if reservation is too old
         if ($current_time_sec >= ($job->{start_time} + $duration)){
             oar_warn("[OAR::Schedulers::Scheduler] check_reservation_jobs: Cancel reservation $job->{job_id}, job is too old\n");
-            OAR::IO::set_job_message($dbh, $job->{job_id}, "reservation too old");
+            OAR::IO::set_job_message($dbh, $job->{job_id}, "Reservation too old");
             OAR::IO::set_job_state($dbh, $job->{job_id}, "toError");
         }else{
             if ($job->{start_time} < $current_time_sec){
@@ -569,11 +569,26 @@ sub check_jobs_to_launch($){
             oar_warn("[OAR::Schedulers::Scheduler] Reduce job ($i) walltime to $max_time instead of $mold->{moldable_walltime}\n");
             OAR::IO::add_new_event($dbh,"REDUCE_RESERVATION_WALLTIME",$i,"Change walltime from $mold->{moldable_walltime} to $max_time");
         }
-        OAR::IO::set_running_date_arbitrary($dbh,$i,$current_time_sec);
-        OAR::IO::set_assigned_moldable_job($dbh,$i,$jobs_to_launch{$i}->[0]);
-        foreach my $r (@{$jobs_to_launch{$i}->[1]}){
-            OAR::IO::add_resource_job_pair($dbh,$jobs_to_launch{$i}->[0],$r);
+        my $running_date = $current_time_sec;
+        if ($running_date < $job->{submission_time}){
+            $running_date = $job->{submission_time};
         }
+        OAR::IO::set_running_date_arbitrary($dbh,$i,$running_date);
+        OAR::IO::set_assigned_moldable_job($dbh,$i,$jobs_to_launch{$i}->[0]);
+        
+        #TODO: to remove
+        #foreach my $r (@{$jobs_to_launch{$i}->[1]}){
+        #    OAR::IO::add_resource_job_pair($dbh,$jobs_to_launch{$i}->[0],$r);
+        #}
+        #TODO option if insert_from_file is not enable:
+
+        my $insert_from_file = get_conf_with_default_param("INSERTS_FROM_FILE", "no");
+        if ($insert_from_file eq 'yes') {
+          OAR::IO::add_resource_job_pairs_from_file($dbh,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
+        } else {
+          OAR::IO::add_resource_job_pairs($dbh,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
+        }
+
         OAR::IO::set_job_state($dbh, $i, "toLaunch");
         $return_code = 1;
     }
