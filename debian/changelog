@@ -1,8 +1,15 @@
-oar (2.5.2+62.gbe79467-0) UNRELEASED; urgency=low
+oar (2.5.3~rc1-1) UNRELEASED; urgency=low
 
+  [ Philippe Le Brouster ]
   * Remove the patches merged in upstream. 
 
- -- Philippe Le Brouster <plb@nebkha.net>  Wed, 11 Jul 2012 16:29:59 +0200
+  [ Pierre Neyron ]
+  * New upstream release candidate 1
+  * Add drawgantt-svg to oar-web-status package
+  * Set Pierre Neyron as Maintainer
+  * Add Philippe Le Brouster as Uploader
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sat, 02 Mar 2013 20:00:04 +0100
 
 oar (2.5.2-3) unstable; urgency=low
 
