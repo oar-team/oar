@@ -40,13 +40,13 @@ fi
 
 start_oar_node() {
     echo
-    echo " * Edit the start_oar_node function in /etc/sysconfig/oar-node if you"
+    echo " * Edit the start_oar_node function in %%DEFAULTDIR%%/oar-node if you"
     echo "   want to perform specific actions (e.g. switch the node to Alive)"
 }
 
 stop_oar_node() {
     echo
-    echo " * Edit the stop_oar_node function in /etc/sysconfig/oar-node if you"
+    echo " * Edit the stop_oar_node function in %%DEFAULTDIR%%/oar-node if you"
     echo "   want to perform specific actions (e.g. switch the node to Absent)"
 }
 
