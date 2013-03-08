@@ -20,6 +20,8 @@ version 2.5.3:
   - Add packaging for the SVG version of drawgantt
   - Bug fix schedulers: rewrite schedulers with placeholders
   - Rework default admission rules
+  - Add the command "oar_resources_init_with_HT" wich generates right resources
+    to add in the DB with a "thread" property (HyperThreading)
 
 
 version 2.5.2:
