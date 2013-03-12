@@ -1,3 +1,12 @@
+oar (2.5.2-3~bpo60+1) squeeze-backports; urgency=low
+
+  * Rebuild for squeeze-backports.
+  * Switch back to debhelper 8 (needed for backporting)
+  * Set Pierre Neyron as Maintainer
+  * Add Philippe Le Brouster as Uploader
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 12 Mar 2013 23:52:45 +0100
+
 oar (2.5.2-3) unstable; urgency=low
 
   * Remove the desktop-computing packaging because it is no more supported
