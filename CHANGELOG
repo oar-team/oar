@@ -22,7 +22,9 @@ version 2.5.3:
   - Rework default admission rules
   - Add the command "oar_resources_init_with_HT" wich generates right resources
     to add in the DB with a "thread" property (HyperThreading)
-
+  - Fix stdout/stderr bug: check the allowed characters in the path given by
+    the users
+  - Fix: the user shell (bash) didn't source /etc/bash.bashrc in batch jobs.
 
 version 2.5.2:
 --------------
