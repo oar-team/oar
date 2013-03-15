@@ -1335,6 +1335,16 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         return(-6);
     }
     
+    # Check the stdout and stderr path validity
+    if ((defined($stdout)) and ($stdout !~ m/^[a-zA-Z0-9_.\/\-\%\\ ]+$/m)) {
+      warn("/!\\ Invalid stdout file name (bad character)\n");
+      return(-12);
+    }
+    if (defined($stderr) and ($stderr !~ m/^[a-zA-Z0-9_.\/\-\%\\ ]+$/m)) {
+      warn("/!\\ Invalid stderr file name (bad character)\n");
+      return(-13);
+    }    
+
 #    # Verify job name
 #    if ($job_name !~ m/^\w*$/m){
 #        warn("ERROR : The job name must contain only alphanumeric characters plus '_'\n");
