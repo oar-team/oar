@@ -9,3 +9,15 @@ If you want to generate RPM packages from the OAR sources:
 
     - the RPM packages are created into the "RPMS" directory
 
+yum install rpm-build
+yum install rpmlint
+yum install rpmdevtools
+
+#mkdir -p SPECS SRPMS RPMS SOURCES BUILD
+rpmdev-setuptree
+cd rpmbuild
+
+cp path/to/oar.spec SPECS/
+cp path/to/oar.tgz SOURCES/
+rpmbuild -bs SPECS/oar-X.spec
+yum-builddep SRPMS/oar-X.src.rpm
