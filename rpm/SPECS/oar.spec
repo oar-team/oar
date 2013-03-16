@@ -1,4 +1,4 @@
-%define version 2.5.2
+%define version 2.5.3+rc3
 %define release 1.el6
 
 %define oaruser  oar
@@ -24,8 +24,7 @@ OAR is a resource manager (or batch scheduler) for large computing clusters.
 %package common
 Summary:        OAR batch scheduler common package
 Group:          System/Servers
-Requires:       perl, shadow-utils, perl-DBI, /bin/mkdir, /usr/bin/chsh
-  # How could we do (libdbd-mysql-perl | libdbd-pg-perl) ?
+Requires:       perl, shadow-utils, perl-DBI, /bin/mkdir, /usr/bin/chsh, libdbd-mysql-perl or libdbd-mysql-perl 
 %description common
 This package installs the common part or the OAR batch scheduler
 
@@ -93,8 +92,7 @@ This package install the submission and query part of the OAR batch scheduler
 %package web-status
 Summary:	OAR batch scheduler web-status package
 Group:          System/Servers
-Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-GD, perl(Sort::Naturally), httpd, php, (php-mysql|php_pgsql)
- # Some Ruby dependencies missing (libdbd-mysql-ruby|libdbd-pg-ruby)
+Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-GD, perl(Sort::Naturally), httpd, php, php-mysql or php_pgsql, libdbd-mysql-ruby or libdbd-pg-ruby
 Provides:       Perl(OAR::Monika), DrawGantt, DrawGantt-SVG
 %description web-status
 This package installs the OAR batch scheduler status web pages: jobs and resources status and gantt diagrams.
