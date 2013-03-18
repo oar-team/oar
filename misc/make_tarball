@@ -59,7 +59,7 @@ TARGET_DIRECTORY=../tarballs
 REMOTE=no
 FORCE=no
 GIT_URI=git://scm.gforge.inria.fr/oar/oar.git
-GIT_TREEISH=2.5
+GIT_TREEISH=master
 
 while getopts "hqrfu:t:d:" options; do
   case $options in
