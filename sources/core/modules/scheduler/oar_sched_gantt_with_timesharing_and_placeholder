@@ -310,7 +310,9 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             OAR::IO::set_moldable_job_max_time($base, $job_to_extend->{assigned_moldable_job}, $new_duration);
             oar_warn("[$scheduler_name] [$i] Extend walltime of job " . $job_to_extend->{job_id} . " to $new_duration (was  $duration)\n");
             OAR::IO::add_new_event($base, "EXTEND_JOB_WALLTIME", $job_to_extend->{job_id}, "Change walltime from $duration to $new_duration (extension job $i)");
+            oar_warn("[$scheduler_name] [$i] Change state -> Terminated\n");
             OAR::IO::set_job_state($base, $i, "Terminated");
+            OAR::IO::add_new_event($base, "EXTENSION_TERMINATED", $i, "Change state of extension job $i to terminated");
         } else {
             oar_debug("[$scheduler_name] [$i] extension job: does not fit\n");
         }
