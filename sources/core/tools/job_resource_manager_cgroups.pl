@@ -25,6 +25,10 @@ use Fcntl ':flock';
 sub exit_myself($$);
 sub print_log($$);
 
+# Put YES if you want to use the memory cgroup
+# This is useful for OOM problems (kill only tasks inside the same cgroup
+my $ENABLE_MEMCG = "NO";
+
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
 
@@ -76,7 +80,11 @@ my @Cpuset_cpus;
 # Get the data structure only for this node
 if (defined($Cpuset->{cpuset_path})){
     $Cpuset_path_job = $Cpuset->{cpuset_path}.'/'.$Cpuset->{name};
-    @Cpuset_cpus = @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}};
+    foreach my $l (@{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}}){
+        foreach my $c (split("[, ]",$l)){
+            push(@Cpuset_cpus, $c);
+        }
+    }
 }
 
 
@@ -106,18 +114,21 @@ if ($ARGV[0] eq "init"){
             flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
             if (!(-r $Cgroup_directory_collection_links.'/cpuset/tasks')){
                 if (!(-r $OS_cgroups_path.'/cpuset/tasks')){
+                    my $cgroup_list = "cpuset,cpu,cpuacct,devices,freezer,net_cls,blkio";
+                    $cgroup_list .= ",memory" if ($ENABLE_MEMCG eq "YES");
                     if (system('oardodo mkdir -p '.$Cgroup_mount_point.' &&
-                                oardodo mount -t cgroup -o cpuset,cpu,cpuacct,devices,freezer,net_cls,blkio none '.$Cgroup_mount_point.'
+                                oardodo mount -t cgroup -o '.$cgroup_list.' none '.$Cgroup_mount_point.' || exit 1
                                 oardodo rm -f /dev/cpuset
-                                oardodo ln -s '.$Cgroup_mount_point.' /dev/cpuset
+                                oardodo ln -s '.$Cgroup_mount_point.' /dev/cpuset &&
                                 oardodo mkdir -p '.$Cgroup_directory_collection_links.' &&
-                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/cpuset
-                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/cpu
-                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/cpuacct
-                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/devices
-                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/freezer
-                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/net_cls
-                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/blkio
+                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/cpuset &&
+                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/cpu &&
+                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/cpuacct &&
+                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/devices &&
+                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/freezer &&
+                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/net_cls &&
+                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/blkio &&
+                                [ "'.$ENABLE_MEMCG.'" =  "YES" ] && oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/memory || true
                                ')){
                         exit_myself(4,"Failed to mount cgroup pseudo filesystem");
                     }
@@ -132,7 +143,8 @@ if ($ARGV[0] eq "init"){
                                 oardodo ln -s '.$OS_cgroups_path.'/devices '.$Cgroup_directory_collection_links.'/devices &&
                                 oardodo ln -s '.$OS_cgroups_path.'/freezer '.$Cgroup_directory_collection_links.'/freezer &&
                                 oardodo ln -s '.$OS_cgroups_path.'/net_cls '.$Cgroup_directory_collection_links.'/net_cls &&
-                                oardodo ln -s '.$OS_cgroups_path.'/blkio '.$Cgroup_directory_collection_links.'/blkio
+                                oardodo ln -s '.$OS_cgroups_path.'/blkio '.$Cgroup_directory_collection_links.'/blkio &&
+                                [ "'.$ENABLE_MEMCG.'" =  "YES" ] && oardodo ln -s '.$OS_cgroups_path.'/memory '.$Cgroup_directory_collection_links.'/memory || true
                                ')){
                         exit_myself(4,"Failed to link existing OS cgroup pseudo filesystem");
                     }
@@ -160,8 +172,8 @@ if ($ARGV[0] eq "init"){
 
         # Be careful with the physical_package_id. Is it corresponding to the memory banch?
         if (system( 'for d in '.$Cgroup_directory_collection_links.'/*; do
-                       oardodo mkdir -p $d/'.$Cpuset_path_job.' || exit1
-                       oardodo chown -R oar $d/'.$Cpuset_path_job.' || exit2
+                       oardodo mkdir -p $d/'.$Cpuset_path_job.' || exit 1
+                       oardodo chown -R oar $d/'.$Cpuset_path_job.' || exit 2
                        /bin/echo 0 | cat > $d/'.$Cpuset_path_job.'/notify_on_release || exit 3
                      done
                      /bin/echo 0 | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive &&
@@ -210,6 +222,23 @@ if ($ARGV[0] eq "init"){
         $IO_ratio = 1000;
         if (system( '/bin/echo '.$IO_ratio.' | cat > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset_path_job.'/blkio.weight')){
             exit_myself(5,"Failed to set the blkio.weight to $IO_ratio");
+        }
+
+        if ($ENABLE_MEMCG eq "YES"){
+            if ($#cpu_cgroup_uniq_list < $#node_cpus){
+                my $mem_global_kb;
+                if (open(MEM, "$Cgroup_directory_collection_links/memory/memory.limit_in_bytes")){
+                    $mem_global_kb = <MEM>;
+                    chop($mem_global_kb);
+                    close(MEM);
+                }else{
+                    exit_myself(5,"Failed to retrieve the memory cgroup limit $Cgroup_directory_collection_links/memory/memory.limit_in_bytes");
+                }
+                my $mem_kb = sprintf("%.0f", (($#cpu_cgroup_uniq_list + 1) / ($#node_cpus + 1) * $mem_global_kb));
+                if (system( '/bin/echo '.$mem_kb.' | cat > '.$Cgroup_directory_collection_links.'/memory/'.$Cpuset_path_job.'/memory.limit_in_bytes')){
+                    exit_myself(5,"Failed to set the memory.limit_in_bytes to $mem_kb");
+                }
+            }
         }
     }
 
