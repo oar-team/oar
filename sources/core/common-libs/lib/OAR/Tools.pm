@@ -540,10 +540,6 @@ my $tmp = "";
 while (<STDIN>){
     $tmp .= $_;
 }
-
-# This will tell bash to source /etc/bash.bashrc as ssh do (otherwise not)
-close(STDIN);
-
 my $cmd_exec = eval($tmp);
 my $pid = fork;
 if($pid == 0){

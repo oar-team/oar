@@ -3,51 +3,43 @@
 # Detect resources on a list of nodes and print corresponding OAR commands
 #set -x
 
-OARCONFFILE=${OARCONFFILE:-/etc/oar/oar.conf}
-OPENSSH_CMD=${OPENSSH_CMD:-/usr/bin/ssh}
-OARNODES_CMD=${OARNODES_CMD:-oarnodes}
-OARPROPERTY_CMD=${OARPROPERTY_CMD:-oarproperty}
-GENERATED_COMMANDS_FILE=${GENERATED_COMMANDS_FILE:-/tmp/oar_resources_init.cmd}
-
+OPENSSH_CMD=/usr/bin/ssh
 . "$OARCONFFILE" || exit 20
+
+OARNODES="oarnodesetting"
+OARPROPERTY="oarproperty"
+FILE_WITH_OAR_COMMANDS_GENERATED="/tmp/oar_resources_init.txt"
 
 # check the file with the nodes to add
 if [ -z "$1" ] || [ ! -r "$1" ]
 then
-    echo "Please provide as argument a file containing the list of nodes to add to OAR resources (this file must be readable by user oar)"
+    echo "Specify a file containing the list of nodes to add into OAR in argument of this command (must be readable by oar user)"
     exit 1
 fi
 
-if ! $OARNODES_CMD --sql false 2> /dev/null; then
-    echo "This script needs the oarnodes command from the oar-user package."
-    echo "You can set the OARNODES_CMD environment variable to set its location path,"
-    echo "or ssh command to run it from another host."
-    exit 21
-fi  
-
 echo "Did you configured the OAR SSH key on all the nodes? [yes/NO] "
-read l ; [ "$l" != "yes" -a "$l" != "YES" ] && exit 2
+read l ; [ "$l" != "yes" ] && exit 2
 
 # Check output file
-if [ -e "$GENERATED_COMMANDS_FILE" ]
+if [ -e "$FILE_WITH_OAR_COMMANDS_GENERATED" ]
 then
-    echo "Commands to run will be written into "$GENERATED_COMMANDS_FILE". Do you want to override it? [yes/NO] "
-    read l ; [ "$l" != "yes" -a "$l" != "YES" ] && exit 3
-    rm $GENERATED_COMMANDS_FILE || exit 4
+    echo "Commands to run will be written into "$FILE_WITH_OAR_COMMANDS_GENERATED". Do you want to override it? [yes/NO] "
+    read l ; [ "$l" != "yes" ] && exit 3
+    rm $FILE_WITH_OAR_COMMANDS_GENERATED || exit 4
 fi
 
 # Add properties
-echo "$OARPROPERTY_CMD -a cpu" > $GENERATED_COMMANDS_FILE
-echo "$OARPROPERTY_CMD -a core" >> $GENERATED_COMMANDS_FILE
-echo "$OARPROPERTY_CMD -c -a host" >> $GENERATED_COMMANDS_FILE
-echo "$OARPROPERTY_CMD -a cpuset" >> $GENERATED_COMMANDS_FILE
-echo "$OARPROPERTY_CMD -a mem" >> $GENERATED_COMMANDS_FILE
+echo "$OARPROPERTY -a cpu" > $FILE_WITH_OAR_COMMANDS_GENERATED
+echo "$OARPROPERTY -a core" >> $FILE_WITH_OAR_COMMANDS_GENERATED
+echo "$OARPROPERTY -c -a host" >> $FILE_WITH_OAR_COMMANDS_GENERATED
+echo "$OARPROPERTY -a cpuset" >> $FILE_WITH_OAR_COMMANDS_GENERATED
+echo "$OARPROPERTY -a mem" >> $FILE_WITH_OAR_COMMANDS_GENERATED
 
 # Init CPU id
-CPU=$($OARNODES_CMD --sql true | grep 'cpu=' | awk -F " cpu=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
+CPU=$(oarnodes --sql true | grep 'cpu=' | awk -F " cpu=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
 [ -z "$CPU" ] && CPU=0
 # Init CORE id
-CORE=$($OARNODES_CMD --sql true | grep 'core=' | awk -F " core=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
+CORE=$(oarnodes --sql true | grep 'core=' | awk -F " core=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
 [ -z "$CORE" ] && CORE=0
 
 echo
@@ -62,9 +54,9 @@ do
     mem=$($OPENSSH_CMD $host cat /proc/meminfo | grep ^MemTotal | awk '{print $2}')
 
     # Get CORE info in the form:
-    # cpu:core
-    # cpu:core
-    # cpu:core
+    # core:cpu
+    # core:cpu
+    # core:cpu
     # ...
     if [ "`$OPENSSH_CMD $host cat /proc/cpuinfo|grep 'physical id'`" != "" ]
     then
@@ -79,13 +71,13 @@ do
     if [ -z "$mem" ] || [ -z "$DATA" ]
     then
         echo "*** KO ***"
-        rm $GENERATED_COMMANDS_FILE
+        rm $FILE_WITH_OAR_COMMANDS_GENERATED
         echo 
         echo "ERROR with node $host. Please check the ssh connection with oar user ($OPENSSH_CMD $host)..."
         exit 5
     fi
 
-    ((mem = $mem / 1024 / 1024 + 1))
+    ((mem = $mem / 1024))
     prev_cpu="-1"
     for i in $DATA
     do
@@ -94,7 +86,7 @@ do
         [ "$cpu" != "$prev_cpu" ] && ((CPU++))
         ((CORE++))
         prev_cpu=$cpu
-        echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+        echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $FILE_WITH_OAR_COMMANDS_GENERATED
     done
     echo "OK"
 done
@@ -102,6 +94,6 @@ done
 
 
 echo
-echo "If the content of '$GENERATED_COMMANDS_FILE' is OK for you then you just need to execute:"
-echo "  source $GENERATED_COMMANDS_FILE"
+echo "If the content of '$FILE_WITH_OAR_COMMANDS_GENERATED' is OK for you then you just need to execute:"
+echo "  source $FILE_WITH_OAR_COMMANDS_GENERATED"
 

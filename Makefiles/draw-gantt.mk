@@ -1,4 +1,4 @@
-MODULE=drawgantt
+MODULE=draw-gantt
 SRCDIR=sources/visualization_interfaces/DrawGantt
 
 EXAMPLEDIR_FILES=$(SRCDIR)/drawgantt.conf

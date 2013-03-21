@@ -196,14 +196,23 @@ foreach my $mold (@{$ref_resource_list}){
 
 -- Check if types given by the user are right
 INSERT INTO admission_rules (rule) VALUES (E'# Check if job types are valid
-my @types = ("container","inner","deploy","desktop_computing","besteffort","cosystem","idempotent","timesharing","allow_classic_ssh","token\\:xxx=yy");
-foreach my $t (@{$type_list}){
-    my $i = 0;
-    while (($types[$i] ne $t) and ($i <= $#types)){
-        $i++;
+my @types = (
+    qr/^container$/,                           qr/^deploy$/,
+    qr/^desktop_computing$/,                   qr/^besteffort$/,
+    qr/^cosystem$/,                            qr/^idempotent$/,
+    qr/^set_placeholder=\\w+$/,                qr/^use_placeholder=\\w+$/,
+    qr/^inner=\\d+$/,                          qr/^timesharing=(?:(?:\\*|user),(?:\\*|name)|(?:\\*|name),(?:\\*|user))$/,
+    qr/^token\\:\\w+\\=\\d+$/,                 qr/^extension=\\d+$/	
+);
+foreach my $t ( @{$type_list} ) {
+    my $match = 0;
+    foreach my $r (@types) {
+        if ($t =~ $r) {
+            $match = 1;
+        }
     }
-    if (($i > $#types) and ($t !~ /^(timesharing|inner|token\\:\\w+\\=\\d+)/)){
-        die("[ADMISSION RULE] The job type $t is not handled by OAR; Right values are : @types\\n");
+    unless ( $match ) {
+        die( "[ADMISSION RULE] Unknown job type: $t\n");
     }
 }
 ');

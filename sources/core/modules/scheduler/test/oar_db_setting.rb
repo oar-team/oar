@@ -362,7 +362,7 @@ def oar_test_insert_load_infile(k,shm=true)
 
   if $PG then
     #need to oar by a superuser for PG;
-    #sudo -u postgres /usr/bin/psql -c "ALTER ROLE oar WITH SUPERUSER;"
+    #sudo su - postgres -c 'psql oar -c "ALTER ROLE oar WITH SUPERUSER;"'
     query = "COPY gantt_jobs_resources FROM '#{file_name}' WITH DELIMITER AS ','"
   else 
     query = "LOAD DATA LOCAL INFILE '#{file_name}' INTO TABLE gantt_jobs_resources"

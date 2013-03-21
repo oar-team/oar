@@ -119,6 +119,7 @@ foreach my $i (@{$order}){
         my $job_duration = $already_scheduled_jobs{$i}->[1];
         if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
             # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
+            oar_debug("[$scheduler_name] [$i] Job is suspended, its resources are free\n");
             @resource_list = OAR::IO::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
             next if ($#resource_list < 0);
         }
@@ -137,12 +138,12 @@ foreach my $i (@{$order}){
             if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
                 oar_debug("[$scheduler_name] [$i] inner job: using container $inner_id\n");
             }else{
-                oar_debug("[$scheduler_name] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
+                oar_debug("[$scheduler_name] [$i] inner job: container $inner_id does not exist but job is running, use container 0\n");
                 $inner_id = 0;
             }
         }
         if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
-            oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,)\n");
+            oar_debug("[$scheduler_name] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
             $container_id = $i;
             oar_debug("[$scheduler_name] [$i] container job: create gantt ($container_id,,,)\n");
             $Gantt->{$container_id}->{""}->{""}->{""} = 
@@ -213,7 +214,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $j = $jobs[$job_index];
     my $i = $j->{job_id};
     $job_index ++;
-    oar_debug("[$scheduler_name] [$i] start scheduling\n");
+    oar_debug("[$scheduler_name] [$i] Start scheduling job\n");
     
     my $scheduler_init_date = $current_time;
     # Search for dependencies
@@ -256,7 +257,20 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $use_placeholder_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
-    my $types = OAR::IO::get_current_job_types($base,$i);
+    my $types = OAR::IO::get_current_job_types($base, $i);
+    my $job_to_extend;
+
+    if (defined($types->{extension}) and ($types->{extension} =~ /^(\d+)$/)) {
+        $job_to_extend = OAR::IO::get_job($base, $1);
+        if ($job_to_extend->{state} eq 'Running') {
+            oar_debug("[$scheduler_name] [$i] extension job: try to extend job " . $job_to_extend->{job_id} . "\n");
+            $types = OAR::IO::get_current_job_types($base, $job_to_extend->{job_id});
+        } else {
+            undef($job_to_extend);
+            oar_debug("[$scheduler_name] [$i] extension job: ignoring because the state of job to extend " . $job_to_extend->{job_id} . " is " . $job_to_extend->{state} . "\n");
+        }
+    }
+
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         $inner_id = $1;
         if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
@@ -270,107 +284,133 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
     }
     if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
-        oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,) and is a container\n");
+        oar_debug("[$scheduler_name] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
     } else {
         ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) =
             OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $j->{job_user}, $j->{job_name}, $types, $inner_id, "[$scheduler_name] [$i]");
     }
-
-    my $job_properties = "\'1\'";
-    if ((defined($j->{properties})) and ($j->{properties} ne "")){
-        $job_properties = $j->{properties};
-    }
-    
-    # Choose the moldable job to schedule
-    my @moldable_results;
-    my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$i);
-    foreach my $moldable (@{$job_descriptions}){
-        my $duration;
-        if (defined($types->{besteffort})){
-            $duration = $besteffort_duration;
-        }else{
-            $duration = $moldable->[1] + $security_time_overhead;
+    if (defined($job_to_extend)) {
+        my @resource_list = OAR::IO::get_job_resources($base, $job_to_extend->{assigned_moldable_job});
+        # Get the walltime of the extension job: we only consider one, the first, moldable job description.
+        my $extension_duration = OAR::IO::get_resources_data_structure_current_job($base,$i)->[0]->[1];
+        # Get walltime of the job to extend
+        my $duration = OAR::IO::get_current_moldable_job($base,$job_to_extend->{assigned_moldable_job})->{moldable_walltime};
+        if ($job_to_extend->{suspended} eq "YES"){
+            # This job was suspended so we must recalculate the walltime
+            $duration += OAR::IO::get_job_suspended_sum_duration($base,$job_to_extend->{job_id},OAR::IO::get_date($base));
         }
-
-        my @tree_list;
-        foreach my $m (@{$moldable->[0]}){
-            my $tmp_properties = "\'1\'";
-            if ((defined($m->{property})) and ($m->{property} ne "")){
-                $tmp_properties = $m->{property};
-            }
-            my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
-            push(@tree_list, $tmp_tree);
-        }
-        my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;
-        $gantt_timeout = $Minimum_timeout_per_job if ($gantt_timeout <= ($timeout / 8));
-        oar_debug("[$scheduler_name] [$i] find_first_hole in gantt ($inner_id,$use_placeholder_name,$timesharing_user,$timesharing_name) with a timeout of $gantt_timeout\n");
-        my @hole;
-        if ($Max_nb_processes <= 1){
-            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$use_placeholder_name}->${$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
-        }else{
-            oar_debug("[$scheduler_name] [$i] using Gantt PARALLEL algorithm\n");
-            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
-        }
-        my @res_trees;
-        my @resources;
-        foreach my $t (@{$hole[1]}){
-            push(@res_trees, $t);
-            foreach my $r (OAR::Schedulers::ResourceTree::get_tree_leafs($t)){
-                push(@resources, OAR::Schedulers::ResourceTree::get_current_resource_value($r));
-            }
-        }
-        push(@moldable_results, {
-                                    resources => \@resources,
-                                    start_date => $hole[0],
-                                    duration => $duration,
-                                    moldable_id => $moldable->[2]
-                                });
-    }
-
-    # Choose moldable job which will finish first
-    oar_debug("[$scheduler_name] [$i] choosing moldable job which will finish first\n");
-    my $index_to_choose = -1;
-    my $best_stop_time;
-    for (my $m=0; $m <= $#moldable_results; $m++){
-        if ($#{$moldable_results[$m]->{resources}} >= 0){
-            my $tmp_stop_date = $moldable_results[$m]->{start_date} + $moldable_results[$m]->{duration};
-            if ((!defined($best_stop_time)) or ($best_stop_time > $tmp_stop_date)){
-                $best_stop_time = $tmp_stop_date;
-                $index_to_choose = $m;
-            }
-        }
-    }
-    if ($index_to_choose >= 0){
-        # Job is successfully scheduled
-        oar_debug("[$scheduler_name] [$i] job is successfully scheduled\n");
+        oar_debug("[$scheduler_name] [$i] extension job: supposed to fit in a hole starting at " . ($job_to_extend->{start_time} + $duration + $security_time_overhead + 1) . "\n");
         my $vec = '';
-        foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
-            vec($vec, $r, 1) = 1;
+        foreach my $r (@resource_list){
+            vec($vec,$r,1) = 1;
         }
-
-        # Create gantt for the new container
-        if (defined($types->{container})){
-            $container_id = $i;
-            oar_debug("[$scheduler_name] [$i] container job: create gantt ($container_id,,,)\n");
-            $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec, $All_resource_list_vec);
+        if (OAR::Schedulers::GanttHoleStorage::try_and_fit_extension_in_hole($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, $job_to_extend->{start_time} + $duration + $security_time_overhead, $extension_duration, $vec)) {
+            oar_debug("[$scheduler_name] [$i] extension job: it fits ! We can extend the walltime of job " . $job_to_extend->{job_id} . "\n");
+            my $new_duration = $duration + $extension_duration;
+            OAR::IO::set_moldable_job_max_time($base, $job_to_extend->{assigned_moldable_job}, $new_duration);
+            oar_warn("[$scheduler_name] [$i] Extend walltime of job " . $job_to_extend->{job_id} . " to $new_duration (was  $duration)\n");
+            OAR::IO::add_new_event($base, "EXTEND_JOB_WALLTIME", $job_to_extend->{job_id}, "Change walltime from $duration to $new_duration (extension job $i)");
+            oar_warn("[$scheduler_name] [$i] Change state -> Terminated\n");
+            OAR::IO::set_job_state($base, $i, "Terminated");
+            OAR::IO::add_new_event($base, "EXTENSION_TERMINATED", $i, "Change state of extension job $i to terminated");
+        } else {
+            oar_debug("[$scheduler_name] [$i] extension job: does not fit\n");
         }
-
-        #Fill all other gantts
-        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec, $inner_id, $set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[$scheduler_name] [$i]"); 
-
-        #update database
-        push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
-        OAR::IO::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
-        OAR::IO::set_job_message($base,$i,"FIFO scheduling OK");
-        OAR::IO::set_job_scheduler_info($base,$i,"FIFO scheduling OK");
-    }else{
-        oar_debug("[$scheduler_name] [$i] job couldn't be scheduled\n");
-        my $message = "cannot find enough resources for job $i";
-        OAR::IO::set_job_message($base,$i,$message);
-        OAR::IO::set_job_scheduler_info($base,$i,$message);
-        oar_debug("[$scheduler_name] [$i] $message\n");
+            
+    } else {
+        my $job_properties = "\'1\'";
+        if ((defined($j->{properties})) and ($j->{properties} ne "")){
+            $job_properties = $j->{properties};
+        }
+        
+        # Choose the moldable job to schedule
+        my @moldable_results;
+        my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$i);
+        foreach my $moldable (@{$job_descriptions}){
+            my $duration;
+            if (defined($types->{besteffort})){
+                $duration = $besteffort_duration;
+            }else{
+                $duration = $moldable->[1] + $security_time_overhead;
+            }
+    
+            my @tree_list;
+            foreach my $m (@{$moldable->[0]}){
+                my $tmp_properties = "\'1\'";
+                if ((defined($m->{property})) and ($m->{property} ne "")){
+                    $tmp_properties = $m->{property};
+                }
+                my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
+                push(@tree_list, $tmp_tree);
+            }
+            my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;
+            $gantt_timeout = $Minimum_timeout_per_job if ($gantt_timeout <= ($timeout / 8));
+            oar_debug("[$scheduler_name] [$i] Find first hole in gantt ($inner_id,$use_placeholder_name,$timesharing_user,$timesharing_name) with a timeout of $gantt_timeout\n");
+            my @hole;
+            if ($Max_nb_processes <= 1){
+                @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
+            }else{
+                @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
+            }
+            my @resources;
+            foreach my $t (@{$hole[1]}){
+                foreach my $r (OAR::Schedulers::ResourceTree::get_tree_leafs($t)){
+                    push(@resources, OAR::Schedulers::ResourceTree::get_current_resource_value($r));
+                }
+            }
+            push(@moldable_results, {
+                                        resources => \@resources,
+                                        start_date => $hole[0],
+                                        duration => $duration,
+                                        moldable_id => $moldable->[2]
+                                    });
+        }
+    
+        my $index_to_choose = -1;
+        my $best_stop_time;
+        for (my $m=0; $m <= $#moldable_results; $m++){
+            if ($#{$moldable_results[$m]->{resources}} >= 0){
+                my $tmp_stop_date = $moldable_results[$m]->{start_date} + $moldable_results[$m]->{duration};
+                if ((!defined($best_stop_time)) or ($best_stop_time > $tmp_stop_date)){
+                    $best_stop_time = $tmp_stop_date;
+                    $index_to_choose = $m;
+                }
+            }
+        }
+        oar_debug("[$scheduler_name] [$i] Choosing job moldable definition " . ($index_to_choose + 1) . " (" . ($#moldable_results + 1) . " proposed)\n");
+        if ($index_to_choose >= 0){
+            # Job is successfully scheduled
+            oar_debug("[$scheduler_name] [$i] Job is successfully scheduled\n");
+            my $vec = '';
+            foreach my $r (@{$moldable_results[$index_to_choose]->{resources}}){
+                vec($vec, $r, 1) = 1;
+            }
+    
+            # Create gantt for the new container
+            if (defined($types->{container})){
+                $container_id = $i;
+                oar_debug("[$scheduler_name] [$i] container job: create gantt ($container_id,,,)\n");
+                $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec, $All_resource_list_vec);
+            }
+    
+            #Fill all other gantts
+            OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec, $inner_id, $set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[$scheduler_name] [$i]"); 
+    
+            #update database
+            push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
+            OAR::IO::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
+            oar_debug("[$scheduler_name] [$i] Add job in database\n");
+            OAR::IO::set_job_message($base,$i,"FIFO scheduling OK");
+            OAR::IO::set_job_scheduler_info($base,$i,"FIFO scheduling OK");
+        }else{
+            oar_debug("[$scheduler_name] [$i] Job couldn't be scheduled\n");
+            my $message = "Cannot find enough resources for job $i";
+            OAR::IO::set_job_message($base,$i,$message);
+            OAR::IO::set_job_scheduler_info($base,$i,$message);
+            oar_debug("[$scheduler_name] [$i] $message\n");
+        }
     }
-    oar_debug("[$scheduler_name] [$i] end scheduling\n");
+    oar_debug("[$scheduler_name] [$i] End scheduling job\n");
 }
 oar_debug("[$scheduler_name] End phase 2 (waiting jobs)\n");
 

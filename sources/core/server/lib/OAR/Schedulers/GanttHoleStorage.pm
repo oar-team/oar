@@ -27,6 +27,8 @@ sub get_free_resources($$$);
 sub find_first_hole($$$$$);
 sub pretty_print($);
 sub get_infinity_value();
+sub merge_clone($$);
+sub try_and_fit_extension_in_hole($$$$);
 
 ###############################################################################
 
@@ -838,5 +840,23 @@ sub find_first_hole_parallel($$$$$$){
     return($current_time, \@result_tree_list);
 }
 
+
+sub try_and_fit_extension_in_hole($$$$) {
+    my ($gantt, $initial_time, $duration, $resources_vec) = @_;
+    my $empty_vec = $gantt->[0]->[3];
+    # Feed vector with enough 0
+    $resources_vec |= $gantt->[0]->[3];
+    for (my $i = 0; $i <= $#$gantt; $i++) {
+        if ($gantt->[$i]->[0] eq $initial_time + 1) {
+            for (my $j = 0; $j <= $#{$gantt->[$i]->[1]}; $j++) {
+                if (($gantt->[$i]->[1]->[$j]->[0] > ($initial_time + 1 + $duration)) and ((~ $gantt->[$i]->[1]->[$j]->[1] & $resources_vec) eq $empty_vec)) {
+                    return 1; # good ! success
+                }
+            }
+            return 0; # only 1 occurence of our start time can exist in gantt, if we did not succeed to fit, then we can say the extension failed
+        }
+    }
+    return 0; # no match, extention failed
+}
 
 return 1;

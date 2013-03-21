@@ -710,12 +710,12 @@ sub get_job_current_hostnames($$) {
 
 # get_job_current_resources
 # returns the list of resources associated to the job passed in parameter
-# parameters : base, jobid
+# parameters : base, moldable_id
 # return value : list of resources
 # side effects : /
 sub get_job_current_resources($$$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $moldable_id= shift;
     my $not_type_list = shift;
 
     my $tmp_str;
@@ -723,7 +723,7 @@ sub get_job_current_resources($$$) {
         $tmp_str = "FROM assigned_resources
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                        assigned_resources.moldable_job_id = $jobid";
+                        assigned_resources.moldable_job_id = $moldable_id";
     }else{
         my $type_str;
         foreach my $t (@{$not_type_list}){
@@ -734,7 +734,7 @@ sub get_job_current_resources($$$) {
         $tmp_str = "FROM assigned_resources,resources
                     WHERE 
                         assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                        assigned_resources.moldable_job_id = $jobid AND
+                        assigned_resources.moldable_job_id = $moldable_id AND
                         resources.resource_id = assigned_resources.resource_id AND
                         resources.type NOT IN (".$type_str.")";
     }
@@ -752,11 +752,11 @@ sub get_job_current_resources($$$) {
 
 # get_job_cpuset_uid
 # returns the uid of the user for this job
-# parameters : base, jobid, resource type, cpuset field
+# parameters : base, moldable_id, resource type, cpuset field
 # return value : number
 sub get_job_cpuset_uid($$$$) {
     my $dbh = shift;
-    my $mjobid= shift;
+    my $moldable_id= shift;
     my $resource_type = shift;
     my $cpuset_field = shift;
 
@@ -764,7 +764,7 @@ sub get_job_cpuset_uid($$$$) {
                                 FROM jobs, resources, assigned_resources
                                 WHERE
                                     resources.type = \'$resource_type\' AND
-                                    assigned_resources.moldable_job_id = $mjobid AND
+                                    assigned_resources.moldable_job_id = $moldable_id AND
                                     assigned_resources.resource_id = resources.resource_id 
                                 ORDER BY resources.resource_id ASC
                                 LIMIT 1");
@@ -779,17 +779,17 @@ sub get_job_cpuset_uid($$$$) {
 
 # get_job_resources
 # returns the list of resources associated to the job passed in parameter
-# parameters : base, jobid
+# parameters : base, moldable_id
 # return value : list of resources
 # side effects : /
 sub get_job_resources($$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $moldable_id= shift;
 
     my $sth = $dbh->prepare("SELECT resource_id as resource
                              FROM assigned_resources
                              WHERE 
-                                moldable_job_id = $jobid
+                                moldable_job_id = $moldable_id
                              ORDER BY resource_id ASC");
     $sth->execute();
     my @res = ();
@@ -802,17 +802,17 @@ sub get_job_resources($$) {
 
 # get_job_network_address
 # returns the list of network_address associated to the job passed in parameter
-# parameters : base, jobid
+# parameters : base, moldable_id
 # return value : list of resources
 # side effects : /
 sub get_job_network_address($$) {
     my $dbh = shift;
-    my $jobid= shift;
+    my $moldable_id= shift;
 
     my $sth = $dbh->prepare("SELECT DISTINCT(resources.network_address) as hostname
                              FROM assigned_resources, resources
                              WHERE 
-                                assigned_resources.moldable_job_id = $jobid AND
+                                assigned_resources.moldable_job_id = $moldable_id AND
                                 resources.resource_id = assigned_resources.resource_id AND
                                 resources.type = \'default\'
                              ORDER BY resources.network_address ASC");
@@ -851,17 +851,17 @@ sub get_job_resources_properties($$) {
 
 # get_job_host_log
 # returns the list of hosts associated to the moldable job passed in parameter
-# parameters : base, moldablejobid
+# parameters : base, moldable_id
 # return value : list of distinct hostnames
 # side effects : /
 sub get_job_host_log($$) {
     my $dbh = shift;
-    my $moldablejobid = shift;
+    my $moldable_id = shift;
     
     my $sth = $dbh->prepare("   SELECT resources.network_address, resources.resource_id
                                 FROM assigned_resources, resources
                                 WHERE
-                                    assigned_resources.moldable_job_id = $moldablejobid AND
+                                    assigned_resources.moldable_job_id = $moldable_id AND
                                     resources.resource_id = assigned_resources.resource_id AND
                                     resources.network_address != \'\' AND
                                     resources.type = \'default\'
@@ -974,13 +974,13 @@ sub get_to_exterminate_jobs($) {
 # return value : /
 sub set_assigned_moldable_job($$$) {
     my $dbh = shift;
-    my $idJob = shift;
-    my $moldable = shift;
+    my $job_id = shift;
+    my $moldable_id = shift;
     
     $dbh->do("  UPDATE jobs
-                SET assigned_moldable_job = $moldable
+                SET assigned_moldable_job = $moldable_id
                 WHERE
-                    job_id = $idJob
+                    job_id = $job_id
             ");
 }
 
@@ -993,7 +993,7 @@ sub set_assigned_moldable_job($$$) {
 # side effects : changes the field startTime of the job in the table Jobs
 sub set_running_date($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     
     my $runningDate;
     my $date = get_date($dbh);
@@ -1007,7 +1007,7 @@ sub set_running_date($$) {
     my $sth = $dbh->prepare("   UPDATE jobs
                                 SET start_time = \'$runningDate\'
                                 WHERE
-                                    job_id = $idJob
+                                    job_id = $job_id
                             ");
     $sth->execute();
     $sth->finish();
@@ -1022,11 +1022,11 @@ sub set_running_date($$) {
 # side effects : changes the field start_time of the job in the table Jobs
 sub set_running_date_arbitrary($$$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $date = shift;
 
     $dbh->do("UPDATE jobs SET start_time = \'$date\'
-              WHERE job_id = $idJob
+              WHERE job_id = $job_id
              ");
 }
 
@@ -1040,11 +1040,11 @@ sub set_running_date_arbitrary($$$) {
 # side effects : changes the field stop_time of the job in the table Jobs
 sub set_finish_date($$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     
     my $finishDate;
     my $date = get_date($dbh);
-    my $jobInfo = get_job($dbh,$idJob);
+    my $jobInfo = get_job($dbh,$job_id);
     my $minDate = $jobInfo->{'start_time'};
     if ($date < $minDate){
         $finishDate = $minDate;
@@ -1054,7 +1054,7 @@ sub set_finish_date($$) {
     my $sth = $dbh->prepare("   UPDATE jobs
                                 SET stop_time = \'$finishDate\'
                                 WHERE
-                                    job_id = $idJob
+                                    job_id = $job_id
                             ");
     $sth->execute();
     $sth->finish();
@@ -1065,13 +1065,13 @@ sub set_finish_date($$) {
 # parameters : base, jobid, exit code
 sub set_job_exit_code($$$) {
     my $dbh = shift;
-    my $idJob = shift;
+    my $job_id = shift;
     my $exit_code = shift;
     
     $dbh->do("  UPDATE jobs
                 SET exit_code = $exit_code
                 WHERE
-                    job_id = $idJob
+                    job_id = $job_id
              ");
 }
 
@@ -1335,16 +1335,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         return(-6);
     }
     
-    # Check the stdout and stderr path validity
-    if ((defined($stdout)) and ($stdout !~ m/^[a-zA-Z0-9_.\/\-\%\\ ]+$/m)) {
-      warn("/!\\ Invalid stdout file name (bad character)\n");
-      return(-12);
-    }
-    if (defined($stderr) and ($stderr !~ m/^[a-zA-Z0-9_.\/\-\%\\ ]+$/m)) {
-      warn("/!\\ Invalid stderr file name (bad character)\n");
-      return(-13);
-    }    
-
 #    # Verify job name
 #    if ($job_name !~ m/^\w*$/m){
 #        warn("ERROR : The job name must contain only alphanumeric characters plus '_'\n");
@@ -5701,7 +5691,7 @@ sub is_node_desktop_computing($$){
 #                   }
 #               ],
 #               walltime,
-#               moldable_job_id
+#               moldable_id
 #           ]
 sub get_resources_data_structure_current_job($$){
     my $dbh = shift;
@@ -6177,7 +6167,7 @@ sub get_gantt_visu_date($){
 sub get_waiting_reservations_already_scheduled($){
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_id, gantt_jobs_predictions.start_time, gantt_jobs_resources.resource_id, moldable_job_descriptions.moldable_walltime
+    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_job_id, gantt_jobs_predictions.start_time, gantt_jobs_resources.resource_id, moldable_job_descriptions.moldable_walltime
                                 FROM jobs, moldable_job_descriptions, gantt_jobs_predictions, gantt_jobs_resources
                                 WHERE
                                     (jobs.state = \'Waiting\'

@@ -37,9 +37,9 @@ my $oarexec_pid_file = $Hash->{oarexec_pid_file};
 
 if ($ARGV[0] eq "suspend"){
     # Suspend all processes of the cpuset
-    if (-r "/dev/oar_cgroups_links/freezer/oar/$Cpuset_name/freezer.state"){
+    if (-r "/dev/oar_cgroups/oar/$Cpuset_name/freezer.state"){
         # We use the FREEZER cgroups feature if it is available
-        system('echo FROZEN > /dev/oar_cgroups_links/freezer/oar/'.$Cpuset_name.'/freezer.state');
+        system('echo FROZEN > /dev/oar_cgroups/oar/'.$Cpuset_name.'/freezer.state');
     }else{
         system('#set -x;
                 PROC=0;
@@ -55,9 +55,9 @@ if ($ARGV[0] eq "suspend"){
     }
 }elsif ($ARGV[0] eq "resume"){
     # Resume all processes of the cpuset
-    if (-r "/dev/oar_cgroups_links/freezer/oar/$Cpuset_name/freezer.state"){
+    if (-r "/dev/oar_cgroups/oar/$Cpuset_name/freezer.state"){
         # We use the FREEZER cgroups feature if it is available
-        system('echo THAWED > /dev/oar_cgroups_links/freezer/oar/'.$Cpuset_name.'/freezer.state');
+        system('echo THAWED > /dev/oar_cgroups/oar/'.$Cpuset_name.'/freezer.state');
     }else{
         system('PROCESSES=$(cat /dev/cpuset/oar/'.$Cpuset_name.'/tasks)
                 oardodo kill -SIGCONT $PROCESSES

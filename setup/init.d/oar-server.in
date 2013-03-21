@@ -2,6 +2,11 @@
 #
 # oar-server     OAR Server
 #
+#
+# --/--/----: Based on startup scripts from Bruno Bzeznik <bruno.bzeznik@imag.fr>
+# 2011-09-02: Merge RPM and Debian scripts by Philippe Le Brouster <philippe.le-brouster@imag.fr>
+# 2012-09-27: Added 'status' by Matteo Guglielmi <matteo.guglielmi@epfl.ch> (patched by Bruno Bzeznik)
+
 # chkconfig: 2345 90 10
 # description: This script starts or stops the OAR resource manager
 # processname: Almighty
@@ -18,18 +23,20 @@
 # Description:       This script starts or stops the OAR resource manager
 ### END INIT INFO
 
+# Author: Bruno Bzeznik <Bruno.Bzeznik@imag.fr>
+#
+
 LANG=C
 export LANG
 
 PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/usr/sbin:/bin:/usr/bin:$PATH
 NAME=oar-server
-DESC="OAR server" 
+DESC="OAR resource manager (server)"
 DAEMON=%%SBINDIR%%/oar-server
 DAEMON_NAME=Almighty
 DAEMON_ARGS=""
 PIDFILE=%%RUNDIR%%/$NAME.pid
 SCRIPTNAME=%%INITDIR%%/$NAME
-SELINUXENABLED_CMD=$(which selinuxenabled 2>/dev/null)
 NOLSB=
 
 [ -f /lib/lsb/init-functions ] || NOLSB=yes
@@ -70,33 +77,31 @@ else
     exit 2
 fi
 
-do_start() {
-    begin_msg "Starting $DESC"
-    if [ -n "$SELINUXENABLED_CMD" -a -x $SELINUXENABLED_CMD ] && $SELINUXENABLED_CMD; then
-        fail_msg "SELinux is enabled, $DESC cannot be started."	
-        exit 2
-    fi
+do_start()
+{
+        begin_msg "Starting $DESC"
+	CHECK_STRING=`oar_checkdb > /dev/null 2>&1` 
+	if [ "$?" -ne "0" ]
+        then
+            MSG="Database is not ready! Maybe not initiated or no DBMS running? You must have a running MySQL or Postgres server. To init the DB, Check the DB_* variables in /etc/oar/oar.conf and use the script 'oar-database'"
+            fail_msg "$MSG"
+            exit 2
+        fi
+        if pidofproc -p $PIDFILE > /dev/null; then
+            fail_msg "already running"
+            exit 1
+        fi
 
-    CHECK_STRING=`oar_checkdb > /dev/null 2>&1` 
-    if [ "$?" -ne "0" ]; then
-        fail_msg "Database seems not ready, $DESC cannot be started."
-        exit 2
-    fi
-    if pidofproc -p $PIDFILE > /dev/null; then
-        fail_msg "$DESC is already running."
-        exit 1
-    fi
+        start_daemon -p "$PIDFILE" "$DAEMON" $DAEMON_ARGS
+        RET=$?
+        if [ "$RET" != 0 ]; then
+            fail_msg "Unable to start"
+        else
+            succ_msg
 
-    start_daemon -p "$PIDFILE" "$DAEMON" $DAEMON_ARGS
-    RET=$?
-    if [ "$RET" != 0 ]; then
-        fail_msg "Unable to start $DESC."
-    else
-        succ_msg
-
-        # redhat world
-        [ -d /var/lock/subsys/ ] && touch /var/lock/subsys/$NAME
-    fi
+            # redhat world
+            [ -d /var/lock/subsys/ ] && touch  /var/lock/subsys/$NAME
+        fi
 }
 
 
@@ -115,7 +120,7 @@ do_stop()
     killproc -p $PIDFILE
     RETVAL="$?"
     if [ "$RETVAL" = 2 ]; then
-        fail_msg "Unable to stop $DESC."
+        fail_msg "Unable to stop $DESC"
         exit 2
     fi
     # Sarko is often frozed when the database is unreachable
@@ -123,7 +128,7 @@ do_stop()
     # Extermination...
     killproc $DAEMON_NAME
     if [ "$?" = 2 ]; then
-        fail_msg "Unable to stop $DESC."
+        fail_msg "Unable to stop $DESC"
         exit 2
     fi
     # Many daemons don't delete their pidfiles when they exit.
@@ -136,11 +141,7 @@ do_stop()
     return 0
 }
 
-
-
-#
-# utility functions to check the status of the daemon
-#
+# status functions
 __pids_var_run() {
   local base=${1##*/}
   local pid_file=${2:-/var/run/$base.pid}
@@ -243,28 +244,28 @@ status() {
   return 3
 }
 
-
 case "$1" in
     start)
         do_start
-    ;;
+        ;;
     stop)
         do_stop
-    ;;
+	;;
     reload|restart|force-reload)
         if do_stop; then
             sleep 1
             do_start
         fi
-    ;;
+        ;;
     status)
-        status -p $PIDFILE $NAME
-        exit $?
-    ;;
+      status $NAME
+      RETVAL=$?
+      exit $RETVAL
+        ;;
     *)
         echo "Usage: $SCRIPTNAME {start|stop|restart|status|force-reload}" >&2
         exit 1
-    ;;
+        ;;
 esac
 
 :
