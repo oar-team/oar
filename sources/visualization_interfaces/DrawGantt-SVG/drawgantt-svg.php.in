@@ -1,48 +1,98 @@
 <?php
 // OAR Drawgantt SVG version
-// $Id$
 
-////////////////////////////////////////////////////////////////////////////////
-// Parameters
-////////////////////////////////////////////////////////////////////////////////
-$site = array_key_exists('site',$_GET)?$_GET['site']:"grenoble";
-$gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
-$gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
-$gantt_relative_start_date = (array_key_exists('relative_start',$_GET) or ($_GET['relative_start'] > 0))?($_GET['relative_start']):86400;
-$gantt_relative_stop_date = (array_key_exists('relative_stop',$_GET) or ($_GET['relative_stop'] > 0))?($_GET['relative_stop']):86400;
-$resource_filter = array_key_exists('filter', $_GET)?$_GET['filter']:"";
-
-$mysql_server="localhost";
-$mysql_user="oarreader";
-$mysql_passwd="read";
-$mysql_db="oar";
-
-////////////////////////////////////////////////////////////////////////////////
-// Configuration
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Configuration: DO NOT EDIT HERE. Customization must go in /etc/oar/drawgantt-svg-config.inc.php
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 $CONF=array();
-$CONF['hierarchy_resource_width'] = 10;
-$CONF['scale'] = 10;
-$CONF['time_ruler_scale'] = 6;
-$CONF['gantt_top'] = 30;
-$CONF['bottom_margin'] = 45;
-$CONF['right_margin'] = 10;
-$CONF['label_right_align'] = 105;
-$CONF['hierarchy_left_align'] = 110;
-$CONF['gantt_left_align'] = 160;
-$CONF['gantt_width'] = 1000;
-$CONF['gantt_min_job_width_for_label'] = 0;
-$CONF['resource_hierarchy'] = array('machine','host','cpu','core');
-$CONF['resource_properties'] = array('core', 'deploy', 'cpuset', 'besteffort', 'ip', 'disktype', 'nodemodel', 'memnode', 'ethnb', 'machine', 'cpuarch', 'cpu', 'cpucore', 'memcpu', 'network_address', 'virtual', 'host', 'rconsole', 'cputype', 'switch', 'cpufreq', 'type');
-$CONF['resource_labels'] = array('host','cpuset');
-$CONF['state_colors'] = array('Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
-$CONF['job_colors'] = array('besteffort' => 'url(#besteffortPattern)', 'deploy' => 'url(#deployPattern)', 'container' => 'url(#containerPattern)', 'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 'exclusive' => 'url(#exclusivePattern)', 'reboot' => 'url(#rebootPattern)', 'set_placeholder=\w+' => 'url(#placeholderPattern)');
-$CONF['short_hostname_regex'] = '/^([^.]+)\..*$/';
-$CONF['cmp_hostname_regex'] = '/^[^.\d]+(\d+)\..*$/';
+// Database access configuration
+$CONF['db_type']="mysql"; // choices: mysql for Mysql or pg for PostgreSQL
+$CONF['db_server']="127.0.0.1";
+$CONF['db_port']="3306"; // usually 3306 for Mysql or 5432 for PostgreSQL
+$CONF['db_name']="oar"; // OAR read only user account 
+$CONF['db_user']="oar";
+$CONF['db_passwd']="oar";
+$CONF['site'] = "My OAR resources"; // name for your infrastructure or site
+$CONF['resource_labels'] = array('network_address','cpuset'); // properties to use to describe resources (resource labels on the left)
+$CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1
+	'network_address' => '/^([^.]+)\..*$/',
+	);
+$CONF['label_cmp_regex'] = array( // string selection regex for comparing and sorting labels (resources)
+	'network_address' => '/^[^.\d]+(\d+)\..*$/',
+	);
+$CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
+	'deploy', 'cpuset', 'besteffort', 'network_address', 'type');
+$CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
+	'network_address','cpuset'); 
+$CONF['state_colors'] = array( // colors for the states of the resources in the gantt
+	'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
+$CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
+	'besteffort' => 'url(#besteffortPattern)', 
+	'deploy' => 'url(#deployPattern)', 
+	'container' => 'url(#containerPattern)', 
+	'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
+	'set_placeholder=\w+' => 'url(#placeholderPattern)',
+	);
+// display geometry customization
+$CONF['hierarchy_resource_width'] = 10; // default: 10
+$CONF['scale'] = 10; // default: 10
+$CONF['time_ruler_scale'] = 6; // default: 6
+$CONF['gantt_top'] = 30; // default: 30
+$CONF['bottom_margin'] = 45; // default: 45
+$CONF['right_margin'] = 10; // default 10
+$CONF['label_right_align'] = 105; // default: 105
+$CONF['hierarchy_left_align'] = 110; // default: 110
+$CONF['gantt_left_align'] = 160; // default: 160
+$CONF['gantt_width'] = 1000; // default: 1000
+$CONF['gantt_min_job_width_for_label'] = 0; // default: 0
+// pattern definitions for the state_colors and job_colors configurations
+$CONF['patterns'] = <<<EOT
+<pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
+<line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />
+</pattern> 
+<pattern id="suspectedPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
+<line x1="5" y1="0" x2="0" y2="5" stroke="#ff0000" stroke-width="2" />
+</pattern> 
+<pattern id="deadPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
+<line x1="5" y1="0" x2="0" y2="5" stroke="#ff8080" stroke-width="2" />
+</pattern> 
+<pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="0" y="10" fill="#888888">B</text>
+</pattern> 
+<pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="0" y="20" fill="#888888">C</text>
+</pattern> 
+<pattern id="placeholderPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<line x1="0" y1="0" x2="20" y2="20" stroke="#000000" stroke-width="2" />
+<text font-size="10" x="10" y="20" fill="#888888">P</text>
+</pattern> 
+<pattern id="deployPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="10" y="10" fill="#888888">D</text>
+</pattern> 
+<pattern id="timesharingPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="10" y="20" fill="#888888">T</text>
+</pattern> 
+EOT;
+
+// Overwrite configuration with values from drawgantt-svg-config.inc.php
+define('CONFIG_DIR', '%%OARCONFDIR%%');
+define('CONFIG_FILE', CONFIG_DIR . '/drawgantt-svg-config.inc.php');
+if (is_readable(CONFIG_FILE)) {
+    require CONFIG_FILE;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
-// Utility functions
+// Script parameters (GET)
+////////////////////////////////////////////////////////////////////////////////
+$gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
+$gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
+$gantt_relative_start_date = (array_key_exists('relative_start',$_GET) and ($_GET['relative_start'] > 0))?($_GET['relative_start']):86400;
+$gantt_relative_stop_date = (array_key_exists('relative_stop',$_GET) and ($_GET['relative_stop'] > 0))?($_GET['relative_stop']):86400;
+$resource_filter = array_key_exists('filter', $_GET)?$_GET['filter']:"";
+
+////////////////////////////////////////////////////////////////////////////////
+// Utility functions and database wrapper class
 ////////////////////////////////////////////////////////////////////////////////
 
 // conversion function from date to pixel coordinates in the gantt
@@ -66,6 +116,74 @@ function resource_id_sort($r2, $r1) {
 		}
 	}
 	return ($r1->cpuset - $r2->cpuset);
+}
+
+class Db {
+	function __construct($backend, $server, $port, $dbname, $user, $password) {
+		$this->backend = $backend;
+		if ($this->backend == "mysql") {
+			$this->handler = mysql_connect("$server:$port", $user, $password) or die('Cound not connect Mysql server: ' . mysql_error());
+			mysql_select_db($dbname) or die('Could not select database');
+		} elseif ($this->backend == "pg") {
+			$this->handler = pg_connect("host=$server port=$port dbname=$dbname user=$user password=$password") or die('Cound not connect PostgreSQL server');
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+	}
+
+	function query($query) {
+		if ($this->backend == "mysql") {
+			$this->result = mysql_query($query, $this->handler) or die('Query failed: ' . mysql_error());
+		} elseif ($this->backend == "pg") {
+			$this->result = pg_query($this->handler, $query) or die('Query failed');
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+	}
+
+	function fetch_array() {
+		if ($this->backend == "mysql") {
+			return mysql_fetch_array($this->result, MYSQL_ASSOC);
+		} elseif ($this->backend == "pg") {
+			return pg_fetch_array($this->result, NULL, PGSQL_ASSOC);
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+	}
+
+	function free() {
+		if ($this->backend == "mysql") {
+			return mysql_free_result($this->result);
+		} elseif ($this->backend == "pg") {
+			return pg_free_result($this->result);
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+	}
+
+	function close() {
+		if ($this->backend == "mysql") {
+			return mysql_close($this->handler);
+		} elseif ($this->backend == "pg") {
+			return pg_close($this->handler);
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+	}
+
+	function get_timestamp() {
+		if ($this->backend == "mysql") {
+			$this->query('SELECT UNIX_TIMESTAMP()');
+			$array = mysql_fetch_array($this->result, MYSQL_NUM);
+		} elseif ($this->backend == "pg") {
+			$this->query('SELECT EXTRACT(EPOCH FROM current_timestamp)');
+			$array = pg_fetch_array($this->result, NULL, PGSQL_NUM);
+		} else {
+			die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+		}
+		$this->free();
+		return $array[0];
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -307,16 +425,16 @@ class Resource {
 	}
 	function label() {
 		global $CONF;
-		if ($this->type == 'host') {
-			return preg_replace($CONF['short_hostname_regex'],'$1',$this->id);
+		if (array_key_exists($this->type, $CONF['label_display_regex'])) {
+			return preg_replace($CONF['label_display_regex'][$this->type],'$1',$this->id);
 		}
 		return $this->id;
 	}
 	function cmp($r) {
 		global $CONF;
-		if ($this->type == 'host') {
-			$v1 = preg_replace($CONF['cmp_hostname_regex'],'$1',$this->id);
-			$v2 = preg_replace($CONF['cmp_hostname_regex'],'$1',$r->id);
+		if (array_key_exists($this->type, $CONF['label_cmp_regex'])) {
+			$v1 = preg_replace($CONF['label_cmp_regex'][$this->type],'$1',$this->id);
+			$v2 = preg_replace($CONF['label_cmp_regex'][$this->type],'$1',$r->id);
 		} else {
 			$v1 = $this->id;
 			$v2 = $r->id;
@@ -336,17 +454,10 @@ class Resource {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Connecting, selecting database
-//$link = mysql_connect("localhost", 'oarreader', 'read')
-$link = mysql_connect($mysql_server, $mysql_user, $mysql_passwd)
-    or die('Could not connect: ' . mysql_error());
-mysql_select_db($mysql_db) or die('Could not select database');
+$db = new Db($CONF['db_type'], $CONF['db_server'], $CONF['db_port'], $CONF['db_name'], $CONF['db_user'], $CONF['db_passwd']);
 
 // Retrieve the "now" date
-$query = 'SELECT UNIX_TIMESTAMP()';
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-$array = mysql_fetch_array($result,MYSQL_NUM);
-$gantt_now = $array[0];
-mysql_free_result($result);
+$gantt_now = $db->get_timestamp();
 
 if ($gantt_start_date == 0) {
 	$gantt_start_date = $gantt_now - $gantt_relative_start_date;
@@ -356,13 +467,13 @@ if ($gantt_stop_date == 0) {
 }
 
 // Retrieve the resource hierarchy 
-$resource_root = new Resource($site, 'site', NULL);
+$resource_root = new Resource($CONF['site'], 'site', NULL);
 $resource_ids = array();
 
 $query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE '.stripslashes($resource_filter):'');
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
+$db->query($query);
 
-while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+while ($line = $db->fetch_array()) {
 	$rid = new ResourceId($line['resource_id'], $line['cpuset']);
 	foreach ($CONF['resource_properties'] as $rp) {
 		$rid->add_property($rp, $line[$rp]);
@@ -375,7 +486,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 		$r->add_resource_id($rid);
 	}
 }
-mysql_free_result($result);
+$db->free();
 
 // sort resource_ids
 uasort($resource_ids, "resource_id_sort");
@@ -397,13 +508,13 @@ WHERE
 	    date_stop >= {$gantt_start_date}
 	)
 EOT;
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+$db->query($query);
+while ($line = $db->fetch_array()) {
 	if (array_key_exists($line['resource_id'], $resource_ids)) {
 		$resource_ids[$line['resource_id']]->add_state($line['value'], $line['date_start'], $line['date_stop']);
 	}
 }
-mysql_free_result($result);
+$db->free();
 
 // Array to store jobs
 $jobs = array();
@@ -428,7 +539,7 @@ SELECT
 	resources.network_address,
 	job_types.type
 FROM 
-	(jobs, assigned_resources, moldable_job_descriptions, resources) LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)
+	(jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)), assigned_resources, moldable_job_descriptions, resources
 WHERE
 	( jobs.stop_time >= {$gantt_start_date} OR
 		( jobs.stop_time = '0' AND 
@@ -445,8 +556,8 @@ WHERE
 ORDER BY 
 	jobs.job_id
 EOT;
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+$db->query($query);
+while ($line = $db->fetch_array()) {
 	if (! array_key_exists($line['job_id'], $jobs)) {
 		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
 	}
@@ -459,7 +570,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 	$jobs[$line['job_id']]->add_network_address($line['network_address']);
 	$jobs[$line['job_id']]->add_type($line['type']);
 }
-mysql_free_result($result);
+$db->free();
 
 // Retrieve predicted jobs (future)
 $query = <<<EOT
@@ -481,7 +592,7 @@ SELECT
 	resources.network_address,
 	job_types.type
 FROM 
-	(jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources) LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)
+	(jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)), moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
 WHERE
 	gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
 	gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
@@ -493,8 +604,8 @@ WHERE
 ORDER BY 
 	jobs.job_id
 EOT;
-$result = mysql_query($query) or die('Query failed: ' . mysql_error());
-while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+$db->query($query);
+while ($line = $db->fetch_array()) {
 	if (! array_key_exists($line['job_id'], $jobs)) {
 		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
 	}
@@ -507,7 +618,7 @@ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 	$jobs[$line['job_id']]->add_network_address($line['network_address']);
 	$jobs[$line['job_id']]->add_type($line['type']);
 }
-mysql_free_result($result);
+$db->free();
 
 // Split resource_ids for jobs in groups for gantt display: resources which belong to the job may be interleaved with resources which don't
 foreach ($jobs as $job) {
@@ -515,7 +626,7 @@ foreach ($jobs as $job) {
 }
 
 // Closing connection to the database
-mysql_close($link);
+$db->close();
 
 ///////////////////////////////////////////////////////////////////////////////
 // SVG document generation
@@ -635,39 +746,8 @@ function mouseMove(evt) {
 ]]></script>
 
 <defs>
-<pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<text font-size="10" x="0" y="10" fill="#888888">B</text>
-</pattern> 
-<pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<text font-size="10" x="0" y="20" fill="#888888">C</text>
-</pattern> 
-<pattern id="deployPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<text font-size="10" x="10" y="10" fill="#888888">D</text>
-</pattern> 
-<pattern id="timesharingPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<text font-size="10" x="10" y="20" fill="#888888">T</text>
-</pattern> 
-<pattern id="exclusivePattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<text font-size="10" x="10" y="20" fill="#888888">E</text>
-</pattern> 
-<pattern id="rebootPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<text font-size="10" x="10" y="20" fill="#888888">R</text>
-</pattern> 
-<pattern id="placeholderPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<line x1="0" y1="0" x2="20" y2="20" stroke="#000000" stroke-width="2" />
-<text font-size="10" x="10" y="20" fill="#888888">P</text>
-</pattern> 
-<pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
-<line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />
-</pattern> 
-<pattern id="suspectedPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
-<line x1="5" y1="0" x2="0" y2="5" stroke="#ff0000" stroke-width="2" />
-</pattern> 
-<pattern id="deadPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
-<line x1="5" y1="0" x2="0" y2="5" stroke="#ff8080" stroke-width="2" />
-</pattern> 
-</defs>
 EOT;
+$output .= $CONF['patterns'] . "\n</defs>\n"; 
 
 // print gantt border
 $output .= '<rect x="'.$CONF['gantt_left_align'].'" y="'.$CONF['gantt_top'].'" width="'.$CONF['gantt_width'].'" height="'.count($resource_ids) * $CONF['scale'].'" stroke="#0000FF" stroke-width="1" fill="#FFFFFF" />';

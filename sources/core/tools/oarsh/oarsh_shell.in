@@ -6,7 +6,7 @@
 
 DEFAULT_SHELL=/bin/bash
 XAUTH_LOCATION="%%XAUTHCMDPATH%%"
-CPUSET_MOUNT_POINT="/dev/cpuset"
+CPUSET_MOUNT_POINT="/dev/oar_cgroups_links"
 OARDIR="%%OARDIR%%"
 
 export PATH=$OARDIR/oardodo:$PATH
@@ -22,18 +22,27 @@ function add_process_to_cpuset() {
     ######################
     # CPUSET assignation #
     ###########################################################################
-    #CPUSET_MOUNT_POINT=$(mount -t cpuset | cut -d " " -f 3 | head -1)
-    CPUSETFILE="$CPUSET_MOUNT_POINT/$1/tasks"
-    
-    if [ ! -w $CPUSETFILE ]
-    then
-        echo "oarsh: Cannot find cpuset file : $CPUSETFILE" 1>&2
+    CPUSETNAME=$1
+    if [ ! -w /dev/cpuset/$CPUSETNAME/tasks ]; then
+        echo "oarsh: Cannot find cpuset file : /dev/cpuset/$CPUSETNAME/tasks" 1>&2
         exit 61
     fi
     shift
-    for p in $@
-    do
-        $OARDIR/oardodo/oardodo sh -c "echo $p > $CPUSETFILE" || return 1
+
+    # Add each processes to the right OAR cgroups
+    for p in $@; do
+        if [ -r $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/tasks ]; then
+            # Feed at least cpuset (security)
+            $OARDIR/oardodo/oardodo sh -c "echo $p > $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/tasks" || return 1
+            for c in $CPUSET_MOUNT_POINT/*; do
+                if [ "$c" != "$CPUSET_MOUNT_POINT/cpuset" -a -r "$c/$CPUSETNAME/tasks" ]; then
+                    $OARDIR/oardodo/oardodo sh -c "echo $p > $c/$CPUSETNAME/tasks" || return 1
+                fi
+            done
+        else
+            # Old behaviour without cgroups (just cpuset)
+            $OARDIR/oardodo/oardodo sh -c "echo $p > /dev/cpuset/$CPUSETNAME/tasks" || return 1
+        fi
     done
     ###########################################################################
 }
