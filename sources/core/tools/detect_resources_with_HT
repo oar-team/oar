@@ -39,6 +39,7 @@ fi
 # Add properties
 echo "$OARPROPERTY_CMD -a cpu" > $GENERATED_COMMANDS_FILE
 echo "$OARPROPERTY_CMD -a core" >> $GENERATED_COMMANDS_FILE
+echo "$OARPROPERTY_CMD -a thread" >> $GENERATED_COMMANDS_FILE
 echo "$OARPROPERTY_CMD -c -a host" >> $GENERATED_COMMANDS_FILE
 echo "$OARPROPERTY_CMD -a cpuset" >> $GENERATED_COMMANDS_FILE
 echo "$OARPROPERTY_CMD -a mem" >> $GENERATED_COMMANDS_FILE
@@ -49,6 +50,9 @@ CPU=$($OARNODES_CMD --sql true | grep 'cpu=' | awk -F " cpu=" '{print $2}' | awk
 # Init CORE id
 CORE=$($OARNODES_CMD --sql true | grep 'core=' | awk -F " core=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
 [ -z "$CORE" ] && CORE=0
+# Init THREAD id
+THREAD=$($OARNODES_CMD --sql true | grep 'thread=' | awk -F " thread=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
+[ -z "$THREAD" ] && THREAD=0
 
 echo
 for host in $(< $1)
@@ -62,16 +66,11 @@ do
     mem=$($OPENSSH_CMD $host cat /proc/meminfo | grep ^MemTotal | awk '{print $2}')
 
     # Get CORE info in the form:
-    # cpu:core
-    # cpu:core
-    # cpu:core
+    # cpu:core:thread
+    # cpu:core:thread
+    # cpu:core:thread
     # ...
-    if [ "`$OPENSSH_CMD $host cat /proc/cpuinfo|grep 'physical id'`" != "" ]
-    then
-      DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") core=$3; if ($1 == "physical" && $2 =="id") print $4 ":" core}'|sort -n)
-    else
-      DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") print $3 ":" $3}'|sort -n)
-    fi
+    DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") core=$3; if ($1 == "physical" && $2 =="id") socket=$4; if ($1 == "core" && $2 =="id") print socket ":" $4 ":" core}'|sort -n)
 
     # Restore stderr
     exec 2>&3
@@ -87,14 +86,18 @@ do
 
     ((mem = $mem / 1024 / 1024 + 1))
     prev_cpu="-1"
+    prev_core="-1"
     for i in $DATA
     do
-        core=$(echo $i|awk -F: '{print $2}')
         cpu=$(echo $i|awk -F: '{print $1}')
+        core=$(echo $i|awk -F: '{print $2}')
+        thread=$(echo $i|awk -F: '{print $3}')
         [ "$cpu" != "$prev_cpu" ] && ((CPU++))
-        ((CORE++))
+        [ "$core" != "$prev_core" ] && ((CORE++))
+        ((THREAD++))
         prev_cpu=$cpu
-        echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+        prev_core=$core
+        echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $GENERATED_COMMANDS_FILE
     done
     echo "OK"
 done

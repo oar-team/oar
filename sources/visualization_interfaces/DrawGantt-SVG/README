@@ -1,6 +1,7 @@
-This is a SVG version of the Gantt diagram.
+This is a SVG version of OAR Gantt diagram.
 It was developped as a prototype to show how transparency (alpha colors) could be useful for rendering the resources usage.
 
 This drawgantt unfortunately does not scale well above several tens of resources.
+It is known to work quite well with recent version of Mozilla Firefox.
 
 Use at your own risks.

@@ -58,7 +58,7 @@ uninstall_shared: $(patsubst %, uninstall_%,$(SHARED_ACTIONS)) uninstall_setup_s
 #
 # template processing (*.in)
 #
-MODULE_SETUP_SOURCE_FILES  = $(wildcard setup/$(MODULE)*.in)
+MODULE_SETUP_SOURCE_FILES  = $(wildcard setup/$(MODULE).*.in)
 MODULE_SETUP_TOBUILD_FILES  = $(patsubst %.in, %, $(MODULE_SETUP_SOURCE_FILES))
 MODULE_SETUP_BUILDED_FILES  = $(patsubst %.in, %.out, $(MODULE_SETUP_SOURCE_FILES))
 MODULE_SETUP_TARGET_FILES  = $(addprefix $(DESTDIR)$(OARDIR)/setup/,$(notdir $(basename $(MODULE_SETUP_SOURCE_FILES))))

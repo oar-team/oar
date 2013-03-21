@@ -81,7 +81,7 @@ resources['items'].collect{|r| r['network_address']}.uniq.each do |node|
     end
   end
   node=~/#{NODENAME_REGEX}/
-  print " ",$1,"\t"
+  print $1.ljust(20)
   col+=1
   if col >= COLS
     col = 0

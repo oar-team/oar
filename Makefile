@@ -3,7 +3,7 @@
 export SHELL=/bin/bash
 
 # Modules that can be builded
-MODULES = server user node monika draw-gantt doc tools api scheduler-ocaml kamelot kamelot-pg www-conf common common-libs database  
+MODULES = server user node monika drawgantt drawgantt-svg doc tools api scheduler-ocaml kamelot kamelot-pg www-conf common common-libs database  
 
 
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
@@ -95,11 +95,17 @@ node-clean: common-clean
 node-build: common-build 
 node-uninstall: common-uninstall
 
-draw-gantt-setup: www-conf-setup
-draw-gantt-install: www-conf-install
-draw-gantt-clean: www-conf-clean
-draw-gantt-build: www-conf-build
-draw-gantt-uninstall: www-conf-uninstall
+drawgantt-setup: www-conf-setup
+drawgantt-install: www-conf-install
+drawgantt-clean: www-conf-clean
+drawgantt-build: www-conf-build
+drawgantt-uninstall: www-conf-uninstall
+
+drawgantt-svg-setup: www-conf-setup
+drawgantt-svg-install: www-conf-install
+drawgantt-svg-clean: www-conf-clean
+drawgantt-svg-build: www-conf-build
+drawgantt-svg-uninstall: www-conf-uninstall
 
 monika-setup: www-conf-setup
 monika-install: www-conf-install
@@ -168,7 +174,11 @@ $(P_TARGETS):
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/draw-gantt.mk $(P_ACTION) \
+	$(MAKE) -f Makefiles/drawgantt.mk $(P_ACTION) \
+                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
+		DOCDIR=/usr/share/doc/oar-web-status \
+		WWWDIR=/usr/share/oar-web-status
+	$(MAKE) -f Makefiles/drawgantt-svg.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status

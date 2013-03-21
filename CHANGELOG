@@ -12,8 +12,20 @@ version 2.5.3:
   - Added --compact, -c option to oarstat (compact view or array jobs)
   - Improvements of the API: media upload from html forms, listing of files, 
     security fixes, add of new configuration options, listing of the scheduled
-    nodes into jobs, fixed bad reinitialization of the limit parameter... 
+    nodes into jobs, fixed bad reinitialization of the limit parameter,
+    stress_factor... 
     See OAR-DOCUMENTATION-API-USER for more informations.
+  - CGROUP: handle cgroup hierarchy already mounted by the OS like in Fedora 18
+    (by systemd in /sys/fs/cgroup) in job_resource_manager_cgroups.pl
+  - Bug fix oar-database: fix the reset function for mysql
+  - Add packaging for the SVG version of drawgantt
+  - Bug fix schedulers: rewrite schedulers with placeholders
+  - Rework default admission rules
+  - Add the command "oar_resources_init_with_HT" wich generates right resources
+    to add in the DB with a "thread" property (HyperThreading)
+  - Fix stdout/stderr bug: check the allowed characters in the path given by
+    the users
+  - Fix: the user shell (bash) didn't source /etc/bash.bashrc in batch jobs.
 
 version 2.5.2:
 --------------
