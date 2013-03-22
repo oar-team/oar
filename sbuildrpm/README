@@ -1,0 +1,42 @@
+== SETUP A CENTOS CHROOT: ==
+
+Inspired by the setup of Debian chroot:
+http://wiki.debian.org/sbuild
+http://wiki.debian.org/mk-sbuild
+
+
+cat < 'EOF' > /etc/schroot/chroot.d/centos6-amd64
+[centos6-amd64]
+type=btrfs-snapshot
+description=CentOS 6/amd64 autobuilder
+groups=root,sbuild
+root-groups=root,sbuild
+profile=sbuildrpm
+btrfs-source-subvolume=/srv/chroot/centos6-amd64
+btrfs-snapshot-directory=/srv/chroot/snapshots
+EOF
+
+btrfs subvolume create /srv/chroot/centos6-amd64
+
+mkdir -p /srv/chroot/snapshots
+
+cat EOF >> /etc/rinse/rinse.conf
+[centos-6]
+mirror       = http://ftp.ciril.fr/pub/linux/centos/6/os/i386/Packages/
+mirror.amd64 = http://ftp.ciril.fr/pub/linux/centos/6/os/x86_64/Packages/
+EOF
+
+rinse --distribution centos-6 --arch amd64 --directory /srv/chroot/centos6-amd64/ 
+
+cat << 'EOF' > /srv/chroot/centos6-amd64/etc/profile.d/debian_chroot.sh
+# set variable identifying the chroot you work in (used in the prompt below)
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+    debian_chroot=$(cat /etc/debian_chroot)
+fi
+
+# set a fancy prompt (non-color, overwrite the one in /etc/profile)
+PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+
+EOF
+
+cp -a /srv/chroot/sid-amd64-sbuild/dev /srv/chroot/centos6-amd64/dev

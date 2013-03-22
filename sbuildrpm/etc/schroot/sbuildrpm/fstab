@@ -1,0 +1,13 @@
+# fstab: static file system information for chroots.
+# Note that the mount point will be prefixed by the chroot path
+# (CHROOT_PATH)
+#
+# <file system>	<mount point>	<type>	<options>	<dump>	<pass>
+/proc		/proc		none    rw,bind        0       0
+/sys		/sys		none    rw,bind        0       0
+/dev/pts	/dev/pts	none	rw,bind		0	0
+tmpfs		/dev/shm	tmpfs	defaults	0	0
+# Mount a large scratch space for the build, so we don't use up
+# space on an LVM snapshot of the chroot itself.
+/var/lib/sbuildrpm/build	/build	none	rw,bind	0	0
+

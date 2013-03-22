@@ -1,0 +1,125 @@
+#!/bin/bash
+set -e
+umask 0002
+######################
+### Misc functions ###
+######################
+
+die() {
+	echo $@ 1>&2
+	exit 1
+}
+
+cleanup() {
+	set +e
+	if [ -n "$KEEP_SESSION" ]; then
+		[ -n "$CHROOT_SESSION" ] && echo "Keeping schroot session open, run 'schroot -c $CHROOT_SESSION -e' to end it"
+		[ -n "$SBUILDRPM_BUILD_DIR" ] && echo "Build directory not deleted, run 'rm -rf $SBUILDRPM_BUILD_DIR' to delete it."
+	else
+		[ -n "$CHROOT_SESSION" ] && schroot -c $CHROOT_SESSION -e
+		[ -n "$SBUILDRPM_BUILD_DIR" ] && rm -rf $SBUILDRPM_BUILD_DIR
+		echo "Cleaned up !"
+	fi
+}
+
+trap_error() {
+	cleanup
+	echo "BAD" 
+	exit 1
+}
+
+usage() {
+	cat 1>&2 <<EOF
+Usage: $0 [-l] [-k] <SPEC file>
+Options:
+	-l	run rpmlint and exit if some error are reported
+	-k	keep the schroot session open
+EOF
+}
+
+trap trap_error ERR
+
+##################
+### Tool setup ### 
+##################
+
+CHROOT_NAME="chroot:centos6-amd64"
+if ! schroot -l | grep -q -e "^$CHROOT_NAME$"; then
+	die "CentOS 6 chroot not found."
+fi
+
+if ! id | grep -q "(sbuild)"; then 
+	echo "You need to be part of the sbuild group, adding you..."
+	sudo adduser $USER sbuild
+	die "Please logout and login again, so that your new group membership is taken into account."
+fi
+
+SBUILDRPM_DIR=/var/lib/sbuildrpm
+if [ ! -d $SBUILDRPM_DIR ]; then
+	echo "$SBUILDRPM_DIR does not exist, creating it..."
+	sudo install -d -m 2770 -o sbuild -g sbuild $SBUILDRPM_DIR
+fi
+
+############
+### Main ###
+############
+
+while getopts "lkh" OPTIONS
+do
+  case $OPTIONS in
+    l)
+		DO_RPMLINT=1
+		;;
+    k)
+	  KEEP_SESSION=1
+		;;
+    h)
+		usage
+	  exit 0
+		;;
+		*)
+		usage
+		exit 1
+		;;
+  esac
+done
+shift $((OPTIND - 1))
+echo $@
+
+SPEC_FILE=$1
+[ -r $SPEC_FILE ] || die "Could not read SPEC file: $SPEC_FILE"
+BASE_DIR=${SPEC_FILE%/rpm/SPECS/*.spec}
+TARBALLS_DIR=$BASE_DIR/../tarballs
+RPMBUILD_DIR=$BASE_DIR/../rpmbuild
+
+NAME=$(grep -e "^Name:" $SPEC_FILE | sed -e "s/^Name:[[:space:]]\+//")
+SOURCE0=$(grep -e "^Source0:" $SPEC_FILE | sed -e "s/^Source0:[[:space:]]\+//")
+VERSION=$(grep -e "^%define version" $SPEC_FILE | sed -e "s/^%define version[[:space:]]//" )
+RELEASE=$(grep -e "^%define release" $SPEC_FILE | sed -e "s/^%define release[[:space:]]//" )
+[ -n "$NAME" -a -n "$SOURCE0" -a -n "$VERSION" -a -n "$RELEASE" ] || die "Fail to fetch info from SPEC file."
+TARBALL=${SOURCE0/\%version/$VERSION}
+[ -r $TARBALLS_DIR/$TARBALL ] || die "Tarball $TARBALL not found."
+
+mkdir -p $SBUILDRPM_DIR/build
+SBUILDRPM_BUILD_DIR=$(mktemp -d --tmpdir=$SBUILDRPM_DIR/build -t $NAME-XXXXXX)
+
+CHROOT_SESSION=${SBUILDRPM_BUILD_DIR##*/}
+schroot -c $CHROOT_NAME -b -n $CHROOT_SESSION
+schroot -c $CHROOT_SESSION -r -d / -u root -- yum -y update
+schroot -c $CHROOT_SESSION -r -d / -u root -- yum -y install rpm-build rpmlint rpmdevtools
+schroot -c $CHROOT_SESSION -r -d / -u root -- install -d -o $USER $HOME
+schroot -c $CHROOT_SESSION -r -d / -- bash -c "echo \"%_topdir /build/$CHROOT_SESSION\" > $HOME/.rpmmacros"
+schroot -c $CHROOT_SESSION -r -d / -- rpmdev-setuptree
+install $SPEC_FILE $SBUILDRPM_BUILD_DIR/SPECS/
+install $TARBALLS_DIR/$TARBALL $SBUILDRPM_BUILD_DIR/SOURCES/
+[ -n "$DO_RPMLINT" ] && schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -- rpmlint SPECS/$NAME.spec
+schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -- rpmbuild -bs SPECS/$NAME.spec
+[ -n "$DO_RPMLINT" ] && schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -- rpmlint SRPMS/oar-$VERSION-$RELEASE.src.rpm
+schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -u root -- yum-builddep -y SRPMS/oar-$VERSION-$RELEASE.src.rpm
+schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -- rpmbuild -ba SPECS/$NAME.spec
+[ -n "$DO_RPMLINT" ] && schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -- rpmlint RPMS/*.rpm
+cp -vf $SBUILDRPM_BUILD_DIR/SRPMS/* $RPMBUILD_DIR/SRPMS/
+cp -vf $SBUILDRPM_BUILD_DIR/RPMS/* $RPMBUILD_DIR/RPMS/
+cleanup
+echo "OK, everything is now in $RPMBUILD_DIR !"
+exit 0
