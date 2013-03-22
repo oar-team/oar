@@ -24,6 +24,7 @@ OAR is a resource manager (or batch scheduler) for large computing clusters.
 %package common
 Summary:        OAR batch scheduler common package
 Group:          System/Servers
+BuildRequires:  gcc
 Requires:       perl, shadow-utils, perl-DBI, /bin/mkdir, /usr/bin/chsh, perl-DBD-MySQL or perl-DBD-Pg
 %description common
 This package installs the common part or the OAR batch scheduler
