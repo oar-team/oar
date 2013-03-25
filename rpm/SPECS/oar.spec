@@ -3,19 +3,19 @@
 
 %define oaruser  oar
 
-Name: 		oar
-Version:        %{version}
-Release:        %{release}
-Summary: 	OAR batch scheduler
-License: 	GPL
-Group: 		System/Servers
-Url:            http://oar.imag.fr
+Name:     oar
+Version:  %{version}
+Release:  %{release}
+Summary:  A versatile HPC cluster task and resource manager (batch scheduler)
+License:  GPLv2
+Group:    System Environment/Base
+Url:      http://oar.imag.fr
 
 %define _topdir %(pwd)
 # %define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
 # %define _unpackaged_files_terminate_build 0
 
-Source0: 	oar-%version.tar.gz
+Source:         oar-%version.tar.gz
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar python-docutils
 %description
@@ -23,15 +23,15 @@ OAR is a resource manager (or batch scheduler) for large computing clusters.
 
 %package common
 Summary:        OAR batch scheduler common package
-Group:          System/Servers
+Group:          System Environment/Base
 BuildRequires:  gcc
-Requires:       perl, shadow-utils, perl-DBI, /bin/mkdir, /usr/bin/chsh, perl-DBD-MySQL or perl-DBD-Pg
+Requires:       perl, shadow-utils, perl-DBI, coreutils, util-linux-ng, perl-DBD-MySQL or perl-DBD-Pg
 %description common
 This package installs the common part or the OAR batch scheduler
 
 %package -n perl-OAR
 Summary:        OAR batch scheduler common perl library package
-Group:          System/Servers
+Group:          System Environment/Base
 Requires:       perl(DBI)
 Provides:       perl(OAR::IO), perl(OAR::Modules::Judas), perl(OAR::Tools), perl(OAR::Conf), perl(OAR::Schedulers::ResourceTree), perl(OAR::Version), perl(OAR::Stat), perl(OAR::Nodes), perl(OAR::Sub)
 %description -n perl-OAR
@@ -39,7 +39,7 @@ This package installs the common libraries of the OAR batch scheduler
 
 %package server-mysql
 Summary:        OAR batch scheduler MySQL backend package for the server
-Group:          System/Servers
+Group:          System Environment/Base
 Requires:       perl-DBD-MySQL
 Provides:       oar-server-backend
 %description server-mysql
@@ -47,7 +47,7 @@ This package installs the MySQL backend for the server part or the OAR batch sch
 
 %package server-pgsql
 Summary:        OAR batch scheduler PostgreSQL backend package for the server
-Group:          System/Servers
+Group:          System Environment/Base
 Requires:       perl-DBD-Pg
 Provides:       oar-server-backend
 %description server-pgsql
@@ -55,44 +55,44 @@ This package installs the PostgreSQL backend for the server part or the OAR batc
 
 %package server
 Summary:        OAR batch scheduler server package
-Group:          System/Servers
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /etc/cron.d, /lib/lsb/init-functions, oar-server-backend
+Group:          System Environment/Base
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-server-backend, openssh-server, openssh-client, crontabs, redhat-lsb-core
 %description server
 This package installs the server part or the OAR batch scheduler
 
 %package node
-Summary:	OAR batch scheduler node package
-Group:          System/Servers
-Requires:       oar-common = %version-%release, /usr/bin/ssh, /usr/sbin/sshd, /lib/lsb/init-functions
+Summary:        OAR batch scheduler node package
+Group:          System Environment/Base
+Requires:       oar-common = %version-%release, openssh-server, openssh-client, redhat-lsb-core
 %description node
 This package installs the execution node part of the OAR batch scheduler
 
 %package user-mysql
-Summary:	OAR batch scheduler user MySQL backend package
-Group:          System/Servers
+Summary:        OAR batch scheduler user MySQL backend package
+Group:          System Environment/Base
 Requires:       perl-DBD-MySQL
 Provides:       oar-user-backend
 %description user-mysql
 This package install the MySQL backend for the submission and query part of the OAR batch scheduler
 
 %package user-pgsql
-Summary:	OAR batch scheduler user PostgreSQL backend package
-Group:          System/Servers
+Summary:        OAR batch scheduler user PostgreSQL backend package
+Group:          System Environment/Base
 Requires:       perl-DBD-Pg
 Provides:       oar-user-backend
 %description user-pgsql
 This package install the PostgreSQL backend for the submission and query part of the OAR batch scheduler
 
 %package user
-Summary:	OAR batch scheduler user package
-Group:          System/Servers
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-user-backend, /usr/bin/ssh
+Summary:        OAR batch scheduler user package
+Group:          System Environment/Base
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-user-backend, openssh-client
 %description user
 This package install the submission and query part of the OAR batch scheduler
 
 %package web-status
-Summary:	OAR batch scheduler web-status package
-Group:          System/Servers
+Summary:        OAR batch scheduler web-status package
+Group:          System Environment/Base
 Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-gd, perl(Sort::Naturally), httpd, php, php-mysql or php-pgsql
 # missing dependency: no RPM packaging for libdbd-mysql-ruby or libdbd-pg-ruby on Centos6
 Provides:       Perl(OAR::Monika), DrawGantt, DrawGantt-SVG
@@ -100,38 +100,24 @@ Provides:       Perl(OAR::Monika), DrawGantt, DrawGantt-SVG
 This package installs the OAR batch scheduler status web pages: jobs and resources status and gantt diagrams.
 
 %package doc
-Summary:	OAR batch scheduler doc package
-Group:          System/Servers
+Summary:        OAR batch scheduler doc package
+Group:          System Environment/Base
 Requires:       man, httpd
 BuildRequires:  python-docutils, httpd
 %description doc
 This package installs some documentation for OAR batch scheduler
 
 %package admin
-Summary:	OAR batch scheduler administration tools package
-Group:          System/Servers
+Summary:        OAR batch scheduler administration tools package
+Group:          System Environment/Base
 Requires:       oar-common = %version-%release, ruby, ruby-DBI, perl(YAML)
 %description admin
 This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...) 
 
-#%package desktop-computing-agent
-#Summary:        OAR desktop computing agent
-#Group:          System/Servers
-#Requires:	oar-common = %version-%release, ruby
-#%description desktop-computing-agent
-#This package install the OAR batch scheduler desktop computing agent
-#
-#%package desktop-computing-cgi
-#Summary:	OAR desktop computing HTTP proxy CGI
-#Group:          System/Servers
-#Requires:	perl(CGI), oar-common = %version-%release, httpd
-#%description    desktop-computing-cgi	
-#This package install the OAR batch scheduler desktop computing HTTP proxy CGI
-
 %package restful-api
-Summary:	OAR RESTful user API
-Group:          System/Servers
-Requires:	perl(CGI), oar-common >= 2.4.0-1, oar-user >= 2.4.0-1, httpd
+Summary:        OAR RESTful user API
+Group:          System Environment/Base
+Requires:       oar-common = %version-%release, oar-user = %version-%release, httpd, perl(CGI) 
 Provides:       perl(OAR::API), oar-api
 Obsoletes:      oar-api
 %description    restful-api
@@ -144,7 +130,7 @@ This package installs the RESTful OAR user API.
 #BuildArch:      amd64 i686
 
 %prep
-%setup -T -b 0
+%setup -q
 
 # Modify Makefile for chown commands to be non-fatal as the permissions
 # are set by the packaging
@@ -253,13 +239,6 @@ cp $TMP/usr/share/doc/oar-server/examples/init.d/oar-server \
 cp $TMP/usr/share/doc/oar-server/examples/default/oar-server \
      $TMP/etc/sysconfig/oar-server
 
-# desktop-computing-cgi
-#TMP=tmp/oar-desktop-computing-cgi
-#mkdir -p $TMP/etc/oar
-#mkdir -p $TMP/etc/cron.hourly
-#cp $TMP/usr/share/doc/oar-desktop-computing-cgi/examples/cron.hourly/oar-desktop-computing-cgi \
-#     $TMP/etc/cron.hourly/oar-desktop-computing-cgi  
-
 # Reconstruct the whole system
 mkdir -p $RPM_BUILD_ROOT
 rm -rf $RPM_BUILD_ROOT/*
@@ -267,7 +246,6 @@ cp -a tmp/*/* $RPM_BUILD_ROOT/
 
 # Additional distribution dependent files
 mkdir -p $RPM_BUILD_ROOT/var/lib/oar/checklogs
-
 
 
 %clean
@@ -279,12 +257,14 @@ rm -rf tmp
 ###### files and permissions ######
 
 %files common -f oar-common.files
+%defattr(0644,root,root)
 %config(noreplace) /etc/oar/oar.conf
 %config(noreplace) /etc/oar/oarnodesetting_ssh
 %config(noreplace) /etc/oar/update_cpuset_id.sh
 %config %attr(0755,root,root) /etc/logrotate.d/oar
 
 %files server -f oar-server.files
+%defattr(0644,root,root)
 %config %attr(0755,root,root) /etc/rc.d/init.d/oar-server
 %config(noreplace) %attr(0644,root,root) /etc/sysconfig/oar-server
 %config %attr(0644,root,root) /etc/cron.d/oar-server
@@ -299,10 +279,13 @@ rm -rf tmp
 %config(noreplace) /etc/oar/wake_up_nodes.sh
 
 %files server-mysql
+%defattr(0644,root,root)
 
 %files server-pgsql
+%defattr(0644,root,root)
 
 %files node -f oar-node.files
+%defattr(0644,root,root)
 %config %attr(0755,root,root) /etc/rc.d/init.d/oar-node
 %config(noreplace) %attr(0644,root,root) /etc/sysconfig/oar-node
 #%config %attr(0644,root,root) /etc/cron.d/oar-node
@@ -313,28 +296,36 @@ rm -rf tmp
 %config(noreplace) /var/lib/oar/checklogs
 
 %files user -f oar-user.files
+%defattr(0644,root,root)
 
 %files user-mysql
+%defattr(0644,root,root)
 
 %files user-pgsql
+%defattr(0644,root,root)
 
 %files web-status -f oar-web-status.files
+%defattr(0644,root,root)
 %config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt.conf
 %config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt-svg-config.inc.php
 %config(noreplace) %attr (0600,apache,root) /etc/oar/monika.conf
 %config(noreplace) %attr (0600,apache,root) /etc/oar/apache.conf
 
 %files doc -f oar-doc.files
+%defattr(0644,root,root)
 %docdir /usr/share/doc/oar-doc 
 
 %files admin -f oar-admin.files
+%defattr(0644,root,root)
 
 #%files desktop-computing-agent -f oar-desktop-computing-agent.files
 #
 #%files desktop-computing-cgi -f oar-desktop-computing-cgi.files
+#%defattr(0644,root,root)
 #%config %attr (0755,root,root) /etc/cron.hourly/oar-desktop-computing-cgi
 
 %files restful-api -f oar-restful-api.files
+%defattr(0644,root,root)
 %config(noreplace) /etc/oar/apache-api.conf
 %config /etc/oar/api_html_header.pl
 %config /etc/oar/api_html_postform.pl
@@ -342,6 +333,7 @@ rm -rf tmp
 %config /etc/oar/api_html_postform_rule.pl
 
 %files -n perl-OAR -f liboar-perl.files
+%defattr(0644,root,root)
 
 #%files scheduler-ocaml-mysql -f oar-scheduler-ocaml-mysql
 
@@ -424,12 +416,6 @@ tools_setup
 %post user
 . /usr/lib/oar/setup/user.sh
 user_setup
-
-
-###### oar-desktop-computing-cgi scripts ######
-#%post desktop-computing-cgi
-#. /usr/lib/oar/setup/desktop-computing-cgi.sh
-#desktop_computing_cgi_setup
 
 
 %changelog
