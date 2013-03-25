@@ -93,11 +93,11 @@ TARBALLS_DIR=$BASE_DIR../tarballs
 RPMBUILD_DIR=$BASE_DIR../rpmbuild
 
 NAME=$(grep -e "^Name:" $SPEC_FILE | sed -e "s/^Name:[[:space:]]\+//")
-SOURCE0=$(grep -e "^Source0:" $SPEC_FILE | sed -e "s/^Source0:[[:space:]]\+//")
+SOURCE=$(grep -e "^Source:" $SPEC_FILE | sed -e "s/^Source:[[:space:]]\+//")
 VERSION=$(grep -e "^%define version" $SPEC_FILE | sed -e "s/^%define version[[:space:]]//" )
 RELEASE=$(grep -e "^%define release" $SPEC_FILE | sed -e "s/^%define release[[:space:]]//" )
-[ -n "$NAME" -a -n "$SOURCE0" -a -n "$VERSION" -a -n "$RELEASE" ] || die "Fail to fetch info from SPEC file."
-TARBALL=${SOURCE0/\%version/$VERSION}
+[ -n "$NAME" -a -n "$SOURCE" -a -n "$VERSION" -a -n "$RELEASE" ] || die "Fail to fetch info from SPEC file."
+TARBALL=${SOURCE/\%version/$VERSION}
 [ -r $TARBALLS_DIR/$TARBALL ] || die "Tarball $TARBALL not found (should be in $TARBALLS_DIR)."
 
 mkdir -p $SBUILDRPM_DIR/build
