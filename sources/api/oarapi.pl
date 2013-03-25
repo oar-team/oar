@@ -273,6 +273,22 @@ SWITCH: for ($q) {
   };
   #}}}
   #
+  #{{{ GET /whoami : Authenticated User informations
+  #
+  $URI = qr{^/whoami\.*(yaml|json|html)*$};
+  OAR::API::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = OAR::API::set_ext($q,$1);
+    (my $header, my $type)=OAR::API::set_output_format($ext);
+    my $version={ "api_timestamp" => time(),
+                  "authenticated_user" => $authenticated_user };
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export($version,$ext);
+    last;
+  };
+  #}}}
+  #
   #{{{ GET /timezone: Timezone information
   #
   $URI = qr{^/timezone\.*(yaml|json|html)*$};
