@@ -1,5 +1,5 @@
-%define version 2.5.3+rc3
-%define release 2.el6
+%define version 2.5.3+rc4
+%define release 1.el6
 
 %define oaruser  oar
 
@@ -419,10 +419,12 @@ user_setup
 
 
 %changelog
-* Mon Feb 25 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
-- new upstream release
-- remove OAR desktop-computing packages
-- add packaging for drawgantt-svg
+* Mon Mar 27 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
+- New upstream release
+- Remove OAR desktop-computing packages
+- Add packaging for drawgantt-svg
+- Fix some rpmlint warnings
+- Make dependancy more accurate for Centos 6
 
 * Wed May 23 2012 Philippe Le Brouster <philippe.le-brouster@imag.fr> 2.5.2-1.el6
 - new upstream release
