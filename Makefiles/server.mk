@@ -9,8 +9,7 @@ OARDIR_BINFILES = $(SRCDIR)/modules/runner/runner \
 		  $(SRCDIR)/qfunctions/oarproperty \
 		  $(SRCDIR)/qfunctions/oarmonitor \
 		  $(SRCDIR)/modules/runner/bipbip.in \
-		  $(SRCDIR)/tools/detect_resources \
-		  $(SRCDIR)/tools/detect_resources_with_HT \
+		  $(SRCDIR)/tools/oar_resources_init \
 		  $(SRCDIR)/tools/oar_checkdb.pl
 
 
@@ -62,8 +61,7 @@ clean: clean_shared
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oaraccounting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaraccounting
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarproperty CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarproperty
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/detect_resources_with_HT CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init_with_HT
+	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar_checkdb.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_checkdb
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix	
 	
@@ -76,8 +74,7 @@ build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oaraccounting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaraccounting
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarproperty CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarproperty
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/detect_resources_with_HT CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init_with_HT
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_checkdb.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_checkdb
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix	
 	
@@ -100,8 +97,7 @@ install: build install_shared
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oaraccounting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaraccounting
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarproperty CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarproperty
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
-	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
-	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/detect_resources_with_HT CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init_with_HT
+	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar_checkdb.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_checkdb
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix
 
@@ -122,8 +118,7 @@ uninstall: uninstall_shared
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oaraccounting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaraccounting
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarproperty CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarproperty
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
-	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/detect_resources CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
-	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/detect_resources_with_HT CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init_with_HT
+	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oar_checkdb.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_checkdb
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix	
 
