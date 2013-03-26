@@ -2,7 +2,7 @@ package OAR::Version;
 require Exporter;
 
 my $OARVersion = "2.5.3";
-my $OARName = "tzuhtzjo:m uy-u:xlaju:n pik";
+my $OARName = "Frog Master";
 
 sub get_version(){
     return $OARVersion." (".$OARName.")";
