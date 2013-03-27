@@ -1,5 +1,5 @@
 %define version 2.5.3+rc4
-%define release 1.el6
+%define release 2.el6
 
 %define oaruser  oar
 
@@ -56,14 +56,14 @@ This package installs the PostgreSQL backend for the server part or the OAR batc
 %package server
 Summary:        OAR batch scheduler server package
 Group:          System Environment/Base
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-server-backend, openssh-server, openssh-client, crontabs, redhat-lsb-core
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-server-backend, openssh-server, openssh-clients, crontabs, redhat-lsb-core
 %description server
 This package installs the server part or the OAR batch scheduler
 
 %package node
 Summary:        OAR batch scheduler node package
 Group:          System Environment/Base
-Requires:       oar-common = %version-%release, openssh-server, openssh-client, redhat-lsb-core
+Requires:       oar-common = %version-%release, openssh-server, openssh-clients, redhat-lsb-core
 %description node
 This package installs the execution node part of the OAR batch scheduler
 
@@ -86,7 +86,7 @@ This package install the PostgreSQL backend for the submission and query part of
 %package user
 Summary:        OAR batch scheduler user package
 Group:          System Environment/Base
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-user-backend, openssh-client
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-user-backend, openssh-clients
 %description user
 This package install the submission and query part of the OAR batch scheduler
 
