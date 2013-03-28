@@ -217,27 +217,31 @@ if ($ARGV[0] eq "init"){
         }else{
             exit_myself(5,"Failed to retrieve the cpu list of the node $Cgroup_directory_collection_links/cpuset/cpuset.cpus");
         }
-# Need to do more tests to validate
         my $IO_ratio = sprintf("%.0f",(($#cpu_cgroup_uniq_list + 1) / ($#node_cpus + 1) * 1000)) ;
+        # TODO: Need to do more tests to validate so remove this feature
+        #       Some values are not working when echoing
         $IO_ratio = 1000;
         if (system( '/bin/echo '.$IO_ratio.' | cat > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset_path_job.'/blkio.weight')){
             exit_myself(5,"Failed to set the blkio.weight to $IO_ratio");
         }
 
         if ($ENABLE_MEMCG eq "YES"){
-            if ($#cpu_cgroup_uniq_list < $#node_cpus){
-                my $mem_global_kb;
-                if (open(MEM, "$Cgroup_directory_collection_links/memory/memory.limit_in_bytes")){
-                    $mem_global_kb = <MEM>;
-                    chop($mem_global_kb);
-                    close(MEM);
-                }else{
-                    exit_myself(5,"Failed to retrieve the memory cgroup limit $Cgroup_directory_collection_links/memory/memory.limit_in_bytes");
+            my $mem_global_kb;
+            if (open(MEM, "/proc/meminfo")){
+                while (my $line = <MEM>){
+                    if ($line =~ /^MemTotal:\s+(\d+)\skB$/){
+                        $mem_global_kb = $1 * 1024;
+                        last;
+                    }
                 }
-                my $mem_kb = sprintf("%.0f", (($#cpu_cgroup_uniq_list + 1) / ($#node_cpus + 1) * $mem_global_kb));
-                if (system( '/bin/echo '.$mem_kb.' | cat > '.$Cgroup_directory_collection_links.'/memory/'.$Cpuset_path_job.'/memory.limit_in_bytes')){
-                    exit_myself(5,"Failed to set the memory.limit_in_bytes to $mem_kb");
-                }
+                close(MEM);
+            }else{
+                exit_myself(5,"Failed to retrieve the global memory from /proc/meminfo");
+            }
+            exit_myself(5,"Failed to parse /proc/meminfo to retrive MemTotal") if (!defined($mem_global_kb));
+            my $mem_kb = sprintf("%.0f", (($#cpu_cgroup_uniq_list + 1) / ($#node_cpus + 1) * $mem_global_kb));
+            if (system( '/bin/echo '.$mem_kb.' | cat > '.$Cgroup_directory_collection_links.'/memory/'.$Cpuset_path_job.'/memory.limit_in_bytes')){
+                exit_myself(5,"Failed to set the memory.limit_in_bytes to $mem_kb");
             }
         }
     }
@@ -339,11 +343,16 @@ if ($ARGV[0] eq "init"){
         # which would allow race condition for the dirty-user-based clean-up mechanism
         if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
             flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
-            if (system('oardodo rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.' &&
+            if (system('if [ -w '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty ]; then
+                          echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty
+                        fi
+                        oardodo rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.' &&
                         for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'; do
-                          oardodo rmdir $d >& /dev/null
+                          [ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty
+                          if [ -d $d ]; then
+                            oardodo rmdir $d >& /dev/null || exit 1
+                          fi
                         done
-                        exit 0
                        ')){
                 # Uncomment this line if you want to use several network_address properties
                 # which are the same physical computer (linux kernel)
