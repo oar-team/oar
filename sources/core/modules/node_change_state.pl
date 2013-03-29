@@ -37,10 +37,15 @@ foreach my $i (@events_to_check){
     if ((($i->{type} eq "SWITCH_INTO_TERMINATE_STATE") or ($i->{type} eq "SWITCH_INTO_ERROR_STATE")) and (defined($job->{exit_code}) and ( ($job->{exit_code} >> 8) == 99))){
         my $jobtypes = OAR::IO::get_current_job_types($base, $i->{job_id});
         if ((defined($jobtypes->{idempotent}))){
-            if (($job->{reservation} eq "None") and ($job->{job_type} eq "PASSIVE") and (OAR::IO::is_job_already_resubmitted($base, $i->{job_id}) == 0) and (OAR::IO::is_an_event_exists($base, $i->{job_id},"SEND_KILL_JOB") <= 0)){
+            if (($job->{reservation} eq "None")
+                 and ($job->{job_type} eq "PASSIVE")
+                 and (OAR::IO::is_job_already_resubmitted($base, $i->{job_id}) == 0)
+                 and (OAR::IO::is_an_event_exists($base, $i->{job_id},"SEND_KILL_JOB") <= 0)
+                 and ($job->{stop_time} - $job->{start_time} > 60)
+                ){
                 my $new_job_id = OAR::IO::resubmit_job($base,$i->{job_id});
                 oar_warn("[NodeChangeState] We resubmit the job $i->{job_id} (new id = $new_job_id) because it is of the type idempotent and its exit code is 99.\n");
-                OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},"idempotent job type + exit code of 99 = resubmit it (new id = $new_job_id).");
+                OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},"idempotent job type + exit code of 99 + duration > 60s = resubmit it (new id = $new_job_id).");
             }
         }
     }
