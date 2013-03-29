@@ -2,7 +2,7 @@
 # Detect resources on a list of nodes and print corresponding OAR commands
 #set -x
 
-while getopts "c:e:n:p:o:h" opt; do
+while getopts "c:e:n:p:o:Hh" opt; do
     case $opt in
     c)
         OARCONFFILE=$OPTARG
@@ -44,6 +44,7 @@ EOF
       ;;
   esac
 done
+shift $((OPTIND-1))
 OARCONFFILE=${OARCONFFILE:-/etc/oar/oar.conf}
 OPENSSH_CMD=${OPENSSH_CMD:-/usr/bin/ssh}
 OARNODES_CMD=${OARNODES_CMD:-oarnodes}
@@ -54,7 +55,8 @@ GENERATED_COMMANDS_FILE=${GENERATED_COMMANDS_FILE:-/tmp/oar_resources_init.cmd}
 
 # check the file with the nodes to add
 if [ -z "$1" ] || [ ! -r "$1" ]; then
-    echo "Please provide as argument a file containing the list of nodes to add to OAR resources (this file must be readable by user oar)"
+    echo "Please provide as argument a file containing the list of nodes to add to OAR"
+    echo "resources (this file must be readable by user oar)"
     exit 1
 fi
 
@@ -70,7 +72,8 @@ read l ; [ "$l" != "yes" -a "$l" != "YES" ] && exit 2
 
 # Check output file
 if [ -e "$GENERATED_COMMANDS_FILE" ]; then
-    echo "Commands to run will be written into "$GENERATED_COMMANDS_FILE". Do you want to override it? [yes/NO] "
+    echo "Commands to run will be written into '$GENERATED_COMMANDS_FILE'."
+    echo "Do you want to override it? [yes/NO]"
     read l ; [ "$l" != "yes" -a "$l" != "YES" ] && exit 3
     rm $GENERATED_COMMANDS_FILE || exit 4
 fi
@@ -132,7 +135,8 @@ for host in $(< $1); do
         echo "*** KO ***"
         rm $GENERATED_COMMANDS_FILE
         echo 
-        echo "ERROR with node $host. Please check the ssh connection with oar user ($OPENSSH_CMD $host)..."
+        echo "ERROR with node $host. Please check the ssh connection with oar user"
+        echo "($OPENSSH_CMD $host)..."
         exit 5
     fi
 
