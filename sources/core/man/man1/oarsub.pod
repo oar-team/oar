@@ -143,11 +143,11 @@ I<Warning>: the file will be overwritten if it already exists.
 
 =item B<-O> <FILE>
 
-Specify the files that will store the standard output stream of the job. The %jobid% pattern is automatically replaced.
+Specify the files that will store the standard output stream of the job. The %jobid% and %jobname% patterns are automatically replaced.
 
 =item B<-E> <FILE>
 
-Specify the files that will store the standard error stream of the job. The %jobid% pattern is automatically replaced.
+Specify the files that will store the standard error stream of the job. The %jobid% and %jobname% patterns are automatically replaced.
 
 =item B<--hold>
 

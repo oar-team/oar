@@ -1593,11 +1593,15 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         $stdout = "OAR";
         $stdout .= ".$job_name" if (defined($job_name));
         $stdout .= '.%jobid%.stdout';
+    }else{
+        $stdout =~ s/%jobname%/$job_name/g;
     }
     if (!defined($stderr) or ($stderr eq "")){
         $stderr = "OAR";
         $stderr .= ".$job_name" if (defined($job_name));
         $stderr .= '.%jobid%.stderr';
+    }else{
+        $stderr =~ s/%jobname%/$job_name/g;
     }
 
     $stdout = $dbh->quote($stdout);
@@ -1764,11 +1768,15 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         $stdout = "OAR";
         $stdout .= ".$job_name" if (defined($job_name));
         $stdout .= '.%jobid%.stdout';
+    }else{
+        $stdout =~ s/%jobname%/$job_name/g;
     }
     if (!defined($stderr) or ($stderr eq "")){
         $stderr = "OAR";
         $stderr .= ".$job_name" if (defined($job_name));
         $stderr .= '.%jobid%.stderr';
+    }else{
+        $stderr =~ s/%jobname%/$job_name/g;
     }
 
     $stdout = $dbh->quote($stdout);
