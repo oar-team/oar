@@ -81,7 +81,7 @@ my @Cpuset_cpus;
 if (defined($Cpuset->{cpuset_path})){
     $Cpuset_path_job = $Cpuset->{cpuset_path}.'/'.$Cpuset->{name};
     foreach my $l (@{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}}){
-        foreach my $c (split("[, ]",$l)){
+        foreach my $c (split("[, \+]",$l)){
             push(@Cpuset_cpus, $c);
         }
     }

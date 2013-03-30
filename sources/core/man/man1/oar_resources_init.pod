@@ -8,20 +8,30 @@ oar_resource_init - Helper script to define OAR resources
 
 B<oar_resource_init> I<host_list_file>
 
-B<oar_resource_init_with_HT> I<host_list_file>
+B<oar_resource_init> -H I<host_list_file>
+
+B<oar_resource_init> -H -T I<host_list_file>
 
 =head1 DESCRIPTION
 
 The script takes a list of hosts from the file given as parameter and generates the OAR commands to add the resources that define each of those hosts in the OAR database.
 Generated commands are written by default in /tmp/oar_resources_init.cmd
 
-<host_list_file> must contain one host per line and the hosts must be reacheable by SSH.
+<host_list_file> must contain one host per line and the hosts must have their "oar-node" service started (this script connects to the hosts via ssh on the port 6667).
 
-B<oar_resource_init_with_HT> is to be used if nodes are configured with HyperThreading enabled.
+The default resource hierarchy which is filled by this script is: host --> cpu --> core.
 
 =head1 OPTIONS
 
 =over 
+
+=item B<-H>
+
+This option can be used when Intel HyperThreading is enabled on the nodes. So for each declared core in the OAR database, the 2 corresponding threads are assigned.
+
+=item B<-T>
+
+This option can be used when Intel HyperThreading is enabled on the nodes. It adds the property "thread" in the OAR database and fills it with the hierarchy: host --> cpu --> core --> thread.
 
 =item B<host_list_file>
 

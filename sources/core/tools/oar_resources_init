@@ -2,7 +2,7 @@
 # Detect resources on a list of nodes and print corresponding OAR commands
 #set -x
 
-while getopts "c:e:n:p:o:Hh" opt; do
+while getopts "c:e:n:p:o:HTh" opt; do
     case $opt in
     c)
         OARCONFFILE=$OPTARG
@@ -22,6 +22,10 @@ while getopts "c:e:n:p:o:Hh" opt; do
     H)
         WITH_HT=1
         ;;
+    T)
+        WITH_HT=1
+        CREATE_THREAD_PROPERTY=1
+        ;;
     h)
         cat <<EOF
 Usage:
@@ -33,6 +37,7 @@ Options:
     -p  oarproperty command
     -o  output file for generated commands
     -H  handle HyperThreading
+    -T  handle HyperThreading + create thread property
     -h  display this message
 
 EOF
@@ -81,9 +86,9 @@ fi
 # Add properties
 echo "$OARPROPERTY_CMD -a cpu" > $GENERATED_COMMANDS_FILE
 echo "$OARPROPERTY_CMD -a core" >> $GENERATED_COMMANDS_FILE
-[ -n "$WITH_HT" ] && echo "$OARPROPERTY_CMD -a thread" >> $GENERATED_COMMANDS_FILE
+[ -n "$WITH_HT" -a -n "$CREATE_THREAD_PROPERTY" ] && echo "$OARPROPERTY_CMD -a thread" >> $GENERATED_COMMANDS_FILE
 echo "$OARPROPERTY_CMD -c -a host" >> $GENERATED_COMMANDS_FILE
-echo "$OARPROPERTY_CMD -a cpuset" >> $GENERATED_COMMANDS_FILE
+echo "$OARPROPERTY_CMD -c -a cpuset" >> $GENERATED_COMMANDS_FILE
 echo "$OARPROPERTY_CMD -a mem" >> $GENERATED_COMMANDS_FILE
 
 # Init CPU id
@@ -93,10 +98,10 @@ CPU=$($OARNODES_CMD --sql true | grep 'cpu=' | awk -F " cpu=" '{print $2}' | awk
 CORE=$($OARNODES_CMD --sql true | grep 'core=' | awk -F " core=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
 [ -z "$CORE" ] && CORE=0
 # Init THREAD id
-if [ -n "$WITH_HT" ]; then
+if [ -n "$WITH_HT" -a -n "$CREATE_THREAD_PROPERTY" ]; then
     THREAD=$($OARNODES_CMD --sql true | grep 'thread=' | awk -F " thread=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
-    [ -z "$THREAD" ] && THREAD=0
 fi
+[ -z "$THREAD" ] && THREAD=0
 
 echo
 for host in $(< $1); do
@@ -155,17 +160,35 @@ for host in $(< $1); do
     else
         prev_cpu="-1"
         prev_core="-1"
+        tmp_cpuset=""
+        cpu=""
+        core=""
         for i in $DATA; do
             cpu=$(echo $i|awk -F: '{print $1}')
             core=$(echo $i|awk -F: '{print $2}')
             thread=$(echo $i|awk -F: '{print $3}')
+            if [ -z "$CREATE_THREAD_PROPERTY" ]; then
+                if [ "$core" != "$prev_core" ]; then
+                    if [ -n "$tmp_cpuset" ]; then
+                        echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+                    fi
+                    tmp_cpuset="$thread"
+                else
+                    tmp_cpuset="$tmp_cpuset+$thread"
+                fi
+            fi
             [ "$cpu" != "$prev_cpu" ] && ((CPU++))
             [ "$core" != "$prev_core" ] && ((CORE++))
             ((THREAD++))
+            if [ -n "$CREATE_THREAD_PROPERTY" ]; then
+                echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+            fi
             prev_cpu=$cpu
             prev_core=$core
-            echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $GENERATED_COMMANDS_FILE
         done
+        if [ -z "$CREATE_THREAD_PROPERTY" ]; then
+            echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+        fi
     fi
     echo "OK"
 done
