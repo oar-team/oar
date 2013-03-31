@@ -19,7 +19,6 @@ OARDIR_DATAFILES = $(SRCDIR)/modules/runner/oarexec
 	  
 OARSCHEDULER_BINFILES = $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing \
 		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing \
-		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas \
 		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_placeholder \
 		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder  
 OARCONFDIR_BINFILES = $(SRCDIR)/tools/oar_phoenix.pl

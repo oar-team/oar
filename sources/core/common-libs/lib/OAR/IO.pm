@@ -5949,7 +5949,7 @@ sub create_a_queue($$$$){
 #return a hashtable : job_id --> [start_time,walltime,queue_name,\@resources,state]
 sub get_gantt_scheduled_jobs($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended,j.project
+    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
                              FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
                              WHERE
                                 m.moldable_index = \'CURRENT\'
@@ -5971,7 +5971,6 @@ sub get_gantt_scheduled_jobs($){
             $res{$ref[0]}->[6] = $ref[7];
             $res{$ref[0]}->[7] = $ref[8];
             $res{$ref[0]}->[8] = $ref[9];
-            $res{$ref[0]}->[9] = $ref[10];
             push(@order,$ref[0]);
         }
         push(@{$res{$ref[0]}->[3]}, $ref[3]);
