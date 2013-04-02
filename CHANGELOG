@@ -26,6 +26,10 @@ version 2.5.3:
   - Fix stdout/stderr bug: check the allowed characters in the path given by
     the users
   - Fix: the user shell (bash) didn't source /etc/bash.bashrc in batch jobs.
+  - Add quota which limits the number of used resources at a time depending of
+    the job attributes: queue, project, types, user
+    (available with the scheduler
+    "oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas")
 
 version 2.5.2:
 --------------
