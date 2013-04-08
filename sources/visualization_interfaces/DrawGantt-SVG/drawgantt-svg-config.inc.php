@@ -17,6 +17,7 @@ $CONF['resource_hierarchy'] = array( // properties to use to build the resource 
 	'network_address','cpuset'); 
 $CONF['resource_labels'] = array(  // properties to use for resource labels on the left (any of the resource hierarchy or cpuset)
 	'network_address','cpuset');
+$CONF['cpuset_label_display_string'] = "%02d";
 $CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1
 	'network_address' => '/^([^.]+)\..*$/');
 $CONF['label_cmp_regex'] = array( // string selection regex for comparing and sorting labels (resources)

@@ -15,6 +15,7 @@ $CONF['db_user']="oar";
 $CONF['db_passwd']="oar";
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
 $CONF['resource_labels'] = array('network_address','cpuset'); // properties to use to describe resources (resource labels on the left)
+$CONF['cpuset_label_display_string'] = "%02d";
 $CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1
 	'network_address' => '/^([^.]+)\..*$/',
 	);
@@ -326,8 +327,9 @@ class ResourceId {
 		array_push($this->job_resource_id_groups, $job_resource_id_group);
 	}
 	function resource_label($type) {
+		global $CONF;
 		if ($type == 'cpuset') {
-			return $this->cpuset;
+			return sprintf($CONF['cpuset_label_display_string'],$this->cpuset);
 		} else {
 			return $this->resources[$type]->label();
 		}
