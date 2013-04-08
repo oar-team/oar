@@ -30,6 +30,8 @@ version 2.5.3:
     the job attributes: queue, project, types, user
     (available with the scheduler
     "oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas")
+  - Add comments in user job STDERR files to know if a job was killed or
+    checkpointed
 
 version 2.5.2:
 --------------
