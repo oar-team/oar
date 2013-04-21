@@ -1,24 +1,46 @@
 # $Id$
 # 
-# The job_resource_manager_cgroups script is a perl script that oar server
+# The "job_resource_manager_cgroups.pl" script is a perl script that oar server
 # deploys on nodes to manage cpusets, users, job keys, ...
 #
-# In this script some cgroup Linux features are added in addition to cpuset:
-#     - Tag each network packet from processes of this job with the class id =
-#       $OAR_JOB_ID
-#     - Put an IO share corresponding to the ratio between reserved cpus and
-#       the number of the node
+# In this script some cgroup Linux features are incorporated:
+#     - [cpuset]  Restrict the job processes to use only the reserved cores;
+#                 And restrict the allowed memory nodes to those directly
+#                 attached to the cores (see the command "numactl -H")
+#     - [cpu]     Nothing is done with this cgroup feature. By default each
+#                 cgroup have cpu.shares=1024 (no priority)
+#     - [cpuacct] Allow to have an accounting of the cpu times used by the
+#                 job processes
+#     - [devices] Allow or deny the access of devices for each job processes
+#                 (By default every devices are allowed)
+#     - [freezer] Permit to suspend or resume the job processes.
+#                 This is used by the suspend/resume of OAR (oarhold/oarresume)
+#     - [net_cls] Tag each network packet from processes of the jobs with 
+#                 the classid = $OAR_JOB_ID.
+#                 This could be useful in conjunction with iptables or tc rules 
+#     - [blkio]   Put an IO share corresponding to the ratio between reserved
+#                 cores and the number of the node (this is disabled by default
+#                 due to bad behaviour seen. More tests have to be done)
+#                 There are some interesting accounting data available.
+#     - [memory]  Permit to restrict the amount of RAM that can be used by the
+#                 job processes (ration of job_nb_cores / total_nb_cores).
+#                 This is useful for OOM problems (kill only tasks inside the
+#                 cgroup where OOM occures)
+#                 DISABLED by default: there are maybe some performance issue
+#                 (need to do some benchmarks)
+#                 You can ENABLE this feature by putting 'my $ENABLE_MEMCG =
+#                 "NO";' in the following code
 #
 # Usage:
-# This script is deployed from the server and executed as oar on the nodes
+# This script is deployed from the server and executed as oar on the nodes.
 # ARGV[0] can have two different values:
 #     - "init"  : then this script must create the right cpuset and assign
 #                 corresponding cpus
 #     - "clean" : then this script must kill all processes in the cpuset and
 #                 clean the cpuset structure
 
-# TAKTUK_HOSTNAME environment variable must be defined and must be a name
-# that we will be able to find in the transfered hashtable ($Cpuset variable).
+# TAKTUK_HOSTNAME environment variable must be defined and must be a key
+# of the transfered hash table ($Cpuset variable).
 use Fcntl ':flock';
 #use Data::Dumper;
 
@@ -26,7 +48,6 @@ sub exit_myself($$);
 sub print_log($$);
 
 # Put YES if you want to use the memory cgroup
-# This is useful for OOM problems (kill only tasks inside the same cgroup
 my $ENABLE_MEMCG = "NO";
 
 my $Old_umask = sprintf("%lo",umask());
@@ -36,10 +57,10 @@ my $Cgroup_mount_point = "/dev/oar_cgroups";
 my $Cpuset;
 my $Log_level;
 my $Cpuset_lock_file = "$ENV{HOME}/cpuset.lock.";
-my $OS_cgroups_path = "/sys/fs/cgroup";  # Where the OS mount by itself the cgroups
+my $OS_cgroups_path = "/sys/fs/cgroup";  # Where the OS mounts by itself the cgroups
 
-# directory where are the links to the cgroup mount points (if directly handled
-# by the OS)
+# Directory where the cgroup mount points are linked to. Useful to have each
+# cgroups in the same plcae with the same hierarchy.
 my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 
 # Retrieve parameters from STDIN in the "Cpuset" structure which looks like: 
@@ -97,6 +118,7 @@ if ($ARGV[0] eq "init"){
         exit_myself(13,"Directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created");
     }
 
+    # Handle the tmp user OAR feature: NOT USED ANYMORE.
     if (defined($Cpuset->{job_uid})){
         my $prevuser = getpwuid($Cpuset->{job_uid});
         system("oardodo /usr/sbin/userdel -f $prevuser") if (defined($prevuser));
@@ -191,13 +213,13 @@ if ($ARGV[0] eq "init"){
             exit_myself(5,"Failed to create and feed the cpuset $Cpuset_path_job");
         }
 
-        # Tag network packets from processes of this job
+        # Tag network packets of the job processes
         if (system( '/bin/echo '.$Cpuset->{job_id}.' | cat > '.$Cgroup_directory_collection_links.'/net_cls/'.$Cpuset_path_job.'/net_cls.classid'
                   )){
             exit_myself(5,"Failed to tag network packets of the cgroup $Cpuset_path_job");
         }
-        # Put a share for IO disk corresponding of the ratio between the number
-        # of cpus of this cgroup and the number of cpus of the node
+        # Put a share of disk IO corresponding of the ratio between the number
+        # of cores of this cgroup and the number of cores of the node
         my @cpu_cgroup_uniq_list;
         my %cpu_cgroup_name_hash;
         foreach my $i (@Cpuset_cpus){
@@ -206,7 +228,7 @@ if ($ARGV[0] eq "init"){
                 push(@cpu_cgroup_uniq_list, $i);
             }
         }
-        # Get the whole cpus of the node
+        # Get the whole cores of the node
         my @node_cpus;
         if (open(CPUS, "$Cgroup_directory_collection_links/cpuset/cpuset.cpus")){
             my $str = <CPUS>;
@@ -225,6 +247,7 @@ if ($ARGV[0] eq "init"){
             exit_myself(5,"Failed to set the blkio.weight to $IO_ratio");
         }
 
+        # Assign the corresponding share of memory if memory cgroup enabled.
         if ($ENABLE_MEMCG eq "YES"){
             my $mem_global_kb;
             if (open(MEM, "/proc/meminfo")){
@@ -423,7 +446,7 @@ if ($ARGV[0] eq "init"){
         } 
     }
 
-
+    # Handle the tmp user OAR feature: NOT USED ANYMORE.
     if (defined($Cpuset->{job_uid})){
         my $ipcrm_args="";
         if (open(IPCMSG,"< /proc/sysvipc/msg")) {
