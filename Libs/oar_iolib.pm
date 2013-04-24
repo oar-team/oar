@@ -5146,7 +5146,8 @@ sub get_gantt_jobs_to_launch($$){
                    AND g2.start_time <= $date
                    AND j.state = \'Waiting\'
                    AND resources.resource_id = g1.resource_id
-                   AND resources.state != \'Alive\'
+                   AND (resources.state IN (\'Dead\',\'Suspected\',\'Absent\')
+                        OR resources.next_state IN (\'Dead\',\'Suspected\',\'Absent\'))
               ";
     my $sth = $dbh->prepare($req);
     $sth->execute();
