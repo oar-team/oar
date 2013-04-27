@@ -4,7 +4,7 @@ oardel - delete or checkpoint job(s).
 
 =head1 SYNOPSIS
 
-B<oardel> [-c|-b][--array][job_ids][-h][-V]
+B<oardel> [-c|-b|-s|--force-terminate-finishing-job][--array][job_ids][-h][-V]
 
 =head1 DESCRIPTION
 
@@ -33,6 +33,13 @@ Delete/checkpoint array job(s) passed as parameter (all the sub-jobs of the give
 =item B<--sql>
 
 Delete/checkpoint jobs which respond to the SQL where clause on the table jobs (ex: "project = 'p1'").
+
+=item B<--force-terminate-finishing-job>
+
+Force to switch the jobs into the Error state when they are stuck in Finishing.
+
+Note: the nodes where the jobs were executing will be turned into Suspected because something wrong occured if this option has to be used.
+
 
 =item B<-V, --version>
 

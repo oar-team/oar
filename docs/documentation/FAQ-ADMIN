@@ -240,7 +240,14 @@ Notes:
 
 A job remains in the "Finishing" state, what can I do?
 ------------------------------------------------------
-If you have waited more than a couple of minutes (10mn for example) then
+From the 2.5.3 version, you can use the oardel command to force the change of
+the job state:
+::
+
+    oardel --force-terminate-finishing-job 42
+
+If you have an older version then you can do the same thing manually. If you
+have waited more than a couple of minutes (30mn for example) then
 something wrong occurred (frontal has crashed, out of memory, ...).
 
 So you are able to turn manually a job into the "Error" state by typing with the root user (example with a bash shell)::

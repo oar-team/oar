@@ -858,14 +858,13 @@ sub get_job_host_log($$) {
     my $dbh = shift;
     my $moldablejobid = shift;
     
-    my $sth = $dbh->prepare("   SELECT resources.network_address, resources.resource_id
+    my $sth = $dbh->prepare("   SELECT DISTINCT(resources.network_address)
                                 FROM assigned_resources, resources
                                 WHERE
                                     assigned_resources.moldable_job_id = $moldablejobid AND
                                     resources.resource_id = assigned_resources.resource_id AND
                                     resources.network_address != \'\' AND
                                     resources.type = \'default\'
-                                ORDER BY resources.resource_id ASC
                             ");
     $sth->execute();
     my @res = ();
@@ -2521,6 +2520,37 @@ sub log_job($$){
     }
 }
 
+# Get the amount of time in the defined state for a job
+# args : base, job_id, job_state
+# returns a number of seconds
+sub get_job_duration_in_state($$$){
+    my $dbh = shift;
+    my $job_id = shift;
+    my $job_state = shift;
+
+    my $current_time = get_date($dbh);
+
+    my $sth = $dbh->prepare("   SELECT date_start, date_stop
+                                FROM job_state_logs
+                                WHERE
+                                    job_id = $job_id AND
+                                    job_state = \'$job_state\'
+                            ");
+    $sth->execute();
+    my $sum = 0;
+    while (my $ref = $sth->fetchrow_hashref()){
+        my $tmp_sum = 0;
+        if ($ref->{date_stop} == 0){
+            $tmp_sum = $current_time - $ref->{date_start};
+        }else{
+            $tmp_sum += $ref->{date_stop} - $ref->{date_start};
+        }
+        $sum += $tmp_sum if ($tmp_sum > 0);
+    }
+    $sth->finish();
+
+    return($sum);
+}
 
 # archive_some_moldable_job_nodes
 # sets the index fields to LOG in the table assigned_resources

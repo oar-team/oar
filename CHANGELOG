@@ -39,6 +39,8 @@ version 2.5.3:
     
     So, even if all the ressources have "maintenance='on'", the new jobs will be
     accepted but not scheduled now.
+  - Add the oardel option --force-terminate-finishing-job: to use when a job is
+    stuck in the Finishing state
 
 version 2.5.2:
 --------------

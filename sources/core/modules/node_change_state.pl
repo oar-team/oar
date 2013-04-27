@@ -55,7 +55,10 @@ foreach my $i (@events_to_check){
     ####################################################
     if ($i->{type} eq "SWITCH_INTO_TERMINATE_STATE"){
         OAR::IO::set_job_state($base,$i->{job_id},"Terminated");
-    }elsif ($i->{type} eq "SWITCH_INTO_ERROR_STATE"){
+    }elsif (
+            ($i->{type} eq "SWITCH_INTO_ERROR_STATE") ||
+            ($i->{type} eq "FORCE_TERMINATE_FINISHING_JOB")
+           ){
         OAR::IO::set_job_state($base,$i->{job_id},"Error");
     }
 
@@ -117,7 +120,8 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "SSH_TRANSFER_TIMEOUT") ||
         ($i->{type} eq "BAD_HASHTABLE_DUMP") ||
         ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT") ||
-        ($i->{type} eq "EXIT_VALUE_OAREXEC")
+        ($i->{type} eq "EXIT_VALUE_OAREXEC") ||
+        ($i->{type} eq "FORCE_TERMINATE_FINISHING_JOB")
        ){
         my @hosts;
         my $finaud_tag = "NO";
@@ -138,7 +142,8 @@ foreach my $i (@events_to_check){
                 ($i->{type} ne "PROLOGUE_ERROR") &&
                 ($i->{type} ne "EPILOGUE_ERROR") &&
                 ($i->{type} ne "CPUSET_ERROR") &&
-                ($i->{type} ne "CPUSET_CLEAN_ERROR")
+                ($i->{type} ne "CPUSET_CLEAN_ERROR") &&
+                ($i->{type} ne "FORCE_TERMINATE_FINISHING_JOB")
             ){
                 @hosts = ($hosts[0]);
             }else{
@@ -146,7 +151,6 @@ foreach my $i (@events_to_check){
                 # then the CPUSET clean will tell us which nodes are dead
                 my $cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
                 if (defined($cpuset_field) && ($i->{type} eq "EXTERMINATE_JOB")){
-                    #@hosts = ($hosts[0]);
                     @hosts = ();
                 }
             }
@@ -158,20 +162,14 @@ foreach my $i (@events_to_check){
             foreach my $j (@hosts){
                 next if ((defined($already_treated_host{$j}) or ($j eq "")));
                 $already_treated_host{$j} = 1;
-                #my @free_resources = OAR::IO::get_current_free_resources_of_node($base, $j);
-                #if ($#free_resources >= 0){
-                #    foreach my $r (@free_resources){
-                        #OAR::IO::set_resource_state($base,$r,"Suspected",$finaud_tag);
-                        OAR::IO::set_node_state($base,$j,"Suspected",$finaud_tag);
-                        foreach my $r (OAR::IO::get_all_resources_on_node($base,$j)){
-                          push(@resources_to_heal,"$r $j");
-                        }
-                        $Exit_code = 1;
-                #    }
-                #}
+                OAR::IO::set_node_state($base,$j,"Suspected",$finaud_tag);
+                foreach my $r (OAR::IO::get_all_resources_on_node($base,$j)){
+                    push(@resources_to_heal,"$r $j");
+                }
+                $Exit_code = 1;
             }
-            oar_warn("[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
-            send_log_by_email("Suspecting nodes","[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
+            oar_warn("[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting them\n");
+            send_log_by_email("Suspecting nodes","[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting them\n");
         }
     }
     
