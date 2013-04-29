@@ -4,11 +4,12 @@ oardel - delete or checkpoint job(s).
 
 =head1 SYNOPSIS
 
-B<oardel> [-c|-b|-s|--force-terminate-finishing-job][--array][job_ids][-h][-V]
+B<oardel> [options] <job_id> [job_id [...] ] 
+B<oardel> [options] --sql <SQL WHERE clause>
 
 =head1 DESCRIPTION
 
-This command is used to delete or checkpoint job(s). Jobs are designed by their number.
+This command can be used to delete or checkpoint job(s). Jobs are passed by id.
 
 =head1 OPTIONS
 
@@ -18,28 +19,27 @@ This command is used to delete or checkpoint job(s). Jobs are designed by their 
 
 Send the checkpoint signal designed from the "--signal" oarsub command option (default is SIGUSR2) to the process launched by the job "job_id".
 
-=item B<-s, --signal>
+=item B<-s, --signal SIG>
 
-Send the signal given as parameter to the process launched by the job "job_id".
+Send signal SIG to the process launched by the selected jobs.
 
 =item B<-b, --besteffort>
 
-Tag specified jobs as besteffort (or remove it if they are already besteffort)
+Change jobs to besteffort (or remove them if they are already besteffort)
 
 =item B<--array> 
 
-Delete/checkpoint array job(s) passed as parameter (all the sub-jobs of the given array job(s))
+Handle array job ids, and their sub-jobs.
 
 =item B<--sql>
 
-Delete/checkpoint jobs which respond to the SQL where clause on the table jobs (ex: "project = 'p1'").
+Select jobs using a SQL WHERE clause on table jobs (e.g. "project = 'p1'")
 
 =item B<--force-terminate-finishing-job>
 
-Force to switch the jobs into the Error state when they are stuck in Finishing.
+Force jobs stuck in the Finishing state to switch to Terminated (Warning: only use as a last resort)
 
-Note: the nodes where the jobs were executing will be turned into Suspected because something wrong occured if this option has to be used.
-
+This using this option indicates that something nasty happened, wodes where the jobs were executing will subsequently be turned into Suspected.
 
 =item B<-V, --version>
 

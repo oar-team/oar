@@ -21,22 +21,21 @@ my $exitValue = 0;
 # Display command help
 sub usage {
     print <<EOS;
-Usage: $0 [-c|-b|-s|--force-terminate-finishing-job][--array][job_ids][-h][-V]
-Delete or send checkpoint signal to jobs.
+Usage: $0 [options] <job_id> [job_id [...] ] 
+       $0 [options] --sql <SQL WHERE clause>
+
 Options:
   -h, --help              show this help screen
-  -c, --checkpoint        send checkpoint signal to the job_ids
-  -s, --signal		  send the signal given as parameter to the job_ids
-  -b, --besteffort        tag specified jobs as besteffort (or remove it
-                          if they are already besteffort)
-      --array             delete/checkpoint array job(s) passed as parameter 
-                          (all the sub-jobs)
-      --sql               delete/checkpoint jobs which respond to the SQL
-                          where clause on the table jobs
-                          (ex: "project = 'p1'")
+  -c, --checkpoint        send checkpoint signal to the jobs
+  -s, --signal <SIG>      send signal SIG to the jobs
+  -b, --besteffort        change the specified jobs to besteffort jobs (or
+                          remove them if they are already besteffort)
+      --array             handle array job ids, and their sub jobs.
+      --sql <SQL>         select jobs using a SQL WHERE clause on table jobs
+                          (e.g. "project = 'p1'")
       --force-terminate-finishing-job
-                          force the job_ids in Finishing state to turn into
-                          Terminated (must be used at a last resort)
+                          force jobs stuck in the Finishing state to switch to
+                          Terminated (Warning: only use as a last resort)
   -V, --version           print OAR version number
 EOS
     exit(1);
@@ -80,7 +79,7 @@ my $array;
 my $Force_terminate_finishing_job;
 
 GetOptions ("checkpoint|c" => \$Checkpoint,
-            "signal|s:s" => \$signal,
+            "signal|s=s" => \$signal,
             "besteffort|b" => \$Besteffort,
             "help|h" => \$sos,
             "array" => \$array,
