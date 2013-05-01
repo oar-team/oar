@@ -1168,6 +1168,68 @@ sub get_possible_wanted_resources($$$$$$$){
     return($result);
 }
 
+# estimate_job_nb_resources
+# returns an array with an estimation of the number of resources that can be
+# used by a job:
+#   [
+#     {
+#       nbresources => int,
+#       walltime => int,
+#       comment => string
+#     }
+#   ]
+sub estimate_job_nb_resources($$$){
+    my ($dbh_ro, $ref_resource_list, $jobproperties) = @_;
+
+    my @dead_resources;
+    foreach my $r (OAR::IO::get_resources_in_state($dbh_ro,"Dead")){
+        push(@dead_resources, $r->{resource_id});
+    }
+    my @results = ();
+    foreach my $moldable_resource (@{$ref_resource_list}){
+        my $tmp_moldable_result = {
+                                    nbresources => 0,
+                                    walltime => $moldable_resource->[1],
+                                    comment => "no comment"
+                                  };
+        my $resource_id_list_vector = '';
+        foreach my $r (@{$moldable_resource->[0]}){
+            # SECURITY : we must use read only database access for this request
+            my $tmp_properties = $r->{property};
+            if ((defined($jobproperties)) and ($jobproperties ne "")){
+                if (!defined($tmp_properties)){
+                    $tmp_properties = $jobproperties;
+                }else{
+                    $tmp_properties = "($tmp_properties) AND ($jobproperties)"
+                }
+            }
+            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
+            $tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree);
+            if (!defined($tree)){
+                # Resource description does not match with the content of the
+                # database
+                if ($DBI::errstr ne ""){
+                    my $tmp_err = $DBI::errstr;
+                    chop($tmp_err);
+                    $tmp_moldable_result->{comment} = "Bad resource request ($tmp_err)";
+                    $tmp_moldable_result->{nbresources} = 0;
+                }else{
+                    $tmp_moldable_result->{comment} = "There are not enough resources for your request";
+                    $tmp_moldable_result->{nbresources} = 0;
+                }
+                last;
+            }else{
+                my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
+                foreach my $l (@leafs){
+                    vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
+                }
+                $tmp_moldable_result->{nbresources} += $#leafs + 1;
+            }
+        }
+        push(@results, $tmp_moldable_result);
+    }
+    return(@results);
+}
 
 # manage the job key if option is activated
 # read job key file if import from file 
@@ -1494,50 +1556,20 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index, $jobproperties_applied_after_validation) = @_;
 
     # Test if properties and resources are coherent
-    my @dead_resources;
-    foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
-        push(@dead_resources, $r->{resource_id});
-    }
     my $estimated_nb_resources = 0;
     my $estimated_walltime = 0;
-    my $wanted_resources;
-    foreach my $moldable_resource (@{$ref_resource_list}){
-        if (!defined($moldable_resource->[1])){
-            $moldable_resource->[1] = $default_walltime;
+    foreach my $e (estimate_job_nb_resources($dbh_ro, $ref_resource_list, $jobproperties)){
+        #print("[TEST] $e->{nbresources} $e->{walltime} $e->{comment}\n");
+        if ($e->{nbresources} == 0){
+            warn($e->{comment}."\n");
+            return(-5);
+        }elsif ($estimated_walltime == 0){
+            $estimated_nb_resources = $e->{nbresources};
+            $estimated_walltime = $e->{walltime};
         }
-        my $resource_id_list_vector = '';
-        foreach my $r (@{$moldable_resource->[0]}){
-            # SECURITY : we must use read only database access for this request
-            my $tmp_properties = $r->{property};
-            if ((defined($jobproperties)) and ($jobproperties ne "")){
-                if (!defined($tmp_properties)){
-                    $tmp_properties = $jobproperties;
-                }else{
-                    $tmp_properties = "($tmp_properties) AND ($jobproperties)"
-                }
-            }
-            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
-            $tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree);
-            if (!defined($tree)){
-                # Resource description does not match with the content of the database
-                if ($DBI::errstr ne ""){
-                    my $tmp_err = $DBI::errstr;
-                    chop($tmp_err);
-                    warn("Bad resource request ($tmp_err)\n");
-                }else{
-                    warn("There are not enough resources for your request\n");
-                }
-                return(-5);
-            }else{
-                my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
-                foreach my $l (@leafs){
-                    vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                }
-                $estimated_nb_resources += $#leafs + 1 if ($estimated_walltime == 0);
-            }
-        }
-        $estimated_walltime = $moldable_resource->[1] if ($estimated_walltime == 0);
     }
+
+    # Add admin properties to the job
     if ($jobproperties_applied_after_validation ne ""){
         if ($jobproperties ne ""){
             $jobproperties = "($jobproperties) AND $jobproperties_applied_after_validation";
@@ -1629,6 +1661,7 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     foreach my $moldable_resource (@{$ref_resource_list}){
         #lock_table($dbh,["moldable_job_descriptions"]);
+        $moldable_resource->[1] = $default_walltime if (!defined($moldable_resource->[1]));
         $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
                     VALUES ($job_id,\'$moldable_resource->[1]\')
                  ");
@@ -1709,56 +1742,25 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     }
 
     # Check the jobs are no moldable
-    if ($#{$ref_resource_list}>1) {
+    if ($#{$ref_resource_list}>=1) {
       die ("/!\\ array jobs cannot be moldable\n");
     }
 
     # Test if properties and resources are coherent
-    my @dead_resources;
-    foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
-        push(@dead_resources, $r->{resource_id});
-    }
     my $estimated_nb_resources = 0;
     my $estimated_walltime = 0;
-    my $wanted_resources;
-    foreach my $moldable_resource (@{$ref_resource_list}){
-        if (!defined($moldable_resource->[1])){
-            $moldable_resource->[1] = $default_walltime;
+    foreach my $e (estimate_job_nb_resources($dbh_ro, $ref_resource_list, $jobproperties)){
+        #print("[TEST] $e->{nbresources} $e->{walltime} $e->{comment}\n");
+        if ($e->{nbresources} == 0){
+            warn($e->{comment}."\n");
+            return(-5);
+        }elsif ($estimated_walltime == 0){
+            $estimated_nb_resources = $e->{nbresources};
+            $estimated_walltime = $e->{walltime};
         }
-        my $resource_id_list_vector = '';
-        foreach my $r (@{$moldable_resource->[0]}){
-            # SECURITY : we must use read only database access for this request
-            my $tmp_properties = $r->{property};
-            if ((defined($jobproperties)) and ($jobproperties ne "")){
-                if (!defined($tmp_properties)){
-                    $tmp_properties = $jobproperties;
-                }else{
-                    $tmp_properties = "($tmp_properties) AND ($jobproperties)"
-                }
-            }
-            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
-            $tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree);
-            if (!defined($tree)){
-                # Resource description does not match with the content of the database
-                if ($DBI::errstr ne ""){
-                    my $tmp_err = $DBI::errstr;
-                    chop($tmp_err);
-                    warn("Bad resource request ($tmp_err)\n");
-                }else{
-                    warn("There are not enough resources for your request\n");
-                }
-                return(-5);
-            }else{
-                #A quoi ca sert !!!!!!
-                my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
-                foreach my $l (@leafs){
-                    vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                }
-                $estimated_nb_resources += $#leafs + 1 if ($estimated_walltime == 0);
-            }
-        }
-        $estimated_walltime = $moldable_resource->[1] if ($estimated_walltime == 0);
     }
+
+    # Add admin properties to the job
     if ($jobproperties_applied_after_validation ne ""){
         if ($jobproperties ne ""){
             $jobproperties = "($jobproperties) AND $jobproperties_applied_after_validation";
@@ -1827,6 +1829,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my $query_challenges = "INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key) VALUES ";
 
     my $moldable_resource =  @{$ref_resource_list}[0];  
+    $moldable_resource->[1] = $default_walltime if (!defined($moldable_resource->[1]));
     my $walltime = $moldable_resource->[1];
     my $query_moldable_job_descriptions="INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime) VALUES "; 
  
@@ -1973,56 +1976,25 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     }
 
     # Check the jobs are no moldable
-    if ($#{$ref_resource_list}>1) {
+    if ($#{$ref_resource_list}>=1) {
       die ("/!\\ array jobs cannot be moldable\n");
     }
 
     # Test if properties and resources are coherent
-    my @dead_resources;
-    foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
-        push(@dead_resources, $r->{resource_id});
-    }
     my $estimated_nb_resources = 0;
     my $estimated_walltime = 0;
-    my $wanted_resources;
-    foreach my $moldable_resource (@{$ref_resource_list}){
-        if (!defined($moldable_resource->[1])){
-            $moldable_resource->[1] = $default_walltime;
+    foreach my $e (estimate_job_nb_resources($dbh_ro, $ref_resource_list, $jobproperties)){
+        print("[TEST] $e->{nbresources} $e->{walltime} $e->{comment}\n");
+        if ($e->{nbresources} == 0){
+            warn($e->{comment}."\n");
+            return(-5);
+        }elsif ($estimated_walltime == 0){
+            $estimated_nb_resources = $e->{nbresources};
+            $estimated_walltime = $e->{walltime};
         }
-        my $resource_id_list_vector = '';
-        foreach my $r (@{$moldable_resource->[0]}){
-            # SECURITY : we must use read only database access for this request
-            my $tmp_properties = $r->{property};
-            if ((defined($jobproperties)) and ($jobproperties ne "")){
-                if (!defined($tmp_properties)){
-                    $tmp_properties = $jobproperties;
-                }else{
-                    $tmp_properties = "($tmp_properties) AND ($jobproperties)"
-                }
-            }
-            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
-            $tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree);
-            if (!defined($tree)){
-                # Resource description does not match with the content of the database
-                if ($DBI::errstr ne ""){
-                    my $tmp_err = $DBI::errstr;
-                    chop($tmp_err);
-                    warn("Bad resource request ($tmp_err)\n");
-                }else{
-                    warn("There are not enough resources for your request\n");
-                }
-                return(-5);
-            }else{
-                #A quoi ca sert !!!!!!
-                my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
-                foreach my $l (@leafs){
-                    vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                }
-                $estimated_nb_resources += $#leafs + 1 if ($estimated_walltime == 0);
-            }
-        }
-        $estimated_walltime = $moldable_resource->[1] if ($estimated_walltime == 0);
     }
+    
+    # Add admin properties to the job
     if ($jobproperties_applied_after_validation ne ""){
         if ($jobproperties ne ""){
             $jobproperties = "($jobproperties) AND $jobproperties_applied_after_validation";
@@ -2101,6 +2073,7 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     my $query_challenges = "INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key) VALUES ";
 
     my $moldable_resource =  @{$ref_resource_list}[0];  
+    $moldable_resource->[1] = $default_walltime if (!defined($moldable_resource->[1]));
     my $walltime = $moldable_resource->[1];
     my $query_moldable_job_descriptions="INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime) VALUES "; 
 
