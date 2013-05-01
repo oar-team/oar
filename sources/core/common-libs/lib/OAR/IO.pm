@@ -222,6 +222,9 @@ sub get_database_type(){
 # Duration to add to all jobs when matching the available_upto resource property field
 my $Cm_security_duration = 600;
 
+# When the walltime of a job is not defined
+my $Default_job_walltime = 3600;
+
 # CONNECTION
 
 
@@ -1189,9 +1192,10 @@ sub estimate_job_nb_resources($$$){
     foreach my $moldable_resource (@{$ref_resource_list}){
         my $tmp_moldable_result = {
                                     nbresources => 0,
-                                    walltime => $moldable_resource->[1],
+                                    walltime => $Default_job_walltime,
                                     comment => "no comment"
                                   };
+        $tmp_moldable_result->{walltime} = $moldable_resource->[1] if (defined($moldable_resource->[1]));
         my $resource_id_list_vector = '';
         foreach my $r (@{$moldable_resource->[0]}){
             # SECURITY : we must use read only database access for this request
@@ -1378,7 +1382,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     my $array_id = 0;
 
-    my $default_walltime = "3600";
     my $startTimeJob = "0";
     my $reservationField = "None";
     #Test if this job is a reservation
@@ -1463,7 +1466,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my @Job_id_list;
     if (($array_job_nb>1)  and (not defined($use_job_key))) { #to test  add_micheline_simple_array_job
       warn("Simple array job submission is used\n"); 
-      my $simple_job_id_list_ref = add_micheline_simple_array_job_non_contiguous($dbh, $dbh_ro, $jobType, $ref_resource_list, \@array_job_commands, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index, $jobproperties_applied_after_validation);
+      my $simple_job_id_list_ref = add_micheline_simple_array_job_non_contiguous($dbh, $dbh_ro, $jobType, $ref_resource_list, \@array_job_commands, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation);
     return($simple_job_id_list_ref);
     } else {
       # single job to submit and when job key is used with array job 
@@ -1473,7 +1476,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
           push(@Job_id_list, $err);
           return(\@Job_id_list);
         }
-        push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index, $jobproperties_applied_after_validation));
+        push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation));
         if ($Job_id_list[-1] <= 0){
           return(\@Job_id_list);
         } else {
@@ -1552,8 +1555,8 @@ sub format_job_message_text($$$$$$$$$){
     return($job_message);
 }
 
-sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index, $jobproperties_applied_after_validation) = @_;
+sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation) = @_;
 
     # Test if properties and resources are coherent
     my $estimated_nb_resources = 0;
@@ -1661,7 +1664,7 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     foreach my $moldable_resource (@{$ref_resource_list}){
         #lock_table($dbh,["moldable_job_descriptions"]);
-        $moldable_resource->[1] = $default_walltime if (!defined($moldable_resource->[1]));
+        $moldable_resource->[1] = $Default_job_walltime if (!defined($moldable_resource->[1]));
         $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
                     VALUES ($job_id,\'$moldable_resource->[1]\')
                  ");
@@ -1727,8 +1730,8 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 # /!\ this function supposes that database engine provides contiguous id when multiple inserts query is executed (Postgres doesn't provide this)
 # 
 
-sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index, $jobproperties_applied_after_validation) = @_;
+sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation) = @_;
 
     my @Job_id_list;
 
@@ -1829,7 +1832,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my $query_challenges = "INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key) VALUES ";
 
     my $moldable_resource =  @{$ref_resource_list}[0];  
-    $moldable_resource->[1] = $default_walltime if (!defined($moldable_resource->[1]));
+    $moldable_resource->[1] = $Default_job_walltime if (!defined($moldable_resource->[1]));
     my $walltime = $moldable_resource->[1];
     my $query_moldable_job_descriptions="INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime) VALUES "; 
  
@@ -1960,8 +1963,8 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 # This function doesn't imply that database engine must provides contiguous id when multiple inserts query is executed (Postgres doesn't provide this)
 # 
 
-sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index, $jobproperties_applied_after_validation) = @_;
+sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation) = @_;
 
     my @Job_id_list = ();
     my $nb_jobs = $#{$array_job_commands_ref}+1;
@@ -2073,7 +2076,7 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     my $query_challenges = "INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key) VALUES ";
 
     my $moldable_resource =  @{$ref_resource_list}[0];  
-    $moldable_resource->[1] = $default_walltime if (!defined($moldable_resource->[1]));
+    $moldable_resource->[1] = $Default_job_walltime if (!defined($moldable_resource->[1]));
     my $walltime = $moldable_resource->[1];
     my $query_moldable_job_descriptions="INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime) VALUES "; 
 
