@@ -695,13 +695,13 @@ _____________________________
           yum install gcc make tar python-docutils
 
           # Common dependencies
-          yum install perl perl-base perl-DBI ruby-GD ruby-DBI perl-Tie-IxHash perl-Sort-Naturally perl-AppConfig
+          yum install perl perl-base perl-DBI ruby-GD ruby-DBI perl-Tie-IxHash perl-Sort-Naturally perl-AppConfig php
           
           # MySQL dependencies
-          yum install mysql perl-DBD-MySQL ruby-mysql
+          yum install mysql perl-DBD-MySQL ruby-mysql php-mysql
           
           # PostgreSQL dependencies
-          yum install postgresql perl-DBD-Pg ruby-pg
+          yum install postgresql perl-DBD-Pg ruby-pg php-pgsql
 
 
 *For Debian like system*::
@@ -710,13 +710,13 @@ _____________________________
           apt-get install gcc make tar python-docutils
           
           # Common dependencies
-          apt-get install perl perl-base ruby libgd-ruby1.8 libdbi-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl
+          apt-get install perl perl-base ruby libgd-ruby1.8 libdbi-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libapache2-mod-php5 
           
           # MySQL dependencies
-          apt-get install libdbd-mysql-perl libdbd-mysql-ruby
+          apt-get install libdbd-mysql-perl libdbd-mysql-ruby php5-mysql
           
           # PostgreSQL dependencies
-          apt-get install libdbd-pg-perl libdbd-pg-ruby
+          apt-get install libdbd-pg-perl libdbd-pg-ruby php5-pgsql
 
 **Instructions**
 
@@ -748,7 +748,7 @@ _____________
 
 **Drawgantt-SVG configuration**
 
- - Edit ``/etc/oar/drawgantt-svg-config.inc.php`` to fit your configuration.
+ - Edit ``/etc/oar/drawgantt-config.inc.php`` to fit your configuration.
 
 **httpd configuration**
 
