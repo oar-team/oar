@@ -1,5 +1,5 @@
 <?php
-// OAR Drawgantt SVG version
+// OAR Drawgantt SVG version - svg rendering script
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Configuration: DO NOT EDIT HERE. Customization must go in /etc/oar/drawgantt-config.inc.php

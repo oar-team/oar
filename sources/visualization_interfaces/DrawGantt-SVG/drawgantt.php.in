@@ -1,0 +1,169 @@
+<?php
+// OAR Drawgantt SVG version - main page + navigation toolbox
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Configuration: DO NOT EDIT HERE. Customization must go in /etc/oar/drawgantt-config.inc.php
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+$CONF=array();
+$CONF['nav_filters'] = array(
+  'all clusters' => "",
+  'cluster1 only' => 'cluster="cluster1"',
+  'cluster2 only' => 'cluster="cluster2"',
+  'cluster3 only' => 'cluster="cluster3"',
+);
+$CONF['nav_custom_buttons'] = array(
+  'my label' => 'http://my.url'
+);
+
+// Overwrite configuration with values from drawgantt-config.inc.php
+define('CONFIG_DIR', '%%OARCONFDIR%%');
+define('CONFIG_FILE', CONFIG_DIR . '/drawgantt-config.inc.php');
+if (is_readable(CONFIG_FILE)) {
+    require CONFIG_FILE;
+}
+
+$filter = array_key_exists('filter',$_GET)?$_GET['filter']:key($CONF['nav_filters']);
+
+
+$output = <<<EOT
+<!DOCTYPE html>
+<html>
+  <head>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+<title>OAR Drawgantt SVG</title>
+<style>
+	body {
+		background-color: #FFFFFF;
+	}
+	#panel {
+		position: absolute;
+		background-color: #DDDDDD;
+		top: 0px;
+		left: 0px;
+		width: 100%;
+		z-index: 0;
+		opacity: 1;
+	}
+	#gantt {
+		z-index: 0;
+	}
+</style>
+<script type="text/javascript">
+	window.onscroll = scroll;
+	window.onresize = reload_content;
+	var relative_start = -86400;
+	var relative_stop = 86400;
+	var filterSQL = "";
+	var scrolledX=0;
+	var scrolledY=0;
+	function scroll() {
+		var panelDiv=document.getElementById("panel");
+		panelDiv.style.top = (window.scrollY -20) + "px";
+	}
+	function show_panel() {
+		var panelDiv=document.getElementById("panel");
+		panelDiv.style.top = window.scrollY + "px";
+	}
+	function hide_panel() {
+		var panelDiv=document.getElementById("panel");
+		panelDiv.style.top = (window.scrollY - 20)+ "px";
+	}
+	function reset() {
+		relative_start = -86400;
+		relative_stop = 86400;
+		reload_content();
+	}
+	function shift(time) {
+		relative_start += time;
+		relative_stop += time;
+		reload_content();
+	}
+	function next() {
+		var t = relative_stop + (relative_stop - relative_start);
+		relative_start = relative_stop;
+		relative_stop = t;
+		reload_content();
+	}
+	function prev() {
+		var t = relative_start - (relative_stop - relative_start);
+		relative_stop = relative_start;
+		relative_start = t;
+		reload_content();
+	}
+	function zoomin() {
+		var t = relative_start + (relative_stop - relative_start) / 4;
+		relative_stop = relative_stop - (relative_stop - relative_start) / 4;
+		relative_start = t;
+		reload_content();
+	}
+	function zoomout() {
+		var t = (relative_stop - relative_start)/2;
+		relative_stop += t;
+		relative_start -= t;
+		reload_content();
+	}
+	function reload_content() {
+		scrolledX = window.scrollX;
+		scrolledY = window.scrollY;
+		var svgObj=document.getElementById("svgObj");
+		var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&relative_start=" + relative_start + "&relative_stop=" + relative_stop + ((filterSQL)?"&filter=" + filterSQL:"");
+		svgObj.data = newURL;
+		svgObj.innerHTML = newURL;
+	}
+	function select_filter() {
+		var filterSelect=document.getElementById("filterSelect");
+		filterSQL = filterSelect.value;
+		window.scrollTo(0,0);
+		reload_content();
+	}
+	function openURL(url) {
+		window.open(url);
+	}
+	function restore_scrolling() {
+		window.scrollTo(scrolledX,scrolledY);
+	}
+	function init() {
+		hide_panel();
+		select_filter();
+	}
+</script>
+</head>
+<body onload="init()">
+<div id="panel" onmouseover="show_panel()" onmouseout="hide_panel()">
+<select id="filterSelect" onchange="select_filter()">
+
+EOT;
+foreach ($CONF['nav_filters'] as $key => $value) {
+	$output .= "<option " . (($key == $filter)?"selected ":"") . "value=\"$value\">$key</option>\n";
+}
+$output .= <<<EOT
+</select>
+<button type="button" onclick="shift(-604800)">&lt;1w</button>
+<button type="button" onclick="shift(-86400)">&lt;1d</button>
+<button type="button" onclick="shift(-21600)">&lt;6h</button>
+<button type="button" onclick="shift(-3600)">&lt;1h</button>
+<button type="button" onclick="prev()">&lt;&lt;</button>
+<button type="button" onclick="zoomout()">-</button>
+<button type="button" onclick="zoomin()">+</button>
+<button type="button" onclick="next()">&gt;&gt;</button>
+<button type="button" onclick="shift(3600)">&gt;1h</button>
+<button type="button" onclick="shift(21600)">&gt;6h</button>
+<button type="button" onclick="shift(86400)">&gt;1d</button>
+<button type="button" onclick="shift(604800)">&gt;1w</button>
+<button type="button" name="reset" value="reset" onclick="reset()">reset</button>
+
+EOT;
+foreach ($CONF['nav_custom_buttons'] as $key => $value) {
+	$output .= "<button tupe=\"button\" onclick=\"openURL('$value')\">$key</button>\n";
+}
+$output .= <<<EOT
+</div>
+<div id="gantt">
+<object id="svgObj" type="image/svg+xml" data="" onload="restore_scrolling()"></object>
+</div>
+</body>
+</html>
+EOT;
+print $output;

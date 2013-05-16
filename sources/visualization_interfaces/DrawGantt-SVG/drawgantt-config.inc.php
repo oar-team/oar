@@ -5,6 +5,17 @@
 // Configuration
 ////////////////////////////////////////////////////////////////////////////////
 
+// Navigation bar configuration
+$CONF['nav_filters'] = array(
+  'all clusters' => "",
+	'cluster1 only' => 'cluster="cluster1"',
+	'cluster2 only' => 'cluster="cluster2"',
+	'cluster3 only' => 'cluster="cluster3"',
+);
+$CONF['nav_custom_buttons'] = array(
+	'my label' => 'http://my.url'
+);
+
 // Database access configuration
 $CONF['db_type']="mysql"; // choices: mysql for Mysql or pg for PostgreSQL
 $CONF['db_server']="127.0.0.1";
@@ -12,6 +23,8 @@ $CONF['db_port']="3306"; // usually 3306 for Mysql or 5432 for PostgreSQL
 $CONF['db_name']="oar"; // OAR read only user account 
 $CONF['db_user']="oar";
 $CONF['db_passwd']="oar";
+
+// Data display configuration
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
 $CONF['resource_labels'] = array('network_address','cpuset'); // properties to use to describe resources (resource labels on the left)
 $CONF['cpuset_label_display_string'] = "%02d";
@@ -32,7 +45,8 @@ $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
 	'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
 	'set_placeholder=\w+' => 'url(#placeholderPattern)',
 	);
-// display geometry customization
+
+// Geometry customization
 $CONF['hierarchy_resource_width'] = 10; // default: 10
 $CONF['scale'] = 10; // default: 10
 $CONF['time_ruler_scale'] = 6; // default: 6
