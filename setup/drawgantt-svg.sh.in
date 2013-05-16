@@ -7,5 +7,5 @@ drawgantt_svg_setup() {
         0600 \
         ${WWWUSER}
 
-    (cd ${WWWDIR}/drawgantt-svg/ && ln -sf drawgantt.html index.html)
+    (cd ${WWWDIR}/drawgantt-svg/ && ln -sf drawgantt.php index.php)
 }
