@@ -88,8 +88,8 @@ if (is_readable(CONFIG_FILE)) {
 ////////////////////////////////////////////////////////////////////////////////
 $gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
 $gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
-$gantt_relative_start_date = (array_key_exists('relative_start',$_GET) and ($_GET['relative_start'] > 0))?($_GET['relative_start']):86400;
-$gantt_relative_stop_date = (array_key_exists('relative_stop',$_GET) and ($_GET['relative_stop'] > 0))?($_GET['relative_stop']):86400;
+$gantt_relative_start_date = array_key_exists('relative_start',$_GET)?$_GET['relative_start']:-86400;
+$gantt_relative_stop_date = array_key_exists('relative_stop',$_GET)?$_GET['relative_stop']:86400;
 $resource_filter = array_key_exists('filter', $_GET)?$_GET['filter']:"";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -462,7 +462,7 @@ $db = new Db($CONF['db_type'], $CONF['db_server'], $CONF['db_port'], $CONF['db_n
 $gantt_now = $db->get_timestamp();
 
 if ($gantt_start_date == 0) {
-	$gantt_start_date = $gantt_now - $gantt_relative_start_date;
+	$gantt_start_date = $gantt_now + $gantt_relative_start_date;
 }
 if ($gantt_stop_date == 0) {
 	$gantt_stop_date = $gantt_now + $gantt_relative_stop_date;
@@ -760,32 +760,33 @@ $output .= $CONF['patterns'] . "\n</defs>\n";
 $output .= '<rect x="'.$CONF['gantt_left_align'].'" y="'.$CONF['gantt_top'].'" width="'.$CONF['gantt_width'].'" height="'.count($resource_ids) * $CONF['scale'].'" stroke="#0000FF" stroke-width="1" fill="#FFFFFF" />';
 
 // print top time ruler
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] - 15).'" text-anchor="start" >'.date("Y-m-d",$gantt_start_date).'</text>';
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] - 5).'" text-anchor="start" >'.date("H:i:s",$gantt_start_date).'</text>';
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] - 15).'" text-anchor="end" >'.date("Y-m-d",$gantt_stop_date).'</text>';
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] - 5).'" text-anchor="end" >'.date("H:i:s",$gantt_stop_date).'</text>';
+//$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] - 15).'" text-anchor="start" >'.date("Y-m-d",$gantt_start_date).'</text>';
+//$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] - 5).'" text-anchor="start" >'.date("H:i:s",$gantt_start_date).'</text>';
+//$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] - 15).'" text-anchor="end" >'.date("Y-m-d",$gantt_stop_date).'</text>';
+//$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] - 5).'" text-anchor="end" >'.date("H:i:s",$gantt_stop_date).'</text>';
 
-for($i=1;$i<($CONF['time_ruler_scale']);$i++) {
-	$d = $gantt_start_date + $i * ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
+$ruler_step= ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
+for($i=0;$i<($CONF['time_ruler_scale']);$i++) {
+	$d = $gantt_start_date - $gantt_start_date % $ruler_step + ($i+1) * $ruler_step;
 	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] - 15).'" text-anchor="middle" >'.date("Y-m-d",$d).'</text>';
 	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] - 5).'" text-anchor="middle" >'.date("H:i:s",$d).'</text>';
 }
 
 // print bottom time ruler
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="end" >'.date("Y-m-d",$gantt_stop_date).'</text>';
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="end" >'.date("H:i:s",$gantt_stop_date).'</text>';
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="start" >'.date("Y-m-d",$gantt_start_date).'</text>';
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="start" >'.date("H:i:s",$gantt_start_date).'</text>';
+//$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="end" >'.date("Y-m-d",$gantt_stop_date).'</text>';
+//$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="end" >'.date("H:i:s",$gantt_stop_date).'</text>';
+//$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="start" >'.date("Y-m-d",$gantt_start_date).'</text>';
+//$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="start" >'.date("H:i:s",$gantt_start_date).'</text>';
 
-for($i=1;$i<($CONF['time_ruler_scale']);$i++) {
-	$d = $gantt_start_date + $i * ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
+for($i=0;$i<($CONF['time_ruler_scale']);$i++) {
+	$d = $gantt_start_date - $gantt_start_date % $ruler_step + ($i+1) * $ruler_step;
 	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="middle" >'.date("Y-m-d",$d).'</text>';
 	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="middle" >'.date("H:i:s",$d).'</text>';
 }
 
 // print time grid lines
-for($i=1;$i<($CONF['time_ruler_scale']);$i++) {
-	$d = $gantt_start_date + $i * ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
+for($i=0;$i<($CONF['time_ruler_scale']);$i++) {
+	$d = $gantt_start_date - $gantt_start_date % $ruler_step + ($i+1) * $ruler_step;
 	$output .= '<line x1="'.date2px($d).'" y1="'.($CONF['gantt_top'] - 5).'" x2="'.date2px($d).'" y2="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 5).'" stroke="#0000FF" stroke-width="1" />';
 }
 
@@ -846,8 +847,8 @@ $output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="15" text-a
 $output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="25" text-anchor="end" >'.date("Y-m-d",$gantt_stop_date).'</text>';
 $output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="15" text-anchor="end" >'.date("H:i:s",$gantt_stop_date).'</text>';
 
-for($i=1;$i<($CONF['time_ruler_scale']);$i++) {
-	$d = $gantt_start_date + $i * ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
+for($i=0;$i<($CONF['time_ruler_scale']);$i++) {
+	$d = $gantt_start_date - $gantt_start_date % $ruler_step + ($i+1) * $ruler_step;
 	$output .= '<text font-size="10" x="'.date2px($d).'" y="25" text-anchor="middle" >'.date("Y-m-d",$d).'</text>';
 	$output .= '<text font-size="10" x="'.date2px($d).'" y="15" text-anchor="middle" >'.date("H:i:s",$d).'</text>';
 }
