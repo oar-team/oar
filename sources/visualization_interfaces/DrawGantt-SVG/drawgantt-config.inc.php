@@ -87,4 +87,9 @@ $CONF['patterns'] = <<<EOT
 <text font-size="10" x="10" y="20" fill="#888888">T</text>
 </pattern> 
 EOT;
+
+// Debugging
+$CONF['debug'] = 0; // Set to 1 to enable php debug prints in the web server error logs
+
+
 ?>

@@ -13,14 +13,16 @@ $CONF['db_port']="3306"; // usually 3306 for Mysql or 5432 for PostgreSQL
 $CONF['db_name']="oar"; // OAR read only user account 
 $CONF['db_user']="oar";
 $CONF['db_passwd']="oar";
+
+// Data display configuration
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
 $CONF['resource_labels'] = array('network_address','cpuset'); // properties to use to describe resources (resource labels on the left)
 $CONF['cpuset_label_display_string'] = "%02d";
 $CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1
 	'network_address' => '/^([^.]+)\..*$/',
 	);
-$CONF['label_cmp_regex'] = array( // string selection regex for comparing and sorting labels (resources)
-	'network_address' => '/^[^.\d]+(\d+)\..*$/',
+$CONF['label_cmp_regex'] = array( // substring selection regex for comparing and sorting labels (resources)
+	'network_address' => '/^([^-])+-(\d+)\..*$/',
 	);
 $CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
 	'deploy', 'cpuset', 'besteffort', 'network_address', 'type');
@@ -35,7 +37,8 @@ $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
 	'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
 	'set_placeholder=\w+' => 'url(#placeholderPattern)',
 	);
-// display geometry customization
+
+// Geometry customization
 $CONF['hierarchy_resource_width'] = 10; // default: 10
 $CONF['scale'] = 10; // default: 10
 $CONF['time_ruler_scale'] = 6; // default: 6
@@ -77,6 +80,9 @@ $CONF['patterns'] = <<<EOT
 </pattern> 
 EOT;
 
+// Debugging
+$CONF['debug'] = 0; // Set to 1 to enable php debug prints in the web server error logs
+
 // Overwrite configuration with values from drawgantt-config.inc.php
 define('CONFIG_DIR', '%%OARCONFDIR%%');
 define('CONFIG_FILE', CONFIG_DIR . '/drawgantt-config.inc.php');
@@ -101,6 +107,14 @@ if (array_key_exists('width', $_GET) and $_GET['width'] > ($CONF['gantt_left_ali
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions and database wrapper class
 ////////////////////////////////////////////////////////////////////////////////
+
+// print debug info to the web server error logs
+function debug($str) {
+	global $CONF;
+	if (array_key_exists('debug', $CONF) and $CONF['debug']) {
+		error_log($str);
+	}
+}
 
 // conversion function from date to pixel coordinates in the gantt
 function date2px($date) {
@@ -440,17 +454,35 @@ class Resource {
 	}
 	function cmp($r) {
 		global $CONF;
+		debug("cmp: " . $this->id." ??? ".$r->id . " (" . $this->type . ")");
 		if (array_key_exists($this->type, $CONF['label_cmp_regex'])) {
-			$v1 = preg_replace($CONF['label_cmp_regex'][$this->type],'$1',$this->id);
-			$v2 = preg_replace($CONF['label_cmp_regex'][$this->type],'$1',$r->id);
+			$r1 = preg_match($CONF['label_cmp_regex'][$this->type],$this->id, $v1);
+			$r2 = preg_match($CONF['label_cmp_regex'][$this->type],$r->id, $v2);
+			if (!$r1 or !$r2) { 
+				debug("cmp: regex match failed");
+				$v1 = array($this->id); 
+				$v2 = array($r->id);
+			} else {
+				debug("cmp: regex matches");
+				array_shift($v1);
+				array_shift($v2);
+			}
 		} else {
-			$v1 = $this->id;
-			$v2 = $r->id;
+			debug("cmp: no regex to match");
+			$v1 = array($this->id);
+			$v2 = array($r->id);
 		}
-		if ($v1 < $v2) {
-			return 1;
-		} elseif ($v2 < $v1) {
-			return -1;
+		debug("cmp: " . join(",",$v1) . " ? " . join(",",$v2));
+		while ($e1 = array_shift($v1)) {
+			$e2 = array_shift($v2);
+			if ($e1 < $e2) {
+				debug("cmp: $e1 < $e2");
+				return 1;
+			} elseif ($e2 < $e1) {
+				debug("cmp: $e1 > $e2");
+				return -1;
+			}
+			debug("cmp: $e1 = $e2");
 		}
 		return 0;
 	}
