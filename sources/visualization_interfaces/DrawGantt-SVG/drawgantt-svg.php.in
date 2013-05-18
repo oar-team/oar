@@ -820,11 +820,12 @@ function mouseMove(evt) {
 ]]></script>
 
 <defs>
-EOT;
-$output .= $CONF['patterns'] . "\n</defs>\n"; 
+{$CONF['patterns']}
+</defs> 
 
-// print gantt border
-$output .= '<rect x="'.$CONF['gantt_left_align'].'" y="'.$CONF['gantt_top'].'" width="'.$gantt_width.'" height="'.$gantt_height.'" stroke="#0000FF" stroke-width="1" fill="#FFFFFF" />';
+<rect x="{$CONF['gantt_left_align']}" y="{$CONF['gantt_top']}" width="{$gantt_width}" height="{$gantt_height}" stroke="#0000FF" stroke-width="1" fill="#FFFFFF" />';
+
+EOT;
 
 // compute the steps of the time rulers
 $ruler_step= ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
