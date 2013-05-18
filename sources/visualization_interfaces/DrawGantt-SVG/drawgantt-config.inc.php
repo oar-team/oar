@@ -29,9 +29,11 @@ $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
 $CONF['resource_labels'] = array('network_address','cpuset'); // properties to use to describe resources (resource labels on the left)
 $CONF['cpuset_label_display_string'] = "%02d";
 $CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1
-	'network_address' => '/^([^.]+)\..*$/');
-$CONF['label_cmp_regex'] = array( // string selection regex for comparing and sorting labels (resources)
-	'network_address' => '/^[^.\d]+(\d+)\..*$/');
+	'network_address' => '/^([^.]+)\..*$/',
+	);
+$CONF['label_cmp_regex'] = array( // substring selection regex for comparing and sorting labels (resources)
+	'network_address' => '/^([^-]+)-(\d+)\..*$/',
+	);
 $CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
 	'deploy', 'cpuset', 'besteffort', 'network_address', 'type');
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
@@ -50,6 +52,7 @@ $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
 $CONF['hierarchy_resource_width'] = 10; // default: 10
 $CONF['scale'] = 10; // default: 10
 $CONF['time_ruler_scale'] = 6; // default: 6
+$CONF['time_ruler_steps'] = array(60,120,180,300,600,1200,1800,3600,7200,10800,21600,28800,43200,86400,172800,259200,604800);
 $CONF['gantt_top'] = 40; // default: 40
 $CONF['bottom_margin'] = 45; // default: 45
 $CONF['right_margin'] = 10; // default 10
@@ -59,7 +62,7 @@ $CONF['gantt_left_align'] = 160; // default: 160
 $CONF['gantt_min_width'] = 1000; // default: 1000
 $CONF['gantt_min_height'] = 400; // default: 400
 $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
-// pattern definitions for the state_colors and job_colors configurations
+// Pattern definitions for the state_colors and job_colors configurations
 $CONF['patterns'] = <<<EOT
 <pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />

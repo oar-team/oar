@@ -43,32 +43,34 @@ $output = <<<EOT
 		top: 0px;
 		left: 0px;
 		width: 100%;
-		z-index: 0;
+		z-index: 1;
 		opacity: 1;
 	}
-	#gantt {
+	#svgObj {
+		position: absolute;
+		top: 0px;
+		left: 0px;
 		z-index: 0;
+		margin: 0px;
 	}
 </style>
 <script type="text/javascript">
-	window.onscroll = scroll;
-	window.onresize = reload_content;
+	window.addEventListener("scroll", hide_panel, false);
+	window.addEventListener("resize", reload_content, false);
 	var relative_start = -86400;
 	var relative_stop = 86400;
+	var zoom_relative_start = 0;
+	var zoom_relative_stop = 0;
 	var filterSQL = "";
 	var scrolledX=0;
 	var scrolledY=0;
-	function scroll() {
-		var panelDiv=document.getElementById("panel");
-		panelDiv.style.top = (window.scrollY -20) + "px";
-	}
 	function show_panel() {
 		var panelDiv=document.getElementById("panel");
 		panelDiv.style.top = window.scrollY + "px";
 	}
 	function hide_panel() {
 		var panelDiv=document.getElementById("panel");
-		panelDiv.style.top = (window.scrollY - 20)+ "px";
+		panelDiv.style.top = (window.scrollY - panelDiv.clientHeight + 5)+ "px";
 	}
 	function reset() {
 		relative_start = -86400;
@@ -103,6 +105,17 @@ $output = <<<EOT
 		relative_stop += t;
 		relative_start -= t;
 		reload_content();
+	}
+	function set_zoom_window(now, start, stop) {
+		zoom_relative_start = start - now;
+		zoom_relative_stop = stop - now;
+	}
+	function zoom() {
+		if (zoom_relative_start != zoom_relative_stop) {
+			relative_start = zoom_relative_start;
+			relative_stop = zoom_relative_stop;
+			reload_content();
+		}
 	}
 	function reload_content() {
 		scrolledX = window.scrollX;
@@ -146,6 +159,7 @@ $output .= <<<EOT
 <button type="button" onclick="shift(-3600)">&lt;1h</button>
 <button type="button" onclick="prev()">&lt;&lt;</button>
 <button type="button" onclick="zoomout()">-</button>
+<button type="button" onclick="zoom()">zoom</button>
 <button type="button" onclick="zoomin()">+</button>
 <button type="button" onclick="next()">&gt;&gt;</button>
 <button type="button" onclick="shift(3600)">&gt;1h</button>
@@ -160,9 +174,7 @@ foreach ($CONF['nav_custom_buttons'] as $key => $value) {
 }
 $output .= <<<EOT
 </div>
-<div id="gantt">
 <object id="svgObj" type="image/svg+xml" data="" onload="restore_scrolling()"></object>
-</div>
 </body>
 </html>
 EOT;
