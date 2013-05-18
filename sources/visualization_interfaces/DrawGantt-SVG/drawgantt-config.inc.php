@@ -67,7 +67,7 @@ $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
 $CONF['job_color_saturation'] = "50%"; // saturation percentage for the color of the jobs
 $CONF['job_color_lightness'] = "50%"; // lightness percentage for the color of the jobs
 $CONF['magic_number'] = (1+sqrt(5))/2; // magic number used to compute the function hue(jod_id) 
-$CONF['patterns'] = <<<EOT // patterns use for filling the job and state rectangles
+$CONF['patterns'] = <<<EOT
 <pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />
 </pattern> 
