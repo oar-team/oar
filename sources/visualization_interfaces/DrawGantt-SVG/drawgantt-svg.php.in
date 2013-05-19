@@ -702,6 +702,7 @@ var svgDocument;
 var infobox, infoboxtext, infoboxrect;
 var timeruler;
 var zoom, zoom_draw, zoom_x1, zoom_x2, zoom_y1, zoom_y2, zoom_width;
+var parent_content;
 function init(evt) {
 
 	svgDocument = evt.target.ownerDocument;
@@ -716,7 +717,9 @@ function init(evt) {
 	zoom_y2 = 0;
 	zoom_width = 0;
 	zoom_draw = false;
-	parent.content.addEventListener("scroll",drawTimeRuler, false);
+// workaround to make the script work on both firefox and chrome
+	parent_content = (parent.content)?(parent.content):(parent);
+	parent_content.addEventListener("scroll",drawTimeRuler, false);
 	drawTimeRuler();
 }
 
@@ -753,7 +756,7 @@ function rootMouseDown(evt) {
 function rootMouseUp(evt) {
 	zoom_draw = false;
 	if ( zoom_width > 5) {
-		parent.content.set_zoom_window({$gantt_now}, px2date(Math.min(zoom_x1,zoom_x2)), px2date(Math.max(zoom_x1,zoom_x2)));
+		parent_content.set_zoom_window({$gantt_now}, px2date(Math.min(zoom_x1,zoom_x2)), px2date(Math.max(zoom_x1,zoom_x2)));
 	}
 	zoom_x1 = 0;
 	zoom_x2 = 0;
@@ -776,8 +779,8 @@ function rootClick(evt) {
 	zoomDraw();
 }
 function drawTimeRuler(evt) {
-	if ({$page_height} > parent.content.innerHeight) {
-		y = parent.content.scrollY + parent.content.innerHeight - 45;
+	if ({$page_height} > parent_content.innerHeight) {
+		y = parent_content.scrollY + parent_content.innerHeight - 45;
 		timeruler.setAttribute("transform","translate(0," + y + ")");
 		timeruler.setAttribute("display", "inline");
 	} else {
