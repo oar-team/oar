@@ -386,9 +386,8 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
 
     # Check the job dependencies 
     foreach my $d (OAR::IO::get_current_job_dependencies($base,$j->{job_id})){
-        next if ($skip_job == 1);
         my $dep_job = OAR::IO::get_job($base,$d);
-        if (($dep_job->{state} ne "Terminated")){
+        if (($dep_job->{state} ne "Terminated") and ($dep_job->{state} ne "Error")){
             my @date_tmp = OAR::IO::get_gantt_job_start_time($base,$d);
             if (defined($date_tmp[0])){
                 my $mold_dep = OAR::IO::get_current_moldable_job($base,$date_tmp[1]);
@@ -397,20 +396,12 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                     $scheduler_init_date = $sched_tmp + (2 * $security_time_overhead);
                 }
             }else{
-                my $message = "Dependency problem with the job $d (job in ERROR state)";
+                my $message = "Dependency problem with the job $d (no scheduling time available)";
                 OAR::IO::set_job_message($base,$j->{job_id},$message);
-#                OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
                 oar_debug("[$scheduler_name] [$j->{job_id}] $message\n");
                 $skip_job = 1;
-                next;
+                last;
             }
-        }elsif (($dep_job->{job_type} eq "PASSIVE") and ($dep_job->{exit_code} != 0)){
-            my $message = "Dependency problem with the job $d (exit code != 0)";
-            OAR::IO::set_job_message($base,$j->{job_id},$message);
-#            OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
-            oar_debug("[$scheduler_name] [$j->{job_id}] $message\n");
-            $skip_job = 1;
-            next;
         }
     }
     next if ($skip_job == 1);
