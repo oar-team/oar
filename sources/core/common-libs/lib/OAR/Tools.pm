@@ -555,6 +555,9 @@ if($pid == 0){
     warn("[OAR] Cannot find @{$cmd_exec}\n");
     exit(-1);
 }
+select(OLDSTDOUT);
+$| = 1;
+print(OLDSTDOUT "USER_CMD_PID $pid\n");
 waitpid($pid,0);
 
 print(OLDSTDOUT "EXIT_CODE $?");

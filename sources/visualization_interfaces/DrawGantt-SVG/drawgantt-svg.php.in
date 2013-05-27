@@ -1,8 +1,8 @@
 <?php
-// OAR Drawgantt SVG version
+// OAR Drawgantt SVG version - svg rendering script
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Configuration: DO NOT EDIT HERE. Customization must go in /etc/oar/drawgantt-svg-config.inc.php
+// Configuration: DO NOT EDIT HERE. Customization must go in /etc/oar/drawgantt-config.inc.php
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 $CONF=array();
@@ -13,13 +13,16 @@ $CONF['db_port']="3306"; // usually 3306 for Mysql or 5432 for PostgreSQL
 $CONF['db_name']="oar"; // OAR read only user account 
 $CONF['db_user']="oar";
 $CONF['db_passwd']="oar";
+
+// Data display configuration
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
 $CONF['resource_labels'] = array('network_address','cpuset'); // properties to use to describe resources (resource labels on the left)
+$CONF['cpuset_label_display_string'] = "%02d";
 $CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1
 	'network_address' => '/^([^.]+)\..*$/',
 	);
-$CONF['label_cmp_regex'] = array( // string selection regex for comparing and sorting labels (resources)
-	'network_address' => '/^[^.\d]+(\d+)\..*$/',
+$CONF['label_cmp_regex'] = array( // substring selection regex for comparing and sorting labels (resources)
+	'network_address' => '/^([^-]+)-(\d+)\..*$/',
 	);
 $CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
 	'deploy', 'cpuset', 'besteffort', 'network_address', 'type');
@@ -34,19 +37,26 @@ $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
 	'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
 	'set_placeholder=\w+' => 'url(#placeholderPattern)',
 	);
-// display geometry customization
+
+// Geometry customization
 $CONF['hierarchy_resource_width'] = 10; // default: 10
 $CONF['scale'] = 10; // default: 10
 $CONF['time_ruler_scale'] = 6; // default: 6
-$CONF['gantt_top'] = 30; // default: 30
+$CONF['time_ruler_steps'] = array(60,120,180,300,600,1200,1800,3600,7200,10800,21600,28800,43200,86400,172800,259200,604800);
+$CONF['gantt_top'] = 40; // default: 40
 $CONF['bottom_margin'] = 45; // default: 45
-$CONF['right_margin'] = 10; // default 10
+$CONF['right_margin'] = 30; // default 30
 $CONF['label_right_align'] = 105; // default: 105
 $CONF['hierarchy_left_align'] = 110; // default: 110
 $CONF['gantt_left_align'] = 160; // default: 160
-$CONF['gantt_width'] = 1000; // default: 1000
+$CONF['gantt_min_width'] = 1000; // default: 1000
+$CONF['gantt_min_height'] = 400; // default: 400
 $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
-// pattern definitions for the state_colors and job_colors configurations
+
+// Colors and fill patterns for jobs and states
+$CONF['job_color_saturation'] = "50%"; // saturation percentage for the color of the jobs
+$CONF['job_color_lightness'] = "50%"; // lightness percentage for the color of the jobs
+$CONF['magic_number'] = (1+sqrt(5))/2; // magic number used to compute the function hue(jod_id) 
 $CONF['patterns'] = <<<EOT
 <pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />
@@ -75,9 +85,12 @@ $CONF['patterns'] = <<<EOT
 </pattern> 
 EOT;
 
-// Overwrite configuration with values from drawgantt-svg-config.inc.php
+// Debugging
+$CONF['debug'] = 0; // Set to 1 to enable php debug prints in the web server error logs
+
+// Overwrite configuration with values from drawgantt-config.inc.php
 define('CONFIG_DIR', '%%OARCONFDIR%%');
-define('CONFIG_FILE', CONFIG_DIR . '/drawgantt-svg-config.inc.php');
+define('CONFIG_FILE', CONFIG_DIR . '/drawgantt-config.inc.php');
 if (is_readable(CONFIG_FILE)) {
     require CONFIG_FILE;
 }
@@ -87,24 +100,37 @@ if (is_readable(CONFIG_FILE)) {
 ////////////////////////////////////////////////////////////////////////////////
 $gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
 $gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
-$gantt_relative_start_date = (array_key_exists('relative_start',$_GET) and ($_GET['relative_start'] > 0))?($_GET['relative_start']):86400;
-$gantt_relative_stop_date = (array_key_exists('relative_stop',$_GET) and ($_GET['relative_stop'] > 0))?($_GET['relative_stop']):86400;
+$gantt_relative_start_date = array_key_exists('relative_start',$_GET)?$_GET['relative_start']:-86400;
+$gantt_relative_stop_date = array_key_exists('relative_stop',$_GET)?$_GET['relative_stop']:86400;
 $resource_filter = array_key_exists('filter', $_GET)?$_GET['filter']:"";
+$gantt_width = $CONF['gantt_min_width'];
+if (array_key_exists('width', $_GET) and $_GET['width'] > ($CONF['gantt_left_align'] + $CONF['gantt_min_width'] + $CONF['right_margin'])) {
+        $gantt_width = $_GET['width'] - $CONF['gantt_left_align'] - $CONF['right_margin'];
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions and database wrapper class
 ////////////////////////////////////////////////////////////////////////////////
 
+// print debug info to the web server error logs
+function debug($str) {
+	global $CONF;
+	if (array_key_exists('debug', $CONF) and $CONF['debug']) {
+		error_log($str);
+	}
+}
+
 // conversion function from date to pixel coordinates in the gantt
 function date2px($date) {
-	global $CONF, $gantt_start_date, $gantt_stop_date, $gantt_now;
+	global $CONF, $gantt_width, $gantt_start_date, $gantt_stop_date, $gantt_now;
 	if ($date < $gantt_start_date) {
 		return $CONF['gantt_left_align'];
 	}
 	if ($date > $gantt_stop_date) {
-		return $CONF['gantt_left_align'] +  $CONF['gantt_width'];
+		return $CONF['gantt_left_align'] +  $gantt_width;
 	}
-	return round($CONF['gantt_left_align'] + ($CONF['gantt_width'] * ($date - $gantt_start_date)) / ($gantt_stop_date - $gantt_start_date));
+	return round($CONF['gantt_left_align'] + ($gantt_width * ($date - $gantt_start_date)) / ($gantt_stop_date - $gantt_start_date));
 }
 
 // sort function for resource_ids
@@ -278,8 +304,11 @@ class Job {
 		return $output;
 	}
 	function color() {
+		global $CONF;
 		if ($this->color == NULL) {
-			$this->color = 'rgb('.(rand(128,191)).','.(rand(64,255)).','.(rand(64,255)).')';
+			// compute a suffled number for job_id, so that colors are not too close
+			$shuffled = (int)(360 * fmod($this->job_id * $CONF['magic_number'], 1));
+			$this->color = "hsl(".$shuffled.",{$CONF['job_color_saturation']},{$CONF['job_color_lightness']})";
 		}
 		return $this->color;
 	}
@@ -326,8 +355,9 @@ class ResourceId {
 		array_push($this->job_resource_id_groups, $job_resource_id_group);
 	}
 	function resource_label($type) {
+		global $CONF;
 		if ($type == 'cpuset') {
-			return $this->cpuset;
+			return sprintf($CONF['cpuset_label_display_string'],$this->cpuset);
 		} else {
 			return $this->resources[$type]->label();
 		}
@@ -353,8 +383,8 @@ class ResourceId {
 		return $output;
 	}
 	function svg_lines($y) {
-		global $CONF;
-		$output = '<line x1="'.$CONF['gantt_left_align'].'" y1="'.$y.'" x2="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y2="'.$y.'" stroke="'.($this->cpuset?"#888888":"#0000FF").'" stroke-width="1" />';
+		global $CONF, $gantt_width;
+		$output = '<line x1="'.$CONF['gantt_left_align'].'" y1="'.$y.'" x2="'.($CONF['gantt_left_align'] + $gantt_width).'" y2="'.$y.'" stroke="'.($this->cpuset?"#888888":"#0000FF").'" stroke-width="1" />';
 		return $output;
 	}
 	function svg_states($y) {
@@ -432,17 +462,35 @@ class Resource {
 	}
 	function cmp($r) {
 		global $CONF;
+		debug("cmp: " . $this->id." ??? ".$r->id . " (" . $this->type . ")");
 		if (array_key_exists($this->type, $CONF['label_cmp_regex'])) {
-			$v1 = preg_replace($CONF['label_cmp_regex'][$this->type],'$1',$this->id);
-			$v2 = preg_replace($CONF['label_cmp_regex'][$this->type],'$1',$r->id);
+			$r1 = preg_match($CONF['label_cmp_regex'][$this->type],$this->id, $v1);
+			$r2 = preg_match($CONF['label_cmp_regex'][$this->type],$r->id, $v2);
+			if (!$r1 or !$r2) { 
+				debug("cmp: regex match failed");
+				$v1 = array($this->id); 
+				$v2 = array($r->id);
+			} else {
+				debug("cmp: regex matches");
+				array_shift($v1);
+				array_shift($v2);
+			}
 		} else {
-			$v1 = $this->id;
-			$v2 = $r->id;
+			debug("cmp: no regex to match");
+			$v1 = array($this->id);
+			$v2 = array($r->id);
 		}
-		if ($v1 < $v2) {
-			return 1;
-		} elseif ($v2 < $v1) {
-			return -1;
+		debug("cmp: " . join(",",$v1) . " ? " . join(",",$v2));
+		while ($e1 = array_shift($v1)) {
+			$e2 = array_shift($v2);
+			if ($e1 < $e2) {
+				debug("cmp: $e1 < $e2");
+				return 1;
+			} elseif ($e2 < $e1) {
+				debug("cmp: $e1 > $e2");
+				return -1;
+			}
+			debug("cmp: $e1 = $e2");
 		}
 		return 0;
 	}
@@ -460,7 +508,7 @@ $db = new Db($CONF['db_type'], $CONF['db_server'], $CONF['db_port'], $CONF['db_n
 $gantt_now = $db->get_timestamp();
 
 if ($gantt_start_date == 0) {
-	$gantt_start_date = $gantt_now - $gantt_relative_start_date;
+	$gantt_start_date = $gantt_now + $gantt_relative_start_date;
 }
 if ($gantt_stop_date == 0) {
 	$gantt_stop_date = $gantt_now + $gantt_relative_stop_date;
@@ -519,6 +567,9 @@ $db->free();
 // Array to store jobs
 $jobs = array();
 
+// query filter based on the resource filter
+$query_filter = $resource_filter?' AND '.stripslashes($resource_filter):'';
+
 // Retrieve past and current jobs 
 $query = <<<EOT
 SELECT 
@@ -553,6 +604,7 @@ WHERE
 	jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
 	moldable_job_descriptions.moldable_job_id = jobs.job_id AND
 	resources.resource_id = assigned_resources.resource_id
+	{$query_filter}
 ORDER BY 
 	jobs.job_id
 EOT;
@@ -601,6 +653,7 @@ WHERE
 	resources.resource_id = gantt_jobs_resources_visu.resource_id AND
 	gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= {$gantt_start_date} AND
 	jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' )
+	{$query_filter}
 ORDER BY 
 	jobs.job_id
 EOT;
@@ -632,28 +685,27 @@ $db->close();
 // SVG document generation
 ///////////////////////////////////////////////////////////////////////////////
 
-// compute page size
-$page_height = $CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + $CONF['bottom_margin'];
-$page_width = $CONF['gantt_left_align'] + $CONF['gantt_width'] + $CONF['right_margin'];
+// compute sizes
+$gantt_height = count($resource_ids) * $CONF['scale'];
+$page_height = max($CONF['gantt_min_height'], $CONF['gantt_top'] + $gantt_height + $CONF['bottom_margin']);
+$page_width = $CONF['gantt_left_align'] + $gantt_width + $CONF['right_margin'];
 
 // labers will be printed at the end of the doc to be on top of the job boxes.
 $labels_output = "";
 // begin SVG doc + script + texture patterns
 $output = <<<EOT
 <?xml version="1.0" standalone="no"?>
-<svg width="{$page_width}px" height="{$page_height}px" viewBox="0 0 {$page_width} {$page_height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" xml:space="preserve" zoomAndPan="magnify" onload="init(evt)" color-rendering="optimizeSpeed" image-rendering="optimizeSpeed" text-rendering="optimizeSpeed" shape-rendering="optimizeSpeed" onmousedown="rootMouseDown(evt)" onmouseup="rootMouseUp(evt)" onmousemove="rootMouseMove(evt)" >
+<svg width="{$page_width}px" height="{$page_height}px" viewBox="0 0 {$page_width} {$page_height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" xml:space="preserve" zoomAndPan="magnify" onload="init(evt)" color-rendering="optimizeSpeed" image-rendering="optimizeSpeed" text-rendering="optimizeSpeed" shape-rendering="optimizeSpeed" onmousedown="rootMouseDown(evt)" onmouseup="rootMouseUp(evt)" onmousemove="rootMouseMove(evt)" onclick="rootClick(evt)" >
 
 <script type="text/ecmascript"><![CDATA[
 var svgDocument;
 var infobox, infoboxtext, infoboxrect;
 var timeruler;
-var zoom, zoom_do, zoom_x1, zoom_x2, zoom_y1, zoom_y2;
+var zoom, zoom_draw, zoom_x1, zoom_x2, zoom_y1, zoom_y2, zoom_width;
+var parent_content;
 function init(evt) {
-	if ( window.svgDocument == null ) {
-		svgDocument = evt.target.ownerDocument;
-	} else {
-		svgDocument = window.svgDocument;
-	}
+
+	svgDocument = evt.target.ownerDocument;
 	infobox = svgDocument.getElementById("infobox");
 	infoboxrect = svgDocument.getElementById("infoboxrect");
 	infoboxtext = svgDocument.getElementById("infoboxtext");
@@ -663,41 +715,73 @@ function init(evt) {
 	zoom_x2 = 0;
 	zoom_y1 = 0;
 	zoom_y2 = 0;
-	window.addEventListener("scroll", drawTimeRuler, false);
-	window.addEventListener("resize", drawTimeRuler, false);
+	zoom_width = 0;
+	zoom_draw = false;
+// workaround to make the script work on both firefox and chrome
+	parent_content = (parent.content)?(parent.content):(parent);
+	parent_content.addEventListener("scroll",drawTimeRuler, false);
 	drawTimeRuler();
 }
+
+function px2date(y) {
+	if (y < {$CONF['gantt_left_align']}) {
+		return {$gantt_start_date};
+	}
+	if (y > {$CONF['gantt_left_align']} +  {$gantt_width}) {
+		return {$gantt_stop_date};
+	}
+	return (y - {$CONF['gantt_left_align']}) * ({$gantt_stop_date} - {$gantt_start_date}) / {$gantt_width} + {$gantt_start_date}
+}
+
 function zoomDraw() {
-	zoom.setAttribute("x", Math.min(zoom_x1,zoom_x2));
-	zoom.setAttribute("y", Math.min(zoom_y1,zoom_y2));
-	zoom.setAttribute("width", Math.abs(zoom_x2 - zoom_x1));
-	zoom.setAttribute("height", Math.abs(zoom_y2 - zoom_y1));
-	zoom.setAttribute("visibility", "visible");
+	if ( zoom_width > 5) {
+		zoom.setAttribute("x", Math.min(zoom_x1,zoom_x2));
+		zoom.setAttribute("y", {$CONF['gantt_top']});
+		zoom.setAttribute("width", zoom_width);
+		zoom.setAttribute("height", {$gantt_height} );
+		zoom.setAttribute("display", "inline");
+	} else {
+		zoom.setAttribute("display", "none");
+	}
 }
 function rootMouseDown(evt) {
-	zoom_x1 = evt.pageX;
-	zoom_y1 = evt.pageY;
-	zoom_x2 = zoom_x1;
-	zoom_y2 = zoom_y1;
-	zoom_do = true;
+	if ((evt.pageX > {$CONF['gantt_left_align']}) && (evt.pageX < ({$CONF['gantt_left_align']} + {$gantt_width})) &&
+		(evt.pageY > {$CONF['gantt_top']}) && (evt.pageY < ({$CONF['gantt_top']} + {$gantt_height}))) {
+		zoom_x1 = evt.pageX;
+		zoom_x2 = zoom_x1;
+		zoom_width = 0;
+		zoom_draw = true;
+	}
 }
 function rootMouseUp(evt) {
-	zoom_do = false;
-	zoom.setAttribute("visibility", "hidden");
-	//svgDocument.rootElement.setAttribute("viewBox", Math.min(zoom_x1,zoom_x2) + " " + Math.min(zoom_y1,zoom_y2) + " " + Math.abs(zoom_x2 - zoom_x1) + " " + Math.abs(zoom_y2 - zoom_y1));
-	//svgDocument.rootElement.setAttribute("width", window.innerWidth);
-	//svgDocument.rootElement.setAttribute("height", window.innerHeight);
+	zoom_draw = false;
+	if ( zoom_width > 5) {
+		parent_content.set_zoom_window({$gantt_now}, px2date(Math.min(zoom_x1,zoom_x2)), px2date(Math.max(zoom_x1,zoom_x2)));
+	}
+	zoom_x1 = 0;
+	zoom_x2 = 0;
+	zoom_width = 0;
 }
 function rootMouseMove(evt) {
-	if (zoom_do) {
+	if (zoom_draw &&
+		(evt.pageX > {$CONF['gantt_left_align']}) && (evt.pageX < ({$CONF['gantt_left_align']} + {$gantt_width})) &&
+		(evt.pageY > {$CONF['gantt_top']}) && (evt.pageY < ({$CONF['gantt_top']} + {$gantt_height}))) {
 		zoom_x2 = evt.pageX;
-		zoom_y2 = evt.pageY;
+		zoom_width=Math.abs(zoom_x2 - zoom_x1);
 		zoomDraw();
 	}
 }
+function rootClick(evt) {
+	zoom_draw = false;
+	zoom_x1 = 0;
+	zoom_x2 = 0;
+	zoom_width = 0;
+	zoomDraw();
+}
 function drawTimeRuler(evt) {
-	if ({$page_height} > window.innerHeight) {
-		timeruler.setAttribute("transform","translate(0," + (window.scrollY + window.innerHeight - 45) + ")");
+	if ({$page_height} > parent_content.innerHeight) {
+		y = parent_content.scrollY + parent_content.innerHeight - 45;
+		timeruler.setAttribute("transform","translate(0," + y + ")");
 		timeruler.setAttribute("display", "inline");
 	} else {
 		timeruler.setAttribute("display", "none");
@@ -746,40 +830,36 @@ function mouseMove(evt) {
 ]]></script>
 
 <defs>
-EOT;
-$output .= $CONF['patterns'] . "\n</defs>\n"; 
+{$CONF['patterns']}
+</defs> 
 
-// print gantt border
-$output .= '<rect x="'.$CONF['gantt_left_align'].'" y="'.$CONF['gantt_top'].'" width="'.$CONF['gantt_width'].'" height="'.count($resource_ids) * $CONF['scale'].'" stroke="#0000FF" stroke-width="1" fill="#FFFFFF" />';
+<rect x="{$CONF['gantt_left_align']}" y="{$CONF['gantt_top']}" width="{$gantt_width}" height="{$gantt_height}" stroke="#0000FF" stroke-width="1" fill="#FFFFFF" />';
+
+EOT;
+
+// compute the steps of the time rulers
+$ruler_step= ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
+while (($r = array_pop($CONF['time_ruler_steps'])) >= $ruler_step) {}
+$ruler_step = $r;
 
 // print top time ruler
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] - 15).'" text-anchor="start" >'.date("Y-m-d",$gantt_start_date).'</text>';
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] - 5).'" text-anchor="start" >'.date("H:i:s",$gantt_start_date).'</text>';
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] - 15).'" text-anchor="end" >'.date("Y-m-d",$gantt_stop_date).'</text>';
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] - 5).'" text-anchor="end" >'.date("H:i:s",$gantt_stop_date).'</text>';
-
-for($i=1;$i<($CONF['time_ruler_scale']);$i++) {
-	$d = $gantt_start_date + $i * ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
+$d = $gantt_start_date - $gantt_start_date % $ruler_step;
+while(($d += $ruler_step) < $gantt_stop_date) {
 	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] - 15).'" text-anchor="middle" >'.date("Y-m-d",$d).'</text>';
 	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] - 5).'" text-anchor="middle" >'.date("H:i:s",$d).'</text>';
 }
 
 // print bottom time ruler
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="end" >'.date("Y-m-d",$gantt_stop_date).'</text>';
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="end" >'.date("H:i:s",$gantt_stop_date).'</text>';
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="start" >'.date("Y-m-d",$gantt_start_date).'</text>';
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="start" >'.date("H:i:s",$gantt_start_date).'</text>';
-
-for($i=1;$i<($CONF['time_ruler_scale']);$i++) {
-	$d = $gantt_start_date + $i * ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
-	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 25).'" text-anchor="middle" >'.date("Y-m-d",$d).'</text>';
-	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 15).'" text-anchor="middle" >'.date("H:i:s",$d).'</text>';
+$d = $gantt_start_date - $gantt_start_date % $ruler_step;
+while(($d += $ruler_step) < $gantt_stop_date) {
+	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] + $gantt_height + 25).'" text-anchor="middle" >'.date("Y-m-d",$d).'</text>';
+	$output .= '<text font-size="10" x="'.date2px($d).'" y="'.($CONF['gantt_top'] + $gantt_height + 15).'" text-anchor="middle" >'.date("H:i:s",$d).'</text>';
 }
 
 // print time grid lines
-for($i=1;$i<($CONF['time_ruler_scale']);$i++) {
-	$d = $gantt_start_date + $i * ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
-	$output .= '<line x1="'.date2px($d).'" y1="'.($CONF['gantt_top'] - 5).'" x2="'.date2px($d).'" y2="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 5).'" stroke="#0000FF" stroke-width="1" />';
+$d = $gantt_start_date - $gantt_start_date % $ruler_step;
+while(($d += $ruler_step) < $gantt_stop_date) {
+	$output .= '<line x1="'.date2px($d).'" y1="'.($CONF['gantt_top'] - 5).'" x2="'.date2px($d).'" y2="'.($CONF['gantt_top'] + $gantt_height + 5).'" stroke="#0000FF" stroke-width="1" />';
 }
 
 // print resource_id labels
@@ -831,34 +911,38 @@ foreach ($resource_ids as $rid) {
 	$y += $CONF['scale'];
 }
 
+// print now line
+if ($gantt_now < $gantt_start_date or $gantt_now > $gantt_stop_date) {
+	$output .= '<line x1="'.date2px($gantt_now).'" y1="'.($CONF['gantt_top'] - 5).'" x2="'.date2px($gantt_now).'" y2="'.($CONF['gantt_top'] + $gantt_height + 5).'" stroke="#FF0000" stroke-width="2" stroke-dasharray="10,10"/>';
+} else {
+	$output .= '<line x1="'.date2px($gantt_now).'" y1="'.($CONF['gantt_top'] - 5).'" x2="'.date2px($gantt_now).'" y2="'.($CONF['gantt_top'] + $gantt_height + 5).'" stroke="#FF0000" stroke-width="2"/>';
+}
+
+// print volatile stuff: infobox + zoom
+$output .= <<<EOT
+<g id="infobox" display="none">
+<rect id="infoboxrect" x="0" y="0" rx="10" ry="10" width="200" height="150" fill="#FFFFFF" stroke="#888888" stroke-width="1" style="opacity: 0.9" />
+<text font-size="10" id="infoboxtext" x="10" y="10" fill="#000000" />
+</g>
+<rect x="0" y="0" width="0" height="0" id="zoom" stroke="#0000FF" stroke-width="1" fill="#8888FF" style="opacity: 0.25" display="none" />
+EOT;
+
 // print mobile time ruler
 $output .= '<g id="timeruler" display="none">';
-$output .= '<rect x="'.($CONF['gantt_left_align'] - 5).'" y="0" width="'.($CONF['gantt_width'] + 10).'" height="30" stroke="#000000" stroke-width="1" fill="#FFFFFF" style="opacity: 0.5"/>';
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="25" text-anchor="start" >'.date("Y-m-d",$gantt_start_date).'</text>';
-$output .= '<text font-size="10" x="'.$CONF['gantt_left_align'].'" y="15" text-anchor="start" >'.date("H:i:s",$gantt_start_date).'</text>';
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="25" text-anchor="end" >'.date("Y-m-d",$gantt_stop_date).'</text>';
-$output .= '<text font-size="10" x="'.($CONF['gantt_left_align'] + $CONF['gantt_width']).'" y="15" text-anchor="end" >'.date("H:i:s",$gantt_stop_date).'</text>';
-
-for($i=1;$i<($CONF['time_ruler_scale']);$i++) {
-	$d = $gantt_start_date + $i * ($gantt_stop_date - $gantt_start_date) / ($CONF['time_ruler_scale']);
+$output .= '<rect x="'.($CONF['gantt_left_align'] - 30).'" y="0" width="'.($gantt_width + 60).'" height="30" stroke="#000000" stroke-width="1" fill="#FFFFFF" style="opacity: 0.5"/>';
+$d = $gantt_start_date - $gantt_start_date % $ruler_step;
+while(($d += $ruler_step) < $gantt_stop_date) {
 	$output .= '<text font-size="10" x="'.date2px($d).'" y="25" text-anchor="middle" >'.date("Y-m-d",$d).'</text>';
 	$output .= '<text font-size="10" x="'.date2px($d).'" y="15" text-anchor="middle" >'.date("H:i:s",$d).'</text>';
 }
 $output .= '</g>';
 
-// print now line
-$output .= '<line x1="'.date2px($gantt_now).'" y1="'.($CONF['gantt_top'] - 5).'" x2="'.date2px($gantt_now).'" y2="'.($CONF['gantt_top'] + count($resource_ids) * $CONF['scale'] + 5).'" stroke="#FF0000" stroke-width="2" />';
-
 // end SVG doc
 $output .=  <<<EOT
-<g id="infobox" display="none">
-<rect id="infoboxrect" x="0" y="0" rx="10" ry="10" width="200" height="150" fill="#FFFFFF" stroke="#888888" stroke-width="1" style="opacity: 0.9" />
-<text font-size="10" id="infoboxtext" x="10" y="10" fill="#000000" />
-</g>
-<rect x="0" y="0" width="0" height="0" id="zoom" stroke="#0000FF" stroke-width="1" fill="#8888FF" style="opacity: 0.25" visibility="hidden" />
 </svg>
 EOT;
 
+// generate doc
 header("Content-Type: image/svg+xml");
 header('Content-Encoding: gzip');
 print gzencode($output);

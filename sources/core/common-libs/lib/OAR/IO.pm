@@ -222,6 +222,9 @@ sub get_database_type(){
 # Duration to add to all jobs when matching the available_upto resource property field
 my $Cm_security_duration = 600;
 
+# When the walltime of a job is not defined
+my $Default_job_walltime = 3600;
+
 # CONNECTION
 
 
@@ -858,14 +861,13 @@ sub get_job_host_log($$) {
     my $dbh = shift;
     my $moldablejobid = shift;
     
-    my $sth = $dbh->prepare("   SELECT resources.network_address, resources.resource_id
+    my $sth = $dbh->prepare("   SELECT DISTINCT(resources.network_address)
                                 FROM assigned_resources, resources
                                 WHERE
                                     assigned_resources.moldable_job_id = $moldablejobid AND
                                     resources.resource_id = assigned_resources.resource_id AND
                                     resources.network_address != \'\' AND
                                     resources.type = \'default\'
-                                ORDER BY resources.resource_id ASC
                             ");
     $sth->execute();
     my @res = ();
@@ -1169,6 +1171,69 @@ sub get_possible_wanted_resources($$$$$$$){
     return($result);
 }
 
+# estimate_job_nb_resources
+# returns an array with an estimation of the number of resources that can be
+# used by a job:
+#   [
+#     {
+#       nbresources => int,
+#       walltime => int,
+#       comment => string
+#     }
+#   ]
+sub estimate_job_nb_resources($$$){
+    my ($dbh_ro, $ref_resource_list, $jobproperties) = @_;
+
+    my @dead_resources;
+    foreach my $r (OAR::IO::get_resources_in_state($dbh_ro,"Dead")){
+        push(@dead_resources, $r->{resource_id});
+    }
+    my @results = ();
+    foreach my $moldable_resource (@{$ref_resource_list}){
+        my $tmp_moldable_result = {
+                                    nbresources => 0,
+                                    walltime => $Default_job_walltime,
+                                    comment => "no comment"
+                                  };
+        $tmp_moldable_result->{walltime} = $moldable_resource->[1] if (defined($moldable_resource->[1]));
+        my $resource_id_list_vector = '';
+        foreach my $r (@{$moldable_resource->[0]}){
+            # SECURITY : we must use read only database access for this request
+            my $tmp_properties = $r->{property};
+            if ((defined($jobproperties)) and ($jobproperties ne "")){
+                if (!defined($tmp_properties)){
+                    $tmp_properties = $jobproperties;
+                }else{
+                    $tmp_properties = "($tmp_properties) AND ($jobproperties)"
+                }
+            }
+            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
+            $tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree);
+            if (!defined($tree)){
+                # Resource description does not match with the content of the
+                # database
+                if ($DBI::errstr ne ""){
+                    my $tmp_err = $DBI::errstr;
+                    chop($tmp_err);
+                    $tmp_moldable_result->{comment} = "Bad resource request ($tmp_err)";
+                    $tmp_moldable_result->{nbresources} = 0;
+                }else{
+                    $tmp_moldable_result->{comment} = "There are not enough resources for your request";
+                    $tmp_moldable_result->{nbresources} = 0;
+                }
+                last;
+            }else{
+                my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
+                foreach my $l (@leafs){
+                    vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
+                }
+                $tmp_moldable_result->{nbresources} += $#leafs + 1;
+            }
+        }
+        push(@results, $tmp_moldable_result);
+    }
+    return(@results);
+}
 
 # manage the job key if option is activated
 # read job key file if import from file 
@@ -1317,7 +1382,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     my $array_id = 0;
 
-    my $default_walltime = "3600";
     my $startTimeJob = "0";
     my $reservationField = "None";
     #Test if this job is a reservation
@@ -1369,6 +1433,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         $rules = $rules.$ref->{'rule'};
     }
     $sth->finish();
+    # This variable is used to add some resources properties restrictions but
+    # after the validation (job is queued even if there are not enough
+    # resources availbale)
+    my $jobproperties_applied_after_validation = "";
     #Apply rules
     eval $rules;
     if ($@) {
@@ -1398,7 +1466,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my @Job_id_list;
     if (($array_job_nb>1)  and (not defined($use_job_key))) { #to test  add_micheline_simple_array_job
       warn("Simple array job submission is used\n"); 
-      my $simple_job_id_list_ref = add_micheline_simple_array_job_non_contiguous($dbh, $dbh_ro, $jobType, $ref_resource_list, \@array_job_commands, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index);
+      my $simple_job_id_list_ref = add_micheline_simple_array_job_non_contiguous($dbh, $dbh_ro, $jobType, $ref_resource_list, \@array_job_commands, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation);
     return($simple_job_id_list_ref);
     } else {
       # single job to submit and when job key is used with array job 
@@ -1408,7 +1476,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
           push(@Job_id_list, $err);
           return(\@Job_id_list);
         }
-        push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index));
+        push(@Job_id_list, add_micheline_subjob($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation));
         if ($Job_id_list[-1] <= 0){
           return(\@Job_id_list);
         } else {
@@ -1488,52 +1556,29 @@ sub format_job_message_text($$$$$$$$$){
 }
 
 sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation) = @_;
 
     # Test if properties and resources are coherent
-    my @dead_resources;
-    foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
-        push(@dead_resources, $r->{resource_id});
-    }
     my $estimated_nb_resources = 0;
     my $estimated_walltime = 0;
-    my $wanted_resources;
-    foreach my $moldable_resource (@{$ref_resource_list}){
-        if (!defined($moldable_resource->[1])){
-            $moldable_resource->[1] = $default_walltime;
+    foreach my $e (estimate_job_nb_resources($dbh_ro, $ref_resource_list, $jobproperties)){
+        #print("[TEST] $e->{nbresources} $e->{walltime} $e->{comment}\n");
+        if ($e->{nbresources} == 0){
+            warn($e->{comment}."\n");
+            return(-5);
+        }elsif ($estimated_walltime == 0){
+            $estimated_nb_resources = $e->{nbresources};
+            $estimated_walltime = $e->{walltime};
         }
-        my $resource_id_list_vector = '';
-        foreach my $r (@{$moldable_resource->[0]}){
-            # SECURITY : we must use read only database access for this request
-            my $tmp_properties = $r->{property};
-            if ((defined($jobproperties)) and ($jobproperties ne "")){
-                if (!defined($tmp_properties)){
-                    $tmp_properties = $jobproperties;
-                }else{
-                    $tmp_properties = "($tmp_properties) AND ($jobproperties)"
-                }
-            }
-            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
-            $tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree);
-            if (!defined($tree)){
-                # Resource description does not match with the content of the database
-                if ($DBI::errstr ne ""){
-                    my $tmp_err = $DBI::errstr;
-                    chop($tmp_err);
-                    warn("Bad resource request ($tmp_err)\n");
-                }else{
-                    warn("There are not enough resources for your request\n");
-                }
-                return(-5);
-            }else{
-                my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
-                foreach my $l (@leafs){
-                    vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                }
-                $estimated_nb_resources += $#leafs + 1 if ($estimated_walltime == 0);
-            }
+    }
+
+    # Add admin properties to the job
+    if ($jobproperties_applied_after_validation ne ""){
+        if ($jobproperties ne ""){
+            $jobproperties = "($jobproperties) AND $jobproperties_applied_after_validation";
+        }else{
+            $jobproperties = "$jobproperties_applied_after_validation";
         }
-        $estimated_walltime = $moldable_resource->[1] if ($estimated_walltime == 0);
     }
 
     lock_table($dbh,["challenges","jobs"]);
@@ -1593,11 +1638,15 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         $stdout = "OAR";
         $stdout .= ".$job_name" if (defined($job_name));
         $stdout .= '.%jobid%.stdout';
+    }else{
+        $stdout =~ s/%jobname%/$job_name/g;
     }
     if (!defined($stderr) or ($stderr eq "")){
         $stderr = "OAR";
         $stderr .= ".$job_name" if (defined($job_name));
         $stderr .= '.%jobid%.stderr';
+    }else{
+        $stderr =~ s/%jobname%/$job_name/g;
     }
 
     $stdout = $dbh->quote($stdout);
@@ -1615,6 +1664,7 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     foreach my $moldable_resource (@{$ref_resource_list}){
         #lock_table($dbh,["moldable_job_descriptions"]);
+        $moldable_resource->[1] = $Default_job_walltime if (!defined($moldable_resource->[1]));
         $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
                     VALUES ($job_id,\'$moldable_resource->[1]\')
                  ");
@@ -1681,7 +1731,7 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 # 
 
 sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation) = @_;
 
     my @Job_id_list;
 
@@ -1695,55 +1745,31 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     }
 
     # Check the jobs are no moldable
-    if ($#{$ref_resource_list}>1) {
+    if ($#{$ref_resource_list}>=1) {
       die ("/!\\ array jobs cannot be moldable\n");
     }
 
     # Test if properties and resources are coherent
-    my @dead_resources;
-    foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
-        push(@dead_resources, $r->{resource_id});
-    }
     my $estimated_nb_resources = 0;
     my $estimated_walltime = 0;
-    my $wanted_resources;
-    foreach my $moldable_resource (@{$ref_resource_list}){
-        if (!defined($moldable_resource->[1])){
-            $moldable_resource->[1] = $default_walltime;
+    foreach my $e (estimate_job_nb_resources($dbh_ro, $ref_resource_list, $jobproperties)){
+        #print("[TEST] $e->{nbresources} $e->{walltime} $e->{comment}\n");
+        if ($e->{nbresources} == 0){
+            warn($e->{comment}."\n");
+            return(-5);
+        }elsif ($estimated_walltime == 0){
+            $estimated_nb_resources = $e->{nbresources};
+            $estimated_walltime = $e->{walltime};
         }
-        my $resource_id_list_vector = '';
-        foreach my $r (@{$moldable_resource->[0]}){
-            # SECURITY : we must use read only database access for this request
-            my $tmp_properties = $r->{property};
-            if ((defined($jobproperties)) and ($jobproperties ne "")){
-                if (!defined($tmp_properties)){
-                    $tmp_properties = $jobproperties;
-                }else{
-                    $tmp_properties = "($tmp_properties) AND ($jobproperties)"
-                }
-            }
-            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
-            $tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree);
-            if (!defined($tree)){
-                # Resource description does not match with the content of the database
-                if ($DBI::errstr ne ""){
-                    my $tmp_err = $DBI::errstr;
-                    chop($tmp_err);
-                    warn("Bad resource request ($tmp_err)\n");
-                }else{
-                    warn("There are not enough resources for your request\n");
-                }
-                return(-5);
-            }else{
-                #A quoi ca sert !!!!!!
-                my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
-                foreach my $l (@leafs){
-                    vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                }
-                $estimated_nb_resources += $#leafs + 1 if ($estimated_walltime == 0);
-            }
+    }
+
+    # Add admin properties to the job
+    if ($jobproperties_applied_after_validation ne ""){
+        if ($jobproperties ne ""){
+            $jobproperties = "($jobproperties) AND $jobproperties_applied_after_validation";
+        }else{
+            $jobproperties = "$jobproperties_applied_after_validation";
         }
-        $estimated_walltime = $moldable_resource->[1] if ($estimated_walltime == 0);
     }
 
     my $job_message = format_job_message_text($job_name,$estimated_nb_resources, $estimated_walltime, $jobType, $reservationField, $queue_name, $project, $type_list, '');
@@ -1764,11 +1790,15 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         $stdout = "OAR";
         $stdout .= ".$job_name" if (defined($job_name));
         $stdout .= '.%jobid%.stdout';
+    }else{
+        $stdout =~ s/%jobname%/$job_name/g;
     }
     if (!defined($stderr) or ($stderr eq "")){
         $stderr = "OAR";
         $stderr .= ".$job_name" if (defined($job_name));
         $stderr .= '.%jobid%.stderr';
+    }else{
+        $stderr =~ s/%jobname%/$job_name/g;
     }
 
     $stdout = $dbh->quote($stdout);
@@ -1802,6 +1832,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my $query_challenges = "INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key) VALUES ";
 
     my $moldable_resource =  @{$ref_resource_list}[0];  
+    $moldable_resource->[1] = $Default_job_walltime if (!defined($moldable_resource->[1]));
     my $walltime = $moldable_resource->[1];
     my $query_moldable_job_descriptions="INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime) VALUES "; 
  
@@ -1933,7 +1964,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 # 
 
 sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $default_walltime, $array_index) = @_;
+    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation) = @_;
 
     my @Job_id_list = ();
     my $nb_jobs = $#{$array_job_commands_ref}+1;
@@ -1948,55 +1979,31 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$)
     }
 
     # Check the jobs are no moldable
-    if ($#{$ref_resource_list}>1) {
+    if ($#{$ref_resource_list}>=1) {
       die ("/!\\ array jobs cannot be moldable\n");
     }
 
     # Test if properties and resources are coherent
-    my @dead_resources;
-    foreach my $r (OAR::IO::get_resources_in_state($dbh,"Dead")){
-        push(@dead_resources, $r->{resource_id});
-    }
     my $estimated_nb_resources = 0;
     my $estimated_walltime = 0;
-    my $wanted_resources;
-    foreach my $moldable_resource (@{$ref_resource_list}){
-        if (!defined($moldable_resource->[1])){
-            $moldable_resource->[1] = $default_walltime;
+    foreach my $e (estimate_job_nb_resources($dbh_ro, $ref_resource_list, $jobproperties)){
+        print("[TEST] $e->{nbresources} $e->{walltime} $e->{comment}\n");
+        if ($e->{nbresources} == 0){
+            warn($e->{comment}."\n");
+            return(-5);
+        }elsif ($estimated_walltime == 0){
+            $estimated_nb_resources = $e->{nbresources};
+            $estimated_walltime = $e->{walltime};
         }
-        my $resource_id_list_vector = '';
-        foreach my $r (@{$moldable_resource->[0]}){
-            # SECURITY : we must use read only database access for this request
-            my $tmp_properties = $r->{property};
-            if ((defined($jobproperties)) and ($jobproperties ne "")){
-                if (!defined($tmp_properties)){
-                    $tmp_properties = $jobproperties;
-                }else{
-                    $tmp_properties = "($tmp_properties) AND ($jobproperties)"
-                }
-            }
-            my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
-            $tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree);
-            if (!defined($tree)){
-                # Resource description does not match with the content of the database
-                if ($DBI::errstr ne ""){
-                    my $tmp_err = $DBI::errstr;
-                    chop($tmp_err);
-                    warn("Bad resource request ($tmp_err)\n");
-                }else{
-                    warn("There are not enough resources for your request\n");
-                }
-                return(-5);
-            }else{
-                #A quoi ca sert !!!!!!
-                my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
-                foreach my $l (@leafs){
-                    vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                }
-                $estimated_nb_resources += $#leafs + 1 if ($estimated_walltime == 0);
-            }
+    }
+    
+    # Add admin properties to the job
+    if ($jobproperties_applied_after_validation ne ""){
+        if ($jobproperties ne ""){
+            $jobproperties = "($jobproperties) AND $jobproperties_applied_after_validation";
+        }else{
+            $jobproperties = "$jobproperties_applied_after_validation";
         }
-        $estimated_walltime = $moldable_resource->[1] if ($estimated_walltime == 0);
     }
 
     my $job_message = format_job_message_text($job_name,$estimated_nb_resources, $estimated_walltime, $jobType, $reservationField, $queue_name, $project, $type_list, '');
@@ -2069,6 +2076,7 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$)
     my $query_challenges = "INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key) VALUES ";
 
     my $moldable_resource =  @{$ref_resource_list}[0];  
+    $moldable_resource->[1] = $Default_job_walltime if (!defined($moldable_resource->[1]));
     my $walltime = $moldable_resource->[1];
     my $query_moldable_job_descriptions="INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime) VALUES "; 
 
@@ -2488,6 +2496,37 @@ sub log_job($$){
     }
 }
 
+# Get the amount of time in the defined state for a job
+# args : base, job_id, job_state
+# returns a number of seconds
+sub get_job_duration_in_state($$$){
+    my $dbh = shift;
+    my $job_id = shift;
+    my $job_state = shift;
+
+    my $current_time = get_date($dbh);
+
+    my $sth = $dbh->prepare("   SELECT date_start, date_stop
+                                FROM job_state_logs
+                                WHERE
+                                    job_id = $job_id AND
+                                    job_state = \'$job_state\'
+                            ");
+    $sth->execute();
+    my $sum = 0;
+    while (my $ref = $sth->fetchrow_hashref()){
+        my $tmp_sum = 0;
+        if ($ref->{date_stop} == 0){
+            $tmp_sum = $current_time - $ref->{date_start};
+        }else{
+            $tmp_sum += $ref->{date_stop} - $ref->{date_start};
+        }
+        $sum += $tmp_sum if ($tmp_sum > 0);
+    }
+    $sth->finish();
+
+    return($sum);
+}
 
 # archive_some_moldable_job_nodes
 # sets the index fields to LOG in the table assigned_resources
@@ -5941,7 +5980,7 @@ sub create_a_queue($$$$){
 #return a hashtable : job_id --> [start_time,walltime,queue_name,\@resources,state]
 sub get_gantt_scheduled_jobs($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended
+    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended,j.project
                              FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
                              WHERE
                                 m.moldable_index = \'CURRENT\'
@@ -5963,6 +6002,7 @@ sub get_gantt_scheduled_jobs($){
             $res{$ref[0]}->[6] = $ref[7];
             $res{$ref[0]}->[7] = $ref[8];
             $res{$ref[0]}->[8] = $ref[9];
+            $res{$ref[0]}->[9] = $ref[10];
             push(@order,$ref[0]);
         }
         push(@{$res{$ref[0]}->[3]}, $ref[3]);
@@ -6349,7 +6389,8 @@ sub get_gantt_jobs_to_launch($$){
                    AND g2.start_time <= $date
                    AND j.state = \'Waiting\'
                    AND resources.resource_id = g1.resource_id
-                   AND resources.state != \'Alive\'
+                   AND (resources.state IN (\'Dead\',\'Suspected\',\'Absent\')
+                        OR resources.next_state IN (\'Dead\',\'Suspected\',\'Absent\'))
               ";
     my $sth = $dbh->prepare($req);
     $sth->execute();

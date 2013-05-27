@@ -84,7 +84,9 @@ Specify the signal to use when checkpointing. Use signal numbers (see kill -l), 
 
 Specify a specific type (I<besteffort>, I<timesharing>, I<idempotent>, I<cosystem>, I<deploy>, I<container>, I<inner>, I<token:xxx=yy>)
 
-Note: a job with a type of B<idempotent> will be automatically resubmitted if its exit code is 99.
+Notes:
+  - a job with the type B<idempotent> will be automatically resubmitted if its exit code is 99 and its duration > 60s.
+  - a job with the types B<idempotent> and B<besteffort> will be automatically resubmitted if it was killed by OAR to execute other none besteffort jobs in place.
 
 =item B<-d, --directory> <DIR>
 
@@ -143,11 +145,11 @@ I<Warning>: the file will be overwritten if it already exists.
 
 =item B<-O> <FILE>
 
-Specify the files that will store the standard output stream of the job. The %jobid% pattern is automatically replaced.
+Specify the files that will store the standard output stream of the job. The %jobid% and %jobname% patterns are automatically replaced.
 
 =item B<-E> <FILE>
 
-Specify the files that will store the standard error stream of the job. The %jobid% pattern is automatically replaced.
+Specify the files that will store the standard error stream of the job. The %jobid% and %jobname% patterns are automatically replaced.
 
 =item B<--hold>
 

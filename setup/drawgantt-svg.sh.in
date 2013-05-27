@@ -2,10 +2,10 @@
 drawgantt_svg_setup() {
 
     install_conffile \
-        ${EXAMPLEDIR}/drawgantt-svg-config.inc.php \
-        ${OARCONFDIR}/drawgantt-svg-config.inc.php \
+        ${EXAMPLEDIR}/drawgantt-config.inc.php \
+        ${OARCONFDIR}/drawgantt-config.inc.php \
         0600 \
         ${WWWUSER}
 
-    (cd ${WWWDIR}/drawgantt-svg/ && ln -sf drawgantt.html index.html)
+    (cd ${WWWDIR}/drawgantt-svg/ && ln -sf drawgantt.php index.php)
 }

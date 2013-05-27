@@ -34,7 +34,7 @@ BEGIN{
 
 use strict;
 use Sys::Hostname;
-use POSIX qw(:signal_h :errno_h :sys_wait_h);
+use POSIX qw(:signal_h :errno_h :sys_wait_h strftime);
 
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
@@ -176,12 +176,14 @@ sub kill_children($){
     system({"oardodo"} "oardodo","kill","-9",@{$children});
 }
 
-sub send_kill_signal_to_myself(){
+sub send_kill_signal_to_myself($){
+    my $signal_to_send = shift;
+
     my $father = $$;
     my $pid=fork;
     if($pid==0){
         sleep(5);
-        kill('SIGUSR2', $father);
+        kill($signal_to_send, $father);
         exit();
     }
 }
@@ -360,7 +362,7 @@ sub user_defined_signal_handler {
     my $signal;
     open(FILE, OAR::Tools::get_oar_user_signal_file_name($Job_id));
     while (<FILE>) {
-	$signal = $_;
+        $signal = $_;
     }
     close(FILE);
     print(pipe_kill_write "SIGNAL_$signal\n");
@@ -499,6 +501,7 @@ my $Stop_signal = 0;
 my $Checkpoint_signal = 0;
 my $user_signal = 0;
 my $stop_loop = 0;
+my $user_cmd_pid = -1;
 # wait end of the child process or KILL notification
 while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
     print("[oarexec $Job_id] wait end of child process or kill notification\n");
@@ -515,6 +518,9 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             if ($line_read =~ /^EXIT_CODE\s(\d+)$/){
                 $Exit_script_code = $1;
                 print("OAREXEC_SCRIPT_EXIT_VALUE $Exit_script_code\n");
+            }elsif ($line_read =~ /^USER_CMD_PID\s(\d+)$/){
+                $user_cmd_pid = $1;
+                print("[oarexec $Job_id] User command PID = $user_cmd_pid\n");
             }
         }
     }elsif (vec($rin_tmp, fileno(pipe_child_read), 1)){
@@ -536,6 +542,10 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
                 $stop_loop = 1;
             }else{
                 kill_children($pid);
+                if (defined($Job->{stderr_file}) and ($Job->{stderr_file} ne "")){
+                    my $date = strftime("%F %T",localtime());
+                    system({"bash"} "bash","-c","cd $Job->{launching_directory} && echo '## OAR [$date] Job $Job_id KILLED' | OARDO_BECOME_USER=$Job->{job_user} oardodo tee -a '$Job->{stderr_file}'");
+                }
             }
             $kill_myself = 1;
         }elsif ($line_read eq "STOP"){
@@ -546,31 +556,35 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
                 print("[oarexec $Job_id] Receive USR1 signal so someone wants to finish this job but it is not an INTERACTIVE one\n");
             }
         }elsif ($line_read eq "CHECKPOINT"){
-            #We must send SIGUSR2 to the child of $pid
-            my ($tmp_hash, $tmp_cmd_hash) = OAR::Tools::get_all_process_children();
-            my $pid_to_send_kill = @{$tmp_hash->{$pid}}[0];
-            if (defined($pid_to_send_kill)){
-                print("[oarexec $Job_id] Checkpoint received, send signal $Job->{checkpoint_signal} to the pid $pid_to_send_kill\n");
-                system({"oardodo"} "oardodo","kill","-s",$Job->{checkpoint_signal},$pid_to_send_kill);
+            #We must send the signal defined by oarsub to the child of $pid
+            if ($user_cmd_pid >= 0){
+                print("[oarexec $Job_id] Checkpoint received, send signal $Job->{checkpoint_signal} to the pid $user_cmd_pid\n");
+                system({"oardodo"} "oardodo","kill","-s",$Job->{checkpoint_signal},$user_cmd_pid);
+                if (defined($Job->{stderr_file}) and ($Job->{stderr_file} ne "")){
+                    my $date = strftime("%F %T",localtime());
+                    system({"bash"} "bash","-c","cd $Job->{launching_directory} && echo '## OAR [$date] Job $Job_id CHECKPOINTED with signal $Job->{checkpoint_signal}' | OARDO_BECOME_USER=$Job->{job_user} oardodo tee -a '$Job->{stderr_file}'");
+                }
             }else{
-                print("[oarexec $Job_id] Cannot find pid of user process??? I will retry in 5 seconds\n");
-                send_kill_signal_to_myself();
+                print("[oarexec $Job_id] Cannot find pid of user process. I will retry in 5 seconds\n");
+                send_kill_signal_to_myself('SIGUSR2');
             }
-            $Checkpoint_signal = 1;	  
+            $Checkpoint_signal = 1;
         }elsif ($line_read =~ m/^SIGNAL_(.*)/){
-	    my $signal = $1;
-	    #We must send $signal to the child of $pid
-            my ($tmp_hash, $tmp_cmd_hash) = OAR::Tools::get_all_process_children();
-            my $pid_to_send_kill = @{$tmp_hash->{$pid}}[0];
-            if (defined($pid_to_send_kill)){
-                print("[oarexec $Job_id] Signal received, send signal $signal to the pid $pid_to_send_kill\n");
-                system({"oardodo"} "oardodo","kill","-s",$signal,$pid_to_send_kill);
+            my $signal = $1;
+            #We must send $signal to the child of $pid
+            if ($user_cmd_pid >= 0){
+                print("[oarexec $Job_id] Signal URG received, send signal $signal to the pid $user_cmd_pid\n");
+                system({"oardodo"} "oardodo","kill","-s",$signal,$user_cmd_pid);
+                if (defined($Job->{stderr_file}) and ($Job->{stderr_file} ne "")){
+                    my $date = strftime("%F %T",localtime());
+                    system({"bash"} "bash","-c","cd $Job->{launching_directory} && echo '## OAR [$date] Job $Job_id SIGNALED with $signal' | OARDO_BECOME_USER=$Job->{job_user} oardodo tee -a '$Job->{stderr_file}'");
+                }
             }else{
-                print("[oarexec $Job_id] Cannot find pid of user process??? I will retry in 5 seconds\n");
-                send_kill_signal_to_myself();
+                print("[oarexec $Job_id] Cannot find pid of user process. I will retry in 5 seconds\n");
+                send_kill_signal_to_myself('URG');
             }
             $user_signal = 1;
-	}
+        }
     }    
 }
 

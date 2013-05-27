@@ -342,6 +342,34 @@ GET /version
 
    wget -q -O - http://localhost/oarapi/version.yaml
 
+GET /whoami
+-----------
+:description:
+  Gives the name of authenticated user seen by OAR API. The name for a not authenticated user is the null string. 
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*:
+    hash
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1245582255
+     authenticated_user: kameleon
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/whoami.yaml
+
+
 GET /timezone
 -------------
 :description:

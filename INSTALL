@@ -6,20 +6,18 @@ Overview
 
 There are currently 3 methods to install OAR (All of them are documented in this page) :
 
- - with the debian packages
- - with the rpm packages
- - with the sources
+ - using the Debian packages
+ - using the RPM packages
+ - from sources
 
 
-The first thing you have to know is about the OAR architecture. A common OAR
+Before going further, please have in mind OAR's architecture. A common OAR
 installation is composed of:
 
-    - a **server node** which will hold all of OAR "smartness". This node will run the oar server daemon;
-    - **frontend nodes** on which you will be allowed to login, then reserve some
-      computing nodes (oarsub, oarstat, oarnodes, ...);
-    - several **computing nodes** (a.k.a. the nodes), on which the jobs will run.
-    - and optionally a **visualisation node** on which all the visualisation
-      web interfaces (monika, draw-gantt, ...)  will be accessible ;
+    - a **server node** which will hold all of OAR "smartness". This node will run the OAR server daemon;
+    - **frontend nodes** on which users will have to login in order to reserve computing nodes (oarsub, oarstat, oarnodes, ...);
+    - several **computing nodes** (a.k.a. nodes), which the jobs will run on.
+    - and optionally a **visualisation server** which will host the visualisation web interfaces (monika, drawgantt, ...);
 
 Computing nodes
 ---------------
@@ -29,7 +27,7 @@ ______________________________
 
 **Instructions**
 
-*For redhat like systems*::
+*For RedHat like systems*::
 
         # Add the oar repository
         cat <<EOF > /etc/yum.repos.d/oar.repo
@@ -43,10 +41,10 @@ ______________________________
         # Install OAR node
         yum install oar-node
 
-*For the debian like systems*::
+*For the Debian like systems*::
   
         # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar.list
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/Debian squeeze main" > /etc/apt/sources.list.d/oar.list
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
 
@@ -58,7 +56,7 @@ _____________________________
 
 **Requirements**
 
-*For redhat like systems*::
+*For RedHat like systems*::
 
           # Build dependencies
           yum install gcc make tar python-docutils
@@ -66,7 +64,7 @@ _____________________________
           # Common dependencies
           yum install Perl Perl-base openssh 
           
-*For debian like system*::
+*For Debian like system*::
 
           # Build dependencies
           apt-get install gcc make tar python-docutils
@@ -78,7 +76,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.2
+        OAR_VERSION=...
         curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -122,7 +120,7 @@ ______________________________
 
 **Instructions**
 
-*For redhat like systems*::
+*For RedHat like systems*::
 
         # Add the epel repository (choose the right version depending on your operating system)
         rpm -i http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-5.noarch.rpm
@@ -142,10 +140,10 @@ ______________________________
         # or Install OAR server for the MySQL backend
         yum install oar-server oar-server-mysql
 
-*For the debian like systems*::
+*For the Debian like systems*::
   
         # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar.list
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/Debian squeeze main" > /etc/apt/sources.list.d/oar.list
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
 
@@ -160,7 +158,7 @@ _____________________________
 
 **Requirements**
 
-*For redhat like systems*::
+*For RedHat like systems*::
 
           # Add the epel repository (choose the right version depending on your operating system)
           rpm -i http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-5.noarch.rpm
@@ -178,7 +176,7 @@ _____________________________
           yum install postgresql-server postgresql perl-DBD-Pg
 
 
-*For debian like system*::
+*For Debian like system*::
 
           # Build dependencies
           apt-get install gcc make tar python-docutils
@@ -196,7 +194,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.2
+        OAR_VERSION=...
         curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -413,7 +411,7 @@ ______________________________
 
 **Instructions**
 
-*For redhat like systems*::
+*For RedHat like systems*::
 
         # Add the epel repository (choose the right version depending on your operating system)
         rpm -i http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-5.noarch.rpm
@@ -433,10 +431,10 @@ ______________________________
         # or Install OAR user for the MySQL backend
         yum install oar-user oar-user-mysql
 
-*For the debian like systems*::
+*For the Debian like systems*::
   
         # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar.list
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/Debian squeeze main" > /etc/apt/sources.list.d/oar.list
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
 
@@ -452,7 +450,7 @@ _____________________________
 
 **Requirements**
 
-*For redhat like systems*::
+*For RedHat like systems*::
 
           # Build dependencies
           yum install gcc make tar python-docutils
@@ -467,7 +465,7 @@ _____________________________
           yum install postgresql perl-DBD-Pg
 
 
-*For debian like system*::
+*For Debian like system*::
 
           # Build dependencies
           apt-get install gcc make tar python-docutils
@@ -485,7 +483,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.2
+        OAR_VERSION=...
         curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -513,13 +511,13 @@ the user nodes.
 OAR RESTful API Installation
 ____________________________
 
-Since the version 2.5.2, OAR offers an API for users and admins interactions. This api
+Since the version ..., OAR offers an API for users and admins interactions. This api
 must be installed on a frontend node (with the user module installed).
 
 From the packaging
 ~~~~~~~~~~~~~~~~~~
 
-*For redhat like systems*::
+*For RedHat like systems*::
 
         # Add the oar repository
         cat <<EOF > /etc/yum.repos.d/oar.repo
@@ -536,10 +534,10 @@ From the packaging
         # Install OAR Restful api
         yum install oar-restful-api
 
-*For the debian like systems*::
+*For the Debian like systems*::
   
         # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar.list
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/Debian squeeze main" > /etc/apt/sources.list.d/oar.list
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
  
@@ -554,7 +552,7 @@ From the sources
 
 **Requirements**:
 
-*For redhat like systems*::
+*For RedHat like systems*::
 
           # Build dependencies
           yum install gcc make tar python-docutils
@@ -572,7 +570,7 @@ From the sources
           yum install postgresql perl-DBD-Pg
 
 
-*For debian like system*::
+*For Debian like system*::
 
           # Build dependencies
           apt-get install gcc make tar python-docutils
@@ -593,7 +591,7 @@ From the sources
 
 Get the sources::
 
-        OAR_VERSION=2.5.2
+        OAR_VERSION=...
         curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -663,7 +661,7 @@ ______________________________
 
 **Instructions**
 
-*For redhat like systems*::
+*For RedHat like systems*::
 
         # Add the oar repository
         cat <<EOF > /etc/yum.repos.d/oar.repo
@@ -676,10 +674,10 @@ ______________________________
 
         yum install oar-web-status
 
-*For the debian like systems*::
+*For the Debian like systems*::
   
         # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian squeeze main" > /etc/apt/sources.list.d/oar.list
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/Debian squeeze main" > /etc/apt/sources.list.d/oar.list
         curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
         apt-get update
 
@@ -691,63 +689,67 @@ _____________________________
 
 **Requirements**:
 
-*For redhat like systems*::
+*For RedHat like systems*::
 
           # Build dependencies
           yum install gcc make tar python-docutils
 
           # Common dependencies
-          yum install perl perl-base perl-DBI ruby-GD ruby-DBI perl-Tie-IxHash perl-Sort-Naturally perl-AppConfig
+          yum install perl perl-base perl-DBI ruby-GD ruby-DBI perl-Tie-IxHash perl-Sort-Naturally perl-AppConfig php
           
           # MySQL dependencies
-          yum install mysql perl-DBD-MySQL ruby-mysql
+          yum install mysql perl-DBD-MySQL ruby-mysql php-mysql
           
           # PostgreSQL dependencies
-          yum install postgresql perl-DBD-Pg ruby-pg
+          yum install postgresql perl-DBD-Pg ruby-pg php-pgsql
 
 
-*For debian like system*::
+*For Debian like system*::
 
           # Build dependencies
           apt-get install gcc make tar python-docutils
           
           # Common dependencies
-          apt-get install perl perl-base ruby libgd-ruby1.8 libdbi-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl
+          apt-get install perl perl-base ruby libgd-ruby1.8 libdbi-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libapache2-mod-php5 
           
           # MySQL dependencies
-          apt-get install libdbd-mysql-perl libdbd-mysql-ruby
+          apt-get install libdbd-mysql-perl libdbd-mysql-ruby php5-mysql
           
           # PostgreSQL dependencies
-          apt-get install libdbd-pg-perl libdbd-pg-ruby
+          apt-get install libdbd-pg-perl libdbd-pg-ruby php5-pgsql
 
 **Instructions**
 
 Get the sources::
 
-        OAR_VERSION=2.5.2
+        OAR_VERSION=...
         curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
 build/install/setup::
 
         # build
-        make monika-build draw-gantt-build www-conf-build
+        make monika-build drawgantt-build drawgantt-svg-build www-conf-build
         # install
-        make monika-install draw-gantt-install www-conf-install
+        make monika-install drawgantt-install drawgantt-svg-install www-conf-install
         # setup
-        make monika-setup draw-gantt-setup www-conf-setup
+        make monika-setup drawgantt-setup drawgantt-svg-setup www-conf-setup
 
 Configuration
 _____________
-
-**Drawgantt configuration**
-
- - Edit ``/etc/oar/drawgantt.conf`` to fit your configuration.
 
 **Monika configuration**
 
  - Edit ``/etc/oar/monika.conf`` to fit your configuration.
  
+**Drawgantt configuration**
+
+ - Edit ``/etc/oar/drawgantt.conf`` to fit your configuration.
+
+**Drawgantt-SVG configuration**
+
+ - Edit ``/etc/oar/drawgantt-config.inc.php`` to fit your configuration.
+
 **httpd configuration**
 
  - You need to edit ``/etc/oar/apache.conf`` to fit your needs and verify that you
