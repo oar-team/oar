@@ -65,6 +65,8 @@ select the text output format. Available values are:
   1: default
   2: prints system messages
 
+The users can use the environment variable OAR_OARSTAT_OUTPUT_FORMAT to select the output format 1 or 2.
+
 =item B<-D, --DUMPER>
 
 Print result in DUMPER format.

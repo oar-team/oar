@@ -8,6 +8,7 @@ use OAR::IO;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 
 my $base;
+my $current_date = -1;
 
 # Read config
 init_conf($ENV{OARCONFFILE});
@@ -557,6 +558,19 @@ sub compact_arrays($){
   return $newjobs;
 }
 
+# Use the current date in seconds from the EPOCH to determine the duration of a
+# running job (start_time>0)
+sub get_job_duration($){
+    my $start_date = shift;
 
+    if ($current_date < 0){
+        $current_date = OAR::IO::get_date($base);
+    }
+    my ($h,$m,$s) = (0,0,0);
+    if (($start_date > 0) and ($start_date < $current_date)){
+        ($h,$m,$s) = OAR::IO::duration_to_hms($current_date - $start_date);
+    }
+    return(sprintf("%i:%02i:%02i", $h,$m,$s));
+}
 
 1;

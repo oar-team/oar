@@ -347,6 +347,10 @@ sub treate_waiting_reservation_jobs($$){
                 }
                 if ($#resa_resources > $#resa_alive_resources){
                     OAR::IO::add_new_event($dbh,"SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION",$job->{job_id},"[OAR::Schedulers::Scheduler] Reduce the number of resources for the job $job->{job_id}.");
+                    my $nbr = $#resa_alive_resources + 1;
+                    if ($job->{message} =~ s/R\=\d+/R\=$nbr/g){
+                        OAR::IO::set_job_message($dbh,$job->{job_id},$job->{message});
+                    }
                 }
             }
         }
@@ -568,6 +572,10 @@ sub check_jobs_to_launch($){
             OAR::IO::set_gantt_job_startTime($dbh,$jobs_to_launch{$i}->[0],$current_time_sec);
             oar_warn("[OAR::Schedulers::Scheduler] Reduce job ($i) walltime to $max_time instead of $mold->{moldable_walltime}\n");
             OAR::IO::add_new_event($dbh,"REDUCE_RESERVATION_WALLTIME",$i,"Change walltime from $mold->{moldable_walltime} to $max_time");
+            my $w = OAR::IO::duration_to_sql($max_time);
+            if ($job->{message} =~ s/W\=\d+\:\d+\:\d+/W\=$w/g){
+                OAR::IO::set_job_message($dbh,$i,$job->{message});
+            }
         }
         my $running_date = $current_time_sec;
         if ($running_date < $job->{submission_time}){
