@@ -290,11 +290,21 @@ rm -rf tmp
 
 %files common -f oar-common.files
 %defattr(0644,root,root)
-%config(noreplace) /etc/oar/oar.conf
-%config(noreplace) /etc/oar/oarnodesetting_ssh
-%config(noreplace) /etc/oar/update_cpuset_id.sh
+%config(noreplace) %attr(0600, oar, root) /etc/oar/oar.conf
+%config(noreplace) %attr(0755, root, root) /etc/oar/oarnodesetting_ssh
+%config(noreplace) %attr(0755, root, root) /etc/oar/update_cpuset_id.sh
 %config %attr(0755,root,root) /etc/logrotate.d/oar
+%attr(0755, root, root) /usr/bin/oarsh
+%attr(0755, root, root) /usr/bin/oarprint
+%attr(0755, root, root) /usr/bin/oarcp
 %attr(0755, root, root) /usr/lib/oar/oarsh_shell
+%attr(0755, root, root) /usr/lib/oar/oarnodesetting
+%attr(0755, root, root) /usr/lib/oar/oarsh
+%attr(0755, root, root) /usr/lib/oar/setup/common.sh
+%attr(0755, root, root) /usr/lib/oar/sentinelle.pl
+%attr(6755, root, oar) /usr/lib/oar/oarsh_oardo
+%attr(6754, root, oar) /usr/sbin/oarnodesetting
+%attr(6754, root, oar) /usr/lib/oar/oardodo/oardodo
 
 %files server -f oar-server.files
 %defattr(0644,root,root)
@@ -307,23 +317,74 @@ rm -rf tmp
 %config(noreplace) /etc/oar/server_epilogue
 %config(noreplace) /etc/oar/server_prologue
 %config(noreplace) /etc/oar/suspend_resume_manager.pl
-%config(noreplace) /etc/oar/oar_phoenix.pl
+%config(noreplace) %attr(0755,root,root) /etc/oar/oar_phoenix.pl
 %config(noreplace) /etc/oar/shut_down_nodes.sh
 %config(noreplace) /etc/oar/wake_up_nodes.sh
+%attr(0755, root, root) /usr/sbin/oar-database
+%attr(0755, root, root) /usr/sbin/oar-server
+%attr(6754, root, oar) /usr/sbin/Almighty
+%attr(6754, root, oar) /usr/sbin/oar_checkdb
+%attr(6754, root, oar) /usr/sbin/oar_phoenix
+%attr(6754, root, oar) /usr/sbin/oar_resources_init
+%attr(6754, root, oar) /usr/sbin/oaraccounting
+%attr(6754, root, oar) /usr/sbin/oarmonitor
+%attr(6754, root, oar) /usr/sbin/oarnotify
+%attr(6754, root, oar) /usr/sbin/oarproperty
+%attr(6754, root, oar) /usr/sbin/oarremoveresource
+%attr(0755, root, root) /usr/lib/oar/Almighty
+%attr(0755, root, root) /usr/lib/oar/Leon
+%attr(0755, root, root) /usr/lib/oar/NodeChangeState
+%attr(0755, root, root) /usr/lib/oar/bipbip
+%attr(0755, root, root) /usr/lib/oar/finaud
+%attr(0755, root, root) /usr/lib/oar/oar_checkdb.pl
+%attr(0755, root, root) /usr/lib/oar/oar_meta_sched
+%attr(0755, root, root) /usr/lib/oar/oar_resources_init
+%attr(0755, root, root) /usr/lib/oar/oaraccounting
+%attr(0755, root, root) /usr/lib/oar/oarmonitor
+%attr(0755, root, root) /usr/lib/oar/oarnotify
+%attr(0755, root, root) /usr/lib/oar/oarproperty
+%attr(0755, root, root) /usr/lib/oar/oarremoveresource
+%attr(0755, root, root) /usr/lib/oar/runner
+%attr(0755, root, root) /usr/lib/oar/sarko
+%attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing
+%attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
+%attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder
+%attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas
+%attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_placeholder
+%attr(0755, root, root) /usr/lib/oar/setup/database.sh
+%attr(0755, root, root) /usr/lib/oar/setup/server.sh
+%attr(0755, root, root) /usr/lib/oar/NodeChangeState
 
 %files node -f oar-node.files
 %defattr(0644,root,root)
 %config %attr(0755,root,root) /etc/rc.d/init.d/oar-node
 %config(noreplace) %attr(0644,root,root) /etc/sysconfig/oar-node
-#%config %attr(0644,root,root) /etc/cron.d/oar-node
 %config(noreplace) /etc/oar/epilogue
 %config(noreplace) /etc/oar/prologue
-%config(noreplace) /etc/oar/sshd_config
+%config(noreplace) %attr(0600, oar, root) /etc/oar/sshd_config
 %config(noreplace) /etc/oar/check.d
 %config(noreplace) /var/lib/oar/checklogs
+%attr(0755, root, root) /usr/bin/oarnodecheckquery
+%attr(0755, root, root) /usr/bin/oarnodechecklist
+%attr(0755, root, root) /usr/lib/oar/setup/node.sh
+%attr(0755, root, root) /usr/lib/oar/oarnodecheckrun
 
 %files user -f oar-user.files
 %defattr(0644,root,root)
+%attr(6755, root, oar) /usr/bin/oarstat
+%attr(6755, root, oar) /usr/bin/oarnodes
+%attr(6755, root, oar) /usr/bin/oarresume
+%attr(6755, root, oar) /usr/bin/oarhold
+%attr(6755, root, oar) /usr/bin/oardel
+%attr(6755, root, oar) /usr/bin/oarsub
+%attr(0755, root, root) /usr/bin/oarmonitor_graph_gen
+%attr(0755, root, root) /usr/lib/oar/oarstat
+%attr(0755, root, root) /usr/lib/oar/setup/user.sh
+%attr(0755, root, root) /usr/lib/oar/oarnodes
+%attr(0755, root, root) /usr/lib/oar/oarresume
+%attr(0755, root, root) /usr/lib/oar/oarhold
+%attr(0755, root, root) /usr/lib/oar/oardel
+%attr(0755, root, root) /usr/lib/oar/oarsub
 
 %files web-status -f oar-web-status.files
 %defattr(0644,root,root)
@@ -331,6 +392,12 @@ rm -rf tmp
 %config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt-config.inc.php
 %config(noreplace) %attr (0600,apache,root) /etc/oar/monika.conf
 %config(noreplace) %attr (0600,apache,root) /etc/oar/apache.conf
+%attr(0755, root, root) /var/www/cgi-bin/drawgantt.cgi
+%attr(0755, root, root) /var/www/cgi-bin/monika.cgi
+%attr(0755, root, root) /usr/lib/oar/setup/www-conf.sh
+%attr(0755, root, root) /usr/lib/oar/setup/drawgantt.sh
+%attr(0755, root, root) /usr/lib/oar/setup/drawgantt-svg.sh
+%attr(0755, root, root) /usr/lib/oar/setup/monika.sh
 
 %files doc -f oar-doc.files
 %defattr(0644,root,root)
@@ -338,12 +405,11 @@ rm -rf tmp
 
 %files admin -f oar-admin.files
 %defattr(0644,root,root)
-
-#%files desktop-computing-agent -f oar-desktop-computing-agent.files
-#
-#%files desktop-computing-cgi -f oar-desktop-computing-cgi.files
-#%defattr(0644,root,root)
-#%config %attr (0755,root,root) /etc/cron.hourly/oar-desktop-computing-cgi
+%attr(6754, root, oar) /usr/sbin/oaradmin
+%attr(0755, root, root) /usr/lib/oar/setup/tools.sh
+%attr(0755, root, root) /usr/lib/oar/oaradmin_modules.rb
+%attr(0755, root, root) /usr/lib/oar/oaradmin.rb
+%attr(0755, root, root) /usr/lib/oar/oar_modules.rb
 
 %files restful-api -f oar-restful-api.files
 %defattr(0644,root,root)
@@ -353,6 +419,10 @@ rm -rf tmp
 %config /etc/oar/api_html_postform_resources.pl
 %config /etc/oar/api_html_postform_rule.pl
 %config /etc/oar/stress_factor.sh
+%attr(6755, root, oar) /var/www/cgi-bin/oarapi/oarapi-debug.cgi
+%attr(6755, root, oar) /var/www/cgi-bin/oarapi/oarapi.cgi
+%attr(0755, root, root) /usr/lib/oar/oarapi.pl
+%attr(0755, root, root) /usr/lib/oar/setup/api.sh
 
 %files -n perl-OAR -f liboar-perl.files
 %defattr(0644,root,root)
