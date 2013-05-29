@@ -202,13 +202,14 @@ cp $TMP/usr/share/doc/oar-restful-api/examples/api_html_header.pl \
    $TMP/usr/share/doc/oar-restful-api/examples/api_html_postform.pl \
    $TMP/usr/share/doc/oar-restful-api/examples/api_html_postform_resources.pl \
    $TMP/usr/share/doc/oar-restful-api/examples/api_html_postform_rule.pl \
+   $TMP/usr/share/doc/oar-restful-api/examples/stress_factor.sh \
      $TMP/etc/oar/
 
 # web-status
 TMP=tmp/oar-web-status
 mkdir -p $TMP/etc/oar
 cp $TMP/usr/share/doc/oar-web-status/examples/drawgantt.conf \
-   $TMP/usr/share/doc/oar-web-status/examples/drawgantt-svg-config.inc.php \
+   $TMP/usr/share/doc/oar-web-status/examples/drawgantt-config.inc.php \
    $TMP/usr/share/doc/oar-web-status/examples/monika.conf \
    $TMP/usr/share/doc/oar-web-status/examples/apache.conf \
      $TMP/etc/oar
@@ -277,6 +278,7 @@ rm -rf tmp
 %config(noreplace) /etc/oar/oarnodesetting_ssh
 %config(noreplace) /etc/oar/update_cpuset_id.sh
 %config %attr(0755,root,root) /etc/logrotate.d/oar
+%attr(0755, root, root) /usr/lib/oar/oarsh_shell
 
 %files server -f oar-server.files
 %defattr(0644,root,root)
@@ -307,16 +309,10 @@ rm -rf tmp
 %files user -f oar-user.files
 %defattr(0644,root,root)
 
-%files user-mysql
-%defattr(0644,root,root)
-
-%files user-pgsql
-%defattr(0644,root,root)
-
 %files web-status -f oar-web-status.files
 %defattr(0644,root,root)
 %config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt.conf
-%config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt-svg-config.inc.php
+%config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt-config.inc.php
 %config(noreplace) %attr (0600,apache,root) /etc/oar/monika.conf
 %config(noreplace) %attr (0600,apache,root) /etc/oar/apache.conf
 
@@ -340,6 +336,7 @@ rm -rf tmp
 %config /etc/oar/api_html_postform.pl
 %config /etc/oar/api_html_postform_resources.pl
 %config /etc/oar/api_html_postform_rule.pl
+%config /etc/oar/stress_factor.sh
 
 %files -n perl-OAR -f liboar-perl.files
 %defattr(0644,root,root)
@@ -453,6 +450,7 @@ user_setup
 - Fix some rpmlint warnings
 - Make dependancy more accurate for Centos 6
 - Improve the database libs dependency resolution for Perl/Ruby/php
+- Fix serveral errors
 
 * Wed May 23 2012 Philippe Le Brouster <philippe.le-brouster@imag.fr> 2.5.2-1.el6
 - new upstream release
