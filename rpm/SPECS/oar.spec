@@ -1,5 +1,5 @@
-%define version 2.5.3+rc4
-%define release 2.el6
+%define version 2.5.3+rc5
+%define release 1.el6
 
 %define oaruser  oar
 
@@ -25,7 +25,7 @@ OAR is a resource manager (or batch scheduler) for large computing clusters.
 Summary:        OAR batch scheduler common package
 Group:          System Environment/Base
 BuildRequires:  gcc
-Requires:       perl, shadow-utils, perl-DBI, coreutils, util-linux-ng, perl-DBD-MySQL or perl-DBD-Pg
+Requires:       perl, shadow-utils, perl-DBI, coreutils, util-linux-ng, oar-perl-db = %version-%release
 %description common
 This package installs the common part or the OAR batch scheduler
 
@@ -37,26 +37,10 @@ Provides:       perl(OAR::IO), perl(OAR::Modules::Judas), perl(OAR::Tools), perl
 %description -n perl-OAR
 This package installs the common libraries of the OAR batch scheduler
 
-%package server-mysql
-Summary:        OAR batch scheduler MySQL backend package for the server
-Group:          System Environment/Base
-Requires:       perl-DBD-MySQL
-Provides:       oar-server-backend
-%description server-mysql
-This package installs the MySQL backend for the server part or the OAR batch scheduler
-
-%package server-pgsql
-Summary:        OAR batch scheduler PostgreSQL backend package for the server
-Group:          System Environment/Base
-Requires:       perl-DBD-Pg
-Provides:       oar-server-backend
-%description server-pgsql
-This package installs the PostgreSQL backend for the server part or the OAR batch scheduler
-
 %package server
 Summary:        OAR batch scheduler server package
 Group:          System Environment/Base
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-server-backend, openssh-server, openssh-clients, crontabs, redhat-lsb-core
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-perl-db, openssh-server, openssh-clients, crontabs, redhat-lsb-core
 %description server
 This package installs the server part or the OAR batch scheduler
 
@@ -67,34 +51,17 @@ Requires:       oar-common = %version-%release, openssh-server, openssh-clients,
 %description node
 This package installs the execution node part of the OAR batch scheduler
 
-%package user-mysql
-Summary:        OAR batch scheduler user MySQL backend package
-Group:          System Environment/Base
-Requires:       perl-DBD-MySQL
-Provides:       oar-user-backend
-%description user-mysql
-This package install the MySQL backend for the submission and query part of the OAR batch scheduler
-
-%package user-pgsql
-Summary:        OAR batch scheduler user PostgreSQL backend package
-Group:          System Environment/Base
-Requires:       perl-DBD-Pg
-Provides:       oar-user-backend
-%description user-pgsql
-This package install the PostgreSQL backend for the submission and query part of the OAR batch scheduler
-
 %package user
 Summary:        OAR batch scheduler user package
 Group:          System Environment/Base
-Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-user-backend, openssh-clients
+Requires:       oar-common = %version-%release, perl-OAR =  %version-%release, oar-perl-db, openssh-clients
 %description user
 This package install the submission and query part of the OAR batch scheduler
 
 %package web-status
 Summary:        OAR batch scheduler web-status package
 Group:          System Environment/Base
-Requires:       ruby, perl-DBI, perl-Tie-IxHash, perl-AppConfig, ruby-DBI, ruby-gd, perl(Sort::Naturally), httpd, php, php-mysql or php-pgsql
-# missing dependency: no RPM packaging for libdbd-mysql-ruby or libdbd-pg-ruby on Centos6
+Requires:       httpd, perl-DBI, perl-Tie-IxHash, perl-AppConfig, perl(Sort::Naturally), oar-perl-db = %version-%release, ruby, ruby-DBI, ruby-gd, oar-ruby-db = %version-%release, php, oar-php-db = %version-%release
 Provides:       Perl(OAR::Monika), DrawGantt, DrawGantt-SVG
 %description web-status
 This package installs the OAR batch scheduler status web pages: jobs and resources status and gantt diagrams.
@@ -110,7 +77,7 @@ This package installs some documentation for OAR batch scheduler
 %package admin
 Summary:        OAR batch scheduler administration tools package
 Group:          System Environment/Base
-Requires:       oar-common = %version-%release, ruby, ruby-DBI, perl(YAML)
+Requires:       oar-common = %version-%release, ruby, ruby-DBI, oar-ruby-db = %version-%release, perl(YAML)
 %description admin
 This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...) 
 
@@ -128,6 +95,54 @@ This package installs the RESTful OAR user API.
 #Group:          System/Servers
 #Requires:       oar-server, ocaml-mysql, rubygem-sequel
 #BuildArch:      amd64 i686
+
+%package perl-mysql
+Summary:        OAR batch scheduler virtual package for Perl/MySQL dependencies
+Group:          System Environment/Base
+Requires:       perl-DBD-MySQL
+Provides:       oar-perl-db
+%description perl-mysql
+This package installs the Perl/MySQL dependencies for OAR 
+
+%package perl-pgsql
+Summary:        OAR batch scheduler virtual package for Perl/PostgreSQL dependencies
+Group:          System Environment/Base
+Requires:       perl-DBD-Pg
+Provides:       oar-perl-db
+%description perl-pgsql
+This package installs the Perl/PostgreSQL dependencies for OAR 
+
+%package ruby-mysql
+Summary:        OAR batch scheduler virtual package for Ruby/MySQL dependencies
+Group:          System Environment/Base
+Requires:       ruby-mysql
+Provides:       oar-ruby-db
+%description ruby-mysql
+This package installs the Ruby/MySQL dependencies for OAR 
+
+%package ruby-pgsql
+Summary:        OAR batch scheduler virtual package for Ruby/PostgreSQL dependencies
+Group:          System Environment/Base
+Requires:       rubygem-pg
+Provides:       oar-ruby-db
+%description ruby-pgsql
+This package installs the Ruby/PostgreSQL dependencies for OAR 
+
+%package php-mysql
+Summary:        OAR batch scheduler virtual package for php/MySQL dependencies
+Group:          System Environment/Base
+Requires:       php-mysql
+Provides:       oar-php-db
+%description php-mysql
+This package installs the php/MySQL dependencies for OAR 
+
+%package php-pgsql
+Summary:        OAR batch scheduler virtual package for php/PostgreSQL dependencies
+Group:          System Environment/Base
+Requires:       php-pgsql
+Provides:       oar-php-db
+%description php-pgsql
+This package installs the php/PostgreSQL dependencies for OAR 
 
 %prep
 %setup -q
@@ -278,12 +293,6 @@ rm -rf tmp
 %config(noreplace) /etc/oar/shut_down_nodes.sh
 %config(noreplace) /etc/oar/wake_up_nodes.sh
 
-%files server-mysql
-%defattr(0644,root,root)
-
-%files server-pgsql
-%defattr(0644,root,root)
-
 %files node -f oar-node.files
 %defattr(0644,root,root)
 %config %attr(0755,root,root) /etc/rc.d/init.d/oar-node
@@ -336,6 +345,24 @@ rm -rf tmp
 %defattr(0644,root,root)
 
 #%files scheduler-ocaml-mysql -f oar-scheduler-ocaml-mysql
+
+%files perl-mysql
+%defattr(0644,root,root)
+
+%files perl-pgsql
+%defattr(0644,root,root)
+
+%files ruby-mysql
+%defattr(0644,root,root)
+
+%files ruby-pgsql
+%defattr(0644,root,root)
+
+%files php-mysql
+%defattr(0644,root,root)
+
+%files php-pgsql
+%defattr(0644,root,root)
 
 ###### oar-common scripts ######
 %post common
@@ -419,12 +446,13 @@ user_setup
 
 
 %changelog
-* Mon Mar 27 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
+* Mon May 29 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
 - New upstream release
 - Remove OAR desktop-computing packages
 - Add packaging for drawgantt-svg
 - Fix some rpmlint warnings
 - Make dependancy more accurate for Centos 6
+- Improve the database libs dependency resolution for Perl/Ruby/php
 
 * Wed May 23 2012 Philippe Le Brouster <philippe.le-brouster@imag.fr> 2.5.2-1.el6
 - new upstream release
