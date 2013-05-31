@@ -1,5 +1,5 @@
 %define version 2.5.3+rc5
-%define release 2.el6
+%define release 3.el6
 
 %define oaruser  oar
 
@@ -131,7 +131,7 @@ This package installs the PostgreSQL dependencies for OAR user package
 %package admin-mysql
 Summary:        OAR batch scheduler MySQL admin backend
 Group:          System Environment/Base
-Requires:       perl-DBD-MySQL
+Requires:       ruby-mysql
 Provides:       oar-admin-backend
 %description admin-mysql
 This package installs the MySQL dependencies for OAR admin package
@@ -139,7 +139,7 @@ This package installs the MySQL dependencies for OAR admin package
 %package admin-pgsql
 Summary:        OAR batch scheduler PostgreSQL admin backend
 Group:          System Environment/Base
-Requires:       perl-DBD-Pg
+Requires:       rubygem-pg
 Provides:       oar-admin-backend
 %description admin-pgsql
 This package installs the PostgreSQL dependencies for OAR admin package
@@ -535,7 +535,7 @@ user_setup
 
 
 %changelog
-* Mon May 30 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3+rc5-2.el6
+* Fri May 31 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3+rc5-3.el6
 - New upstream release
 - Remove OAR desktop-computing packages
 - Add packaging for drawgantt-svg
