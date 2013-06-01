@@ -70,10 +70,10 @@ sub pretty_print($){
         my $step_ref = $accounting->[$index];
         my $next_step_time = $accounting->[$index+1]->[0];
         $str .= "  $index From $step_ref->[0](".strftime("%F %T",localtime($step_ref->[0])).") To $next_step_time(".strftime("%F %T",localtime($next_step_time))."):\n";
-        foreach my $i (sort(keys($step_ref->[1]))){
-            foreach my $j (sort(keys($step_ref->[1]->{$i}))){
-                foreach my $k (sort(keys($step_ref->[1]->{$i}->{$j}))){
-                    foreach my $l (sort(keys($step_ref->[1]->{$i}->{$j}->{$k}))){
+        foreach my $i (sort(keys(%{$step_ref->[1]}))){
+            foreach my $j (sort(keys(%{$step_ref->[1]->{$i}}))){
+                foreach my $k (sort(keys(%{$step_ref->[1]->{$i}->{$j}}))){
+                    foreach my $l (sort(keys(%{$step_ref->[1]->{$i}->{$j}->{$k}}))){
                         $str .= sprintf("    %16.16s > %16.16s > %10.10s > %10.10s = %i\n", $i, $j, $k, $l, $step_ref->[1]->{$i}->{$j}->{$k}->{$l});
                     }
                 }
@@ -185,24 +185,24 @@ sub check_quotas($$$$$$$$$$$){
 #            print("QUOTA CHECK: slot ($qindex) $accounting->[$qindex]->[0](".strftime("%F %T",localtime($accounting->[$qindex]->[0])).") --> $accounting->[$qindex+1]->[0](".strftime("%F %T",localtime($accounting->[$qindex+1]->[0])).")\n");
             my $q_counter; my $p_counter; my $u_counter;
             OUTER_LOOP:
-            foreach my $q (keys($gantt_quotas)){
+            foreach my $q (keys(%{$gantt_quotas})){
                 if (($q eq $job_queue) or ($q eq '*') or ($q eq '/')){
                     if ($q eq '/'){
                         $q_counter = $job_queue;
                     }else{
                         $q_counter = $q;
                     }
-                    foreach my $p (keys($gantt_quotas->{$q})){
+                    foreach my $p (keys(%{$gantt_quotas->{$q}})){
                         if (($p eq $job_project) or ($p eq '*') or ($p eq '/')){
                             if ($p eq '/'){
                                 $p_counter = $job_project;
                             }else{
                                 $p_counter = $p;
                             }
-                            foreach my $t (keys($gantt_quotas->{$q}->{$p})){
+                            foreach my $t (keys(%{$gantt_quotas->{$q}->{$p}})){
                                 foreach my $job_t (@{$job_types_arrayref},'*'){
                                     if ($t eq $job_t){
-                                        foreach my $u (keys($gantt_quotas->{$q}->{$p}->{$t})){
+                                        foreach my $u (keys(%{$gantt_quotas->{$q}->{$p}->{$t}})){
                                             if (($u eq $job_user) or ($u eq '*') or ($u eq '/')){
                                                 if ($u eq '/'){
                                                     $u_counter = $job_user;
