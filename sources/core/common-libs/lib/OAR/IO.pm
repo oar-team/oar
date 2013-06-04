@@ -186,7 +186,7 @@ sub get_last_event_from_type($$);
 sub check_accounting_update($$);
 sub update_accounting($$$$$$$$$);
 sub get_accounting_summary($$$$$);
-sub get_accounting_summary_byproject($$$$);
+sub get_accounting_summary_byproject($$$$$$);
 sub get_last_project_karma($$$$);
 
 # LOCK FUNCTIONS:
@@ -7051,15 +7051,26 @@ sub get_accounting_summary($$$$$){
 
 # Get an array of consumptions by project for a given user
 # params: base, start date, ending date, user
-sub get_accounting_summary_byproject($$$$){
+sub get_accounting_summary_byproject($$$$$$){
     my $dbh = shift;
     my $start = shift;
     my $stop = shift;
     my $user = shift;
+    my $limit = shift;
+    my $offset = shift;
     my $user_query="";
-    if ("$user" ne "") {
+    if (defined($user) && "$user" ne "") {
         $user_query="AND accounting_user = ". $dbh->quote($user);
     }
+    my $limit_query="";
+    if (defined($limit) && "$limit" ne "") {
+        $limit_query="LIMIT $limit";
+    }    
+    if (defined($offset) && "$offset" ne "") {
+        $limit_query.=" OFFSET $offset";
+    }
+
+
 
     my $sth = $dbh->prepare("   SELECT accounting_user as user,
                                        consumption_type,
@@ -7072,6 +7083,7 @@ sub get_accounting_summary_byproject($$$$){
                                     $user_query
                                 GROUP BY accounting_user,project,consumption_type
                                 ORDER BY project,consumption_type,seconds
+                                $limit_query
                             ");
     $sth->execute();
 

@@ -622,6 +622,20 @@ sub struct_job_nodes($$) {
 }
 
 
+# ACCOUNTING LIST
+sub struct_accounting($) {
+  my $accounting = shift;
+  my $result;
+  foreach my $a (keys (%{$accounting})) {
+    my $hashref = {  project => $a,
+                     consumptions => $accounting->{$a}
+                  };
+    push (@$result,$hashref);
+  }
+  return $result;
+}
+
+
 # OAR RESOURCES
 sub filter_resource_list($) {
   my $resources = shift;

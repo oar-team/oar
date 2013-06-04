@@ -13,7 +13,7 @@ version 2.5.3:
   - Improvements of the API: media upload from html forms, listing of files, 
     security fixes, add of new configuration options, listing of the scheduled
     nodes into jobs, fixed bad reinitialization of the limit parameter,
-    stress_factor... 
+    stress_factor, accounting... 
     See OAR-DOCUMENTATION-API-USER for more informations.
   - CGROUP: handle cgroup hierarchy already mounted by the OS like in Fedora 18
     (by systemd in /sys/fs/cgroup) in job_resource_manager_cgroups.pl
