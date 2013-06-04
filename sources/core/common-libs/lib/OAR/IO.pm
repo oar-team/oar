@@ -1227,6 +1227,7 @@ sub estimate_job_nb_resources($$$){
                 foreach my $l (@leafs){
                     vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
                 }
+                $tmp_moldable_result->{comment} = "No resource assigned to this job" if ($#leafs < 0);
                 $tmp_moldable_result->{nbresources} += $#leafs + 1;
             }
         }
