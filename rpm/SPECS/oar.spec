@@ -262,6 +262,7 @@ cp $TMP/usr/share/doc/oar-server/examples/job_resource_manager.pl \
    $TMP/usr/share/doc/oar-server/examples/shut_down_nodes.sh \
    $TMP/usr/share/doc/oar-server/examples/server_prologue \
    $TMP/usr/share/doc/oar-server/examples/server_epilogue \
+   $TMP/usr/share/doc/oar-server/examples/scheduler_quotas.conf \
      $TMP/etc/oar
 
 cp $TMP/usr/share/doc/oar-server/examples/cron.d/oar-server \
@@ -320,6 +321,7 @@ rm -rf tmp
 %config(noreplace) %attr(0755,root,root) /etc/oar/oar_phoenix.pl
 %config(noreplace) /etc/oar/shut_down_nodes.sh
 %config(noreplace) /etc/oar/wake_up_nodes.sh
+%config(noreplace) /etc/oar/scheduler_quotas.conf
 %attr(0755, root, root) /usr/sbin/oar-database
 %attr(0755, root, root) /usr/sbin/oar-server
 %attr(6754, root, oar) /usr/sbin/Almighty
