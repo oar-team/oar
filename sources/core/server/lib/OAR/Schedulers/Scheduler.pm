@@ -91,7 +91,17 @@ sub init_scheduler($$$$$$){
     $current_time_sec = OAR::IO::get_date($dbh);
     if ($current_time_sec < $previous_ref_time_sec){
         # The system is very fast!!!
-        $current_time_sec = $previous_ref_time_sec;
+        my $tmp_delta = $previous_ref_time_sec - $current_time_sec;
+        if ($tmp_delta > 60){
+            oar_error("[OAR::Schedulers::Scheduler] init_scheduler : The previous scheduler step was performed $tmp_delta seconds in the future. It is bad, maybe the system clock of the DB server has changed. This can results in bad scheduling decisions.\n");
+        }else{
+            $current_time_sec = $previous_ref_time_sec;
+            if ($tmp_delta > 1){
+                # Avoid race condition that could increment too much the current time indefinitely
+                oar_debug("[OAR::Schedulers::Scheduler] init_scheduler : The previous scheduler step was performed $tmp_delta seconds in the future. So we have to wait or the scheduling decisions will be bad\n");
+                sleep($tmp_delta);
+            }
+        }
     }
     $current_time_sec++;
     $current_time_sql = OAR::IO::local_to_sql($current_time_sec);
