@@ -373,7 +373,7 @@ class ResourceId {
 	}
 	function svg_label($y) {
 		global $CONF;
-		$output = '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $CONF['scale']).'" text-anchor="end" onmouseover="mouseOver(evt, \''.$this->svg_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)">';
+		$output = '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $CONF['scale']).'" text-anchor="end" onmouseover="mouseOver(evt, \''.$this->svg_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)">';
 		$labels = array();
 		foreach ($CONF['resource_labels'] as $type) {
 			array_push($labels, $this->resource_label($type));
@@ -391,7 +391,7 @@ class ResourceId {
 		global $CONF;
 		$output = '';
 		foreach ($this->states as $state) {
-			$output .= '<rect x="'.date2px($state->start).'" y="'.$y.'" width="'.(date2px($state->stop) - date2px($state->start)).'" height="'.$CONF['scale'].'" fill="'.$CONF['state_colors'][$state->value].'" stroke="#00FF00" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$state->svg_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
+			$output .= '<rect x="'.date2px($state->start).'" y="'.$y.'" width="'.(date2px($state->stop) - date2px($state->start)).'" height="'.$CONF['scale'].'" fill="'.$CONF['state_colors'][$state->value].'" stroke="#00FF00" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$state->svg_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
 		}
 		return $output;
 	}
@@ -414,9 +414,9 @@ class ResourceId {
 					$output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$color.'" stroke-width="0"  style="opacity: 0.5" />';
 				}
 			}		
-			$output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color().'" stroke="#008800" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
+			$output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color().'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
 			if ($width > $CONF['gantt_min_job_width_for_label']) {
-				$labels_output .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $width / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)">';
+				$labels_output .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $width / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)">';
 				$labels_output .= $grp->job->job_id;
 				$labels_output .= '</text>';
 			}
@@ -787,16 +787,22 @@ function drawTimeRuler(evt) {
 		timeruler.setAttribute("display", "none");
 	}
 }
-function mouseOver(evt, message) {
+function mouseOver(evt, message, highlight) {
   var length = 0;
   var array;
   var i = 0;
   var tspan;
-	while (infoboxtext.hasChildNodes()) { 
-		infoboxtext.removeChild(infoboxtext.lastChild);
-	}
+  if (highlight != '') {
+    var elems = document.getElementsByClassName(highlight);
+    for(var i = 0; i < elems.length; i++) {
+      elems[i].setAttribute("stroke-width", 2);
+    }
+  }
+  while (infoboxtext.hasChildNodes()) { 
+    infoboxtext.removeChild(infoboxtext.lastChild);
+  }
   array = message.split("|");
-	infobox.setAttribute("display", "inline");
+    infobox.setAttribute("display", "inline");
   for (i in array) {
     tspan = svgDocument.createElementNS("http://www.w3.org/2000/svg","tspan");
     tspan.setAttribute("x",10);
@@ -808,24 +814,30 @@ function mouseOver(evt, message) {
   infoboxrect.setAttribute("width", length + 20);
   infoboxrect.setAttribute("height", array.length * {$CONF['scale']} + 20);
 }
-function mouseOut(evt) {
-	infobox.setAttribute("display", "none");
+function mouseOut(evt, highlight) {
+  infobox.setAttribute("display", "none");
+  if (highlight != '') {
+    var elems = document.getElementsByClassName(highlight);
+    for(var i = 0; i < elems.length; i++) {
+      elems[i].setAttribute("stroke-width", 1);
+    }
+  }
 }
 function mouseMove(evt) {
-	var width=parseInt(infoboxrect.getAttribute("width")); 
-	var height=parseInt(infoboxrect.getAttribute("height")); 
-	var x,y;
-	if ((evt.pageX + 10 + width) < {$page_width}) {
-		x = (evt.pageX + 10);
-	} else {
-		x = ({$page_width} - width);
-	}
-	if ((evt.pageY + 20 + height) < Math.min({$page_height}, window.scrollY + window.innerHeight)) {
-		y = (evt.pageY + 20);
-	} else {
-		y = (evt.pageY - height - 5 );
-	}
-	infobox.setAttribute("transform", "translate(" + x + "," + y + ")");
+  var width=parseInt(infoboxrect.getAttribute("width")); 
+  var height=parseInt(infoboxrect.getAttribute("height")); 
+  var x,y;
+  if ((evt.pageX + 10 + width) < {$page_width}) {
+    x = (evt.pageX + 10);
+  } else {
+    x = ({$page_width} - width);
+  }
+  if ((evt.pageY + 20 + height) < Math.min({$page_height}, window.scrollY + window.innerHeight)) {
+    y = (evt.pageY + 20);
+  } else {
+    y = (evt.pageY - height - 5 );
+  }
+  infobox.setAttribute("transform", "translate(" + x + "," + y + ")");
 }
 ]]></script>
 
@@ -877,14 +889,14 @@ foreach ($CONF['resource_hierarchy'] as $rh) {
 	$y = $y0;
 	foreach ($resource_ids as $rid) {
 		if (($r0 != NULL) and ($rid->resources[$rh]->id != $r0->id)) {
-			$output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
+			$output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
 			$y0 = $y;
 		}		
 		$r0 = $rid->resources[$rh]; 
 		$y += $CONF['scale'];
 	}
 	if ($r0) {
-		$output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\')" onmouseout="mouseOut(evt)" onmousemove="mouseMove(evt)" />';
+		$output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
 	$x += $CONF['scale'];
 	}
 }
