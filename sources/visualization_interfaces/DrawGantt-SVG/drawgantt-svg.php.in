@@ -43,7 +43,7 @@ $CONF['hierarchy_resource_width'] = 10; // default: 10
 $CONF['scale'] = 10; // default: 10
 $CONF['time_ruler_scale'] = 6; // default: 6
 $CONF['time_ruler_steps'] = array(60,120,180,300,600,1200,1800,3600,7200,10800,21600,28800,43200,86400,172800,259200,604800);
-$CONF['gantt_top'] = 40; // default: 40
+$CONF['gantt_top'] = 50; // default: 50
 $CONF['bottom_margin'] = 45; // default: 45
 $CONF['right_margin'] = 30; // default 30
 $CONF['label_right_align'] = 105; // default: 105
@@ -54,8 +54,8 @@ $CONF['gantt_min_height'] = 400; // default: 400
 $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
 
 // Colors and fill patterns for jobs and states
-$CONF['job_color_saturation'] = "50%"; // saturation percentage for the color of the jobs
-$CONF['job_color_lightness'] = "50%"; // lightness percentage for the color of the jobs
+$CONF['job_color_saturation'] = "75%"; // saturation percentage for the color of the jobs
+$CONF['job_color_lightness'] = "75%"; // lightness percentage for the color of the jobs
 $CONF['magic_number'] = (1+sqrt(5))/2; // magic number used to compute the function hue(jod_id) 
 $CONF['patterns'] = <<<EOT
 <pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >

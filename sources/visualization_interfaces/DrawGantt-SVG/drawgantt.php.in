@@ -55,7 +55,7 @@ $output = <<<EOT
 	}
 </style>
 <script type="text/javascript">
-	window.addEventListener("scroll", hide_panel, false);
+	window.addEventListener("scroll", show_panel, false);
 	window.addEventListener("resize", reload_content, false);
 	var relative_start = -86400;
 	var relative_stop = 86400;
@@ -67,11 +67,6 @@ $output = <<<EOT
 	function show_panel() {
 		var panelDiv=document.getElementById("panel");
 		panelDiv.style.top = window.scrollY + "px";
-		panelDiv.style.left = window.scrollX + "px";
-	}
-	function hide_panel() {
-		var panelDiv=document.getElementById("panel");
-		panelDiv.style.top = (window.scrollY - panelDiv.clientHeight + 5) + "px";
 		panelDiv.style.left = window.scrollX + "px";
 	}
 	function reset() {
@@ -122,7 +117,7 @@ $output = <<<EOT
 	function reload_content() {
 		scrolledX = window.scrollX;
 		scrolledY = window.scrollY;
-		hide_panel();
+		show_panel();
 		var svgObj=document.getElementById("svgObj");
 		var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&relative_start=" + relative_start + "&relative_stop=" + relative_stop + ((filterSQL)?"&filter=" + filterSQL:"");
 		svgObj.data = newURL;
@@ -141,13 +136,13 @@ $output = <<<EOT
 		window.scrollTo(scrolledX,scrolledY);
 	}
 	function init() {
-		hide_panel();
+		show_panel();
 		select_filter();
 	}
 </script>
 </head>
 <body onload="init()">
-<div id="panel" align="center" onmouseover="show_panel()" onmouseout="hide_panel()">
+<div id="panel" align="center">
 <select id="filterSelect" onchange="select_filter()">
 
 EOT;
