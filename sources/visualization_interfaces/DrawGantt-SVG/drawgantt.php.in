@@ -164,7 +164,8 @@ $output .= <<<EOT
 <button type="button" onclick="shift(21600)">&gt;6h</button>
 <button type="button" onclick="shift(86400)">&gt;1d</button>
 <button type="button" onclick="shift(604800)">&gt;1w</button>
-<button type="button" name="reset" value="reset" onclick="reset()">reset</button>
+<button type="button" onclick="reload_content()">reload</button>
+<button type="button" onclick="reset()">reset</button>
 
 EOT;
 foreach ($CONF['nav_custom_buttons'] as $key => $value) {
