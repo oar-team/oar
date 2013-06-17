@@ -39,7 +39,7 @@ $CONF['resource_properties'] = array( // properties to display in the pop-up on 
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
 	'network_address','cpuset'); 
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
-	'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
+	'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
 	'besteffort' => 'url(#besteffortPattern)', 
 	'deploy' => 'url(#deployPattern)', 
@@ -76,6 +76,9 @@ $CONF['patterns'] = <<<EOT
 </pattern> 
 <pattern id="deadPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#ff8080" stroke-width="2" />
+</pattern> 
+<pattern id="standbyPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
+<line x1="5" y1="0" x2="0" y2="5" stroke="#00ff00" stroke-width="2" />
 </pattern> 
 <pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="0" y="10" fill="#888888">B</text>

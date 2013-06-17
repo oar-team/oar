@@ -29,7 +29,7 @@ $CONF['resource_properties'] = array( // properties to display in the pop-up on 
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
 	'network_address','cpuset'); 
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
-	'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
+	'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
 	'besteffort' => 'url(#besteffortPattern)', 
 	'deploy' => 'url(#deployPattern)', 
@@ -66,6 +66,9 @@ $CONF['patterns'] = <<<EOT
 </pattern> 
 <pattern id="deadPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#ff8080" stroke-width="2" />
+</pattern> 
+<pattern id="standbyPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
+<line x1="5" y1="0" x2="0" y2="5" stroke="#00ff00" stroke-width="2" />
 </pattern> 
 <pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="0" y="10" fill="#888888">B</text>
@@ -222,14 +225,21 @@ class State {
 	function __construct($value, $start, $stop) {
 		global $gantt_start_date, $gantt_stop_date;
 		$this->value = $value;
-		
-		$this->start = ($start < $gantt_start_date)?$gantt_start_date:$start;
-		$this->stop = (($stop == 0) or ($stop > $gantt_stop_date))?$gantt_stop_date:$stop;
+		$this->set_start($start);
+		$this->set_stop($stop);
 	}
+  function set_start($start) {
+	  $this->real_start = $start;	
+		$this->start = ($start < $gantt_start_date)?$gantt_start_date:$start;
+  }
+  function set_stop($stop) {
+	  $this->real_stop = $stop;	
+		$this->stop = (($stop == 0) or ($stop > $gantt_stop_date))?$gantt_stop_date:$stop;
+  }
 	function svg_text() {
 		$output = "State: {$this->value}";
-		$output .= "|Since: ".date("r", $this->start);
-		$output .= "|Until: ".date("r", $this->stop);
+		$output .= "|Since: ".date("r", $this->real_start);
+		$output .= "|Until: ".date("r", $this->real_stop);
 		return $output;
 	}
 }
@@ -541,28 +551,56 @@ uasort($resource_ids, "resource_id_sort");
 
 // Retrieve the states of resources
 $query = <<<EOT
-SELECT resource_id, date_start, date_stop, value
+SELECT resource_id, date_start, date_stop, value, attribute
 FROM resource_logs
-WHERE
-	attribute = 'state' AND
-	(
-	    value = 'Absent' OR
-	    value = 'Dead' OR
-	    value = 'Suspected'
-	) AND
-	date_start <= {$gantt_stop_date} AND
-	(
-	    date_stop = 0 OR
-	    date_stop >= {$gantt_start_date}
-	)
+WHERE date_start <= {$gantt_stop_date}
+AND ( date_stop = 0
+  OR date_stop >= {$gantt_start_date}
+)
+AND (
+  ( attribute = 'state'
+    AND (
+      value = 'Absent'
+      OR value = 'Dead'
+      OR value = 'Suspected'
+    )
+  ) 
+  OR ( attribute = 'available_upto'
+    AND value > {$gantt_now}
+    AND date_stop = 0
+  )
+)
 EOT;
+$available_upto_lines = array();
 $db->query($query);
 while ($line = $db->fetch_array()) {
-	if (array_key_exists($line['resource_id'], $resource_ids)) {
-		$resource_ids[$line['resource_id']]->add_state($line['value'], $line['date_start'], $line['date_stop']);
+	if ($line['attribute'] == 'state') {
+	  if (array_key_exists($line['resource_id'], $resource_ids)) {
+		  $resource_ids[$line['resource_id']]->add_state($line['value'], $line['date_start'], $line['date_stop']);
+	  }
+  } else {
+		array_push($available_upto_lines, $line);
 	}
 }
 $db->free();
+if ($gantt_now < $gantt_stop_date) {
+  foreach ($available_upto_lines as $line) {
+    if (array_key_exists($line['resource_id'], $resource_ids)) {
+      $resource_id = $resource_ids[$line['resource_id']];
+      for ($i=0; $i < count($resource_id->states); $i++) {
+        $state = $resource_id->states[$i];
+        if ($state->value == 'Absent') {
+          if ($gantt_now < $gantt_start_date) {
+            unset($resource_id->states[$i]);
+          } elseif ($state->real_stop == 0) {
+            $state->set_stop($gantt_now);
+            $state->value = 'Standby';
+          }
+        }
+      }
+    }
+  }
+}
 
 // Array to store jobs
 $jobs = array();
