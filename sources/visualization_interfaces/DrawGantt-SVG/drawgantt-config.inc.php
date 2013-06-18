@@ -8,12 +8,12 @@
 // Navigation bar configuration
 $CONF['nav_filters'] = array(
   'all clusters' => "",
-	'cluster1 only' => 'cluster="cluster1"',
-	'cluster2 only' => 'cluster="cluster2"',
-	'cluster3 only' => 'cluster="cluster3"',
+  'cluster1 only' => 'cluster="cluster1"',
+  'cluster2 only' => 'cluster="cluster2"',
+  'cluster3 only' => 'cluster="cluster3"',
 );
 $CONF['nav_custom_buttons'] = array(
-	'my label' => 'http://my.url'
+  'my label' => 'http://my.url'
 );
 
 // Database access configuration
@@ -29,24 +29,24 @@ $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
 $CONF['resource_labels'] = array('network_address','cpuset'); // properties to use to describe resources (resource labels on the left)
 $CONF['cpuset_label_display_string'] = "%02d";
 $CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1
-	'network_address' => '/^([^.]+)\..*$/',
-	);
+  'network_address' => '/^([^.]+)\..*$/',
+  );
 $CONF['label_cmp_regex'] = array( // substring selection regex for comparing and sorting labels (resources)
-	'network_address' => '/^([^-]+)-(\d+)\..*$/',
-	);
+  'network_address' => '/^([^-]+)-(\d+)\..*$/',
+  );
 $CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
-	'deploy', 'cpuset', 'besteffort', 'network_address', 'type');
+  'deploy', 'cpuset', 'besteffort', 'network_address', 'type');
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
-	'network_address','cpuset'); 
+  'network_address','cpuset'); 
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
-	'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)');
+  'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
-	'besteffort' => 'url(#besteffortPattern)', 
-	'deploy' => 'url(#deployPattern)', 
-	'container' => 'url(#containerPattern)', 
-	'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
-	'set_placeholder=\w+' => 'url(#placeholderPattern)',
-	);
+  'besteffort' => 'url(#besteffortPattern)', 
+  'deploy' => 'url(#deployPattern)', 
+  'container' => 'url(#containerPattern)', 
+  'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
+  'set_placeholder=\w+' => 'url(#placeholderPattern)',
+  );
 
 // Geometry customization
 $CONF['hierarchy_resource_width'] = 10; // default: 10
@@ -100,6 +100,5 @@ EOT;
 
 // Debugging
 $CONF['debug'] = 0; // Set to 1 to enable php debug prints in the web server error logs
-
 
 ?>
