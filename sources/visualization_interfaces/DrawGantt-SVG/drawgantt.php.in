@@ -35,11 +35,11 @@ $output = <<<EOT
 <title>OAR Drawgantt SVG</title>
 <style>
   body {
-    background-color: #FFFFFF;
+    background-color: white;
   }
   #panel {
     position: absolute;
-    background-color: #DDDDDD;
+    background-color: lightgrey;
     top: 0px;
     left: 0px;
     width: 100%;
@@ -52,6 +52,13 @@ $output = <<<EOT
     left: 0px;
     z-index: 0;
     margin: 0px;
+  }
+  #waiter {
+    position: absolute;
+    background-color: lightgreen;
+    bottom: 10px;
+    visibility: hidden;
+    z-index: 2;  
   }
 </style>
 <script type="text/javascript">
@@ -122,6 +129,7 @@ $output = <<<EOT
     var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&relative_start=" + relative_start + "&relative_stop=" + relative_stop + ((filterSQL)?"&filter=" + filterSQL:"");
     svgObj.data = newURL;
     svgObj.innerHTML = newURL;
+    document.getElementById("waiter").style.visibility="visible";
   }
   function select_filter() {
     var filterSelect=document.getElementById("filterSelect");
@@ -134,6 +142,7 @@ $output = <<<EOT
   }
   function restore_scrolling() {
     window.scrollTo(scrolledX,scrolledY);
+	document.getElementById("waiter").style.visibility="hidden";
   }
   function init() {
     show_panel();
@@ -174,6 +183,7 @@ foreach ($CONF['nav_custom_buttons'] as $key => $value) {
 $output .= <<<EOT
 </div>
 <object id="svgObj" type="image/svg+xml" data="" onload="restore_scrolling()"></object>
+<div id="waiter">Please wait while data are being treated...</div>
 </body>
 </html>
 EOT;
