@@ -64,8 +64,8 @@ $CONF['gantt_min_height'] = 400; // default: 400
 $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
 
 // Colors and fill patterns for jobs and states
-$CONF['job_color_saturation'] = "75%"; // saturation percentage for the color of the jobs
-$CONF['job_color_lightness'] = "75%"; // lightness percentage for the color of the jobs
+$CONF['job_color_saturation_lightness'] = "75%,75%"; // default: "75%,75%"
+$CONF['job_color_saturation_lightness_highlight'] = "50%,50%"; // default: "50%,50%"
 $CONF['magic_number'] = (1+sqrt(5))/2; // magic number used to compute the function hue(jod_id) 
 $CONF['patterns'] = <<<EOT
 <pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
