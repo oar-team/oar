@@ -637,7 +637,11 @@ sub get_idle_nodes($$$){
             # Search if the node has enough time to sleep
             my $tmp = OAR::IO::get_next_job_date_on_node($dbh,$n);
             if (!defined($tmp) or ($tmp - $sleep_duration > $current_time_sec)){
-                push(@res, $n);
+                # Search if node has not been woken up recently
+                my $wakeup_date = OAR::IO::get_last_wake_up_date_of_node($dbh,$n);
+                if (!defined($wakeup_date) or ($wakeup_date < $tmp_time)){
+                  push(@res, $n);
+                }
             }
         }
     }

@@ -6373,6 +6373,26 @@ sub get_next_job_date_on_node($$){
     return($ref[0]);
 }
 
+sub get_last_wake_up_date_of_node($$){
+    my $dbh = shift;
+    my $hostname = shift;
+    
+    my $req = "SELECT date
+               FROM event_log_hostnames,event_logs
+               WHERE
+                  event_log_hostnames.event_id = event_logs.event_id AND
+                  event_log_hostnames.hostname = \'$hostname\' AND
+                  event_logs.type = \'WAKEUP_NODE\'
+               ORDER BY date DESC
+               LIMIT 1";
+
+        my $sth = $dbh->prepare($req);
+    $sth->execute();
+    my @ref = $sth->fetchrow_array();
+    $sth->finish();
+
+    return($ref[0]);
+}
 
 #Get jobs to launch at a given date
 #args : base, date in sql format

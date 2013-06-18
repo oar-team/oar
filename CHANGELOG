@@ -41,6 +41,8 @@ version 2.5.3:
     accepted but not scheduled now.
   - Add the oardel option --force-terminate-finishing-job: to use when a job is
     stuck in the Finishing state
+  - Bug #15911: Energy saving now waits SCHEDULER_NODE_MANAGER_IDLE_TIME for 
+    nodes that have been woken up, even if they didn't run any job.
 
 version 2.5.2:
 --------------
