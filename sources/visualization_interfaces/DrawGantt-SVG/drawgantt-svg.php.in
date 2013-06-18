@@ -228,18 +228,20 @@ class State {
 		$this->set_start($start);
 		$this->set_stop($stop);
 	}
-  function set_start($start) {
-	  $this->real_start = $start;	
+	function set_start($start) {
+		global $gantt_start_date;
+		$this->real_start = $start;	
 		$this->start = ($start < $gantt_start_date)?$gantt_start_date:$start;
-  }
-  function set_stop($stop) {
-	  $this->real_stop = $stop;	
+	}
+	function set_stop($stop) {
+		global $gantt_stop_date;
+		$this->real_stop = $stop;	
 		$this->stop = (($stop == 0) or ($stop > $gantt_stop_date))?$gantt_stop_date:$stop;
-  }
+	}
 	function svg_text() {
 		$output = "State: {$this->value}";
 		$output .= "|Since: ".date("r", $this->real_start);
-		$output .= "|Until: ".date("r", $this->real_stop);
+		$output .= "|Until: ".(($this->real_stop)?date("r", $this->real_stop):"Undetermined");
 		return $output;
 	}
 }
