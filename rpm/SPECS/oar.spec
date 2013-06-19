@@ -1,5 +1,5 @@
-%define version 2.5.3+rc5
-%define release 3.el6
+%define version 2.5.3
+%define release 1.el6
 
 %define oaruser  oar
 
@@ -537,7 +537,7 @@ user_setup
 
 
 %changelog
-* Fri May 31 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3+rc5-3.el6
+* Wed Jun 19 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
 - New upstream release
 - Remove OAR desktop-computing packages
 - Add packaging for drawgantt-svg
