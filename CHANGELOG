@@ -9,29 +9,30 @@ version 2.5.3:
     limits the number of concurrent processes launched by the Almighty when the
     the jobs finish.
   - Bug fix in ssh key feature in oarsub.
-  - Added --compact, -c option to oarstat (compact view or array jobs)
+  - Added --compact, -c option to oarstat (compact view or array jobs).
   - Improvements of the API: media upload from html forms, listing of files, 
     security fixes, add of new configuration options, listing of the scheduled
     nodes into jobs, fixed bad reinitialization of the limit parameter,
     stress_factor, accounting... 
     See OAR-DOCUMENTATION-API-USER for more informations.
   - CGROUP: handle cgroup hierarchy already mounted by the OS like in Fedora 18
-    (by systemd in /sys/fs/cgroup) in job_resource_manager_cgroups.pl
-  - Bug fix oar-database: fix the reset function for mysql
-  - Add packaging for the SVG version of drawgantt
-  - Bug fix schedulers: rewrite schedulers with placeholders
-  - Rework default admission rules
-  - Add the command "oar_resources_init_with_HT" wich generates right resources
-    to add in the DB with a "thread" property (HyperThreading)
+    (by systemd in /sys/fs/cgroup) in job_resource_manager_cgroups.pl.
+  - Bug fix oar-database: fix the reset function for mysql.
+  - SVG version of drawgantt: all features are now implemented to replace the
+    legacy drawgantt. Both can be installed.
+  - Bug fix schedulers: rewrite schedulers with placeholders.
+  - Rework default admission rules.
+  - Add support to the oar_resource_init command to generate resources with
+    a "thread" property (useful if HyperThreading is activated/used on nodes).
   - Fix stdout/stderr bug: check the allowed characters in the path given by
-    the users
+    the users.
   - Fix: the user shell (bash) didn't source /etc/bash.bashrc in batch jobs.
   - Add quota which limits the number of used resources at a time depending of
     the job attributes: queue, project, types, user
     (available with the scheduler
-    "oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas")
+    "oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas").
   - Add comments in user job STDERR files to know if a job was killed or
-    checkpointed
+    checkpointed.
   - Add the variable $jobproperties_applied_after_validation. It can be used in
     an admission rule to add a constraint after the validation of the job. Ex:
     
@@ -40,9 +41,19 @@ version 2.5.3:
     So, even if all the ressources have "maintenance='on'", the new jobs will be
     accepted but not scheduled now.
   - Add the oardel option --force-terminate-finishing-job: to use when a job is
-    stuck in the Finishing state
+    stuck in the Finishing state.
   - Bug #15911: Energy saving now waits SCHEDULER_NODE_MANAGER_IDLE_TIME for 
     nodes that have been woken up, even if they didn't run any job.
+  - Simplify job dependencies: do not check the exit code of the jobs in
+    dependencies.
+  - Admission rules: add the "estimate_job_nb_resources" function that is
+    useful to know the number of resources that will be used by a job.
+  - oarstat: add another output format that can be used by using "--format 2"
+    or by setting "OARSTAT_DEFAULT_OUTPUT_FORMAT=2" in oar.conf.
+  - oarsub: Add the capability to use the tag %jobname% in the STDOUT (-O)
+    and/or STDERR (-E) filenames (like %jobid%).
+  - bug #14935: fix timesharing jobs within a container issue
+  - add schedulers with the placeholder feature.
 
 version 2.5.2:
 --------------
