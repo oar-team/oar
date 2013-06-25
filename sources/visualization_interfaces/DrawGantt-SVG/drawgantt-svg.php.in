@@ -211,7 +211,16 @@ class Db {
       die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
     }
     $this->free();
-    return $array[0];
+    return (int)$array[0];
+  }
+  function cast($var,$type) {
+    if ($this->backend == "mysql") {
+      return $var;
+    } elseif ($this->backend == "pg") {
+      return $var."::".$type;
+    } else {
+      die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+    }
   }
 }
 
@@ -552,6 +561,7 @@ $db->free();
 uasort($resource_ids, "resource_id_sort");
 
 // Retrieve the states of resources
+$value_int = $db->cast("value","int");
 $query = <<<EOT
 SELECT resource_id, date_start, date_stop, value, attribute
 FROM resource_logs
@@ -568,7 +578,7 @@ AND (
     )
   ) 
   OR ( attribute = 'available_upto'
-    AND value > {$gantt_now}
+    AND {$value_int} > {$gantt_now}
     AND date_stop = 0
   )
 )
