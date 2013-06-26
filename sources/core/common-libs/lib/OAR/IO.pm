@@ -186,7 +186,7 @@ sub get_last_event_from_type($$);
 sub check_accounting_update($$);
 sub update_accounting($$$$$$$$$);
 sub get_accounting_summary($$$$$);
-sub get_accounting_summary_byproject($$$$);
+sub get_accounting_summary_byproject($$$$$$);
 sub get_last_project_karma($$$$);
 
 # LOCK FUNCTIONS:
@@ -1227,6 +1227,7 @@ sub estimate_job_nb_resources($$$){
                 foreach my $l (@leafs){
                     vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
                 }
+                $tmp_moldable_result->{comment} = "No resource assigned to this job" if ($#leafs < 0);
                 $tmp_moldable_result->{nbresources} += $#leafs + 1;
             }
         }
@@ -6372,6 +6373,26 @@ sub get_next_job_date_on_node($$){
     return($ref[0]);
 }
 
+sub get_last_wake_up_date_of_node($$){
+    my $dbh = shift;
+    my $hostname = shift;
+    
+    my $req = "SELECT date
+               FROM event_log_hostnames,event_logs
+               WHERE
+                  event_log_hostnames.event_id = event_logs.event_id AND
+                  event_log_hostnames.hostname = \'$hostname\' AND
+                  event_logs.type = \'WAKEUP_NODE\'
+               ORDER BY date DESC
+               LIMIT 1";
+
+        my $sth = $dbh->prepare($req);
+    $sth->execute();
+    my @ref = $sth->fetchrow_array();
+    $sth->finish();
+
+    return($ref[0]);
+}
 
 #Get jobs to launch at a given date
 #args : base, date in sql format
@@ -7050,15 +7071,26 @@ sub get_accounting_summary($$$$$){
 
 # Get an array of consumptions by project for a given user
 # params: base, start date, ending date, user
-sub get_accounting_summary_byproject($$$$){
+sub get_accounting_summary_byproject($$$$$$){
     my $dbh = shift;
     my $start = shift;
     my $stop = shift;
     my $user = shift;
+    my $limit = shift;
+    my $offset = shift;
     my $user_query="";
-    if ("$user" ne "") {
+    if (defined($user) && "$user" ne "") {
         $user_query="AND accounting_user = ". $dbh->quote($user);
     }
+    my $limit_query="";
+    if (defined($limit) && "$limit" ne "") {
+        $limit_query="LIMIT $limit";
+    }    
+    if (defined($offset) && "$offset" ne "") {
+        $limit_query.=" OFFSET $offset";
+    }
+
+
 
     my $sth = $dbh->prepare("   SELECT accounting_user as user,
                                        consumption_type,
@@ -7071,6 +7103,7 @@ sub get_accounting_summary_byproject($$$$){
                                     $user_query
                                 GROUP BY accounting_user,project,consumption_type
                                 ORDER BY project,consumption_type,seconds
+                                $limit_query
                             ");
     $sth->execute();
 

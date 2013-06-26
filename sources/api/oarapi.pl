@@ -1452,6 +1452,76 @@ SWITCH: for ($q) {
   #}}}
 
   ###########################################
+  # Accounting
+  ###########################################
+  #
+  #{{{ GET /accounting[<user>]?from=<from>,to=<to> : Show accounting informations between 2 unix timestamps
+  #
+  $URI = qr{^/accounting(/[^\..]+)*\.*(yaml|json|html)*$};
+  OAR::API::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+
+    my $ext=OAR::API::set_ext($q,$2);
+    my $header ; my $type; 
+    my $user=$1;
+    ($header,$type)=OAR::API::set_output_format($ext,"GET");
+
+    if (defined($user)) {
+      $user=~s/^\///;
+    }
+
+    my $JOBS_URI_DEFAULT_PARAMS = "from=0&to=2147483647";
+    if (is_conf("API_JOBS_URI_DEFAULT_PARAMS")){ $JOBS_URI_DEFAULT_PARAMS = get_conf("API_JOBS_URI_DEFAULT_PARAMS"); }
+
+    my $from;
+    if (!defined($q->param('from'))) {
+      my $param = qr{.*from=(.*?)(&|$)};
+      if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
+        $from = $1;
+      }else {
+        $from = 0;
+      }
+    }else{
+      $from = $q->param('from');
+    }
+
+    my $to;
+    if (!defined($q->param('to'))) {
+      my $param = qr{.*to=(.*?)(&|$)};
+      if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
+        $to = $1;
+      }else{
+        $to = 2147483647;
+      }
+    }else{
+      $to = $q->param('to');
+    }
+
+    # get accounting infos
+    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $accounting = OAR::API::struct_accounting(OAR::IO::get_accounting_summary_byproject($dbh,$from,$to,$user,undef,undef));
+    my $total;
+    if (defined($accounting)) { 
+      $total = @$accounting;
+    }else{
+      $accounting=OAR::API::struct_empty($STRUCTURE);
+      $total=0;
+    }
+    OAR::IO::disconnect($dbh);
+
+    # add pagination informations and export
+    $accounting = OAR::API::add_pagination($accounting,$total,$q->path_info,$q->query_string,$ext,0,0,$STRUCTURE);
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export($accounting,$ext);
+    last;
+  };
+  #}}}
+
+  ###########################################
   # Admission rules 
   ###########################################
   #

@@ -79,7 +79,7 @@ sub get_accounting_summary_byproject($$$){
     my $start = shift;
     my $stop = shift;
     my $user = shift;
-	return OAR::IO::get_accounting_summary_byproject($base,$start,$stop,$user);
+	return OAR::IO::get_accounting_summary_byproject($base,$start,$stop,$user,undef,undef);
 }
 
 sub get_array_job_ids($){
