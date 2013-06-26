@@ -34,125 +34,129 @@ $output = <<<EOT
 <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
 <title>OAR Drawgantt SVG</title>
 <style>
-	body {
-		background-color: #FFFFFF;
-	}
-	#panel {
-		position: absolute;
-		background-color: #DDDDDD;
-		top: 0px;
-		left: 0px;
-		width: 100%;
-		z-index: 1;
-		opacity: 1;
-	}
-	#svgObj {
-		position: absolute;
-		top: 0px;
-		left: 0px;
-		z-index: 0;
-		margin: 0px;
-	}
+  body {
+    background-color: white;
+  }
+  #panel {
+    position: absolute;
+    background-color: lightgrey;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    z-index: 1;
+    opacity: 1;
+  }
+  #svgObj {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 0;
+    margin: 0px;
+  }
+  #waiter {
+    position: absolute;
+    background-color: lightgreen;
+    bottom: 10px;
+    visibility: hidden;
+    z-index: 2;  
+  }
 </style>
 <script type="text/javascript">
-	window.addEventListener("scroll", hide_panel, false);
-	window.addEventListener("resize", reload_content, false);
-	var relative_start = -86400;
-	var relative_stop = 86400;
-	var zoom_relative_start = 0;
-	var zoom_relative_stop = 0;
-	var filterSQL = "";
-	var scrolledX=0;
-	var scrolledY=0;
-	function show_panel() {
-		var panelDiv=document.getElementById("panel");
-		panelDiv.style.top = window.scrollY + "px";
-		panelDiv.style.left = window.scrollX + "px";
-	}
-	function hide_panel() {
-		var panelDiv=document.getElementById("panel");
-		panelDiv.style.top = (window.scrollY - panelDiv.clientHeight + 5) + "px";
-		panelDiv.style.left = window.scrollX + "px";
-	}
-	function reset() {
-		relative_start = -86400;
-		relative_stop = 86400;
-		reload_content();
-	}
-	function shift(time) {
-		relative_start += time;
-		relative_stop += time;
-		reload_content();
-	}
-	function next() {
-		var t = relative_stop + (relative_stop - relative_start);
-		relative_start = relative_stop;
-		relative_stop = t;
-		reload_content();
-	}
-	function prev() {
-		var t = relative_start - (relative_stop - relative_start);
-		relative_stop = relative_start;
-		relative_start = t;
-		reload_content();
-	}
-	function zoomin() {
-		var t = relative_start + (relative_stop - relative_start) / 4;
-		relative_stop = relative_stop - (relative_stop - relative_start) / 4;
-		relative_start = t;
-		reload_content();
-	}
-	function zoomout() {
-		var t = (relative_stop - relative_start)/2;
-		relative_stop += t;
-		relative_start -= t;
-		reload_content();
-	}
-	function set_zoom_window(now, start, stop) {
-		zoom_relative_start = start - now;
-		zoom_relative_stop = stop - now;
-	}
-	function zoom() {
-		if (zoom_relative_start != zoom_relative_stop) {
-			relative_start = zoom_relative_start;
-			relative_stop = zoom_relative_stop;
-			reload_content();
-		}
-	}
-	function reload_content() {
-		scrolledX = window.scrollX;
-		scrolledY = window.scrollY;
-		hide_panel();
-		var svgObj=document.getElementById("svgObj");
-		var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&relative_start=" + relative_start + "&relative_stop=" + relative_stop + ((filterSQL)?"&filter=" + filterSQL:"");
-		svgObj.data = newURL;
-		svgObj.innerHTML = newURL;
-	}
-	function select_filter() {
-		var filterSelect=document.getElementById("filterSelect");
-		filterSQL = filterSelect.value;
-		window.scrollTo(0,0);
-		reload_content();
-	}
-	function openURL(url) {
-		window.open(url);
-	}
-	function restore_scrolling() {
-		window.scrollTo(scrolledX,scrolledY);
-	}
-	function init() {
-		hide_panel();
-		select_filter();
-	}
+  window.addEventListener("scroll", show_panel, false);
+  window.addEventListener("resize", reload_content, false);
+  var relative_start = -86400;
+  var relative_stop = 86400;
+  var zoom_relative_start = 0;
+  var zoom_relative_stop = 0;
+  var filterSQL = "";
+  var scrolledX=0;
+  var scrolledY=0;
+  function show_panel() {
+    var panelDiv=document.getElementById("panel");
+    panelDiv.style.top = window.scrollY + "px";
+    panelDiv.style.left = window.scrollX + "px";
+  }
+  function reset() {
+    relative_start = -86400;
+    relative_stop = 86400;
+    reload_content();
+  }
+  function shift(time) {
+    relative_start += time;
+    relative_stop += time;
+    reload_content();
+  }
+  function next() {
+    var t = relative_stop + (relative_stop - relative_start);
+    relative_start = relative_stop;
+    relative_stop = t;
+    reload_content();
+  }
+  function prev() {
+    var t = relative_start - (relative_stop - relative_start);
+    relative_stop = relative_start;
+    relative_start = t;
+    reload_content();
+  }
+  function zoomin() {
+    var t = relative_start + (relative_stop - relative_start) / 4;
+    relative_stop = relative_stop - (relative_stop - relative_start) / 4;
+    relative_start = t;
+    reload_content();
+  }
+  function zoomout() {
+    var t = (relative_stop - relative_start)/2;
+    relative_stop += t;
+    relative_start -= t;
+    reload_content();
+  }
+  function set_zoom_window(now, start, stop) {
+    zoom_relative_start = start - now;
+    zoom_relative_stop = stop - now;
+  }
+  function zoom() {
+    if (zoom_relative_start != zoom_relative_stop) {
+      relative_start = zoom_relative_start;
+      relative_stop = zoom_relative_stop;
+      reload_content();
+    }
+  }
+  function reload_content() {
+    scrolledX = window.scrollX;
+    scrolledY = window.scrollY;
+    show_panel();
+    var svgObj=document.getElementById("svgObj");
+    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&relative_start=" + relative_start + "&relative_stop=" + relative_stop + ((filterSQL)?"&filter=" + filterSQL:"");
+    svgObj.data = newURL;
+    svgObj.innerHTML = newURL;
+    document.getElementById("waiter").style.visibility="visible";
+  }
+  function select_filter() {
+    var filterSelect=document.getElementById("filterSelect");
+    filterSQL = filterSelect.value;
+    window.scrollTo(0,0);
+    reload_content();
+  }
+  function openURL(url) {
+    window.open(url);
+  }
+  function restore_scrolling() {
+    window.scrollTo(scrolledX,scrolledY);
+	document.getElementById("waiter").style.visibility="hidden";
+  }
+  function init() {
+    show_panel();
+    select_filter();
+  }
 </script>
 </head>
 <body onload="init()">
-<div id="panel" align="center" onmouseover="show_panel()" onmouseout="hide_panel()">
+<div id="panel" align="center">
 <select id="filterSelect" onchange="select_filter()">
 
 EOT;
 foreach ($CONF['nav_filters'] as $key => $value) {
-	$output .= "<option " . (($key == $filter)?"selected ":"") . "value=\"$value\">$key</option>\n";
+  $output .= "<option " . (($key == $filter)?"selected ":"") . "value=\"$value\">$key</option>\n";
 }
 $output .= <<<EOT
 </select>
@@ -169,15 +173,17 @@ $output .= <<<EOT
 <button type="button" onclick="shift(21600)">&gt;6h</button>
 <button type="button" onclick="shift(86400)">&gt;1d</button>
 <button type="button" onclick="shift(604800)">&gt;1w</button>
-<button type="button" name="reset" value="reset" onclick="reset()">reset</button>
+<button type="button" onclick="reload_content()">reload</button>
+<button type="button" onclick="reset()">reset</button>
 
 EOT;
 foreach ($CONF['nav_custom_buttons'] as $key => $value) {
-	$output .= "<button tupe=\"button\" onclick=\"openURL('$value')\">$key</button>\n";
+  $output .= "<button tupe=\"button\" onclick=\"openURL('$value')\">$key</button>\n";
 }
 $output .= <<<EOT
 </div>
 <object id="svgObj" type="image/svg+xml" data="" onload="restore_scrolling()"></object>
+<div id="waiter">Please wait while data are being treated...</div>
 </body>
 </html>
 EOT;
