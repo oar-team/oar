@@ -1,34 +1,15 @@
-oar (2.5.3~rc5-1) unstable; urgency=low
-
-  * Imported Upstream version 2.5.3+rc5
-
- -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 27 May 2013 23:49:56 +0200
-
-oar (2.5.3~rc3-1) UNRELEASED; urgency=low
-
-  * Imported Upstream version 2.5.3+rc3
-
- -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 15 Mar 2013 15:19:27 +0100
-
-oar (2.5.3~rc2-1) UNRELEASED; urgency=low
-
-  * [deb] do not specify builder
-  * Imported Upstream version 2.5.3+rc2
-
- -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 08 Mar 2013 20:21:26 +0100
-
-oar (2.5.3~rc1-1) UNRELEASED; urgency=low
+oar (2.5.3-1) unstable; urgency=low
 
   [ Philippe Le Brouster ]
   * Remove the patches merged in upstream. 
 
   [ Pierre Neyron ]
-  * Imported Upstream version 2.5.3+rc1
+  * Imported Upstream version 2.5.3
   * Add drawgantt-svg to oar-web-status package
   * Set Pierre Neyron as Maintainer
   * Add Philippe Le Brouster as Uploader
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Sat, 02 Mar 2013 20:00:04 +0100
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 26 Jun 2013 18:15:04 +0200
 
 oar (2.5.2-3) unstable; urgency=low
 
