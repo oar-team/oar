@@ -1,3 +1,9 @@
+oar (2.5.3-2) unstable; urgency=low
+
+  * fix clean-up of oar-server and oar-web-status after remove/purge
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 02 Jul 2013 11:07:39 +0200
+
 oar (2.5.3-1) unstable; urgency=low
 
   [ Philippe Le Brouster ]
