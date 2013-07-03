@@ -1,3 +1,22 @@
+oar (2.5.3-2) unstable; urgency=low
+
+  * fix clean-up of oar-server and oar-web-status after remove/purge
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 02 Jul 2013 11:07:39 +0200
+
+oar (2.5.3-1) unstable; urgency=low
+
+  [ Philippe Le Brouster ]
+  * Remove the patches merged in upstream. 
+
+  [ Pierre Neyron ]
+  * Imported Upstream version 2.5.3
+  * Add drawgantt-svg to oar-web-status package
+  * Set Pierre Neyron as Maintainer
+  * Add Philippe Le Brouster as Uploader
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 26 Jun 2013 18:15:04 +0200
+
 oar (2.5.2-3~bpo60+1) squeeze-backports; urgency=low
 
   * Rebuild for squeeze-backports.
@@ -6,6 +25,7 @@ oar (2.5.2-3~bpo60+1) squeeze-backports; urgency=low
   * Add Philippe Le Brouster as Uploader
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 12 Mar 2013 23:52:45 +0100
+
 
 oar (2.5.2-3) unstable; urgency=low
 

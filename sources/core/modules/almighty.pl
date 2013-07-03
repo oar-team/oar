@@ -99,7 +99,7 @@ my $villainstimeout = 10;
 my $checknodestimeout = get_conf_with_default_param("FINAUD_FREQUENCY", 300);
 
 # Max number of concurrent bipbip processes
-my $Max_bipbip_processes = 100;
+my $Max_bipbip_processes = get_conf_with_default_param("MAX_CONCURRENT_JOB_TERMINATIONS", 25);
 my %bipbip_children = ();
 
 # Internal stuff, not relevant for average user
@@ -557,6 +557,7 @@ while (1){
                  start_hulot();
                }
             my $scheduler_result=scheduler();
+            $lastscheduler = time();
             if ($scheduler_result == 1){
                 $state="Runner";
             }elsif ($scheduler_result == 0){
@@ -594,6 +595,7 @@ while (1){
     # CHECK FOR VILLAINS
     elsif($state eq "Check for villains"){
         my $check_result=check_for_villains();
+        $lastvillains = time();
         if ($check_result == 1){
             $state="Leon";
         }elsif ($check_result == 0){
@@ -607,6 +609,7 @@ while (1){
     # CHECK NODE STATES
     elsif($state eq "Check node states"){
         my $check_result=check_nodes();
+        $lastchecknodes = time();
         if ($check_result == 1){
             $state="Change node state";
         }elsif ($check_result == 0){

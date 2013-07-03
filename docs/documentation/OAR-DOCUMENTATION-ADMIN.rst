@@ -114,7 +114,7 @@ Option are: ::
   -E                  active all queues
   -D                  inactive all queues
   --add_queue         add a new queue; syntax is name,priority,scheduler
-                      (ex: "name,3,"oar_sched_gantt_with_timesharing"
+                      (ex: "name,3,oar_sched_gantt_with_timesharing"
   --remove_queue      remove an existing queue
   -l                  list all queues and there status
   -h                  show this help screen
@@ -226,30 +226,30 @@ submitted. So each admission rule is executed in the order of the id field and
 it can set several variables. If one of them exits then the others will not
 be evaluated and oarsub returns an error.
 
-Some examples are better than a long description :
+The rules can be added with the following command:
+::
+
+    oaradmin rules -a
+
+Some examples are better than a long description:
 
  - Specify the default value for queue parameter
    ::
       
-      INSERT INTO admission_rules (rule) VALUES('
         if (not defined($queue_name)) {
             $queue_name="default";
         }
-      ');
 
  - Avoid users except oar to go in the admin queue
    ::
       
-      INSERT INTO admission_rules (rule) VALUES ('
         if (($queue_name eq "admin") && ($user ne "oar")) {
-          die("[ADMISSION RULE] Only oar user can submit jobs in the admin queue\\n");
+          die("[ADMISSION RULE] Only oar user can submit jobs in the admin queue\n");
         }
-      ');
 
  - Restrict the maximum of the walltime for interactive jobs
    ::
  
-      INSERT INTO admission_rules (rule) VALUES ('
         my $max_walltime = OAR::IO::sql_to_duration("12:00:00");
         if ($jobType eq "INTERACTIVE"){ 
           foreach my $mold (@{$ref_resource_list}){
@@ -257,40 +257,48 @@ Some examples are better than a long description :
               (defined($mold->[1])) and
               ($max_walltime < $mold->[1])
             ){
-              print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
+              print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\n");
               $mold->[1] = $max_walltime;
             }
           }
         }
-      ');
 
  - Specify the default walltime
    ::
    
-    INSERT INTO admission_rules (rule) VALUES ('
       my $default_wall = OAR::IO::sql_to_duration("2:00:00");
       foreach my $mold (@{$ref_resource_list}){
         if (!defined($mold->[1])){
-          print("[ADMISSION RULE] Set default walltime to $default_wall.\\n");
+          print("[ADMISSION RULE] Set default walltime to $default_wall.\n");
           $mold->[1] = $default_wall;
         }
       }
-    ');
  
  - How to perform actions if the user name is in a file
    ::
   
-    INSERT INTO admission_rules (rule) VALUES ('
       open(FILE, "/tmp/users.txt");
       while (($queue_name ne "admin") and ($_ = <FILE>)){
         if ($_ =~ m/^\\s*$user\\s*$/m){
-          print("[ADMISSION RULE] Change assigned queue into admin\\n");
+          print("[ADMISSION RULE] Change assigned queue into admin\n");
           $queue_name = "admin";
         }
       }
       close(FILE);
-    ');
-    
+
+ - How to automatically add a job type depending of the walltime and an
+   estimation of the number of resources of the job
+   ::
+
+      foreach my $e (estimate_job_nb_resources($dbh_ro, $ref_resource_list, $jobproperties)){
+        #print("AREA: $e->{nbresources} x $e->{walltime} = ".$e->{nbresources} * $e->{walltime}."\n");
+        if ($e->{nbresources} * $e->{walltime} > 24*3600*1){
+          print("[ADMISSION RULE] Your job is of the 'big' type\n");
+          push(@{$type_list},"big");
+          last;
+        }
+      }
+
 *event_logs*
 ------------
 
@@ -1256,4 +1264,6 @@ Each configuration tag found in /etc/oar.conf is now described:
 .. include:: FAQ-ADMIN
 
 .. include:: CHANGELOG
+
+.. include:: doc_archives.rst
 

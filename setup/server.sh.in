@@ -58,6 +58,10 @@ server_setup() {
         ${EXAMPLEDIR}/server_epilogue \
         ${OARCONFDIR}/server_epilogue
 
+    install_conffile \
+        ${EXAMPLEDIR}/scheduler_quotas.conf \
+        ${OARCONFDIR}/scheduler_quotas.conf
+
     setup_oar_ssh
     create_phoenix_home
 

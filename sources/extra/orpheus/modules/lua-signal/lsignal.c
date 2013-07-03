@@ -34,8 +34,8 @@
   #define USE_SIGACTION 1
 #endif
 
-#include <lua.h>
-#include <lauxlib.h>
+#include <lua5.1/lua.h>
+#include <lua5.1/lauxlib.h>
 
 #include <assert.h>
 #include <errno.h>

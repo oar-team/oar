@@ -1,0 +1,18 @@
+TODO
+- job category ->  to test
+- configuration: getenv oar_api_server_url --> to test 
+- wallitime ( string ): h:m:s and not [[h:]m:]s walltime -> to document
+- case "type" : /* TODO transform to json ....*/ only one type -> to document
+- drmaa attribute: v_mail and block_mail support
+- drmaa attribute: start_time
+
+- demo: appliance / kameleon step (w/ testsuite) / tgz 
+
+- debian package (see pbs-drmaa or/and slurm-drmaa)
+- implementation of bulk with oar job array / (need not trivial modification of array job support)
+- use newer pbs-drmaa and drmaa-utils
+
+- inform PSCN
+- inform drmaa mailing-list
+
+  'q poy'  OK

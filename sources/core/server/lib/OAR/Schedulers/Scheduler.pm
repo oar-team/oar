@@ -91,7 +91,17 @@ sub init_scheduler($$$$$$){
     $current_time_sec = OAR::IO::get_date($dbh);
     if ($current_time_sec < $previous_ref_time_sec){
         # The system is very fast!!!
-        $current_time_sec = $previous_ref_time_sec;
+        my $tmp_delta = $previous_ref_time_sec - $current_time_sec;
+        if ($tmp_delta > 60){
+            oar_error("[OAR::Schedulers::Scheduler] init_scheduler : The previous scheduler step was performed $tmp_delta seconds in the future. It is bad, maybe the system clock of the DB server has changed. This can results in bad scheduling decisions.\n");
+        }else{
+            $current_time_sec = $previous_ref_time_sec;
+            if ($tmp_delta > 1){
+                # Avoid race condition that could increment too much the current time indefinitely
+                oar_debug("[OAR::Schedulers::Scheduler] init_scheduler : The previous scheduler step was performed $tmp_delta seconds in the future. So we have to wait or the scheduling decisions will be bad\n");
+                sleep($tmp_delta);
+            }
+        }
     }
     $current_time_sec++;
     $current_time_sql = OAR::IO::local_to_sql($current_time_sec);
@@ -320,7 +330,7 @@ sub treate_waiting_reservation_jobs($$){
         if ($current_time_sec > $start+$max ){
             oar_warn("[OAR::Schedulers::Scheduler] treate_waiting_reservation_jobs :  Reservation $job->{job_id} in ERROR\n");
             OAR::IO::set_job_state($dbh, $job->{job_id}, "Error");
-            OAR::IO::set_job_message($dbh,$job->{job_id},"[OAR::Schedulers::Scheduler] Reservation has expired and it cannot be started.");
+            OAR::IO::set_job_message($dbh,$job->{job_id},"Reservation has expired and it cannot be started.");
             $return = 1;
         }
         my @resa_alive_resources = OAR::IO::get_gantt_Alive_resources_for_job($dbh,$moldable->[2]);
@@ -347,6 +357,10 @@ sub treate_waiting_reservation_jobs($$){
                 }
                 if ($#resa_resources > $#resa_alive_resources){
                     OAR::IO::add_new_event($dbh,"SCHEDULER_REDUCE_NB_NODES_FOR_RESERVATION",$job->{job_id},"[OAR::Schedulers::Scheduler] Reduce the number of resources for the job $job->{job_id}.");
+                    my $nbr = $#resa_alive_resources + 1;
+                    if ($job->{message} =~ s/R\=\d+/R\=$nbr/g){
+                        OAR::IO::set_job_message($dbh,$job->{job_id},$job->{message});
+                    }
                 }
             }
         }
@@ -422,7 +436,7 @@ sub check_reservation_jobs($$$$){
         #look if reservation is too old
         if ($current_time_sec >= ($job->{start_time} + $duration)){
             oar_warn("[OAR::Schedulers::Scheduler] check_reservation_jobs: Cancel reservation $job->{job_id}, job is too old\n");
-            OAR::IO::set_job_message($dbh, $job->{job_id}, "reservation too old");
+            OAR::IO::set_job_message($dbh, $job->{job_id}, "Reservation too old");
             OAR::IO::set_job_state($dbh, $job->{job_id}, "toError");
         }else{
             if ($job->{start_time} < $current_time_sec){
@@ -568,12 +582,31 @@ sub check_jobs_to_launch($){
             OAR::IO::set_gantt_job_startTime($dbh,$jobs_to_launch{$i}->[0],$current_time_sec);
             oar_warn("[OAR::Schedulers::Scheduler] Reduce job ($i) walltime to $max_time instead of $mold->{moldable_walltime}\n");
             OAR::IO::add_new_event($dbh,"REDUCE_RESERVATION_WALLTIME",$i,"Change walltime from $mold->{moldable_walltime} to $max_time");
+            my $w = OAR::IO::duration_to_sql($max_time);
+            if ($job->{message} =~ s/W\=\d+\:\d+\:\d+/W\=$w/g){
+                OAR::IO::set_job_message($dbh,$i,$job->{message});
+            }
         }
-        OAR::IO::set_running_date_arbitrary($dbh,$i,$current_time_sec);
+        my $running_date = $current_time_sec;
+        if ($running_date < $job->{submission_time}){
+            $running_date = $job->{submission_time};
+        }
+        OAR::IO::set_running_date_arbitrary($dbh,$i,$running_date);
         OAR::IO::set_assigned_moldable_job($dbh,$i,$jobs_to_launch{$i}->[0]);
-        foreach my $r (@{$jobs_to_launch{$i}->[1]}){
-            OAR::IO::add_resource_job_pair($dbh,$jobs_to_launch{$i}->[0],$r);
+        
+        #TODO: to remove
+        #foreach my $r (@{$jobs_to_launch{$i}->[1]}){
+        #    OAR::IO::add_resource_job_pair($dbh,$jobs_to_launch{$i}->[0],$r);
+        #}
+        #TODO option if insert_from_file is not enable:
+
+        my $insert_from_file = get_conf_with_default_param("INSERTS_FROM_FILE", "no");
+        if ($insert_from_file eq 'yes') {
+          OAR::IO::add_resource_job_pairs_from_file($dbh,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
+        } else {
+          OAR::IO::add_resource_job_pairs($dbh,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
         }
+
         OAR::IO::set_job_state($dbh, $i, "toLaunch");
         $return_code = 1;
     }
@@ -604,7 +637,11 @@ sub get_idle_nodes($$$){
             # Search if the node has enough time to sleep
             my $tmp = OAR::IO::get_next_job_date_on_node($dbh,$n);
             if (!defined($tmp) or ($tmp - $sleep_duration > $current_time_sec)){
-                push(@res, $n);
+                # Search if node has not been woken up recently
+                my $wakeup_date = OAR::IO::get_last_wake_up_date_of_node($dbh,$n);
+                if (!defined($wakeup_date) or ($wakeup_date < $tmp_time)){
+                  push(@res, $n);
+                }
             }
         }
     }

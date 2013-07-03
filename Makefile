@@ -3,7 +3,7 @@
 export SHELL=/bin/bash
 
 # Modules that can be builded
-MODULES = server user node monika draw-gantt doc desktop-computing-agent desktop-computing-cgi tools api scheduler-ocaml www-conf common common-libs database  
+MODULES = server user node monika drawgantt drawgantt-svg doc tools api scheduler-ocaml kamelot kamelot-pg www-conf common common-libs database  
 
 
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
@@ -95,23 +95,23 @@ node-clean: common-clean
 node-build: common-build 
 node-uninstall: common-uninstall
 
-draw-gantt-setup: www-conf-setup
-draw-gantt-install: www-conf-install
-draw-gantt-clean: www-conf-clean
-draw-gantt-build: www-conf-build
-draw-gantt-uninstall: www-conf-uninstall
+drawgantt-setup: www-conf-setup
+drawgantt-install: www-conf-install
+drawgantt-clean: www-conf-clean
+drawgantt-build: www-conf-build
+drawgantt-uninstall: www-conf-uninstall
+
+drawgantt-svg-setup: www-conf-setup
+drawgantt-svg-install: www-conf-install
+drawgantt-svg-clean: www-conf-clean
+drawgantt-svg-build: www-conf-build
+drawgantt-svg-uninstall: www-conf-uninstall
 
 monika-setup: www-conf-setup
 monika-install: www-conf-install
 monika-clean: www-conf-clean
 monika-build: www-conf-build
 monika-uninstall: www-conf-uninstall
-
-desktop-computing-cgi-setup: common-setup common-libs-setup
-desktop-computing-cgi-install: sanity-check common-install common-libs-install
-desktop-computing-cgi-clean: common-clean common-libs-clean
-desktop-computing-cgi-build: common-build common-libs-build
-desktop-computing-cgi-uninstall: common-uninstall common-libs-uninstall
 
 tools-setup: common-setup common-libs-setup
 tools-install: sanity-check common-install common-libs-install
@@ -174,7 +174,11 @@ $(P_TARGETS):
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/draw-gantt.mk $(P_ACTION) \
+	$(MAKE) -f Makefiles/drawgantt.mk $(P_ACTION) \
+                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
+		DOCDIR=/usr/share/doc/oar-web-status \
+		WWWDIR=/usr/share/oar-web-status
+	$(MAKE) -f Makefiles/drawgantt-svg.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
@@ -188,14 +192,6 @@ $(P_TARGETS):
                 DESTDIR=$(PACKAGES_DIR)/oar-admin \
 		DOCDIR=/usr/share/doc/oar-admin
 	
-	# oar-desktop-computing-agent
-	$(MAKE) -f Makefiles/desktop-computing-agent.mk $(P_ACTION) \
-		DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-agent
-	
-	# oar-desktop-computing-cgi
-	$(MAKE) -f Makefiles/desktop-computing-cgi.mk $(P_ACTION) \
-	    DESTDIR=$(PACKAGES_DIR)/oar-desktop-computing-cgi
-	
 	# oar-restful-api
 	$(MAKE) -f Makefiles/api.mk $(P_ACTION) \
 	    DOCDIR=/usr/share/doc/oar-restful-api \
@@ -208,4 +204,3 @@ $(P_TARGETS):
 	# scheduler-ocaml-mysql
 	#$(MAKE) -f Makefiles/scheduler-ocaml.mk $(P_ACTION) \
 	#    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql 
-

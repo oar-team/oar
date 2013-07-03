@@ -2,9 +2,10 @@ Source: oar
 Section: science
 Priority: extra
 Maintainer: Pierre Neyron <pierre.neyron@free.fr>
-Uploaders: Vincent Danjean <vdanjean@debian.org>, Philippe Le Brouster <plb@nebkha.net>
+Uploaders: Philippe Le Brouster <plb@nebkha.net>,
+  Vincent Danjean <vdanjean@debian.org>
 DM-Upload-Allowed: yes
-Build-Depends: debhelper (>= 8~), po-debconf, python-docutils, perl
+Build-Depends: debhelper (>= 9~), po-debconf, python-docutils, perl
 Standards-Version: 3.9.3
 Vcs-Git: git://scm.gforge.inria.fr/oar/oar.git/
 Homepage: http://oar.imag.fr/
@@ -108,7 +109,7 @@ Description: OAR batch scheduler PostgreSQL user backend package
 
 Package: oar-web-status
 Architecture: all
-Depends: ${misc:Depends}, ${shlibs:Depends}, apache2 | httpd-cgi, ruby, libdbd-mysql-ruby | libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl, libjs-jquery
+Depends: ${misc:Depends}, ${shlibs:Depends}, apache2 | httpd-cgi, ruby, libdbd-mysql-ruby | libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl, libjs-jquery, php5, php5-mysql | php5-pgsql
 Suggests: oar-doc
 Description: OAR batch scheduler visualization tool package
  OAR is a versatile resource and task manager (also called a batch scheduler)

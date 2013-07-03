@@ -389,6 +389,7 @@ sub htmlJobTable {
         $output .= $cgi->td({-align => "center"},"User");
         $output .= $cgi->td({-align => "center"},"State");
         $output .= $cgi->td({-align => "center"},"Queue");
+        $output .= $cgi->td({-align => "center"},"Name");
         #$output .= $cgi->td({-align => "center"},"NbNodes");
         #$output .= $cgi->td({-align => "center"},"NbCores");
         $output .= $cgi->td({-align => "center"},"wanted_resources");

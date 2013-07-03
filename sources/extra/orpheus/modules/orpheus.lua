@@ -102,6 +102,7 @@ function get_jobs()
   for row in oar.rows("SELECT job_id, command from jobs WHERE state='toLaunch'") do
     local job = {}
     job_id = row[1]
+    print(job_id)
     job_ids = job_ids .. job_id .. ','
     -- determine the execution time 
     if row[2] then

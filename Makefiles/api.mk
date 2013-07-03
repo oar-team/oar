@@ -14,6 +14,7 @@ EXAMPLEDIR_FILES = $(SRCDIR)/oarapi_examples.txt \
 		   $(SRCDIR)/api_html_postform.pl \
 		   $(SRCDIR)/api_html_postform_resources.pl \
 		   $(SRCDIR)/api_html_postform_rule.pl \
+		   $(SRCDIR)/stress_factor.sh \
 		   $(SRCDIR)/INSTALL \
 		   $(SRCDIR)/TODO
 

@@ -330,6 +330,27 @@ project with `Kadeploy <http://ka-tools.imag.fr/>`_ tools.
 When you submit a job you have to use "-t deploy" option of oarsub_ to
 specify that this is a deploy job.
 
+Quotas
+------
+The administrator can limit the number of resources used by user, job types,
+project ans queue (or a combination of them).
+This feature acts like quotas. When one of the defined rules is reached then
+next jobs will not be scheduled at this time. The scheduler will find another
+slot when the quotas will be satisfied.
+
+This feature is available in queues which use the scheduler
+"oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas".
+
+The quota rules are defined in "/etc/oar/scheduler_quotas.conf".
+
+By default no quota is applied.
+
+*Note1*: Quotas are applied globally, only the jobs of the type "container" are
+not taken in account (but the inner jobs are used to compute the quotas).
+
+*Note2*: Besteffort jobs are not taken in account except in the besteffort
+queue.
+
 Desktop computing
 -----------------
 
