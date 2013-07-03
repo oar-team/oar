@@ -1,3 +1,9 @@
+oar (2.5.3-2~bpo60+1) squeeze-backports; urgency=low
+
+  * Rebuild for squeeze-backports.
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 03 Jul 2013 22:10:47 +0200
+
 oar (2.5.3-2) unstable; urgency=low
 
   * fix clean-up of oar-server and oar-web-status after remove/purge
