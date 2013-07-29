@@ -152,14 +152,19 @@ $output = <<<EOT
 </head>
 <body onload="init()">
 <div id="panel" align="center">
-<select id="filterSelect" onchange="select_filter()">
-
 EOT;
-foreach ($CONF['nav_filters'] as $key => $value) {
-  $output .= "<option " . (($key == $filter)?"selected ":"") . "value=\"$value\">$key</option>\n";
+if (count($CONF['nav_filters']) > 0) {
+  $output .= <<<EOT
+<select id="filterSelect" onchange="select_filter()">
+EOT;
+  foreach ($CONF['nav_filters'] as $key => $value) {
+    $output .= "<option " . (($key == $filter)?"selected ":"") . "value=\"$value\">$key</option>\n";
+  }
+  $output .= <<<EOT
+</select>
+EOT;
 }
 $output .= <<<EOT
-</select>
 <button type="button" onclick="shift(-604800)">&lt;1w</button>
 <button type="button" onclick="shift(-86400)">&lt;1d</button>
 <button type="button" onclick="shift(-21600)">&lt;6h</button>
@@ -183,7 +188,7 @@ foreach ($CONF['nav_custom_buttons'] as $key => $value) {
 $output .= <<<EOT
 </div>
 <object id="svgObj" type="image/svg+xml" data="" onload="restore_scrolling()"></object>
-<div id="waiter">Please wait while data are being treated...</div>
+<div id="waiter">Processing data... please wait...</div>
 </body>
 </html>
 EOT;
