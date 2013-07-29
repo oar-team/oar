@@ -543,7 +543,7 @@ CPUSET_PATH="/oar"
 #
 # This variable must be set to enable the use of oarsh from a frontale node
 # Otherwise you must not set this variable if you are not on a frontale
-#OARSH_OARSTAT_CMD="%%BINDIR%%/oarstat"
+OARSH_OARSTAT_CMD="%%BINDIR%%/oarstat"
 
 # The following variable adds options to ssh (or OPENSSH_CMD if configured).
 # If one option is not handled by your ssh version just remove it BUT be
