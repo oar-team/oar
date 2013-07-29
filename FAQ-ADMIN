@@ -62,6 +62,15 @@ see oarnotify_.
 
 How can I handle licence tokens?
 --------------------------------
+There are 2 ways to handle licence tokens:
+  - by defining licence resources into OAR (like cores).
+  - by calling external scripts that gives the number of free licences.
+
+Defining licence resources into OAR
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This approach is useful when everything is done inside the cluster (no
+interaction with the outside).
+
 OAR does not manage resources with an empty "network_address". So you can
 define resources that are not linked with a real node.
 
@@ -84,26 +93,54 @@ whatever you want that are other notions):
 After this configuration, users can perform submissions like
 ::
 
-    oarsub -I -l "/switch=2/nodes=10+{type = 'mathlab'}/licence=20"
+    oarsub -I -l "/switch=2/nodes=10+{type='mathlab'}/licence=2"
 
 So users ask OAR to give them some other resource types but nothing blocks
-their program to take more licences than they asked.
-You can resolve this problem with the SERVER_SCRIPT_EXEC_FILE_ configuration.
-In these files you have to bind OAR allocated resources to the licence servers
-to restrict user consumptions to what they asked. This is very dependant of
-the licence management.
+their program to take more licences than they asked. So the users have to
+really take care to define the right amount of licences that theirs jobs will
+use.
+
+Calling an external script
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+This approach is useful when the cluster processes will use the same licence
+servers than other clusters or other computers. So you can't know in advance when
+another computer outside the cluster will use the tokens (like the slots for a
+proprietary software).
+
+So the only way to handle this situation is to tell the OAR scheduler how many
+tokens are free each times. And so it can try to schedule the job that asked
+some tokens.
+
+This is not a perfect solution but it works most of the time.
+
+To configure this feature, you have to:
+
+ 1. Write a script that displays on the STDOUT the number free tokens.
+
+ 2. Edit /etc/oar.oar.conf on the OAR server and change the value of
+    SCHEDULER_TOKEN_SCRIPTS; for example:
+    ::
+
+        SCHEDULER_TOKEN_SCRIPTS="{ fluent => '/usr/local/bin/check_fluent.sh' }"
+
+Then the users will be able to submit jobs like:
+::
+
+    oarsub -l nodes=1/core=12 -t token:fluent=12 ./script.sh
 
 How can I handle multiple clusters with one OAR?
 ------------------------------------------------
 These are the steps to follow:
 
- 1. create a resource property to identify the corresponding cluster (like "cluster")::
+ 1. create a resource property to identify the corresponding cluster (like
+    "cluster")::
 
         oarproperty -a cluster
 
     (you can see this new property when you use oarnodes)
 
- 2. with oarnodesetting_ you have to fill this field for all resources; for example::
+ 2. with oarnodesetting_ you have to fill this field for all resources; for
+    example::
  
         oarnodesetting -h node42.cluster1.com -p cluster=1
         oarnodesetting -h node43.cluster1.com -p cluster=1
@@ -145,10 +182,9 @@ How to configure a more ecological cluster (or how to make some power consumptio
 
 This feature can be performed with the `Dynamic nodes coupling features`.
 
-First you have to make sure that you have a command to wake up a computer
-that is stopped. For example you can use the WoL (Wake on Lan) feature
-(generally you have to right configure the BIOS and add right options to the
-Linux Ethernet driver; see "ethtool").
+First you have to make sure that you have a command to wake up your nodes.
+. For example you can use the ipmitool tool to communicate with the
+management boards of the computers.
 
 If you want to enable a node to be woke up the next 12 hours::
 
@@ -170,11 +206,11 @@ And if you want to disable the halt and the wakeup::
 
     oarnodesetting -h host_name -p cm_availability=0
 
-Note: In the unstable 2.4 OAR version, cm_availability has been renamed
+Note: Since the 2.4 OAR version, cm_availability has been renamed
 into available_upto. 
     
-Your `SCHEDULER_NODE_MANAGER_WAKE_UP_CMD`_ must be a script that read node
-names and translate them into the right wake up command.
+Your `SCHEDULER_NODE_MANAGER_WAKE_UP_CMD`_ must be a script that reads node
+names and translate them into the right wake up commands.
 
 So with the right OAR and node configurations you can optimize the power
 consumption of your cluster (and your air conditioning infrastructure)
@@ -223,17 +259,12 @@ the OAR install directory with the root user (example with a bash shell)::
 
 (Replace 42 by your job identifier)
 
+Since OAR 2.5.3, you can directly use the command:
+::
+
+    oardel --force-terminate-finishing-job 42
+
 How can I write my own scheduler?
 ---------------------------------
 .. include:: scheduler/README
-
-What is the syntax of this documentation?
------------------------------------------
-
-We are using the RST format from the `Docutils
-<http://docutils.sourceforge.net/>`_ project. This syntax is easily readable
-and can be converted into HTML, LaTex or XML.
-
-You can find basic informations on
-http://docutils.sourceforge.net/docs/user/rst/quickref.html
 

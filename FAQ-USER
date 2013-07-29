@@ -12,7 +12,7 @@ Since the version 2.2, release numbers are divided into 3 parts:
 How can I submit a moldable job?
 --------------------------------
 
-You just have to use several "-l" oarsub_ option(one for each moldable
+You just have to use several "-l" oarsub_ option (one for each moldable
 description). By default the OAR scheduler will launch the moldable job which
 will end first.
 
