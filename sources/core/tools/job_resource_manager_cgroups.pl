@@ -23,13 +23,13 @@
 #                 due to bad behaviour seen. More tests have to be done)
 #                 There are some interesting accounting data available.
 #     - [memory]  Permit to restrict the amount of RAM that can be used by the
-#                 job processes (ration of job_nb_cores / total_nb_cores).
+#                 job processes (ratio of job_nb_cores / total_nb_cores).
 #                 This is useful for OOM problems (kill only tasks inside the
-#                 cgroup where OOM occures)
-#                 DISABLED by default: there are maybe some performance issue
+#                 cgroup where OOM occurs)
+#                 DISABLED by default: there are maybe some performance issues
 #                 (need to do some benchmarks)
 #                 You can ENABLE this feature by putting 'my $ENABLE_MEMCG =
-#                 "NO";' in the following code
+#                 "YES";' in the following code
 #
 # Usage:
 # This script is deployed from the server and executed as oar on the nodes.
