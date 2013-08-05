@@ -8,8 +8,6 @@ The main goal of this scheduler is to provide a better scalabily in comparaison 
 
 This developement of this scheduler borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). 
 
-
-
 Features:
 ---------
  * conservative backfilling
@@ -35,6 +33,11 @@ Missing:
  * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
  * SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE (get_scheduled_jobs function is ready)
 
+Depedencies:
+------------
+ * ocaml-core ocaml-libs ocaml-findlib libmysql-ocaml-dev libounit-ocaml-dev  libpostgresql-ocaml-dev
+
+
 Next:
 -----
 
@@ -57,6 +60,10 @@ Next:
 
 ToDo:
 -----
+
+  * debug noschedule job issue
+  * test timesharing
+  * test placeholder
 
   * test_unit: better compilation process
   * Ounit (cf archive)
