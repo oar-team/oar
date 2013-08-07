@@ -385,10 +385,8 @@ let get_moldable_job_list_fairsharing dbh default_resources queue besteffort_dur
       AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
       AND job_resource_descriptions.res_job_index = 'CURRENT'
       AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-      ORDER BY job_resource_descriptions.res_job_order DESC;"
-(*
-      ORDER BY moldable_job_descriptions.moldable_id ASC, job_resource_groups.res_group_id ASC, job_resource_descriptions.res_job_order ASC;
-*)
+      ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC;"
+      (* ORDER BY job_resource_descriptions.res_job_order DESC; *)
   in
     let query =
       if fairsharing_flag then

@@ -147,7 +147,7 @@ let slot_after_job_end slot jbs = {
 	set_of_res = slot.set_of_res;
 }
   
-let old_split_slots slots jbs = 
+let split_slots slots jbs = 
 	let split_slot slt = 
 		if jbs.time_b > slt.time_s then (* AAA *)
 			if  (add (add jbs.time_b jbs.w_time) minus_one) > slt.time_e then
@@ -162,12 +162,12 @@ let old_split_slots slots jbs =
 			else
 				 	(* B+C *) 
 					( slot_during_job slt jbs) :: [(slot_after_job_end slt jbs )]
-(*	in List.flatten (List.map (fun slot -> split_slot slot ) slots) ;; *)
-  in List.flatten (List.map (fun slot -> split_slot slot ) slots) ;;
+	in List.flatten (List.map (fun slot -> split_slot slot ) slots) ;;
 
 
-
-let split_slots slots jbs =
+(* TODO debug BUG identify by Joseph during his experiments - observation very low 
+number of running jobs *)
+let to_debug_split_slots slots jbs =
   let add_no_empty s ac = match s.set_of_res with
     | [] -> ac
     | itvs -> s::ac
@@ -189,7 +189,7 @@ let split_slots slots jbs =
           split_slts l a
 			else
 				(* B+C *) 
-				let a =add_no_empty ( slot_during_job slt jbs) (add_no_empty (slot_after_job_end slt jbs ) accu) in
+				let a = add_no_empty ( slot_during_job slt jbs) (add_no_empty (slot_after_job_end slt jbs ) accu) in
           split_slts l a            
     in split_slts slots []
 
