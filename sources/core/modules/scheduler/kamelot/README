@@ -98,7 +98,7 @@ Bugs:
 Debug:
 ------
   make bc
-  ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ./common/helpers.cmo ./common/interval.cmo ./common/conf.cmo ./commont/types.cmo ./common/hierarchy.cmo ./scheduling.cmo
+  ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ./common/helpers.cmo ./common/interval.cmo ./common/conf.cmo ./common/types.cmo ./common/hierarchy.cmo ./scheduling.cmo
 
 ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ./common/helpers.cmo \
             ./common/interval.cmo ./common/conf.cmo ./common/types.cmo ./common/hierarchy.cmo \

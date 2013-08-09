@@ -147,7 +147,7 @@ let slot_after_job_end slot jbs = {
 	set_of_res = slot.set_of_res;
 }
   
-let split_slots slots jbs = 
+let old_split_slots slots jbs = 
 	let split_slot slt = 
 		if jbs.time_b > slt.time_s then (* AAA *)
 			if  (add (add jbs.time_b jbs.w_time) minus_one) > slt.time_e then
@@ -167,6 +167,33 @@ let split_slots slots jbs =
 
 (* TODO debug BUG identify by Joseph during his experiments - observation very low 
 number of running jobs *)
+
+let split_slots slots jbs =
+  let add_no_empty s ac = match s.set_of_res with
+    | [] -> ac
+    | itvs -> s::ac
+  in
+  let rec split_slts slts accu = match slts with 
+    | [] ->  accu
+    | slt ::l ->  if jbs.time_b > slt.time_s then (* AAA *)
+			              if  (add (add jbs.time_b jbs.w_time) minus_one) > slt.time_e then
+					            (* A+B *)
+					            let a = add_no_empty (slot_before_job_begin slt jbs)  (add_no_empty (slot_during_job slt jbs) accu) in
+                        split_slts l a
+			              else
+				 		(* A+B+C *)
+						let a = add_no_empty (slot_before_job_begin slt jbs) (add_no_empty (slot_during_job slt jbs) (add_no_empty (slot_after_job_end slt jbs) accu)) in
+              split_slts l a
+		else
+			if (add (add jbs.time_b  jbs.w_time) minus_one) >= slt.time_e then
+			  let a = add_no_empty (slot_during_job slt jbs) accu in
+          split_slts l a
+			else
+				(* B+C *) 
+				let a = add_no_empty ( slot_during_job slt jbs) (add_no_empty (slot_after_job_end slt jbs ) accu) in
+          split_slts l a            
+    in split_slts (List.rev slots) []
+
 let to_debug_split_slots slots jbs =
   let add_no_empty s ac = match s.set_of_res with
     | [] -> ac
