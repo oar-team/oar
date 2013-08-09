@@ -5,6 +5,7 @@ oar (2.5.2-4) UNRELEASED; urgency=low
   * Fix piupart reported error: package uses files from /usr/share/doc
     (Closes: #722621)
   * Fix database schema version: 2.5.2
+  * Fix dependencies to the database backend packages
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 18 Sep 2013 23:23:47 +0200
 
