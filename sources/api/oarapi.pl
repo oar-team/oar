@@ -311,7 +311,7 @@ SWITCH: for ($q) {
   # Jobs
   ###########################################
   #
-  #{{{ GET /jobs[/details|table]?state=<state>,from=<from>,to=<to> : List of jobs
+  #{{{ GET /jobs[/details|table]?state=<state>,from=<from>,to=<to>,ids=<id1:id2:...> : List of jobs
   #
   $URI = qr{^/jobs(/details|/table)*\.*(yaml|json|html)*$};
   OAR::API::GET( $_, $URI ) && do {
@@ -347,8 +347,9 @@ SWITCH: for ($q) {
     my $user = $q->param('user');
     my $array = $q->param('array');
     my $max_items = $MAX_ITEMS;
+    my @ids;
 
-    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('array'))) {
+    if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('array')) && !defined($q->param('ids'))) {
         my $param = qr{.*from=(.*?)(&|$)};
         if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
         	$from = $1;
@@ -382,9 +383,15 @@ SWITCH: for ($q) {
     if (defined($q->param('offset'))) {
         $offset = $q->param('offset');
     }
-    # requested user jobs
-    my $jobs = OAR::Stat::get_jobs_for_user_query($user,$from,$to,$state,$max_items,$offset,$array);
-    my $total_jobs = OAR::Stat::count_jobs_for_user_query($user,$from,$to,$state,$array);
+
+    # Construct ids array if any
+    if (defined($q->param('ids'))) {
+      @ids=split(':',$q->param('ids'));
+    } 
+
+    # Get the requested user jobs
+    my $jobs = OAR::Stat::get_jobs_for_user_query($user,$from,$to,$state,$max_items,$offset,$array,\@ids);
+    my $total_jobs = OAR::Stat::count_jobs_for_user_query($user,$from,$to,$state,$array,\@ids);
     
     if ( !defined $jobs || keys %$jobs == 0 ) {
       $jobs = OAR::API::struct_empty($STRUCTURE);

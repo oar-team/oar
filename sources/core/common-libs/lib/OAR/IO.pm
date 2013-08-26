@@ -1227,7 +1227,6 @@ sub estimate_job_nb_resources($$$){
                 foreach my $l (@leafs){
                     vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
                 }
-                $tmp_moldable_result->{comment} = "No resource assigned to this job" if ($#leafs < 0);
                 $tmp_moldable_result->{nbresources} += $#leafs + 1;
             }
         }
@@ -4140,12 +4139,14 @@ sub get_jobs_for_user_query {
     my $offset = shift;
     my $user = shift || "";
     my $array_id = shift || "";
+    my $ids = shift || [];
     my $first_query_date_start = "";
     my $second_query_date_start = "";
     my $third_query_date_start = "";
     my $first_query_date_end = "";
     my $second_query_date_end = "";
     my $third_query_date_end = "";
+    my $id_filter = "";
 
     if ($date_start ne "") {
     	$first_query_date_start = "(
@@ -4171,7 +4172,9 @@ sub get_jobs_for_user_query {
     if (defined($offset)) { $offset = "OFFSET $offset"; }
     if ($user ne "") { $user = " AND jobs.job_user = ".$dbh->quote($user); }
     if ($array_id ne "") { $array_id = " AND jobs.array_id = ".$dbh->quote($array_id); }
-
+    if (@{$ids} > 0) {
+      $id_filter = " AND jobs.job_id in (".join(',',@{$ids}).")";
+    }
     my $req =
         "
         SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job,jobs.reservation,jobs.project,jobs.properties,jobs.exit_code,jobs.command,jobs.initial_request,jobs.launching_directory,jobs.message,jobs.job_type,jobs.array_id,jobs.stderr_file,jobs.stdout_file,jobs.start_time,moldable_job_descriptions.moldable_walltime,jobs.stop_time
@@ -4185,7 +4188,7 @@ sub get_jobs_for_user_query {
              						$first_query_date_end
              						jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
              						moldable_job_descriptions.moldable_job_id = jobs.job_id
-             						$state $user $array_id
+             						$state $user $array_id $id_filter
 
          						UNION
 
@@ -4197,7 +4200,7 @@ sub get_jobs_for_user_query {
          						   jobs.job_id = moldable_job_descriptions.moldable_job_id
          						   $second_query_date_start
          						   $second_query_date_end
-         						   $state $user $array_id
+         						   $state $user $array_id $id_filter
          						
          						UNION
          						
@@ -4207,7 +4210,7 @@ sub get_jobs_for_user_query {
          						   jobs.start_time = \'0\'
          						   $third_query_date_start
          						   $third_query_date_end
-         						   $state $user $array_id
+         						   $state $user $array_id $id_filter
          						)
          ORDER BY jobs.job_id $limit $offset";
 
@@ -4257,12 +4260,14 @@ sub count_jobs_for_user_query {
     my $offset = shift;
     my $user = shift || "";
     my $array_id = shift || "";
+    my $ids = shift || [];
     my $first_query_date_start = "";
     my $second_query_date_start = "";
     my $third_query_date_start = "";
     my $first_query_date_end = "";
     my $second_query_date_end = "";
     my $third_query_date_end = "";
+    my $id_filter = "";
 
     if ($date_start ne "") {
     	$first_query_date_start = "(   
@@ -4287,6 +4292,9 @@ sub count_jobs_for_user_query {
     if (defined($offset)) { $offset = "OFFSET $offset"; }
     if ($user ne "") { $user = " AND jobs.job_user = ".$dbh->quote($user); }
     if ("$array_id" ne "") { $array_id = " AND jobs.array_id = ".$dbh->quote($array_id); }
+    if (@{$ids} > 0) {
+      $id_filter = " AND jobs.job_id in (".join(',',@{$ids}).")";
+    }
 
     my $req =
         "
@@ -4301,7 +4309,7 @@ sub count_jobs_for_user_query {
              						$first_query_date_end
              						jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
              						moldable_job_descriptions.moldable_job_id = jobs.job_id
-             						$state $user $array_id
+             						$state $user $array_id $id_filter
 
          						UNION
 
@@ -4313,7 +4321,7 @@ sub count_jobs_for_user_query {
          						   jobs.job_id = moldable_job_descriptions.moldable_job_id
          						   $second_query_date_start
          						   $second_query_date_end
-         						   $state $user $array_id
+         						   $state $user $array_id $id_filter
 
          						UNION
 
@@ -4323,8 +4331,9 @@ sub count_jobs_for_user_query {
          						   jobs.start_time = \'0\'
          						   $third_query_date_start
          						   $third_query_date_end
-         						   $state $user $array_id
-         						)";
+         						   $state $user $array_id $id_filter
+         						)
+             ";
 
     my $sth = $dbh->prepare($req);
     $sth->execute();

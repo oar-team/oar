@@ -111,6 +111,7 @@ sub get_jobs_for_user_query {
     my $limit = shift;
     my $offset = shift;
     my $array = shift;
+    my $ids = shift;
 	
     if (defined($state)) {
         my @states = split(/,/,$state);
@@ -123,7 +124,7 @@ sub get_jobs_for_user_query {
         $state = $statement;
     }
 
-    my %jobs =  OAR::IO::get_jobs_for_user_query($base,$from,$to,$state,$limit,$offset,$user,$array);
+    my %jobs =  OAR::IO::get_jobs_for_user_query($base,$from,$to,$state,$limit,$offset,$user,$array,$ids);
     return (\%jobs);
 }
 
@@ -133,6 +134,7 @@ sub count_jobs_for_user_query {
     my $to = shift;
     my $state = shift;
     my $array = shift;
+    my $ids=shift;
 	
 	if (defined($state)) {
 		my @states = split(/,/,$state);
@@ -145,7 +147,7 @@ sub count_jobs_for_user_query {
     $state = $statement;
 	}
 
-	my $total =  OAR::IO::count_jobs_for_user_query($base,$from,$to,$state,$user,undef,undef,$array);
+	my $total =  OAR::IO::count_jobs_for_user_query($base,$from,$to,$state,$user,undef,undef,$array,$ids);
 	return $total;
 }
 
