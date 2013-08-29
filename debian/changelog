@@ -1,6 +1,14 @@
+oar (2.5.3-3) unstable; urgency=low
+
+  * Fix oar-user dependancy on oar-user-mysql or oar-user-postgresql
+  * Fix prologues and epilogues configuration files permissions:
+    add patch to set mod 0755
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 29 Aug 2013 23:09:04 +0200
+
 oar (2.5.3-2) unstable; urgency=low
 
-  * fix clean-up of oar-server and oar-web-status after remove/purge
+  * Fix clean-up of oar-server and oar-web-status after remove/purge
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 02 Jul 2013 11:07:39 +0200
 
