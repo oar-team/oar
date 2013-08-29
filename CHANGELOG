@@ -1,6 +1,11 @@
 OAR CHANGELOG
 =============
 
+version 2.5.4:
+--------------
+  - [api]: implemented the ability to get a set of jobs at once with
+    GET /jobs?ids=<id1>:<id2>:<id3>:...
+
 version 2.5.3:
 --------------
   - Add the "Name" field on the main Monika page. This is easier for the users

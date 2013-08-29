@@ -413,6 +413,7 @@ GET /jobs
   - **from** (timestamp): restrict the list to the jobs that are running or not yet started before this date. Using this parameters disables the default behavior of listing only the jobs that are in queue.
   - **to** (timestamp): restrict the list to the jobs that are running or not yet finished at this date. Using this parameters disables the default behavior of listing only the jobs that are in queue.
   - **user**: restrict the list to the jobs owned by this username
+  - **ids**: colon separated list of ids to get a set of jobs
 
 :output:
   *structure*: collection
