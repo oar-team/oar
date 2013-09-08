@@ -1,16 +1,13 @@
 oar (2.5.3-3) unstable; urgency=low
 
-  [ Gregor Herrmann ]
-  * Fix "FTBFS with perl 5.18: POD failure":
-    add patch to add encoding to POD
-    (Closes: #720431)
-
-  [ Pierre Neyron ]
   * Fix oar-user dependancy on oar-user-mysql or oar-user-postgresql
   * Fix prologues and epilogues configuration files permissions:
     add patch to set mod 0755
+  * Fix oarsub copyright in pod (man), this corrects the "FTBFS with perl 5.18: POD failure" reported by Debian
+    (Closes: #720431)
+  * Fix the database structure version: must be 2.5.2
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 29 Aug 2013 23:09:04 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 09 Sep 2013 00:03:38 +0200
 
 oar (2.5.3-2) unstable; urgency=low
 
