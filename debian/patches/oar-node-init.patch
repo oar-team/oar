@@ -1,0 +1,13 @@
+Index: oar/setup/init.d/oar-node.in
+===================================================================
+--- oar.orig/setup/init.d/oar-node.in	2013-09-03 11:20:39.551778527 +0200
++++ oar/setup/init.d/oar-node.in	2013-09-03 11:22:26.409815079 +0200
+@@ -74,7 +74,7 @@
+ 
+ do_start() {
+     begin_msg "Starting $DESC"
+-    if [ -n "$SELINUXENABLED_CMD" -a -x $SELINUXENABLED_CMD ] && $SELINUXENABLED_CMD; then
++    if [ -n "$SELINUXENABLED_CMD" ] && [ -x "$SELINUXENABLED_CMD" ] && $SELINUXENABLED_CMD; then
+         fail_msg "SELinux is enabled, $DESC cannot be started."	
+         exit 2
+     fi
