@@ -4,7 +4,7 @@ CREATE TABLE schema (
   version VARCHAR( 255 ) NOT NULL,
   name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.5.0','');
+INSERT INTO schema VALUES ('2.5.2','');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
