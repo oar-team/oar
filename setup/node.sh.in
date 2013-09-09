@@ -47,11 +47,13 @@ install_ssh_host_keys() {
 node_setup() {
     install_conffile \
         ${EXAMPLEDIR}/epilogue \
-        ${OARCONFDIR}/epilogue
+        ${OARCONFDIR}/epilogue \
+        0755
     
     install_conffile \
         ${EXAMPLEDIR}/prologue \
-        ${OARCONFDIR}/prologue
+        ${OARCONFDIR}/prologue \
+        0755
 
     install_conffile \
         ${EXAMPLEDIR}/sshd_config \
