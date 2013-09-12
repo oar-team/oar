@@ -87,6 +87,7 @@ sub del_stagein($$);
 sub get_jobs_to_schedule($$$);
 sub get_current_job_types($$);
 sub set_moldable_job_max_time($$$);
+sub is_timesharing_for_2_jobs($$$);
 
 #ARRAY JOBS MANAGEMENT
 sub get_jobs_in_array($$);
@@ -679,6 +680,42 @@ sub is_job_desktop_computing($$){
     $sth->execute();
     my ($count) = $sth->fetchrow_array();
     return($count > 0);
+}
+
+# is_timesharing_for_2_jobs
+# return true if both jobs are timesharing compatible
+# parameters: base, jobid1, jobid2
+# return value: boolean
+# side effects: /
+sub is_timesharing_for_2_jobs($$$){
+    my $dbh = shift;
+    my $jobid1 = shift;
+    my $jobid2 = shift;
+
+    # this request returns exactly 1 row if and only if both jobs are timesharing compatible
+    my $sth = $dbh->prepare("SELECT 1
+                             FROM jobs j, job_types t
+                             WHERE
+                               j.job_id IN ($jobid1, $jobid2) AND
+                               j.job_id = t.job_id AND
+                               t.type like 'timesharing=%'
+                             GROUP BY
+                               t.type
+                             HAVING
+                               COUNT(j.job_id) = 2 AND (
+                                 ( t.type = 'timesharing=user,name' AND
+                                   COUNT(DISTINCT j.job_user) = 1 AND
+                                   COUNT(DISTINCT j.job_name) = 1 ) OR
+                                 ( t.type = 'timesharing=user,*' AND
+                                   COUNT(DISTINCT j.job_user) = 1 ) OR
+                                 ( t.type = 'timesharing=*,name' AND
+                                   COUNT(DISTINCT j.job_user) = 1 ) OR
+                                 t.type = 'timesharing=*,*' )
+                            ");
+    my $res = $sth->execute();
+    # $res == 1 if the request produced a row, 0E0 otherwise.
+    $sth->finish();
+    return($res == 1);
 }
 
 # get_job_current_hostnames

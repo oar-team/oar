@@ -545,14 +545,18 @@ sub check_jobs_to_kill($){
     my %fragged_jobs = ();
     foreach my $r (keys(%nodes_for_jobs_to_launch)){
         if (defined($besteffort_resource_occupation{$r})) {
-            oar_debug("[OAR::Schedulers::Scheduler] check_jobs_to_kill: resource $r is needed for job $nodes_for_jobs_to_launch{$r}, besteffort job $besteffort_resource_occupation{$r} must be killed\n");
-            unless (defined($fragged_jobs{$besteffort_resource_occupation{$r}})) {
-                OAR::IO::add_new_event($dbh,"BESTEFFORT_KILL",$besteffort_resource_occupation{$r},"[OAR::Schedulers::Scheduler] kill the besteffort job $besteffort_resource_occupation{$r}");
-                OAR::IO::lock_table($dbh,["frag_jobs","event_logs","jobs"]);
-                OAR::IO::frag_job($dbh, $besteffort_resource_occupation{$r});
-                OAR::IO::unlock_table($dbh);
-                $return = 1;
-                $fragged_jobs{$besteffort_resource_occupation{$r}} = 1;
+            if (OAR::IO::is_timesharing_for_2_jobs($dbh, $nodes_for_jobs_to_launch{$r}, $besteffort_resource_occupation{$r})) {
+                oar_debug("[OAR::Schedulers::Scheduler] check_jobs_to_kill: resource $r is needed for job $nodes_for_jobs_to_launch{$r}, but besteffort job $besteffort_resource_occupation{$r} can live, because timesharing compatible\n");
+            } else {
+                oar_debug("[OAR::Schedulers::Scheduler] check_jobs_to_kill: resource $r is needed for job $nodes_for_jobs_to_launch{$r}, besteffort job $besteffort_resource_occupation{$r} must be killed\n");
+                unless (defined($fragged_jobs{$besteffort_resource_occupation{$r}})) {
+                    OAR::IO::add_new_event($dbh,"BESTEFFORT_KILL",$besteffort_resource_occupation{$r},"[OAR::Schedulers::Scheduler] kill the besteffort job $besteffort_resource_occupation{$r}");
+                    OAR::IO::lock_table($dbh,["frag_jobs","event_logs","jobs"]);
+                    OAR::IO::frag_job($dbh, $besteffort_resource_occupation{$r});
+                    OAR::IO::unlock_table($dbh);
+                    $return = 1;
+                    $fragged_jobs{$besteffort_resource_occupation{$r}} = 1;
+                }
             }
         }
      }
