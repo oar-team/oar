@@ -4236,8 +4236,8 @@ sub get_jobs_for_user_query {
                             'message' => $ref[14],
                             'job_type' => $ref[15],
                             'array_id' => $ref[16],
-                            'stdout_file' => $ref[17],
-                            'stderr_file' => $ref[18],
+                            'stdout_file' => $ref[18],
+                            'stderr_file' => $ref[17],
                             'start_time' => $ref[19],
                             'walltime' => $ref[20],
                             'stop_time' => $ref[21]
