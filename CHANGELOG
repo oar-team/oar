@@ -6,6 +6,7 @@ version 2.5.4:
   - [api]: implemented the ability to get a set of jobs at once with
     GET /jobs?ids=<id1>:<id2>:<id3>:...
   - [api] BUGFIX: stderr and stdout where reversed
+  - [api] BUGFIX: memory leak into the api when used with FastCGI
 
 version 2.5.3:
 --------------
