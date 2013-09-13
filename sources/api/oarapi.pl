@@ -125,7 +125,10 @@ close(FILE);
 # FastCGI loop starting
 ##############################################################################
 my $q;
+my $fcgi_cycle_count=0;
 FCGI: while ($q = new CGI::Fast) {
+
+$fcgi_cycle_count++;
 
 # Sets the cgi handler of the OAR::API (global variable)
 $OAR::API::q=$q;
@@ -2452,6 +2455,10 @@ SWITCH: for ($q) {
   ###########################################
   #
   OAR::API::ERROR( 404, "Not found", "No way to handle your request " . $q->path_info );
+}
+
+if ($fcgi_cycle_count > 50) {
+  exit 0;
 }
 
 } # End of fastcgi loop
