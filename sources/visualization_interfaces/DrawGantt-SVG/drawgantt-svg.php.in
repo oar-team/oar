@@ -31,7 +31,6 @@ $CONF['resource_hierarchy'] = array( // properties to use to build the resource 
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
-  'besteffort' => 'url(#besteffortPattern)', 
   'deploy' => 'url(#deployPattern)', 
   'container' => 'url(#containerPattern)', 
   'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
@@ -57,7 +56,7 @@ $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
 $CONF['job_color_saturation_lightness'] = "75%,75%"; // default: "75%,75%"
 $CONF['job_color_saturation_lightness_highlight'] = "50%,50%"; // default: "50%,50%"
 $CONF['magic_number'] = (1+sqrt(5))/2; // magic number used to compute the function hue(jod_id) 
-$CONF['patterns'] = <<<EOT
+$CONF['static_patterns'] = <<<EOT
 <pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />
 </pattern> 
@@ -69,9 +68,6 @@ $CONF['patterns'] = <<<EOT
 </pattern> 
 <pattern id="standbyPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#00ff00" stroke-width="2" />
-</pattern> 
-<pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<text font-size="10" x="0" y="10" fill="#888888">B</text>
 </pattern> 
 <pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="0" y="20" fill="#888888">C</text>
@@ -86,6 +82,17 @@ $CONF['patterns'] = <<<EOT
 <pattern id="timesharingPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="10" y="20" fill="#888888">T</text>
 </pattern> 
+EOT;
+
+// Besteffort job type display options
+$CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
+$CONF['besteffort_label'] = "(%%LABEL%%)"; // default: "(%%LABEL%%)"
+$CONF['besteffort_pattern'] = <<<EOT
+<pattern id="%%PATTERN_ID%%" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
+<line x1="0" y1="0" x2="10" y2="10" stroke="%%PATTERN_COLOR%%" stroke-width="4"/>
+<line x1="-5" y1="5" x2="5" y2="15" stroke="%%PATTERN_COLOR%%" stroke-width="4"/>
+<line x1="5" y1="-5" x2="15" y2="5" stroke="%%PATTERN_COLOR%%" stroke-width="4"/>
+</pattern>'
 EOT;
 
 // Debugging
@@ -111,7 +118,7 @@ $gantt_width = $CONF['gantt_min_width'];
 if (array_key_exists('width', $_GET) and $_GET['width'] > ($CONF['gantt_left_align'] + $CONF['gantt_min_width'] + $CONF['right_margin'])) {
         $gantt_width = $_GET['width'] - $CONF['gantt_left_align'] - $CONF['right_margin'];
 }
-
+$patterns = $CONF['static_patterns'];
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions and database wrapper class
@@ -326,11 +333,18 @@ class Job {
     return $output;
   }
   function color() {
-    global $CONF;
+    global $CONF, $patterns;
     if ($this->color == NULL) {
       // compute a suffled number for job_id, so that colors are not too close
       $shuffled = (int)(360 * fmod($this->job_id * $CONF['magic_number'], 1));
-      $this->color = "hsl(".$shuffled.",{$CONF['job_color_saturation_lightness']})";
+      if (preg_grep("/^besteffort$/", $this->types)) {
+        $p = preg_replace("/%%PATTERN_ID%%/", "job{$this->job_id}Pattern", $CONF['besteffort_pattern']);
+        $p = preg_replace("/%%PATTERN_COLOR%%/", "hsl(".$shuffled.",{$CONF['job_color_saturation_lightness']})", $p);
+        $patterns .= $p;
+        $this->color = "url(#job{$this->job_id}Pattern)";
+      } else {
+        $this->color = "hsl(".$shuffled.",{$CONF['job_color_saturation_lightness']})";
+      }
     }
     return $this->color;
   }
@@ -425,7 +439,7 @@ class ResourceId {
       if($grp->job->stop_time > 0) {
         $width = date2px($grp->job->stop_time) - date2px($grp->job->start_time);
       } else {
-        if (in_array('besteffort', $grp->job->types) and ($grp->job->state == "Running")) {
+        if ($CONF['besteffort_truncate_job_to_now'] and in_array('besteffort', $grp->job->types) and ($grp->job->state == "Running")) {
           $width = date2px($gantt_now) - date2px($grp->job->start_time);
         } else {
           $width = date2px($grp->job->start_time + $grp->job->moldable_walltime) - date2px($grp->job->start_time);
@@ -439,7 +453,11 @@ class ResourceId {
       $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color().'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
       if ($width > $CONF['gantt_min_job_width_for_label']) {
         $labels_output .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $width / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)">';
-        $labels_output .= $grp->job->job_id;
+        if (preg_grep("/^besteffort$/", $grp->job->types)) {
+          $labels_output .= preg_replace("/%%LABEL%%/",$grp->job->job_id,$CONF['besteffort_label']);
+        } else {
+          $labels_output .= $grp->job->job_id;
+        }
         $labels_output .= '</text>';
       }
     }
@@ -743,8 +761,8 @@ $page_width = $CONF['gantt_left_align'] + $gantt_width + $CONF['right_margin'];
 
 // labers will be printed at the end of the doc to be on top of the job boxes.
 $labels_output = "";
-// begin SVG doc + script + texture patterns
-$output = <<<EOT
+// SVG headers + script + defs
+$output_headers = <<<EOT
 <?xml version="1.0" standalone="no"?>
 <svg width="{$page_width}px" height="{$page_height}px" viewBox="0 0 {$page_width} {$page_height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" xml:space="preserve" zoomAndPan="magnify" onload="init(evt)" color-rendering="optimizeSpeed" image-rendering="optimizeSpeed" text-rendering="optimizeSpeed" shape-rendering="optimizeSpeed" onmousedown="rootMouseDown(evt)" onmouseup="rootMouseUp(evt)" onmousemove="rootMouseMove(evt)" onclick="rootClick(evt)" >
 
@@ -891,13 +909,11 @@ function mouseMove(evt) {
   infobox.setAttribute("transform", "translate(" + x + "," + y + ")");
 }
 ]]></script>
+EOT;
 
-<defs>
-{$CONF['patterns']}
-</defs> 
-
+// begin diagram drawing
+$output = <<<EOT
 <rect x="{$CONF['gantt_left_align']}" y="{$CONF['gantt_top']}" width="{$gantt_width}" height="{$gantt_height}" stroke="#0000FF" stroke-width="1" fill="#FFFFFF" />';
-
 EOT;
 
 // compute the steps of the time rulers
@@ -1005,9 +1021,15 @@ $output .=  <<<EOT
 </svg>
 EOT;
 
+$output_headers .= <<<EOT
+<defs>
+{$patterns}
+</defs> 
+EOT;
+
 // generate doc
 header("Content-Type: image/svg+xml");
 header('Content-Encoding: gzip');
-print gzencode($output);
+print gzencode($output_headers . $output);
 
 ?>
