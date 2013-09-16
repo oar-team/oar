@@ -432,9 +432,8 @@ class ResourceId {
     return $output;
   }
   function svg_jobs($y) {
-    global $CONF, $gantt_now;
+    global $CONF, $gantt_now, $output_labels;
     $output = '';
-    $labels_output = '';
     foreach ($this->job_resource_id_groups as $grp) {
       if($grp->job->stop_time > 0) {
         $width = date2px($grp->job->stop_time) - date2px($grp->job->start_time);
@@ -452,16 +451,16 @@ class ResourceId {
       }    
       $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color().'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
       if ($width > $CONF['gantt_min_job_width_for_label']) {
-        $labels_output .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $width / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)">';
+        $output_labels .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $width / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)">';
         if (preg_grep("/^besteffort$/", $grp->job->types)) {
-          $labels_output .= preg_replace("/%%LABEL%%/",$grp->job->job_id,$CONF['besteffort_label']);
+          $output_labels .= preg_replace("/%%LABEL%%/",$grp->job->job_id,$CONF['besteffort_label']);
         } else {
-          $labels_output .= $grp->job->job_id;
+          $output_labels .= $grp->job->job_id;
         }
-        $labels_output .= '</text>';
+        $output_labels .= '</text>';
       }
     }
-    return $output.$labels_output;
+    return $output;
   }
 }
 
@@ -760,7 +759,7 @@ $page_height = max($CONF['gantt_min_height'], $CONF['gantt_top'] + $gantt_height
 $page_width = $CONF['gantt_left_align'] + $gantt_width + $CONF['right_margin'];
 
 // labers will be printed at the end of the doc to be on top of the job boxes.
-$labels_output = "";
+$output_labels = "";
 // SVG headers + script + defs
 $output_headers = <<<EOT
 <?xml version="1.0" standalone="no"?>
@@ -989,6 +988,9 @@ foreach ($resource_ids as $rid) {
   
   $y += $CONF['scale'];
 }
+
+// print labels
+$output .= $output_labels;
 
 // print now line
 if ($gantt_now < $gantt_start_date or $gantt_now > $gantt_stop_date) {
