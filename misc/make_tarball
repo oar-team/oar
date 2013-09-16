@@ -125,7 +125,7 @@ set_oar_version_file "$tarball_srcdir" "$version"
 cd "$cur_dir"
 
 mkdir -p "$TARGET_DIRECTORY"
-tar czf "$TARGET_DIRECTORY/$tarball_prefix.tar.gz" -C "$tarball_dir" .
+tar czf "$TARGET_DIRECTORY/$tarball_prefix.tar.gz" -C "$tarball_dir" oar-$version
 echo "$TARGET_DIRECTORY/$tarball_prefix.tar.gz"
 
 [ -d "$TMPDIR" ] && rm -rf "$TMPDIR"
