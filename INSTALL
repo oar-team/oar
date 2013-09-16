@@ -530,13 +530,18 @@ With this configuration, users can launch X11 applications after a 'oarsub -I'
 on the given node or "oarsh -X node12".
 
 OAR RESTful API Installation
-____________________________
+----------------------------
+
+Description
+___________
 
 Since the version X.X.X, OAR offers an API for users and admins interactions.
 This api must be installed on a frontend node (with the user module installed).
 
-From the packaging
-~~~~~~~~~~~~~~~~~~
+Installation from the packages
+______________________________
+
+**Instructions**
 
 *For RedHat like systems*::
 
@@ -569,10 +574,10 @@ From the packaging
         # Install OAR Restful api
         apt-get install oar-restful-api
 
-From the sources
-~~~~~~~~~~~~~~~~
+Installation from the tarball
+_____________________________
 
-**Requirements**:
+**Requirements**
 
 *For RedHat like systems*::
 
@@ -627,7 +632,7 @@ build/install/setup::
         make api-setup
 
 Configuration
-~~~~~~~~~~~~~
+_____________
 
 *Configuring OAR*
 
@@ -709,7 +714,7 @@ ______________________________
 Installation from the tarball
 _____________________________
 
-**Requirements**:
+**Requirements**
 
 *For RedHat like systems*::
 
