@@ -3,7 +3,7 @@
 export SHELL=/bin/bash
 
 # Modules that can be builded
-MODULES = server user node monika drawgantt drawgantt-svg doc tools api scheduler-ocaml kamelot kamelot-pg www-conf common common-libs database  
+MODULES = server user node monika drawgantt drawgantt-svg doc tools api kamelot-mysql kamelot-postgresql www-conf common common-libs database  
 
 
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
@@ -20,11 +20,11 @@ TARGETS_UNINSTALL = $(MODULES:=-uninstall)
 TARGETS = $(TARGETS_BUILD) $(TARGETS_CLEAN) $(TARGETS_INSTALL) $(TARGETS_UNINSTALL) $(TARGETS_SETUP)
 
 all:       usage
-build:     $(filter-out scheduler-ocaml% , $(TARGETS_BUILD))
-install:   $(filter-out scheduler-ocaml% , $(TARGETS_INSTALL))
-clean:     $(filter-out scheduler-ocaml% , $(TARGETS_CLEAN))
-uninstall: $(filter-out scheduler-ocaml% , $(TARGETS_UNINSTALL))
-setup:     $(filter-out scheduler-ocaml% , $(TARGETS_SETUP))
+build:     $(TARGETS_BUILD)
+install:   $(TARGETS_INSTALL)
+clean:     $(TARGETS_CLEAN)
+uninstall: $(TARGETS_UNINSTALL)
+setup:     $(TARGETS_SETUP)
 
 tarball: .git
 	./misc/make_tarball
