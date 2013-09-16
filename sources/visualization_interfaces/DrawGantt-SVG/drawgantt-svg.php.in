@@ -101,6 +101,7 @@ if (is_readable(CONFIG_FILE)) {
 ////////////////////////////////////////////////////////////////////////////////
 // Script parameters (GET)
 ////////////////////////////////////////////////////////////////////////////////
+date_default_timezone_set(array_key_exists('timezone',$_GET)?$_GET['timezone']:'UTC');
 $gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
 $gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
 $gantt_relative_start_date = array_key_exists('relative_start',$_GET)?$_GET['relative_start']:-86400;

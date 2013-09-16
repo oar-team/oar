@@ -12,6 +12,10 @@ $CONF['nav_filters'] = array(
   'cluster2 only' => 'cluster="cluster2"',
   'cluster3 only' => 'cluster="cluster3"',
 );
+$CONF['nav_timezones'] = array(
+  'UTC' => "UTC",
+  'Paris' => "Europe/Paris",
+);
 $CONF['nav_custom_buttons'] = array(
   'my label' => 'http://my.url'
 );
