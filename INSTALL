@@ -196,7 +196,7 @@ _____________________________
           apt-get install mysql-server mysql-client libdbd-mysql-perl
           
           # PostgreSQL dependencies
-          apt-get install postgresql-server postgresql-client libdbd-pg-perl
+          apt-get install postgresql postgresql-client libdbd-pg-perl
 
 **Instructions**
 
@@ -591,10 +591,10 @@ _____________________________
           FIXME:
           
           # MySQL dependencies
-          yum install mysql perl-DBD-MySQL
+          yum install perl-DBD-MySQL
           
           # PostgreSQL dependencies
-          yum install postgresql perl-DBD-Pg
+          yum install perl-DBD-Pg
 
 
 *For Debian like system*::
@@ -603,16 +603,16 @@ _____________________________
           apt-get install gcc make tar python-docutils
           
           # Common dependencies
-          apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl httpd-cgi libcgi-fast-perl 
+          apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl apache2 libcgi-fast-perl 
           
           # FastCGI dependency (optional but highly recommended)
           apt-get install libapache2-mod-fastcgi
 
           # MySQL dependencies
-          apt-get install mysql-server mysql-client libdbd-mysql-perl
+          apt-get install libdbd-mysql-perl
           
           # PostgreSQL dependencies
-          apt-get install postgresql-server postgresql-client libdbd-pg-perl
+          apt-get install libdbd-pg-perl
 
 **Instructions**
 
