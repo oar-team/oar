@@ -6,19 +6,20 @@
 # may cause your system to be vulnerable. 
 # You should also check that you have a <Location> directive for each
 # of these aliases  (security issue, see later!)
-ScriptAlias /oarapi %%CGIDIR%%/oarapi.cgi
-ScriptAlias /oarapi-public %%CGIDIR%%/oarapi.cgi
+ScriptAlias /oarapi %%CGIDIR%%/oarapi/oarapi.cgi
+ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 #ScriptAlias /oarapi-debug %%CGIDIR%%/oarapi-debug.cgi
 #ScriptAlias /oarapi-cigri %%CGIDIR%%/oarapi.cgi
 
 # FastCGI server
 <IfModule mod_fastcgi.c>
-  FastCgiServer %%CGIDIR%%/oarapi.cgi -processes 3
+  FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi -processes 3
 </IfModule>
 
 # Default options for the oar api
-<Directory %%CGIDIR%%>
-  Options ExecCGI -MultiViews FollowSymLinks
+<Directory %%CGIDIR%%/oarapi>
+  Options +ExecCGI -MultiViews +FollowSymLinks
+  Require all granted
 
   # FastCGI handler
   <IfModule mod_fastcgi.c>
@@ -113,25 +114,27 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi.cgi
 # name that it sends through the X_REMOTE_IDENT header variable.
 # This is commonly the case for a grid middleware that has already authenticated 
 # users and that may be trusted by OAR.
-<Location /oarapi-cigri>
-  # Require SSL on this location
-  SSLRequireSSL
-  # Check the validity of the client SSL certificate
-  SSLVerifyClient require
-  SSLVerifyDepth  1
-  # In this example, we check that the client is the cigri middleware of the 
-  # Ciment project: the organisational unit presented by the certificatethe 
-  # should be "CIMENT" and the DN should be "CIGRI"
-  SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq "CIMENT" \
-               and %{SSL_CLIENT_S_DN_CN} eq "CIGRI" )
-  # We can also do some filtering on the X_REMOTE_IDENT header
-  ## This example only allows users kameleon and oar to be authenticated to the API
-  # RewriteEngine On
-  # RewriteCond %{HTTP:X_REMOTE_IDENT}  (.*)
-  # RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
-  # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=kameleon
-  # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=oar
-  # RewriteRule .* - [E=MY_REMOTE_IDENT:]
-  # RequestHeader set X_REMOTE_IDENT %{MY_REMOTE_IDENT}e
-</Location>
+#<Location /oarapi-cigri>
+#  <IfModule ssl>
+#    # Require SSL on this location
+#    SSLRequireSSL
+#    # Check the validity of the client SSL certificate
+#    SSLVerifyClient require
+#    SSLVerifyDepth  1
+#    # In this example, we check that the client is the cigri middleware of the 
+#    # Ciment project: the organisational unit presented by the certificatethe 
+#    # should be "CIMENT" and the DN should be "CIGRI"
+#    SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq "CIMENT" \
+#                 and %{SSL_CLIENT_S_DN_CN} eq "CIGRI" )
+#    # We can also do some filtering on the X_REMOTE_IDENT header
+#    ## This example only allows users kameleon and oar to be authenticated to the API
+#    # RewriteEngine On
+#    # RewriteCond %{HTTP:X_REMOTE_IDENT}  (.*)
+#    # RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
+#    # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=kameleon
+#    # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=oar
+#    # RewriteRule .* - [E=MY_REMOTE_IDENT:]
+#    # RequestHeader set X_REMOTE_IDENT %{MY_REMOTE_IDENT}e
+#  </IfModule>
+#</Location>
 
