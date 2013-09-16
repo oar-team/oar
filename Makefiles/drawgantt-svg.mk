@@ -18,11 +18,13 @@ install: install_shared
 	install -d $(DESTDIR)$(WWWDIR)/drawgantt-svg
 	install -m 0644  $(SRCDIR)/drawgantt.php $(DESTDIR)$(WWWDIR)/drawgantt-svg/drawgantt.php
 	install -m 0644  $(SRCDIR)/drawgantt-svg.php $(DESTDIR)$(WWWDIR)/drawgantt-svg/drawgantt-svg.php
+	ln -sf drawgantt.php $(DESTDIR)$(WWWDIR)/drawgantt-svg/index.php
 
 uninstall: uninstall_shared
 	rm -f \
 	    $(DESTDIR)$(WWWDIR)/drawgantt-svg/drawgantt.php \
-	    $(DESTDIR)$(WWWDIR)/drawgantt-svg/drawgantt-svg.php
+	    $(DESTDIR)$(WWWDIR)/drawgantt-svg/drawgantt-svg.php \
+	    $(DESTDIR)$(WWWDIR)/drawgantt-svg/index.php
 	
 	-rmdir \
 	    $(DESTDIR)$(WWWDIR)/drawgantt-svg
