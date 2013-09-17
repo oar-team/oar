@@ -34,7 +34,7 @@ $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
   'besteffort' => 'url(#besteffortPattern)', 
   'deploy' => 'url(#deployPattern)', 
   'container' => 'url(#containerPattern)', 
-  'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
+  'timesharing=(\*|user),(\*|name)' => 'url(#timesharingPattern)', 
   'set_placeholder=\w+' => 'url(#placeholderPattern)',
   );
 
@@ -1005,15 +1005,6 @@ if ($gantt_now < $gantt_start_date or $gantt_now > $gantt_stop_date) {
   $output .= '<line x1="'.date2px($gantt_now).'" y1="'.($CONF['gantt_top'] - 5).'" x2="'.date2px($gantt_now).'" y2="'.($CONF['gantt_top'] + $gantt_height + 5).'" stroke="#FF0000" stroke-width="2"/>';
 }
 
-// print volatile stuff: infobox + zoom
-$output .= <<<EOT
-<g id="infobox" display="none">
-<rect id="infoboxrect" x="0" y="0" rx="10" ry="10" width="200" height="150" fill="#FFFFFF" stroke="#888888" stroke-width="1" style="opacity: 0.9" />
-<text font-size="10" id="infoboxtext" x="10" y="10" fill="#000000" />
-</g>
-<rect x="0" y="0" width="0" height="0" id="zoom" stroke="#0000FF" stroke-width="1" fill="#8888FF" style="opacity: 0.25" display="none" />
-EOT;
-
 // print mobile time ruler
 $output .= '<g id="timeruler" display="none">';
 $output .= '<rect x="'.($CONF['gantt_left_align'] - 30).'" y="0" width="'.($gantt_width + 60).'" height="30" stroke="#000000" stroke-width="1" fill="#FFFFFF" style="opacity: 0.5"/>';
@@ -1023,6 +1014,15 @@ while(($d += $ruler_step) < $gantt_stop_date) {
   $output .= '<text font-size="10" x="'.date2px($d).'" y="15" text-anchor="middle" >'.date("H:i:s",$d).'</text>';
 }
 $output .= '</g>';
+
+// print volatile stuff: infobox + zoom
+$output .= <<<EOT
+<g id="infobox" display="none">
+<rect id="infoboxrect" x="0" y="0" rx="10" ry="10" width="200" height="150" fill="#FFFFFF" stroke="#888888" stroke-width="1" style="opacity: 0.9" />
+<text font-size="10" id="infoboxtext" x="10" y="10" fill="#000000" />
+</g>
+<rect x="0" y="0" width="0" height="0" id="zoom" stroke="#0000FF" stroke-width="1" fill="#8888FF" style="opacity: 0.25" display="none" />
+EOT;
 
 // end SVG doc
 $output .=  <<<EOT

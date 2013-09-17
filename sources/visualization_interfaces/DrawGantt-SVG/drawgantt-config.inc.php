@@ -48,7 +48,7 @@ $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
   'besteffort' => 'url(#besteffortPattern)', 
   'deploy' => 'url(#deployPattern)', 
   'container' => 'url(#containerPattern)', 
-  'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
+  'timesharing=(\*|user),(\*|name)' => 'url(#timesharingPattern)', 
   'set_placeholder=\w+' => 'url(#placeholderPattern)',
   );
 
