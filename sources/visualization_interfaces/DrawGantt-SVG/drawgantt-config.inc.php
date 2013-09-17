@@ -45,6 +45,7 @@ $CONF['resource_hierarchy'] = array( // properties to use to build the resource 
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
+  'besteffort' => 'url(#besteffortPattern)', 
   'deploy' => 'url(#deployPattern)', 
   'container' => 'url(#containerPattern)', 
   'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
@@ -86,8 +87,10 @@ $CONF['static_patterns'] = <<<EOT
 <pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="0" y="20" fill="#888888">C</text>
 </pattern> 
+<pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="10" y="20" fill="#888888">B</text>
+</pattern> 
 <pattern id="placeholderPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<line x1="0" y1="0" x2="20" y2="20" stroke="#000000" stroke-width="2" />
 <text font-size="10" x="10" y="20" fill="#888888">P</text>
 </pattern> 
 <pattern id="deployPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
@@ -98,14 +101,13 @@ $CONF['static_patterns'] = <<<EOT
 </pattern> 
 EOT;
 
-// Besteffort job type display options
-$CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
-$CONF['besteffort_label'] = "(%%LABEL%%)"; // default: "(%%LABEL%%)"
+// Besteffort job display options for the part shown in the future
+$CONF['besteffort_truncate_job_to_now'] = 0; // default: 1
 $CONF['besteffort_pattern'] = <<<EOT
 <pattern id="%%PATTERN_ID%%" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
-<line x1="0" y1="0" x2="10" y2="10" stroke="%%PATTERN_COLOR%%" stroke-width="4"/>
-<line x1="-5" y1="5" x2="5" y2="15" stroke="%%PATTERN_COLOR%%" stroke-width="4"/>
-<line x1="5" y1="-5" x2="15" y2="5" stroke="%%PATTERN_COLOR%%" stroke-width="4"/>
+<line x1="0" y1="0" x2="10" y2="10" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
+<line x1="-5" y1="5" x2="5" y2="15" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
+<line x1="5" y1="-5" x2="15" y2="5" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
 </pattern>'
 EOT;
 

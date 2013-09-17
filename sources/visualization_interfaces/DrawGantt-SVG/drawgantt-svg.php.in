@@ -31,6 +31,7 @@ $CONF['resource_hierarchy'] = array( // properties to use to build the resource 
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
+  'besteffort' => 'url(#besteffortPattern)', 
   'deploy' => 'url(#deployPattern)', 
   'container' => 'url(#containerPattern)', 
   'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
@@ -72,8 +73,10 @@ $CONF['static_patterns'] = <<<EOT
 <pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="0" y="20" fill="#888888">C</text>
 </pattern> 
+<pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="10" y="20" fill="#888888">B</text>
+</pattern> 
 <pattern id="placeholderPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<line x1="0" y1="0" x2="20" y2="20" stroke="#000000" stroke-width="2" />
 <text font-size="10" x="10" y="20" fill="#888888">P</text>
 </pattern> 
 <pattern id="deployPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
@@ -84,14 +87,13 @@ $CONF['static_patterns'] = <<<EOT
 </pattern> 
 EOT;
 
-// Besteffort job type display options
-$CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
-$CONF['besteffort_label'] = "(%%LABEL%%)"; // default: "(%%LABEL%%)"
+// Besteffort job display options for the part shown in the future
+$CONF['besteffort_truncate_job_to_now'] = 0; // default: 1
 $CONF['besteffort_pattern'] = <<<EOT
 <pattern id="%%PATTERN_ID%%" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
-<line x1="0" y1="0" x2="10" y2="10" stroke="%%PATTERN_COLOR%%" stroke-width="4"/>
-<line x1="-5" y1="5" x2="5" y2="15" stroke="%%PATTERN_COLOR%%" stroke-width="4"/>
-<line x1="5" y1="-5" x2="15" y2="5" stroke="%%PATTERN_COLOR%%" stroke-width="4"/>
+<line x1="0" y1="0" x2="10" y2="10" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
+<line x1="-5" y1="5" x2="5" y2="15" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
+<line x1="5" y1="-5" x2="15" y2="5" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
 </pattern>'
 EOT;
 
@@ -118,7 +120,7 @@ $gantt_width = $CONF['gantt_min_width'];
 if (array_key_exists('width', $_GET) and $_GET['width'] > ($CONF['gantt_left_align'] + $CONF['gantt_min_width'] + $CONF['right_margin'])) {
         $gantt_width = $_GET['width'] - $CONF['gantt_left_align'] - $CONF['right_margin'];
 }
-$patterns = $CONF['static_patterns'];
+$patterns = array();
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions and database wrapper class
@@ -266,7 +268,7 @@ class State {
 // Storage class for jobs
 class Job {
   public $job_id,$job_name,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time,$resource_ids,$network_addresses,$types;
-  protected $color;
+  protected $color, $colorHL;
   function __construct($job_id,$job_name,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time) {
     $this->job_id = $job_id;
     $this->job_name = $job_name;
@@ -285,6 +287,7 @@ class Job {
     $this->network_addresses = array();
     $this->types = array();
     $this->color = NULL;
+    $this->colorHL = NULL;
   }
 
   function add_resource_id($resource_id) {
@@ -332,21 +335,15 @@ class Job {
     //$output .= "|Properties: {$this->properties}";
     return $output;
   }
-  function color() {
-    global $CONF, $patterns;
-    if ($this->color == NULL) {
+  function color($hl) {
+    global $CONF;
+    if ($this->color == NULL or $this->colorHL == NULL) {
       // compute a suffled number for job_id, so that colors are not too close
       $shuffled = (int)(360 * fmod($this->job_id * $CONF['magic_number'], 1));
-      if (preg_grep("/^besteffort$/", $this->types)) {
-        $p = preg_replace("/%%PATTERN_ID%%/", "job{$this->job_id}Pattern", $CONF['besteffort_pattern']);
-        $p = preg_replace("/%%PATTERN_COLOR%%/", "hsl(".$shuffled.",{$CONF['job_color_saturation_lightness']})", $p);
-        $patterns .= $p;
-        $this->color = "url(#job{$this->job_id}Pattern)";
-      } else {
-        $this->color = "hsl(".$shuffled.",{$CONF['job_color_saturation_lightness']})";
-      }
+      $this->color = "hsl(".$shuffled.",{$CONF['job_color_saturation_lightness']})";
+      $this->colorHL = "hsl(".$shuffled.",{$CONF['job_color_saturation_lightness_highlight']})";
     }
-    return $this->color;
+    return (($hl)?$this->colorHL:$this->color);
   }
 }
 
@@ -432,31 +429,38 @@ class ResourceId {
     return $output;
   }
   function svg_jobs($y) {
-    global $CONF, $gantt_now, $output_labels;
+    global $CONF, $gantt_now, $output_labels, $patterns;
     $output = '';
     foreach ($this->job_resource_id_groups as $grp) {
       if($grp->job->stop_time > 0) {
         $width = date2px($grp->job->stop_time) - date2px($grp->job->start_time);
       } else {
-        if ($CONF['besteffort_truncate_job_to_now'] and in_array('besteffort', $grp->job->types) and ($grp->job->state == "Running")) {
-          $width = date2px($gantt_now) - date2px($grp->job->start_time);
-        } else {
-          $width = date2px($grp->job->start_time + $grp->job->moldable_walltime) - date2px($grp->job->start_time);
-        }
+        $width = date2px($grp->job->start_time + $grp->job->moldable_walltime) - date2px($grp->job->start_time);
       }
       foreach ($CONF['job_colors'] as $type => $color) {
         if (preg_grep("/^{$type}$/", $grp->job->types)) {
           $output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$color.'" stroke-width="0"  style="opacity: 0.5" />';
         }
       }    
-      $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color().'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+      if (in_array('besteffort', $grp->job->types) and ($grp->job->state == "Running")) {
+        $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.(date2px($gantt_now) - date2px($grp->job->start_time)).'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color(false).'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+        if (! $CONF['besteffort_truncate_job_to_now']) { 
+          if (! array_key_exists($grp->job->job_id, $patterns)) {
+            $p = preg_replace("/%%PATTERN_ID%%/", "besteffort{$grp->job->job_id}Pattern", $CONF['besteffort_pattern']);
+            $p = preg_replace("/%%PATTERN_COLOR%%/", $grp->job->color(false), $p);
+            $patterns[$grp->job->job_id] = $p;
+            $p = preg_replace("/%%PATTERN_ID%%/", "besteffortHL{$grp->job->job_id}Pattern", $CONF['besteffort_pattern']);
+            $p = preg_replace("/%%PATTERN_COLOR%%/", $grp->job->color(true), $p);
+            $patterns[$grp->job->job_id] .= $p;
+          }
+          $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($gantt_now).'" y="'.$y.'" width="'.($width - (date2px($gantt_now) - date2px($grp->job->start_time))).'" height="'.($grp->size() * $CONF['scale']).'" fill="'."url(#besteffort{$grp->job->job_id}Pattern)".'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+	}
+      } else {
+        $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color(false).'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+      }
       if ($width > $CONF['gantt_min_job_width_for_label']) {
         $output_labels .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $width / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)">';
-        if (preg_grep("/^besteffort$/", $grp->job->types)) {
-          $output_labels .= preg_replace("/%%LABEL%%/",$grp->job->job_id,$CONF['besteffort_label']);
-        } else {
-          $output_labels .= $grp->job->job_id;
-        }
+        $output_labels .= $grp->job->job_id;
         $output_labels .= '</text>';
       }
     }
@@ -863,7 +867,8 @@ function mouseOver(evt, message, highlight) {
   if (highlight != '') {
     var elems = document.getElementsByClassName(highlight);
     for(var i = 0; i < elems.length; i++) {
-      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("{$CONF['job_color_saturation_lightness']}","{$CONF['job_color_saturation_lightness_highlight']}"));
+      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace(",{$CONF['job_color_saturation_lightness']})",",{$CONF['job_color_saturation_lightness_highlight']})"));
+      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("besteffort","besteffortHL"));
     }
   }
   while (infoboxtext.hasChildNodes()) { 
@@ -887,7 +892,8 @@ function mouseOut(evt, highlight) {
   if (highlight != '') {
     var elems = document.getElementsByClassName(highlight);
     for(var i = 0; i < elems.length; i++) {
-      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("{$CONF['job_color_saturation_lightness_highlight']}","{$CONF['job_color_saturation_lightness']}"));
+      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace(",{$CONF['job_color_saturation_lightness_highlight']})",",{$CONF['job_color_saturation_lightness']})"));
+      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("besteffortHL","besteffort"));
     }
   }
 }
@@ -1023,15 +1029,11 @@ $output .=  <<<EOT
 </svg>
 EOT;
 
-$output_headers .= <<<EOT
-<defs>
-{$patterns}
-</defs> 
-EOT;
+$output_defs = "<defs>".$CONF['static_patterns'].join("",array_values($patterns))."</defs>";
 
 // generate doc
 header("Content-Type: image/svg+xml");
 header('Content-Encoding: gzip');
-print gzencode($output_headers . $output);
+print gzencode($output_headers . $output_defs . $output);
 
 ?>
