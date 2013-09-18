@@ -2,8 +2,10 @@ oar (2.5.2-4) UNRELEASED; urgency=low
 
   * Set Pierre Neyron as Maintainer
   * Add Philippe Le Brouster as Uploader
+  * Fix piupart reported error: package uses files from /usr/share/doc
+    (Closes: #722621)
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 19 Sep 2013 00:01:43 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 18 Sep 2013 23:23:47 +0200
 
 oar (2.5.2-3.1) unstable; urgency=low
 
