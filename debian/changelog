@@ -1,3 +1,10 @@
+oar (2.5.2-4) UNRELEASED; urgency=low
+
+  * Set Pierre Neyron as Maintainer
+  * Add Philippe Le Brouster as Uploader
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 19 Sep 2013 00:01:43 +0200
+
 oar (2.5.2-3.1) unstable; urgency=low
 
   * Non-maintainer upload.

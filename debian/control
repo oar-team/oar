@@ -1,8 +1,9 @@
 Source: oar
 Section: science
 Priority: extra
-Maintainer: Philippe Le Brouster <plb@nebkha.net>
-Uploaders: Vincent Danjean <vdanjean@debian.org>
+Maintainer: Pierre Neyron <pierre.neyron@free.fr>
+Uploaders: Philippe Le Brouster <plb@nebkha.net>,
+  Vincent Danjean <vdanjean@debian.org>
 DM-Upload-Allowed: yes
 Build-Depends: debhelper (>= 9~), po-debconf, python-docutils, perl
 Standards-Version: 3.9.3
