@@ -4,6 +4,7 @@ oar (2.5.2-4) UNRELEASED; urgency=low
   * Add Philippe Le Brouster as Uploader
   * Fix piupart reported error: package uses files from /usr/share/doc
     (Closes: #722621)
+  * Fix database schema version: 2.5.2
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 18 Sep 2013 23:23:47 +0200
 
