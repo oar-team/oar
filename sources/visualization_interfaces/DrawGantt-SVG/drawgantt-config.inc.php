@@ -70,7 +70,6 @@ $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
 // Colors and fill patterns for jobs and states
 $CONF['job_color_saturation_lightness'] = "75%,75%"; // default: "75%,75%"
 $CONF['job_color_saturation_lightness_highlight'] = "50%,50%"; // default: "50%,50%"
-$CONF['magic_number'] = (1+sqrt(5))/2; // magic number used to compute the function hue(jod_id) 
 $CONF['static_patterns'] = <<<EOT
 <pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />
@@ -102,7 +101,7 @@ $CONF['static_patterns'] = <<<EOT
 EOT;
 
 // Besteffort job display options for the part shown in the future
-$CONF['besteffort_truncate_job_to_now'] = 0; // default: 1
+$CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
 $CONF['besteffort_pattern'] = <<<EOT
 <pattern id="%%PATTERN_ID%%" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
 <line x1="0" y1="0" x2="10" y2="10" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
@@ -110,6 +109,29 @@ $CONF['besteffort_pattern'] = <<<EOT
 <line x1="5" y1="-5" x2="15" y2="5" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
 </pattern>'
 EOT;
+
+// Advanced customization for the computation of the colors of the jobs
+// Uncomment and adapt the following to override the default function
+//class MyShuffle extends Shuffle {
+//    // Default function: get the color's hue value as a function of the job_id
+//    function job2int($job) {
+//        // compute a suffled number for job_id, so that colors are not too close
+//        $magic_number = (1+sqrt(5))/2;
+//        return (int)(360 * fmod($job->job_id * $magic_number, 1));
+//    }
+//    // Other example: get the color's hue value as a function of the job_user value
+//    protected $cache = array(); 
+//    function job2int($job) { 
+//        // shuffled number based on the job_user:
+//        if (! array_key_exists($job->job_user, $this->cache)) {
+//            $n = (int) base_convert(substr(md5($job->job_user) ,0, 5), 16, 10);
+//            $magic_number = (1+sqrt(5))/2;
+//            $this->cache[$job->job_user] = (int)(360 * fmod($n * $magic_number, 1));
+//        }
+//        return $this->cache[$job->job_user];
+//    }
+//}
+//Shuffle::init(new MyShuffle()); // this line must be uncommented for the overiding to take effect
 
 // Debugging
 $CONF['debug'] = 0; // Set to 1 to enable php debug prints in the web server error logs
