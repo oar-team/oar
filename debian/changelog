@@ -1,6 +1,11 @@
 oar (2.5.2-3+deb7u1) wheezy-security; urgency=high
 
+  [ Pierre Neyron ]
   * Fix CVE-2016-1235
+
+  [ Gregor Herrmann ]
+  * Fix "FTBFS with perl 5.18: POD failure":
+    add patch to add encoding to POD
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 01 Apr 2016 21:26:15 +0200
 
