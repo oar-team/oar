@@ -6,6 +6,7 @@ oar (2.5.2-4) UNRELEASED; urgency=low
     (Closes: #722621)
   * Fix database schema version: 2.5.2
   * Fix dependencies to the database backend packages
+  * Fix packages post scripts: purge /etc/oar, /var/lib/oar
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 18 Sep 2013 23:23:47 +0200
 
