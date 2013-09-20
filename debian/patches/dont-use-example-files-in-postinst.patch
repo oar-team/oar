@@ -1,3 +1,9 @@
+Fix debian #722621: piuparts says packages use files from /usr/share/doc
+
+Required files are moved to /usr/share/oar
+
+For upstream
+
 Index: oar/Makefiles/api.mk
 ===================================================================
 --- oar.orig/Makefiles/api.mk	2013-09-19 11:58:10.389755813 +0200

@@ -1,4 +1,8 @@
-Index: oar/sources/core/tools/oardo.c
+Fix compilation warning
+
+For upstream
+
+Index: oar/sources/core/tools/oardo.
 ===================================================================
 --- oar.orig/sources/core/tools/oardo.c	2013-09-19 23:06:57.461518535 +0200
 +++ oar/sources/core/tools/oardo.c	2013-09-19 23:07:28.034101201 +0200

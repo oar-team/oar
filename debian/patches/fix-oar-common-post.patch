@@ -1,3 +1,5 @@
+Ignore stderr (in case the file does not exists)
+For upstream
 Index: oar/setup/common.sh.in
 ===================================================================
 --- oar.orig/setup/common.sh.in	2013-09-19 11:58:10.389755813 +0200

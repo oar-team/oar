@@ -1,3 +1,7 @@
+Fix oar database structure version
+
+For upstream
+
 Index: oar/sources/core/database/pg_structure.sql
 ===================================================================
 --- oar.orig/sources/core/database/pg_structure.sql	2013-09-08 23:52:33.273012468 +0200

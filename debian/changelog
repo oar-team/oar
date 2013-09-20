@@ -13,6 +13,7 @@ oar (2.5.2-4) UNRELEASED; urgency=low
 
   [ Vincent Danjean ]
   * Bump Standard-Version (no change needed)
+  * Add header to new quilt patches
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 20 Sep 2013 08:44:51 +0200
 

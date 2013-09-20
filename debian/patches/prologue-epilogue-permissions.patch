@@ -1,3 +1,7 @@
+Fix permissions for epilogue/prologue
+
+For upstream
+
 Index: oar/setup/node.sh.in
 ===================================================================
 --- oar.orig/setup/node.sh.in	2013-09-19 23:32:27.000000000 +0200
