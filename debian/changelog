@@ -1,5 +1,6 @@
 oar (2.5.2-4) UNRELEASED; urgency=low
 
+  [ Pierre Neyron ]
   * Set Pierre Neyron as Maintainer
   * Add Philippe Le Brouster as Uploader
   * Fix piupart reported error: package uses files from /usr/share/doc
@@ -9,6 +10,9 @@ oar (2.5.2-4) UNRELEASED; urgency=low
   * Fix packages post scripts: purge /etc/oar, /var/lib/oar
   * Fix oardo.c compilation warning
   * Fix prologues and epilogues configuration files permissions
+
+  [ Vincent Danjean ]
+  * Bump Standard-Version (no change needed)
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 20 Sep 2013 08:44:51 +0200
 
