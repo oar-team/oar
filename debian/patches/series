@@ -1,3 +1,4 @@
+fix-oardo-c-warning.patch
 fix-oar-common-post.patch
 dont-use-example-files-in-postinst.patch
 0001-Remove-the-desktop-computing-module-from-the-2.5-bra.patch
