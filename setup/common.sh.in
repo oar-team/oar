@@ -88,11 +88,11 @@ bash_oar
 EOF
     touch ${OARHOMEDIR}/.bash_profile
     touch ${OARHOMEDIR}/.bashrc
-    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bash_profile; then
+    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bash_profile 2> /dev/null; then
         echo '' >> ${OARHOMEDIR}/.bash_profile
         echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bash_profile
     fi
-    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bashrc; then
+    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bashrc 2> /dev/null; then
         echo '' >> ${OARHOMEDIR}/.bashrc
         echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bashrc
     fi
@@ -144,8 +144,8 @@ common_setup() {
         0755
 
     set_rights ${OARDIR}/oarsh_oardo     6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oarnodesetting 6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarnodesetting 6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
 
-    set_rights ${OARDIR}/oardodo/oardodo 6754 ${ROOTUSER} ${OAROWNERGROUP}
+    set_rights ${OARDIR}/oardodo/oardodo 6750 ${ROOTUSER} ${OAROWNERGROUP}
     set_rights ${OARDIR}/oardodo         0755 ${ROOTUSER} ${OAROWNERGROUP}
 }
