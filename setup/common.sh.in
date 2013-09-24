@@ -129,17 +129,17 @@ common_setup() {
     mkdir -p ${OARCONFDIR}/
 
     install_conffile \
-        ${EXAMPLEDIR}/oar.conf \
+        ${SHAREDIR}/oar.conf \
         ${OARCONFDIR}/oar.conf \
         0600 ${OAROWNER}:${ROOTGROUP}
 
     install_conffile \
-        ${EXAMPLEDIR}/oarnodesetting_ssh \
+        ${SHAREDIR}/oarnodesetting_ssh \
         ${OARCONFDIR}/oarnodesetting_ssh \
         0755
 
     install_conffile \
-        ${EXAMPLEDIR}/update_cpuset_id.sh \
+        ${SHAREDIR}/update_cpuset_id.sh \
         ${OARCONFDIR}/update_cpuset_id.sh \
         0755
 

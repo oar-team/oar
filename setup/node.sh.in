@@ -46,17 +46,17 @@ install_ssh_host_keys() {
 
 node_setup() {
     install_conffile \
-        ${EXAMPLEDIR}/epilogue \
+        ${SHAREDIR}/epilogue \
         ${OARCONFDIR}/epilogue \
         0755
     
     install_conffile \
-        ${EXAMPLEDIR}/prologue \
+        ${SHAREDIR}/prologue \
         ${OARCONFDIR}/prologue \
         0755
 
     install_conffile \
-        ${EXAMPLEDIR}/sshd_config \
+        ${SHAREDIR}/sshd_config \
         ${OARCONFDIR}/sshd_config \
         0600 ${OAROWNER}
 

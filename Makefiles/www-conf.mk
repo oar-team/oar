@@ -1,7 +1,7 @@
 MODULE=www-conf
 SRCDIR=sources
 
-EXAMPLEDIR_FILES= $(SRCDIR)/visualization_interfaces/apache.conf.in
+SHAREDIR_FILES= $(SRCDIR)/visualization_interfaces/apache.conf.in
 
 include Makefiles/shared/shared.mk
 

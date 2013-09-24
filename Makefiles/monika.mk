@@ -3,7 +3,7 @@ SRCDIR=sources/visualization_interfaces/Monika
 
 OAR_PERLLIB=$(SRCDIR)/lib
 
-EXAMPLEDIR_FILES= $(SRCDIR)/monika.conf.in \
+SHAREDIR_FILES= $(SRCDIR)/monika.conf.in \
 		  $(SRCDIR)/userInfos.cgi
 
 CGIDIR_FILES = $(SRCDIR)/monika.cgi.in

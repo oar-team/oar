@@ -1,7 +1,7 @@
 MODULE=drawgantt-svg
 SRCDIR=sources/visualization_interfaces/DrawGantt-SVG
 
-EXAMPLEDIR_FILES=$(SRCDIR)/drawgantt-config.inc.php
+SHAREDIR_FILES=$(SRCDIR)/drawgantt-config.inc.php
 
 PROCESS_TEMPLATE_FILES=$(SRCDIR)/drawgantt-svg.php.in \
 			$(SRCDIR)/drawgantt.php.in

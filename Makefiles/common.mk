@@ -10,7 +10,7 @@ MANDIR_FILES = $(SRCDIR)/man/man1/oarsh.1 \
 	       $(SRCDIR)/man/man1/oarprint.1 \
 	       $(SRCDIR)/man/man1/oarnodesetting.1
 
-EXAMPLEDIR_FILES = $(SRCDIR)/tools/oar.conf.in \
+SHAREDIR_FILES = $(SRCDIR)/tools/oar.conf.in \
                    $(SRCDIR)/tools/oarnodesetting_ssh.in \
 		   $(SRCDIR)/tools/update_cpuset_id.sh.in
 

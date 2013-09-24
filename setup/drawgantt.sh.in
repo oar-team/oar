@@ -2,7 +2,7 @@
 drawgantt_setup() {
 
     install_conffile \
-        ${EXAMPLEDIR}/drawgantt.conf \
+        ${SHAREDIR}/drawgantt.conf \
         ${OARCONFDIR}/drawgantt.conf \
         0600 \
         ${WWWUSER}
