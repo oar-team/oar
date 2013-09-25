@@ -7,7 +7,7 @@ OAR_PERLLIB = $(SRCDIR)/lib
 
 OARDIR_BINFILES = $(SRCDIR)/oarapi.pl
 
-SHAREDIR = $(SRCDIR)/apache2.conf.in \
+SHAREDIR_FILES = $(SRCDIR)/apache2.conf.in \
 		   $(SRCDIR)/api_html_header.pl \
 		   $(SRCDIR)/api_html_postform.pl \
 		   $(SRCDIR)/api_html_postform_resources.pl \
