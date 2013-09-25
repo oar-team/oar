@@ -12,7 +12,7 @@ global:
  # 
  # Debian specific
  distrib: debian
- debian_version_name: squeeze
+ debian_version_name: wheezy
  distrib_repository: http://ftp.fr.debian.org/debian
  output_environment_file_system_type: ext4
  #
