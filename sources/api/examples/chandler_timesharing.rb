@@ -53,7 +53,7 @@ printf ("\033[2K")
 # Construct a has of used resources
 used_resources={}
 resource_jobs={}
-jobs['items'].each do |job|
+jobs['items'].select{|job| job['state'] == "Running"}.each do |job|
   v=1
   if job['types'].grep(/^timesharing=\*,name$/).any?
     v=2
@@ -118,6 +118,3 @@ NaturalSort::naturalsort(resource_jobs).each do |k,v|
   end
   print "\n"
 end
-
-print "For the timeline of the machines usage, please have a look at:\n"
-print " https://intranet.grid5000.fr/oar/grenoble/digitalis/drawgantt-svg/\n"
