@@ -8,6 +8,7 @@ require 'oarrestapi_lib'
 require 'shared_examples'
 APIURI="http://kameleon:kameleon@localhost/oarapi-priv/" 
 
+
 $jobid=""
 $rjobid=""
 
@@ -304,6 +305,7 @@ describe OarApi do
     before(:all) do
       @api = OarApi.new(APIURI)
       @api.get_hash("jobs/details")
+      @values=@api.value
     end
     context "(basic structure)" do
       it_should_behave_like "All list structures"
@@ -319,13 +321,13 @@ describe OarApi do
       end
       context "should have resources behaving correctly" do
         before(:all) do
-          @api.value=@api.value['resources'][0]
+          @api.value=@values["items"][0]['resources'][0]
         end
         it_should_behave_like "ResourceId"
       end
       context "should have nodes behaving correctly" do
         before(:all) do
-          @api.value=@api.value['nodes'][0]
+          @api.value=@values["items"][0]['nodes'][0]
         end
         it_should_behave_like "Node"
         it "should have a status" do
