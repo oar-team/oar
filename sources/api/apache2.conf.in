@@ -19,7 +19,6 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 # Default options for the oar api
 <Directory %%CGIDIR%%/oarapi>
   Options +ExecCGI -MultiViews +FollowSymLinks
-  Require all granted
 
   # FastCGI handler
   <IfModule mod_fastcgi.c>
@@ -28,6 +27,8 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 
    # Control hosts that can access to the API
    Order deny,allow
+   #Require all granted # <- seems to be the "Deny from all" syntax for apache > 2.3
+                        # but gives a 500 error with apache 2.2
    Deny from all
    Allow from             localhost
    Allow from             localhost.localdomain
