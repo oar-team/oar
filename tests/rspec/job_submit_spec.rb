@@ -1,3 +1,5 @@
+$LOAD_PATH << '.'
+
 require 'oarrestapi_lib'
 
 $jobid = ""

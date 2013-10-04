@@ -2,6 +2,8 @@
 # Please, run this test on a kameleon appliance
 # If this is the first time, run it twice and do not care about the first time.
 
+$LOAD_PATH << '.'
+
 require 'oarrestapi_lib'
 require 'shared_examples'
 APIURI="http://kameleon:kameleon@localhost/oarapi-priv/" 

@@ -1,3 +1,5 @@
+$LOAD_PATH << '.'
+
 require 'oarrestapi_lib'
 require 'shared_examples'
 APIURI="http://oar:kameleon@localhost/oarapi-priv/" 
