@@ -3875,7 +3875,8 @@ sub get_finaud_nodes($) {
                                     (state = \'Alive\' OR
                                     (state = \'Suspected\' AND finaud_decision = \'YES\')) AND
                                     type = \'default\' AND
-                                    desktop_computing = \'NO\'
+                                    desktop_computing = \'NO\' AND
+                                    next_state = \'UnChanged\'
                               ");
     }
     else{
@@ -3898,7 +3899,8 @@ sub get_finaud_nodes($) {
                       (state = \'Alive\' OR
                       (state = \'Suspected\' AND finaud_decision = \'YES\')) AND
                       type = \'default\' AND
-                      desktop_computing = \'NO\'";
+                      desktop_computing = \'NO\' AND
+                      next_state = \'UnChanged\'";
       $sth = $dbh->prepare($str);
     }
     $sth->execute();
