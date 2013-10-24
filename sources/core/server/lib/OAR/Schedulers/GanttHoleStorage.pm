@@ -21,10 +21,12 @@ my $Infinity = 4294967296;
 # gantt chart management
 sub new($$);
 sub new_with_1_hole($$$$$$);
+sub add_1_hole($$$$);
 sub add_new_resources($$);
 sub set_occupation($$$$);
 sub get_free_resources($$$);
 sub find_first_hole($$$$$);
+sub find_first_hole_with_constraints($$$$$$);
 sub pretty_print($);
 sub get_infinity_value();
 
@@ -107,6 +109,21 @@ sub new_with_1_hole($$$$$$){
     $gantt->[1]->[1] = [[($date + $duration), $resources_vec]];
 
     return($gantt);
+}
+
+# Add 1 hole to a Gantt
+# arg : gantt, date, duration, resource_vec
+sub add_1_hole($$$$) {
+    my $gantt = shift;
+    my $date = shift;
+    my $duration = shift;
+    my $resources_vec = shift;
+    my $all_resources_vec = $gantt->[0]->[2];
+    my $max_resource_number = (length($all_resources_vec) - 1) * 8;
+    my $minimum_hole_duration = $gantt->[0]->[4];
+
+    my $new_gantt_with_1_hole = new_with_1_hole($max_resource_number, $minimum_hole_duration, $date, $duration, $resources_vec, $all_resources_vec);
+    return merge_clone($gantt, $new_gantt_with_1_hole);
 }
 
 # Build a new gantt from the merger of two existing gantts
