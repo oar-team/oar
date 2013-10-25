@@ -364,7 +364,7 @@ foreach my $job (@Rjobs){
         if (defined($types->{container})){
             $container_id = $i;
             oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
-            $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $Minimum_hole_time, $job->{start_date}, $moldable->[1] + $Security_time_overhead, $vec, $All_resource_list_vec);
+            $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $Minimum_hole_time, $job->{start_time}, $moldable->[1] + $Security_time_overhead, $vec, $All_resource_list_vec);
         }
 
         #Fill all other gantts
@@ -621,7 +621,7 @@ sub check_reservation_jobs($$){
                     if (defined($types->{container})){
                         $container_id = $i;
                         oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
-                        $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $Minimum_hole_time, $job->{start_date}, $duration  + $Security_time_overhead, $vec, $All_resource_list_vec);
+                        $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $Minimum_hole_time, $job->{start_time}, $duration  + $Security_time_overhead, $vec, $All_resource_list_vec);
                     }
         
                     #Fill all other gantts
