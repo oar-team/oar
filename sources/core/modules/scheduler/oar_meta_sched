@@ -7,10 +7,10 @@ use DBI();
 use OAR::IO;
 use OAR::Modules::Judas qw(oar_debug oar_warn oar_error set_current_log_category);
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
-use Data::Dumper;
 use OAR::Tools;
 use OAR::Modules::Hulot;
 use OAR::Schedulers::GanttHoleStorage;
+#use Data::Dumper;
 
 # Log category
 set_current_log_category('scheduler');
@@ -45,6 +45,12 @@ if (!defined($sched_available_suspended_resource_type_tmp)){
 my $Resources_to_always_add_type = get_conf("SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE");
 my @Resources_to_always_add = ();
 
+my $Max_nb_processes = get_conf_with_default_param("SCHEDULER_NB_PROCESSES",1);
+if ($Max_nb_processes > 1) {
+    oar_debug("[MetaSched] Using Gantt PARALLEL algorithm\n");
+}
+my $Constraints_iterations = get_conf_with_default_param("SCHEDULER_CONSTRAINTS_ITERATIONS",4);
+
 # Do we log every scheduler's computation ?
 my $Log_scheduling = get_conf("SCHEDULER_LOG_DECISIONS");
 if (defined($Log_scheduling) and $Log_scheduling ne "yes") { $Log_scheduling = undef; }
@@ -60,6 +66,9 @@ my $Minimum_hole_time = 0;
 if (is_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME")){
     $Minimum_hole_time = get_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME");
 }
+
+# timeout for validating reservation
+my $Reservation_validation_timeout = 30;
 
 # waiting time when a reservation has not all of its nodes
 my $Reservation_waiting_timeout = 300;
@@ -83,7 +92,7 @@ if (defined($Resources_to_always_add_type)){
     my $tmp_result_state_resources = OAR::IO::get_specific_resource_states($base,$Resources_to_always_add_type);
     if (defined($tmp_result_state_resources->{"Alive"})){
         @Resources_to_always_add = @{$tmp_result_state_resources->{"Alive"}};
-        oar_debug("[MetaSched] Got resources to automatically add to every reservations: @Resources_to_always_add\n");
+        oar_debug("[MetaSched] Resources to automatically add to all reservations: @Resources_to_always_add\n");
     }
 }
 
@@ -127,16 +136,15 @@ foreach my $r (OAR::IO::list_resources($base)){
     $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
 }
 my $Gantt = {};
-$Gantt->{0}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new($max_resources, $Minimum_hole_time);
-OAR::Schedulers::GanttHoleStorage::add_new_resources($Gantt->{0}->{""}->{""}->{""}, $All_resource_list_vec);
+$Gantt->{default}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new($max_resources, $Minimum_hole_time);
+OAR::Schedulers::GanttHoleStorage::add_new_resources($Gantt->{default}->{""}->{""}->{""}, $All_resource_list_vec);
 
-oar_debug("[MetaSched] Begin processing of already scheduled reservations (accepted with resources assigned)\n");
+oar_debug("[MetaSched] Begin processing of already handled reservations\n");
 # Add already scheduled reservations into the gantt
 foreach my $i (keys(%{$reservation_already_there})){
-    my $container_id = 0;
-    my $inner_id = 0;
-    my $set_placeholder_name = "";
-    my $use_placeholder_name = "";
+    my $gantt_name = "default";
+    my $placeholder_name = "";
+    my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $vec = '';
@@ -144,46 +152,38 @@ foreach my $i (keys(%{$reservation_already_there})){
     foreach my $r (@{$reservation_already_there->{$i}->{resources}}){
         vec($vec, $r, 1) = 1;
     }
-    if (defined($types->{inner}) and ($types->{inner} =~ /^(\w+)$/)){
-        $inner_id = $1;
-        if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
-            oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
-        }else{
-            oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
-            $inner_id = 0;
-        }
-    }
-    if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+
+    if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
+        my $container_name;
         if ($types->{container} ne "true") {
-            ($container_id) = $types->{container} =~ /^(\w+)$/;
+            ($container_name) = $types->{container} =~ /^(\w+)$/;
         } else {
-            $container_id = $i;
+            $container_name = $i;
         }
-        if (defined($Gantt->{$container_id})) {
-            oar_debug("[MetaSched] [$i] container job: add a hole in gantt ($container_id,,,)\n");
-            $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::add_1_hole($Gantt->{$container_id}->{""}->{""}->{""}, $reservation_already_there->{$i}->{start_time}, $reservation_already_there->{$i}->{walltime} + $Security_time_overhead, $vec);
+        if (defined($Gantt->{$container_name})) {
+            oar_debug("[MetaSched] [$i] container job, adding a hole in gantt: ($container_name,,,)\n");
+            $Gantt->{$container_name}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::add_1_hole($Gantt->{$container_name}->{""}->{""}->{""}, $reservation_already_there->{$i}->{start_time}, $reservation_already_there->{$i}->{walltime} + $Security_time_overhead, $vec);
         } else {
-            oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
-            $Gantt->{$container_id}->{""}->{""}->{""} = 
+            oar_debug("[MetaSched] [$i] container job: create gantt ($container_name,,,)\n");
+            $Gantt->{$container_name}->{""}->{""}->{""} = 
                 OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $Minimum_hole_time, $reservation_already_there->{$i}->{start_time}, $reservation_already_there->{$i}->{walltime} + $Security_time_overhead, $vec, $All_resource_list_vec);
         }
     } else {
-        ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
-            OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $reservation_already_there->{$i}->{job_user}, $reservation_already_there->{$i}->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
+        ($gantt_name, $placeholder_name, $timesharing_name, $timesharing_user) = 
+            OAR::Schedulers::GanttHoleStorage::manage_gantt_hierarchy($Gantt, $reservation_already_there->{$i}->{job_name}, $reservation_already_there->{$i}->{job_user}, $types, undef, "[MetaSched] [$i]");
     }
 
     #Fill all other gantts
-    OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $reservation_already_there->{$i}->{start_time}, $reservation_already_there->{$i}->{walltime} + $Security_time_overhead, $vec, $inner_id ,$set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
+    OAR::Schedulers::GanttHoleStorage::fill_gantt_hierarchy($Gantt, $reservation_already_there->{$i}->{start_time}, $reservation_already_there->{$i}->{walltime} + $Security_time_overhead, $vec, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[MetaSched] [$i]"); 
 }
-oar_debug("[MetaSched] End processing of already scheduled reservations\n");
+oar_debug("[MetaSched] End processing of already handled reservations\n");
 
 oar_debug("[MetaSched] Begin processing of current jobs\n");
 my @initial_jobs = OAR::IO::get_jobs_in_multiple_states($base, ["Running","toLaunch","Launching","Finishing","Suspended","Resuming"]);
 foreach my $job (@initial_jobs){
-    my $container_id = 0;
-    my $inner_id = 0;
-    my $set_placeholder_name = "";
-    my $use_placeholder_name = "";
+    my $gantt_name = "default";
+    my $placeholder_name = "";
+    my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $i = $job->{job_id};
@@ -221,36 +221,28 @@ foreach my $job (@initial_jobs){
         foreach my $r (@resource_list){
             vec($vec, $r, 1) = 1;
         }
-        if (defined($types->{inner}) and ($types->{inner} =~ /^(\w+)$/)){
-            $inner_id = $1;
-            if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
-                oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
-            }else{
-                oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
-                $inner_id = 0;
-            }
-        }
-        if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+        if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
+            my $container_name;
             if ($types->{container} ne "true") {
-                ($container_id) = $types->{container} =~ /^(\w+)$/;
+                $container_name = "container:$types->{container}";
             } else {
-                $container_id = $i;
+                $container_name = "container:$i";
             }
-            if (defined($Gantt->{$container_id})) {
-                oar_debug("[MetaSched] [$i] container job: add a hole in gantt ($container_id,,,)\n");
-                $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::add_1_hole($Gantt->{$container_id}->{""}->{""}->{""}, $date, $job_duration + $Security_time_overhead, $vec);
+            if (defined($Gantt->{$container_name})) {
+                oar_debug("[MetaSched] [$i] container job: add a hole in gantt ($container_name,,,)\n");
+                $Gantt->{$container_name}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::add_1_hole($Gantt->{$container_name}->{""}->{""}->{""}, $date, $job_duration + $Security_time_overhead, $vec);
             } else {
-                oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
-                $Gantt->{$container_id}->{""}->{""}->{""} = 
+                oar_debug("[MetaSched] [$i] container job: create gantt ($container_name,,,)\n");
+                $Gantt->{$container_name}->{""}->{""}->{""} = 
                     OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $Minimum_hole_time, $date, $job_duration + $Security_time_overhead, $vec, $All_resource_list_vec);
             }
         } else {
-            ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
-            OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $job->{job_user}, $job->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
+            ($gantt_name, $placeholder_name, $timesharing_name, $timesharing_user) = 
+            OAR::Schedulers::GanttHoleStorage::manage_gantt_hierarchy($Gantt, $job->{job_name}, $job->{job_user}, $types, undef, "[MetaSched] [$i]");
         }
 
         #Fill all other gantts
-        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $date, $job_duration + $Security_time_overhead, $vec, $inner_id ,$set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
+        OAR::Schedulers::GanttHoleStorage::fill_gantt_hierarchy($Gantt, $date, $job_duration + $Security_time_overhead, $vec, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[MetaSched] [$i]"); 
     }else{
         #Stock information about besteffort jobs
         foreach my $j (@resource_list){
@@ -261,13 +253,13 @@ foreach my $job (@initial_jobs){
 OAR::IO::unlock_table($base);
 oar_debug("[MetaSched] End processing of current jobs\n");
 
-oar_debug("[MetaSched] Begin processing of waiting reservations (accepted reservations which do not have assigned resources yet)\n");
+oar_debug("[MetaSched] Begin processing of accepted reservations which do not have assigned resources yet\n");
+my $constraints = {};
 my @Rjobs = OAR::IO::get_waiting_reservation_jobs($base);
 foreach my $job (@Rjobs){
-    my $container_id = 0;
-    my $inner_id = 0;
-    my $set_placeholder_name = "";
-    my $use_placeholder_name = "";
+    my $gantt_name = "default";
+    my $placeholder_name = "";
+    my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $i = $job->{job_id};
@@ -286,26 +278,37 @@ foreach my $job (@Rjobs){
     push(@tmp_resource_list, OAR::IO::get_resources_in_state($base,"Absent"));
 
     my $types = OAR::IO::get_current_job_types($base,$i);
-    if (defined($types->{inner}) and ($types->{inner} =~ /^(\w+)$/)){
-        $inner_id = $1;
-        if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
-            oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
-        }else{
-            oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist.\n");
-            OAR::IO::set_job_message($base,$i,"Container $inner_id does not exist");
-            OAR::IO::set_job_scheduler_info($base,$i,"Container $inner_id does not exist");
-            $inner_id=0;
+    if (defined($types->{inner})){
+        $gantt_name = "container:$types>{inner}";
+        if (not defined($Gantt->{$gantt_name}->{""}->{""}->{""})){
+            oar_debug("[MetaSched] [$i] inner job, wants to use gantt: ($gantt_name,...), which does not exist. Skipped\n");
+            OAR::IO::set_job_message($base,$i,"$gantt_name does not exist, skipped");
+            OAR::IO::set_job_scheduler_info($base,$i,"$gantt_name does not exist, skipped");
+            $gantt_name=0;
             next;
         }
-    }
-    if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
-        oar_debug("[MetaSched] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
-    } else {
-        ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) =
-            OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $job->{job_user}, $job->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
+    } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
+        my ($r, $max_constraint_duration) = OAR::Schedulers::GanttHoleStorage::compute_constraints($types->{constraints}, $job->{start_time}, $Constraints_iterations);
+        $constraints->{$types->{constraints}} = $r;
+        # Job cannot be scheduler if job duration does not fit in any constraint
+        #if ($moldable->[1] + $Security_time_overhead < $max_constraint_duration) {
+        #    my $message = "job duration cannot fit in constraints. Skipped";
+        #    oar_debug("[MetaSched] [$i] $message\n");
+        #    OAR::IO::set_job_message($base,$i,$message);
+        #    OAR::IO::set_job_scheduler_info($base,$i,$message);
+        #    next;
+        #}
     }
 
-    my $free_resources_vec = OAR::Schedulers::GanttHoleStorage::get_free_resources($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, 
+    if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
+        oar_debug("[MetaSched] [$i] Job is ($gantt_name,,,) and is a container\n");
+        # nothing more to do, Gantt for container will be created once the job is scheduled, below.
+    } else {
+        ($gantt_name, $placeholder_name, $allowed_name, $timesharing_name, $timesharing_user) =
+            OAR::Schedulers::GanttHoleStorage::manage_gantt_hierarchy($Gantt, $job->{job_name}, $job->{job_user}, $types, $constraints, "[MetaSched] [$i]");
+    }
+
+    my $free_resources_vec = OAR::Schedulers::GanttHoleStorage::get_free_resources($Gantt->{$gantt_name}->{$allowed_name}->{$timesharing_user}->{$timesharing_name}, 
                                                                         $job->{start_time},
                                                                         $moldable->[1] + $Security_time_overhead,
                                                                    );
@@ -378,23 +381,24 @@ foreach my $job (@Rjobs){
 
         # Create gantt for the new container
         if (defined($types->{container})){
+            my $container_name;
             if ($types->{container} ne "true") {
-                ($container_id) = $types->{container} =~ /^(\w+)$/;
+                $container_name = "container:$types->{container}";
             } else {
-                $container_id = $i;
+                $container_name = "container:$i";
             }
-            if (defined($Gantt->{$container_id})) {
-                oar_debug("[MetaSched] [$i] container job: add a hole in gantt ($container_id,,,)\n");
-                $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::add_1_hole($Gantt->{$container_id}->{""}->{""}->{""}, $job->{start_time}, $moldable->[1] + $Security_time_overhead, $vec);
+            if (defined($Gantt->{$container_name})) {
+                oar_debug("[MetaSched] [$i] container job, adding a hole in gantt: ($container_name,,,)\n");
+                $Gantt->{$container_name}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::add_1_hole($Gantt->{$container_name}->{""}->{""}->{""}, $job->{start_time}, $moldable->[1] + $Security_time_overhead, $vec);
             } else {
-                oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
-                $Gantt->{$container_id}->{""}->{""}->{""} = 
+                oar_debug("[MetaSched] [$i] container job, creating gantt ($container_name,,,)\n");
+                $Gantt->{$container_name}->{""}->{""}->{""} = 
                     OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $Minimum_hole_time, $job->{start_time}, $moldable->[1] + $Security_time_overhead, $vec, $All_resource_list_vec);
             }
         }
 
         #Fill all other gantts
-        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $job->{start_time}, $moldable->[1] + $Security_time_overhead, $vec, $inner_id, $set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
+        OAR::Schedulers::GanttHoleStorage::fill_gantt_hierarchy($Gantt, $job->{start_time}, $moldable->[1] + $Security_time_overhead, $vec, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[MetaSched] [$i]"); 
 
         # Update database
         push(@resources, @Resources_to_always_add);
@@ -406,7 +410,7 @@ foreach my $job (@Rjobs){
         OAR::IO::set_job_message($base,$job->{job_id},"Not able to find resources for this reservation");
     }
 }
-oar_debug("[MetaSched] End processing of waiting reservations\n");
+oar_debug("[MetaSched] End processing of accepted reservations which do not have assigned resources yet\n");
 
 
 ###########################################################################################################
@@ -419,7 +423,7 @@ oar_debug("[MetaSched] End processing of waiting reservations\n");
 sub treate_waiting_reservation_jobs($){
     my $queue_name = shift;
 
-    oar_debug("[MetaSched] Queue $queue_name: begin processing of waiting reservations\n");
+    oar_debug("[MetaSched] Queue $queue_name: begin processing of reservations with missing resources\n");
 
     my $return = 0;
 
@@ -470,7 +474,7 @@ sub treate_waiting_reservation_jobs($){
             }
         }
     }
-    oar_debug("[MetaSched] Queue $queue_name: end processing of waiting reservations\n");
+    oar_debug("[MetaSched] Queue $queue_name: end processing of reservations with missing resources\n");
     return($return);
 }
 
@@ -494,21 +498,20 @@ sub check_reservation_jobs($$){
         $max_resources = $r->{resource_id} if ($r->{resource_id} > $max_resources);
     }
     my $Gantt = {};
-    $Gantt->{0}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new($max_resources, $Minimum_hole_time);
-    OAR::Schedulers::GanttHoleStorage::add_new_resources($Gantt->{0}->{""}->{""}->{""}, $All_resource_list_vec);
+    $Gantt->{default}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new($max_resources, $Minimum_hole_time);
+    OAR::Schedulers::GanttHoleStorage::add_new_resources($Gantt->{default}->{""}->{""}->{""}, $All_resource_list_vec);
 
     # Find jobs to check
     my @jobs_to_sched = OAR::IO::get_waiting_toSchedule_reservation_jobs_specific_queue($base,$queue_name);
     if ($#jobs_to_sched >= 0){
-        oar_debug("[MetaSched] Building the gantt structure and filling in already scheduled jobs\n");
+        oar_debug("[MetaSched] Adding to gantt newly scheduled jobs\n");
         # Build gantt diagram of other jobs
         # Take care of currently scheduled jobs except besteffort jobs if queue_name is not besteffort
         my ($order, %already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
         foreach my $i (keys(%already_scheduled_jobs)){
-            my $container_id = 0;
-            my $inner_id = 0;
-            my $set_placeholder_name = "";
-            my $use_placeholder_name = "";
+            my $gantt_name = 0;
+            my $placeholder_name = "";
+            my $allowed_name = "";
             my $timesharing_user = "";
             my $timesharing_name = "";
             my $types = OAR::IO::get_current_job_types($base,$i);
@@ -529,44 +532,35 @@ sub check_reservation_jobs($$){
                 foreach my $r (@resource_list){
                     vec($vec, $r, 1) = 1;
                 }
-                if (defined($types->{inner}) and ($types->{inner} =~ /^(\w+)$/)){
-                    $inner_id = $1;
-                    if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
-                        oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
-                    }else{
-                        oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
-                        $inner_id = 0;
-                    }
-                }
-                if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+                if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
+                    my $container_name;
                     if ($types->{container} ne "true") {
-                        ($container_id) = $types->{container} =~ /^(\w+)$/;
+                        ($container_name) = "container:$types->{container}";
                     } else {
-                        $container_id = $i;
+                        $container_name = "container:$i";
                     }
-                    if (defined($Gantt->{$container_id})) {
-                        oar_debug("[MetaSched] [$i] container job: add a hole in gantt ($container_id,,,)\n");
-                        $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::add_1_hole($Gantt->{$container_id}->{""}->{""}->{""}, $already_scheduled_jobs{$i}->[0], $job_duration + $Security_time_overhead, $vec);
+                    if (defined($Gantt->{$container_name})) {
+                        oar_debug("[MetaSched] [$i] container job, adding a hole in gantt ($container_name,,,)\n");
+                        $Gantt->{$container_name}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::add_1_hole($Gantt->{$container_name}->{""}->{""}->{""}, $already_scheduled_jobs{$i}->[0], $job_duration + $Security_time_overhead, $vec);
                     } else {
-                        oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
-                        $Gantt->{$container_id}->{""}->{""}->{""} = 
+                        oar_debug("[MetaSched] [$i] container job, creating gantt ($container_name,,,)\n");
+                        $Gantt->{$container_name}->{""}->{""}->{""} = 
                             OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $Minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $Security_time_overhead, $vec, $All_resource_list_vec);
                     }
                 } else {
-                    ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
-                        OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6], $types, $inner_id, "[MetaSched] [$i]");
+                    ($gantt_name, $placeholder_name, $allowed_name, $timesharing_name, $timesharing_user) = 
+                        OAR::Schedulers::GanttHoleStorage::manage_gantt_hierarchy($Gantt, $already_scheduled_jobs{$i}->[6], $already_scheduled_jobs{$i}->[5], $types, undef, "[MetaSched] [$i]");
                 }
 
                 #Fill all other gantts
-                OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $already_scheduled_jobs{$i}->[0], $job_duration + $Security_time_overhead, $vec, $inner_id ,$set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
+                OAR::Schedulers::GanttHoleStorage::fill_gantt_hierarchy($Gantt, $already_scheduled_jobs{$i}->[0], $job_duration + $Security_time_overhead, $vec, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[MetaSched] [$i]"); 
             }
         }
-        oar_debug("[MetaSched] Try and schedule new reservations of queue $queue_name\n");
+        my $constraints = {};
         foreach my $job (@jobs_to_sched){
-            my $container_id = 0;
-            my $inner_id = 0;
-            my $set_placeholder_name = "";
-            my $use_placeholder_name = "";
+            my $gantt_name = "default";
+            my $placeholder_name = "";
+            my $allowed_name = "";
             my $timesharing_user = "";
             my $timesharing_name = "";
             my $i = $job->{job_id};
@@ -596,23 +590,32 @@ sub check_reservation_jobs($$){
                 foreach my $r (@tmp_resource_list){
                     vec($available_resources_vector, $r->{resource_id}, 1) = 1;
                 }
-                if (defined($types->{inner}) and ($types->{inner} =~ /^(\w+)$/)){
-                    $inner_id = $1;
-                    if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
-                        oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
-                    }else{
-                        oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist.\n");
-                        OAR::IO::set_job_message($base,$i,"Container $inner_id does not exist");
-                        OAR::IO::set_job_scheduler_info($base,$i,"Container $inner_id does not exist");
-                        $inner_id=0;
+                if (defined($types->{inner})) {
+                    $gantt_name = "container:$types->{inner}";
+                    if (not defined($Gantt->{$gantt_name}->{""}->{""}->{""})){
+                        oar_debug("[MetaSched] [$i] inner job, want to use gantt: ($gantt_name,...) which does not exist. Skipped\n");
+                        OAR::IO::set_job_message($base,$i,"$gantt_name does not exist, skipped");
+                        OAR::IO::set_job_scheduler_info($base,$i,"$gantt_name does not exist, skipped");
                         next;
                     }
+               } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
+                   my ($r, $max_constraint_duration) = OAR::Schedulers::GanttHoleStorage::compute_constraints($types->{constraints}, $job->{start_time}, $Constraints_iterations);
+                   $constraints->{$types->{constraints}} = $r;
+                   # Job cannot be scheduler if job duration does not fit in any constraint
+                   #if ($duration < $max_constraint_duration) {
+                   #    my $message = "job duration cannot fit in constraints. Skipped";
+                   #    oar_debug("[MetaSched] [$i] $message\n");
+                   #    OAR::IO::set_job_message($base,$i,$message);
+                   #    OAR::IO::set_job_scheduler_info($base,$i,$message);
+                   #    next;
+                   #}
                 }
-                if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
-                    oar_debug("[MetaSched] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
+                if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
+                    oar_debug("[MetaSched] [$i] Job is ($gantt_name,,,) and is a container\n");
+                    # nothing more to do, Gantt for container will be created once the job is scheduled, below.
                 } else {
-                    ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) =
-                        OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $job->{job_user}, $job->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
+                    ($gantt_name, $placeholder_name, $allowed_name, $timesharing_name, $timesharing_user) =
+                        OAR::Schedulers::GanttHoleStorage::manage_gantt_hierarchy($Gantt, $job->{job_name}, $job->{job_user}, $types, $constraints, "[MetaSched] [$i]");
                 }
 
                 my @dead_resources;
@@ -635,7 +638,13 @@ sub check_reservation_jobs($$){
                     my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
                     push(@tree_list, $tmp_tree);
                 }
-                my @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name},$job->{start_time}, $duration + $Security_time_overhead, \@tree_list, 30);
+                oar_debug("[MetaSched] [$i] find_first_hole in gantt ($gantt_name,$allowed_name,$timesharing_name,$timesharing_user) with a timeout of $Reservation_validation_timeout\n");
+                my @hole;
+                if ($Max_nb_processes <= 1){
+                    @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}->{$timesharing_user},$job->{start_time}, $duration + $Security_time_overhead, \@tree_list, $Reservation_validation_timeout);
+                } else {
+                    @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($Gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}->{$timesharing_user},$job->{start_time}, $duration + $Security_time_overhead, \@tree_list, $Reservation_validation_timeout, $Max_nb_processes);
+                }
                 if ($hole[0] == $job->{start_time}){
                     # The reservation can be scheduled
                     my @resources;
@@ -653,23 +662,24 @@ sub check_reservation_jobs($$){
                     }
                     # Create gantt for the new container
                     if (defined($types->{container})){
+                        my $container_name;
                         if ($types->{container} ne "true") {
-                            ($container_id) = $types->{container} =~ /^(\w+)$/;
+                            $container_name = "container:$types->{container}";
                         } else {
-                            $container_id = $i;
+                            $container_name = "container:$i";
                         }
-                        if (defined($Gantt->{$container_id})) {
-                            oar_debug("[MetaSched] [$i] container job: add a hole in gantt ($container_id,,,)\n");
-                            $Gantt->{$container_id}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::add_1_hole($Gantt->{$container_id}->{""}->{""}->{""}, $job->{start_time}, $duration + $Security_time_overhead, $vec);
+                        if (defined($Gantt->{$container_name})) {
+                            oar_debug("[MetaSched] [$i] container job, adding a hole in gantt: ($container_name,,,)\n");
+                            $Gantt->{$container_name}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::add_1_hole($Gantt->{$container_name}->{""}->{""}->{""}, $job->{start_time}, $duration + $Security_time_overhead, $vec);
                         } else {
-                            oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
-                            $Gantt->{$container_id}->{""}->{""}->{""} = 
+                            oar_debug("[MetaSched] [$i] container job, creatint gantt ($container_name,,,)\n");
+                            $Gantt->{$container_name}->{""}->{""}->{""} = 
                                 OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $Minimum_hole_time, $job->{start_time}, $duration + $Security_time_overhead, $vec, $All_resource_list_vec);
                         }
                     }
         
                     #Fill all other gantts
-                    OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $job->{start_time}, $duration + $Security_time_overhead, $vec, $inner_id, $set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
+                    OAR::Schedulers::GanttHoleStorage::fill_gantt_hierarchy($Gantt, $job->{start_time}, $duration + $Security_time_overhead, $vec, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[MetaSched] [$i]"); 
 
                     # Update database
                     push(@resources, @Resources_to_always_add);
@@ -783,7 +793,7 @@ foreach my $i (@queues){
     $policy = $i->[1];
     my $waiting_jobs = OAR::IO::is_waiting_job_specific_queue_present($base,$name);
     if ($waiting_jobs == 1){
-        oar_debug("[MetaSched] Queue $name: Launching scheduler $policy at time $initial_time{sql}\n");
+        oar_debug("[MetaSched] Queue $name: launching scheduler $policy at time $initial_time{sql}\n");
         my ($sched_exit_code,$sched_signal_num,$sched_dumped_core) = OAR::Tools::launch_command("$binpath/schedulers/$policy $name $initial_time{sec} \"$initial_time{sql}\"");
         if (($sched_signal_num != 0) || ($sched_dumped_core != 0)){
             oar_error("[MetaSched] Error: execution of $policy failed, inactivating queue $name (see `oarnotify')\n");
