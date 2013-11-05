@@ -7,6 +7,7 @@ version 2.5.4:
     GET /jobs?ids=<id1>:<id2>:<id3>:...
   - [api] BUGFIX: stderr and stdout where reversed
   - [api] BUGFIX: memory leak into the api when used with FastCGI
+  - [accounting]: fixed a memory leak and a rare case of bad consumption count
 
 version 2.5.3:
 --------------

@@ -185,7 +185,7 @@ sub get_last_event_from_type($$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
-sub update_accounting($$$$$$$$$);
+sub update_accounting($$$$$$$$$$);
 sub get_accounting_summary($$$$$);
 sub get_accounting_summary_byproject($$$$$$);
 sub get_last_project_karma($$$$);
@@ -6907,7 +6907,7 @@ sub check_accounting_update($$){
                    jobs.accounted = \'NO\' AND
                    (jobs.state = \'Terminated\' OR jobs.state = \'Error\') AND
                    jobs.stop_time >= jobs.start_time AND
-                   jobs.start_time > 0 AND
+                   jobs.start_time > 1 AND
                    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
                    assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id AND
                    assigned_resources.resource_id = resources.resource_id AND
@@ -6918,13 +6918,27 @@ sub check_accounting_update($$){
     my $sth = $dbh->prepare("$req");
     $sth->execute();
 
+    # Preparing the query that checks window existency
+    # This is made here out of the main loop for performance optimization
+    # This sth is used into the add_accounting_row function
+    my $sth1 = $dbh->prepare("  SELECT consumption
+                                FROM accounting
+                                WHERE
+                                    accounting_user = ? AND
+                                    accounting_project = ? AND
+                                    consumption_type = ? AND
+                                    queue_name = ? AND
+                                    window_start = ? AND
+                                    window_stop = ?
+                            ");
+
     while (my @ref = $sth->fetchrow_array()) {
         my $start = $ref[0];
         my $stop = $ref[1];
         my $theoricalStopTime = $ref[2] + $start;
         print("[ACCOUNTING] Treate job $ref[3]\n");
-        update_accounting($dbh,$start,$stop,$windowSize,$ref[4],$ref[7],$ref[5],"USED",$ref[6]);
-        update_accounting($dbh,$start,$theoricalStopTime,$windowSize,$ref[4],$ref[7],$ref[5],"ASKED",$ref[6]);
+        update_accounting($dbh,$sth1,$start,$stop,$windowSize,$ref[4],$ref[7],$ref[5],"USED",$ref[6]);
+        update_accounting($dbh,$sth1,$start,$theoricalStopTime,$windowSize,$ref[4],$ref[7],$ref[5],"ASKED",$ref[6]);
         $dbh->do("  UPDATE jobs
                     SET accounted = \'YES\'
                     WHERE
@@ -6935,8 +6949,9 @@ sub check_accounting_update($$){
 
 # insert accounting data in table accounting
 # params : base, start date in second, stop date in second, window size, user, queue, type(ASKED or USED)
-sub update_accounting($$$$$$$$$){
+sub update_accounting($$$$$$$$$$){
     my $dbh = shift;
+    my $sth1 = shift;
     my $start = shift;
     my $stop = shift;
     my $windowSize = shift;
@@ -6961,7 +6976,7 @@ sub update_accounting($$$$$$$$$){
             $conso = $windowStop - $start + 1;
         }
         $conso = $conso * $nb_resources;
-        add_accounting_row($dbh,$windowStart,$windowStop,$user,$project,$queue,$type,$conso);
+        add_accounting_row($dbh,$sth1,$windowStart,$windowStop,$user,$project,$queue,$type,$conso);
         $windowStart = $windowStop + 1;
         $start = $windowStart;
         $windowStop += $windowSize;
@@ -6969,8 +6984,9 @@ sub update_accounting($$$$$$$$$){
 }
 
 # start and stop in SQL syntax
-sub add_accounting_row($$$$$$$$){
+sub add_accounting_row($$$$$$$$$){
     my $dbh = shift;
+    my $sth1 = shift;
     my $start = shift;
     my $stop = shift;
     my $user = shift;
@@ -6980,18 +6996,9 @@ sub add_accounting_row($$$$$$$$){
     my $conso = shift;
 
     # Test if the window exists
-    my $sth = $dbh->prepare("   SELECT consumption
-                                FROM accounting
-                                WHERE
-                                    accounting_user = \'$user\' AND
-                                    accounting_project = \'$project\' AND
-                                    consumption_type = \'$type\' AND
-                                    queue_name = \'$queue\' AND
-                                    window_start = \'$start\' AND
-                                    window_stop = \'$stop\'
-                            ");
-    $sth->execute();
-    my @ref = $sth->fetchrow_array();
+    $sth1->execute($user,$project,$type,$queue,$start,$stop);
+    my @ref = $sth1->fetchrow_array();
+    $sth1->finish();
     if (defined($ref[0])){
         # Update the existing window
         $conso += $ref[0];
