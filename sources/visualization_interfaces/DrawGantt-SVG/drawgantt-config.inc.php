@@ -30,7 +30,7 @@ $CONF['db_passwd']="oar";
 
 // Data display configuration
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
-$CONF['resource_labels'] = array('network_address','cpuset'); // properties to use to describe resources (resource labels on the left)
+$CONF['resource_labels'] = array('network_address','cpuset'); // properties to describe resources (labels on the left). Must also be part of resource_hierarchy below 
 $CONF['cpuset_label_display_string'] = "%02d";
 $CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1
   'network_address' => '/^([^.]+)\..*$/',

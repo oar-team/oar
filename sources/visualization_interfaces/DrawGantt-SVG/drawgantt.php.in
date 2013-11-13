@@ -166,7 +166,7 @@ $output = <<<EOT
 <body onload="init()">
 <div id="panel" align="center">
 EOT;
-if (count($CONF['nav_filters']) > 0) {
+if (count($CONF['nav_filters']) > 1) {
   $output .= <<<EOT
 <select id="filterSelect" onchange="select_filter()">
 EOT;
@@ -195,7 +195,7 @@ $output .= <<<EOT
 <button type="button" onclick="reset()">reset</button>
 
 EOT;
-if (count($CONF['nav_timezones']) > 0) {
+if (count($CONF['nav_timezones']) > 1) {
   $output .= <<<EOT
 <select id="timezoneSelect" onchange="select_timezone()">
 EOT;
