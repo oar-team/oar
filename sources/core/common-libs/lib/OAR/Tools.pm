@@ -490,18 +490,18 @@ sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$$$@){
 $ENV{TERM} = "unknown";
 $ENV{BASH_ENV} = "$ENV{HOME}/.bashrc";
 
-$ENV{OAR_STDOUT} = "'.$stdout_file.'";
-$ENV{OAR_STDERR} = "'.$stderr_file.'";
-$ENV{OAR_FILE_NODES} = "'.$node_file.'";
+$ENV{OAR_STDOUT} = \''.$stdout_file.'\';
+$ENV{OAR_STDERR} = \''.$stderr_file.'\';
+$ENV{OAR_FILE_NODES} = \''.$node_file.'\';
 $ENV{OAR_JOBID} = '.$job_id.';
 $ENV{OAR_ARRAYID} = '.$array_id.';
 $ENV{OAR_ARRAYINDEX} = '.$array_index.';
-$ENV{OAR_USER} = "'.$user.'";
-$ENV{OAR_WORKDIR} = "'.$launching_directory.'";
-$ENV{OAR_RESOURCE_PROPERTIES_FILE} = "'.$resource_file.'";
-$ENV{OAR_JOB_NAME} = "'.$job_name.'";
-$ENV{OAR_PROJECT_NAME} = "'.$job_project.'";
-$ENV{OAR_JOB_WALLTIME} = "'.$job_walltime.'";
+$ENV{OAR_USER} = \''.$user.'\';
+$ENV{OAR_WORKDIR} = \''.$launching_directory.'\';
+$ENV{OAR_RESOURCE_PROPERTIES_FILE} = \''.$resource_file.'\';
+$ENV{OAR_JOB_NAME} = \''.$job_name.'\';
+$ENV{OAR_PROJECT_NAME} = \''.$job_project.'\';
+$ENV{OAR_JOB_WALLTIME} = \''.$job_walltime.'\';
 $ENV{OAR_JOB_WALLTIME_SECONDS} = '.$job_walltime_sec.';
 
 $ENV{OAR_NODEFILE} = $ENV{OAR_FILE_NODES};
@@ -629,9 +629,9 @@ export SHELL="'.$shell.'";
 export SUDO_COMMAND=OAR;
 SHLVL=1;
 
-if ( cd $OAR_WORKING_DIRECTORY &> /dev/null );
+if ( cd "$OAR_WORKING_DIRECTORY" &> /dev/null );
 then
-    cd $OAR_WORKING_DIRECTORY;
+    cd "$OAR_WORKING_DIRECTORY";
 else
     exit 2;
 fi;
