@@ -594,6 +594,7 @@ sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$$){
         $exp_env .= "export $job_env ;";
     }
 
+    $launching_directory =~ s/\$/\\\$/s;
     my $script = '
 if [ "a$TERM" == "a" ] || [ "x$TERM" == "xunknown" ];
 then
