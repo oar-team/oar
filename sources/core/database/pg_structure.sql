@@ -300,6 +300,7 @@ CREATE TABLE resources (
   last_job_date integer NOT NULL default '0',
   available_upto integer NOT NULL default '2147483647',
   last_available_upto integer NOT NULL default '0',
+  maintenance varchar(3) check (maintenance in ('on','off')) NOT NULL default 'off',
   PRIMARY KEY (resource_id)
 );
 CREATE INDEX resource_state ON resources (state);
