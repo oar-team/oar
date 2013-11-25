@@ -100,7 +100,9 @@ my $checknodestimeout = get_conf_with_default_param("FINAUD_FREQUENCY", 300);
 
 # Max number of concurrent bipbip processes
 my $Max_bipbip_processes = get_conf_with_default_param("MAX_CONCURRENT_JOB_TERMINATIONS", 25);
-my %bipbip_children = ();
+
+# Regexp of the notification received from oarexec processes
+my $OAREXEC_REGEXP = 'OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)';
 
 # Internal stuff, not relevant for average user
 my $lastscheduler;
@@ -201,52 +203,122 @@ sub qget_appendice(){
 # notification as soon as possible (i.e. reactivity) even if the almighty is
 # performing some other internal task in the meantime
 sub comportement_appendice(){
-        close READ;
+    close READ;
 
-        while (1){
-            my $answer = qget_appendice();
-            if ($answer =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
-                # Check if there are not too many bipbip processes already
-                # running to not overload the server
-                my $wait_bipbip = 1;
-                while ($wait_bipbip == 1){
-                    foreach my $b (keys(%bipbip_children)){
-                        my $wpid_res = waitpid($b, WNOHANG);
-                        if (($wpid_res == -1) or ($wpid_res == $b)){
-                            delete($bipbip_children{$b});
-                        }
-                    }
-                    if (keys(%bipbip_children) >= $Max_bipbip_processes){
-                        oar_warn("[Almighty] Wait the end of bipbip processes (nb children: ".keys(%bipbip_children)."/$Max_bipbip_processes)\n");
-                        sleep(1);
-                    }else{
-                        $wait_bipbip = 0;
-                    }
-                }
-                my $pid=0;
-                $pid=fork;
-                if($pid==0){
-                    #CHILD
-                    $SIG{USR1} = 'IGNORE';
-                    $SIG{INT}  = 'IGNORE';
-                    $SIG{TERM} = 'IGNORE';
-                    #$SIG{CHLD} = 'IGNORE';
-                    $SIG{CHLD} = 'DEFAULT';
-                    $0="Almighty: bipbip";
-                    exec("$bipbip_command $1 $2 $3 $4");
-                }
-                $bipbip_children{$pid} = 1;
-                oar_debug("[Almighty] called bipbip with params: $1 $2 $3 $4 (nb concurrent bipbip = ".keys(%bipbip_children).")\n");
-                #launch_command("$bipbip_command $1 ATTACH &");
-            }elsif ($answer ne ""){
-                oar_debug("[Almighty] Appendice has read on the socket : $answer\n");
-                print WRITE "$answer\n";
-                flush WRITE;
-            }else{
-                oar_debug("[Almighty] A connection was opened but nothing was written in the socket\n");
-                #sleep(1);
+    # Initialize bipbip process handler
+    ## pipe to communicate with the "Almighty: bipbip" process that launches
+    ## and manages bipbip processes
+    pipe(pipe_bipbip_read,pipe_bipbip_write);
+    autoflush pipe_bipbip_write 1;
+    autoflush pipe_bipbip_read 1;
+
+    my $bipbip_launcher_pid=0;
+    $bipbip_launcher_pid=fork();
+    if ($bipbip_launcher_pid==0){
+        #CHILD
+        oar_debug("[Almighty][bipbip_launcher] Start bipbip handler process\n");
+        close(pipe_bipbip_write);
+        $SIG{USR1} = 'IGNORE';
+        $SIG{INT}  = 'IGNORE';
+        $SIG{TERM} = 'IGNORE';
+        $0="Almighty: bipbip";
+        # Pipe to handle children ending
+        pipe(pipe_bipbip_children_read,pipe_bipbip_children_write);
+        autoflush pipe_bipbip_children_write 1;
+        autoflush pipe_bipbip_children_read 1;
+        # Handle finished bipbip processes
+        sub bipbip_child_signal_handler {
+            $SIG{CHLD} = \&bipbip_child_signal_handler;
+            my $wait_pid_ret ;
+            while (($wait_pid_ret = waitpid(-1,WNOHANG)) > 0){
+                my $exit_value = $? >> 8;
+                print(pipe_bipbip_children_write "$wait_pid_ret $exit_value\n");
             }
         }
+        $SIG{CHLD} = \&bipbip_child_signal_handler;
+
+        my $rin_pipe = '';
+        vec($rin_pipe,fileno(pipe_bipbip_read),1) = 1;
+        my $rin_sig = '';
+        vec($rin_sig,fileno(pipe_bipbip_children_read),1) = 1;
+        my $rin = $rin_pipe | $rin_sig;
+        my $rin_tmp;
+        my $stop = 0;
+        my %bipbip_children = ();
+        my @bipbip_processes_to_run = ();
+        while ($stop == 0){ 
+            select($rin_tmp = $rin, undef, undef, undef);
+            if (vec($rin_tmp, fileno(pipe_bipbip_children_read), 1)){
+                my ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_bipbip_children_read,1);
+                if ($line_read =~ m/(\d+) (\d+)/m){
+                    oar_debug("[Almighty][bipbip_launcher] Process $1 for the job $bipbip_children{$1} ends with exit_code=$2\n");
+                    delete($bipbip_children{$1});
+                }else{
+                    oar_warn("[Almighty][bipbip_launcher] Read a malformed string in pipe_bipbip_children_read: $line_read\n");
+                }
+            }elsif (vec($rin_tmp, fileno(pipe_bipbip_read), 1)){
+                my ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_bipbip_read,1);
+                if (($res_read == 1) and ($line_read eq "")){
+                    $stop = 1;
+                    oar_warn("[Almighty][bipbip_launcher] Father pipe closed so we stop the process\n");
+                }elsif ($line_read =~ m/$OAREXEC_REGEXP/m){
+                #}elsif ($line_read =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
+                    oar_debug("[Almighty][bipbip_launcher] Read on pipe: $line_read\n");
+                    push(@bipbip_processes_to_run, $line_read);
+                }else{
+                    oar_warn("[Almighty][bipbip_launcher] Read a bad string: $line_read\n");
+                }
+            }
+            while(($stop == 0) and ($#bipbip_processes_to_run >= 0) and (keys(%bipbip_children) < $Max_bipbip_processes)){
+                my $str = shift(@bipbip_processes_to_run);
+                if ($str =~ m/$OAREXEC_REGEXP/m){
+                #if ($str =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
+                    my $pid=0;
+                    $pid=fork;
+                    if (!defined($pid)){
+                        oar_error("[Almighty][bipbip_launcher] Fork failed, I kill myself\n");
+                        exit(2);
+                    }
+                    if($pid==0){
+                        #CHILD
+                        $SIG{USR1} = 'IGNORE';
+                        $SIG{INT}  = 'IGNORE';
+                        $SIG{TERM} = 'IGNORE';
+                        $SIG{CHLD} = 'DEFAULT';
+                        exec("$bipbip_command $1 $2 $3 $4");
+                        oar_error("[Almighty][bipbip_launcher] failed exec: $bipbip_command $1 $2 $3 $4\n");
+                        exit(1);
+                    }
+                    $bipbip_children{$pid} = $1;
+                    oar_debug("[Almighty][bipbip_launcher] Called bipbip with params: $1 $2 $3 $4\n");
+                }
+            }
+            oar_debug("[Almighty][bipbip_launcher] Nb running bipbip: ".keys(%bipbip_children)."; Waiting processes: @bipbip_processes_to_run\n");
+        }
+        oar_warn("[Almighty][bipbip_launcher] End of process\n");
+        exit(1);
+    }
+
+    close(pipe_bipbip_read);
+    while (1){
+        my $answer = qget_appendice();
+        oar_debug("[Almighty] Appendice has read on the socket : $answer\n");
+        #if ($answer =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
+        if ($answer =~ m/$OAREXEC_REGEXP/m){
+            #launch_command("$bipbip_command $1 ATTACH &");
+            if (! print pipe_bipbip_write "$answer\n"){
+                oar_error("[Almighty] Appendice cannot communicate with bipbip_launcher process, I kill myself\n");
+                exit(2);
+            }
+            flush pipe_bipbip_write;
+        }elsif ($answer ne ""){
+            print WRITE "$answer\n";
+            flush WRITE;
+        }else{
+            oar_debug("[Almighty] A connection was opened but nothing was written in the socket\n");
+            #sleep(1);
+        }
+    }
 }
 
 # hulot module forking

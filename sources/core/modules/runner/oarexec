@@ -141,32 +141,6 @@ sub clean_all(){
     kill(9,@{$children});
 }
 
-# read a line on a socket
-# arg1 --> socket
-# arg2 --> timeout
-# return 0 if the read times out
-sub read_socket_line($$){
-    my $sock = shift;
-    my $timeout = shift;
-
-    my $char = "a";
-    my $res = 1;
-    my $rin = '';
-    my $line;
-    vec($rin,fileno($sock),1) = 1;
-    my $rin_tmp;
-    while (($res > 0) && ($char ne "\n") && ($char ne "")){
-        $res = select($rin_tmp = $rin, undef, undef, $timeout);
-        if ($res > 0){
-            sysread($sock,$char,1);
-            if ($char ne "\n"){
-                $line .= $char;
-            }
-        }
-    }
-    return($res,$line);
-}
-
 #kill all child of the pid
 # arg1 --> child pid
 sub kill_children($){
@@ -516,7 +490,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
     select($rin_tmp = $rin, undef, undef, undef);
     
     if (vec($rin_tmp, fileno(pipe_script_read), 1)){
-        ($res_read,$line_read) = read_socket_line(\*pipe_script_read,1);
+        ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_script_read,1);
         if (($res_read == 1) and ($line_read eq "")){
             # Script is finished
             close(pipe_script_read);
@@ -532,7 +506,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             }
         }
     }elsif (vec($rin_tmp, fileno(pipe_child_read), 1)){
-        ($res_read,$line_read) = read_socket_line(\*pipe_child_read,1);
+        ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_child_read,1);
         print("[oarexec $Job_id] PIPE reads : $res_read,$line_read\n");
         if ($line_read =~ m/(\d+) (\d+)/m){
             if ($1 == $pid){
@@ -542,7 +516,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             }
         }
     }elsif (vec($rin_tmp, fileno(pipe_kill_read), 1)){
-        ($res_read,$line_read) = read_socket_line(\*pipe_kill_read,1);
+        ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_kill_read,1);
         print("[oarexec $Job_id] pipe kill signal : $res_read,$line_read\n");
         if ($line_read eq "KILL"){
             print("[oarexec $Job_id] Kill children\n");

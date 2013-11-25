@@ -66,6 +66,7 @@ sub get_default_node_file_db_field_distinct_values();
 sub replace_jobid_tag_in_string($$);
 sub inhibit_notify_tcp_socket();
 sub enable_notify_tcp_socket();
+sub read_socket_line($$);
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -886,6 +887,32 @@ sub manage_remote_commands($$$$$$$){
     }
 
     return(1,@bad);
+}
+
+# read a line on a socket
+# arg1 --> socket
+# arg2 --> timeout
+# return 0 if the read times out
+sub read_socket_line($$){
+    my $sock = shift;
+    my $timeout = shift;
+
+    my $char = "a";
+    my $res = 1;
+    my $rin = '';
+    my $line;
+    vec($rin,fileno($sock),1) = 1;
+    my $rin_tmp;
+    while (($res > 0) && ($char ne "\n") && ($char ne "")){
+        $res = select($rin_tmp = $rin, undef, undef, $timeout);
+        if ($res > 0){
+            sysread($sock,$char,1);
+            if ($char ne "\n"){
+                $line .= $char;
+            }
+        }
+    }
+    return($res,$line);
 }
 
 1;

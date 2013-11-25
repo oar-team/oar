@@ -8,6 +8,9 @@ version 2.5.4:
   - [api] BUGFIX: stderr and stdout where reversed
   - [api] BUGFIX: memory leak into the api when used with FastCGI
   - [accounting]: fixed a memory leak and a rare case of bad consumption count
+  - [almighty]: rewrite the handling of finished oarexec
+                launch bipbip processes with MAX_CONCURRENT_JOB_TERMINATIONS 
+                to not overload the server.
 
 version 2.5.3:
 --------------
