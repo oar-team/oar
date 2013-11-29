@@ -293,7 +293,7 @@ sub comportement_appendice(){
                     oar_debug("[Almighty][bipbip_launcher] Called bipbip with params: $1 $2 $3 $4\n");
                 }
             }
-            oar_debug("[Almighty][bipbip_launcher] Nb running bipbip: ".keys(%bipbip_children)."; Waiting processes: @bipbip_processes_to_run\n");
+            oar_debug("[Almighty][bipbip_launcher] Nb running bipbip: ".keys(%bipbip_children)."/$Max_bipbip_processes; Waiting processes(".($#bipbip_processes_to_run + 1)."): @bipbip_processes_to_run\n");
         }
         oar_warn("[Almighty][bipbip_launcher] End of process\n");
         exit(1);

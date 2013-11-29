@@ -2024,7 +2024,7 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$)
     my $estimated_nb_resources = 0;
     my $estimated_walltime = 0;
     foreach my $e (estimate_job_nb_resources($dbh_ro, $ref_resource_list, $jobproperties)){
-        print("[TEST] $e->{nbresources} $e->{walltime} $e->{comment}\n");
+        #print("[TEST] $e->{nbresources} $e->{walltime} $e->{comment}\n");
         if ($e->{nbresources} == 0){
             warn($e->{comment}."\n");
             return(-5);
