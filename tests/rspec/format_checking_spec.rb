@@ -260,7 +260,7 @@ describe OarApi do
  
   end
 
-  describe "JOB DETAILS CHECKING: /jobs/<id> data structure" do
+  describe "JOB INFOS CHECKING: /jobs/<id> data structure" do
     context "(with normal job)" do
       before(:all) do
         @api = OarApi.new(APIURI)
@@ -301,7 +301,68 @@ describe OarApi do
 
   end
 
-  describe "JOB DETAILS CHECKING: /jobs/details data structure" do
+
+  describe "JOB DETAILS CHECKING: /jobs/<id>/details data structure" do
+    context "(with normal job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+        @api.get_hash("jobs/#{$jobid}/details")
+        @value=@api.value
+      end
+      it_should_behave_like "Job"
+      it "should be owned by the kameleon user" do
+        @api.value['owner'].should == "kameleon"
+      end
+      it "should have resources and nodes details" do
+        @api.value['resources'].should be_an(Array)
+        @api.value['nodes'].should be_an(Array)
+      end
+      context "should have resources behaving correctly" do
+        before(:all) do
+          @api.value=@value['resources'][0]
+        end
+        it_should_behave_like "ResourceId"
+      end
+      context "should have nodes behaving correctly" do
+        before(:all) do
+          @api.value=@value['nodes'][0]
+        end
+        it_should_behave_like "Node"
+        it "should have a status" do
+          @api.value.should have_key('status')
+        end
+      end
+    end
+    context "(with non-existent job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+      end
+
+      it "should raise an exception" do
+        lambda {
+            @api.get_hash("jobs/00/details")
+        }.should raise_exception
+      end
+
+      it "should return a 404 error" do
+        begin
+          @api.get_hash("jobs/00/details")
+        rescue => e
+          e.should respond_to('http_code')
+          e.http_code.should == 404
+        end 
+      end
+    end
+    context "(with finished job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+        @api.get_hash("jobs/1/details")
+      end
+      it_should_behave_like "Job"
+    end
+  end
+
+  describe "JOBS LIST DETAILS CHECKING: /jobs/details data structure" do
     before(:all) do
       @api = OarApi.new(APIURI)
       @api.get_hash("jobs/details")

@@ -225,7 +225,7 @@ SWITCH: for ($q) {
                         'title' => 'resources'
                       } ,
                       { 'rel' => 'collection', 
-                        'href' => OAR::API::htmlize_uri(OAR::API::make_uri("resources/full",$ext,0),$ext),
+                        'href' => OAR::API::htmlize_uri(OAR::API::make_uri("resources/details",$ext,0),$ext),
                         'title' => 'full_resources'
                       } ,
                       { 'rel' => 'collection', 
@@ -442,13 +442,14 @@ SWITCH: for ($q) {
   };
   #}}}
   #
-  #{{{ GET /jobs/<id> : Details of a job
+  #{{{ GET /jobs/<id>[/details] : Infos of a job. Adding /details results in a "oarstat -f" equivalent
   #
-  $URI = qr{^/jobs/(\d+)(\.yaml|\.json|\.html)*$};
+  $URI = qr{^/jobs/(\d+)(/details)*(\.yaml|\.json|\.html)*$};
   OAR::API::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
-    my $ext=OAR::API::set_ext($q,$2);
+    my $details = $2;
+    my $ext=OAR::API::set_ext($q,$3);
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, DELETE");
     
     # Must be authenticated
@@ -471,12 +472,22 @@ SWITCH: for ($q) {
         "Job not found" );
       last;
     }
-    $job=OAR::Stat::get_job_data(@$job[0],1);
-    my $result = OAR::API::struct_job($job,$STRUCTURE);
+    my $j=OAR::Stat::get_job_data(@$job[0],1);
+    if (defined($details) and $details eq "/details") {
+        my $job_resources = OAR::Stat::get_job_resources(@$job[0]);
+        my $resources = OAR::API::struct_job_resources($job_resources,$STRUCTURE);
+        my $nodes= OAR::API::struct_job_nodes($job_resources,$STRUCTURE);
+        OAR::API::add_resources_uris($resources,$ext,'');
+        $j->{'resources'}=$resources;
+        OAR::API::add_nodes_uris($nodes,$ext,'');
+        $j->{'nodes'}=$nodes;
+    }
+
+    my $result = OAR::API::struct_job($j,$STRUCTURE);
     OAR::API::add_job_uris($result,$ext);
     OAR::Stat::close_db_connection; 
     print $header;
-    if ($ext eq "html") { OAR::API::job_html_header($job); };
+    if ($ext eq "html") { OAR::API::job_html_header($j); };
     print OAR::API::export($result,$ext);
     last;
   };
@@ -988,15 +999,16 @@ SWITCH: for ($q) {
   # Resources
   ###########################################
   #
-  #{{{ GET /resources/(full|<id>) : List of resources or details of a resource
+  #{{{ GET /resources/(details|<id>) : List of resources or details of a resource
   #
-  $URI = qr{^/resources(/full|/[0-9]+)*\.*(yaml|json|html)*$};
+  $URI = qr{^/resources(/full|/details|/[0-9]+)*\.*(yaml|json|html)*$};
   OAR::API::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=OAR::API::set_ext($q,$2);
     my $header, my $type;
     if(defined($1)) {
-      if ($1 ne "/full") {
+      # "/full" is kept for backward compatibility
+      if ($1 ne "/full" && $1 ne "/details") {
         ($header, $type)=OAR::API::set_output_format($ext,"GET, DELETE");
       }else{
         ($header, $type)=OAR::API::set_output_format($ext,"GET");
@@ -1027,7 +1039,7 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database"
                                                  );
     if (defined($1)) {
-    	if ($1 eq "/full") {
+    	if ($1 eq "/full" || $1 eq "/details") {
     		# get specified intervals of resources
     		$resources = OAR::Nodes::get_requested_resources($max_items,$offset);
     	}
