@@ -138,7 +138,7 @@ sub add_1_hole($$$$) {
     my $minimum_hole_duration = $gantt->[0]->[4];
 
     my $new_gantt_with_1_hole = new_with_1_hole($max_resource_number, $minimum_hole_duration, $date, $duration, $resources_vec, $all_resources_vec);
-    return merge_clone($gantt, $new_gantt_with_1_hole);
+    return clone_union($gantt, $new_gantt_with_1_hole);
 }
 
 sub to_strips($) {
