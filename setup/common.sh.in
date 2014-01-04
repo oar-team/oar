@@ -86,6 +86,15 @@ bash_oar() {
 
 bash_oar
 EOF
+    # Default bash sourced file in a batch job (BASH_ENV)
+    [ ! -f "${OARHOMEDIR}/.batch_job_bashrc" ] && cat > ${OARHOMEDIR}/.batch_job_bashrc <<EOF
+#
+# OAR bash environnement file for only the batch job users
+#
+
+source ~/.bashrc
+
+EOF
     touch ${OARHOMEDIR}/.bash_profile
     touch ${OARHOMEDIR}/.bashrc
     if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bash_profile 2> /dev/null; then

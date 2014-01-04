@@ -489,7 +489,7 @@ sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$$$@){
 
     my $script = '
 $ENV{TERM} = "unknown";
-$ENV{BASH_ENV} = "$ENV{HOME}/.bashrc";
+$ENV{BASH_ENV} = "~oar/.batch_job_bashrc";
 
 $ENV{OAR_STDOUT} = \''.$stdout_file.'\';
 $ENV{OAR_STDERR} = \''.$stderr_file.'\';
@@ -541,9 +541,6 @@ my $tmp = "";
 while (<STDIN>){
     $tmp .= $_;
 }
-
-# This will tell bash to source /etc/bash.bashrc as ssh do (otherwise not)
-close(STDIN);
 
 my $cmd_exec = eval($tmp);
 my $pid = fork;

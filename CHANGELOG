@@ -12,6 +12,12 @@ version 2.5.4:
   - [almighty]: rewrite the handling of finished oarexec
                 launch bipbip processes with MAX_CONCURRENT_JOB_TERMINATIONS 
                 to not overload the server.
+  - [oarexec]: introduce BASH_ENV=~oar/.batch_job_bashrc for batch jobs
+               Batch jobs with bash shell have some difficulties to source the
+               right bash scripts when launching.
+               Now we set BASH_ENV=~oar/.batch_job_bashrc before launching the
+               user bash process so we can handle which script must be sourced.
+               By default we source ~/.bashrc.
 
 version 2.5.3:
 --------------
