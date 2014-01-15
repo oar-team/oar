@@ -19,6 +19,8 @@ version 2.5.4:
                user bash process so we can handle which script must be sourced.
                By default we source ~/.bashrc.
   - [api]: Rewritten/commented apache config file
+  - [oaradmin]: Disabled deprecated "conf" sub-command (the config file may 
+                be edited by the REST-API)
 
 version 2.5.3:
 --------------
