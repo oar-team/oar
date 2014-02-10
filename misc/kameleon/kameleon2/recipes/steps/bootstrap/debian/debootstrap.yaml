@@ -1,0 +1,14 @@
+# # Bootstrap
+- include: ifupdown locales libui-dialog-perl dialog isc-dhcp-client netbase net-tools iproute openssh-server pciutils
+- debootstrap:
+  - check_cmd_out: debootstrap
+  - on_bootstrap_init:
+    - exec_out: export DEBIAN_FRONTEND=noninteractive
+  - on_setup_init:
+    - exec_in: export DEBIAN_FRONTEND=noninteractive
+  - exec_out: mkdir -p $$rootfs
+  - exec_out: mkdir -p $(dirname "$$archive_file")
+  - exec_out: test ! -f "$$archive_file" || tar zxf "$$archive_file" -C "$$rootfs"
+  - exec_out: test -f "$$archive_file" || debootstrap --no-check-gpg --arch=$$arch --include="$$include" $$release $$rootfs $$repository
+  - exec_out: test -f "$$archive_file" || tar zcf "$$archive_file" -C "$$rootfs" --numeric-owner --one-file-system .
+  - exec_out: cat /etc/resolv.conf > $$rootfs/etc/resolv.conf

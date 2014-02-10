@@ -1,0 +1,12 @@
+- configure_kernel:
+  - write_in:
+    - /etc/kernel-img.conf
+    - |
+      do_symlinks = yes
+      relative_links = yes
+      do_bootloader = yes
+      do_bootfloppy = no
+      do_initrd = yes
+      link_in_boot = no
+- install_kernel:
+  - exec_in: apt-get -y --force-yes install linux-image-$$arch 2>&1

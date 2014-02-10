@@ -1,0 +1,27 @@
+# # System Config
+- configure_locales:
+  # set locales programtically, based on http://linux.livejournal.com/1880366.html
+  - exec_in: |
+      test ! -f /etc/locale.gen || \
+        (echo $$locales | tr ' ' '\n' | xargs -I {} sed -i 's/^# {}/{}/' /etc/locale.gen)
+  - exec_in: locale-gen $$lang
+  - exec_in: update-locale LANG=$$lang
+
+- set_hosts:
+  - write_in:
+    - /etc/hosts
+    - |
+      #
+      # /etc/hosts: static lookup table for host names
+      #
+      
+      #<ip-address>	<hostname.domain.org>	<hostname>
+      127.0.0.1	localhost.localdomain	localhost	$$network_hostname
+      ::1		localhost.localdomain	localhost
+
+- set_hostname:
+  - exec_in: echo "$$network_hostname" > /etc/hostname
+
+- set_timezone:
+  - exec_in: echo "$$timezone" > /etc/timezone
+  - exec_in: "dpkg-reconfigure -f noninteractive tzdata 2>&1"

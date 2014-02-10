@@ -1,0 +1,12 @@
+# # Create User
+- create_group:
+  - exec_in: addgroup $$group
+- add_user:
+  # use the create_passwd.py script to generate the crypted password
+  - exec_in: useradd -m -g $$group $$name -s /bin/bash
+  - exec_in: echo -n '$$name:$$password' | chpasswd
+- add_group_to_sudoers:
+  - append_in:
+    - /etc/sudoers
+    - |
+      %admin ALL=(ALL:ALL) ALL

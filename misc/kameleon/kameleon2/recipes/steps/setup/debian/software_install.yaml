@@ -1,0 +1,15 @@
+# Software Install
+- add_contribs_source:
+  - exec_in: perl -pi -e "s/main$/main contrib non-free/" /etc/apt/sources.list
+- update_repositories:
+  - exec_in: apt-get -y --force-yes update
+- upgrade_system:
+  - exec_in: apt-get -y --force-yes dist-upgrade
+- clean:
+  - on_export_init:
+    - exec_in: apt-get -y --force-yes autoclean
+    - exec_in: apt-get -y --force-yes clean
+    - exec_in: apt-get -y --force-yes autoremove
+- core_packages:
+  - exec_in: apt-get -y --force-yes install $$packages
+

@@ -1,0 +1,7 @@
+# OAR prereq install
+- clean:
+  - on_export_init:
+    - exec_in: /etc/init.d/postgresql stop
+- req_packages:
+  - exec_in: apt-get -y --force-yes install $$packages
+

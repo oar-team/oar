@@ -1,0 +1,13 @@
+# # Network Config
+- network_interfaces:
+  # WARNING: The MTU is set to 1492 to avoid connection failure over some
+  # network du to PPP header
+  - write_in:
+    - /etc/network/interfaces
+    - |
+      auto lo
+      iface lo inet loopback
+      
+      auto eth0
+      iface eth0 inet dhcp
+          pre-up ip link set mtu 1492 eth0
