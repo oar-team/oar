@@ -1,4 +1,5 @@
 - configure_postgres:
+  - on_checkpoint: redo
   - exec_in: /etc/init.d/postgresql start
 - clean:
   - on_export_init:

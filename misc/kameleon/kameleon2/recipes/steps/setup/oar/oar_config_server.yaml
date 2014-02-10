@@ -5,6 +5,10 @@
   - exec_in: sed -e 's/^#\(TAKTUK_CMD\=\"\/usr\/bin\/taktuk \-t 30 \-s\".*\)/\1/' -i /etc/oar/oar.conf
   - exec_in: sed -e 's/^#\(PINGCHECKER_TAKTUK_ARG_COMMAND\=\"broadcast exec timeout 5 kill 9 \[ true \]\".*\)/\1/' -i /etc/oar/oar.conf
 
+- configure_db_type:
+  - exec_in: sed -e 's/^\(DB_TYPE\)=.*/\1="Pg"/' -i /etc/oar/oar.conf
+  - exec_in: sed -e 's/^\(DB_PORT\)=.*/\1="5432"/' -i /etc/oar/oar.conf
+
 - configure_cpuset:
   - exec_in: sed -e 's/^#\(JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD\=\"cpuset\".*\)/\1/' -i /etc/oar/oar.conf
   - exec_in: sed -e 's/^#\(JOB_RESOURCE_MANAGER_FILE\=\"\/etc\/oar\/job_resource_manager\.pl\".*\)/\1/' -i /etc/oar/oar.conf
@@ -15,4 +19,4 @@
   - exec_in: sed -e 's/^\(DB_BASE_LOGIN\)=.*/\1="oar"/' -i /etc/oar/oar.conf
   - exec_in: sed -e 's/^\(DB_BASE_PASSWD_RO\)=.*/\1="oar_ro"/' -i /etc/oar/oar.conf
   - exec_in: sed -e 's/^\(DB_BASE_LOGIN_RO\)=.*/\1="oar_ro"/' -i /etc/oar/oar.conf
-  - exec_in: oar-database --create --db-admin-user root
+  - exec_in: /usr/local/sbin/oar-database --create --db-is-local --db-admin-user root
