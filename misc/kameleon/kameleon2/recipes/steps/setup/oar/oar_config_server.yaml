@@ -15,6 +15,10 @@
   - exec_in: sed -e 's/^#\(CPUSET_PATH\=\"\/oar\".*\)/\1/' -i /etc/oar/oar.conf
 
 - configure_database:
+  - on_checkpoint:
+    - exec_in: su postgres -c "psql -c 'drop database oar'"
+    - exec_in: su postgres -c "psql -c 'drop user oar'"
+    - exec_in: su postgres -c "psql -c 'drop user oar_ro'"
   - exec_in: sed -e 's/^\(DB_BASE_PASSWD\)=.*/\1="oar"/' -i /etc/oar/oar.conf
   - exec_in: sed -e 's/^\(DB_BASE_LOGIN\)=.*/\1="oar"/' -i /etc/oar/oar.conf
   - exec_in: sed -e 's/^\(DB_BASE_PASSWD_RO\)=.*/\1="oar_ro"/' -i /etc/oar/oar.conf

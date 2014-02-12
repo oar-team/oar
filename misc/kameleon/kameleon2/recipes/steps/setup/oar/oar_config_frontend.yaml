@@ -20,7 +20,7 @@
         Options ExecCGI -MultiViews FollowSymLinks
         AuthType      basic
         AuthUserfile  /etc/oar/api-users
-        AuthName      \"OAR API authentication\"
+        AuthName      "OAR API authentication"
         Require valid-user
         #RequestHeader set X_REMOTE_IDENT %{REMOTE_USER}e
         RewriteEngine On
