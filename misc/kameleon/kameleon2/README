@@ -1,0 +1,18 @@
+
+#############################################
+# Kameleon2 recipes to build OAR appliances #
+#############################################
+
+# Get kameleon:
+  git clone git://scm.gforge.inria.fr/kameleon/kameleon.git
+  git co kameleon2-dev
+ 
+  gem build kameleon.gemspec
+  gem install kameleon-2.0.0.dev.gem
+
+# Build appliance:
+  sudo kameleon build oar_devel_git2debian
+
+# Run appliance:
+  cd builds/oar_devel_git2debian
+  sudo kvm `readlink oar_devel_git2debian_temp.qcow2` -redir tcp:2222::22 -redir tcp:8080::80 -m 512 -smp 4
