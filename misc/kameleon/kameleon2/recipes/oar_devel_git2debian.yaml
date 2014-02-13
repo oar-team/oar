@@ -37,7 +37,7 @@ global:
 
   ## OAR
   #
-  oar_git_directory: "/home/kameleon/oar" 
+  oar_git_directory: "/home/kameleon/oar"
   oar_git_repository: "git://scm.gforge.inria.fr/oar/oar.git"
   oar_git_treeish: "2.5"
   oar_prefix_install: "/usr/local"
@@ -51,27 +51,26 @@ global:
 
   # Shell session that allows us to connect to the building machine in order to
   # configure it and setup additional programs
-  default_env: "USER=root HOME=/root PATH=/usr/bin:/usr/sbin:/bin:/sbin LC_ALL=POSIX"
+  default_env: "USER=root HOME=/root LC_ALL=POSIX"
   in_context:
-    cmd: env -i $$default_env chroot $$rootfs bash
+    cmd: $$default_env chroot $$rootfs bash
     workdir: /
 
 #== Bootstrap the new system and create the 'in_context'
 bootstrap:
   - oar_precheck
+  - debootstrap:
+    - release: $$release
+    - arch: $$arch
+    - repository: http://ftp.fr.debian.org/debian/
+    - rootfs_archive: $$cachedir/$$distrib/$$release/$$arch/debootstrap.tar.gz
   - prepare_appliance_with_nbd:
     - mountdir: $$rootfs
     - image_size: 2G
     - filesystem_type: ext4
-  - debootstrap:
-    - rootfs: $$rootfs
-    - release: $$release
-    - arch: $$arch
-    - repository: http://ftp.fr.debian.org/debian/
-    - archive_file: $$cachedir/$$distrib/$$release/$$arch/debootstrap.tar.gz
+    - rootfs_archive: $$cachedir/$$distrib/$$release/$$arch/debootstrap.tar.gz
   - start_chroot:
     - rootfs: $$rootfs
-
 
 #== Install and configuration steps
 # WARNING: this part should be independante from the build context (whenever
@@ -79,7 +78,8 @@ bootstrap:
 setup:
   # Install
   - software_install:
-    - packages: "debian-keyring ntp zip unzip rsync sudo less vim bash-completion extlinux"
+    - packages: >
+        debian-keyring ntp zip unzip rsync sudo less vim bash-completion
   - kernel_install:
     - arch: $$arch
   # Configuration
@@ -87,16 +87,26 @@ setup:
     - locales: C
     - lang: C
     - timezone: Europe/Paris
-    - network_hostname: oar
   - keyboard_config:
     - layout: "fr,us"
-  - network_config
+  - network_config:
+    - hostname: oar
   - create_user:
     - name: $$user_name
     - group: admin
     - password: $$user_name
   - oar_prereq_install:
-    - packages: "vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby libyaml-perl libjson-perl libdbi-perl taktuk oidentd console-tools mingetty curl git-core make python-docutils apache2-mpm-prefork libjson-perl libwww-perl ntp libgd-ruby1.8 perl libdbi-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libsort-versions-perl openjdk-6-jre libcgi-fast-perl libpostgresql-ocaml libpostgresql-ocaml-dev ocaml-findlib ocaml-nox libounit-ocaml-dev ruby-rest-client ruby-rspec postgresql libdbd-pg-ruby libpostgresql-ocaml-dev libdbd-pg-ruby libmysql-ocaml-dev libdbd-pg-perl libapache2-mod-fastcgi"
+    - packages: >
+        vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby
+        libyaml-perl libjson-perl libdbi-perl taktuk oidentd console-tools
+        mingetty curl git-core make python-docutils apache2-mpm-prefork
+        libjson-perl libwww-perl ntp libgd-ruby1.8 perl libdbi-perl
+        libtie-ixhash-perl libappconfig-perl libsort-naturally-perl
+        libsort-versions-perl openjdk-6-jre libcgi-fast-perl
+        libpostgresql-ocaml libpostgresql-ocaml-dev ocaml-findlib ocaml-nox
+        libounit-ocaml-dev ruby-rest-client ruby-rspec postgresql
+        libdbd-pg-ruby libpostgresql-ocaml-dev libdbd-pg-ruby
+        libmysql-ocaml-dev libdbd-pg-perl libapache2-mod-fastcgi
   - oar_devel_prereq_install:
     - packages: "sshfs git ruby-dev libapache2-mod-passenger rubygems"
   - oar_git_install
@@ -114,7 +124,7 @@ setup:
 #== Export the generated appliance in the format of your choice
 export:
   - save_appliance_from_nbd:
-    - filename: "$${distrib}-$${release}"
+    - filename: "$${kameleon_recipe_name}"
     - save_as_qcow2
     # - save_as_tgz
     # - save_as_raw

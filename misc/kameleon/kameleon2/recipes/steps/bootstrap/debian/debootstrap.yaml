@@ -1,14 +1,13 @@
 # # Bootstrap
-- include: ifupdown locales libui-dialog-perl dialog isc-dhcp-client netbase net-tools iproute openssh-server pciutils
+- include: >
+    ifupdown locales libui-dialog-perl dialog isc-dhcp-client netbase
+    net-tools iproute acpid openssh-server pciutils
 - debootstrap:
   - check_cmd_out: debootstrap
-  - on_bootstrap_init:
-    - exec_out: export DEBIAN_FRONTEND=noninteractive
-  - on_setup_init:
-    - exec_in: export DEBIAN_FRONTEND=noninteractive
-  - exec_out: mkdir -p $$rootfs
-  - exec_out: mkdir -p $(dirname "$$archive_file")
-  - exec_out: test ! -f "$$archive_file" || tar zxf "$$archive_file" -C "$$rootfs"
-  - exec_out: test -f "$$archive_file" || debootstrap --no-check-gpg --arch=$$arch --include="$$include" $$release $$rootfs $$repository
-  - exec_out: test -f "$$archive_file" || tar zcf "$$archive_file" -C "$$rootfs" --numeric-owner --one-file-system .
-  - exec_out: cat /etc/resolv.conf > $$rootfs/etc/resolv.conf
+  - exec_out: mkdir -p $(dirname "$$rootfs_archive")
+  - exec_out: ROOTFS=$(dirname "$$rootfs_archive")/rootfs
+  - exec_out: mkdir -p $ROOTFS
+  - exec_out: test -f "$$rootfs_archive" || debootstrap --no-check-gpg --arch=$$arch --include="$$include" $$release $ROOTFS $$repository
+  - exec_out: test -f "$$rootfs_archive" || cat /etc/resolv.conf > $ROOTFS/etc/resolv.conf
+  - exec_out: test -f "$$rootfs_archive" || tar zcf "$$rootfs_archive" -C "$ROOTFS" --numeric-owner --one-file-system .
+  - exec_out: test -f "$$rootfs_archive" || rm -rf $ROOTFS

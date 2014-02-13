@@ -6,16 +6,18 @@
   - exec_out: mount -o bind /dev/pts $$rootfs/dev/pts
   - exec_out: mount -t proc /proc  $$rootfs/proc
   - exec_out: mount -t sysfs /sys  $$rootfs/sys
-  - exec_out: cat /proc/mounts > $$rootfs/etc/mtab
+  - exec_out: test -f $$rootfs/etc/mtab || cat /proc/mounts > $$rootfs/etc/mtab
   - on_export_clean:
-    - exec_out: echo umount $$rootfs/sys... ; mountpoint -q $$rootfs/sys && umount -f -l $$rootfs/sys  || true
-    - exec_out: echo umount $$rootfs/proc... ; mountpoint -q $$rootfs/proc && umount  -f -l $$rootfs/proc  || true
-    - exec_out: echo umount $$rootfs/dev/pts... ; mountpoint -q $$rootfs/dev/pts && umount -f -l $$rootfs/dev/pts  || true
-    - exec_out: echo umount $$rootfs/dev... ; mountpoint -q $$rootfs/dev && umount -f -l $$rootfs/dev  || true
+    - exec_out: echo try umount $$rootfs/sys... ; mountpoint -q $$rootfs/sys && umount -f -l $$rootfs/sys  || true
+    - exec_out: echo try umount $$rootfs/proc... ; mountpoint -q $$rootfs/proc && umount  -f -l $$rootfs/proc  || true
+    - exec_out: echo try umount $$rootfs/dev/pts... ; mountpoint -q $$rootfs/dev/pts && umount -f -l $$rootfs/dev/pts  || true
+    - exec_out: echo try umount $$rootfs/dev... ; mountpoint -q $$rootfs/dev && umount -f -l $$rootfs/dev  || true
 
 - cpuset_base_name: /dev/cpuset
 - cpuset_name: kameleon
+
 - init_cpuset:
+  - on_checkpoint: redo
   - on_setup_init:
     - exec_in: |
         if [ ! -f $$cpuset_base_name/cpus ]; then
@@ -28,20 +30,24 @@
     - exec_in: echo 0 > $$cpuset_base_name/$$cpuset_name/cpuset.cpus
     - exec_in: echo 0 > $$cpuset_base_name/$$cpuset_name/cpuset.mems
     - exec_in: echo $$ > $$cpuset_base_name/$$cpuset_name/tasks
+
+- clean_cpuset:
+  - on_checkpoint: redo
   - on_export_clean:
+    - exec_out: CPUSET_DIR="$$rootfs/$$cpuset_base_name"
     - exec_out: |
-        if [ -f $$rootfs/$$cpuset_base_name/$$cpuset_name/tasks ]; then
-          for pid in `cat $$rootfs/$$cpuset_base_name/$$cpuset_name/tasks`; do
+        if [ -f $CPUSET_DIR/$$cpuset_name/tasks ]; then
+          for pid in `cat $CPUSET_DIR/$$cpuset_name/tasks`; do
             kill -9 $pid
           done
           echo "Waiting for all processes of the in context to terminate..."
-          while [ ! -z "$(cat $$rootfs/$$cpuset_base_name/$$cpuset_name/tasks)" ]; do
+          while [ ! -z "$(cat $CPUSET_DIR/$$cpuset_name/tasks)" ]; do
             sleep .2
           done
           sleep .2
-          echo > $$rootfs/$$cpuset_base_name/$$cpuset_name/cpuset.cpus
-          echo > $$rootfs/$$cpuset_base_name/$$cpuset_name/cpuset.mems
-          rmdir $$rootfs/$$cpuset_base_name/$$cpuset_name
+          echo > $CPUSET_DIR/$$cpuset_name/cpuset.cpus
+          echo > $CPUSET_DIR/$$cpuset_name/cpuset.mems
+          rmdir $CPUSET_DIR/$$cpuset_name
         fi
-    - exec_out: echo umount $$rootfs/$$cpuset_base_name... ; mountpoint -q $$rootfs/$$cpuset_base_name && umount -f -l $$rootfs/$$cpuset_base_name 
+    - exec_out: echo try umount $CPUSET_DIR... ; mountpoint -q $CPUSET_DIR && umount -f -l $CPUSET_DIR || true
 

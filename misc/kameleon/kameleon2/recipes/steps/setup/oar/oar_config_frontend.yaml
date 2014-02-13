@@ -15,7 +15,7 @@
     - |
       ScriptAlias /oarapi-priv $$oar_prefix_install/lib/cgi-bin/oarapi/oarapi.cgi
       ScriptAlias /oarapi-priv-debug $$oar_prefix_install/lib/cgi-bin/oarapi/oarapi.cgi
-
+      
       <Location /oarapi-priv>
         Options ExecCGI -MultiViews FollowSymLinks
         AuthType      basic

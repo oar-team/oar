@@ -13,7 +13,7 @@ create: |
 
       echo "sync" ; sync
       qemu-nbd -d $$nbd_device
-      qemu-nbd -c $$nbd_device "$(readlink $$container)" -n
+      qemu-nbd -c $$nbd_device "$(readlink $$container)"
     fi
 
 apply: |
@@ -22,17 +22,21 @@ apply: |
                   | grep backing \
                   | sed -e 's/.*checkpoints\/\(.*\)_$${container}\(.*\)/\1/p' \
                   | uniq)
-    
+
     ln -sf "checkpoints/${previous_id}_$${container}" "$$container"
 
     lsmod | grep nbd >/dev/null || modprobe nbd max_part=63
 
     echo "sync" ; sync
     qemu-nbd -d $$nbd_device
-    qemu-nbd -c $$nbd_device "$(readlink $$container)" -n
+    qemu-nbd -c $$nbd_device "$(readlink $$container)"
 
-remove: |
-    rm -f "checkpoints/@microstep_id_$${container}"
+clear: |
+    if [ -d "checkpoints" ] ; then
+      ls checkpoints/ | \
+        xargs -I {} bash -c "echo Removing checkpoints/{} ; rm checkpoints/{}"
+      rm -f $$container
+    fi
 
 list: |
     if [ -d "checkpoints" ] ; then

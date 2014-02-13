@@ -1,4 +1,8 @@
 # OAR checking before setup
 - postgres_already_running_check:
-  - exec_out: ps awux |grep postgres|grep -v grep >/dev/null && echo -e "\n*** YOU SHOULD STOP YOUR POSTGRESQL SERVER! ***\n" && exit 1 || true
-
+  - rescue:
+    - exec_out: |
+        if [ "$(ps awux | grep postgres | grep -v grep)" ] ; then
+          false
+        fi
+    - breakpoint: *** YOU SHOULD STOP YOUR POSTGRESQL SERVER! ***

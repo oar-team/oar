@@ -8,8 +8,8 @@
 - node:
   - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build
   - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install node-install
-  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install node-setup 
-   
+  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install node-setup
+
 - frontend:
   - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build
   - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install user-install drawgantt-install monika-install www-conf-install api-install tools-install

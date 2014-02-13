@@ -1,12 +1,6 @@
 # Prepare Appliance
 - nbd_device: /dev/nbd0
 
-- init_contexts:
-  - on_bootstrap_init:
-    - exec_out: "fail() { echo $@ 1>&2; false; }"
-  - on_setup_init:
-    - exec_in: "fail() { echo $@ 1>&2; false; }"
-
 - create_raw_image:
   - check_cmd_out: qemu-img
   - exec_out: mkdir -p checkpoints
@@ -31,6 +25,7 @@
 
 
 - detach_nbd_device:
+  - on_checkpoint: redo
   - on_export_clean:
     - exec_out: echo "sync" ; sync
     - exec_out: qemu-nbd -d $$nbd_device
@@ -51,33 +46,39 @@
       echo Creating root partition...
       mkfs.$$filesystem_type -q $${nbd_device}p2 || fail cannot create / ext4
 
-- create_fstab_mtab:
-  - on_setup_init:
-    - write_out:
-      - $$mountdir/etc/fstab
-      - |
-        # /etc/fstab: static file system information.
-        #
-        # Use 'blkid' to print the universally unique identifier for a
-        # device; this may be used with UUID= as a more robust way to name devices
-        # that works even if disks are added and removed. See fstab(5).
-        #
-        # <file system> <mount point>   <type>  <options>       <dump>  <pass>
-        UUID=`blkid -s UUID -o value $${nbd_device}p2` /               $$filesystem_type    errors=remount-ro  0       1
-        UUID=`blkid -s UUID -o value $${nbd_device}p1` /boot           $$filesystem_type    sync               0       2
-
 - mount_mountdir:
   - on_checkpoint: redo
   - exec_out: mkdir -p $$mountdir
   - exec_out:  "echo Mounting root partition... ;  mount $${nbd_device}p2 $$mountdir || fail cannot mount /"
   - on_export_clean:
-    - exec_out: "echo umounting $$mountdir... ; mountpoint -q $$mountdir && umount -f -l $$mountdir || true"
+    - exec_out: "echo try umount $$mountdir... ; mountpoint -q $$mountdir && umount -f -l $$mountdir || true"
+    - exec_out: "test -d $$mountdir && rmdir $$mountdir || true"
   - exec_out: mkdir -p $$mountdir/boot
   - exec_out:  "echo Mounting boot partition... ;  mount $${nbd_device}p1 $$mountdir/boot || fail cannot mount /boot"
   - on_export_clean:
-    - exec_out: "echo umounting $$mountdir/boot... ; mountpoint -q $$mountdir/boot && umount -f -l $$mountdir/boot || true"
+    - exec_out: "echo try umount $$mountdir/boot... ; mountpoint -q $$mountdir/boot && umount -f -l $$mountdir/boot || true"
+    - exec_out: "test -d $$mountdir/boot && rmdir $$mountdir/boot || true"
 
-- install_extlinux:
+- copy_rootfs:
+  - exec_out: tar -xf $$rootfs_archive -C $$mountdir
+  - exec_out: echo "sync..." ; sync
+
+- create_fstab:
+  - write_out:
+    - $$mountdir/etc/fstab
+    - |
+      # /etc/fstab: static file system information.
+      #
+      # Use 'blkid' to print the universally unique identifier for a
+      # device; this may be used with UUID= as a more robust way to name devices
+      # that works even if disks are added and removed. See fstab(5).
+      #
+      # <file system> <mount point>   <type>  <options>       <dump>  <pass>
+      UUID=`blkid -s UUID -o value $${nbd_device}p2` /               $$filesystem_type    errors=remount-ro  0       1
+      UUID=`blkid -s UUID -o value $${nbd_device}p1` /boot           $$filesystem_type    sync               0       2
+
+
+- install_bootloader:
   - on_export_init:
     - exec_in: extlinux-install $$nbd_device 2>&1
     - write_in:
@@ -89,8 +90,4 @@
         label linux
         kernel ../`basename /boot/vmlinuz*`
         append initrd=../`basename /boot/init*` root=UUID=`blkid -s UUID -o value $${nbd_device}p2` ro
-    - exec_in: |
-        dir=/var/lib/os-prober/mount
-        if [ -d "$dir" ]
-        then umount -f -l "$dir" && rmdir "$dir"
-        fi
+    - exec_out: echo " sync..." ; sync

@@ -8,5 +8,13 @@
       do_bootfloppy = no
       do_initrd = yes
       link_in_boot = no
+
 - install_kernel:
-  - exec_in: apt-get -y --force-yes install linux-image-$$arch 2>&1
+  - exec_in: "apt-get -y --force-yes install linux-image-$$arch 2>&1"
+
+- install_extlinux:
+  - exec_in: "apt-get -y --force-yes install extlinux 2>&1"
+  - on_setup_clean:
+    - exec_in: |
+        dir=/var/lib/os-prober/mount
+        test ! -d "$dir" || (umount -f -l "$dir" && rmdir "$dir")

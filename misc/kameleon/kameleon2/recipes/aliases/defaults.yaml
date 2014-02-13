@@ -1,21 +1,33 @@
 write_local:
   - exec_local: |
-      mkdir -p $(dirname @1); echo -e @2 > @1
+      mkdir -p $(dirname @1);
+      cat >@1 <<EOF
+      @2
+      EOF
 write_in:
   - exec_in: |
-      mkdir -p $(dirname @1); echo -e @2 > @1
+      mkdir -p $(dirname @1);
+      cat >@1 <<EOF
+      @2
+      EOF
 write_out:
   - exec_out: |
-      mkdir -p $(dirname @1); echo -e @2 > @1
+      mkdir -p $(dirname @1);
+      cat >@1 <<EOF
+      @2
+      EOF
 append_local:
   - exec_local: |
-      mkdir -p $(dirname @1); echo -e @2 >> @1
+      mkdir -p $(dirname @1);
+      cat >>@1 <<<"@2"
 append_in:
   - exec_in: |
-      mkdir -p $(dirname @1); echo -e @2 >> @1
+      mkdir -p $(dirname @1);
+      cat >>@1 <<<"@2"
 append_out:
   - exec_out: |
-      mkdir -p $(dirname @1); echo -e @2 >> @1
+      mkdir -p $(dirname @1);
+      cat >>@1 <<<"@2"
 local2out:
   - exec_out: |
       mkdir -p $(dirname @2)"
@@ -51,14 +63,14 @@ in2out:
 check_cmd_out:
   - on_bootstrap_init:
     - exec_out: |
-        echo @1 | tr ' ' '\n' | xargs -I {} bash -c "(command -V {} && exit 0) || (echo 1>&2 '{} is missing' && exit 1)"
+        echo "@1" | tr ' ' '\n' | xargs -I {} bash -c "(command -V {} && exit 0) || (echo 1>&2 '{} is missing' && exit 1)"
 
 check_cmd_local:
   - on_bootstrap_init:
     - exec_local: |
-        echo @1 | tr ' ' '\n' | xargs -I {} bash -c "(command -V {} && exit 0) || (echo 1>&2 '{} is missing' && exit 1)"
+        echo "@1" | tr ' ' '\n' | xargs -I {} bash -c "(command -V {} && exit 0) || (echo 1>&2 '{} is missing' && exit 1)"
 
 check_cmd_in:
   - on_setup_init:
     - exec_in: |
-        echo @1 | tr ' ' '\n' | xargs -I {} bash -c "(command -V {} && exit 0) || (echo 1>&2 '{} is missing' && exit 1)"
+        echo "@1" | tr ' ' '\n' | xargs -I {} bash -c "(command -V {} && exit 0) || (echo 1>&2 '{} is missing' && exit 1)"
