@@ -227,7 +227,7 @@ GetOptions ("state|s=s" => \$state,
             "resource|r=i" => \@resource,
             "file|f=s" => \$file,
             "version|V" => \$Version
-           );
+           ) or exit(1);
 
 usage() if (defined($sos));
 

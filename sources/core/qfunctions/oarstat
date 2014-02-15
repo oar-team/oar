@@ -91,7 +91,7 @@ GetOptions ("help|h" => \$usage,
             "json|J" => \$JSON_mode,
             "dumper|D" => \$DUMPER_mode,
             "format=s" => \$text_format
-           );
+           ) or exit(1);
 
 if ($usage){
     &print_usage;

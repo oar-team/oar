@@ -21,6 +21,7 @@ version 2.5.4:
   - [api]: Rewritten/commented apache config file
   - [oaradmin]: Disabled deprecated "conf" sub-command (the config file may 
                 be edited by the REST-API)
+  - [commands] exit immediately on wrong arguments
 
 version 2.5.3:
 --------------

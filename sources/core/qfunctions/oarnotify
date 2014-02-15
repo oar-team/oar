@@ -37,7 +37,7 @@ GetOptions ("version|V" => \$Version,
             "remove_queue=s" => \@Remove_queue,
             "list_queues|l" => \$List_queues,
             "help|h" => \$sos
-           );
+           ) or exit(1);
 # Display command help
 sub usage {
     print <<EOS;

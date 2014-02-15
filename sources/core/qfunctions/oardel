@@ -86,7 +86,7 @@ GetOptions ("checkpoint|c" => \$Checkpoint,
             "sql=s"   => \$Sql_property,
             "force-terminate-finishing-job" => \$Force_terminate_finishing_job,
             "version|V" => \$Version
-           );
+           ) or exit(1);
 
 if (defined($sos)){
     usage();

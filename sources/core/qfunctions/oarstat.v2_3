@@ -74,7 +74,7 @@ GetOptions ("help|h" => \&show_usage,
             "yaml|Y" => \$YAML_mode,
             "dumper|D" => \$DUMPER_mode,
             "backward-compatible|backward_compatible" => \$Old
-           );
+           ) or exit(1);
 
 if (defined($XML_mode) and $XML_enabled != 1){
     warn("XML module not available on the system. Ask your administrator to install it if needed.\n");

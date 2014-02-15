@@ -39,7 +39,7 @@ GetOptions ("help|h" => \$Help,
             "array" => \$array,
             "sql=s"   => \$Sql_property,
             "running|r" => \$Suspend_running
-           );
+           ) or exit(1);
 
 if (defined($Help)){
     usage();

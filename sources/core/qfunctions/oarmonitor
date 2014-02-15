@@ -51,7 +51,7 @@ GetOptions ("version|V" => \$Version,
             "frequency|f=i" => \$Frequency,
             "help|h" => \$sos,
             "verbose|v" => \$Verbose
-           );
+           ) or exit(1);
 
 # Display command help
 sub usage {

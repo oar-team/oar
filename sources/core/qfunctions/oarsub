@@ -635,7 +635,7 @@ GetOptions ("resource|l=s" => \@resource,
             "import-job-key-from-file|i=s" => \$import_job_key_file,
             "export-job-key-to-file|e=s" => \$export_job_key_file,
             "version|V" => \$Version
-           );
+           ) or exit(1);
 
 
 if (defined($Version)){

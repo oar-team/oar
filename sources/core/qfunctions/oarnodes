@@ -231,7 +231,7 @@ GetOptions ("state|s" => \$stateMode,
             "json|J" => \$JSON_mode,
             "dumper|D" => \$DUMPER_mode,
             "version|V" => \$Version
-           );
+           ) or exit(1);
 
 if ($usage){
     print_usage();
