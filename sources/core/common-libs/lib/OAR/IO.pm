@@ -7828,6 +7828,18 @@ sub job_finishing_sequence($$$$$$){
                     job_user => $job_user,
                     job_uid => $job_cpuset_uid,
                     types => $types,
+                    resources => undef,
+                    node_file_db_fields => undef,
+                    node_file_db_fields_distinct_values => undef,
+                    array_id            => $job->{array_id},
+                    array_index         => $job->{array_index},
+                    stdout_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stdout_file},$job_id),
+                    stderr_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stderr_file},$job_id),
+                    launching_directory => $job->{launching_directory},
+                    job_name            => $job->{job_name},
+                    walltime_seconds    => undef,
+                    walltime            => undef,
+                    project             => $job->{project},
                     log_level => OAR::Modules::Judas::get_log_level()
                 };
                 my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);

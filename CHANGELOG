@@ -21,7 +21,10 @@ version 2.5.4:
   - [api]: Rewritten/commented apache config file
   - [oaradmin]: Disabled deprecated "conf" sub-command (the config file may 
                 be edited by the REST-API)
-  - [commands] exit immediately on wrong arguments
+  - [commands]: exit immediately on wrong arguments
+  - [oarsh]: propagate OAR shell environment variables
+             The users have access to the same OAR environment variables when
+             connecting on all the job nodes with oarsh
 
 version 2.5.3:
 --------------

@@ -66,8 +66,8 @@ my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 # Retrieve parameters from STDIN in the "Cpuset" structure which looks like: 
 # $Cpuset = {
 #               job_id => id of the corresponding job
-#               name => "cpuset name",
-#               cpuset_path => "relative path in the cpuset FS",
+#               name => "cpuset name"
+#               cpuset_path => "relative path in the cpuset FS"
 #               nodes => hostname => [array with the content of the database cpuset field]
 #               ssh_keys => {
 #                               public => {
@@ -84,6 +84,18 @@ my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 #               job_user => "job user"
 #               job_uid => "job uid for the job_user if needed"
 #               types => hashtable with job types as keys
+#               resources => [ {property_name => value} ]
+#               node_file_db_fields => NODE_FILE_DB_FIELD
+#               node_file_db_fields_distinct_values => NODE_FILE_DB_FIELD_DISTINCT_VALUES
+#               array_id => job array id
+#               array_index => job index in the array
+#               stdout_file => stdout file name
+#               stderr_file => stderr file name
+#               launching_directory => launching directory
+#               job_name => job name
+#               walltime_seconds => job walltime in seconds
+#               walltime => job walltime
+#               project => job project name
 #               log_level => debug level number
 #           }
 my $tmp = "";
@@ -267,6 +279,73 @@ if ($ARGV[0] eq "init"){
                 exit_myself(5,"Failed to set the memory.limit_in_bytes to $mem_kb");
             }
         }
+        # Create file used in the user jobs (environment variables, node files, ...)
+        ##Feed the node file
+        my @tmp_res;
+        my %tmp_already_there;
+        foreach my $r (@{$Cpuset->{resources}}){
+            if (($r->{$Cpuset->{node_file_db_fields}} ne "") and ($r->{type} eq "default")){
+                if (($r->{$Cpuset->{node_file_db_fields_distinct_values}} ne "") and (!defined($tmp_already_there{$r->{$Cpuset->{node_file_db_fields_distinct_values}}}))){
+                    push(@tmp_res, $r->{$Cpuset->{node_file_db_fields}});
+                    $tmp_already_there{$r->{$Cpuset->{node_file_db_fields_distinct_values}}} = 1;
+                }
+            }
+        }
+        if (open(NODEFILE, "> $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}")){
+            foreach my $f (sort(@tmp_res)){
+                print(NODEFILE "$f\n") or exit_myself(19,"Failed to write in node file $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}");
+            }
+            close(NODEFILE);
+        }else{
+            exit_myself(19,"Failed to create node file $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}");
+        }
+
+        ##create resource set file
+        if (open(RESFILE, "> $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources")){
+            foreach my $r (@{$Cpuset->{resources}}){
+                my $line = "";
+                foreach my $p (keys(%{$r})){
+                    $r->{$p} = "" if (!defined($r->{$p}));
+                    $line .= " $p = '$r->{$p}' ,"
+                }
+                chop($line);
+                print(RESFILE "$line\n") or exit_myself(19,"Failed to write in resource file $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources");
+            }
+            close(RESFILE);
+        }else{
+            exit_myself(19,"Failed to create resource file $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources");
+        }
+
+        ## Write environment file
+        if (open(ENVFILE, "> $Cpuset->{oar_tmp_directory}/$Cpuset->{name}.env")){
+            my $filecontent = <<"EOF";
+export OAR_JOBID='$Cpuset->{job_id}'
+export OAR_ARRAYID='$Cpuset->{array_id}'
+export OAR_ARRAYINDEX='$Cpuset->{array_index}'
+export OAR_USER='$Cpuset->{user}'
+export OAR_WORKDIR='$Cpuset->{launching_directory}'
+export OAR_JOB_NAME='$Cpuset->{job_name}'
+export OAR_PROJECT_NAME='$Cpuset->{project}'
+export OAR_STDOUT='$Cpuset->{stdout_file}'
+export OAR_STDERR='$Cpuset->{stderr_file}'
+export OAR_FILE_NODES='$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}'
+export OAR_RESOURCE_PROPERTIES_FILE='$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources'
+export OAR_JOB_WALLTIME='$Cpuset->{walltime}'
+export OAR_JOB_WALLTIME_SECONDS='$Cpuset->{walltime_seconds}'
+
+export OAR_NODEFILE=\$OAR_FILE_NODES
+export OAR_NODE_FILE=\$OAR_FILE_NODES
+export OAR_RESOURCE_FILE=\$OAR_RESOURCE_PROPERTIES_FILE
+export OAR_O_WORKDIR=\$OAR_WORKDIR
+export OAR_WORKING_DIRECTORY=\$OAR_WORKDIR
+export OAR_JOB_ID=\$OAR_JOBID
+export OAR_ARRAY_ID=\$OAR_ARRAYID
+export OAR_ARRAY_INDEX=\$OAR_ARRAYINDEX
+EOF
+            print(ENVFILE "$filecontent") or exit_myself(19,"Failed to write in file ");
+        }else{
+            exit_myself(19,"Failed to create file ");
+        }
     }
 
     # Copy ssh key files
@@ -444,6 +523,12 @@ if ($ARGV[0] eq "init"){
 	        flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
 	        close(LOCK);
         } 
+        print_log(3,"Remove file $Cpuset->{oar_tmp_directory}/$Cpuset->{name}.env");
+        unlink("$Cpuset->{oar_tmp_directory}/$Cpuset->{name}.env");
+        print_log(3,"Remove file $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}");
+        unlink("$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}");
+        print_log(3,"Remove file $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources");
+        unlink("$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources");
     }
 
     # Handle the tmp user OAR feature: NOT USED ANYMORE.

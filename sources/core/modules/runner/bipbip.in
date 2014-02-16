@@ -138,6 +138,8 @@ if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
 my $job_cpuset_uid;
 $Job_user = OAR::Tools::format_job_user($job->{job_user},$Job_id,$job_cpuset_uid);
 my $types = OAR::IO::get_current_job_types($base,$Job_id);
+my @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
+my $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
 if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#hosts >= 0))){
     my $event_type;
     my @bad;
@@ -170,6 +172,18 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         job_user => $Job_user,
         job_uid => $job_cpuset_uid,
         types => $types,
+        resources => \@resources,
+        node_file_db_fields => $Node_file_db_field,
+        node_file_db_fields_distinct_values => $Node_file_db_field_distinct_values,
+        array_id            => $job->{array_id},
+        array_index         => $job->{array_index},
+        stdout_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stdout_file},$Job_id),
+        stderr_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stderr_file},$Job_id),
+        launching_directory => $job->{launching_directory},
+        job_name            => $job->{job_name},
+        walltime_seconds    => $moldable->{moldable_walltime},
+        walltime            => OAR::IO::duration_to_sql($moldable->{moldable_walltime}),
+        project             => $job->{project},
         log_level => OAR::Modules::Judas::get_log_level()
     };
     if (defined($cpuset_nodes)){
@@ -339,8 +353,6 @@ if (defined($Server_prologue)){
 ###############################################################################
 
 #CALL OAREXEC ON THE FIRST NODE
-my $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
-my @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
 my $pro_epi_timeout = OAR::Tools::get_default_prologue_epilogue_timeout();
 if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
    $pro_epi_timeout = get_conf("PROLOGUE_EPILOGUE_TIMEOUT"); 
