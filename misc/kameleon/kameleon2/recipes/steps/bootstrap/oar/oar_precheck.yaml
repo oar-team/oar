@@ -5,4 +5,4 @@
         if [ "$(ps awux | grep postgres | grep -v grep)" ] ; then
           false
         fi
-    - breakpoint: *** YOU SHOULD STOP YOUR POSTGRESQL SERVER! ***
+    - breakpoint: "*** YOU SHOULD STOP YOUR POSTGRESQL SERVER! ***"

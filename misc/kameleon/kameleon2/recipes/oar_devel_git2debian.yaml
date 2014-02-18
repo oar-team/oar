@@ -33,7 +33,11 @@ global:
 
   ## System variables. Required by kameleon engine
   # Include specific steps
-  include_steps: [$$distrib/$$release, $$distrib, oar, $${distrib}_oar]
+  include_steps: 
+    - $$distrib/$$release
+    - $$distrib
+    - oar
+    - $${distrib}_oar
 
   ## OAR
   #
