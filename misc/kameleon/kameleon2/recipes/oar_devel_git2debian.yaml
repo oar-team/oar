@@ -88,8 +88,8 @@ setup:
     - arch: $$arch
   # Configuration
   - system_config:
-    - locales: C
-    - lang: C
+    - locales: en_US fr_FR
+    - lang: fr_FR.UTF-8
     - timezone: Europe/Paris
   - keyboard_config:
     - layout: "fr,us"
