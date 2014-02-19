@@ -28,6 +28,6 @@
         RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
         RequestHeader add X-REMOTE_IDENT %{MY_REMOTE_IDENT}e
       </Location>
-  - exec_in: htpasswd -b -c /etc/oar/api-users kameleon kameleon
-  - exec_in: htpasswd -b /etc/oar/api-users oar kameleon
+  - exec_in: htpasswd -b -c /etc/oar/api-users $$user_name $$user_name
+  - exec_in: htpasswd -b /etc/oar/api-users oar $$user_name
 
