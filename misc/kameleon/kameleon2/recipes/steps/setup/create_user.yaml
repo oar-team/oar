@@ -5,6 +5,8 @@
   # use the create_passwd.py script to generate the crypted password
   - exec_in: useradd -m -g $$group $$name -s /bin/bash
   - exec_in: echo -n '$$name:$$password' | chpasswd
+  - on_export_init:
+    - exec_in: chown '$$user_name:' -R /home/$$user_name
 - add_group_to_sudoers:
   - append_in:
     - /etc/sudoers

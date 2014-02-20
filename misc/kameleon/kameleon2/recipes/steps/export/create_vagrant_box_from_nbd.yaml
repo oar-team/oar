@@ -1,0 +1,48 @@
+# FIXME: Should be use guest kernel...
+# - guest_addons_url: http://download.virtualbox.org/virtualbox/4.2.16/VBoxGuestAdditions_4.2.16.iso
+# - install_guest_addons:
+#   - exec_in: apt-get install  -y --force-yes dkms gcc
+#   - exec_in: echo "Download Guest Additions"
+#   - exec_in: wget -q $$guest_addons_url -O /tmp/VBoxGuestAdditions_4.2.16.iso
+#   - exec_in: mount -o loop /tmp/VBoxGuestAdditions_4.2.16.iso /mnt
+#   - exec_in: yes|sh /mnt/VBoxLinuxAdditions.run || true
+#   - on_export_clean:
+#     - exec_in: |
+#         echo "try umount /mnt" ; mountpoint -q /mnt && umount -f -l /mnt || true
+
+- nullify_free_space:
+  - exec_in: dd if=/dev/zero of=/bigemptyfile bs=4096k || true
+  - exec_in: rm -f /bigemptyfile
+
+- nullify_free_space:
+  - exec_in: dd if=/dev/zero of=/bigemptyfile bs=4096k || true
+  - exec_in: rm -f /bigemptyfile
+
+- save_vdi:
+  - exec_out: echo "sync..." ; sync
+  - exec_out: |
+      qemu-img convert -O vdi $(readlink $$container) $$vdi
+  - exec_out: echo "Saved vdi appliance to $$vdi"
+  - exec_out: VBoxManage modifyhd $$vdi --compact
+
+- createvm:
+  - exec_out: |
+      BOX_NAME="$${kameleon_recipe_name}_$${kameleon_short_uuid}"
+  - exec_out: VBoxManage createvm --name "$BOX_NAME" --register
+  - exec_out: VBoxManage modifyvm "$BOX_NAME" --ostype $$os_type
+  - exec_out: VBoxManage modifyvm "$BOX_NAME" --memory 1024
+  - exec_out: VBoxManage modifyvm "$BOX_NAME" --acpi on
+  - exec_out: VBoxManage modifyvm "$BOX_NAME" --nic1 bridged 
+  - exec_out: VBoxManage modifyvm "$BOX_NAME" --bridgeadapter1 eth0
+  - exec_out: VBoxManage storagectl "$BOX_NAME" --name "IDE Controller" --add ide
+  - exec_out: |
+      VBoxManage storageattach "$BOX_NAME" --storagectl "IDE Controller" \
+          --port 0 --device 0 --type hdd \
+          --medium $$vdi
+  - on_export_clean:
+    - exec_out: VBoxManage unregistervm --delete "$BOX_NAME"
+
+- exportvm:
+  - exec_out: echo "Create vagrant package"
+  - exec_out: rm -f $$output
+  - exec_out: vagrant package --base $BOX_NAME --output $$output

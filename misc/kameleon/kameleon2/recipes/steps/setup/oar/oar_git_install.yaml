@@ -1,10 +1,15 @@
+- keep_oar_src: true
 - fetch_repository:
   - exec_in: mkdir -p $$oar_git_directory
   - exec_in: git init $$oar_git_directory
   - exec_in: git --git-dir $$oar_git_directory/.git --work-tree $$oar_git_directory fetch --depth 0 $$oar_git_repository $$oar_git_treeish
   - exec_in: git --git-dir $$oar_git_directory/.git --work-tree $$oar_git_directory checkout FETCH_HEAD
   - exec_in: make -C $$oar_git_directory clean
-
+  - on_clean:
+    - exec_in: |
+        if [ $$keep_oar_src = false ]; then
+          rm -rf $$oar_git_directory
+        fi
 - node:
   - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build
   - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install node-install

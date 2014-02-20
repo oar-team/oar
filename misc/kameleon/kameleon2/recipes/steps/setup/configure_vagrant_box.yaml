@@ -1,0 +1,37 @@
+- enable_passwordless_sudo:
+  - exec_in: cp /etc/sudoers{,.orig}
+  - exec_in: sed -i -e '/Defaults\s\+env_reset/a Defaults\texempt_group=admin' /etc/sudoers
+  - exec_in: sed -i -e 's/%admin ALL=(ALL) ALL/%admin ALL=NOPASSWD:ALL/g' /etc/sudoers
+  - write_in:
+    - /etc/sudoers.d/$$user_name
+    - |
+      Defaults:$$user_name !requiretty
+      #Defaults !visiblepw
+      Defaults env_keep = "SSH_AUTH_SOCK"
+      
+      $$user_name ALL=NOPASSWD: ALL
+
+- install_chef:
+  - exec_in: echo "installing chef"
+  - exec_in: curl -L https://www.opscode.com/chef/install.sh -k | sudo bash
+
+- install_puppet:
+  - exec_in: echo "installing puppet"
+  - exec_in: wget -q http://apt.puppetlabs.com/puppetlabs-release-stable.deb -O /tmp/puppetlabs-release-stable.deb
+  - exec_in: dpkg -i "/tmp/puppetlabs-release-stable.deb"
+  - exec_in: apt-get update
+  - exec_in: apt-get install puppet -y --force-yes
+
+- copy_insecure_sshkey:
+  - exec_in: mkdir -p /home/$$user_name/.ssh/
+  - exec_in: chmod 0755 /home/$$user_name/.ssh/
+  - exec_in: echo -e  'y\n' | ssh-keygen -q -t dsa -f /home/$$user_name/.ssh/id_rsa -N ''
+  - write_in:
+    - /home/$$user_name/.ssh/authorized_keys
+    - |
+      ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== $$user_name insecure public key
+  - exec_in: cat /home/$$user_name/.ssh/id_rsa.pub >> /home/$$user_name/.ssh/authorized_keys
+  - exec_in: chmod 0644 /home/$$user_name/.ssh/authorized_keys
+  - exec_in: chmod 0600 /home/$$user_name/.ssh/id_rsa*
+  - exec_in: |
+      chown "$$user_name:" -R /home/$$user_name/.ssh
