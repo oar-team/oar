@@ -1,3 +1,9 @@
+- setup_fuse:
+  - exec_in: usermod -a -G fuse kameleon
+  - append_in:
+    - /etc/fuse.conf
+    - |
+      user_allow_other
 - motd_config:
   - write_in:
     - /etc/motd
@@ -15,7 +21,10 @@
             -d '{"resource":"/nodes=1,walltime=00:10:00", "command":"sleep 600"}'
       * Launch the tests: 
           $ cd oar/tests/rspec && make
-      
+      * Mount your local git repository for coding:
+          $ mkdir git
+          $ sshfs -o allow_root your_login@10.0.2.2:git git
+
       Notes:
         - if you want to change the keyboard mapping, use: 
         'loadkeys <2_letters_country_code>'
