@@ -562,15 +562,19 @@ sub compact_arrays($){
 
 # Use the current date in seconds from the EPOCH to determine the duration of a
 # running job (start_time>0)
-sub get_job_duration($){
+sub get_job_duration($$){
     my $start_date = shift;
+    my $stop_date = shift;
 
-    if ($current_date < 0){
-        $current_date = OAR::IO::get_date($base);
+    if ($stop_date < $start_date){
+        if ($current_date < 0){
+            $current_date = OAR::IO::get_date($base);
+        }
+        $stop_date = $current_date;
     }
     my ($h,$m,$s) = (0,0,0);
-    if (($start_date > 0) and ($start_date < $current_date)){
-        ($h,$m,$s) = OAR::IO::duration_to_hms($current_date - $start_date);
+    if (($start_date > 0) and ($start_date < $stop_date)){
+        ($h,$m,$s) = OAR::IO::duration_to_hms($stop_date - $start_date);
     }
     return(sprintf("%i:%02i:%02i", $h,$m,$s));
 }

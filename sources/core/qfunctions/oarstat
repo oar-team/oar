@@ -405,7 +405,7 @@ EOS
                             $job_info->{'array_index'},
 					    	$hashestat{$job_info->{state}},
 			    			$job_info->{job_user},
-                            OAR::Stat::get_job_duration($job_info->{start_time}),
+                            OAR::Stat::get_job_duration($job_info->{start_time},$job_info->{stop_time}),
 						    $job_info->{message}
     					);
                         $Printed_jobs ++;
@@ -444,7 +444,7 @@ EOS
 	    					$job_info->{job_id},
 					    	$hashestat{$job_info->{state}},
 			    			$job_info->{job_user},
-                            OAR::Stat::get_job_duration($job_info->{start_time}),
+                            OAR::Stat::get_job_duration($job_info->{start_time},$job_info->{stop_time}),
 						    $job_info->{message}
     					);
                     }else{
