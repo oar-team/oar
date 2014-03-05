@@ -111,8 +111,8 @@ setup:
 
 #== Export the generated appliance in the format of your choice
 export:
-  - save_vagrant_appliance:
-    - os_type: Debian_64
+  - save_vagrant_libvirt_appliance:
     - memory: "512"
+    - image_size: 5
     - filename: "$${kameleon_recipe_name}"
 
