@@ -8,19 +8,18 @@
       Defaults:$$user_name !requiretty
       #Defaults !visiblepw
       Defaults env_keep = "SSH_AUTH_SOCK"
-      
       $$user_name ALL=NOPASSWD: ALL
 
-- install_chef:
-  - exec_in: echo "installing chef"
-  - exec_in: curl -L https://www.opscode.com/chef/install.sh -k | sudo bash
-
 - install_puppet:
-  - exec_in: echo "installing puppet"
+  - exec_in: echo "Installing puppet..."
   - exec_in: wget -q http://apt.puppetlabs.com/puppetlabs-release-stable.deb -O /tmp/puppetlabs-release-stable.deb
   - exec_in: dpkg -i "/tmp/puppetlabs-release-stable.deb"
   - exec_in: apt-get update
   - exec_in: apt-get install puppet -y --force-yes
+
+- install_salt:
+  - exec_in: echo "Installing salt..."
+  - exec_in: curl -L http://bootstrap.saltstack.org | sudo sh
 
 - copy_insecure_sshkey:
   - exec_in: mkdir -p /home/$$user_name/.ssh/
@@ -33,5 +32,5 @@
   - exec_in: cat /home/$$user_name/.ssh/id_rsa.pub >> /home/$$user_name/.ssh/authorized_keys
   - exec_in: chmod 0644 /home/$$user_name/.ssh/authorized_keys
   - exec_in: chmod 0600 /home/$$user_name/.ssh/id_rsa*
-  - exec_in: |
-      chown "$$user_name:" -R /home/$$user_name/.ssh
+  - exec_in: rsync -ah /home/$$user_name/.ssh/ /root/.ssh/
+  - exec_in: chown "$$user_name:" -R /home/$$user_name
