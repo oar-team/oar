@@ -149,7 +149,7 @@ sub scan_script($$){
             }
         }
         if (!close(FILE)){
-            warn("[ERROR] Cannot open the file $file. Check if it is readable by everybody (744).\n");
+            warn("[ERROR] Cannot open the file $file.\n");
             exit(12);
         }
     }else{
