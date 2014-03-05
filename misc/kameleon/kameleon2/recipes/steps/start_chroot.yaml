@@ -13,6 +13,9 @@
     - exec_out: echo try umount $$rootfs/dev/pts... ; mountpoint -q $$rootfs/dev/pts && umount -f -l $$rootfs/dev/pts  || true
     - exec_out: echo try umount $$rootfs/dev... ; mountpoint -q $$rootfs/dev && umount -f -l $$rootfs/dev  || true
 
+- configure_dns:
+  - exec_out: echo "nameserver $$dns" > $$rootfs/etc/resolv.conf
+
 - cpuset_base_name: /dev/cpuset
 - cpuset_name: kameleon
 

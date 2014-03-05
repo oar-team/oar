@@ -4,11 +4,7 @@
 #############################################
 
 # Get kameleon:
-  git clone git://scm.gforge.inria.fr/kameleon/kameleon.git
-  git co kameleon2-dev
- 
-  gem build kameleon.gemspec
-  gem install kameleon-2.0.0.dev.gem
+  gem install kameleon-builder
 
 # Build appliance:
   sudo kameleon build oar_devel_git2debian

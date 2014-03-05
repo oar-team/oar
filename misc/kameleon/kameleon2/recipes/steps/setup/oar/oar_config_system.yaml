@@ -1,5 +1,5 @@
 - setup_fuse:
-  - exec_in: usermod -a -G fuse kameleon
+  - exec_in: usermod -a -G fuse $$user_name
   - append_in:
     - /etc/fuse.conf
     - |

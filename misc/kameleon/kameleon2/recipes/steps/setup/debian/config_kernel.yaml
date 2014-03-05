@@ -1,0 +1,13 @@
+- configure_kernel:
+  - write_in:
+    - /etc/kernel-img.conf
+    - |
+      do_symlinks = yes
+      relative_links = yes
+      do_bootloader = yes
+      do_bootfloppy = no
+      do_initrd = yes
+      link_in_boot = no
+
+- update_initramfs:
+  - exec_in: update-initramfs -u

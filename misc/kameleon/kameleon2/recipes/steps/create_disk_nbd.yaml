@@ -1,0 +1,56 @@
+# Create disk
+#
+# this step create the appliance disk and initialize the
+# checkpoint mechanism with Qemu Network Block Device (NBD)
+
+- device: /dev/nbd0
+- consider_checkpoint: true
+
+- create_initial_image:
+  - check_cmd_out: qemu-img
+  - exec_out: mkdir -p checkpoints
+  - exec_out: |
+      if [ $$consider_checkpoint = true ]; then
+        if [ ! -e "$$filename" ] ; then
+          qemu-img create -f qcow2 checkpoints/base_$$filename $$image_size
+          # keep a link to the last checkpoint disk
+          ln -sf checkpoints/base_$$filename $$filename
+        fi
+      else
+        qemu-img create -f qcow2 $$filename $$image_size
+      fi
+
+- load_nbd_module:
+  - on_checkpoint: redo
+  - on_bootstrap_init:
+    - exec_out: |
+        lsmod | grep nbd >/dev/null \
+        || modprobe nbd max_part=63 \
+        || fail failed to load nbd module into kernel
+
+- attach_nbd_device:
+  # this microstep must be skipped because it is already done by the
+  # checkpoint restore function
+  - on_checkpoint: redo
+  - check_cmd_out: qemu-nbd
+  - exec_out: echo Connecting $$filename to nbd device $$device
+  - exec_out: echo "sync" ; sync
+  - exec_out: qemu-nbd -d $$device
+  - exec_out: |
+      if [ $$consider_checkpoint = true ]; then
+        REAL_PATH="$(readlink $$filename)"
+      else
+        REAL_PATH="$$filename"
+      fi
+      qemu-nbd -c $$device $REAL_PATH -n || fail nbd device $$device is unavailable
+
+- detach_nbd_device:
+  # this miscrostep must be done again ensure that the nbd device is
+  # detached
+  - on_checkpoint: redo
+  - on_export_clean:
+    - exec_out: echo "sync" ; sync
+    - exec_out: qemu-nbd -d $$device
+    - exec_out: "pgrep qemu-nbd | xargs -I {} kill -9 {} || true"
+
+

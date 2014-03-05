@@ -1,0 +1,11 @@
+# Install emacs 24
+- add_source_list:
+  - write_in:
+    - /etc/apt/sources.list.d/emacs.list
+    - "deb http://emacs.naquadah.org/ stable/"
+- update_keys:
+  - exec_in: wget -q -O - http://emacs.naquadah.org/key.gpg | apt-key add -
+- update_repositories:
+  - exec_in: apt-get -y --force-yes update
+- install_emacs:
+  - exec_in: apt-get -y --force-yes install emacs-snapshot-nox

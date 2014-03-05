@@ -1,4 +1,15 @@
 # OAR prereq install
+- packages: >
+    vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby
+    libyaml-perl libjson-perl libdbi-perl taktuk oidentd console-tools
+    mingetty curl git-core make python-docutils
+    libjson-perl libwww-perl ntp libgd-ruby1.8 perl libdbi-perl
+    libtie-ixhash-perl libappconfig-perl libsort-naturally-perl
+    libsort-versions-perl openjdk-6-jre libcgi-fast-perl
+    libpostgresql-ocaml libpostgresql-ocaml-dev ocaml-findlib ocaml-nox
+    libounit-ocaml-dev ruby-rest-client ruby-rspec postgresql
+    libdbd-pg-ruby libpostgresql-ocaml-dev libdbd-pg-ruby
+    libmysql-ocaml-dev libdbd-pg-perl
 - clean:
   - on_export_init:
     - exec_in: /etc/init.d/postgresql stop

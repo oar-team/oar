@@ -24,8 +24,9 @@ global:
   rootfs: $$kameleon_cwd/rootfs
   user_name: kameleon
   arch: amd64
+  dns: 208.67.222.222
 
-  nbd_device: /dev/nbd10
+  nbd_device: /dev/nbd1
   container: "$${kameleon_recipe_name}_temp.qcow2"
 
   distrib: debian
@@ -33,7 +34,7 @@ global:
 
   ## System variables. Required by kameleon engine
   # Include specific steps
-  include_steps: 
+  include_steps:
     - $$distrib/$$release
     - $$distrib
     - oar
@@ -41,7 +42,7 @@ global:
 
   ## OAR
   #
-  oar_git_directory: "/home/kameleon/oar"
+  oar_git_directory: "/home/$$user_name/oar"
   oar_git_repository: "git://scm.gforge.inria.fr/oar/oar.git"
   oar_git_treeish: "2.5"
   oar_prefix_install: "/usr/local"
@@ -68,23 +69,32 @@ bootstrap:
     - arch: $$arch
     - repository: http://ftp.fr.debian.org/debian/
     - rootfs_archive: $$cachedir/$$distrib/$$release/$$arch/debootstrap.tar.gz
-  - prepare_appliance_with_nbd:
-    - mountdir: $$rootfs
+  - create_disk_nbd:
     - image_size: 2G
+    - filename: $$container
+    - device: $$nbd_device
+  - populate_disk:
+    - filename: $$container
+    - device: $$nbd_device
+    - mountdir: $$rootfs
     - filesystem_type: ext4
     - rootfs_archive: $$cachedir/$$distrib/$$release/$$arch/debootstrap.tar.gz
   - start_chroot:
     - rootfs: $$rootfs
+    - dns: $$dns
+  - install_bootloader:
+    - mountdir: $$rootfs
+    - device: $$nbd_device
 
 #== Install and configuration steps
-# WARNING: this part should be independante from the build context (whenever
+# WARNING: this part should be independante from the out context (whenever
 # possible...)
 setup:
   # Install
   - software_install:
     - packages: >
         debian-keyring ntp zip unzip rsync sudo less vim bash-completion
-  - kernel_install:
+  - config_kernel:
     - arch: $$arch
   # Configuration
   - system_config:
@@ -99,20 +109,9 @@ setup:
     - name: $$user_name
     - group: admin
     - password: $$user_name
-  - oar_prereq_install:
-    - packages: >
-        vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby
-        libyaml-perl libjson-perl libdbi-perl taktuk oidentd console-tools
-        mingetty curl git-core make python-docutils apache2-mpm-prefork
-        libjson-perl libwww-perl ntp libgd-ruby1.8 perl libdbi-perl
-        libtie-ixhash-perl libappconfig-perl libsort-naturally-perl
-        libsort-versions-perl openjdk-6-jre libcgi-fast-perl
-        libpostgresql-ocaml libpostgresql-ocaml-dev ocaml-findlib ocaml-nox
-        libounit-ocaml-dev ruby-rest-client ruby-rspec postgresql
-        libdbd-pg-ruby libpostgresql-ocaml-dev libdbd-pg-ruby
-        libmysql-ocaml-dev libdbd-pg-perl libapache2-mod-fastcgi
-  - oar_devel_prereq_install:
-    - packages: "sshfs git ruby-dev libapache2-mod-passenger rubygems"
+  - install_emacs_snapshot
+  - oar_prereq_install
+  - oar_devel_prereq_install
   - oar_git_install
   - oar_debian_config_server
   - oar_debian_config_frontend
@@ -124,6 +123,7 @@ setup:
   - oar_config_devel
   - oar_clean
   - autologin
+  - copy_conf
 
 #== Export the generated appliance in the format of your choice
 export:

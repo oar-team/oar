@@ -1,7 +1,7 @@
 # # Bootstrap
 - include: >
     ifupdown locales libui-dialog-perl dialog isc-dhcp-client netbase
-    net-tools iproute acpid openssh-server pciutils
+    net-tools iproute acpid openssh-server pciutils extlinux linux-image-$$arch
 - debootstrap:
   - check_cmd_out: debootstrap
   - exec_out: mkdir -p $(dirname "$$rootfs_archive")
