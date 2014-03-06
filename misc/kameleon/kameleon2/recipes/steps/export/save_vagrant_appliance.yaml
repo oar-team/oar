@@ -1,9 +1,9 @@
 - save_as_vdi:
   - check_cmd_out: VBoxManage
-  - exec_in: |
-      echo "Nullify freespace"
-      dd if=/dev/zero of=/bigemptyfile bs=4M || true
-      rm -f /bigemptyfile
+  # - exec_in: |
+  #     echo "Nullify freespace"
+  #     dd if=/dev/zero of=/bigemptyfile bs=4M || true
+  #     rm -f /bigemptyfile
   - exec_out: echo "sync..." ; sync
   - exec_out: qemu-img convert -O vdi $(readlink $$container) $$filename.vdi
   - exec_out: |

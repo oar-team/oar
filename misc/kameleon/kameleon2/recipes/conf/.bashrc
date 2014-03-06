@@ -1,6 +1,13 @@
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
 
+if [ "`id -u`" -eq 0 ]; then
+  PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+else
+  PATH="/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games"
+fi
+export PATH
+
 # simple history browsing
 export HISTCONTROL=erasedups
 export HISTSIZE=10000

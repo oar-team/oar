@@ -1,8 +1,8 @@
 - save_as_vdi:
-  - exec_in: |
-      echo "Nullify freespace"
-      dd if=/dev/zero of=/bigemptyfile bs=4M || true
-      rm -f /bigemptyfile
+  # - exec_in: |
+  #     echo "Nullify freespace"
+  #     dd if=/dev/zero of=/bigemptyfile bs=4M || true
+  #     rm -f /bigemptyfile
   - exec_out: echo "sync..." ; sync
   - exec_out: qemu-img convert -c -O qcow2 $(readlink $$container) $$filename.qcow2
 
