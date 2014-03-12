@@ -11,5 +11,5 @@
     - exec_in: apt-get -y --force-yes clean
     - exec_in: apt-get -y --force-yes autoremove
 - core_packages:
-  - exec_in: apt-get -y --force-yes install $$packages 2>&1
+  - exec_in: apt-get -y --force-yes --no-install-recommends install $$packages 2>&1
 

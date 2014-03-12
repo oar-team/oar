@@ -4,7 +4,7 @@
 #
 # RECIPE: debian_vagrant
 #
-# DESCRIPTION: Build a debian wheezy appliance using chroot and qemu-nbd.
+# DESCRIPTION: Debian wheezy appliance for vagrant.
 #
 # TEMPLATE: debian-wheezy-chroot
 #
@@ -60,7 +60,7 @@ bootstrap:
     - repository: http://ftp.fr.debian.org/debian/
     - rootfs_archive: $$cachedir/$$distrib/$$release/$$arch/debootstrap.tar.gz
   - create_disk_nbd:
-    - image_size: 5G
+    - image_size: 10G
     - filename: $$container
     - device: $$nbd_device
   - populate_disk:
@@ -84,7 +84,7 @@ setup:
   - software_install:
     - packages: >
         debian-keyring ntp zip unzip rsync sudo less vim bash-completion
-        curl nfs-common openssh-server avahi-daemon libnss-mdns
+        curl wget nfs-common openssh-server avahi-daemon libnss-mdns
         inotify-tools
   - config_kernel:
     - arch: $$arch
@@ -105,9 +105,6 @@ setup:
   - autologin
   - copy_conf
   - setup_vagrant_box
-  # Optional packages
-  # - oar_prereq_install
-  # - oar_devel_prereq_install
 
 #== Export the generated appliance in the format of your choice
 export:

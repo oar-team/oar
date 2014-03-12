@@ -1,14 +1,12 @@
 #==============================================================================
-# vim_: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
 # RECIPE: oar-devel
 #
-# DESCRIPTION: This recipe build a base debian wheezy appliance.
+# DESCRIPTION: Debian dev appliance with OAR-2.5 (node/server/frontend).
 #
-# TEMPLATE: debian-wheezy-base
-#
-# WARNING: autologin means anyone booting this image get acces WITHOUT password
+# TEMPLATE: debian-wheezy-chroot
 #
 #==============================================================================
 
@@ -70,7 +68,7 @@ bootstrap:
     - repository: http://ftp.fr.debian.org/debian/
     - rootfs_archive: $$cachedir/$$distrib/$$release/$$arch/debootstrap.tar.gz
   - create_disk_nbd:
-    - image_size: 2G
+    - image_size: 10G
     - filename: $$container
     - device: $$nbd_device
   - populate_disk:

@@ -2,9 +2,9 @@
 # vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
-# RECIPE: debian_vagrant
+# RECIPE: oar-devel
 #
-# DESCRIPTION: Build a debian wheezy appliance using chroot and qemu-nbd.
+# DESCRIPTION: Debian dev vagrant box with OAR-2.5 (node/server/frontend).
 #
 # TEMPLATE: debian-wheezy-chroot
 #
@@ -38,6 +38,13 @@ global:
     - oar
     - $${distrib}_oar
 
+  ## OAR
+  #
+  oar_git_directory: "/home/$$user_name/oar"
+  oar_git_repository: "git://scm.gforge.inria.fr/oar/oar.git"
+  oar_git_treeish: "2.5"
+  oar_prefix_install: "/usr/local"
+
   # Shell session from where we launch exec_out commands. There is often a
   # local bash session, but it can be a remote shell on other machines or on
   # any shell. (eg. bash, chroot, fakechroot, ssh, tmux, lxc...)
@@ -54,13 +61,14 @@ global:
 
 #== Bootstrap the new system and create the 'in_context'
 bootstrap:
+  - oar_precheck
   - debootstrap:
     - release: $$release
     - arch: $$arch
     - repository: http://ftp.fr.debian.org/debian/
     - rootfs_archive: $$cachedir/$$distrib/$$release/$$arch/debootstrap.tar.gz
   - create_disk_nbd:
-    - image_size: 5G
+    - image_size: 10G
     - filename: $$container
     - device: $$nbd_device
   - populate_disk:
@@ -84,35 +92,43 @@ setup:
   - software_install:
     - packages: >
         debian-keyring ntp zip unzip rsync sudo less vim bash-completion
-        curl nfs-common openssh-server avahi-daemon libnss-mdns
+        curl wget nfs-common openssh-server avahi-daemon libnss-mdns
         inotify-tools
   - config_kernel:
     - arch: $$arch
   # Configuration
   - system_config:
-    - locales: fr_FR en_US
+    - locales: en_US fr_FR
     - lang: fr_FR.UTF-8
     - timezone: Europe/Paris
   - keyboard_config:
     - layout: "fr,us"
   - network_config:
-    - hostname: kameleon-$$distrib
+    - hostname: oar
   - create_user:
     - name: $$user_name
     - group: admin
     - password: $$user_name
-  - install_emacs_snapshot
+  - oar_prereq_install
+  - oar_devel_prereq_install
+  - oar_git_install:
+    - keep_oar_src: false
+  - oar_debian_config_server
+  - oar_debian_config_frontend
+  - oar_debian_config_node
+  - oar_config_node
+  - oar_config_server
+  - oar_config_frontend
+  - oar_config_system
+  - oar_config_devel
+  - oar_clean
   - autologin
   - copy_conf
   - setup_vagrant_box
-  # Optional packages
-  # - oar_prereq_install
-  # - oar_devel_prereq_install
 
 #== Export the generated appliance in the format of your choice
 export:
-  - save_vagrant_libvirt_appliance:
+  - save_vagrant_appliance:
+    - os_type: Debian_64
     - memory: "512"
-    - image_size: 5
     - filename: "$${kameleon_recipe_name}"
-
