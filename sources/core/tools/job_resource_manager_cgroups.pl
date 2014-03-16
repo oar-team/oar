@@ -50,6 +50,11 @@ sub print_log($$);
 # Put YES if you want to use the memory cgroup
 my $ENABLE_MEMCG = "NO";
 
+# Directories where files of the job user will be deleted at the end if there
+# is not an other running job of the same user
+my @TMP_DIRECTORIES_TO_CLEAR = ('/tmp/.','/dev/shm/.','/var/tmp/.');
+my $FSTRIM_CMD = "/sbin/fstrim";
+
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
 
@@ -514,8 +519,12 @@ EOF
 		                print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args.");
 		                system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
 		            }
-		            print_log (3,"Purging /tmp /dev/shm /var/tmp...");
-		            system("oardodo find /tmp/. /dev/shm/. /var/tmp/. -user $Cpuset->{user} -delete"); 
+		            print_log (3,"Purging @TMP_DIRECTORIES_TO_CLEAR.");
+		            system('for d in '."@TMP_DIRECTORIES_TO_CLEAR".'; do
+                                oardodo find $d -user '.$Cpuset->{user}.' -delete
+                                [ -x '.$FSTRIM_CMD.' ] && oardodo '.$FSTRIM_CMD.' $d >& /dev/null
+                            done
+                           ');
 		        } else {
 		            print_log(2,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.");
 		        }
