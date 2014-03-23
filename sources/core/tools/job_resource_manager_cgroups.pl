@@ -48,7 +48,7 @@ sub exit_myself($$);
 sub print_log($$);
 
 # Put YES if you want to use the memory cgroup
-my $ENABLE_MEMCG = "NO";
+my $ENABLE_MEMCG = "YES";
 
 # Directories where files of the job user will be deleted at the end if there
 # is not an other running job of the same user
