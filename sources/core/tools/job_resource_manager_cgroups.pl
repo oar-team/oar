@@ -153,7 +153,8 @@ if ($ARGV[0] eq "init"){
             flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
             if (!(-r $Cgroup_directory_collection_links.'/cpuset/tasks')){
                 if (!(-r $OS_cgroups_path.'/cpuset/tasks')){
-                    my $cgroup_list = "cpuset,cpu,cpuacct,devices,freezer,net_cls,blkio";
+                    #my $cgroup_list = "cpuset,cpu,cpuacct,devices,freezer,net_cls,blkio";
+                    my $cgroup_list = "cpuset,cpu,cpuacct,devices,freezer,blkio";
                     $cgroup_list .= ",memory" if ($ENABLE_MEMCG eq "YES");
                     if (system('oardodo mkdir -p '.$Cgroup_mount_point.' &&
                                 oardodo mount -t cgroup -o '.$cgroup_list.' none '.$Cgroup_mount_point.' || exit 1
@@ -165,7 +166,7 @@ if ($ARGV[0] eq "init"){
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/cpuacct &&
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/devices &&
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/freezer &&
-                                oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/net_cls &&
+                                #oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/net_cls &&
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/blkio &&
                                 [ "'.$ENABLE_MEMCG.'" =  "YES" ] && oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/memory || true
                                ')){
@@ -181,7 +182,7 @@ if ($ARGV[0] eq "init"){
                                 oardodo ln -s '.$OS_cgroups_path.'/cpuacct '.$Cgroup_directory_collection_links.'/cpuacct &&
                                 oardodo ln -s '.$OS_cgroups_path.'/devices '.$Cgroup_directory_collection_links.'/devices &&
                                 oardodo ln -s '.$OS_cgroups_path.'/freezer '.$Cgroup_directory_collection_links.'/freezer &&
-                                oardodo ln -s '.$OS_cgroups_path.'/net_cls '.$Cgroup_directory_collection_links.'/net_cls &&
+                                #oardodo ln -s '.$OS_cgroups_path.'/net_cls '.$Cgroup_directory_collection_links.'/net_cls &&
                                 oardodo ln -s '.$OS_cgroups_path.'/blkio '.$Cgroup_directory_collection_links.'/blkio &&
                                 [ "'.$ENABLE_MEMCG.'" =  "YES" ] && oardodo ln -s '.$OS_cgroups_path.'/memory '.$Cgroup_directory_collection_links.'/memory || true
                                ')){
@@ -231,10 +232,10 @@ if ($ARGV[0] eq "init"){
         }
 
         # Tag network packets of the job processes
-        if (system( '/bin/echo '.$Cpuset->{job_id}.' | cat > '.$Cgroup_directory_collection_links.'/net_cls/'.$Cpuset_path_job.'/net_cls.classid'
-                  )){
-            exit_myself(5,"Failed to tag network packets of the cgroup $Cpuset_path_job");
-        }
+#        if (system( '/bin/echo '.$Cpuset->{job_id}.' | cat > '.$Cgroup_directory_collection_links.'/net_cls/'.$Cpuset_path_job.'/net_cls.classid'
+#                  )){
+#            exit_myself(5,"Failed to tag network packets of the cgroup $Cpuset_path_job");
+#        }
         # Put a share of disk IO corresponding of the ratio between the number
         # of cores of this cgroup and the number of cores of the node
         my @cpu_cgroup_uniq_list;
