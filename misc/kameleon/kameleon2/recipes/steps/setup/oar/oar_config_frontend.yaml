@@ -34,3 +34,6 @@
   - exec_in: htpasswd -b -c /etc/oar/api-users $$user_name $$user_name
   - exec_in: htpasswd -b /etc/oar/api-users oar $$user_name
 
+- install_chandler:
+  - exec_in: gem install naturalsort --no-ri --no-rdoc
+  - exec_in: cp /home/$$user_name/oar/sources/api/examples/chandler.rb /usr/local/bin/chandler
