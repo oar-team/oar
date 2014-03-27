@@ -107,7 +107,6 @@ setup:
     - name: $$user_name
     - group: admin
     - password: $$user_name
-  - install_emacs_snapshot
   - oar_prereq_install
   - oar_devel_prereq_install
   - oar_git_install
