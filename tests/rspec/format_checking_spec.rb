@@ -4,9 +4,10 @@
 
 $LOAD_PATH << '.'
 
+USER=ENV['USER']
 require 'oarrestapi_lib'
 require 'shared_examples'
-APIURI="http://kameleon:kameleon@localhost/oarapi-priv/" 
+APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/"
 
 
 $jobid=""
@@ -201,7 +202,7 @@ describe OarApi do
 
     context "(with state=Running [note: add a sleep if test jobs are not yet running])" do
       before(:all) do
-        @api.get_hash("jobs?state=Running&user=kameleon")
+        @api.get_hash("jobs?state=Running&user=#{USER}")
       end
       it "should return a few running jobs" do
         @api.value['items'].length.should > 0
@@ -221,8 +222,8 @@ describe OarApi do
         id=@api.value['items'][0]['id']
         @api.get_link_href_from_array(links,"resources").should == "/oarapi-priv/jobs/#{id}/resources"
       end
-      it "should return jobs owned by the kameleon user" do
-        @api.value['items'][0]['owner'].should == "kameleon"
+      it "should return jobs owned by the #{USER} user" do
+        @api.value['items'][0]['owner'].should == "#{USER}"
       end
     end
 
@@ -267,8 +268,8 @@ describe OarApi do
         @api.get_hash("jobs/#{$jobid}")
       end
       it_should_behave_like "Job"
-      it "should be owned by the kameleon user" do
-        @api.value['owner'].should == "kameleon"
+      it "should be owned by the #{USER} user" do
+        @api.value['owner'].should == "#{USER}"
       end
     end
     context "(with non-existent job)" do
@@ -310,8 +311,8 @@ describe OarApi do
         @value=@api.value
       end
       it_should_behave_like "Job"
-      it "should be owned by the kameleon user" do
-        @api.value['owner'].should == "kameleon"
+      it "should be owned by the #{USER} user" do
+        @api.value['owner'].should == "#{USER}"
       end
       it "should have resources and nodes details" do
         @api.value['resources'].should be_an(Array)
