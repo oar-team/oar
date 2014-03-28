@@ -111,8 +111,7 @@ setup:
     - password: $$user_name
   - oar_prereq_install
   - oar_devel_prereq_install
-  - oar_git_install:
-    - keep_oar_src: false
+  - oar_git_install
   - oar_debian_config_server
   - oar_debian_config_frontend
   - oar_debian_config_node
