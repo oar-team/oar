@@ -7828,7 +7828,7 @@ sub job_finishing_sequence($$$$$$){
     }
 
     # Execute PING_CHECKER if asked
-    if ((is_conf("ACTIVATE_PINGCHECKER_AT_JOB_END")) and (lc(get_conf("ACTIVATE_PINGCHECKER_AT_JOB_END")) eq "yes")){
+    if ((is_conf("ACTIVATE_PINGCHECKER_AT_JOB_END")) and (lc(get_conf("ACTIVATE_PINGCHECKER_AT_JOB_END")) eq "yes") and (!defined($types->{deploy}))){
         my @hosts = OAR::IO::get_job_current_hostnames($dbh,$job_id);
         oar_debug("[job_finishing_sequence] [$job_id] Run pingchecker to test nodes at the end of the job on nodes: @hosts\n");
         my @bad_pingchecker = OAR::PingChecker::test_hosts(@hosts);
