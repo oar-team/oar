@@ -56,7 +56,6 @@ then
     if [ "$SSH_CLIENT" != ""  ] && [ "$OAR_KEY" != "1" ]
     then
         echo "oarsh: The OAR_KEY environment variable is not defined and this seems to be a oar user connection." 1>&2
-        echo "oarsh: See 'Important notes' part of the 'CPUSET installation' section of the OAR documentation." 1>&2
         exit 65
     fi
     # It must be oar

@@ -514,6 +514,13 @@ So, with this configuration, this is transparent for the users.
 
 **Note**: In OpenMPI 1.6, "pls_rsh_agent" was replaced by "orte_rsh_agent".
 
+Intel MPI
+~~~~~~~~~
+Example using the hydra launcher:
+::
+
+    mpiexec.hydra -genvall -f $OAR_NODE_FILE -bootstrap-exec oarsh -env I_MPI_DEBUG 5 -n 8 ./ring
+
 Tests of the CPUSET mechanism
 -----------------------------
 
