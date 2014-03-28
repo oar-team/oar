@@ -26,6 +26,7 @@ Vagrant.configure("2") do |config|
 
   # enable ssh forward agent for all VMs
   config.ssh.forward_agent = true
+  config.vm.network "forwarded_port", guest: 80, host: 8080
 
   # Config provider
   config.vm.provider :virtualbox do |vm|
