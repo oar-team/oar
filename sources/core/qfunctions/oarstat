@@ -17,7 +17,6 @@ umask(oct("022"));
 # Read config
 init_conf($ENV{OARCONFFILE});
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
-my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 
 
 #Try to load XML module
@@ -360,10 +359,6 @@ sub print_job_data($){
                 print("    stopTime = ".OAR::Stat::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
                 if (defined($data->{$job_info->{job_id}}->{cpuset_name})){
                     print("    cpuset_name = $data->{$job_info->{job_id}}->{cpuset_name}\n");
-                }
-                if (defined($data->{$job_info->{job_id}}->{job_uid})){
-                    print("    job_user = $data->{$job_info->{job_id}}->{job_user}\n");
-                    print("    job_uid = $data->{$job_info->{job_id}}->{job_uid}\n");
                 }
                 if ((defined($job_info->{initial_request})) and
                     (($ENV{OARDO_USER} eq $job_info->{job_user}) or

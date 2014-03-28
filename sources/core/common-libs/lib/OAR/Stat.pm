@@ -13,7 +13,6 @@ my $current_date = -1;
 # Read config
 init_conf($ENV{OARCONFFILE});
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
-my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 
 sub open_db_connection(){
 	$base  = OAR::IO::connect_ro_one();
@@ -341,7 +340,6 @@ sub get_job_data($$){
     my @job_events;
     my %data_to_display;
     my $job_user;
-    my $job_cpuset_uid;
     my @job_dependencies;
     my @job_types = OAR::IO::get_job_types($dbh,$job_info->{job_id});
     my $cpuset_name;
@@ -366,9 +364,7 @@ sub get_job_data($$){
         @date_tmp = OAR::IO::get_gantt_job_start_time_visu($dbh,$job_info->{job_id});
         @job_events = OAR::IO::get_job_events($dbh,$job_info->{job_id});
         @job_dependencies = OAR::IO::get_current_job_dependencies($dbh,$job_info->{job_id});
-
-        $job_cpuset_uid = OAR::IO::get_job_cpuset_uid($dbh, $job_info->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
-        $job_user = OAR::Tools::format_job_user($job_info->{job_user},$job_info->{job_id},$job_cpuset_uid);
+        $job_user = $job_info->{job_user};
    
         #Get the job resource description to print -l option
         my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($dbh,$job_info->{job_id});
@@ -407,7 +403,6 @@ sub get_job_data($$){
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
             job_user => $job_user,
-            job_uid => $job_cpuset_uid,
             state => $job_info->{state},
             assigned_resources => \@nodes,
             assigned_network_address => \@node_hostnames,

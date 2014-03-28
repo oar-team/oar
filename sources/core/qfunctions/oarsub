@@ -99,7 +99,6 @@ my $job_key_pub = "";
 my $import_job_key_file = "";
 my $import_job_key_inline = "";
 my $export_job_key_file = "";
-my $Job_uid_resource_type;
 my $Initial_request_string = "oarsub @ARGV";
 
 # a non array-job is an array-job with 1 subjob
@@ -154,9 +153,7 @@ sub connect_job($$$){
             $ENV{OAR_CPUSET} = "";
         }
         my $moldable = OAR::Sub::get_current_moldable_job($job->{assigned_moldable_job});
-        my $job_cpuset_uid;
-        $job_cpuset_uid = OAR::Sub::get_job_cpuset_uid($job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if (defined($Job_uid_resource_type));
-        my $job_user = OAR::Sub::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
+        my $job_user = $job->{job_user};
         OAR::Sub::close_db_connection();
         my @passinfo = getpwnam($lusr) or die("Cannot retreive system information for user $lusr\n");
         my $shell=$passinfo[8];
@@ -531,16 +528,6 @@ sub parse_resource_descriptions($){
         }
         push(@result, \@resource_groups);
     }
-    # Add resource constraints for JOB_RESOURCE_MANAGER_JOB_UID_TYPE for each resource groups
-    if (defined($Job_uid_resource_type) and defined($Cpuset_field) and !(grep(/^desktop_computing$/, @Type))){
-        my %tmp = (
-                    property => "type = '$Job_uid_resource_type'",
-                    resources => [ {resource => $Cpuset_field, value => 1} ]
-                  );
-        foreach my $moldable (@result){
-            push(@{$moldable->[0]},\%tmp);
-        }
-    }
 
     return(@result);
 }
@@ -576,7 +563,6 @@ if (!defined($Cosystem_hostname)){
 
 $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
 $Cpuset_path = get_conf("CPUSET_PATH");
-$Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){
     OAR::Sub::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));

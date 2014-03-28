@@ -790,33 +790,6 @@ sub get_job_current_resources($$$) {
 }
 
 
-# get_job_cpuset_uid
-# returns the uid of the user for this job
-# parameters : base, moldable_id, resource type, cpuset field
-# return value : number
-sub get_job_cpuset_uid($$$$) {
-    my $dbh = shift;
-    my $moldable_id= shift;
-    my $resource_type = shift;
-    my $cpuset_field = shift;
-
-    my $sth = $dbh->prepare("   SELECT resources.$cpuset_field
-                                FROM jobs, resources, assigned_resources
-                                WHERE
-                                    resources.type = \'$resource_type\' AND
-                                    assigned_resources.moldable_job_id = $moldable_id AND
-                                    assigned_resources.resource_id = resources.resource_id 
-                                ORDER BY resources.resource_id ASC
-                                LIMIT 1");
-    $sth->execute();
-    my $result;
-    if (my @res = $sth->fetchrow_array()){
-        $result = $res[0];
-    }
-    return($result);
-}
-
-
 # get_job_resources
 # returns the list of resources associated to the job passed in parameter
 # parameters : base, moldable_id
@@ -7795,16 +7768,13 @@ sub job_finishing_sequence($$$$$$){
             if (defined($cpuset_path) and defined($cpuset_field)){
                 $cpuset_full_path = $cpuset_path.'/'.$cpuset_name;
             }
-            my $job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
             
             my $job = get_job($dbh, $job_id);
             my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
             if (defined($cpuset_nodes) and (keys(%{$cpuset_nodes}) > 0)){
                 OAR::Modules::Judas::oar_debug("[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Clean cpuset on each nodes\n");
                 my $taktuk_cmd = get_conf("TAKTUK_CMD");
-                my $job_cpuset_uid;
-                $job_cpuset_uid = OAR::IO::get_job_cpuset_uid($dbh, $job->{assigned_moldable_job}, $job_uid_resource_type, $cpuset_field) if (defined($job_uid_resource_type));
-                my $job_user = OAR::Tools::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
+                my $job_user = $job->{job_user};
                 my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($dbh,$job_id);
                 $ssh_public_key = OAR::Tools::format_ssh_pub_key($ssh_public_key,$cpuset_full_path,$job->{job_user},$job_user);
 
@@ -7826,7 +7796,6 @@ sub job_finishing_sequence($$$$$$){
                     oar_tmp_directory => OAR::Tools::get_default_oarexec_directory(),
                     user => $job->{job_user},
                     job_user => $job_user,
-                    job_uid => $job_cpuset_uid,
                     types => $types,
                     resources => undef,
                     node_file_db_fields => undef,

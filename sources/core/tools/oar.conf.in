@@ -527,10 +527,6 @@ JOB_RESOURCE_MANAGER_FILE="%%OARCONFDIR%%/job_resource_manager_cgroups.pl"
 # to set OARSUB_FORCE_JOB_KEY="yes")
 CPUSET_PATH="/oar"
 
-# Resource "type" DB field to use if you want to enable the job uid feature.
-# (create a unique user id per job on each nodes of the job)
-#JOB_RESOURCE_MANAGER_JOB_UID_TYPE="userid"
-
 # Name of the perl script the retrieve monitoring data from compute nodes.
 # This is used in oarmonitor command.
 #OARMONITOR_SENSOR_FILE="%%OARCONFDIR%%/oarmonitor_sensor.pl"

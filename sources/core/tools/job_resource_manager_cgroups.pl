@@ -87,7 +87,6 @@ my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 #               oar_tmp_directory => "path to the temp directory"
 #               user => "user name"
 #               job_user => "job user"
-#               job_uid => "job uid for the job_user if needed"
 #               types => hashtable with job types as keys
 #               resources => [ {property_name => value} ]
 #               node_file_db_fields => NODE_FILE_DB_FIELD
@@ -133,19 +132,6 @@ if ($ARGV[0] eq "init"){
     # First, create the tmp oar directory
     if (!(((-d $Cpuset->{oar_tmp_directory}) and (-O $Cpuset->{oar_tmp_directory})) or (mkdir($Cpuset->{oar_tmp_directory})))){
         exit_myself(13,"Directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created");
-    }
-
-    # Handle the tmp user OAR feature: NOT USED ANYMORE.
-    if (defined($Cpuset->{job_uid})){
-        my $prevuser = getpwuid($Cpuset->{job_uid});
-        system("oardodo /usr/sbin/userdel -f $prevuser") if (defined($prevuser));
-        my @tmp = getpwnam($Cpuset->{user});
-        if ($#tmp < 0){
-            exit_myself(15,"Cannot get information from user '$Cpuset->{user}'");
-        }
-        if (system("oardodo /usr/sbin/adduser --disabled-password --gecos 'OAR temporary user' --no-create-home --force-badname --quiet --home $tmp[7] --gid $tmp[3] --shell $tmp[8] --uid $Cpuset->{job_uid} $Cpuset->{job_user}")){
-            exit_myself(15,"Failed to create $Cpuset->{job_user} with uid $Cpuset->{job_uid} and home $tmp[7] and group $tmp[3] and shell $tmp[8]");
-        }
     }
 
     if (defined($Cpuset_path_job)){
@@ -364,9 +350,6 @@ EOF
                 exit_myself(8,"Error writing $Cpuset->{ssh_keys}->{private}->{file_name}");
             }
             close(PRIV);
-            if (defined($Cpuset->{job_uid})){
-                system("ln -s $Cpuset->{ssh_keys}->{private}->{file_name} $Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey");
-            }
         }else{
             exit_myself(7,"Error opening $Cpuset->{ssh_keys}->{private}->{file_name}");
         }
@@ -411,9 +394,6 @@ EOF
     if ($Cpuset->{ssh_keys}->{private}->{key} ne ""){
         # private key
         unlink($Cpuset->{ssh_keys}->{private}->{file_name});
-        if (defined($Cpuset->{job_uid})){
-            unlink("$Cpuset->{oar_tmp_directory}/$Cpuset->{job_user}.jobkey");
-        }
 
         # public key
         if (open(PUB,"+<", $Cpuset->{ssh_keys}->{public}->{file_name})){
@@ -467,69 +447,67 @@ EOF
                 #exit(0);
                 exit_myself(6,"Failed to delete the cpuset $Cpuset_path_job");
             }
-            if (not defined($Cpuset->{job_uid})){
-                # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
-                my @cpusets = ();
-                if (opendir(DIR, $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/')) {
-                    @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
-		            closedir DIR;
+            # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
+            my @cpusets = ();
+            if (opendir(DIR, $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/')) {
+                @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
+		        closedir DIR;
+		    } else {
+		        exit_myself(18,"Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}");
+		    }
+		    if ($#cpusets < 0) {
+                # No other jobs on this node at this time
+		        my $useruid=getpwnam($Cpuset->{user});
+		        my $ipcrm_args="";
+		        if (open(IPCMSG,"< /proc/sysvipc/msg")) {
+		            <IPCMSG>;
+		            while (<IPCMSG>) {
+		                if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
+                            $ipcrm_args .= " -q $1";
+		            	    print_log(3,"Found IPC MSG for user $useruid: $1.");
+		                }
+		            }
+		            close (IPCMSG);
 		        } else {
-		            exit_myself(18,"Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}");
+		            print_log(3,"Cannot open /proc/sysvipc/msg: $!.");
 		        }
-		        if ($#cpusets < 0) {
-                    # No other jobs on this node at this time
-		            my $useruid=getpwnam($Cpuset->{user});
-		            my $ipcrm_args="";
-		            if (open(IPCMSG,"< /proc/sysvipc/msg")) {
-		                <IPCMSG>;
-		                while (<IPCMSG>) {
-		                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
-                                $ipcrm_args .= " -q $1";
-		                	    print_log(3,"Found IPC MSG for user $useruid: $1.");
-		                    }
+		        if (open(IPCSHM,"< /proc/sysvipc/shm")) {
+		            <IPCSHM>;
+		            while (<IPCSHM>) {
+		                if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
+		                    $ipcrm_args .= " -m $1";
+		            	    print_log(3,"Found IPC SHM for user $useruid: $1.");
 		                }
-		                close (IPCMSG);
-		            } else {
-		                print_log(3,"Cannot open /proc/sysvipc/msg: $!.");
 		            }
-		            if (open(IPCSHM,"< /proc/sysvipc/shm")) {
-		                <IPCSHM>;
-		                while (<IPCSHM>) {
-		                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
-		                        $ipcrm_args .= " -m $1";
-		                	    print_log(3,"Found IPC SHM for user $useruid: $1.");
-		                    }
-		                }
-		                close (IPCSHM);
-		            } else {
-		                print_log(3,"Cannot open /proc/sysvipc/shm: $!.");
-		            }
-		            if (open(IPCSEM,"< /proc/sysvipc/sem")) {
-		                <IPCSEM>;
-		                while (<IPCSEM>) {
-		                    if (/^\s*[\d\-]+\s+(\d+)(?:\s+\d+){2}\s+$useruid(?:\s+\d+){5}/) {
-		                        $ipcrm_args .= " -s $1";
-		                	    print_log(3,"Found IPC SEM for user $useruid: $1.");
-		                    }
-		                }
-		                close (IPCSEM);
-		            } else {
-		                print_log(3,"Cannot open /proc/sysvipc/sem: $!.");
-		            }
-		            if ($ipcrm_args) {
-		                print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args.");
-		                system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
-		            }
-		            print_log (3,"Purging @TMP_DIRECTORIES_TO_CLEAR.");
-		            system('for d in '."@TMP_DIRECTORIES_TO_CLEAR".'; do
-                                oardodo find $d -user '.$Cpuset->{user}.' -delete
-                                [ -x '.$FSTRIM_CMD.' ] && oardodo '.$FSTRIM_CMD.' $d >& /dev/null
-                            done
-                           ');
+		            close (IPCSHM);
 		        } else {
-		            print_log(2,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.");
+		            print_log(3,"Cannot open /proc/sysvipc/shm: $!.");
 		        }
-            }
+		        if (open(IPCSEM,"< /proc/sysvipc/sem")) {
+		            <IPCSEM>;
+		            while (<IPCSEM>) {
+		                if (/^\s*[\d\-]+\s+(\d+)(?:\s+\d+){2}\s+$useruid(?:\s+\d+){5}/) {
+		                    $ipcrm_args .= " -s $1";
+		            	    print_log(3,"Found IPC SEM for user $useruid: $1.");
+		                }
+		            }
+		            close (IPCSEM);
+		        } else {
+		            print_log(3,"Cannot open /proc/sysvipc/sem: $!.");
+		        }
+		        if ($ipcrm_args) {
+		            print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args.");
+		            system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
+		        }
+		        print_log (3,"Purging @TMP_DIRECTORIES_TO_CLEAR.");
+		        system('for d in '."@TMP_DIRECTORIES_TO_CLEAR".'; do
+                            oardodo find $d -user '.$Cpuset->{user}.' -delete
+                            [ -x '.$FSTRIM_CMD.' ] && oardodo '.$FSTRIM_CMD.' $d >& /dev/null
+                        done
+                       ');
+		    } else {
+		        print_log(2,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.");
+		    }
 	        flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
 	        close(LOCK);
         } 
@@ -539,60 +517,6 @@ EOF
         unlink("$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}");
         print_log(3,"Remove file $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources");
         unlink("$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources");
-    }
-
-    # Handle the tmp user OAR feature: NOT USED ANYMORE.
-    if (defined($Cpuset->{job_uid})){
-        my $ipcrm_args="";
-        if (open(IPCMSG,"< /proc/sysvipc/msg")) {
-            <IPCMSG>;
-            while (<IPCMSG>) {
-                if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$Cpuset->{job_uid}(?:\s+\d+){6}$/) {
-                    $ipcrm_args .= " -q $1";
-                } else {
-                    print_log(3,"Cannot parse IPC MSG: $_.");
-                }
-            }
-            close (IPCMSG);
-        }else{
-            exit_myself(14,"Cannot open /proc/sysvipc/msg: $!");
-        }
-        if (open(IPCSHM,"< /proc/sysvipc/shm")) {
-            <IPCSHM>;
-            while (<IPCSHM>) {
-                if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$Cpuset->{job_uid}(?:\s+\d+){6}$/) {
-                    $ipcrm_args .= " -m $1";
-                } else {
-                    print_log(3,"Cannot parse IPC SHM: $_.");
-                }
-            }
-            close (IPCSHM);
-        }else{
-            exit_myself(14,"Cannot open /proc/sysvipc/shm: $!");
-        }
-        if (open(IPCSEM,"< /proc/sysvipc/sem")) {
-            <IPCSEM>;
-            while (<IPCSEM>) {
-                if (/^\s*\d+\s+(\d+)(?:\s+\d+){2}\s+$Cpuset->{job_uid}(?:\s+\d+){5}$/) {
-                    $ipcrm_args .= " -s $1";
-                } else {
-                    print_log(3,"Cannot parse IPC SEM: $_.");
-                }
-            }
-            close (IPCSEM);
-        }else{
-            exit_myself(14,"Cannot open /proc/sysvipc/sem: $!");
-        }
-        if ($ipcrm_args) {
-            print_log(3,"Purging SysV IPC: ipcrm $ipcrm_args");
-            if(system("oardodo ipcrm $ipcrm_args")){
-                exit_myself(14,"Failed to purge IPC: ipcrm $ipcrm_args");
-            }
-        }
-        print_log(3,"Purging /tmp...");
-        #system("oardodo find /tmp/ -user $Cpuset->{job_user} -exec rm -rfv {} \\;");
-        system("oardodo find /tmp/. /dev/shm/. /var/tmp/. -user $Cpuset->{job_user} -delete");
-        system("oardodo /usr/sbin/userdel -f $Cpuset->{job_user}");
     }
 }else{
     exit_myself(3,"Bad command line argument $ARGV[0]");

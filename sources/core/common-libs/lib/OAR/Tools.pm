@@ -163,17 +163,6 @@ sub format_ssh_pub_key($$$$){
     return('environment="OAR_CPUSET='.$cpuset.'",environment="OAR_JOB_USER='.$job_user.'" '.$key."\n");
 }
 
-# Return the name of the user on the computing nodes
-sub format_job_user($$$){
-    my $user = shift;
-    my $jobid = shift;
-    my $uid = shift;
-
-    my $res = $user;
-    $res .= '_'.$jobid if (defined($uid));
-    return($res);
-}
-
 # return a hashtable of all child in arrays and a hashtable with process command names
 sub get_all_process_children(){
     my %process_hash;

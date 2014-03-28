@@ -113,7 +113,7 @@ foreach my $job (OAR::IO::get_jobs_in_state($base,"toLaunch")){
         next;
     }
     
-    OAR::IO::set_job_state($base,$jobid,"Launching");
+    #OAR::IO::set_job_state($base,$jobid,"Launching");
     if (($Detach_oarexec == 0) or ($runner_launcher_window_size < 1)){
         # Every bipbip are forked now
         oar_debug("[Runner] Launching job : $batch $jobid\n");

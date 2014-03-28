@@ -206,20 +206,6 @@ sub get_current_moldable_job($){
 	return OAR::IO::get_current_moldable_job($base,$moldable_job_id);
 }
 
-sub get_job_cpuset_uid($$$){
-	my $job_id = shift;
-    my $resource_type = shift;
-    my $cpuset_field = shift;
-	return OAR::IO::get_job_cpuset_uid($base, $job_id, $resource_type, $cpuset_field);
-}
-
-sub format_job_user($$$){
-    my $user = shift;
-    my $job_id = shift;
-    my $uid = shift;
-	return OAR::Tools::format_job_user($user, $job_id, $uid);
-}
-
 sub get_default_oarexec_directory(){
 	return OAR::Tools::get_default_oarexec_directory();
 }

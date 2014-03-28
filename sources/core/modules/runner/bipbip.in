@@ -79,7 +79,6 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
     OAR::Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
 }
 
-my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 my $Job_user;
 
 my $base;
@@ -96,6 +95,12 @@ my $job = OAR::IO::get_job($base,$Job_id);
 my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($base,$Job_id);
 
 my @hosts = OAR::IO::get_job_current_hostnames($base,$Job_id);
+
+# Tell that the launching process is initiated
+if ($job->{state} eq "toLaunch"){
+    OAR::IO::set_job_state($base,$Job_id,"Launching");
+    $job->{state} = "Launching";
+}
 
 if (!(($job->{state} eq "Launching") or ($job->{state} eq "Running") or ($job->{state} eq "Suspended") or ($job->{state} eq "Resuming"))){
     oar_debug("[bipbip $Job_id] Job already treated\n");
@@ -135,8 +140,7 @@ if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
     OAR::Tools::notify_tcp_socket($addr,$port,"Starting...");
 }
 
-my $job_cpuset_uid;
-$Job_user = OAR::Tools::format_job_user($job->{job_user},$Job_id,$job_cpuset_uid);
+$Job_user = $job->{job_user};
 my $types = OAR::IO::get_current_job_types($base,$Job_id);
 my @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
 my $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
@@ -148,9 +152,8 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     ###############
     my $cpuset_nodes;
     $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job}) if (defined($Cpuset_field));
-    $job_cpuset_uid = OAR::IO::get_job_cpuset_uid($base, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
 
-    $Job_user = OAR::Tools::format_job_user($job->{job_user},$Job_id,$job_cpuset_uid);
+    $Job_user = $job->{job_user};
     $ssh_public_key = OAR::Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_full_path,$job->{job_user},$Job_user);
     my $cpuset_data_hash = {
         job_id => $Job_id,
@@ -170,7 +173,6 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         oar_tmp_directory => OAR::Tools::get_default_oarexec_directory(),
         user => $job->{job_user},
         job_user => $Job_user,
-        job_uid => $job_cpuset_uid,
         types => $types,
         resources => \@resources,
         node_file_db_fields => $Node_file_db_field,
