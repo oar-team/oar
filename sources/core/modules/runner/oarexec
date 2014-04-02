@@ -468,8 +468,6 @@ if ($Job->{mode} eq "PASSIVE"){
 
 print("[oarexec $Job_id] child pid = $pid\n");
 
-my $kill_myself = 0;
-
 my $res_read;
 my $line_read;
 my $rin = '';
@@ -528,7 +526,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
                     append_string_to_user_file($Job->{job_user}, $Job->{stderr_file}, $Job->{launching_directory}, "Job $Job_id KILLED");
                 }
             }
-            $kill_myself = 1;
+            $Kill_myself = 1;
         }elsif ($line_read eq "STOP"){
             print("[oarexec $Job_id] Receive STOP notification\n");
             if ($Job->{mode} eq "INTERACTIVE"){
@@ -624,7 +622,7 @@ if (defined($Job->{epilogue})){
 }
 
 clean_all();
-if ($kill_myself == 1){
+if ($Kill_myself == 1){
     quit_oarexec(3,$Job);
 }elsif($Stop_signal == 1){
     quit_oarexec(34,$Job);
