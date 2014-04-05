@@ -30,6 +30,8 @@ version 2.5.4:
                             Use fstrim (for SSD) when cleaning files.
   - [deploy]: do not check the nodes when ACTIVATE_PINGCHECKER_AT_JOB_END is on
               and the job is of the deploy type (bug #17128).
+  - [judas]: disable sending log by emails on errors. This could generate too
+             much mails.
 
 version 2.5.3:
 --------------

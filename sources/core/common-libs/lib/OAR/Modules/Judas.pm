@@ -139,7 +139,7 @@ sub oar_warn($){
 sub oar_error($){
     my $string = shift;
 
-    send_log_by_email(undef,"[error] $string");
+    #send_log_by_email(undef,"[error] $string");
     my ($seconds, $microseconds) = gettimeofday();
     $microseconds = int($microseconds / 1000);
     $microseconds = sprintf("%03d",$microseconds);
