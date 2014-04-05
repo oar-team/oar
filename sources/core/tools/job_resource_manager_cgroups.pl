@@ -15,9 +15,6 @@
 #                 (By default every devices are allowed)
 #     - [freezer] Permit to suspend or resume the job processes.
 #                 This is used by the suspend/resume of OAR (oarhold/oarresume)
-#     - [net_cls] Tag each network packet from processes of the jobs with 
-#                 the classid = $OAR_JOB_ID.
-#                 This could be useful in conjunction with iptables or tc rules 
 #     - [blkio]   Put an IO share corresponding to the ratio between reserved
 #                 cores and the number of the node (this is disabled by default
 #                 due to bad behaviour seen. More tests have to be done)
@@ -42,13 +39,15 @@
 # TAKTUK_HOSTNAME environment variable must be defined and must be a key
 # of the transfered hash table ($Cpuset variable).
 use Fcntl ':flock';
-#use Data::Dumper;
 
 sub exit_myself($$);
 sub print_log($$);
 
 # Put YES if you want to use the memory cgroup
 my $ENABLE_MEMCG = "YES";
+
+my $OS_cgroups_path = "/sys/fs/cgroup";  # Where the OS mounts by itself the cgroups
+                                         # (systemd for example
 
 # Directories where files of the job user will be deleted at the end if there
 # is not an other running job of the same user
@@ -62,10 +61,9 @@ my $Cgroup_mount_point = "/dev/oar_cgroups";
 my $Cpuset;
 my $Log_level;
 my $Cpuset_lock_file = "$ENV{HOME}/cpuset.lock.";
-my $OS_cgroups_path = "/sys/fs/cgroup";  # Where the OS mounts by itself the cgroups
 
 # Directory where the cgroup mount points are linked to. Useful to have each
-# cgroups in the same plcae with the same hierarchy.
+# cgroups in the same place with the same hierarchy.
 my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 
 # Retrieve parameters from STDIN in the "Cpuset" structure which looks like: 
@@ -139,7 +137,6 @@ if ($ARGV[0] eq "init"){
             flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
             if (!(-r $Cgroup_directory_collection_links.'/cpuset/tasks')){
                 if (!(-r $OS_cgroups_path.'/cpuset/tasks')){
-                    #my $cgroup_list = "cpuset,cpu,cpuacct,devices,freezer,net_cls,blkio";
                     my $cgroup_list = "cpuset,cpu,cpuacct,devices,freezer,blkio";
                     $cgroup_list .= ",memory" if ($ENABLE_MEMCG eq "YES");
                     if (system('oardodo mkdir -p '.$Cgroup_mount_point.' &&
@@ -152,7 +149,6 @@ if ($ARGV[0] eq "init"){
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/cpuacct &&
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/devices &&
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/freezer &&
-                                #oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/net_cls &&
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/blkio &&
                                 [ "'.$ENABLE_MEMCG.'" =  "YES" ] && oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/memory || true
                                ')){
@@ -168,7 +164,6 @@ if ($ARGV[0] eq "init"){
                                 oardodo ln -s '.$OS_cgroups_path.'/cpuacct '.$Cgroup_directory_collection_links.'/cpuacct &&
                                 oardodo ln -s '.$OS_cgroups_path.'/devices '.$Cgroup_directory_collection_links.'/devices &&
                                 oardodo ln -s '.$OS_cgroups_path.'/freezer '.$Cgroup_directory_collection_links.'/freezer &&
-                                #oardodo ln -s '.$OS_cgroups_path.'/net_cls '.$Cgroup_directory_collection_links.'/net_cls &&
                                 oardodo ln -s '.$OS_cgroups_path.'/blkio '.$Cgroup_directory_collection_links.'/blkio &&
                                 [ "'.$ENABLE_MEMCG.'" =  "YES" ] && oardodo ln -s '.$OS_cgroups_path.'/memory '.$Cgroup_directory_collection_links.'/memory || true
                                ')){
@@ -177,6 +172,7 @@ if ($ARGV[0] eq "init"){
                 }
             }
             if (!(-d $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path})){
+                # Populate default oar cgroup
                 if (system( 'for d in '.$Cgroup_directory_collection_links.'/*; do
                                oardodo mkdir -p $d/'.$Cpuset->{cpuset_path}.' || exit 1
                                oardodo chown -R oar $d/'.$Cpuset->{cpuset_path}.' || exit 2
@@ -197,6 +193,7 @@ if ($ARGV[0] eq "init"){
         }
 
         # Be careful with the physical_package_id. Is it corresponding to the memory banch?
+        # Create job cgroup
         if (system( 'for d in '.$Cgroup_directory_collection_links.'/*; do
                        oardodo mkdir -p $d/'.$Cpuset_path_job.' || exit 1
                        oardodo chown -R oar $d/'.$Cpuset_path_job.' || exit 2
@@ -217,13 +214,8 @@ if ($ARGV[0] eq "init"){
             exit_myself(5,"Failed to create and feed the cpuset $Cpuset_path_job");
         }
 
-        # Tag network packets of the job processes
-#        if (system( '/bin/echo '.$Cpuset->{job_id}.' | cat > '.$Cgroup_directory_collection_links.'/net_cls/'.$Cpuset_path_job.'/net_cls.classid'
-#                  )){
-#            exit_myself(5,"Failed to tag network packets of the cgroup $Cpuset_path_job");
-#        }
         # Put a share of disk IO corresponding of the ratio between the number
-        # of cores of this cgroup and the number of cores of the node
+        # of cores of this job cgroup and the number of cores of the node
         my @cpu_cgroup_uniq_list;
         my %cpu_cgroup_name_hash;
         foreach my $i (@Cpuset_cpus){
@@ -271,8 +263,9 @@ if ($ARGV[0] eq "init"){
                 exit_myself(5,"Failed to set the memory.limit_in_bytes to $mem_kb");
             }
         }
+
         # Create file used in the user jobs (environment variables, node files, ...)
-        ##Feed the node file
+        ## Feed the node file
         my @tmp_res;
         my %tmp_already_there;
         foreach my $r (@{$Cpuset->{resources}}){
@@ -292,7 +285,7 @@ if ($ARGV[0] eq "init"){
             exit_myself(19,"Failed to create node file $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}");
         }
 
-        ##create resource set file
+        ## create resource set file
         if (open(RESFILE, "> $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources")){
             foreach my $r (@{$Cpuset->{resources}}){
                 my $line = "";
@@ -422,13 +415,13 @@ EOF
                 PROCESSES=$(cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks)
                 while [ "$PROCESSES" != "" ]
                 do
-                    oardodo kill -9 $PROCESSES
+                    oardodo kill -9 $PROCESSES >& /dev/null
                     PROCESSES=$(cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks)
                 done'
               );
 
         # Locking around the cleanup of the cpuset for that user, to prevent a creation to occure at the same time
-        # which would allow race condition for the dirty-user-based clean-up mechanism
+        # which would allow race condition for the user-based clean-up mechanism
         if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
             flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
             if (system('if [ -w '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty ]; then
@@ -447,7 +440,7 @@ EOF
                 #exit(0);
                 exit_myself(6,"Failed to delete the cpuset $Cpuset_path_job");
             }
-            # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
+            # user-based cleanup: do cleanup only if that is the last job of the user on that host.
             my @cpusets = ();
             if (opendir(DIR, $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/')) {
                 @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
@@ -506,7 +499,7 @@ EOF
                         done
                        ');
 		    } else {
-		        print_log(2,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.");
+		        print_log(3,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.");
 		    }
 	        flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
 	        close(LOCK);
