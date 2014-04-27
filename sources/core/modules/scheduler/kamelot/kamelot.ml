@@ -300,6 +300,8 @@ let _ =
           
           (* fill slots with prev scheduled jobs  *)
           let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn init2ord_ids [] security_time_overhead now in (* TODO available_suspended_res_itvs *)
+          Conf.log ("nb of prev_scheduled_jobs:" ^ (string_of_int (List.length prev_scheduled_jobs)));
+
           if (not ( prev_scheduled_jobs = [])) then
             let (h_prev_scheduled_jobs_w_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
             let prev_scheduled_job_ids =
@@ -323,24 +325,31 @@ let _ =
                 end
             in
              
-            (* display previous scheduled jobs 
-            Hashtbl.iter (fun k v -> printf "prev job: %s,  %s\n" k ) h_prev_scheduled_jobs_types; 
+            (* TODO debug display previous scheduled jobs  
+            Hashtbl.iter (fun k v -> ignore (Printf.sprintf "prev job: %s,  %s\n" v k )) h_prev_scheduled_jobs_types; 
             *)
-            (* Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots))); *)
-            (* 
-            let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
-            Conf.log ("slots_with_scheduled_jobs_before #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
-         
-            Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
-            *)
+            Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots))); 
+             
+            let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in
+                Conf.log ("length :"^(string_of_int (List.length slots_with_scheduled_jobs) ));
 
+            (*    Conf.log ("slots_with_scheduled_jobs_before  #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs)); *) 
+        
+             
+            
             (* fill slots function with previous scheduled jobs *)
             set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_w_types prev_scheduled_job_ids security_time_overhead;
 
-            (*             
+                         
              let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
-               Conf.log ("slots_with_scheduled_jobs after #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
-            *)  
+               begin
+                 Conf.log ("slots_with_scheduled_jobs after #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
+                 (* Conf.log ("slots_with_scheduled_jobs_before #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string (Helpers.last_n slots_with_scheduled_jobs 5) ));*)
+                 Conf.log ("length slots_with_scheduled_jobs #0: " ^ (string_of_int ( List.length slots_with_scheduled_jobs) ));
+                 (* 
+                 Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
+                 *)
+               end;
 
           else ();
 
