@@ -3,6 +3,8 @@ OAR CHANGELOG
 
 version 2.5.4:
 --------------
+  - [kamelot]: BUGFIX: in split_slots_prev_scheduled_one_job function 
+               oblivion of a left part of list
   - [api]: added GET /jobs/<id>/details support
   - [api]: implemented the ability to get a set of jobs at once with
     GET /jobs?ids=<id1>:<id2>:<id3>:...
