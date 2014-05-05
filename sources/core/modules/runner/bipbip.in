@@ -488,7 +488,6 @@ eval {
 };
 if (($Detach_oarexec == 1) and ($error == 0)){
     oar_debug("[bipbip $Job_id] Exit from bipbip normally\n");
-    exit(0);
 }else{
     if ($init_done == 0){
         if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
