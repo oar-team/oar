@@ -18,7 +18,7 @@ sub open_ro_db_connection(){
 	$base  = OAR::IO::connect_ro();
 }
 sub close_db_connection(){
-	OAR::IO::disconnect($base);
+	OAR::IO::disconnect($base) if (defined($base));
 	$base = undef;
 }
 
@@ -150,15 +150,15 @@ sub scan_script($$){
         }
         if (!close(FILE)){
             warn("[ERROR] Cannot open the file $file.\n");
-            exit(12);
+            close_db_connection(); exit(12);
         }
     }else{
         warn("[ERROR] Cannot execute: oardodo cat $file\n");
-        exit(12);
+        close_db_connection(); exit(12);
     }
     if ($error > 0){
         warn("[ERROR] $error error(s) encountered while parsing the file $file.\n");
-        exit(12);
+        close_db_connection(); exit(12);
     }
 	$result{initial_request} = $Initial_request_string;
     return(\%result);
@@ -176,11 +176,11 @@ sub read_array_param_file($){
         }
         if (!close(PARAMETER_FILE)){
             warn("[ERROR] Cannot open the parameter file $array_param_file.\n");
-            exit(12);
+            close_db_connection(); exit(12);
         }
     }else{
         warn("[ERROR] Cannot execute: oardodo cat $array_param_file\n");
-        exit(12);
+        close_db_connection(); exit(12);
     }
     return \@array_params;
 }

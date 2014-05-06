@@ -142,6 +142,13 @@ if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
 
 $Job_user = $job->{job_user};
 my $types = OAR::IO::get_current_job_types($base,$Job_id);
+# NOOP jobs
+if (defined($types->{noop})){
+    OAR::IO::set_job_state($base,$Job_id,"Running");
+    OAR::IO::disconnect($base);
+    exit(0);
+}
+
 my @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
 my $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
 if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#hosts >= 0))){

@@ -201,7 +201,7 @@ foreach my $mold (@{$ref_resource_list}){
 
 -- Check if types given by the user are right
 INSERT INTO admission_rules (rule) VALUES (E'# Check if job types are valid
-my @types = ("container","inner","deploy","desktop_computing","besteffort","cosystem","idempotent","timesharing","allow_classic_ssh","token\\:xxx=yy");
+my @types = ("container","inner","deploy","desktop_computing","besteffort","cosystem","noop","idempotent","timesharing","allow_classic_ssh","token\\:xxx=yy");
 foreach my $t (@{$type_list}){
     my $i = 0;
     while (($types[$i] ne $t) and ($i <= $#types)){

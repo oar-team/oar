@@ -81,18 +81,25 @@ foreach my $j (OAR::IO::get_to_kill_jobs($base)){
         oar_debug("[Leon] Job is terminated or is terminating I do nothing\n");
     }else{
         my $types = OAR::IO::get_current_job_types($base,$j->{job_id});
-        my @hosts = OAR::IO::get_job_current_hostnames($base,$j->{job_id});
-        my $host_to_connect_via_ssh = $hosts[0];
-        #deploy, cosystem and no host part
-        if ((defined($types->{cosystem})) or ($#hosts < 0)){
-            $host_to_connect_via_ssh = $Cosystem_hostname;
-        }elsif (defined($types->{deploy})){
-            $host_to_connect_via_ssh = $Deploy_hostname;
-        }
-        #deploy, cosystem and no host part
-        if (defined($host_to_connect_via_ssh)){
-            OAR::IO::add_new_event($base,"SEND_KILL_JOB",$j->{job_id},"[Leon] Send kill signal to oarexec on $host_to_connect_via_ssh for the job $j->{job_id}");
-            OAR::Tools::signal_oarexec($host_to_connect_via_ssh, $j->{job_id}, "TERM", 0, $base, $Openssh_cmd, '');
+        if (defined($types->{noop})){
+            oar_debug("[Leon] Kill the NOOP job $j->{job_id}\n");
+            OAR::IO::set_finish_date($base,$j->{job_id});
+            OAR::IO::set_job_state($base,$j->{job_id},"Terminated");
+            OAR::IO::set_job_message($base,$j->{job_id},"NOOP job killed by Leon");
+        }else{
+            my @hosts = OAR::IO::get_job_current_hostnames($base,$j->{job_id});
+            my $host_to_connect_via_ssh = $hosts[0];
+            #deploy, cosystem and no host part
+            if ((defined($types->{cosystem})) or ($#hosts < 0)){
+                $host_to_connect_via_ssh = $Cosystem_hostname;
+            }elsif (defined($types->{deploy})){
+                $host_to_connect_via_ssh = $Deploy_hostname;
+            }
+            #deploy, cosystem and no host part
+            if (defined($host_to_connect_via_ssh)){
+                OAR::IO::add_new_event($base,"SEND_KILL_JOB",$j->{job_id},"[Leon] Send kill signal to oarexec on $host_to_connect_via_ssh for the job $j->{job_id}");
+                OAR::Tools::signal_oarexec($host_to_connect_via_ssh, $j->{job_id}, "TERM", 0, $base, $Openssh_cmd, '');
+            }
         }
     }
     OAR::IO::job_arm_leon_timer($base,$j->{job_id});

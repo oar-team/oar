@@ -82,11 +82,13 @@ Specify the signal to use when checkpointing. Use signal numbers (see kill -l), 
 
 =item B<-t, --type> <TYPE>
 
-Specify a specific type (I<besteffort>, I<timesharing>, I<idempotent>, I<cosystem>, I<deploy>, I<container>, I<inner>, I<token:xxx=yy>)
+Specify a specific type (I<besteffort>, I<timesharing>, I<idempotent>, I<cosystem>, I<deploy>, I<noop>, I<container>, I<inner>, I<token:xxx=yy>)
 
 Notes:
+  - a job with the type B<besteffort> will be scheduled with the lowest priority and will be killed if a "normal" job needs its resources.
   - a job with the type B<idempotent> will be automatically resubmitted if its exit code is 99 and its duration > 60s.
   - a job with the types B<idempotent> and B<besteffort> will be automatically resubmitted if it was killed by OAR to execute other none besteffort jobs in place.
+  - a job with the type B<noop> does nothing except reserving the resources. It is ended at the end of it walltime or when using the oardel command.
 
 =item B<-d, --directory> <DIR>
 
