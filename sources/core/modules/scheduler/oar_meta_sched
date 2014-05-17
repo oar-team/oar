@@ -140,7 +140,7 @@ foreach my $i (keys(%{$reservation_already_there})){
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $vec = '';
-    my $types = OAR::IO::get_current_job_types($base,$i);
+    my $types = OAR::IO::get_job_types_hash($base,$i);
     foreach my $r (@{$reservation_already_there->{$i}->{resources}}){
         vec($vec, $r, 1) = 1;
     }
@@ -196,7 +196,7 @@ foreach my $job (@initial_jobs){
     oar_debug("[MetaSched] [$i] Add job in database\n");
     OAR::IO::add_gantt_scheduled_jobs($base,$job->{assigned_moldable_job},$date,\@resource_list);
 
-    my $types = OAR::IO::get_current_job_types($base,$job->{job_id});
+    my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
     # Ignore besteffort jobs
     if (! defined($types->{besteffort})){
         my $job_duration = $mold->{moldable_walltime};
@@ -269,7 +269,7 @@ foreach my $job (@Rjobs){
     #push(@tmp_resource_list, OAR::IO::get_resources_in_state($base,"Dead"));
     push(@tmp_resource_list, OAR::IO::get_resources_in_state($base,"Absent"));
 
-    my $types = OAR::IO::get_current_job_types($base,$i);
+    my $types = OAR::IO::get_job_types_hash($base,$i);
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         $inner_id = $1;
         if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
@@ -485,7 +485,7 @@ sub check_reservation_jobs($$){
             my $use_placeholder_name = "";
             my $timesharing_user = "";
             my $timesharing_name = "";
-            my $types = OAR::IO::get_current_job_types($base,$i);
+            my $types = OAR::IO::get_job_types_hash($base,$i);
             if ((! defined($types->{besteffort})) or ($queue_name eq "besteffort")){
                 my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
                 my $job_duration = $already_scheduled_jobs{$i}->[1];
@@ -536,7 +536,7 @@ sub check_reservation_jobs($$){
             my $timesharing_user = "";
             my $timesharing_name = "";
             my $i = $job->{job_id};
-            my $types = OAR::IO::get_current_job_types($base,$i);
+            my $types = OAR::IO::get_job_types_hash($base,$i);
             my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
             # It is a reservation, we take care only of the first moldable job
             my $moldable = $job_descriptions->[0];
@@ -865,74 +865,80 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
     if ($#other_jobs < 0){
         # We can resume the job
         oar_debug("[MetaSched] [$j->{job_id}] Resuming job\n");
-        ###############
-        # RESUME PART #
-        ###############
-        my $script = get_conf("JUST_BEFORE_RESUME_EXEC_FILE");
-        my $timeout = get_conf("SUSPEND_RESUME_SCRIPT_TIMEOUT");
-        $timeout = OAR::Tools::get_default_suspend_resume_script_timeout() if (!defined($timeout));
-        my $skip = 0;
-        if (defined($script)){
-            # Launch admin script
-            my $script_error = 0;
-            eval {
-                $SIG{ALRM} = sub { die "alarm\n" };
-                alarm($timeout);
-                oar_debug("[MetaSched] [$j->{job_id}] Running post suspend script: `$script $j->{job_id}'\n");
-                $script_error = system("$script script $j->{job_id}");
-                oar_debug("[MetaSched] [$j->{job_id}] `$script $j->{job_id}' terminated\n");
-                alarm(0);
-            };
-            if( $@ || ($script_error != 0)){
-                my $str = "[MetaSched] [$j->{job_id}] Suspend script error: $@; return code = $script_error\n";
-                oar_error($str);
-                OAR::IO::add_new_event($base,"RESUME_SCRIPT_ERROR",$j->{job_id},$str);
-                OAR::IO::frag_job($base,$j->{job_id});
-                OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qdel");
-                $skip = 1;
-            }
-        }
- 
-        if ((defined($Cpuset_field)) and ($skip == 0)){
-            my $cpuset_name = OAR::IO::get_job_cpuset_name($base, $j->{job_id}) if (defined($Cpuset_field));
-            my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$j->{assigned_moldable_job});
-            my $suspend_data_hash = {
-                name => $cpuset_name,
-                job_id => $j->{job_id},
-                oarexec_pid_file => OAR::Tools::get_oar_pid_file_name($j->{job_id}),
-            };
-            if (defined($cpuset_nodes)){
-                my $taktuk_cmd = get_conf("TAKTUK_CMD");
-                my $openssh_cmd = get_conf("OPENSSH_CMD");
-                $openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
-                if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
-                    OAR::Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
-                }
-                my $suspend_file = get_conf("SUSPEND_RESUME_FILE");
-                $suspend_file = OAR::Tools::get_default_suspend_resume_file() if (!defined($suspend_file));
-                $suspend_file = "$ENV{OARDIR}/$suspend_file" if ($suspend_file !~ /^\//);
-                my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_file,"resume",$openssh_cmd,$taktuk_cmd,$base);
-                if ($tag == 0){
-                    my $str = "[MetaSched] [SUSPEND_RESUME] [$j->{job_id}] Bad suspend/resume file: $suspend_file\n";
+        my $jobtypes = OAR::IO::get_job_types_hash($base,$j->{job_id});
+        if (defined($jobtypes->{noop})){
+            OAR::IO::resume_job_action($base,$j->{job_id});
+            oar_debug("[MetaSched] [$j->{job_id}] Resume NOOP job OK\n");
+        }else{
+            ###############
+            # RESUME PART #
+            ###############
+            my $script = get_conf("JUST_BEFORE_RESUME_EXEC_FILE");
+            my $timeout = get_conf("SUSPEND_RESUME_SCRIPT_TIMEOUT");
+            $timeout = OAR::Tools::get_default_suspend_resume_script_timeout() if (!defined($timeout));
+            my $skip = 0;
+            if (defined($script)){
+                # Launch admin script
+                my $script_error = 0;
+                eval {
+                    $SIG{ALRM} = sub { die "alarm\n" };
+                    alarm($timeout);
+                    oar_debug("[MetaSched] [$j->{job_id}] Running post suspend script: `$script $j->{job_id}'\n");
+                    $script_error = system("$script script $j->{job_id}");
+                    oar_debug("[MetaSched] [$j->{job_id}] `$script $j->{job_id}' terminated\n");
+                    alarm(0);
+                };
+                if( $@ || ($script_error != 0)){
+                    my $str = "[MetaSched] [$j->{job_id}] Suspend script error: $@; return code = $script_error\n";
                     oar_error($str);
-                    OAR::IO::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $j->{job_id}, $str);
-                }else{
-                    if (($#bad < 0)){
-                        OAR::IO::resume_job_action($base,$j->{job_id});
-                   }else{
-                        my $str = "[MetaSched] [SUSPEND_RESUME] [$j->{job_id}] Error on several nodes: @bad\n";
+                    OAR::IO::add_new_event($base,"RESUME_SCRIPT_ERROR",$j->{job_id},$str);
+                    OAR::IO::frag_job($base,$j->{job_id});
+                    OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qdel");
+                    $skip = 1;
+                }
+            }
+
+            if ((defined($Cpuset_field)) and ($skip == 0)){
+                my $cpuset_name = OAR::IO::get_job_cpuset_name($base, $j->{job_id}) if (defined($Cpuset_field));
+                my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$j->{assigned_moldable_job});
+                my $suspend_data_hash = {
+                    name => $cpuset_name,
+                    job_id => $j->{job_id},
+                    oarexec_pid_file => OAR::Tools::get_oar_pid_file_name($j->{job_id}),
+                };
+                if (defined($cpuset_nodes)){
+                    my $taktuk_cmd = get_conf("TAKTUK_CMD");
+                    my $openssh_cmd = get_conf("OPENSSH_CMD");
+                    $openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+                    if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+                        OAR::Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+                    }
+                    my $suspend_file = get_conf("SUSPEND_RESUME_FILE");
+                    $suspend_file = OAR::Tools::get_default_suspend_resume_file() if (!defined($suspend_file));
+                    $suspend_file = "$ENV{OARDIR}/$suspend_file" if ($suspend_file !~ /^\//);
+                    my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_file,"resume",$openssh_cmd,$taktuk_cmd,$base);
+                    if ($tag == 0){
+                        my $str = "[MetaSched] [SUSPEND_RESUME] [$j->{job_id}] Bad suspend/resume file: $suspend_file\n";
                         oar_error($str);
-                        OAR::IO::add_new_event_with_host($base,"RESUME_ERROR",$j->{job_id},$str,\@bad);
-                        OAR::IO::frag_job($base,$j->{job_id});
-                        # A Leon must be run
-                        $exit_code = 2;
+                        OAR::IO::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $j->{job_id}, $str);
+                    }else{
+                       if (($#bad < 0)){
+                            OAR::IO::resume_job_action($base,$j->{job_id});
+                       }else{
+                            my $str = "[MetaSched] [SUSPEND_RESUME] [$j->{job_id}] Error on several nodes: @bad\n";
+                            oar_error($str);
+                            OAR::IO::add_new_event_with_host($base,"RESUME_ERROR",$j->{job_id},$str,\@bad);
+                            OAR::IO::frag_job($base,$j->{job_id});
+                            # A Leon must be run
+                            $exit_code = 2;
+                        }
                     }
                 }
             }
+            #####################
+            # RESUME PART, END  #
+            #####################
         }
-        #####################
-        # RESUME PART, END  #
-        #####################
     }
 }
 
