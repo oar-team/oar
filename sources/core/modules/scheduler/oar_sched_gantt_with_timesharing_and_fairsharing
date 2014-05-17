@@ -186,7 +186,7 @@ oar_debug("[$scheduler_name] Begin phase 1 (running jobs)\n");
 # Take care of currently scheduled jobs (gantt in the database)
 my ($order,%already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
 foreach my $i (@{$order}){
-    my $types = OAR::IO::get_current_job_types($base,$i);
+    my $types = OAR::IO::get_job_types_hash($base,$i);
     # Do not take care of besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
@@ -390,7 +390,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
 
     my $gantt_to_use = $Container_gantt_hash{0};
     my $container_num = 0;
-    my $types = OAR::IO::get_current_job_types($base,$j->{job_id});
+    my $types = OAR::IO::get_job_types_hash($base,$j->{job_id});
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         if (defined($Container_gantt_hash{$1})){
             $gantt_to_use = $Container_gantt_hash{$1};

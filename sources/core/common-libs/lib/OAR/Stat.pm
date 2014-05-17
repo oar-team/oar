@@ -21,7 +21,8 @@ sub open_db_connection(){
 }
 
 sub close_db_connection(){
-	OAR::IO::disconnect($base);
+	OAR::IO::disconnect($base) if (defined($base));
+    $base = undef;
 }
 
 sub get_oar_version(){
@@ -240,7 +241,7 @@ sub get_history($$){
     #print finished or running jobs
     my %jobs_history = OAR::IO::get_jobs_range_dates($base,$date_start,$date_stop);
     foreach my $i (keys(%jobs_history)){
-        my $types = OAR::IO::get_current_job_types($base,$i);
+        my $types = OAR::IO::get_job_types_hash($base,$i);
         if (!defined($job_gantt{$i}) || (defined($types->{besteffort}))){
             if (($jobs_history{$i}->{state} eq "Running") ||
                 ($jobs_history{$i}->{state} eq "toLaunch") ||

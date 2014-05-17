@@ -91,29 +91,23 @@ if (defined($Cpuset_path) and defined($Cpuset_field)){
     $Cpuset_full_path = $Cpuset_path.'/'.$Cpuset_name;
 }
 
-my $job = OAR::IO::get_job($base,$Job_id);
 my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($base,$Job_id);
-
 my @hosts = OAR::IO::get_job_current_hostnames($base,$Job_id);
+my $job = OAR::IO::get_job($base,$Job_id);
+my @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
+my $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
+$job = OAR::IO::get_job($base,$Job_id); # In case of the job state has changed since the last call :-(
 
-# Tell that the launching process is initiated
-if ($job->{state} eq "toLaunch"){
-    OAR::IO::set_job_state($base,$Job_id,"Launching");
-    $job->{state} = "Launching";
-}
-
-if (!(($job->{state} eq "Launching") or ($job->{state} eq "Running") or ($job->{state} eq "Suspended") or ($job->{state} eq "Resuming"))){
-    oar_debug("[bipbip $Job_id] Job already treated\n");
-    #OAR::IO::add_new_event($base, "BIPBIP_BAD_JOBID", $Job_id, "A Job is requested but it is already treated. This job must be already killed (exterminated) and come back from hell ???");
-    OAR::IO::disconnect($base);
-    exit 1;
-}
-
-
-#deploy, cosystem and no host part
 
 #check if we must treate the end of a oarexec
-if (defined($Oarexec_reattach_exit_value)){
+if ((defined($Oarexec_reattach_exit_value)) and
+    (($job->{state} eq "Launching") or
+     ($job->{state} eq "Running") or
+     ($job->{state} eq "Suspended") or
+     ($job->{state} eq "Resuming")
+    )
+   ){
+    oar_debug("[bipbip $Job_id] OAREXEC end: $Oarexec_reattach_exit_value $Oarexec_reattach_script_exit_value\n");
     if ($Oarexec_reattach_exit_value =~ m/\d+/m){
         if ($Oarexec_challenge eq $job_challenge){
             OAR::IO::check_end_of_job($base, $Job_id, $Oarexec_reattach_script_exit_value, $Oarexec_reattach_exit_value, \@hosts, $Remote_host, $Remote_port,$job->{job_user},$job->{launching_directory},$Server_epilogue);
@@ -130,9 +124,26 @@ if (defined($Oarexec_reattach_exit_value)){
         OAR::IO::disconnect($base);
         exit(2);
     }
+}elsif ($job->{state} eq "toLaunch"){
+    # Tell that the launching process is initiated
+    OAR::IO::set_job_state($base,$Job_id,"Launching");
+    $job->{state} = "Launching";
+}else{
+    oar_warn("[bipbip $Job_id] Job already treated or deleted in the meantime\n");
+    OAR::IO::disconnect($base);
+    exit(1);
 }
 
-# ELSE we must launch oarexec on the first node
+# NOOP jobs
+my $types = OAR::IO::get_job_types_hash($base,$Job_id);
+if (defined($types->{noop})){
+    OAR::IO::set_job_state($base,$Job_id,"Running");
+    OAR::IO::disconnect($base);
+    oar_debug("[bipbip $Job_id] User: $job->{job_user}; Set NOOP job to Running\n");
+    exit(0);
+}
+
+# HERE we must launch oarexec on the first node
 oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
 if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
@@ -141,16 +152,7 @@ if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
 }
 
 $Job_user = $job->{job_user};
-my $types = OAR::IO::get_current_job_types($base,$Job_id);
-# NOOP jobs
-if (defined($types->{noop})){
-    OAR::IO::set_job_state($base,$Job_id,"Running");
-    OAR::IO::disconnect($base);
-    exit(0);
-}
 
-my @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
-my $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
 if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#hosts >= 0))){
     my $event_type;
     my @bad;

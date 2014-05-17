@@ -80,12 +80,13 @@ foreach my $j (OAR::IO::get_to_kill_jobs($base)){
     }elsif (($j->{state} eq "Terminated") || ($j->{state} eq "Error") || ($j->{state} eq "Finishing")){
         oar_debug("[Leon] Job is terminated or is terminating I do nothing\n");
     }else{
-        my $types = OAR::IO::get_current_job_types($base,$j->{job_id});
+        my $types = OAR::IO::get_job_types_hash($base,$j->{job_id});
         if (defined($types->{noop})){
             oar_debug("[Leon] Kill the NOOP job $j->{job_id}\n");
             OAR::IO::set_finish_date($base,$j->{job_id});
             OAR::IO::set_job_state($base,$j->{job_id},"Terminated");
             OAR::IO::set_job_message($base,$j->{job_id},"NOOP job killed by Leon");
+            $Exit_code = 1;
         }else{
             my @hosts = OAR::IO::get_job_current_hostnames($base,$j->{job_id});
             my $host_to_connect_via_ssh = $hosts[0];

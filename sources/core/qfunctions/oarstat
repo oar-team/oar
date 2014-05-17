@@ -11,6 +11,9 @@ use Getopt::Long;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use OAR::Stat;
 
+$SIG{HUP} = sub {OAR::Stat::close_db_connection(); exit(10)};
+$SIG{PIPE} = sub {OAR::Stat::close_db_connection(); exit(10)};
+
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
 
@@ -511,7 +514,10 @@ sub print_properties {
                 }
             }
             chop($line);
-            print("$line\n") or exit(5);
+            if (!print("$line\n")){
+                OAR::Stat::close_db_connection();
+                exit(5);
+            }
         }
     } else {
         warn("No job specified\n");
@@ -524,7 +530,7 @@ sub print_state {
     my %job_state;
     if ($#job_ids < 0){
         warn("--state can only be used with an id\n");
-          exit(1);
+        OAR::Stat::close_db_connection(); exit(1);
     }elsif($#job_ids >= 0){
         foreach my $j (@job_ids){
             my $state_string = OAR::Stat::get_job_state($j);
@@ -594,8 +600,7 @@ EOS
         
     }else{
         print("Bad syntax for --accounting\n");
-		OAR::Stat::close_db_connection();
-        exit(1);
+		OAR::Stat::close_db_connection(); exit(1);
     }
 }
 

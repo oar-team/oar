@@ -165,7 +165,7 @@ if (defined($Checkpoint)){
             my $strComment;
             # Retrieve node names used by the job
             my @hosts = OAR::IO::get_job_current_hostnames($base,$idJob);
-            my $types = OAR::IO::get_current_job_types($base,$idJob);
+            my $types = OAR::IO::get_job_types_hash($base,$idJob);
             my $host_to_connect = $hosts[0];
             if ((defined($types->{cosystem})) or ($#hosts < 0)){
                 $host_to_connect = $Cosystem_hostname;
@@ -221,7 +221,7 @@ if (defined($Checkpoint)){
             my $strComment;
             # Retrieve node names used by the job
             my @hosts = OAR::IO::get_job_current_hostnames($base,$idJob);
-            my $types = OAR::IO::get_current_job_types($base,$idJob);
+            my $types = OAR::IO::get_job_types_hash($base,$idJob);
             my $host_to_connect = $hosts[0];
             if ((defined($types->{cosystem})) or ($#hosts < 0)){
                 $host_to_connect = $Cosystem_hostname;
@@ -282,7 +282,6 @@ if (defined($Checkpoint)){
                 warn("The job $j is not in the Finishing state.\n");
             }
         }
-        OAR::IO::disconnect($base);
         my $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         if (defined($strError)){
             warn("$strError\n");
@@ -299,7 +298,7 @@ if (defined($Checkpoint)){
             OAR::IO::lock_table($base,["jobs","job_types","resources","assigned_resources","event_logs"]);
             my $job = OAR::IO::get_job($base, $j);
             if (defined($job->{state}) and ($job->{state} eq "Running")){ 
-                my $types = OAR::IO::get_current_job_types($base,$j);
+                my $types = OAR::IO::get_job_types_hash($base,$j);
                 if (defined($types->{besteffort})){
                     OAR::IO::update_current_scheduler_priority($base,$job->{job_id},$job->{assigned_moldable_job},"-2","STOP");
                     OAR::IO::remove_current_job_types($base,$job->{job_id},"besteffort");
@@ -317,7 +316,6 @@ if (defined($Checkpoint)){
             }
             OAR::IO::unlock_table($base);
         }
-        OAR::IO::disconnect($base);
         my $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         if (defined($strError)){
             warn("$strError\n");
@@ -327,6 +325,7 @@ if (defined($Checkpoint)){
 }else{
     # oardel is used to delete some jobs
     my @jobRegistered;
+    my $notify_almighty = 0;
     foreach my $idJob (@job_ids) {
         print("Deleting the job = $idJob ...");
         # Try to insert delete informations in the database
@@ -340,15 +339,16 @@ if (defined($Checkpoint)){
         }elsif ($err == -2){
             print("ERROR.\n");
             warn("Cannot frag $idJob ; This job was already killed.\n");
+            $notify_almighty = 1;
             $exitValue = 6;
 	}else{
             print("REGISTERED.\n");
+            $notify_almighty = 1;
             push(@jobRegistered,$idJob);
         }
 
     }
-    OAR::IO::disconnect($base);
-    if (@jobRegistered){
+    if ($notify_almighty > 0){
         #Signal Almigthy
         my $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel") if (!defined($strError));
@@ -356,10 +356,11 @@ if (defined($Checkpoint)){
             warn("$strError\n");
             $exitValue = 2;
         }else{
-            print("The job(s) [ @jobRegistered ] will be deleted in a near future.\n");
+            print("The job(s) [ @jobRegistered ] will be deleted in a near future.\n") if (@jobRegistered);
         }
     }
 }
 
 
+OAR::IO::disconnect($base);
 exit($exitValue);

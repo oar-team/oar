@@ -85,7 +85,7 @@ sub get_job_stagein($$);
 sub is_stagein_deprecated($$$);
 sub del_stagein($$);
 sub get_jobs_to_schedule($$$);
-sub get_current_job_types($$);
+sub get_job_types_hash($$);
 sub set_moldable_job_max_time($$$);
 sub is_timesharing_for_2_jobs($$$);
 
@@ -3361,17 +3361,16 @@ sub get_fairsharing_jobs_to_schedule($$$){
 }
 
 
-# get_current_job_types
+# get_job_types_hash
 # return a hash table with all types for the given job ID
-sub get_current_job_types($$){
+sub get_job_types_hash($$){
     my $dbh = shift;
     my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT type
                                 FROM job_types
                                 WHERE
-                                    types_index = \'CURRENT\'
-                                    AND job_id = $job_id
+                                    job_id = $job_id
                             ");
     $sth->execute();
     my %res;
@@ -5604,7 +5603,7 @@ sub update_current_scheduler_priority($$$$$){
     $state = "STOP" if ($state ne "START");
 
     if (is_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER")){
-        my $types = OAR::IO::get_current_job_types($dbh,$job_id);
+        my $types = OAR::IO::get_job_types_hash($dbh,$job_id);
         if (((defined($types->{besteffort})) or (defined($types->{timesharing})))
             and (($state eq "START" and (is_an_event_exists($dbh,$job_id,"SCHEDULER_PRIORITY_UPDATED_START") <= 0))
                 or (($state eq "STOP") and (is_an_event_exists($dbh,$job_id,"SCHEDULER_PRIORITY_UPDATED_START") > 0)))
@@ -7517,7 +7516,7 @@ sub check_end_of_job($$$$$$$$$$){
             push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             my $strWARN = "[bipbip $job_id] the job $job_id was killed by Leon";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-            my $types = OAR::IO::get_current_job_types($base,$job_id);
+            my $types = OAR::IO::get_job_types_hash($base,$job_id);
             if ((defined($types->{besteffort})) and (defined($types->{idempotent}))){
                 if (OAR::IO::is_an_event_exists($base,$job_id,"BESTEFFORT_KILL") > 0){
                     my $new_job_id = OAR::IO::resubmit_job($base,$job_id);
@@ -7530,7 +7529,7 @@ sub check_end_of_job($$$$$$$$$$){
             #Oarexec was killed by Leon and epilogue of oarexec is in error
             push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             my $strWARN = "[bipbip $job_id] The job $job_id was killed by Leon and oarexec epilogue was in error";
-            my $types = OAR::IO::get_current_job_types($base,$job_id);
+            my $types = OAR::IO::get_job_types_hash($base,$job_id);
             if ((defined($types->{besteffort})) and (defined($types->{idempotent}))){
                 if (OAR::IO::is_an_event_exists($base,$job_id,"BESTEFFORT_KILL") > 0){
                     my $new_job_id = OAR::IO::resubmit_job($base,$job_id);
@@ -7623,7 +7622,7 @@ sub check_end_of_job($$$$$$$$$$){
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             my $strWARN = "[bipbip $job_id] oarexec received a SIGUSR2 signal; so user process has received a checkpoint signal";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-#            my $types = OAR::IO::get_current_job_types($base,$job_id);
+#            my $types = OAR::IO::get_job_types_hash($base,$job_id);
 #            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
 #                if ($exit_script_value == 0){
 #                    my $new_job_id = OAR::IO::resubmit_job($base,$job_id);
@@ -7641,7 +7640,7 @@ sub check_end_of_job($$$$$$$$$$){
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             my $strWARN = "[bipbip $job_id] oarexec received a SIGURG signal; so user process has received the user defined signal";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-#            my $types = OAR::IO::get_current_job_types($base,$job_id);
+#            my $types = OAR::IO::get_job_types_hash($base,$job_id);
 #            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
 #                if ($exit_script_value == 0){
 #                    my $new_job_id = OAR::IO::resubmit_job($base,$job_id);
@@ -7659,7 +7658,7 @@ sub check_end_of_job($$$$$$$$$$){
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             my $strWARN = "[bipbip $job_id] oarexec received a SIGUSR2 signal and there was an epilogue error; so user process has received a checkpoint signal";
             OAR::Modules::Judas::oar_debug("$strWARN\n");
-#            my $types = OAR::IO::get_current_job_types($base,$job_id);
+#            my $types = OAR::IO::get_job_types_hash($base,$job_id);
 #            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
 #                if ($exit_script_value == 0){
 #                    my $new_job_id = OAR::IO::resubmit_job($base,$job_id);
@@ -7746,7 +7745,7 @@ sub job_finishing_sequence($$$$$$){
     }
     
    
-    my $types = OAR::IO::get_current_job_types($dbh,$job_id);
+    my $types = OAR::IO::get_job_types_hash($dbh,$job_id);
     if ((!defined($types->{deploy})) and (!defined($types->{cosystem}))){
         ###############
         # CPUSET PART #

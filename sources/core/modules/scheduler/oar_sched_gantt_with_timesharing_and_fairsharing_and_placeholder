@@ -171,7 +171,7 @@ foreach my $i (@{$order}){
     my $use_placeholder_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
-    my $types = OAR::IO::get_current_job_types($base,$i);
+    my $types = OAR::IO::get_job_types_hash($base,$i);
     # Ignore besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
@@ -339,7 +339,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $use_placeholder_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
-    my $types = OAR::IO::get_current_job_types($base,$i);
+    my $types = OAR::IO::get_job_types_hash($base,$i);
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         $inner_id = $1;
         if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){

@@ -193,7 +193,7 @@ sub get_job_current_hostnames($){
 
 sub get_current_job_types($){
 	my $job_id = shift;
-	return OAR::IO::get_current_job_types($base,$job_id);
+	return OAR::IO::get_job_types_hash($base,$job_id);
 }
 
 sub get_job_cpuset_name($){
