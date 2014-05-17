@@ -2449,10 +2449,7 @@ sub log_job($$){
                         res_job_index = \'LOG\'
                     FROM moldable_job_descriptions, job_resource_groups
                     WHERE
-                        job_resource_groups.res_group_index = \'CURRENT\'
-                        AND moldable_job_descriptions.moldable_index = \'LOG\'
-                        AND job_resource_descriptions.res_job_index = \'CURRENT\'
-                        AND moldable_job_descriptions.moldable_job_id = $job_id
+                        moldable_job_descriptions.moldable_job_id = $job_id
                         AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
                         AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
              ");

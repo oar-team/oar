@@ -94,9 +94,8 @@ if (defined($Cpuset_path) and defined($Cpuset_field)){
 my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($base,$Job_id);
 my @hosts = OAR::IO::get_job_current_hostnames($base,$Job_id);
 my $job = OAR::IO::get_job($base,$Job_id);
-my @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
-my $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
-$job = OAR::IO::get_job($base,$Job_id); # In case of the job state has changed since the last call :-(
+my @resources;
+my $moldable;
 
 
 #check if we must treate the end of a oarexec
@@ -124,14 +123,19 @@ if ((defined($Oarexec_reattach_exit_value)) and
         OAR::IO::disconnect($base);
         exit(2);
     }
-}elsif ($job->{state} eq "toLaunch"){
-    # Tell that the launching process is initiated
-    OAR::IO::set_job_state($base,$Job_id,"Launching");
-    $job->{state} = "Launching";
 }else{
-    oar_warn("[bipbip $Job_id] Job already treated or deleted in the meantime\n");
-    OAR::IO::disconnect($base);
-    exit(1);
+    @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
+    $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
+    $job = OAR::IO::get_job($base,$Job_id); # In case of the job state has changed since the last call :-(
+    if ($job->{state} eq "toLaunch"){
+        # Tell that the launching process is initiated
+        OAR::IO::set_job_state($base,$Job_id,"Launching");
+        $job->{state} = "Launching";
+    }else{
+        oar_warn("[bipbip $Job_id] Job already treated or deleted in the meantime\n");
+        OAR::IO::disconnect($base);
+        exit(1);
+    }
 }
 
 # NOOP jobs
