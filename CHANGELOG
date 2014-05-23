@@ -34,6 +34,9 @@ version 2.5.4:
               and the job is of the deploy type (bug #17128).
   - [judas]: disable sending log by emails on errors. This could generate too
              much mails.
+  - [noop]: add the 'noop' job type. If specified nothing is done on computing
+            nodes. The job just reserves the resources for the specified
+            walltime.
 
 version 2.5.3:
 --------------

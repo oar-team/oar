@@ -616,10 +616,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 oar_debug("[$scheduler_name] Update TOKEN $t to $Token_values{$t}\n");
             }
         }
-    }else{
+    }elsif ($moldable_results[0]->{comment} ne "TIMEOUT"){
         my $message = "No enough matching resources ($moldable_results[0]->{comment})";
         OAR::IO::set_job_message($base,$j->{job_id},$message);
-#        OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
+        #OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
         oar_debug("[$scheduler_name] [$j->{job_id}] $message\n");
     }
 #        print("[GANTT] 18 ".gettimeofday."\n");

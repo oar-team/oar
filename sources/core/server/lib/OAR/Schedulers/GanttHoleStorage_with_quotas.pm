@@ -664,6 +664,7 @@ sub find_first_hole($$$$$$$$$$$){
             #print("TTTTTTT $gantt->[0]->[5]->[0] $gantt->[0]->[5]->[1] -- $gantt->[$current_hole_index]->[0] $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
             $current_time = $Infinity;
             @result_tree_list = ();
+            $comment = "TIMEOUT";
             $end_loop = 1;
         }
     }
@@ -888,6 +889,7 @@ sub find_first_hole_parallel($$$$$$$$$$$$){
                 #print("TTTTTTT $gantt->[0]->[5]->[0] $gantt->[0]->[5]->[1] -- $gantt->[$current_hole_index]->[0] $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
                 $current_time = $Infinity;
                 @result_tree_list = ();
+                $comment = "TIMEOUT";
                 $end_loop = 1;
             }
         }
