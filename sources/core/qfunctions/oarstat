@@ -550,18 +550,22 @@ sub show_accounting {
     
         # One user output
         if (defined($user)) {
-            my $asked;
-            my $used;
-            if (defined($Consumptions->{$user}->{ASKED})) { $asked=$Consumptions->{$user}->{ASKED}; }
-            else { $asked=0; }
-            if (defined($Consumptions->{$user}->{USED})) { $used=$Consumptions->{$user}->{USED}; }
-            else { $used=0; }
-            if (!defined($Consumptions->{$user}->{begin})) {$Consumptions->{$user}->{begin}="No window found";}
-            if (!defined($Consumptions->{$user}->{end})) {$Consumptions->{$user}->{end}="No window found";}
+            my $asked = 0;
+            $asked=$Consumptions->{$user}->{ASKED} if (defined($Consumptions->{$user}->{ASKED}));
+            my $used =0;
+            $used=$Consumptions->{$user}->{USED} if (defined($Consumptions->{$user}->{USED}));
             print "Usage summary for user '$user' from $1 to $2:\n";
             print "-------------------------------------------------------------\n";
-            printf ("%-28s %s\n","Start of the first window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{begin}));
-            printf ("%-28s %s\n","End of the last window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{end}));
+            if (defined($Consumptions->{$user}->{begin})){
+                printf ("%-28s %s\n","Start of the first window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{begin}));
+            }else{
+                printf ("%-28s %s\n","Start of the first window:","No window found");
+            }
+            if (defined($Consumptions->{$user}->{end})){
+                printf ("%-28s %s\n","End of the last window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{end}));
+            }else{
+                printf ("%-28s %s\n","End of the last window:","No window found");
+            }
             printf ("%-28s %s ( %s)\n","Asked consumption:",$asked,OAR::Stat::get_duration($asked));
             printf ("%-28s %s ( %s)\n","Used consumption:",$used,OAR::Stat::get_duration($used));
             print "By project consumption:\n";
