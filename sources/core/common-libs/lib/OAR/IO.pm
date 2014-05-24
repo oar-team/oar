@@ -1555,7 +1555,7 @@ sub format_job_message_text($$$$$$$$$){
     my $types_to_text = '';
     $types_to_text = "T=".join('|',@{$type_list_array_ref})."," if ($#{$type_list_array_ref} >= 0);
     my $job_message = "R=$estimated_nb_resources,W=".duration_to_sql($estimated_walltime).",J=$job_mode,";
-    $job_message .= "N=$job_name," if ($job_name ne "");
+    $job_message .= "N=$job_name," if ((defined($job_name)) and ($job_name ne ""));
     $job_message .= "Q=$queue," if (($queue ne "default") and ($queue ne "besteffort"));
     $job_message .= "P=$project," if ($project ne "default");
     $job_message .= "$types_to_text";

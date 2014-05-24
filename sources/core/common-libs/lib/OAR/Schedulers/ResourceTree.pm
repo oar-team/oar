@@ -3,9 +3,9 @@ package OAR::Schedulers::ResourceTree;
 
 use warnings;
 use strict;
-use Data::Dumper;
+#use Data::Dumper;
 use Storable qw(dclone);
-use Time::HiRes qw(gettimeofday);
+#use Time::HiRes qw(gettimeofday);
 
 ###############################################################################
 #                       RESOURCE TREE MANAGEMENT                              #
