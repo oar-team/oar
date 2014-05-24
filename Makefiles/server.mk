@@ -1,8 +1,7 @@
 MODULE=server
 SRCDIR=sources/core
 
-OARDIR_BINFILES = $(SRCDIR)/modules/runner/runner \
-	          $(SRCDIR)/modules/scheduler/oar_meta_sched \
+OARDIR_BINFILES = $(SRCDIR)/modules/scheduler/oar_meta_sched \
 		  $(SRCDIR)/qfunctions/oarnotify \
 		  $(SRCDIR)/qfunctions/oarremoveresource \
 		  $(SRCDIR)/qfunctions/oaraccounting \

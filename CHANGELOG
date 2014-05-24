@@ -39,6 +39,7 @@ version 2.5.4:
            walltime.
   - [quotas] add the possibility to make quotas on the number of used resources
              AND on the number of running jobs.
+  - [runner]: add runner bipbip processes in the bipbip_laucher in Almighty.
 
 version 2.5.3:
 --------------

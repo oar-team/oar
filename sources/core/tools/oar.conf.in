@@ -6,13 +6,13 @@
 ###############################################################################
 #
 # Database type ("mysql" or "Pg")
-DB_TYPE="mysql"
+DB_TYPE="Pg"
 
 # DataBase hostname
-DB_HOSTNAME="localhost"
+DB_HOSTNAME="127.0.0.1"
 
 # DataBase port
-DB_PORT="3306"
+DB_PORT="5432"
 
 # Database base name
 DB_BASE_NAME="oar"
@@ -83,18 +83,10 @@ COSYSTEM_HOSTNAME="127.0.0.1"
 # SERVER_HOSTNAME)
 DETACH_JOB_FROM_SERVER="1"
 
-# If DETACH_JOB_FROM_SERVER=1 then OAR is able to launch jobs with a sliding
-# window to avoid the overload of the server (default is 5).
-# (This reduce the number of "bipbip" processes seen at a time.)
-# If you want to disable this sliding window feature then just put the value 0
-# to this tag.
-#RUNNER_SLIDING_WINDOW_SIZE="5"
-
-# If DETACH_JOB_FROM_SERVER=1 then OAR will treate the end of each job
-# asynchronously.
-# MAX_CONCURRENT_JOB_TERMINATIONS is the maximum number of jobs treated
-# simultaneously (default is 25).
-#MAX_CONCURRENT_JOB_TERMINATIONS=25
+# MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING is the maximum number of jobs
+# treated simultaneously (default is 25).
+# This is the maximum number of bipbip processes launched at a time
+#MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING=25
 
 # Command to use to connect to other nodes (default is "ssh" in the PATH)
 OPENSSH_CMD="/usr/bin/ssh -p 6667"
@@ -145,7 +137,7 @@ FINAUD_FREQUENCY="300"
 # (sentinelle.pl is like a "for" of ssh but it adds timeout and window to 
 # avoid overloading the server)
 # (sentinelle.pl is provided with OAR in the install directory)
-PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 5 -w 20"
+PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 30 -w 20"
 
 # Taktuk
 # taktuk may be used to check aliveness of nodes.
@@ -230,7 +222,7 @@ SCHEDULER_TIMEOUT="30"
 
 # Number of processes to use when performing scheduling calculations
 # (default is 1)
-SCHEDULER_NB_PROCESSES=4
+SCHEDULER_NB_PROCESSES=2
 
 # Time to add between each jobs (for example: time for administration tasks or
 # time to let computers to reboot)
@@ -245,7 +237,7 @@ SCHEDULER_GANTT_HOLE_MINIMUM_TIME="300"
 
 # You can add an order preference on resources assigned by the
 # system(SQL ORDER syntax)
-SCHEDULER_RESOURCE_ORDER="scheduler_priority ASC, state_num ASC, available_upto DESC, suspended_jobs ASC, network_address DESC, resource_id ASC"
+SCHEDULER_RESOURCE_ORDER="scheduler_priority ASC, state_num ASC, available_upto DESC, suspended_jobs ASC, network_address ASC, resource_id ASC"
 
 # If next line is uncommented then OAR will automatically update the value of 
 # "scheduler_priority" field corresponding to the besteffort jobs.
@@ -311,7 +303,7 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 #
 # Specify the number of job to take care at each time
 # Default is 30
-SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
+SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=100
 
 # Number of seconds to consider for the fairsharing
 # Default is 30 days
@@ -558,7 +550,7 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 # Default oarstat output format.
 # See oarstat "--format" option to know the available values
 # (default is 1)
-#OARSTAT_DEFAULT_OUTPUT_FORMAT=2
+OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 
 #DESKTOP_COMPUTING_ALLOW_CREATE_NODE="0"
 #DESKTOP_COMPUTING_EXPIRY="300"

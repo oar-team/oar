@@ -67,6 +67,9 @@ my $Reservation_waiting_timeout = 300;
 # global variables : initialized in init_scheduler function
 my %besteffort_resource_occupation;
 
+# stock the job ids that where already send to almighty
+my %To_launch_jobs_already_treated;
+
 my $current_time_sec = 0;
 my $current_time_sql = "0000-00-00 00:00:00";
 
@@ -374,7 +377,7 @@ foreach my $job (@Rjobs){
         push(@resources, @Resources_to_always_add);
         oar_debug("[MetaSched] [$i] Add job in database\n");
         OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
-        OAR::IO::set_job_message($base,$job->{job_id},"");
+        #OAR::IO::set_job_message($base,$job->{job_id},"");
     }else{
         oar_warn("[MetaSched] [$i] Cannot find resources for reservation. Did some resources become Dead or get removed from database ?\n");
         OAR::IO::set_job_message($base,$job->{job_id},"Not able to find resources for this reservation");
@@ -717,7 +720,6 @@ sub check_jobs_to_launch(){
         } else {
           OAR::IO::add_resource_job_pairs($base,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
         }
-
         OAR::IO::set_job_state($base, $i, "toLaunch");
         $return_code = 1;
     }
@@ -746,18 +748,14 @@ foreach my $i (@queues){
             OAR::IO::stop_a_queue($base,$name);
         }
         if ($sched_exit_code == 1){
-            $exit_code = 1;
+            $exit_code = 0;
         }elsif($sched_exit_code != 0){
             oar_error("[MetaSched] Error: Scheduler $policy returned a bad value: $sched_exit_code, at time $initial_time{sec}. Inactivating queue $policy (see `oarnotify')\n");
             OAR::IO::stop_a_queue($base,$name);
             #$exit_code = 3;
         }
-        if (treate_waiting_reservation_jobs($name) != 0){
-            $exit_code = 1;
-        }
-        if (check_reservation_jobs($name,$Order_part) != 0){
-            $exit_code = 1;
-        }
+        treate_waiting_reservation_jobs($name);
+        check_reservation_jobs($name,$Order_part);
     }else{
         oar_debug("[MetaSched] Queue $name: No job\n");
     }
@@ -769,7 +767,7 @@ if ($exit_code == 0){
         OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         $exit_code = 2;
     }elsif (check_jobs_to_launch() == 1){
-        $exit_code = 1;
+        $exit_code = 0;
     }
 }
 
@@ -948,6 +946,61 @@ foreach my $j (OAR::IO::get_gantt_waiting_interactive_prediction_date($base)){
     my $new_start_prediction = OAR::IO::local_to_sql($j->{start_time});
     oar_debug("[MetaSched] [$j->{job_id}] Notifying user of the start prediction: $new_start_prediction (".$j->{message}.")\n");
     OAR::Tools::notify_tcp_socket($addr,$port,"[$initial_time{sql}] Start prediction: $new_start_prediction (".$j->{message}.")");
+}
+
+# Run the decisions
+## Treate "toError" jobs
+foreach my $j (OAR::IO::get_jobs_in_state($base,"toError")){
+    my ($addr,$port) = split(/:/,$j->{info_type});
+    oar_debug("[MetaSched] Treate job $j->{job_id} in toError state\n");
+    if (($j->{job_type} eq "INTERACTIVE") or
+        (($j->{job_type} eq "PASSIVE") and
+         ($j->{reservation} eq "Scheduled"))){
+        oar_debug("[MetaSched] Notify oarsub job (num:$j->{job_id}) in error; jobInfo=$j->{info_type}\n");
+        if ((defined(OAR::Tools::notify_tcp_socket($addr,$port,"$j->{message}"))) or
+            (defined(OAR::Tools::notify_tcp_socket($addr,$port,"BAD JOB")))){
+            oar_debug("[MetaSched] Cannot open connection to oarsub client for job $j->{job_id} !\n");
+        }
+    }
+    oar_debug("[MetaSched] Set job $j->{job_id} to state Error\n");
+    OAR::IO::set_job_state($base, $j->{job_id}, "Error");
+}
+## Treate toAckReservation jobs
+foreach my $j (OAR::IO::get_jobs_in_state($base,"toAckReservation")){
+    my ($addr,$port) = split(/:/,$j->{info_type});
+    oar_debug("[MetaSched] Treate job $j->{job_id} in toAckReservation state\n");
+    my $err = OAR::Tools::notify_tcp_socket($addr,$port,"GOOD RESERVATION");
+    if (defined($err)){
+        oar_warn("[MetaSched] Frag job $j->{job_id}, I cannot notify oarsub for the reservation ($err)\n");
+        OAR::IO::add_new_event($base,"CANNOT_NOTIFY_OARSUB",$j->{job_id},"[MetaSched] Can not notify oarsub for the job $j->{job_id} ($err)");
+        OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
+        OAR::IO::frag_job($base,$j->{job_id});
+        OAR::IO::unlock_table($base);
+        $exit_code = 2;
+    }else{
+        oar_debug("[MetaSched] Notify oarsub for a RESERVATION (idJob=$j->{job_id}) --> OK; jobInfo=$j->{info_type}\n");
+        OAR::IO::set_job_state($base,$j->{job_id} , "Waiting");
+        if ($j->{start_time} - 1 <= $current_time_sec){
+            $exit_code = 1 if ($exit_code == 0);
+        }
+    }
+}
+## Treate toLaunch jobs
+foreach my $j (OAR::IO::get_jobs_in_state($base,"toLaunch")){
+    if (!defined($To_launch_jobs_already_treated{$j->{job_id}})){
+        if (OAR::IO::is_job_desktop_computing($base,$j->{job_id})){
+            oar_debug("[MetaSched] $j->{job_id} : Desktop computing job, I don't handle it!\n");
+        }else{
+            my ($addr,$port) = split(/:/,$j->{info_type});
+            my $err = OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"OARRUNJOB_$j->{job_id}");
+            if (!defined($err)){
+                oar_debug("[MetaSched] Notify almighty to launch the job $j->{job_id}\n");
+            }else{
+                oar_warn("[MetaSched] Not able to notify almighty to launch the job $j->{job_id} ($err)\n");
+            }
+        }
+        $To_launch_jobs_already_treated{$j->{job_id}} = 1;
+    }
 }
 
 OAR::IO::disconnect($base);

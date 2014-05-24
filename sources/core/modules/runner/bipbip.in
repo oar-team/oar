@@ -59,9 +59,10 @@ if (!defined($Debug_mode)){
     $Debug_mode = 0;
 }
 
-my $Detach_oarexec = $ENV{OAR_DETACH_OAREXEC}; # Must be defined by runner
- # ATTENTION: not initialized if executed by Almighty or another module because not needed
-#oar_debug("[bipbip $Job_id] OAR_DETACH_OAREXEC = $Detach_oarexec\n");
+my $Detach_oarexec = get_conf("DETACH_JOB_FROM_SERVER");
+if (!defined($Detach_oarexec)){
+    $Detach_oarexec = 0;
+}
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){
     OAR::Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
@@ -96,7 +97,6 @@ my @hosts = OAR::IO::get_job_current_hostnames($base,$Job_id);
 my $job = OAR::IO::get_job($base,$Job_id);
 my @resources;
 my $moldable;
-
 
 #check if we must treate the end of a oarexec
 if ((defined($Oarexec_reattach_exit_value)) and
