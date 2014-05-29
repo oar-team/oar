@@ -14,6 +14,8 @@ use OAR::Schedulers::QuotaStorage;
 use Storable qw(dclone);
 use Time::HiRes qw(gettimeofday);
 
+select(STDOUT); $| = 1;
+
 # Log category
 set_current_log_category('scheduler');
 my $scheduler_name = "oar_sched_gantt_with_timesharing_and_fairsharing_with_quotas";
@@ -616,6 +618,11 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 $Token_values{$t} = $Token_values{$t} - $types->{token}->{$t};
                 oar_debug("[$scheduler_name] Update TOKEN $t to $Token_values{$t}\n");
             }
+        }
+
+        if ($moldable_results[$index_to_choose]->{start_date} <= $current_time){
+            # Try tu run the job now
+            print("SCHEDRUN JOB_ID=$j->{job_id} MOLDABLE_JOB_ID=$moldable_results[$index_to_choose]->{moldable_id} RESOURCES=".join(',', @{$moldable_results[$index_to_choose]->{resources}})."\n");
         }
     }elsif ($moldable_results[0]->{comment} ne "TIMEOUT"){
         my $message = "No enough matching resources ($moldable_results[0]->{comment})";

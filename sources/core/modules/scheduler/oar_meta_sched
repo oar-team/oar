@@ -682,6 +682,50 @@ sub check_jobs_to_kill(){
      return($return);
 }
 
+# Tell Almighty to run a job
+sub notify_to_run_job($$){
+    my ($base,
+        $job_id) = @_;
+
+    if (!defined($To_launch_jobs_already_treated{$job_id})){
+        if (OAR::IO::is_job_desktop_computing($base, $job_id)){
+            oar_debug("[MetaSched] $job_id : Desktop computing job, I don't handle it!\n");
+        }else{
+            my $err = OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"OARRUNJOB_$job_id");
+            if (!defined($err)){
+                $To_launch_jobs_already_treated{$job_id} = 1;
+                oar_debug("[MetaSched] Notify almighty to launch the job $job_id\n");
+            }else{
+                oar_warn("[MetaSched] Not able to notify almighty to launch the job $job_id ($err)\n");
+            }
+        }
+    }
+}
+
+# Prepare a job to be run by bipbip
+sub prepare_job_to_be_launched($$$$$){
+    my ($base,
+        $job_id,
+        $moldable_job_id,
+        $job_submission_time,
+        $resources_array_ref) = @_;
+
+    my $running_date = $current_time_sec;
+    if ($running_date < $job_submission_time){
+        $running_date = $job_submission_time;
+    }
+    OAR::IO::set_running_date_arbitrary($base, $job_id, $running_date);
+    OAR::IO::set_assigned_moldable_job($base, $job_id, $moldable_job_id);
+
+    my $insert_from_file = get_conf_with_default_param("INSERTS_FROM_FILE", "no");
+    if ($insert_from_file eq 'yes') {
+        OAR::IO::add_resource_job_pairs_from_file($base, $moldable_job_id, $resources_array_ref);
+    }else{
+        OAR::IO::add_resource_job_pairs($base, $moldable_job_id, $resources_array_ref);
+    }
+    OAR::IO::set_job_state($base, $job_id, "toLaunch");
+    notify_to_run_job($base, $job_id);
+}
 
 
 # Detect if there are jobs to launch
@@ -707,20 +751,7 @@ sub check_jobs_to_launch(){
                 OAR::IO::set_job_message($base,$i,$job->{message});                                                                  
             }
         }
-        my $running_date = $current_time_sec;
-        if ($running_date < $job->{submission_time}){
-            $running_date = $job->{submission_time};
-        }
-        OAR::IO::set_running_date_arbitrary($base,$i,$running_date);
-        OAR::IO::set_assigned_moldable_job($base,$i,$jobs_to_launch{$i}->[0]);
-
-        my $insert_from_file = get_conf_with_default_param("INSERTS_FROM_FILE", "no");
-        if ($insert_from_file eq 'yes') {
-          OAR::IO::add_resource_job_pairs_from_file($base,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
-        } else {
-          OAR::IO::add_resource_job_pairs($base,$jobs_to_launch{$i}->[0],$jobs_to_launch{$i}->[1]);
-        }
-        OAR::IO::set_job_state($base, $i, "toLaunch");
+        prepare_job_to_be_launched($base, $i, $jobs_to_launch{$i}->[0], $job->{submission_time}, $jobs_to_launch{$i}->[1]);
         $return_code = 1;
     }
 
@@ -742,8 +773,29 @@ foreach my $i (@queues){
     my $waiting_jobs = OAR::IO::is_waiting_job_specific_queue_present($base,$name);
     if ($waiting_jobs == 1){
         oar_debug("[MetaSched] Queue $name: Launching scheduler $policy at time $initial_time{sql}\n");
-        my ($sched_exit_code,$sched_signal_num,$sched_dumped_core) = OAR::Tools::launch_command("$binpath/schedulers/$policy $name $initial_time{sec} \"$initial_time{sql}\"");
-        if (($sched_signal_num != 0) || ($sched_dumped_core != 0)){
+        my ($sched_exit_code,$sched_signal_num,$sched_dumped_core) = (-1, -1, -1);
+        my $sched_pid = open(READSCHED, "$binpath/schedulers/$policy $name $initial_time{sec} \"$initial_time{sql}\" |") or oar_warn("[MetaSched] Cannot run: \"$binpath/schedulers/$policy $name $initial_time{sec} \"$initial_time{sql}\"\"; $!\n");
+        if (defined($sched_pid)){
+            while(my $l = <READSCHED>){
+                chop($l);
+                oar_debug("[MetaSched] Read on the scheduler output:$l\n");
+                if ((get_conf_with_default_param("SCHEDULER_LAUNCHER_OPTIMIZATION", "yes") eq "yes") and
+                    ($l =~ m/^SCHEDRUN JOB_ID=(\d+) MOLDABLE_JOB_ID=(\d+) RESOURCES=([\d,]+)$/m)){
+                    my $job_id_to_schedule = $1;
+                    my $moldable_job_id_to_schedule = $2;
+                    my @job_resources_to_schedule = split(',',$3);
+                    oar_debug("[MetaSched] Early launch the job $job_id_to_schedule\n");
+                    my $job = OAR::IO::get_job($base,$job_id_to_schedule);
+                    prepare_job_to_be_launched($base, $job_id_to_schedule, $moldable_job_id_to_schedule, $job->{submission_time}, \@job_resources_to_schedule);
+                    notify_to_run_job($base, $job_id_to_schedule);
+                }
+            }
+            close(READSCHED);
+            $sched_exit_code  = $? >> 8;
+            $sched_signal_num  = $? & 127;
+            $sched_dumped_core = $? & 128;
+        }
+        if ((!defined($sched_pid)) or ($sched_signal_num != 0) or ($sched_dumped_core != 0)){
             oar_error("[MetaSched] Error: execution of $policy failed, inactivating queue $name (see `oarnotify')\n");
             OAR::IO::stop_a_queue($base,$name);
         }
@@ -752,7 +804,6 @@ foreach my $i (@queues){
         }elsif($sched_exit_code != 0){
             oar_error("[MetaSched] Error: Scheduler $policy returned a bad value: $sched_exit_code, at time $initial_time{sec}. Inactivating queue $policy (see `oarnotify')\n");
             OAR::IO::stop_a_queue($base,$name);
-            #$exit_code = 3;
         }
         treate_waiting_reservation_jobs($name);
         check_reservation_jobs($name,$Order_part);
@@ -987,20 +1038,7 @@ foreach my $j (OAR::IO::get_jobs_in_state($base,"toAckReservation")){
 }
 ## Treate toLaunch jobs
 foreach my $j (OAR::IO::get_jobs_in_state($base,"toLaunch")){
-    if (!defined($To_launch_jobs_already_treated{$j->{job_id}})){
-        if (OAR::IO::is_job_desktop_computing($base,$j->{job_id})){
-            oar_debug("[MetaSched] $j->{job_id} : Desktop computing job, I don't handle it!\n");
-        }else{
-            my ($addr,$port) = split(/:/,$j->{info_type});
-            my $err = OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"OARRUNJOB_$j->{job_id}");
-            if (!defined($err)){
-                oar_debug("[MetaSched] Notify almighty to launch the job $j->{job_id}\n");
-            }else{
-                oar_warn("[MetaSched] Not able to notify almighty to launch the job $j->{job_id} ($err)\n");
-            }
-        }
-        $To_launch_jobs_already_treated{$j->{job_id}} = 1;
-    }
+    notify_to_run_job($base, $j->{job_id});
 }
 
 OAR::IO::disconnect($base);
