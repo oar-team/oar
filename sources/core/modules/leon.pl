@@ -4,13 +4,13 @@
 
 use English;
 use OAR::IO;
-use Sys::Hostname;
+#use Sys::Hostname;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
-use IPC::Open2;
-use IPC::Open3;
-use Data::Dumper;
+#use IPC::Open2;
+#use IPC::Open3;
+#use Data::Dumper;
 use OAR::Modules::Judas qw(oar_debug oar_warn oar_error set_current_log_category);
-use IO::Socket::INET;
+#use IO::Socket::INET;
 use OAR::Tools;
 use OAR::PingChecker qw(test_hosts);
 
@@ -42,6 +42,32 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){
     OAR::Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
+}
+
+# Test if we must launch a finishing sequence on a specific job
+if (defined($ARGV[0])){
+    my $job_id = $ARGV[0];
+    if ($job_id !~ m/^\d+$/m){
+        oar_error("[Leon_exterminator] Leon was called to exterminate a job but \"$job_id\" is not a correct value\n");
+    }
+    my $base = OAR::IO::connect();
+    my $frag_state = OAR::IO::get_job_frag_state($base, $job_id);
+    if (defined($frag_state) and ($frag_state eq "LEON_EXTERMINATE")){
+        $SIG{PIPE} = 'IGNORE';
+        $SIG{USR1} = 'IGNORE';
+        $SIG{INT}  = 'IGNORE';
+        $SIG{TERM} = 'IGNORE';
+        my $str = "[Leon] I exterminate the job $job_id";
+        my @events; push(@events, {type => "EXTERMINATE_JOB", string => $str});
+        oar_debug("[Leon_exterminator] Leon was called to exterminate ithe job \"$job_id\"\n");
+        OAR::IO::job_arm_leon_timer($base,$job_id);
+        OAR::IO::job_finishing_sequence($base, $Server_epilogue, $Server_hostname, $Server_port, $job_id, \@events);
+        OAR::Tools::notify_tcp_socket($Server_hostname, $Server_port, "ChState");
+    }else{
+        oar_error("[Leon_exterminator] Leon was called to exterminate the job \"$job_id\" but its frag_state is not LEON_EXTERMINATE\n");
+    }
+    OAR::IO::disconnect($base);
+    exit(0);
 }
 
 my $Exit_code = 0;
@@ -116,25 +142,7 @@ foreach my $j (OAR::IO::get_to_exterminate_jobs($base)){
     }
     OAR::IO::set_finish_date($base,$j->{job_id});
     OAR::IO::set_job_message($base,$j->{job_id},"Job exterminated by Leon");
-    OAR::IO::job_arm_leon_timer($base,$j->{job_id});
-    $Exit_code = 2;
-
-    $SIG{PIPE}  = 'IGNORE';
-    my $pid = fork();
-    if ($pid == 0){
-        #CHILD
-        undef($base);
-        $SIG{USR1} = 'IGNORE';
-        $SIG{INT}  = 'IGNORE';
-        $SIG{TERM} = 'IGNORE';
-        my $str = "[Leon] I exterminate the job $j->{job_id}";
-        my @events;
-        push(@events, {type => "EXTERMINATE_JOB", string => $str});
-        my $dbh = OAR::IO::connect();
-        OAR::IO::job_finishing_sequence($dbh,$Server_epilogue,$Server_hostname,$Server_port,$j->{job_id},\@events);
-        OAR::IO::disconnect($dbh);
-        exit(0);
-    }
+    OAR::Tools::notify_tcp_socket($Server_hostname, $Server_port, "LEONEXTERMINATE_$j->{job_id}");
 }
 OAR::IO::unlock_table($base);
 

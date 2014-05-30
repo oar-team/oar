@@ -117,6 +117,11 @@ my $OAREXEC_REGEXP = 'OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)';
 #   $1: job id
 my $OARRUNJOB_REGEXP = 'OARRUNJOB_(\d+)';
 
+# Regexp of the notification received when a job must be exterminate
+#   $1: job id
+my $LEONEXTERMINATE_REGEXP = 'LEONEXTERMINATE_(\d+)';
+
+
 # Internal stuff, not relevant for average user
 my $lastscheduler;
 my $lastvillains;
@@ -277,7 +282,9 @@ sub comportement_appendice(){
                 if (($res_read == 1) and ($line_read eq "")){
                     $stop = 1;
                     oar_warn("[Almighty][bipbip_launcher] Father pipe closed so we stop the process\n");
-                }elsif (($line_read =~ m/$OAREXEC_REGEXP/m) or ($line_read =~ m/$OARRUNJOB_REGEXP/m)){
+                }elsif (($line_read =~ m/$OAREXEC_REGEXP/m) or
+                        ($line_read =~ m/$OARRUNJOB_REGEXP/m) or
+                        ($line_read =~ m/$LEONEXTERMINATE_REGEXP/m)){
                     if (!grep(/^$line_read$/,@bipbip_processes_to_run)){
                         oar_debug("[Almighty][bipbip_launcher] Read on pipe: $line_read\n");
                         push(@bipbip_processes_to_run, $line_read);
@@ -296,6 +303,9 @@ sub comportement_appendice(){
                     $bipbip_job_id = $1;
                 }elsif ($str =~ m/$OARRUNJOB_REGEXP/m){
                     $cmd_to_run = "$bipbip_command $1";
+                    $bipbip_job_id = $1;
+                }elsif ($str =~ m/$LEONEXTERMINATE_REGEXP/m){
+                    $cmd_to_run = "$leon_command $1";
                     $bipbip_job_id = $1;
                 }
                 if ($bipbip_job_id > 0){
@@ -355,7 +365,8 @@ sub comportement_appendice(){
         my $answer = qget_appendice();
         oar_debug("[Almighty] Appendice has read on the socket : $answer\n");
         if (($answer =~ m/$OAREXEC_REGEXP/m) or
-            ($answer =~ m/$OARRUNJOB_REGEXP/m)){
+            ($answer =~ m/$OARRUNJOB_REGEXP/m) or
+            ($answer =~ m/$LEONEXTERMINATE_REGEXP/m)){
             if (! print pipe_bipbip_write "$answer\n"){
                 oar_error("[Almighty] Appendice cannot communicate with bipbip_launcher process, I kill myself\n");
                 exit(2);
@@ -732,8 +743,6 @@ while (1){
         $state="Time update";
         if ($check_result == 1){
             add_command("Term");
-        }elsif($check_result == 2){
-            $state = "Change node state";
         }
     }
 

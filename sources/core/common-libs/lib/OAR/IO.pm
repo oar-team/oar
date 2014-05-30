@@ -75,7 +75,7 @@ sub get_waiting_reservation_jobs($);
 sub get_waiting_reservation_jobs_specific_queue($$);
 sub get_waiting_toSchedule_reservation_jobs_specific_queue($$);
 sub get_jobs_range_dates($$$);
-sub get_jobs_gantt_scheduled;
+sub get_jobs_gantt_scheduled($$$);
 sub get_jobs_for_user_query;
 sub count_jobs_for_user_query;
 sub get_desktop_computing_host_jobs($$);
@@ -980,6 +980,23 @@ sub get_to_exterminate_jobs($) {
 }
 
 
+# Get the frag_state value for a specific job
+sub get_job_frag_state($$) {
+    my $dbh = shift;
+    my $jobid = shift;
+    my $sth = $dbh->prepare("   SELECT frag_state
+                                FROM frag_jobs
+                                WHERE
+                                    frag_id_job = $jobid
+                            ");
+    $sth->execute();
+    my @ref = $sth->fetchrow_array();
+    $sth->finish();
+
+    return($ref[0]);
+}
+
+
 # set_assigned_moldable_job
 # sets the assigned_moldable_job field to the given value
 # parameters : base, jobid, moldable id
@@ -1565,7 +1582,7 @@ sub format_job_message_text($$$$$$$$$){
     return($job_message);
 }
 
-sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
+sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$ssh_priv_key,$ssh_pub_key,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation) = @_;
 
     # Test if properties and resources are coherent
@@ -1973,7 +1990,7 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 # This function doesn't imply that database engine must provides contiguous id when multiple inserts query is executed (Postgres doesn't provide this)
 # 
 
-sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
+sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation) = @_;
 
     my @Job_id_list = ();
@@ -7829,8 +7846,8 @@ sub job_finishing_sequence($$$$$$){
         oar_debug("[job_finishing_sequence] [$job_id] Run pingchecker to test nodes at the end of the job on nodes: @hosts\n");
         my @bad_pingchecker = OAR::PingChecker::test_hosts(@hosts);
         if ($#bad_pingchecker >= 0){
-            oar_error("[job_finishing_sequence] [$job_id] PING_CHECKER_NODE_SUSPECTED OAR suspects nodes for the job $job_id : @bad_pingchecker\n");
-            push(@{$events}, {type => "PING_CHECKER_NODE_SUSPECTED", string => "[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad_pingchecker", hosts => \@bad_pingchecker});
+            oar_error("[job_finishing_sequence] [$job_id] PING_CHECKER_NODE_SUSPECTED_END_JOB OAR suspects nodes for the job $job_id : @bad_pingchecker\n");
+            push(@{$events}, {type => "PING_CHECKER_NODE_SUSPECTED_END_JOB", string => "[job_finishing_sequence] OAR suspects nodes for the job $job_id : @bad_pingchecker", hosts => \@bad_pingchecker});
         }
     }
     #

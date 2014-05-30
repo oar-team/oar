@@ -106,6 +106,7 @@ foreach my $i (@events_to_check){
     # Check if we must suspect some nodes #
     #######################################
     if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") ||
+        ($i->{type} eq "PING_CHECKER_NODE_SUSPECTED_END_JOB") ||
         ($i->{type} eq "CPUSET_ERROR") ||
         ($i->{type} eq "CPUSET_CLEAN_ERROR") ||
         ($i->{type} eq "SUSPEND_ERROR") ||
@@ -126,7 +127,8 @@ foreach my $i (@events_to_check){
         my @hosts;
         my $finaud_tag = "NO";
         # Restrict Suspected state to the first node (node really connected with OAR) for some event types
-        if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED")
+        if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") or
+            ($i->{type} eq "PING_CHECKER_NODE_SUSPECTED_END_JOB")
         ){
             @hosts = OAR::IO::get_hostname_event($base,$i->{event_id});
             $finaud_tag = "YES";
