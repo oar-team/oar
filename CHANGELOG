@@ -3,6 +3,8 @@ OAR CHANGELOG
 
 version 2.5.4:
 --------------
+  - [api] implemented HTTP_X_API_PATH_PREFIX header variable to prefix all
+          returned uris.
   - [kamelot] BUGFIX: in split_slots_prev_scheduled_one_job function 
               oblivion of a left part of list
   - [api] added GET /jobs/<id>/details support

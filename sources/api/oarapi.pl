@@ -180,6 +180,16 @@ else {
 }
 
 ##############################################################################
+# URI prefix header variable
+##############################################################################
+
+if (defined( $q->http('HTTP_X_API_PATH_PREFIX') ) ) {
+  $OAR::API::HTTP_X_API_PATH_PREFIX=$q->http('HTTP_X_API_PATH_PREFIX');
+}else{
+  $OAR::API::HTTP_X_API_PATH_PREFIX="";
+}
+
+##############################################################################
 # Data structure variants
 ##############################################################################
 $STRUCTURE=$DEFAULT_STRUCTURE;

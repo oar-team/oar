@@ -12,6 +12,7 @@ our $ABSOLUTE_URIS;
 our $q;
 our $DEBUG_MODE;
 our $extension;
+our $HTTP_X_API_PATH_PREFIX;
 
 ##############################################################################
 # INIT
@@ -168,13 +169,13 @@ sub make_uri($$$) {
   my $absolute = shift; # deprecated, left here for compatibility
   if (defined($ext) && $ext eq "html") { $path.=".html"; }
   if (our $ABSOLUTE_URIS == 1) {
-    return $q->url(-absolute => 1)."/".$path;
+    return "$HTTP_X_API_PATH_PREFIX".$q->url(-absolute => 1)."/".$path;
   }
   else {
     if ($URIenabled) {
       my $base = URI->new($q->url().$q->path_info);
       my $goal = URI->new($q->url()."/".$path);
-      return "".$goal->rel($base);
+      return "$HTTP_X_API_PATH_PREFIX".$goal->rel($base);
     }
     else { 
       ERROR (500,

@@ -612,6 +612,8 @@ OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 # as you don't have to rewrite the uris, but due to the possible confusion 
 # between "resources" and "resources/", it may not work with some libraries 
 # like "ruby Restfully".
+# In addition, you can use the X_API_PATH_PREFIX http header variable to prepend each uris
+# returned by the API by a given prefix. (for example: curl -i -H'X_API_PATH_PREFIX: http://prefix_a/la/noix/' ...)
 #API_ABSOLUTE_URIS=1
 
 # Api stress_factor script
