@@ -3769,18 +3769,31 @@ sub get_node_job($$) {
 # side effects : /
 sub get_alive_nodes_with_jobs($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("   SELECT resources.network_address
-                                FROM assigned_resources, moldable_job_descriptions, jobs, resources
-                                WHERE
+    my $sth;
+    if ($Db_type eq "Pg"){
+        $sth = $dbh->prepare("   SELECT resources.network_address
+                                 FROM assigned_resources, moldable_job_descriptions, jobs, resources
+                                 WHERE
+                                    assigned_resources.resource_id = resources.resource_id
+                                    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                                    AND moldable_job_descriptions.moldable_job_id = jobs.job_id
+                                    AND jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
+                                    AND (resources.state = 'Alive' or resources.next_state='Alive')
+                            ");
+    }else{
+        $sth = $dbh->prepare("   SELECT resources.network_address
+                                 FROM assigned_resources, moldable_job_descriptions, jobs, resources
+                                 WHERE
                                     assigned_resources.assigned_resource_index = \'CURRENT\'
                                     AND moldable_job_descriptions.moldable_index = \'CURRENT\'
                                     AND (resources.state = 'Alive' or resources.next_state='Alive')
                                     AND assigned_resources.resource_id = resources.resource_id
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+                                    AND jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
                             ");
+    }
+
     $sth->execute();
     my @res = ();
     while (my @ary = $sth->fetchrow_array) {
@@ -4383,6 +4396,16 @@ sub get_gantt_waiting_interactive_prediction_date($){
              moldable_job_descriptions.moldable_job_id = jobs.job_id AND
              gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id
         ";
+    if ($Db_type eq "Pg"){
+        $req = "SELECT jobs.job_id, jobs.info_type, gantt_jobs_predictions_visu.start_time, jobs.message
+                FROM jobs, moldable_job_descriptions, gantt_jobs_predictions_visu
+                WHERE
+                    jobs.state = \'Waiting\' AND
+                    jobs.job_type = \'INTERACTIVE\' AND
+                    jobs.reservation = \'None\' AND
+                    moldable_job_descriptions.moldable_job_id = jobs.job_id AND
+                    gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id";
+    }
     
     my $sth = $dbh->prepare($req);
     $sth->execute();
@@ -6015,7 +6038,18 @@ sub create_a_queue($$$$){
 #return a hashtable : job_id --> [start_time,walltime,queue_name,\@resources,state]
 sub get_gantt_scheduled_jobs($){
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended,j.project
+    my $sth;
+    if ($Db_type eq "Pg"){
+        $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended,j.project
+                             FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
+                             WHERE
+                                g1.moldable_job_id = g2.moldable_job_id
+                                AND m.moldable_id = g2.moldable_job_id
+                                AND j.job_id = m.moldable_job_id
+                             ORDER BY j.start_time, j.job_id
+                            ");
+    }else{
+        $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended,j.project
                              FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
                              WHERE
                                 m.moldable_index = \'CURRENT\'
@@ -6024,6 +6058,7 @@ sub get_gantt_scheduled_jobs($){
                                 AND j.job_id = m.moldable_job_id
                              ORDER BY j.start_time, j.job_id
                             ");
+    }
     $sth->execute();
     my %res ;
     my @order;
@@ -6193,9 +6228,11 @@ sub update_gantt_visualization($){
 
     lock_table($dbh, ["gantt_jobs_predictions_visu","gantt_jobs_resources_visu","gantt_jobs_predictions","gantt_jobs_resources"]);
 
-    $dbh->do("DELETE FROM gantt_jobs_predictions_visu");
-    $dbh->do("DELETE FROM gantt_jobs_resources_visu");
-#    $dbh->do("OPTIMIZE TABLE ganttJobsResources_visu, ganttJobsPredictions_visu");
+#    $dbh->do("DELETE FROM gantt_jobs_predictions_visu");
+#    $dbh->do("DELETE FROM gantt_jobs_resources_visu");
+##    $dbh->do("OPTIMIZE TABLE ganttJobsResources_visu, ganttJobsPredictions_visu");
+    $dbh->do("TRUNCATE TABLE gantt_jobs_predictions_visu");
+    $dbh->do("TRUNCATE TABLE gantt_jobs_resources_visu");
 
     $dbh->do("INSERT INTO gantt_jobs_predictions_visu
               SELECT *
@@ -6298,19 +6335,18 @@ sub gantt_flush_tables($$$){
     my @jobs_to_keep = keys(%{$reservations_to_keep});
     if ($#jobs_to_keep >= 0){
         $sql = "moldable_job_id NOT IN (".join(',',@jobs_to_keep).")";
+        $dbh->do("  DELETE FROM gantt_jobs_predictions
+                    WHERE
+                        $sql
+                 ");
+        $dbh->do("  DELETE FROM gantt_jobs_resources
+                    WHERE
+                        $sql
+                 ");
+    }else{
+        $dbh->do("TRUNCATE TABLE gantt_jobs_resources");
+        $dbh->do("TRUNCATE TABLE gantt_jobs_predictions");
     }
-    #$dbh->do("TRUNCATE TABLE gantt_jobs_predictions");
-    $dbh->do("  DELETE FROM gantt_jobs_predictions
-                WHERE
-                    $sql
-             ");
-    #$dbh->do("TRUNCATE TABLE gantt_jobs_resources");
-    $dbh->do("  DELETE FROM gantt_jobs_resources
-                WHERE
-                    $sql
-             ");
-    
-#   $dbh->do("OPTIMIZE TABLE ganttJobs, ganttJobsPrediction");
 }
 
 
@@ -6447,6 +6483,21 @@ sub get_gantt_jobs_to_launch($$){
                    AND (resources.state IN (\'Dead\',\'Suspected\',\'Absent\')
                         OR resources.next_state IN (\'Dead\',\'Suspected\',\'Absent\'))
               ";
+    if ($Db_type eq "Pg"){
+        $req = "SELECT DISTINCT(j.job_id)
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
+                WHERE
+                   g1.moldable_job_id = g2.moldable_job_id
+                   AND m.moldable_id = g1.moldable_job_id
+                   AND j.job_id = m.moldable_job_id
+                   AND g2.start_time <= $date
+                   AND j.state = \'Waiting\'
+                   AND resources.resource_id = g1.resource_id
+                   AND (resources.state IN (\'Dead\',\'Suspected\',\'Absent\')
+                        OR resources.next_state IN (\'Dead\',\'Suspected\',\'Absent\'))
+              ";
+    }
+
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my %jobs_not_to_launch;
@@ -6467,6 +6518,20 @@ sub get_gantt_jobs_to_launch($$){
                     AND resources.resource_id = g1.resource_id
                     AND resources.state = \'Alive\'
            ";
+    if ($Db_type eq "Pg"){
+        $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
+                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
+                WHERE
+                    g1.moldable_job_id = g2.moldable_job_id
+                    AND m.moldable_id = g1.moldable_job_id
+                    AND j.job_id = m.moldable_job_id
+                    AND g2.start_time <= $date
+                    AND j.state = \'Waiting\'
+                    AND resources.resource_id = g1.resource_id
+                    AND resources.state = \'Alive\'
+           ";
+
+    }
     $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
