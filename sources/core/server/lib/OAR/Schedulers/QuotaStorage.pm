@@ -202,6 +202,25 @@ sub check_quotas($$$$$$$$$$$){
             OUTER_LOOP:
             foreach my $q (keys(%{$gantt_quotas})){
                 if (($q eq $job_queue) or ($q eq '*') or ($q eq '/')){
+                    if (($q ne $job_queue) and (defined($gantt_quotas->{$job_queue}))){  # check if another rule is more specific
+                        my $skip = 0;
+                        foreach my $tmp_t (@{$job_types_arrayref},'*'){
+                            if (defined($gantt_quotas->{$job_queue}->{$job_project}->{$tmp_t}->{$job_user})
+                                or defined($gantt_quotas->{$job_queue}->{$job_project}->{$tmp_t}->{'*'})
+                                or defined($gantt_quotas->{$job_queue}->{$job_project}->{$tmp_t}->{'/'})
+                                or defined($gantt_quotas->{$job_queue}->{'*'}->{$tmp_t}->{$job_user})
+                                or defined($gantt_quotas->{$job_queue}->{'/'}->{$tmp_t}->{$job_user})
+                                or defined($gantt_quotas->{$job_queue}->{'*'}->{$tmp_t}->{'*'})
+                                or defined($gantt_quotas->{$job_queue}->{'*'}->{$tmp_t}->{'/'})
+                                or defined($gantt_quotas->{$job_queue}->{'/'}->{$tmp_t}->{'*'})
+                                or defined($gantt_quotas->{$job_queue}->{'/'}->{$tmp_t}->{'/'})
+                                ){
+                                $skip = 1;
+                                last;
+                            }
+                        }
+                        next if ($skip == 1);
+                    }
                     if ($q eq '/'){
                         $q_counter = $job_queue;
                     }else{
@@ -209,15 +228,44 @@ sub check_quotas($$$$$$$$$$$){
                     }
                     foreach my $p (keys(%{$gantt_quotas->{$q}})){
                         if (($p eq $job_project) or ($p eq '*') or ($p eq '/')){
+                            if (($p ne $job_project) and (defined($gantt_quotas->{$q}->{$job_project}))){  # check if another rule is more specific
+                                my $skip = 0;
+                                foreach my $tmp_t (@{$job_types_arrayref},'*'){
+                                    if (defined($gantt_quotas->{$q}->{$job_project}->{$tmp_t}->{$job_user})
+                                        or defined($gantt_quotas->{$q}->{$job_project}->{$tmp_t}->{'*'})
+                                        or defined($gantt_quotas->{$q}->{$job_project}->{$tmp_t}->{'/'})
+                                        ){
+                                        $skip = 1;
+                                        last;
+                                    }
+                                }
+                                next if ($skip == 1);
+                            }
                             if ($p eq '/'){
                                 $p_counter = $job_project;
                             }else{
                                 $p_counter = $p;
                             }
                             foreach my $t (keys(%{$gantt_quotas->{$q}->{$p}})){
+                                if ($t eq '*'){  # check if another rule is more specific
+                                    my $skip = 0;
+                                    foreach my $tmp_t (@{$job_types_arrayref}){
+                                        if (defined($gantt_quotas->{$q}->{$p}->{$tmp_t}->{$job_user})
+                                            or defined($gantt_quotas->{$q}->{$p}->{$tmp_t}->{'*'})
+                                            or defined($gantt_quotas->{$q}->{$p}->{$tmp_t}->{'/'})
+                                            ){
+                                            $skip = 1;
+                                            last;
+                                        }
+                                    }
+                                    next if ($skip == 1);
+                                }
                                 foreach my $job_t (@{$job_types_arrayref},'*'){
                                     if ($t eq $job_t){
                                         foreach my $u (keys(%{$gantt_quotas->{$q}->{$p}->{$t}})){
+                                            if (($u ne $job_user) and defined($gantt_quotas->{$q}->{$p}->{$t}->{$job_user})){  # check if another rule is more specific
+                                                next;
+                                            }
                                             if (($u eq $job_user) or ($u eq '*') or ($u eq '/')){
                                                 if ($u eq '/'){
                                                     $u_counter = $job_user;
