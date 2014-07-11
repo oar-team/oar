@@ -21,9 +21,9 @@ INSERT IGNORE INTO admission_rules (rule) VALUES ('# Prevent users oar and root 
 die ("[ADMISSION RULE] root and oar users are not allowed to submit jobs.\\n") if ( $user eq "root" or $user eq "oar" );
 ');
 
-# Avoid the jobs to go on resources in maintenance
-INSERT IGNORE INTO admission_rules (rule) VALUES ('# Avoid the jobs to go on resources in maintenance
-$jobproperties_applied_after_validation = "maintenance=\\\'off\\\'";
+# Avoid the jobs to go on resources in drain mode
+INSERT IGNORE INTO admission_rules (rule) VALUES ('# Avoid the jobs to go on resources in drain mode
+$jobproperties_applied_after_validation = "drain=\\\'NO\\\'";
 ');
 
 # Avoid users except admin to go in the admin queue

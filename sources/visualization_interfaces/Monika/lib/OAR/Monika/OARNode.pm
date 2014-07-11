@@ -184,11 +184,11 @@ sub htmlTable {
 			$output .= $cgi->end_td();
     }
     elsif ($ressourceState eq "Alive" && $self->isRessourceWorking($currentRessource) eq '0'){
-      my $maintenance = $self->{Ressources}->{$currentRessource}->{infos}->{maintenance};
-      if (!defined($maintenance) or ($maintenance ne "on")) {
+      my $drain = $self->{Ressources}->{$currentRessource}->{infos}->{drain};
+      if (!defined($drain) or ($drain ne "YES")) {
         $output .= $cgi->colorTd("Free",100/$self->cpus."%");
       } else {
-        $output .= $cgi->colorTd("Maintenance",100/$self->cpus."%");
+        $output .= $cgi->colorTd("Drain",100/$self->cpus."%");
       }
     }
 

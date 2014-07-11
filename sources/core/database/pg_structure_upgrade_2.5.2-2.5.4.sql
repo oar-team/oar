@@ -1,5 +1,5 @@
 
-ALTER TABLE resources ADD maintenance varchar(3) check (maintenance in ('on','off')) NOT NULL default 'off';
+ALTER TABLE resources ADD drain varchar(3) check (drain in ('YES','NO')) NOT NULL default 'NO';
 
 -- Update the database schema version
 DELETE FROM schema;

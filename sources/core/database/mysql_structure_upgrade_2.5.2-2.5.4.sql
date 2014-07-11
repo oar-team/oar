@@ -1,5 +1,5 @@
 
-ALTER TABLE resources ADD maintenance ENUM('on','off') DEFAULT 'off' NOT NULL;
+ALTER TABLE resources ADD drain ENUM('YES','NO') DEFAULT 'NO' NOT NULL;
 
 -- Update the database schema version
 DELETE FROM `schema`;

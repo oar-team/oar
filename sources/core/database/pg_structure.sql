@@ -4,7 +4,7 @@ CREATE TABLE schema (
   version VARCHAR( 255 ) NOT NULL,
   name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.5.2','');
+INSERT INTO schema VALUES ('2.5.4','');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
@@ -300,7 +300,7 @@ CREATE TABLE resources (
   last_job_date integer NOT NULL default '0',
   available_upto integer NOT NULL default '2147483647',
   last_available_upto integer NOT NULL default '0',
-  maintenance varchar(3) check (maintenance in ('on','off')) NOT NULL default 'off',
+  drain varchar(3) check (drain in ('YES','NO')) NOT NULL default 'NO',
   PRIMARY KEY (resource_id)
 );
 CREATE INDEX resource_state ON resources (state);

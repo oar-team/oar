@@ -42,7 +42,13 @@ version 2.5.4:
            walltime.
   - [quotas] add the possibility to make quotas on the number of used resources
              AND on the number of running jobs.
-  - [runner]: add runner bipbip processes in the bipbip_laucher in Almighty.
+  - [runner] add runner bipbip processes in the bipbip_laucher in Almighty.
+  - [database] replace the field "maintenance" by "drain".
+               So the administrator can disable resource without killing
+               current jobs by:
+                    oarnodesetting -h n12 -p drain=YES
+               ATTENTION: the admission rule with "maintenance" must be
+                          changed with the "drain" keyword.
 
 version 2.5.3:
 --------------

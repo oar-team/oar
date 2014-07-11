@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `schema` (
 version VARCHAR( 255 ) NOT NULL,
 name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO `schema` VALUES ('2.5.2', '');
+INSERT INTO `schema` VALUES ('2.5.4', '');
 
 #DROP TABLE IF EXISTS jobs;
 CREATE TABLE IF NOT EXISTS jobs (
@@ -181,7 +181,7 @@ desktop_computing ENUM('YES','NO') DEFAULT 'NO' NOT NULL,
 last_job_date INT UNSIGNED DEFAULT 0,
 available_upto INT UNSIGNED DEFAULT 2147483647 NOT NULL,
 last_available_upto INT UNSIGNED DEFAULT 0 NOT NULL,
-maintenance ENUM('on','off') DEFAULT 'off' NOT NULL ,
+drain ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 INDEX state (state),
 INDEX next_state (next_state),
 INDEX suspended_jobs (suspended_jobs),
