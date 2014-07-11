@@ -1126,11 +1126,6 @@ SWITCH: for ($q) {
   };
   #}}}
   #
-  #{{{ GET /resources/jobs : (NOT YET IMPLEMENTED) Jobs running on all resources
-  #
-  # TODO: should give an array of all resources plus a job array per resource
-  #}}}
-  #
   #{{{ GET /resources/(<id>)/jobs : Jobs running on a resource
   #
   $URI = qr{^/resources(/[0-9]+)+/jobs(\.yaml|\.json|\.html)*$};
@@ -1206,6 +1201,46 @@ SWITCH: for ($q) {
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export($jobs,$ext);
+    last;
+  };
+  #}}}
+  #
+  #{{{ GET /resources/<property>/jobs : List jobs running on resources, by property (WORK IN PROGRESS)
+  #
+  $URI = qr{^/resources/([A-za-z0-9]+)*/jobs\.*(yaml|json|html)*$};
+  OAR::API::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext=OAR::API::set_ext($q,$2);
+    my $header, my $type;
+    my $property=$1;
+    ($header, $type)=OAR::API::set_output_format($ext,"GET");
+
+    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $jobs=OAR::IO::get_resources_jobs($dbh) or OAR::IO::disconnect($dbh), OAR::API::ERROR(500,
+                                                "Could not get resources jobs",
+                                                "Could not get resources jobs"
+                                                 );
+    my $resources=OAR::IO::get_resources_by_property($dbh,$property) or OAR::IO::disconnect($dbh), OAR::API::ERROR(500,
+                                                "Could not get resources by property $property",
+                                                "Could not get resources by property $property"
+                                                 );
+    my %resources_by_property_jobs=();
+   # TODO: debug this ;-)
+    foreach my $resource (keys %$resources) {
+      foreach my $resource_id (@$resource) {
+        foreach my $job ($jobs->{$resource_id}) {
+          push(@{$resources_by_property_jobs{$resource}}, $job);
+        }
+      }
+    }
+    # TODO: api formatting (into OAR::API; should be a list of items with links, api_timestamp,...))
+    OAR::IO::disconnect($dbh);
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export(\%resources_by_property_jobs,$ext);
     last;
   };
   #}}}

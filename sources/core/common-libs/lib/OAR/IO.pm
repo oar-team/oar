@@ -98,6 +98,7 @@ sub get_array_job_ids($$);
 
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
 sub get_resource_job($$);
+sub get_resources_jobs($);
 sub get_resource_job_to_frag($$);
 sub get_node_job($$);
 sub get_node_job_to_frag($$);
@@ -129,6 +130,7 @@ sub is_node_desktop_computing($$);
 sub get_resources_data_structure_current_job($$);
 sub get_hosts_state($);
 sub get_alive_nodes_with_jobs($);
+sub get_resources_by_property($$);
 
 # QUEUES MANAGEMENT
 sub get_active_queues($);
@@ -3701,6 +3703,38 @@ sub get_resource_job_with_state($$$) {
     return @res;
 }
 
+# get_resources_jobs
+# returns the list of jobs associated to all resources
+# parameters : base
+# return value : hash of resource_id->array of job_id
+# side effects : /
+sub get_resources_jobs($) {
+  my $dbh = shift;
+  my $sth = $dbh->prepare("   SELECT jobs.job_id,assigned_resources.resource_id
+                                FROM assigned_resources, moldable_job_descriptions, jobs
+                                WHERE
+                                    assigned_resources.assigned_resource_index = \'CURRENT\'
+                                    AND moldable_job_descriptions.moldable_index = \'CURRENT\'
+                                    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                                    AND moldable_job_descriptions.moldable_job_id = jobs.job_id
+                                    AND (jobs.state = \'Waiting\'
+                                           OR jobs.state = \'Hold\'
+                                           OR jobs.state = \'toLaunch\'
+                                           OR jobs.state = \'toAckReservation\'
+                                           OR jobs.state = \'Launching\'
+                                           OR jobs.state = \'Running\'
+                                           OR jobs.state = \'Suspended\'
+                                           OR jobs.state = \'Resuming\'
+                                           OR jobs.state = \'Finishing\');
+                            ");
+  $sth->execute();
+  my %res = ();
+  while (my @ref = $sth->fetchrow_array()) {
+        push(@{$res{$ref[0]}}, $ref[1]);
+  }
+  return(\%res);
+}
+
 # get_resource_job_to_frag
 # same as get_resource_job but excepts the cosystem jobs
 # parameters : base, resource
@@ -3801,6 +3835,24 @@ sub get_alive_nodes_with_jobs($) {
     }
     return @res;
     $sth->finish();
+}
+
+
+# get_resources_by_property
+# returns the list of resources grouped by a given property
+# parameters : base
+# return value : hash of property_value->array of resource_id
+# side effects : /
+sub get_resources_by_property($$) {
+  my $dbh = shift;
+  my $property = shift;
+  my $sth = $dbh->prepare("  select resource_id,$property from resources order by $property;");
+  $sth->execute();
+  my %res = ();
+  while (my @ref = $sth->fetchrow_array()) {
+        push(@{$res{$ref[1]}}, $ref[0]);
+  }
+  return(\%res);
 }
 
 
