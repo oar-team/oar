@@ -42,8 +42,9 @@ $CONF['resource_properties'] = array( // properties to display in the pop-up on 
   'deploy', 'cpuset', 'besteffort', 'network_address', 'type');
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
   'network_address','cpuset'); 
+$CONF['resource_drain_property'] = "drain"; // if set, must also be one of the resource_properties above to activate the functionnality
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
-  'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)');
+  'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)', 'Drain' => 'url(#drainPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
   'besteffort' => 'url(#besteffortPattern)', 
   'deploy' => 'url(#deployPattern)', 
@@ -82,6 +83,10 @@ $CONF['static_patterns'] = <<<EOT
 </pattern> 
 <pattern id="standbyPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#00ff00" stroke-width="2" />
+</pattern> 
+<pattern id="drainPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="15" height="10" viewBox="0 0 10 10" >
+<circle cx="5" cy="5" r="4" fill="#ff0000" stroke="#ff0000" stroke-width="1" />
+<line x1="2" y1="5" x2="9" y2="5" stroke="#ffffff" stroke-width="2" />
 </pattern> 
 <pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="0" y="20" fill="#888888">C</text>
