@@ -367,11 +367,11 @@ class Job {
   }
   function svg_text() {
     $output = "Jobid: {$this->job_id}";
-    $output .= "|User: {$this->job_user}";
+    $output .= "|User: ".htmlspecialchars($this->job_user);
     $output .= "|Kind: {$this->job_type}";
-    $output .= "|Queue: {$this->queue_name}";
-    $output .= "|Types: ".join(", ",$this->types);
-    $output .= "|Name: {$this->job_name}";
+    $output .= "|Queue: ".htmlspecialchars($this->queue_name);
+    $output .= "|Types: ".join(", ", array_map(htmlspecialchars, $this->types));
+    $output .= "|Name: ".htmlspecialchars($this->job_name);
     $output .= "|Walltime: " . $this->moldable_walltime/3600 . "hr";
     $output .= "|Resources: ".count($this->resource_ids);
     $output .= "|Machines: ".count($this->network_addresses);
@@ -379,7 +379,7 @@ class Job {
     $output .= "|Start: ".date("r", $this->start_time);
     $output .= "|Stop: ".(($this->stop_time > 0)?(date("r", $this->stop_time)):(date("r", $this->start_time + $this->moldable_walltime)));
     $output .= "|State: {$this->state}";
-    //$output .= "|Properties: {$this->properties}";
+    //$output .= "|Properties: ".htmlspecialchars($this->properties);
     return $output;
   }
   function color($hl) {
@@ -445,7 +445,7 @@ class ResourceId {
     $sep = "";
     $output = "";
     foreach ($this->properties as $key => $value) {
-      $output .= $sep."{$key}: {$value}";
+      $output .= $sep.htmlspecialchars("{$key}: {$value}");
       $sep = "|";
     }
     return $output;
