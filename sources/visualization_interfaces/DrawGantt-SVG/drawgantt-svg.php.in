@@ -314,11 +314,12 @@ class State {
 
 // Storage class for jobs
 class Job {
-  public $job_id,$job_name,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time,$resource_ids,$network_addresses,$types;
+  public $job_id,$job_name,$project,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time,$resource_ids,$network_addresses,$types;
   protected $color, $colorHL;
-  function __construct($job_id,$job_name,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time) {
+  function __construct($job_id,$job_name,$project,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time) {
     $this->job_id = $job_id;
     $this->job_name = $job_name;
+    $this->project = $project;
     $this->job_type = $job_type;
     $this->state = $state;
     $this->job_user = $job_user;
@@ -372,6 +373,7 @@ class Job {
     $output .= "|Queue: ".htmlspecialchars($this->queue_name);
     $output .= "|Types: ".join(", ", array_map(htmlspecialchars, $this->types));
     $output .= "|Name: ".htmlspecialchars($this->job_name);
+    $output .= "|Project: ".htmlspecialchars($this->project);
     $output .= "|Walltime: " . $this->moldable_walltime/3600 . "hr";
     $output .= "|Resources: ".count($this->resource_ids);
     $output .= "|Machines: ".count($this->network_addresses);
@@ -698,6 +700,7 @@ $query = <<<EOT
 SELECT 
   jobs.job_id,
   jobs.job_name,
+  jobs.project,
   jobs.job_type,
   jobs.state,
   jobs.job_user,
@@ -734,7 +737,7 @@ EOT;
 $db->query($query);
 while ($line = $db->fetch_array()) {
   if (! array_key_exists($line['job_id'], $jobs)) {
-    $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
+    $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['project'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
   }
   if (array_key_exists($line['resource_id'], $resource_ids)) {
     $jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
@@ -752,6 +755,7 @@ $query = <<<EOT
 SELECT 
   jobs.job_id,
   jobs.job_name,
+  jobs.project,
   jobs.job_type,
   jobs.state,
   jobs.job_user,
@@ -783,7 +787,7 @@ EOT;
 $db->query($query);
 while ($line = $db->fetch_array()) {
   if (! array_key_exists($line['job_id'], $jobs)) {
-    $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
+    $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['project'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
   }
   if (array_key_exists($line['resource_id'], $resource_ids)) {
     $jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
