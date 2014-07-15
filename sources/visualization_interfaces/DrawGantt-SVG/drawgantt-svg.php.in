@@ -371,7 +371,7 @@ class Job {
     $output .= "|User: ".htmlspecialchars($this->job_user);
     $output .= "|Kind: {$this->job_type}";
     $output .= "|Queue: ".htmlspecialchars($this->queue_name);
-    $output .= "|Types: ".join(", ", array_map(htmlspecialchars, $this->types));
+    $output .= "|Types: ".join(", ", array_map("htmlspecialchars", $this->types));
     $output .= "|Name: ".htmlspecialchars($this->job_name);
     $output .= "|Project: ".htmlspecialchars($this->project);
     $output .= "|Walltime: " . $this->moldable_walltime/3600 . "hr";
