@@ -3,6 +3,8 @@ OAR CHANGELOG
 
 version 2.5.4:
 --------------
+  - [api] Implemented GET /resources/<property>/jobs to get jobs running on
+          resources, groupped by a given property
   - [kamelot] BUGFIX: fix hierarchies manipulation (remove toplevel resource)
   - [api] implemented HTTP_X_API_PATH_PREFIX header variable to prefix all
           returned uris.

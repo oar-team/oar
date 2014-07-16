@@ -3728,9 +3728,9 @@ sub get_resources_jobs($) {
                                            OR jobs.state = \'Finishing\');
                             ");
   $sth->execute();
-  my %res = ();
+  my %res;
   while (my @ref = $sth->fetchrow_array()) {
-        push(@{$res{$ref[0]}}, $ref[1]);
+        push(@{$res{$ref[1]}}, $ref[0]);
   }
   return(\%res);
 }

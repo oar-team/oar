@@ -1,3 +1,0 @@
-
-- Implémenter "GET /resources/[network_address|id|cluster|...]/jobs?type=default"
-  par exemple "/resources/network_address/jobs?type=default" liste tous les jobs groupés par network_address

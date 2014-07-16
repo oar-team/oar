@@ -1205,7 +1205,7 @@ SWITCH: for ($q) {
   };
   #}}}
   #
-  #{{{ GET /resources/<property>/jobs : List jobs running on resources, by property (WORK IN PROGRESS)
+  #{{{ GET /resources/<property>/jobs : List jobs running on resources, by property
   #
   $URI = qr{^/resources/([A-za-z0-9]+)*/jobs\.*(yaml|json|html)*$};
   OAR::API::GET( $_, $URI ) && do {
@@ -1227,20 +1227,28 @@ SWITCH: for ($q) {
                                                 "Could not get resources by property $property",
                                                 "Could not get resources by property $property"
                                                  );
-    my %resources_by_property_jobs=();
-   # TODO: debug this ;-)
-    foreach my $resource (keys %$resources) {
-      foreach my $resource_id (@$resource) {
-        foreach my $job ($jobs->{$resource_id}) {
-          push(@{$resources_by_property_jobs{$resource}}, $job);
+
+    my %resources_by_property_jobs;
+    foreach my $property (keys %$resources) {
+      if (!defined($resources_by_property_jobs{$property})) { @{$resources_by_property_jobs{$property}}=();}
+      foreach my $resource_id (@{$resources->{$property}}) {
+        foreach my $job_id (@{$jobs->{$resource_id}}) {
+          push(@{$resources_by_property_jobs{$property}}, $job_id);
         }
       }
     }
-    # TODO: api formatting (into OAR::API; should be a list of items with links, api_timestamp,...))
+    # Formatting pass
+    my @items;
+    foreach my $r (keys %resources_by_property_jobs) {
+      push(@items,{ $property => $r, jobs => $resources_by_property_jobs{$r} });
+    }
+    my $output={ 'items' => \@items,
+                 'links' => [ { 'rel' => "self", 'href' => OAR::API::htmlize_uri(OAR::API::make_uri("/resources/$property/jobs",$ext,0),$ext) } ],
+                 'api_timestamp' => time() };
     OAR::IO::disconnect($dbh);
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print OAR::API::export(\%resources_by_property_jobs,$ext);
+    print OAR::API::export($output,$ext);
     last;
   };
   #}}}
