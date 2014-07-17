@@ -24,6 +24,7 @@ my @hostnames;
 my $base;
 my $state;
 my $maintenance;
+my $drain;
 my $nowaitMode;
 my @properties;
 my $new_resource;
@@ -180,33 +181,38 @@ sub set_maintenance_off($$$$$){
 # print explanations for the user and exit
 sub usage {
     print <<EOS;
-Usage: $0 [[-a] [-h hostname] [-p "property=value"]] || [[-r resource_number] ||
-[--sql "sql syntax"] || [-h hostname]] [[-s state] || [-p "property=value"] || [-m on/off]]
+Usage: $0 [[-a] [-h hostname] [-p "property=value"]] || [[-r resource_id] ||
+[--sql "sql syntax"] || [-h hostname]] [[-s state] || [-p "property=value"] ||
+[-m on|off]] || [-d on|off]
 Change the state and properties of a node in OAR.
 You can also create a new resource.
 Options:
- -a, --add                       add a new resource
- -s, --state=STATE               set the new state of the node
- -m, --maintenance [on, off]	 set the maintenance mode on/off for the resource
-				 this means setting its state to Absent
-				 and its available_upto value to 0
- -h, --hostname=HOSTNAME         set the node hostname
- -f, --file=FILENAME             get the hostname list from a file (1 hostname by line)
- -r, --resource                  set the resource
-     --sql                       get resource identifiers which respond to the
-                                 SQL where clause on the table jobs
-                                 (ex: "type = 'default'")
- -p, --property="PROPERTY=VALUE" set the property of the node to the given
-                                 value
- -n, --no-wait                    do not wait for job end when the node
-                                 switches to Absent or Dead
-     --help                      display this help
- -V, --version                   print OAR version number
+ -r, --resource [resource_id]         Resource id of the resource to modify
+ -h, --hostname [hostname]            Hostname for the resources to modify
+ -f, --file [file]                    Get a hostname list from a file (1
+                                      hostname by line) for resources to modify
+     --sql [SQL]                      Select resources to modify from database
+                                      using a SQL where clause on the resource
+                                      table (e.g.: "type = 'default'")
+ -a, --add                            Add a new resource
+ -s, --state=state                    Set the new state of the node
+ -m, --maintenance [on|off]           Set/unset maintenance mode for resources,
+                                      this is equivalent to setting its state
+                                      to Absent and its available_upto to 0
+ -d, --drain [on|off]                 Prevent new job to be scheduled on 
+                                      resources, this is equivalent to setting
+                                      the drain property to YES
+ -p, --property ["property=value"]    Set the property of the resource to the
+                                      given value
+ -n, --no-wait                        Do not wait for job end when the node
+                                      switches to Absent or Dead
+     --help                           Display this help
+ -V, --version                        Print OAR version number
 N.B.:
  - The states allowed are: Alive, Absent or Dead.
  - If not specified, the hostname will be retrieved via the 'hostname'
-   utility.
- - You cannot specify "-a" and "-r" together.
+   command.
+ - "-a" and "-r" cannot be use together.
 EOS
     exit(1);
 }
@@ -217,6 +223,7 @@ my $Version;
 Getopt::Long::Configure ("gnu_getopt");
 GetOptions ("state|s=s" => \$state,
             "maintenance|m=s" => \$maintenance,
+            "drain|d=s" => \$drain,
             "care=s" => \$maintenance, # care is an alias for maintenance
             "hostname|h=s"   => \@hostnames,
             "no-wait|n" => \$nowaitMode,
@@ -233,7 +240,7 @@ usage() if (defined($sos));
 
 if (defined($Version)){
     print("OAR version : ".OAR::Version::get_version()."\n");
-    exit(0);
+    exit($exit_code);
 }
 
 ($#properties >= 0) || defined($state) || defined($new_resource) || defined($maintenance) or usage();
@@ -245,6 +252,11 @@ if (defined($maintenance) && !(($maintenance eq 'on') || ($maintenance eq 'off')
     warn("/!\\ Bad maintenance mode value. Possibilities are : on | off\n");
     usage();
 }
+if (defined($drain) && !(($drain eq 'on') || ($drain eq 'off'))){
+    warn("/!\\ Bad drain mode value. Possibilities are : on | off\n");
+    usage();
+}
+
 
 if (defined($Sql_property)){
     my $db = OAR::IO::connect_ro();
@@ -324,28 +336,28 @@ if (defined($new_resource)){
                 print("Done\n");
             }
         }
-	if (defined($maintenance)){
-	    if ($maintenance eq 'on'){
-		set_maintenance_on($base, \@resource, $remote_host, $remote_port, $nowaitMode);
-	    }
-	    if ($maintenance eq 'off'){
-		set_maintenance_off($base, \@resource, $remote_host, $remote_port, $nowaitMode);
-	    }
-	}
+        if (defined($maintenance)){
+            if ($maintenance eq 'on'){
+                set_maintenance_on($base, \@resource, $remote_host, $remote_port, $nowaitMode);
+            }
+            if ($maintenance eq 'off'){
+                set_maintenance_off($base, \@resource, $remote_host, $remote_port, $nowaitMode);
+            }
+        }
     }else{
         # update all resources with netwokAdress = $hostname
-	if (defined($maintenance)){
-	    my @res_to_maintain;
-	    foreach my $h (@hostnames){
-		push @res_to_maintain, OAR::IO::get_all_resources_on_node($base, $h);
-	    }
-	    if ($maintenance eq 'on'){
-		set_maintenance_on($base, \@res_to_maintain, $remote_host, $remote_port, $nowaitMode);
-	    }
-	    if ($maintenance eq 'off'){
-		set_maintenance_off($base, \@res_to_maintain, $remote_host, $remote_port, $nowaitMode);
-	    }
-	}
+        if (defined($maintenance)){
+            my @res_to_maintain;
+            foreach my $h (@hostnames){
+            push @res_to_maintain, OAR::IO::get_all_resources_on_node($base, $h);
+            }
+            if ($maintenance eq 'on'){
+            set_maintenance_on($base, \@res_to_maintain, $remote_host, $remote_port, $nowaitMode);
+            }
+            if ($maintenance eq 'off'){
+            set_maintenance_off($base, \@res_to_maintain, $remote_host, $remote_port, $nowaitMode);
+            }
+        }
         if (defined($state)){
             my @nodes_to_check;
             foreach my $h (@hostnames){
@@ -370,6 +382,14 @@ if (defined($new_resource)){
                 }
             }
         }
+    }
+}
+
+if (defined ($drain)){
+    if ($drain = "on") {
+        push @properties, "drain=YES"; 
+    }elsif ($drain = "off") {
+        push @properties, "drain=NO"; 
     }
 }
 
