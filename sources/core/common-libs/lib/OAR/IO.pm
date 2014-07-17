@@ -114,6 +114,7 @@ sub list_resources($);
 sub count_all_resources($);
 sub get_requested_resources($$$);
 sub get_resource_info($$);
+sub get_resource_next_value_for_property($$);
 sub is_node_exists($$);
 sub get_resources_on_node($$);
 sub set_node_state($$$$);
@@ -4989,6 +4990,31 @@ sub get_resource_info($$) {
     $sth->finish();
 
     return $ref;
+}
+
+
+# get_resource_next_value_for_property
+# returns the next possible numerical value for a property
+# parameters : base, property
+# return value : int
+# side effects : /
+sub get_resource_next_value_for_property($$) {
+    my $dbh = shift;
+    my $property = shift;
+
+    my $sth = $dbh->prepare("   SELECT $property
+                                FROM resources
+                                ORDER BY $property DESC
+                                LIMIT 1
+                            ");
+    $sth->execute();
+
+    my ($res) = $sth->fetchrow_array();
+    $sth->finish();
+    if (defined($res)) {
+        return $res + 1;
+    }
+    return 0; # if empty table
 }
 
 
