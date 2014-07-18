@@ -1049,6 +1049,7 @@ foreach ($CONF['resource_hierarchy'] as $rh) {
 $y = $CONF['gantt_top'];
 foreach ($resource_ids as $rid) {
   $output .= $rid->svg_lines($y);
+  $output .= $rid->svg_drain($y);
   $y += $CONF['scale'];
 }
 
