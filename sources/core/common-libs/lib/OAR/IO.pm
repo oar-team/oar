@@ -7860,7 +7860,7 @@ sub job_finishing_sequence($$$$$$){
         my $signal_num;
         my $dumped_core;
         my $timeout = OAR::Tools::get_default_server_prologue_epilogue_timeout();
-        if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
+        if (is_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT")){
             $timeout = get_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT"); 
         }
         eval{
