@@ -25,7 +25,7 @@ sub new_with_1_hole($$$$$$);
 sub add_new_resources($$);
 sub set_occupation($$$$);
 sub get_free_resources($$$);
-sub find_first_hole($$$$$$$$$$$);
+sub find_first_hole($$$$$$$$$$$$);
 sub pretty_print($);
 sub get_infinity_value();
 
@@ -529,8 +529,19 @@ sub get_free_resources($$$){
 
 # Take a list of resource trees and find a hole that fit
 # args : gantt ref, initial time from which the search will begin, job duration, list of resource trees
-sub find_first_hole($$$$$$$$$$$){
-    my ($gantt, $initial_time, $duration, $tree_description_list, $timeout, $job_queue, $job_project, $job_types_arrayref, $job_user, $gantt_quotas,$accounting) = @_;
+sub find_first_hole($$$$$$$$$$$$){
+    my ($gantt,
+        $initial_time,
+        $duration,
+        $tree_description_list,
+        $timeout,
+        $job_queue,
+        $job_project,
+        $job_types_arrayref,
+        $job_user,
+        $gantt_quotas,
+        $accounting,
+        $only_default_type_resource_vec) = @_;
 
     # $tree_description_list->[0]  --> First resource group corresponding tree
     # $tree_description_list->[1]  --> Second resource group corresponding tree
@@ -586,7 +597,7 @@ sub find_first_hole($$$$$$$$$$$){
             my $i = 0;
             # Initiate already used resources with the empty vector
             my $already_occupied_resources_vec = $gantt->[0]->[3]; 
-            my $result_tree_accounting_nbresources_used = 0;
+            my $accounted_used_resources_vec = '';
             do{
                 foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
                     vec($already_occupied_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
@@ -610,7 +621,9 @@ sub find_first_hole($$$$$$$$$$$){
                 # $gantt->[$current_hole_index]->[1]->[$h]->[0] : stop date of the hole
                 if (defined($tree_clone)){
                     # Keep in mind the number of resources used by previous groups of the job
-                    $result_tree_accounting_nbresources_used += OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone);
+                    foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
+                        vec($accounted_used_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
+                    }
                     my $gantt_next_hole_date_start = $Infinity;
                     $gantt_next_hole_date_start = $gantt->[$current_hole_index+1]->[0] if ($current_hole_index < $#{$gantt});
                     ($current_time,$comment) = OAR::Schedulers::QuotaStorage::check_quotas(
@@ -621,7 +634,7 @@ sub find_first_hole($$$$$$$$$$$){
                                                     $gantt_next_hole_date_start,
                                                     $duration,
                                                     $job_queue,$job_project,$job_types_arrayref,$job_user,
-                                                    $result_tree_accounting_nbresources_used
+                                                    unpack("%32b*", $accounted_used_resources_vec & $only_default_type_resource_vec)
                                                                                            );
                     if (($current_time + $duration >= $gantt->[$current_hole_index]->[1]->[$h]->[0])
                         or (($current_hole_index < $#{$gantt}) and ($gantt->[$current_hole_index+1]->[0] <= $current_time))
@@ -674,8 +687,20 @@ sub find_first_hole($$$$$$$$$$$){
 
 # Take a list of resource trees and find a hole that fit
 # args : gantt ref, initial time from which the search will begin, job duration, list of resource trees
-sub find_first_hole_parallel($$$$$$$$$$$$){
-    my ($gantt, $initial_time, $duration, $tree_description_list, $timeout, $max_children, $job_queue, $job_project, $job_types_arrayref, $job_user, $gantt_quotas,$accounting) = @_;
+sub find_first_hole_parallel($$$$$$$$$$$$$){
+    my ($gantt,
+        $initial_time,
+        $duration,
+        $tree_description_list,
+        $timeout,
+        $max_children,
+        $job_queue,
+        $job_project,
+        $job_types_arrayref,
+        $job_user,
+        $gantt_quotas,
+        $accounting,
+        $only_default_type_resource_vec) = @_;
 
     # $tree_description_list->[0]  --> First resource group corresponding tree
     # $tree_description_list->[1]  --> Second resource group corresponding tree
@@ -750,7 +775,7 @@ sub find_first_hole_parallel($$$$$$$$$$$$){
                     my $i = 0;
                     # Initiate already used resources with the empty vector
                     my $already_occupied_resources_vec = $gantt->[0]->[3];
-                    my $result_tree_accounting_nbresources_used = 0;
+                    my $accounted_used_resources_vec = '';
                     do{
                         foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
                             vec($already_occupied_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
@@ -773,7 +798,9 @@ sub find_first_hole_parallel($$$$$$$$$$$$){
                         # $gantt->[$current_hole_index]->[1]->[$h]->[0] : stop date of the hole
                         if (defined($tree_clone)){
                             # Keep in mind the number of resources used by previous groups of the job
-                            $result_tree_accounting_nbresources_used += OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone);
+                            foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
+                                vec($accounted_used_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
+                            }
                             my $gantt_next_hole_date_start = $Infinity;
                             $gantt_next_hole_date_start = $gantt->[$current_hole_index+1]->[0] if ($current_hole_index < $#{$gantt});
                             ($current_time, $comment) = OAR::Schedulers::QuotaStorage::check_quotas(
@@ -784,7 +811,7 @@ sub find_first_hole_parallel($$$$$$$$$$$$){
                                                             $gantt_next_hole_date_start,
                                                             $duration,
                                                             $job_queue,$job_project,$job_types_arrayref,$job_user,
-                                                            $result_tree_accounting_nbresources_used
+                                                            unpack("%32b*", $accounted_used_resources_vec & $only_default_type_resource_vec)
                                                                                                    );
                             if (($current_time + $duration >= $gantt->[$current_hole_index]->[1]->[$h]->[0])
                                 or (($current_hole_index < $#{$gantt}) and ($gantt->[$current_hole_index+1]->[0] <= $current_time))

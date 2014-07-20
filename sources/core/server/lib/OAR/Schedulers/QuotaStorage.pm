@@ -2,25 +2,28 @@
 package OAR::Schedulers::QuotaStorage;
 require Exporter;
 use POSIX qw(strftime);
-use Storable qw(store_fd fd_retrieve dclone);
+use Storable qw(dclone);
 use OAR::Schedulers::GanttHoleStorage_with_quotas;
 use warnings;
 use strict;
 
 # Prototypes
 # quota data management
-sub new();
+sub new($);
 sub read_conf_file($);
 sub update_accounting_counters($$$$$$$$);
 sub check_quotas($$$$$$$$$$$);
 sub pretty_print($);
 ###############################################################################
+my $Security_time_overhead;
 
 # Creates an accounting data structure for quotas
-sub new(){
+sub new($){
+    $Security_time_overhead = shift;
+
     my $accounting_counters_init;
-    # $accounting_counters_init->{'queue'}->{'project'}->{'type'}->{'user'} = [nb_used_resources, nb_running_jobs]
-    $accounting_counters_init->{'*'}->{'*'}->{'*'}->{'*'} = [0,0];
+    # $accounting_counters_init->{'queue'}->{'project'}->{'type'}->{'user'} = [nb_used_resources, nb_running_jobs, resourcetime]
+    $accounting_counters_init->{'*'}->{'*'}->{'*'}->{'*'} = [0,0,0];
 
     return( [                       # Accounting data storage for quotas: an array of array
                 [                   # This is a chronological stack with:
@@ -41,7 +44,7 @@ sub read_conf_file($){
     my $msg;
     my $Gantt_quotas;
     # By default, no quota
-    $Gantt_quotas->{'*'}->{'*'}->{'*'}->{'*'} = [-1,-1];
+    $Gantt_quotas->{'*'}->{'*'}->{'*'}->{'*'} = [-1,-1,-1];
     if (open(QUOTAFILE, "< $quota_file")){
         my $oldslurpmode = $/;
         undef $/;
@@ -62,6 +65,8 @@ sub read_conf_file($){
                 foreach my $u (keys(%{$Gantt_quotas->{$q}->{$p}->{$t}})){
                     if (! ref($Gantt_quotas->{$q}->{$p}->{$t}->{$u})){
                         $Gantt_quotas->{$q}->{$p}->{$t}->{$u} = [$Gantt_quotas->{$q}->{$p}->{$t}->{$u}, -1];
+                    }elsif ($#{$Gantt_quotas->{$q}->{$p}->{$t}->{$u}} < 2){
+                        $Gantt_quotas->{$q}->{$p}->{$t}->{$u}->[2] = -1;
                     }
                 }
             }
@@ -85,7 +90,7 @@ sub pretty_print($){
             foreach my $j (sort(keys(%{$step_ref->[1]->{$i}}))){
                 foreach my $k (sort(keys(%{$step_ref->[1]->{$i}->{$j}}))){
                     foreach my $l (sort(keys(%{$step_ref->[1]->{$i}->{$j}->{$k}}))){
-                        $str .= sprintf("    %16.16s > %16.16s > %10.10s > %10.10s = %i resources, %i jobs\n", $i, $j, $k, $l, $step_ref->[1]->{$i}->{$j}->{$k}->{$l}->[0], $step_ref->[1]->{$i}->{$j}->{$k}->{$l}->[1]);
+                        $str .= sprintf("    %16.16s > %16.16s > %10.10s > %10.10s = %i resources, %i jobs, %f resourcesXhours\n", $i, $j, $k, $l, $step_ref->[1]->{$i}->{$j}->{$k}->{$l}->[0], $step_ref->[1]->{$i}->{$j}->{$k}->{$l}->[1], $step_ref->[1]->{$i}->{$j}->{$k}->{$l}->[2]);
                     }
                 }
             }
@@ -112,7 +117,8 @@ sub update_accounting_counters($$$$$$$$){
     for (my $stackid = 0; $stackid < $#{$accounting}; $stackid++){
         # Update existing slots with the new job
         if (($accounting->[$stackid]->[0] >= $date_start) and ($accounting->[$stackid+1]->[0] <= $date_stop)){
-            update_accounting_slot_data($accounting->[$stackid]->[1], $job_queue, $job_project, $job_types_arrayref, $job_user, $nb_resources);
+            my $resourcesXhours = $nb_resources * (($date_stop - 1 - $accounting->[$stackid]->[0] - $Security_time_overhead) / 3600);
+            update_accounting_slot_data($accounting->[$stackid]->[1], $job_queue, $job_project, $job_types_arrayref, $job_user, $nb_resources, $resourcesXhours);
         }
         # Get the index of the first slot to add
         if (($accounting->[$stackid]->[0] < $date_start) and ($accounting->[$stackid+1]->[0] > $date_start)){
@@ -128,26 +134,30 @@ sub update_accounting_counters($$$$$$$$){
     if ($array_id_to_insert2 >= 0){
         splice(@{$accounting}, $array_id_to_insert2 + 1, 0, [ $date_stop , dclone($accounting->[$array_id_to_insert2]->[1]) ]);
         if ($accounting->[$array_id_to_insert2]->[0] >= $date_start){
-            update_accounting_slot_data($accounting->[$array_id_to_insert2]->[1], $job_queue, $job_project, $job_types_arrayref, $job_user, $nb_resources);
+            my $resourcesXhours = $nb_resources * (($date_stop - 1 - $accounting->[$array_id_to_insert2]->[0] - $Security_time_overhead) / 3600);
+            update_accounting_slot_data($accounting->[$array_id_to_insert2]->[1], $job_queue, $job_project, $job_types_arrayref, $job_user, $nb_resources, $resourcesXhours);
         }
     }
     # Add new slot (start of job)
     if ($array_id_to_insert1 >= 0){
         splice(@{$accounting}, $array_id_to_insert1 + 1, 0, [ $date_start , dclone($accounting->[$array_id_to_insert1]->[1]) ]);
-        update_accounting_slot_data($accounting->[$array_id_to_insert1+1]->[1], $job_queue, $job_project, $job_types_arrayref, $job_user, $nb_resources);
+        my $resourcesXhours = $nb_resources * (($date_stop - 1 - $accounting->[$array_id_to_insert1+1]->[0] - $Security_time_overhead) / 3600);
+        update_accounting_slot_data($accounting->[$array_id_to_insert1+1]->[1], $job_queue, $job_project, $job_types_arrayref, $job_user, $nb_resources, $resourcesXhours);
     }
 }
 
 # Update the hash of a slot for accounting data
 # Internal function
-sub update_accounting_slot_data($$$$$$){
+sub update_accounting_slot_data($$$$$$$){
     my ( $counter_hashref,
          $queue,
          $project,
          $types_arrayref,
          $user,
-         $nbresources) = @_;
+         $nbresources,
+         $resourcesXhours) = @_;
 
+    $resourcesXhours = 0 if ($resourcesXhours < 0);
     foreach my $t (@{$types_arrayref},'*'){
         # Update the number of used resources
         $counter_hashref->{'*'}->{'*'}->{$t}->{'*'}->[0] += $nbresources;
@@ -167,6 +177,15 @@ sub update_accounting_slot_data($$$$$$){
         $counter_hashref->{$queue}->{$project}->{$t}->{'*'}->[1] += 1;
         $counter_hashref->{$queue}->{'*'}->{$t}->{$user}->[1] += 1;
         $counter_hashref->{'*'}->{$project}->{$t}->{$user}->[1] += 1;
+        # Update the resource X hours occupation (=~cputime)
+        $counter_hashref->{'*'}->{'*'}->{$t}->{'*'}->[2] += $resourcesXhours;
+        $counter_hashref->{'*'}->{'*'}->{$t}->{$user}->[2] += $resourcesXhours;
+        $counter_hashref->{'*'}->{$project}->{$t}->{'*'}->[2] += $resourcesXhours;
+        $counter_hashref->{$queue}->{'*'}->{$t}->{'*'}->[2] += $resourcesXhours;
+        $counter_hashref->{$queue}->{$project}->{$t}->{$user}->[2] += $resourcesXhours;
+        $counter_hashref->{$queue}->{$project}->{$t}->{'*'}->[2] += $resourcesXhours;
+        $counter_hashref->{$queue}->{'*'}->{$t}->{$user}->[2] += $resourcesXhours;
+        $counter_hashref->{'*'}->{$project}->{$t}->{$user}->[2] += $resourcesXhours;
     }
 }
 
@@ -184,7 +203,8 @@ sub check_quotas($$$$$$$$$$$){
          $job_types_arrayref,
          $job_user,
          $nbresources_occupied_by_other_groups) = @_;
-    
+
+    my $resourcesXhours = $nbresources_occupied_by_other_groups * ($duration - $Security_time_overhead) / 3600; 
     my $comment = "quota_ok";
     my $qindex = 0;
 #    print(pretty_print($accounting));
@@ -272,18 +292,29 @@ sub check_quotas($$$$$$$$$$$){
                                                 }else{
                                                     $u_counter = $u;
                                                 }
-                                                if (($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[0] >= 0) or ($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[1] >= 0)){
+                                                if (($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[0] >= 0) or
+                                                    ($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[1] >= 0) or
+                                                    ($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[2] >= 0)
+                                                   ){
                                                     # Get previous nb resources used by the previous group of the job
                                                     my $tmp_account = $nbresources_occupied_by_other_groups;
                                                     my $tmp_nbjobs_account = 1;
+                                                    my $tmp_resourcesXhours_account = $resourcesXhours;
                                                     if (defined($accounting->[$qindex]->[1]->{$q_counter}->{$p_counter}->{$t}->{$u_counter})){
                                                         # Add existing accounting data from the other jobs
                                                         $tmp_account += $accounting->[$qindex]->[1]->{$q_counter}->{$p_counter}->{$t}->{$u_counter}->[0];
                                                         $tmp_nbjobs_account += $accounting->[$qindex]->[1]->{$q_counter}->{$p_counter}->{$t}->{$u_counter}->[1];
+                                                        $tmp_resourcesXhours_account += $accounting->[$qindex]->[1]->{$q_counter}->{$p_counter}->{$t}->{$u_counter}->[2];
+                                                        if ($current_time > $accounting->[$qindex]->[0]){
+                                                            $tmp_resourcesXhours_account -= ($accounting->[$qindex]->[1]->{$q_counter}->{$p_counter}->{$t}->{$u_counter}->[0] * ($current_time - $accounting->[$qindex]->[0])) / 3600;
+                                                        }
                                                     }
                                                     if ((($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[0] < $tmp_account) and ($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[0] >= 0)) or
-                                                       (($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[1] < $tmp_nbjobs_account) and ($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[1] >= 0))){
-                                                        $comment = "quota_exceeded:Gantt_quotas->{$q}->{$p}->{$t}->{$u}=\[$tmp_account,$tmp_nbjobs_account\]>\[$gantt_quotas->{$q}->{$p}->{$t}->{$u}->[0],$gantt_quotas->{$q}->{$p}->{$t}->{$u}->[1]\]";
+                                                        (($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[1] < $tmp_nbjobs_account) and ($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[1] >= 0)) or
+                                                        (($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[2] < $tmp_resourcesXhours_account) and ($gantt_quotas->{$q}->{$p}->{$t}->{$u}->[2] >= 0))
+                                                       ){
+                                                        $tmp_resourcesXhours_account = sprintf("%.2f", $tmp_resourcesXhours_account);
+                                                        $comment = "quota_exceeded:Gantt_quotas->{$q}->{$p}->{$t}->{$u}=\[$tmp_account,$tmp_nbjobs_account,$tmp_resourcesXhours_account\]>\[$gantt_quotas->{$q}->{$p}->{$t}->{$u}->[0],$gantt_quotas->{$q}->{$p}->{$t}->{$u}->[1],$gantt_quotas->{$q}->{$p}->{$t}->{$u}->[2]\]";
                                                         $current_time = $accounting->[$qindex+1]->[0];
                                                         last OUTER_LOOP;
                                                     }

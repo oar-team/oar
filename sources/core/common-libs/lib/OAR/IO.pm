@@ -4906,6 +4906,35 @@ sub list_resources($) {
     return(@res);
 }
 
+# get_vecs_resources
+# returns max resource_id value and 2 vectors:
+#   - first:  with 1 for all resource_id
+#   - second: with 1 for resource_id of the type "default"
+# parameters : base
+sub get_vecs_resources($) {
+    my $dbh = shift;
+
+    my $sth = $dbh->prepare("   SELECT resource_id, type
+                                FROM resources
+                            ");
+    $sth->execute();
+    my $vec_all = '';
+    my $vec_only_default = '';
+    my $max_resources = 1;
+    while (my @r = $sth->fetchrow_array()){
+        $max_resources = $r[0] if ($r[0] > $max_resources);
+        vec($vec_all, $r[0], 1) = 1;
+        if ($r[1] eq "default"){
+            vec($vec_only_default, $r[0], 1) = 1;
+        }else{
+            vec($vec_only_default, $r[0], 1) = 0;
+        }
+    }
+    $sth->finish();
+
+    return($max_resources, $vec_all, $vec_only_default);
+}
+
 # count_all_resources
 # count all resources
 # parameters : base

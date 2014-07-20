@@ -42,18 +42,24 @@ version 2.5.4:
   - [noop] add the 'noop' job type. If specified nothing is done on computing
            nodes. The job just reserves the resources for the specified
            walltime.
-  - [quotas] add the possibility to make quotas on the number of used resources
-             AND on the number of running jobs.
+  - [quotas] add the possibility to make quotas on:
+               - the number of used resources
+               - the number of running jobs
+               - the resourcesXhours in use
+
   - [runner] add runner bipbip processes in the bipbip_laucher in Almighty.
   - [database] replace the field "maintenance" by "drain".
                So the administrator can disable resources without killing
-               current jobs by:
+               current jobs by::
+                    
                     oarnodesetting -h n12 -p drain=YES
-               ATTENTION: the admission rule with "maintenance" must be
+
+               :ATTENTION: the admission rule with "maintenance" must be
                           changed with the "drain" keyword.
   - [cpuset] cpuset resources filed is now varchar.
              It is now possible to specify several core id in 1 cpuset field
-             like:
+             like::
+
                 1+4+8
 
 version 2.5.3:
