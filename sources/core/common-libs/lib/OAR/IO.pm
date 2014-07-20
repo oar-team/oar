@@ -754,7 +754,6 @@ sub get_job_current_hostnames($$) {
 # get_job_current_resources
 # returns the list of resources associated to the job passed in parameter
 # parameters : base, moldable_id
-# return value : list of resources
 # side effects : /
 sub get_job_current_resources($$$) {
     my $dbh = shift;
@@ -786,10 +785,12 @@ sub get_job_current_resources($$$) {
                              ORDER BY assigned_resources.resource_id ASC");
     $sth->execute();
     my @res = ();
+    my $vec = '';
     while (my $ref = $sth->fetchrow_hashref()) {
         push(@res, $ref->{resource});
+        vec($vec, $ref->{resource}, 1) = 1;
     }
-    return(@res);
+    return($vec, @res);
 }
 
 
@@ -1196,7 +1197,6 @@ sub get_possible_wanted_resources($$$$$$$){
     }
     
     $sth->finish();
-    $result = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($result);
 
     return($result);
 }
@@ -1214,10 +1214,7 @@ sub get_possible_wanted_resources($$$$$$$){
 sub estimate_job_nb_resources($$$){
     my ($dbh_ro, $ref_resource_list, $jobproperties) = @_;
 
-    my @dead_resources;
-    foreach my $r (OAR::IO::get_resources_in_state($dbh_ro,"Dead")){
-        push(@dead_resources, $r->{resource_id});
-    }
+    my ($dead_resources_vec, @dead_resources) = OAR::IO::get_resource_ids_in_state($dbh_ro,"Dead");
     my @results = ();
     foreach my $moldable_resource (@{$ref_resource_list}){
         my $tmp_moldable_result = {
@@ -1238,7 +1235,7 @@ sub estimate_job_nb_resources($$$){
                 }
             }
             my $tree = get_possible_wanted_resources($dbh_ro, undef, $resource_id_list_vector, \@dead_resources, $tmp_properties, $r->{resources}, undef);
-            $tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree);
+            $tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($tree, undef);
             if (!defined($tree)){
                 # Resource description does not match with the content of the
                 # database
@@ -1253,10 +1250,9 @@ sub estimate_job_nb_resources($$$){
                 }
                 last;
             }else{
-                my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tree);
-                foreach my $l (@leafs){
-                    vec($resource_id_list_vector, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                }
+                my ($tmp_leafs_vec, $tmp_leafs_hashref) = OAR::Schedulers::ResourceTree::get_tree_leafs_vec($tree);
+                $resource_id_list_vector |= $tmp_leafs_vec;
+                my @leafs = keys(%{$tmp_leafs_hashref});
                 $tmp_moldable_result->{nbresources} += $#leafs + 1;
             }
         }
@@ -3912,6 +3908,28 @@ sub get_resources_in_state($$) {
     return @res;
 }
 
+# get_resource_ids_in_state
+# returns the resource ids in the specified state
+# parameters : base, state
+sub get_resource_ids_in_state($$) {
+    my $dbh = shift;
+    my $state = shift;
+    
+    my $sth = $dbh->prepare("   SELECT resource_id
+                                FROM resources
+                                WHERE
+                                    state = \'$state\'
+                            ");
+    $sth->execute();
+    my @res = ();
+    my $vec = '';
+    while (my @r = $sth->fetchrow_array) {
+        push(@res, $r[0]);
+        vec($vec, $r[0], 1) = 1;
+    }
+    $sth->finish();
+    return($vec, @res);
+}
 
 # get_finaud_nodes
 # returns the list of nodes for finaud
@@ -3967,24 +3985,25 @@ sub get_finaud_nodes($) {
 # get_resources_that_can_be_waked_up
 # returns a list of resources
 # parameters : base, date max
-# return value : list of resource ref
+# return value : vec of resource_id
 sub get_resources_that_can_be_waked_up($$) {
     my $dbh = shift;
     my $max_date = shift;
     
     $max_date = $max_date + $Cm_security_duration;
-    my $sth = $dbh->prepare("   SELECT *
+    my $sth = $dbh->prepare("   SELECT resource_id
                                 FROM resources
                                 WHERE
                                     state = \'Absent\' AND
                                     resources.available_upto > $max_date
                             ");
     $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref);
+    my $vec = '';
+    while (my @r = $sth->fetchrow_array) {
+        vec($vec, $r[0], 1) = 1;
     }
-    return(@res);
+    $sth->finish();
+    return($vec);
 }
 
 # get_nodes_that_can_be_waked_up
@@ -4014,24 +4033,25 @@ sub get_nodes_that_can_be_waked_up($$) {
 # get_resources_that_will_be_out
 # returns a list of resources
 # parameters : base, job max date
-# return value : list of resource ref
+# return value : vec of resource_id
 sub get_resources_that_will_be_out($$) {
     my $dbh = shift;
     my $max_date = shift;
     
     $max_date = $max_date + $Cm_security_duration;
-    my $sth = $dbh->prepare("   SELECT *
+    my $sth = $dbh->prepare("   SELECT resource_id
                                 FROM resources
                                 WHERE
                                     state = \'Alive\' AND
                                     resources.available_upto < $max_date
                             ");
     $sth->execute();
-    my @res = ();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref);
+    my $vec = '';
+    while (my @r = $sth->fetchrow_array) {
+        vec($vec, $r[0], 1) = 1;
     }
-    return(@res);
+    $sth->finish();
+    return($vec);
 }
 
 # get_energy_saving_resources_availability
@@ -6177,9 +6197,11 @@ sub get_gantt_scheduled_jobs($){
             $res{$ref[0]}->[7] = $ref[8];
             $res{$ref[0]}->[8] = $ref[9];
             $res{$ref[0]}->[9] = $ref[10];
+            $res{$ref[0]}->[10] = '';  # vector with resources
             push(@order,$ref[0]);
         }
         push(@{$res{$ref[0]}->[3]}, $ref[3]);
+        vec($res{$ref[0]}->[10], $ref[3], 1) = 1;
     }
     $sth->finish();
 

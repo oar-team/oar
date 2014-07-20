@@ -598,32 +598,25 @@ sub find_first_hole($$$$$$$$$$$$){
             # Initiate already used resources with the empty vector
             my $already_occupied_resources_vec = $gantt->[0]->[3]; 
             my $accounted_used_resources_vec = '';
+            my $tmp_leafs_vec = '';
+            my $tmp_leafs_hashref = {};
             do{
-                foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
-                    vec($already_occupied_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                }
+                $already_occupied_resources_vec |= $tmp_leafs_vec;
                 # clone the tree, so we can work on it without damage
                 $tree_clone = OAR::Schedulers::ResourceTree::clone($tree_description_list->[$i]);
-                #Remove tree leafs that are not free
-                foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
-                    if ((!vec($gantt->[$current_hole_index]->[1]->[$h]->[1],OAR::Schedulers::ResourceTree::get_current_resource_value($l),1)) or
-                        (vec($already_occupied_resources_vec,OAR::Schedulers::ResourceTree::get_current_resource_value($l),1))
-                       ){
-                        OAR::Schedulers::ResourceTree::delete_subtree($l);
-                    }
-                }
+                
                 #print(Dumper($tree_clone));
-                $tree_clone = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tree_clone);
-                $tree_clone = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree_clone);
+                $tree_clone = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees(
+                                    $tree_clone,
+                                    $gantt->[$current_hole_index]->[1]->[$h]->[1] & ~ $already_occupied_resources_vec);
                 
                 ## QUOTAS
                 # $current_time : start date of the hole
                 # $gantt->[$current_hole_index]->[1]->[$h]->[0] : stop date of the hole
                 if (defined($tree_clone)){
                     # Keep in mind the number of resources used by previous groups of the job
-                    foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
-                        vec($accounted_used_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                    }
+                    ($tmp_leafs_vec, $tmp_leafs_hashref) = OAR::Schedulers::ResourceTree::get_tree_leafs_vec($tree_clone);
+                    $accounted_used_resources_vec |= $tmp_leafs_vec;
                     my $gantt_next_hole_date_start = $Infinity;
                     $gantt_next_hole_date_start = $gantt->[$current_hole_index+1]->[0] if ($current_hole_index < $#{$gantt});
                     ($current_time,$comment) = OAR::Schedulers::QuotaStorage::check_quotas(
@@ -643,7 +636,8 @@ sub find_first_hole($$$$$$$$$$$$){
                     }
                 }
                 ## QUOTAS
-                $result_tree_list[$i] = $tree_clone;
+                my @tmpa = keys(%{$tmp_leafs_hashref});
+                $result_tree_list[$i] = [$tree_clone, $tmp_leafs_vec, \@tmpa];
                 $i ++;
             }while(defined($tree_clone) && ($i <= $#$tree_description_list));
             if (defined($tree_clone)){
@@ -776,31 +770,23 @@ sub find_first_hole_parallel($$$$$$$$$$$$$){
                     # Initiate already used resources with the empty vector
                     my $already_occupied_resources_vec = $gantt->[0]->[3];
                     my $accounted_used_resources_vec = '';
+                    my $tmp_leafs_vec = '';
+                    my $tmp_leafs_hashref = {};
                     do{
-                        foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
-                            vec($already_occupied_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                        }
+                        $already_occupied_resources_vec |= $tmp_leafs_vec;
+                        # clone the tree, so we can work on it without damage
                         $tree_clone = $tree_description_list->[$i];
-                        #Remove tree leafs that are not free
-                        foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
-                            if ((!vec($gantt->[$current_hole_index]->[1]->[$h]->[1],OAR::Schedulers::ResourceTree::get_current_resource_value($l),1)) or
-                                (vec($already_occupied_resources_vec,OAR::Schedulers::ResourceTree::get_current_resource_value($l),1))
-                               ){
-                                OAR::Schedulers::ResourceTree::delete_subtree($l);
-                            }
-                        }
-                        #print(Dumper($tree_clone));
-                        $tree_clone = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tree_clone);
-                        $tree_clone = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree_clone);
+                        $tree_clone = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees(
+                                            $tree_clone,
+                                            $gantt->[$current_hole_index]->[1]->[$h]->[1] & ~ $already_occupied_resources_vec);
 
                         ## QUOTAS
                         # $current_time : start date of the hole
                         # $gantt->[$current_hole_index]->[1]->[$h]->[0] : stop date of the hole
                         if (defined($tree_clone)){
                             # Keep in mind the number of resources used by previous groups of the job
-                            foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
-                                vec($accounted_used_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                            }
+                            ($tmp_leafs_vec, $tmp_leafs_hashref) = OAR::Schedulers::ResourceTree::get_tree_leafs_vec($tree_clone);
+                            $accounted_used_resources_vec |= $tmp_leafs_vec;
                             my $gantt_next_hole_date_start = $Infinity;
                             $gantt_next_hole_date_start = $gantt->[$current_hole_index+1]->[0] if ($current_hole_index < $#{$gantt});
                             ($current_time, $comment) = OAR::Schedulers::QuotaStorage::check_quotas(
@@ -820,7 +806,8 @@ sub find_first_hole_parallel($$$$$$$$$$$$$){
                             }
                         }
                         ## QUOTAS
-                        $tree_list->[$i] = $tree_clone;
+                        my @tmpa = keys(%{$tmp_leafs_hashref});
+                        $tree_list->[$i] = [$tree_clone, $tmp_leafs_vec, \@tmpa];
                         $i ++;
                     }while(defined($tree_clone) && ($i <= $#$tree_description_list));
 

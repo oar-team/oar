@@ -162,10 +162,10 @@ if (defined($Resources_to_always_add_type)){
 my $timesharing_gantts;
 # Create the Gantt Diagrams
 #Init the gantt chart with all resources
-my ($max_resources, $All_resource_list_vec, $Only_default_type_resource_vec) = OAR::IO::get_vecs_resources($base);
+my ($Max_resources, $All_resource_list_vec, $Only_default_type_resource_vec) = OAR::IO::get_vecs_resources($base);
 
 my %Container_gantt_hash;
-$Container_gantt_hash{0} = OAR::Schedulers::GanttHoleStorage_with_quotas::new($max_resources, $minimum_hole_time);
+$Container_gantt_hash{0} = OAR::Schedulers::GanttHoleStorage_with_quotas::new($Max_resources, $minimum_hole_time);
 OAR::Schedulers::GanttHoleStorage_with_quotas::add_new_resources($Container_gantt_hash{0}, $All_resource_list_vec);
 my $quota_accounting_data = OAR::Schedulers::QuotaStorage::new($security_time_overhead);
 
@@ -202,10 +202,11 @@ foreach my $i (@{$order}){
     # Do not take care of besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
+        my $resource_list_vec = $already_scheduled_jobs{$i}->[10];
         my $job_duration = $already_scheduled_jobs{$i}->[1];
         if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
             # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
-            @resource_list = OAR::IO::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
+            ($resource_list_vec, @resource_list) = OAR::IO::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
             next if ($#resource_list < 0);
         }
         if ($already_scheduled_jobs{$i}->[8] eq "YES"){
@@ -213,19 +214,15 @@ foreach my $i (@{$order}){
             $job_duration += OAR::IO::get_job_suspended_sum_duration($base,$i,$current_time);
         }
 
-        my $vec = '';
-        foreach my $r (@resource_list){
-            vec($vec,$r,1) = 1;
-        }
         my $gantt_to_use = $Container_gantt_hash{0};
         if (defined($types->{container})){
             oar_debug("[$scheduler_name] [$i] container job: create a new gantt for container $i\n");
-            $Container_gantt_hash{$i} = OAR::Schedulers::GanttHoleStorage_with_quotas::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec, $All_resource_list_vec);
+            $Container_gantt_hash{$i} = OAR::Schedulers::GanttHoleStorage_with_quotas::new_with_1_hole($Max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $resource_list_vec, $All_resource_list_vec);
             $gantt_to_use = $Container_gantt_hash{$i};
         }else{
             OAR::Schedulers::QuotaStorage::update_accounting_counters(
                                                 $quota_accounting_data,
-                                                unpack("%32b*", $vec & $Only_default_type_resource_vec),
+                                                unpack("%32b*", $resource_list_vec & $Only_default_type_resource_vec),
                                                 $already_scheduled_jobs{$i}->[0],
                                                 $job_duration + $security_time_overhead,
                                                 $already_scheduled_jobs{$i}->[2],
@@ -263,7 +260,7 @@ foreach my $i (@{$order}){
                                                     $Container_gantt_hash{$g},
                                                     $already_scheduled_jobs{$i}->[0],
                                                     $job_duration + $security_time_overhead,
-                                                    $vec
+                                                    $resource_list_vec
                                                                              );
             }
             #OAR::Schedulers::GanttHoleStorage_with_quotas::pretty_print($Container_gantt_hash{$g});
@@ -277,7 +274,7 @@ foreach my $i (@{$order}){
                                                             $timesharing_gantts->{$c}->{$u}->{$n},
                                                             $already_scheduled_jobs{$i}->[0],
                                                             $job_duration + $security_time_overhead,
-                                                            $vec
+                                                            $resource_list_vec
                                                                                      );
                     } else {
                         oar_debug("[$scheduler_name] [$i] skip timesharing job occupation in gantt of timesharing ($c, $u, $n)\n");
@@ -294,10 +291,7 @@ oar_debug("[$scheduler_name] End phase 1 (running jobs)\n");
 # Begining of the real scheduling
 
 # Get list of Alive resources
-my $alive_resources_vector = '';
-foreach my $r (OAR::IO::get_resources_in_state($base,"Alive")){
-    vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
-}
+my ($alive_resources_vector, @alive_resources)= OAR::IO::get_resource_ids_in_state($base,"Alive");
 
 # ENERGY SAVING: add fake occupations/holes from energy saving configuration 
 # CM part and Hulot part (wake up nodes in energy saving mode)
@@ -340,10 +334,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
 }
 # CM part
  
-my @Dead_resources;
-foreach my $r (OAR::IO::get_resources_in_state($base,"Dead")){
-    push(@Dead_resources, $r->{resource_id});
-}
+my ($Dead_resources_vec, @Dead_resources) = OAR::IO::get_resource_ids_in_state($base,"Dead");
 
 oar_debug("[$scheduler_name] Begin phase 2 (waiting jobs)\n");
 my @jobs = OAR::IO::get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user);
@@ -504,10 +495,8 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         my @resources;
         my $res_vec = '';
         foreach my $t (@{$hole[2]}){
-            foreach my $r (OAR::Schedulers::ResourceTree::get_tree_leafs($t)){
-                push(@resources, OAR::Schedulers::ResourceTree::get_current_resource_value($r));
-                vec($res_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($r), 1) = 1;
-            }
+            $res_vec |= $t->[1];
+            push(@resources, @{$t->[2]});
         }
         push(@moldable_results, {
                                     resources => \@resources,
@@ -547,7 +536,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             }
         }
         if (defined($types->{container})){
-            $Container_gantt_hash{$j->{job_id}} = OAR::Schedulers::GanttHoleStorage_with_quotas::new_with_1_hole($max_resources, $minimum_hole_time, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $moldable_results[$index_to_choose]->{resources_vec}, $All_resource_list_vec);
+            $Container_gantt_hash{$j->{job_id}} = OAR::Schedulers::GanttHoleStorage_with_quotas::new_with_1_hole($Max_resources, $minimum_hole_time, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $moldable_results[$index_to_choose]->{resources_vec}, $All_resource_list_vec);
         }else{
             OAR::Schedulers::QuotaStorage::update_accounting_counters(
                                                $quota_accounting_data,
