@@ -32,7 +32,7 @@ my $sos;
 my @resource;
 my $file;
 my $Sql_property;
-my $next_property_value;
+my $last_property_value;
 
 # Get OAR configuration
 init_conf($ENV{OARCONFFILE});
@@ -207,8 +207,8 @@ Options:
                                       given value
  -n, --no-wait                        Do not wait for job end when the node
                                       switches to Absent or Dead
-     --next-property-value [property] Get the next usable numerical value for
-                                      property for a new resource
+     --last-property-value [property] Get the last value used for a property (as
+                                      sorted by SQL's ORDER BY DESC)
      --help                           Display this help
  -V, --version                        Print OAR version number
 N.B.:
@@ -236,7 +236,7 @@ GetOptions ("state|s=s" => \$state,
             "sql=s"   => \$Sql_property,
             "resource|r=i" => \@resource,
             "file|f=s" => \$file,
-            "next-property-value=s" => \$next_property_value,
+            "last-property-value=s" => \$last_property_value,
             "version|V" => \$Version
            ) or exit(1);
 
@@ -247,7 +247,7 @@ if (defined($Version)){
     exit($exit_code);
 }
 
-($#properties >= 0) || defined($state) || defined($new_resource) || defined($maintenance) || defined($drain) || defined($next_property_value) or usage();
+($#properties >= 0) || defined($state) || defined($new_resource) || defined($maintenance) || defined($drain) || defined($last_property_value) or usage();
 if (defined($state) && !(($state eq 'Alive') || ($state eq 'Absent') || ($state eq 'Dead'))){
     warn("/!\\ Bad state value. Possibilities are : Alive | Absent | Dead \n");
     usage();
@@ -301,15 +301,15 @@ if (defined($new_resource)){
 defined($hostnames[0]) or $hostnames[0] = hostname();
 #print("$hostname\n");
 my $base = OAR::IO::connect() or die("Cannot connect to the database\n");
-if (defined($next_property_value)) {
+if (defined($last_property_value)) {
     my $db = OAR::IO::connect_ro();
-    my $value = OAR::IO::get_resource_next_value_for_property($db,$next_property_value);
+    my $value = OAR::IO::get_resource_last_value_of_property($db,$last_property_value);
     OAR::IO::disconnect($db);
     if (defined($value)){
         print $value."\n";
         $exit_code = 0;
     } else {
-        warn("/!\\ Cannot retrive the next value for $next_property_value.\n");
+        warn("/!\\ Cannot retrive the last value for $last_property_value.\n");
         $exit_code = 14;
     }
     exit($exit_code);

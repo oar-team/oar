@@ -5027,7 +5027,7 @@ sub get_resource_info($$) {
 # parameters : base, property
 # return value : int
 # side effects : /
-sub get_resource_next_value_for_property($$) {
+sub get_resource_last_value_of_property($$) {
     my $dbh = shift;
     my $property = shift;
 
@@ -5040,10 +5040,7 @@ sub get_resource_next_value_for_property($$) {
 
     my ($res) = $sth->fetchrow_array();
     $sth->finish();
-    if (defined($res)) {
-        return $res + 1;
-    }
-    return 0; # if empty table
+    return $res;
 }
 
 
