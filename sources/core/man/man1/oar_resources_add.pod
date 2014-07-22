@@ -1,0 +1,139 @@
+=encoding UTF-8
+
+=head1 NAME
+
+oar_resource_add - Yet another helper script to define OAR resources 
+
+=head1 SYNOPSIS
+
+B<oar_resource_add> -H <# of hosts> [options]
+
+=head1 DESCRIPTION
+
+The script generate the oarproperty and oarnodesetting commands to generate resources following the host/cpu/core/thread hierarchy.
+
+If resources are already registered, offsets can be provided, or guessed from the database.
+
+This script is also a good example of how one could create resources by himself using shell loops and oarnodesetting.
+
+=head1 OPTIONS
+
+=over 
+
+=item B<-H>, B<--hosts> <#>
+
+# of hosts
+
+=item B<-C>, B<--cpus> <#>
+
+# of cpu per host
+
+=item B<-c>, B<--cores> <#>
+
+# of core per cpu
+
+=item B<-t>, B<--threads> <#>
+
+# of threads per core
+
+=item B<--host-prefix> <str>
+
+Hostname prefix (default: "node-")
+
+=item B<--host-suffix> <str>
+
+Hostname suffix (e.g. ".domain")
+
+=item B<--host0> <#>
+
+First host number to use
+
+=item B<--cpu0> <#>
+
+First cpu number to use
+
+=item B<--core0> <#>
+
+First core number to use
+
+=item B<--thread0> <#>
+
+First thread number to use
+
+=item B<--cpuset> <#>
+
+# of cpusets on host (default=cpus*cores*threads)
+
+=item B<-p>, B<--other-properties> <str>
+
+Extra properties for every resources
+
+=item B<-o>, B<--write-to> <file>
+
+Write commands to file
+
+=item B<-a>, B<--auto-offset>
+
+Guess first host/cpu/core/thread number to use from the OAR database (unless host0/cpu0/core0/thread0 is set). Warning: host, cpu, core and thread properties must exist in your database or you will get errors.
+
+=item B<-h>, B<--help>
+
+Display this message
+
+=back
+
+=head1 EXAMPLES
+
+$ oar_resources_add --hosts=2 --host0 5 --cpu0 8 --core0=64 --thread0=128 -p "mem=1024 gpu=NO"
+
+oarproperty -c -a host || true
+
+oarproperty -a cpu || true
+
+oarproperty -a core || true
+
+oarproperty -a thread || true
+
+oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=64 -p thread=128 -p cpuset=0 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=65 -p thread=129 -p cpuset=1 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=66 -p thread=130 -p cpuset=2 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=67 -p thread=131 -p cpuset=3 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=68 -p thread=132 -p cpuset=4 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=69 -p thread=133 -p cpuset=5 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=70 -p thread=134 -p cpuset=6 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=71 -p thread=135 -p cpuset=7 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=72 -p thread=136 -p cpuset=0 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=73 -p thread=137 -p cpuset=1 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=74 -p thread=138 -p cpuset=2 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=75 -p thread=139 -p cpuset=3 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=76 -p thread=140 -p cpuset=4 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=77 -p thread=141 -p cpuset=5 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=78 -p thread=142 -p cpuset=6 mem=1024 gpu=NO
+
+oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=79 -p thread=143 -p cpuset=7 mem=1024 gpu=NO
+
+=head1 SEE ALSO
+
+oarnodesetting(1), oarproperty(1), oar_resources_init(1), bash(1)
+
+=head1 COPYRIGHTS
+
+ Copyright 2004-2013 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+=cut
+
+
