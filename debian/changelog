@@ -1,3 +1,10 @@
+oar (2.5.4~rc1-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+  * Drop tools with dependancies to Ruby
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 22 Jul 2014 21:44:23 +0200
+
 oar (2.5.3-3) unstable; urgency=low
 
   * Fix oar-user dependancy on oar-user-mysql or oar-user-postgresql
