@@ -25,7 +25,7 @@ $CONF['label_cmp_regex'] = array( // substring selection regex for comparing and
   'network_address' => '/^([^-]+)-(\d+)\..*$/',
   );
 $CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
-  'deploy', 'cpuset', 'besteffort', 'network_address', 'type');
+  'deploy', 'cpuset', 'besteffort', 'network_address', 'type', 'drain');
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
   'network_address','cpuset'); 
 $CONF['resource_drain_property'] = "drain"; // if set, must also be one of the resource_properties above to activate the functionnality
