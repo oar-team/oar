@@ -62,6 +62,11 @@ version 2.5.4:
 
                 1+4+8
 
+  - [oarsub] add filter on notifications
+             It is possible to specify which TAGs must be triggered::
+
+                oarsub --notify "[END,ERROR]mail:name@domain.com" -I
+
 version 2.5.3:
 --------------
   - Add the "Name" field on the main Monika page. This is easier for the users

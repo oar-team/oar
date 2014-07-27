@@ -1420,7 +1420,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my $user= $ENV{OARDO_USER};
 
     # Verify notify syntax
-    if ((defined($notify)) and ($notify !~ m/^\s*(mail:|exec:).+$/m)){
+    if ((defined($notify)) and ($notify !~ m/^\s*(\[\s*(.+)\s*\]\s*)?(mail|exec)\s*:.+$/m)){
         warn("/!\\Bad syntax for the notify option\n");
         return(-6);
     }

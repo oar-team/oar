@@ -123,6 +123,12 @@ TAG can be:
   - SUSPENDED : when the job is suspended
   - RESUMING : when the job is resumed
 
+By default all TAGs are triggered. It is possible to specify which TAGs must be triggered.
+Ex:
+ --notify "[END,ERROR]mail:name@domain.com"
+ --notify "[RUNNING]mail:name@domain.com"
+ --notify "[RUNNING,END,ERROR]exec:/path/to/script args"
+
 =item B<--resubmit> <OAR JOB ID>
 
 Resubmit the given job as a new one.
