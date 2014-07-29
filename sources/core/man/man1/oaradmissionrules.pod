@@ -1,0 +1,86 @@
+=head1 NAME
+
+oaradmissionrules - manage admission rules
+
+=head1 SYNOPSIS
+
+B<oaradmissionrules> --show [--full|--ids]
+
+B<oaradmissionrules> --show <rule-id> [--full|--no-header|--to-file [filename]]
+
+B<oaradmissionrules> --new [--from-file] [--editor <cmd>]
+
+B<oaradmissionrules> --edit <rule-id> [--from-file] [--editor <cmd>]
+
+B<oaradmissionrules> --delete <rule-id>
+
+
+=head1 DESCRIPTION
+
+Show, create, edit or delete admission rules.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-s, --show> [rule-id]
+
+Show all rules or rule rule_id
+
+=over
+
+=item B<-I, --ids>
+
+Show rule ids only
+
+=item B<-f, --full>
+
+Show full scripts
+
+=item B<-H, --no-header>
+
+Show scripts only
+
+=item B<-w, --to-file> [filename]
+
+Write to file instead of printing to stdout
+
+=back
+
+=item B<-n, --new>
+
+Create a new rule
+
+=item B<-e, --edit> <rule-id>
+
+Edit rule rule-id
+
+=over
+
+=item B<-E, --editor> <cmd>
+
+Use cmd as editor (default is "editor")
+
+=item B<-r, --from-file> <filename>
+
+Read from file instead of running editor
+
+=back
+
+=item B<-d, --delete> <rule-id>
+
+Delete rule rule-id
+
+=item B<-h, --help>
+
+Print usage
+
+=item B<-V, --version>
+
+Print OAR version
+
+=back
+
+=head1 COPYRIGHTS
+
+ Copyright 2003-2014 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

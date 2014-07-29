@@ -4662,6 +4662,7 @@ sub list_admission_rules($) {
 	
 	my $sth = $dbh->prepare("   SELECT *
                                 FROM admission_rules
+                                ORDER BY id
                            ");
     $sth->execute();
     my @res = ();

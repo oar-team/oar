@@ -6,6 +6,7 @@ OARDIR_BINFILES = $(SRCDIR)/modules/scheduler/oar_meta_sched \
 		  $(SRCDIR)/qfunctions/oarremoveresource \
 		  $(SRCDIR)/qfunctions/oaraccounting \
 		  $(SRCDIR)/qfunctions/oarproperty \
+		  $(SRCDIR)/qfunctions/oaradmissionrules \
 		  $(SRCDIR)/qfunctions/oarmonitor \
 		  $(SRCDIR)/modules/runner/bipbip.in \
 		  $(SRCDIR)/tools/oar_resources_init \
@@ -29,6 +30,7 @@ MANDIR_FILES = $(SRCDIR)/man/man1/Almighty.1 \
 	       $(SRCDIR)/man/man1/oarmonitor.1 \
 	       $(SRCDIR)/man/man1/oarnotify.1 \
 	       $(SRCDIR)/man/man1/oarproperty.1 \
+	       $(SRCDIR)/man/man1/oaradmissionrules.1 \
 	       $(SRCDIR)/man/man1/oarremoveresource.1 \
 	       $(SRCDIR)/man/man1/oar-server.1 \
 	       $(SRCDIR)/man/man1/oar_resources_init.1 \
@@ -63,6 +65,7 @@ clean: clean_shared
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarremoveresource CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarremoveresource
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oaraccounting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaraccounting
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarproperty CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarproperty
+	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oaradmissionrules CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmissionrules
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar_resources_add CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_add
@@ -77,6 +80,7 @@ build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarremoveresource CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarremoveresource
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oaraccounting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaraccounting
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarproperty CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarproperty
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oaradmissionrules CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmissionrules
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_resources_add CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_add
@@ -101,6 +105,7 @@ install: build install_shared
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarremoveresource CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarremoveresource
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oaraccounting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaraccounting
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarproperty CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarproperty
+	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oaradmissionrules CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmissionrules
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oar_resources_add CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_add
@@ -123,6 +128,7 @@ uninstall: uninstall_shared
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarremoveresource CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarremoveresource
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oaraccounting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaraccounting
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarproperty CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarproperty
+	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oaradmissionrules CMD_TARGET=$(DESTDIR)$(SBINDIR)/oaradmissionrules
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oar_resources_add CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_add

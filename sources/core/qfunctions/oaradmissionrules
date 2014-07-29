@@ -1,0 +1,222 @@
+#!/usr/bin/perl -w
+#
+# Show, create, edit or delete admission rules
+#
+
+use strict;
+use warnings;
+use OAR::IO;
+use OAR::Conf qw(init_conf get_conf is_conf);
+use Getopt::Long;
+use OAR::Version;
+use OAR::Tools;
+use Data::Dumper;
+use File::Temp qw/ tempfile /;
+
+my $base;
+my $action;
+my $showopt="short";
+my $rule_id;
+my $editor="editor";
+my $filename;
+
+sub usage() {
+    my ($command) = $0 =~ /([^\/]+)$/;
+    my $usage = <<EOS;
+Usage: 
+  $command --show [--full|--ids]
+  $command --show <rule-id> [--full|--no-header|--to-file [filename]]
+  $command --new [--from-file] [--editor <cmd>]
+  $command --edit <rule-id> [--from-file] [--editor <cmd>]
+  $command --delete <rule-id>
+
+  Show, create, edit or delete admission rules.
+
+Options:
+  -s, --show [rule-id]         show all rules or rule rule_id
+    -I, --ids                  show rule ids only
+    -f, --full                 show full scripts
+    -H, --no-header            show scripts only
+    -w, --to-file [filename]   write to file instead of printing to stdout
+
+  -n, --new                    create a new rule
+  -e, --edit <rule-id>         edit rule rule-id
+    -E, --editor <cmd>         use cmd as editor (default is "editor")
+    -r, --from-file <filename> read from file instead of running editor
+
+  -d, --delete <rule-id>       delete rule rule-id
+
+  -h, --help                   print this
+  -V, --version                print OAR version
+  
+EOS
+    return $usage;
+}
+
+sub print_rule($$$) {
+    my $rule_id = shift;
+    my $rule = shift;
+    my $showopt = shift;
+    if ($showopt eq "ids") {
+        print "$rule_id\n";
+    }
+    elsif ($showopt eq "short") {
+        my @lines = (split("\n",$rule),"");
+        print <<EOS;
+# Rule: $rule_id
+$lines[0]
+
+EOS
+    }
+    elsif ($showopt eq "full") {
+        print <<EOS;
+###############################################################################
+# Rule: $rule_id
+$rule
+
+EOS
+    }
+    elsif ($showopt eq "no-header") {
+        if (defined($filename)) {
+            my $fh;
+            if ($filename eq "") {
+                ($fh, $filename) = tempfile("OAR-admission-rule.$rule_id.XXXXXX", TMPDIR => 1, UNLINK => 0) or die "Error: cannot create temp file\n";
+            } else {
+                open($fh, ">", $filename) or die "Error: could not open $filename\n";
+            }
+            print $fh $rule;
+            close($fh);
+            print "Admission rule written to $filename\n";
+        }
+        else {
+            print $rule;
+        }
+    }
+}
+
+sub get_all_from_db() {
+    my @res = OAR::IO::list_admission_rules($base);
+    return @res;
+}
+
+sub get_from_db($) {
+    my $rule_id = shift;
+    my $r = OAR::IO::get_admission_rule($base,$rule_id);
+    if (not defined($r)) {
+        die "Error: could not retrieve admission rule from database\n";
+    }
+    return $r->{rule};
+}
+
+sub edit($$) {
+    my $rule_id = shift;
+    my $rule = shift;
+    my ($fh, $filename) = tempfile("OAR-oaradmission-rule.".($rule_id == -1)?"new":$rule_id."XXXXXX", TMPDIR => 1, UNLINK => 1) or die "Error: cannot create temp file\n";
+    if (defined($rule)) {
+        print $fh $rule or die "Error: cannot write current rule to temp file\n";
+    }
+    close $fh or die "Error: cannot close temp file\n";
+    system($editor, $filename);
+    if ($? == -1) {
+        die "Error: failed to execute: $!\n";
+    }
+    elsif ($? & 127) {
+        die "Editor process died with signal " . ($? & 127) . "\n";
+    }
+    elsif (($? >> 8) != 0) {
+        die "Editor process exited with value " . ($? >> 8) . "\n";
+    }
+    return $filename;
+}
+
+sub read_file($) {
+    my $filename = shift;
+    my $fh;
+    open($fh, "<", $filename) or die "Error: could not open $filename\n";
+    my $rule;
+    { local $/ = undef; $rule = <$fh>; }
+    close $fh or die "Error: cannot close file\n";
+    return $rule;
+}
+
+sub update_rule($$) {
+    my $rule_id = shift;
+    my $rule = shift;
+    my $r = OAR::IO::update_admission_rule($base, $rule_id, $rule);
+    defined($r) or die "Error: could not update rule $rule_id in database\n";
+}
+
+sub add_rule($) {
+    my $rule = shift;
+    my $r = OAR::IO::add_admission_rule($base, $rule);
+    defined($r) or die "Error: could not add rule in database\n";
+}
+
+sub delete_rule($) {
+    my $rule_id = shift;
+    my $r = OAR::IO::delete_admission_rule($base, $rule_id);
+    defined($r) or die "Error: admission rule $rule_id could not be deleted\n";
+}
+
+Getopt::Long::Configure("gnu_getopt");
+
+GetOptions( 
+            "show|s:-1" => sub { $action = shift; $rule_id = shift; },
+            "new|n" => sub { $action = shift; $rule_id = -1; },
+            "edit|e=i" => sub { $action = shift; $rule_id = shift; },
+            "delete|d=i" => sub { $action = shift; $rule_id = shift; },
+            "ids|I" =>  sub { $showopt = shift; },
+            "no-header|H" =>  sub { $showopt = shift; },
+            "full|f" =>  sub { $showopt = shift; },
+            "editor|E=s" => \$editor,
+            "from-file|r=s" => sub { shift; $filename = shift; },
+            "to-file|w:s" => sub { shift; $filename = shift; },
+            "version|V" => sub { print("OAR version : ".OAR::Version::get_version()."\n"); exit(0) },
+            "help|h"   => sub { print usage(); }
+          ) or die "\n".usage();
+
+defined($action) or die "Error: syntax error\n\n".usage();
+
+$base = OAR::IO::connect();
+
+if ($action eq "show") {
+    if ($rule_id < 0) {
+        foreach my $r (get_all_from_db()) {
+            print_rule($r->{id}, $r->{rule}, $showopt);
+        }
+    } else {
+        if (defined($filename)) {
+            $showopt="no-header";
+        } 
+        my $rule = get_from_db($rule_id);
+        print_rule($rule_id, $rule, $showopt);
+    }
+}
+elsif ($action eq "new" or $action eq "edit") {
+    my $rule = "";
+    if ($rule_id >= 0) {
+        $rule = get_from_db($rule_id);
+    }
+    if (not defined($filename)) {
+        $filename = edit($rule_id, $rule);
+    }
+    read_file($filename);
+    if ($rule_id < 0) {
+        add_rule($rule);
+    }
+    else {
+        update_rule($rule_id, $rule);
+    }
+}
+elsif ($action eq "delete") {
+    delete_rule($rule_id);
+}
+else {
+    die "Unknown action !\n";
+}
+
+OAR::IO::disconnect($base);
+
+exit(0);
+
+__END__
