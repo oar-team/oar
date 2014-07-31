@@ -200,7 +200,7 @@ elsif ($action eq "new" or $action eq "edit") {
     if (not defined($filename)) {
         $filename = edit($rule_id, $rule);
     }
-    read_file($filename);
+    $rule = read_file($filename);
     if ($rule_id < 0) {
         add_rule($rule);
     }
