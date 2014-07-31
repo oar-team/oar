@@ -4,72 +4,107 @@ oaradmissionrules - manage admission rules
 
 =head1 SYNOPSIS
 
-B<oaradmissionrules> --show [--full|--ids]
+=over
 
-B<oaradmissionrules> --show <rule-id> [--full|--no-header|--to-file [filename]]
+=item B<oaradmissionrules> --show-all [options]
 
-B<oaradmissionrules> --new [--from-file] [--editor <cmd>]
+Show all rules
 
-B<oaradmissionrules> --edit <rule-id> [--from-file] [--editor <cmd>]
+=item B<oaradmissionrules> --show <rule-id> [options]
 
-B<oaradmissionrules> --delete <rule-id>
+Show rule #rule-id
 
+=item B<oaradmissionrules> --new [options]
+
+Create a new rule
+
+=item B<oaradmissionrules> --modify <rule-id> [options]
+
+Modify rule #rule-id
+
+=item B<oaradmissionrules> --delete <rule-id>
+
+Delete rule #rule-id
+
+=back
 
 =head1 DESCRIPTION
 
-Show, create, edit or delete admission rules.
+Show, create, modify or delete admission rules.
 
 =head1 OPTIONS
 
 =over
 
-=item B<-s, --show> [rule-id]
-
-Show all rules or rule rule_id
+=item B<-s, --show-all>
 
 =over
 
-=item B<-I, --ids>
+=item B<-Y, --enabled>
 
-Show rule ids only
+Show enabled admission rules only
+
+=item B<-N, --disabled>
+
+Show disabled admission rules only
+
+=back
+
+=item B<-s, --show-all>
+
+=item B<-s, --show> [rule-id]
+
+=over
+
+=item B<-I, --id>
+
+Show #rule-id only
 
 =item B<-f, --full>
 
-Show full scripts
+Show full script
 
 =item B<-H, --no-header>
 
-Show scripts only
+Show script only
 
 =item B<-w, --to-file> [filename]
 
-Write to file instead of printing to stdout
+Write script to file (%% replaced by #rule-id)
 
 =back
 
 =item B<-n, --new>
 
-Create a new rule
-
-=item B<-e, --edit> <rule-id>
-
-Edit rule rule-id
+=item B<-m, --modify> <rule-id>
 
 =over
 
-=item B<-E, --editor> <cmd>
+=item B<-e, --edit> [cmd]
 
-Use cmd as editor (default is "editor")
+edit script using editor or cmd if provided
 
 =item B<-r, --from-file> <filename>
 
-Read from file instead of running editor
+Read script from file instead of running editor
+
+=item B<-P, --priotity> <priority>
+
+Set priority for rule
+
+=item B<-Y, --enabled>
+
+Enable admission rule
+
+=item B<-N, --disabled>
+
+Disable admission rule
 
 =back
 
 =item B<-d, --delete> <rule-id>
 
-Delete rule rule-id
+No option
 
 =item B<-h, --help>
 

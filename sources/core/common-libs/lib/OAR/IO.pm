@@ -153,13 +153,13 @@ sub update_gantt_visualization($);
 sub get_gantt_visu_scheduled_job_resources($$);
 
 # ADMISSION RULES MANAGEMENT
-sub add_admission_rule($$);
-sub list_admission_rules($);
+sub add_admission_rule($$$$);
+sub list_admission_rules($$);
 sub get_admission_rule($$);
 sub get_requested_admission_rules($$$);
 sub count_all_admission_rules($);
 sub delete_admission_rule($$);
-sub update_admission_rule($$$);
+sub update_admission_rule($$$$$);
 
 # TIME CONVERSION
 sub ymdhms_to_sql($$$$$$);
@@ -1453,7 +1453,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         return(-9);
     }
     #Retrieve Micheline's rules from the table
-    my $sth = $dbh->prepare("SELECT rule FROM admission_rules ORDER BY id");
+    my $sth = $dbh->prepare("SELECT rule FROM admission_rules WHERE enabled = 'YES' ORDER BY priority,id");
     $sth->execute();
     while (my $ref = $sth->fetchrow_hashref()) {
         $rules = $rules.$ref->{'rule'};
@@ -4638,14 +4638,16 @@ sub get_job_stagein($$) {
 
 # add_admission_rule
 # adds a new rule in the table admission_rule
-# parameters : base, rule
+# parameters : base, priority, enabled, rule
 # return value : new admission rule id
-sub add_admission_rule($$) {
+sub add_admission_rule($$$$) {
     my $dbh = shift;
+    my $priority = shift;
+    my $enabled = shift;
     my $rule = $dbh->quote(shift);
      
-    $dbh->do("  INSERT INTO admission_rules (rule)
-                VALUES ($rule)
+    $dbh->do("  INSERT INTO admission_rules (priority, enabled, rule)
+                VALUES ($priority, ".($enabled?"'YES'":"'NO'").", $rule)
              ");
     my $id = get_last_insert_id($dbh,"admission_rules_id_seq");
 
@@ -4657,12 +4659,18 @@ sub add_admission_rule($$) {
 # parameters : base
 # return value : list of admission rules
 # side effects : /
-sub list_admission_rules($) {
+sub list_admission_rules($$) {
 	my $dbh = shift;
+    my $enabled = shift;
 	
+    my $where = "";
+    if (defined($enabled)) {
+        $where = ($enabled)?"WHERE enabled = 'YES'":"WHERE enabled = 'NO'";
+    }
+        
 	my $sth = $dbh->prepare("   SELECT *
-                                FROM admission_rules
-                                ORDER BY id
+                                FROM admission_rules $where
+                                ORDER BY priority, id
                            ");
     $sth->execute();
     my @res = ();
@@ -4760,11 +4768,13 @@ sub delete_admission_rule($$) {
 
 # update_admission_rule
 # updates an existing rule in the table admission_rule
-# parameters : base, rule id, rule
+# parameters : base, rule id, priority, enabled, rule
 # return value : id of the updated admission rule if ok, undef else
-sub update_admission_rule($$$) {
+sub update_admission_rule($$$$$) {
     my $dbh = shift;
     my $id = shift;
+    my $priority = shift;
+    my $enabled = shift;
     my $rule = $dbh->quote(shift);
 
     my $sth = $dbh->prepare("       SELECT COUNT(*)
@@ -4773,7 +4783,8 @@ sub update_admission_rule($$$) {
     $sth->execute();
     if($sth->fetchrow_array() > 0) {
       $dbh->do("  UPDATE admission_rules
-                SET rule=$rule WHERE id=$id
+                SET (priority, enabled, rule) = ($priority, ".($enabled?"'YES'":"'NO'").", $rule)
+                WHERE id=$id
                ");
       return($id);
     }else{

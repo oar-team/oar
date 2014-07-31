@@ -152,7 +152,7 @@ sub count_jobs_for_user_query {
 }
 
 sub get_all_admission_rules() {
-	my @admission_rules = OAR::IO::list_admission_rules($base);
+	my @admission_rules = OAR::IO::list_admission_rules($base,undef);
 	return \@admission_rules;
 }
 
