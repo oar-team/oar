@@ -1706,7 +1706,7 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
-    my $id = OAR::IO::add_admission_rule($dbh,$admission_rule->{rule});
+    my $id = OAR::IO::add_admission_rule($dbh,$admission_rule->{priority},$admission_rule->{enabled},$admission_rule->{rule});
     if ( $id && $id > 0) {
         print $q->header( -status => 201, -type => OAR::API::get_content_type($ext) , -location => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext) );
 
@@ -1714,6 +1714,8 @@ SWITCH: for ($q) {
       	print $HTML_HEADER if ($ext eq "html");
       	print OAR::API::export( { 
                       'id' => "$id",
+                      'priority' => "$admission_rule->{priority}",
+                      'enalbed' => "$admission_rule->{enabled}",
                       'rule' => OAR::API::nl2br($admission_rule->{rule}),
                       'api_timestamp' => time(),
                       'uri' => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext)
@@ -1753,11 +1755,14 @@ SWITCH: for ($q) {
     if (defined($admission_rule)) {
     	OAR::Stat::delete_specific_admission_rule($rule_id);
     	print $HTML_HEADER if ($ext eq "html");
-    	print OAR::API::export( { 'id' => "$admission_rule->{id}",
-    				            'rule' => "$admission_rule->{rule}",
-                    			'status' => "deleted",
-                    			'api_timestamp' => time()
-    						  } , $ext );
+    	print OAR::API::export( { 
+            'id' => "$admission_rule->{id}",
+            'priority' => "$admission_rule->{priority}",
+            'enalbed' => "$admission_rule->{enabled}",
+            'rule' => "$admission_rule->{rule}",
+            'status' => "deleted",
+            'api_timestamp' => time()
+        } , $ext );
         OAR::Stat::close_db_connection; 
     }
     else {
@@ -1813,14 +1818,16 @@ SWITCH: for ($q) {
             "Could not find admission rule to delete: id=$rule_id"
           );
         }
-    }elsif (defined($admission_rule->{rule})) {
-      my $id = OAR::IO::update_admission_rule($dbh,$rule_id,$admission_rule->{rule});
+    }elsif (defined($admission_rule->{priority}) and defined($admission_rule->{enabled}) and defined($admission_rule->{rule})) {
+      my $id = OAR::IO::update_admission_rule($dbh,$rule_id,$admission_rule->{priority},$admission_rule->{enabled},$admission_rule->{rule});
       OAR::IO::disconnect($dbh);
       if ( $id && $id > 0) {
           print $q->header( -status => 201, -type => OAR::API::get_content_type($ext) , -location => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext) );
           print $HTML_HEADER if ($ext eq "html");
           print OAR::API::export( {
                       'id' => "$id",
+                      'priority' => "$admission_rule->{priority}",
+                      'enalbed' => "$admission_rule->{enabled}",
                       'rule' => OAR::API::nl2br($admission_rule->{rule}),
                       'api_timestamp' => time(),
                       'uri' => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext)
