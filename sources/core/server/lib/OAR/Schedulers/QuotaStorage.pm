@@ -317,6 +317,8 @@ sub check_quotas($$$$$$$$$$$){
                                                         $comment = "quota_exceeded:Gantt_quotas->{$q}->{$p}->{$t}->{$u}=\[$tmp_account,$tmp_nbjobs_account,$tmp_resourcesXhours_account\]>\[$gantt_quotas->{$q}->{$p}->{$t}->{$u}->[0],$gantt_quotas->{$q}->{$p}->{$t}->{$u}->[1],$gantt_quotas->{$q}->{$p}->{$t}->{$u}->[2]\]";
                                                         $current_time = $accounting->[$qindex+1]->[0];
                                                         last OUTER_LOOP;
+                                                    }else{
+                                                        $comment = "quota_ok";
                                                     }
                                                 }
                                             }

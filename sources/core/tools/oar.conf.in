@@ -222,7 +222,7 @@ SCHEDULER_TIMEOUT="30"
 
 # Number of processes to use when performing scheduling calculations
 # (default is 1)
-SCHEDULER_NB_PROCESSES=2
+SCHEDULER_NB_PROCESSES=1
 
 # Time to add between each jobs (for example: time for administration tasks or
 # time to let computers to reboot)
