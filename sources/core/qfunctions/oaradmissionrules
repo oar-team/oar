@@ -176,6 +176,7 @@ sub add_rule($$$) {
     my $rule = shift;
     my $r = OAR::IO::add_admission_rule($base, $priority, $enabled, $rule);
     defined($r) or die "Error: could not add rule in database\n";
+    return($r);
 }
 
 sub delete_rule($) {
