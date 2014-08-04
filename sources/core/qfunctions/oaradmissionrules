@@ -136,7 +136,15 @@ sub edit($$) {
     }
     close $fh or die "Error: cannot close temp file\n";
     if ($edit eq "") { 
-        $edit = "editor";
+        if (exists($ENV{EDITOR})) {
+            $edit = $ENV{EDITOR};
+        }
+        elsif (qx/which editor/ ne "") {
+            $edit = "editor";
+        }
+        else {
+            $edit = "vi";
+        }
     }
     system($edit, $filename);
     if ($? == -1) {
@@ -226,8 +234,12 @@ elsif ($action eq "show") {
 elsif ($action eq "new") {
     my $r;
     my $rule = "";
-    (defined($edit) or defined($filename)) or die "Error: you must specify --edit or --from-file\n\n".usage();
-    (defined($edit) and defined($filename)) and die "Error: you cannot use both --edit and --from-file at a same time\n\n".usage();
+    if (defined($edit) and defined($filename)) {
+        die "Error: you cannot use both --edit and --from-file at a same time\n\n".usage();
+    }
+    if (not defined($edit) and not defined($filename)) {
+        $edit="";
+    }
     if (not defined($filename)) {
         $filename = edit($rule_id, $rule);
     }
