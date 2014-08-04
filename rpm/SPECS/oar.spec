@@ -1,4 +1,4 @@
-%define version 2.5.3
+%define version 2.5.4+rc2
 %define release 1.el6
 
 %define oaruser  oar
@@ -61,8 +61,8 @@ This package install the submission and query part of the OAR batch scheduler
 %package web-status
 Summary:        OAR batch scheduler web-status package
 Group:          System Environment/Base
-Requires:       httpd, perl-DBI, perl-Tie-IxHash, perl-AppConfig, perl(Sort::Naturally), ruby, ruby-DBI, ruby-gd, php, oar-web-status-backend = %version-%release
-Provides:       Perl(OAR::Monika), DrawGantt, DrawGantt-SVG
+Requires:       httpd, perl-DBI, perl-Tie-IxHash, perl-AppConfig, perl(Sort::Naturally), php, oar-web-status-backend = %version-%release
+Provides:       Perl(OAR::Monika), DrawGantt-SVG
 %description web-status
 This package installs the OAR batch scheduler status web pages: jobs and resources status and gantt diagrams.
 
@@ -73,13 +73,6 @@ Requires:       man, httpd
 BuildRequires:  python-docutils, httpd
 %description doc
 This package installs some documentation for OAR batch scheduler
-
-%package admin
-Summary:        OAR batch scheduler administration tools package
-Group:          System Environment/Base
-Requires:       oar-user = %version-%release, perl(YAML), ruby, ruby-DBI, oar-admin-backend = %version-%release
-%description admin
-This package installs some useful tools to help the administrator of a oar server (resources manipulation, admission rules edition, ...) 
 
 %package restful-api
 Summary:        OAR RESTful user API
@@ -128,26 +121,10 @@ Provides:       oar-user-backend
 %description user-pgsql
 This package installs the PostgreSQL dependencies for OAR user package
 
-%package admin-mysql
-Summary:        OAR batch scheduler MySQL admin backend
-Group:          System Environment/Base
-Requires:       ruby-mysql
-Provides:       oar-admin-backend
-%description admin-mysql
-This package installs the MySQL dependencies for OAR admin package
-
-%package admin-pgsql
-Summary:        OAR batch scheduler PostgreSQL admin backend
-Group:          System Environment/Base
-Requires:       rubygem-pg
-Provides:       oar-admin-backend
-%description admin-pgsql
-This package installs the PostgreSQL dependencies for OAR admin package
-
 %package web-status-mysql
 Summary:        OAR batch scheduler MySQL web-status backend
 Group:          System Environment/Base
-Requires:       perl-DBD-MySQL, ruby-mysql, php-mysql
+Requires:       perl-DBD-MySQL, php-mysql
 Provides:       oar-web-status-backend
 %description web-status-mysql
 This package installs the MySQL dependencies for OAR web-status package
@@ -155,7 +132,7 @@ This package installs the MySQL dependencies for OAR web-status package
 %package web-status-pgsql
 Summary:        OAR batch scheduler PostgreSQL web-status backend
 Group:          System Environment/Base
-Requires:       perl-DBD-Pg, rubygem-pg, php-pgsql
+Requires:       perl-DBD-Pg, php-pgsql
 Provides:       oar-web-status-backend
 %description web-status-pgsql
 This package installs the PostgreSQL dependencies for OAR web-status package
@@ -188,7 +165,7 @@ export TARGET_DIST=redhat
 make packages-install PACKAGES_DIR=tmp
 
 # Get the file lists for every package (except those explicitely listed later)
-for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-admin oar-restful-api liboar-perl
+for package in oar-common oar-server oar-node oar-user oar-web-status oar-doc oar-restful-api liboar-perl
 do
   ( cd tmp/$package && ( find -type f && find -type l ) | sed 's#^.##' ) \
     | sed -e "s/\.1$/.1.gz/g" > $package.files
@@ -224,8 +201,7 @@ cp $TMP/usr/share/doc/oar-restful-api/examples/api_html_header.pl \
 # web-status
 TMP=tmp/oar-web-status
 mkdir -p $TMP/etc/oar
-cp $TMP/usr/share/doc/oar-web-status/examples/drawgantt.conf \
-   $TMP/usr/share/doc/oar-web-status/examples/drawgantt-config.inc.php \
+cp $TMP/usr/share/doc/oar-web-status/examples/drawgantt-config.inc.php \
    $TMP/usr/share/doc/oar-web-status/examples/monika.conf \
    $TMP/usr/share/doc/oar-web-status/examples/apache.conf \
      $TMP/etc/oar
@@ -390,28 +366,17 @@ rm -rf tmp
 
 %files web-status -f oar-web-status.files
 %defattr(0644,root,root)
-%config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt.conf
 %config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt-config.inc.php
 %config(noreplace) %attr (0600,apache,root) /etc/oar/monika.conf
 %config(noreplace) %attr (0600,apache,root) /etc/oar/apache.conf
-%attr(0755, root, root) /var/www/cgi-bin/drawgantt.cgi
 %attr(0755, root, root) /var/www/cgi-bin/monika.cgi
 %attr(0755, root, root) /usr/lib/oar/setup/www-conf.sh
-%attr(0755, root, root) /usr/lib/oar/setup/drawgantt.sh
 %attr(0755, root, root) /usr/lib/oar/setup/drawgantt-svg.sh
 %attr(0755, root, root) /usr/lib/oar/setup/monika.sh
 
 %files doc -f oar-doc.files
 %defattr(0644,root,root)
 %docdir /usr/share/doc/oar-doc 
-
-%files admin -f oar-admin.files
-%defattr(0644,root,root)
-%attr(6754, root, oar) /usr/sbin/oaradmin
-%attr(0755, root, root) /usr/lib/oar/setup/tools.sh
-%attr(0755, root, root) /usr/lib/oar/oaradmin_modules.rb
-%attr(0755, root, root) /usr/lib/oar/oaradmin.rb
-%attr(0755, root, root) /usr/lib/oar/oar_modules.rb
 
 %files restful-api -f oar-restful-api.files
 %defattr(0644,root,root)
@@ -441,12 +406,6 @@ rm -rf tmp
 %defattr(0644,root,root)
 
 %files user-pgsql
-%defattr(0644,root,root)
-
-%files admin-mysql
-%defattr(0644,root,root)
-
-%files admin-pgsql
 %defattr(0644,root,root)
 
 %files web-status-mysql
@@ -499,18 +458,15 @@ fi
 %post web-status
 . /usr/lib/oar/setup/www-conf.sh
 . /usr/lib/oar/setup/monika.sh
-. /usr/lib/oar/setup/drawgantt.sh
 . /usr/lib/oar/setup/drawgantt-svg.sh
 www_conf_setup
 monika_setup
-drawgantt_setup
 drawgantt_svg_setup
 service httpd reload || true
 
 %postun web-status
 if [ "$1" = "0" ] ; then # last uninstall
   rm -f /etc/httpd/conf.d/oar-web-status.conf || true
-  rm -rf /var/lib/drawgantt-files/cache
 fi
 
 ###### oar-restful-api scripts ######
@@ -525,11 +481,6 @@ if [ "$1" = "0" ] ; then # last uninstall
   service httpd reload || true
 fi
 
-###### oar-admin scripts ######
-%post admin
-. /usr/lib/oar/setup/tools.sh
-tools_setup
-
 ###### oar-user scripts ######
 %post user
 . /usr/lib/oar/setup/user.sh
@@ -537,6 +488,10 @@ user_setup
 
 
 %changelog
+* Wed Aug 5 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-1.el6
+- New upstream release
+- Removed dependancies on ruby: removed oar-admin and its associated backends, removed drawgantt
+
 * Wed Jun 19 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
 - New upstream release
 - Remove OAR desktop-computing packages
