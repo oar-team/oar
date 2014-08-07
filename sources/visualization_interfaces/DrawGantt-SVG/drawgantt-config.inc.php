@@ -21,12 +21,12 @@ $CONF['nav_custom_buttons'] = array(
 );
 
 // Database access configuration
-$CONF['db_type']="mysql"; // choices: mysql for Mysql or pg for PostgreSQL
+$CONF['db_type']="pg"; // choices: mysql for Mysql or pg for PostgreSQL
 $CONF['db_server']="127.0.0.1";
-$CONF['db_port']="3306"; // usually 3306 for Mysql or 5432 for PostgreSQL
+$CONF['db_port']="5432"; // usually 3306 for Mysql or 5432 for PostgreSQL
 $CONF['db_name']="oar"; // OAR read only user account 
-$CONF['db_user']="oar";
-$CONF['db_passwd']="oar";
+$CONF['db_user']="oar_ro";
+$CONF['db_passwd']="oar_ro";
 
 // Data display configuration
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
@@ -39,7 +39,7 @@ $CONF['label_cmp_regex'] = array( // substring selection regex for comparing and
   'network_address' => '/^([^-]+)-(\d+)\..*$/',
   );
 $CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
-  'deploy', 'cpuset', 'besteffort', 'network_address', 'type');
+  'deploy', 'cpuset', 'besteffort', 'network_address', 'type', 'drain');
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
   'network_address','cpuset'); 
 $CONF['resource_drain_property'] = "drain"; // if set, must also be one of the resource_properties above to activate the functionnality
