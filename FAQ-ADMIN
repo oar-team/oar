@@ -14,8 +14,8 @@ What means the error "Bad configuration option: PermitLocalCommand" when I am us
 
 For security reasons, on the latest OpenSSH releases you are able to execute
 a local command when you are connecting to the remote host and we must
-deactivate this option because the oarsh_ wrapper executes the *ssh* command
-into the user oar.
+deactivate this option because the oarsh wrapper executes the *ssh* command
+with oar user privileges.
 
 So if you encounter this error message it means that your OpenSSH does
 not know this option and you have to remove it from the oar.conf.
@@ -67,7 +67,8 @@ There are 2 ways to handle licence tokens:
   - by calling external scripts that gives the number of free licences.
 
 Defining licence resources into OAR
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+___________________________________
+
 This approach is useful when everything is done inside the cluster (no
 interaction with the outside).
 
@@ -101,7 +102,8 @@ really take care to define the right amount of licences that theirs jobs will
 use.
 
 Calling an external script
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+__________________________
+
 This approach is useful when the cluster processes will use the same licence
 servers than other clusters or other computers. So you can't know in advance when
 another computer outside the cluster will use the tokens (like the slots for a
@@ -117,7 +119,7 @@ To configure this feature, you have to:
 
  1. Write a script that displays on the STDOUT the number free tokens.
 
- 2. Edit /etc/oar.oar.conf on the OAR server and change the value of
+ 2. Edit /etc/oar/oar.conf on the OAR server and change the value of
     SCHEDULER_TOKEN_SCRIPTS; for example:
     ::
 
@@ -149,7 +151,7 @@ These are the steps to follow:
 
  3. Then you have to restrict properties for new job type.
     So an admission rule performs this job (you can insert this new rule with
-    the oaradmin_ command)::
+    the oaradmissionrules_ command)::
 
         my $cluster_constraint = 0;
         if (grep(/^cluster1$/, @{$type_list})){
@@ -189,26 +191,23 @@ management boards of the computers.
 If you want to enable a node to be woke up the next 12 hours::
 
     ((DATE=$(date +%s)+3600*12))
-    oarnodesetting -h host_name -p cm_availability=$DATE
+    oarnodesetting -h host_name -p available_upto=$DATE
 
 Otherwise you can disable the wake up of nodes (but not the halt) by::
 
-    oarnodesetting -h host_name -p cm_availability=1
+    oarnodesetting -h host_name -p vailable_upto=1
 
 If you want to disable the halt on a node (but not the wakeup)::
 
-    oarnodesetting -h host_name -p cm_availability=2147483647
+    oarnodesetting -h host_name -p available_upto=2147483647
 
 2147483647 = 2^31 - 1 : we take this value as infinite and it is used to
 disable the halt mechanism.
 
 And if you want to disable the halt and the wakeup::
 
-    oarnodesetting -h host_name -p cm_availability=0
+    oarnodesetting -h host_name -p available_upto=0
 
-Note: Since the 2.4 OAR version, cm_availability has been renamed
-into available_upto. 
-    
 Your `SCHEDULER_NODE_MANAGER_WAKE_UP_CMD`_ must be a script that reads node
 names and translate them into the right wake up commands.
 
