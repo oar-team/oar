@@ -5,4 +5,5 @@ Alias /drawgantt-files %%OARHOMEDIR%%/drawgantt-files
 Alias /drawgantt-svg %%WWWDIR%%/drawgantt-svg
 <Directory %%WWWDIR%%>
         Options Indexes FollowSymlinks
+        #Require all granted # <- seems to be needed for apache >= 2.3
 </Directory>

@@ -1,7 +1,7 @@
 MODULE=drawgantt
 SRCDIR=sources/visualization_interfaces/DrawGantt
 
-EXAMPLEDIR_FILES=$(SRCDIR)/drawgantt.conf
+SHAREDIR_FILES=$(SRCDIR)/drawgantt.conf
 
 PROCESS_TEMPLATE_FILES= $(SRCDIR)/drawgantt.conf.in \
 			$(SRCDIR)/drawgantt.cgi.in

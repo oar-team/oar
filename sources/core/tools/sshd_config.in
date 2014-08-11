@@ -46,7 +46,7 @@ PasswordAuthentication no
 MaxStartups 1024
 
 X11Forwarding yes
-X11DisplayOffset 10
+X11DisplayOffset 65
 PrintMotd no
 PrintLastLog yes
 KeepAlive yes

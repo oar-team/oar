@@ -119,11 +119,7 @@ while (<LIST>) {
 #
 sub print_usage() {
     print <<EOS;
-Usage: $0 [-h|--help]
-       $0 --init [OPTIONS]
-       $0 --reset [OPTIONS]
-       $0 --create [OPTIONS]
-       $0 --drop [OPTIONS]
+Usage: $0 <ACTION> [OPTIONS]
 
 Setup the database used by OAR
 

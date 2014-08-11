@@ -1,7 +1,10 @@
+$LOAD_PATH << '.'
+
 require 'oarrestapi_lib'
 
+USER=ENV['USER']
 $jobid = ""
-APIURI="http://kameleon:kameleon@localhost/oarapi-priv/" 
+APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/"
 describe OarApi do
   before :all do
     # Custom variables

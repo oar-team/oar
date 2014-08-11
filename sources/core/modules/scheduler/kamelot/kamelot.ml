@@ -6,7 +6,7 @@ open Scheduling
 TODO
 
 1) Add security_time_overhead = SCHEDULER_JOB_SECURITY_TIME | 60
-1.1) Suspend / SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE 
+1.1) Suspend / SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
 1.2) Fairsharing
 1.0.1) Test SCHEDULER_JOB_SECURITY_TIME in container context
 3) Besteffort (need resource reverse order => not sure ?)
@@ -63,7 +63,7 @@ let token_scripts =
 (*                             *)
 
 (* test if Fairsharing  is enabled *)
-let fairsharing_flag = Conf.test_key("FAIRSHARING_ENABLED") 
+let fairsharing_flag = Conf.test_key("FAIRSHARING_ENABLED")
 let fairsharing_nb_job_limit = Conf.get_default_value "SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER" "30"
 
 let karma_window_size = Int64.of_int ( 3600 * 30 * 24 ) (* 30 days *)
@@ -76,8 +76,8 @@ let k_karma_coeff_user_asked_consumption = "1"
 (* get fairsharing config if any *)
 let karma_proj_targets = Conf.str_perl_hash_to_pairs_w_convert (Conf.get_default_value "SCHEDULER_FAIRSHARING_PROJECT_TARGETS" k_proj_targets) float_of_string_e
 let karma_user_targets = Conf.str_perl_hash_to_pairs_w_convert (Conf.get_default_value "SCHEDULER_FAIRSHARING_USER_TARGETS" k_user_targets) float_of_string_e
-let karma_coeff_proj_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_PROJECT" k_coeff_proj_consumption) 
-let karma_coeff_user_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER" k_coeff_user_consumption) 
+let karma_coeff_proj_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_PROJECT" k_coeff_proj_consumption)
+let karma_coeff_user_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER" k_coeff_user_consumption)
 let karma_coeff_user_asked_consumption = float_of_string_e (Conf.get_default_value "SCHEDULER_FAIRSHARING_COEF_USER_ASK" k_karma_coeff_user_asked_consumption)
 
 (*                                                     *)
@@ -87,7 +87,7 @@ let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
   let start_window = Int64.sub now karma_window_size and stop_window = now in
     let karma_sum_time_asked, karma_sum_time_used = Iolib.get_sum_accounting_window dbh queue start_window stop_window
     and karma_projects_asked, karma_projects_used = Iolib.get_sum_accounting_for_param dbh queue "accounting_project" start_window stop_window
-    and karma_users_asked, karma_users_used       = Iolib.get_sum_accounting_for_param dbh queue "accounting_user" start_window stop_window 
+    and karma_users_asked, karma_users_used       = Iolib.get_sum_accounting_for_param dbh queue "accounting_user" start_window stop_window
     in
       let karma j = let job = try Hashtbl.find h_jobs j  with Not_found -> failwith "Karma: not found job" in
         let user = job.user and proj = job.project in
@@ -104,6 +104,25 @@ let jobs_karma_sorting dbh queue now karma_window_size jobs_ids h_jobs =
       in
       let kompare x y = let kdiff = (karma x) -. (karma y) in if kdiff = 0.0 then 0 else if kdiff > 0.0 then 1 else -1 in
         List.sort kompare jobs_ids;;
+
+(*      *)
+(* misc *)
+(*      *)
+let display_hslot0 str h_s =
+  let slots = try Hashtbl.find h_s 0 with  Not_found -> failwith "Can't slots #0" in
+    begin
+      Conf.log ("Length of " ^ str ^ (string_of_int (List.length slots) ));
+      Conf.log ( str ^ "#0: ");
+      Conf.log (slots_to_string slots);
+    end
+
+let display_last_hslot0 str h_s n =
+  let slots = try Hashtbl.find h_s 0 with  Not_found -> failwith "Can't slots #0" in
+    begin
+      Conf.log ("Length of " ^ str ^ (string_of_int (List.length slots) ));
+      Conf.log ( str ^ "#0: ");
+      Conf.log (slots_to_string (Helpers.last_n slots n));
+    end
 
 (*               *)
 (* Suspend stuff *)
@@ -131,58 +150,58 @@ let argv = if (Array.length(Sys.argv) > 2) then
 let resources_init_slots_determination dbh now nb_potential_resources potential_resources =
   let flag_wake_up_cmd = Conf.test_key("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") ||
                         (((compare (Conf.get_default_value "ENERGY_SAVING_INTERNAL" "no") "yes")==0) && Conf.test_key("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))
-  in 
-    
+  in
+
     if flag_wake_up_cmd then
       (*                                                                                                             *)
       (* generate initial slot with no dead and suspected resources and with resources (nodes) which can be waked up *)
       (*                                                                                                             *)
     begin
       Conf.log "Energy Saving and Wakeup Mode are enabled";
-      let hash_available_upto_by_resources =  Hashtbl.create 100 and idx = ref 0 
+      let hash_available_upto_by_resources =  Hashtbl.create 100 and idx = ref 0
         (* available_upto_vals array containts only once occurrence of each r.available_upto, need to iterate on hash_available_upto_by_resources *)
         and available_upto_vals = Array.make nb_potential_resources 0L in
       let hash_available_upto_by_resources_populate r =
-        if (not (Hashtbl.mem hash_available_upto_by_resources r.available_upto)) then 
+        if (not (Hashtbl.mem hash_available_upto_by_resources r.available_upto)) then
           begin
             Array.set available_upto_vals !idx r.available_upto;
             idx := !idx + 1;
           end;
         Hashtbl.add hash_available_upto_by_resources r.available_upto (r.ord_r_id:int);
       in
-        
 
-(*          
+
+(*
           let res_lst = try Hashtbl.find hash_available_upto_by_resources r.available_upto
                         with Not_found -> Hashtbl.add hash_available_upto_by_resources r.available_upto [r.ord_r_id];[]
                         in
                           match res_lst with
                              [] -> ()
 (* TODO Need TO OPTIMIZE remove replace and *)
-                            | x -> Hashtbl.replace hash_available_upto_by_resources r.available_upto (x @ [r.ord_r_id]) 
+                            | x -> Hashtbl.replace hash_available_upto_by_resources r.available_upto (x @ [r.ord_r_id])
 
       in
 *)
 
       let resources = List.filter (fun n -> if (n.state = Alive) || (n.state = Absent) then
-                                              begin 
-                                                hash_available_upto_by_resources_populate n; 
+                                              begin
+                                                hash_available_upto_by_resources_populate n;
                                                 true
-                                              end 
-                                            else 
+                                              end
+                                            else
                                               false
                                   )
                                   potential_resources in
 
-        let resource_intervals = 
+        let resource_intervals =
           if ((List.length resources) = 0) then
             begin
               Conf.log "none available ressources for scheduling any jobs"; exit 0
             end
           else
-            ints2intervals (List.map (fun n -> n.ord_r_id) resources) 
-        in                     
-        (* create corresponding job from available_up parameter of resource *) 
+            ints2intervals (List.map (fun n -> n.ord_r_id) resources)
+        in
+        (* create corresponding job from available_up parameter of resource *)
         let pseudo_job_av_upto a_upto res_itv =
           { jobid=0;
             jobstate="";
@@ -195,28 +214,28 @@ let resources_init_slots_determination dbh now nb_potential_resources potential_
             user = "";
             project = "";
             rq = []
-          } 
+          }
           in
-        (* create pseudo_jobs from hastable which containts resources' id by distinct available upto *) 
+        (* create pseudo_jobs from hastable which containts resources' id by distinct available upto *)
 
         let pseudo_jobs_resources_available_upto =
           let rec pseudo_jobs_av_up i p_jobs = match i with
             | 0 -> p_jobs
-            | x  -> let avail_upto = available_upto_vals.(x-1) in 
+            | x  -> let avail_upto = available_upto_vals.(x-1) in
                       if (avail_upto < max_time_minus_one) then
                         let res_av_up = Hashtbl.find_all hash_available_upto_by_resources avail_upto in
                           pseudo_jobs_av_up (x-1) ((pseudo_job_av_upto avail_upto (ints2intervals res_av_up)) :: p_jobs)
                       else
                         pseudo_jobs_av_up (x-1) p_jobs
           in
-            pseudo_jobs_av_up !idx [] 
+            pseudo_jobs_av_up !idx []
         in
 
     (* TODO remove
-            Hashtbl.fold (fun avail_upto r_set acc -> 
+            Hashtbl.fold (fun avail_upto r_set acc ->
             if (avail_upto < max_time_minus_one)   then
-               (pseudo_job_av_upto avail_upto (ints2intervals r_set)) :: acc 
-            else 
+               (pseudo_job_av_upto avail_upto (ints2intervals r_set)) :: acc
+            else
               acc
            ) hash_available_upto_by_resources []
       *)
@@ -235,7 +254,7 @@ let resources_init_slots_determination dbh now nb_potential_resources potential_
 (*               *)
 (* Main function *)
 (*               *)
-let _ = 
+let _ =
 	try
 		Conf.log "Starting";
 
@@ -247,11 +266,11 @@ let _ =
       | "precomputed" -> Conf.log("Iolib.get_resource_list_w_precomputed_hierarchy: mode precomputed");
                   Iolib.get_resource_list_w_thinest_hierarchy conn (List.hd hy_labels) sched_resource_order (* TODO: MUST BE CHANGED *)
       | "mono" -> Conf.log("Iolib.get_resource_list_w_thinest_hierarchy: mode mono");
-                  Iolib.get_resource_list_w_thinest_hierarchy conn (List.hd hy_labels) sched_resource_order 
+                  Iolib.get_resource_list_w_thinest_hierarchy conn (List.hd hy_labels) sched_resource_order
       (* retrieve ressources, hierarchy_info to convert to hierarchy_level, array to translate r_id to/from initial order and sql order_by order *)
-      
+
       | _ -> Conf.log("Iolib.get_resource_list_w_hierarchy: mode default");
-                  let (nb_pot_res, pot_resources, h_value_order, hierarchy_info, ord2init_id_lst, init2ord_id_lst)  = 
+                  let (nb_pot_res, pot_resources, h_value_order, hierarchy_info, ord2init_id_lst, init2ord_id_lst)  =
                     Iolib.get_resource_list_w_hierarchy conn hy_labels sched_resource_order in
                   let hy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
                   (nb_pot_res, pot_resources,hy_levels,ord2init_id_lst, init2ord_id_lst)
@@ -262,20 +281,20 @@ let _ =
 
         Conf.log ("Hierarchies:");
         let hierarchy_levels = Hierarchy.hy_iolib2hy_level h_value_order hierarchy_info hy_labels in
-          List.iter (fun x ->  Conf.log ("h_label:"^(fst x));Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; 
+          List.iter (fun x ->  Conf.log ("h_label:"^(fst x));Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels;
 *)
-      let get_res_hy_mode = Conf.get_default_value "KAMELOT_GET_RESOURCES_HIERARCHY_MODE" "default" in 
+      let get_res_hy_mode = Conf.get_default_value "KAMELOT_GET_RESOURCES_HIERARCHY_MODE" "default" in
       let (nb_potential_res,potential_resources, hierarchy_levels, ord2init_ids, init2ord_ids) = get_resources_hierarchies get_res_hy_mode in
 (*
       Conf.log ("Hierarchies:");
-      List.iter (fun x ->  Conf.log ("h_label:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels; 
+      List.iter (fun x ->  Conf.log ("h_label:"^(fst x)); Conf.log("|"^(String.concat ", " (List.map itvs2str (snd x)))^"|")) hierarchy_levels;
 *)
 
      let h_slots = Hashtbl.create 10 in
 	    (* Hashtbl.add h_slots 0 [slot_init]; *)
       let  (resource_intervals,slots_init_available_upto_resources) = resources_init_slots_determination conn now nb_potential_res potential_resources in
-        Hashtbl.add h_slots 0 slots_init_available_upto_resources;  
-      
+        Hashtbl.add h_slots 0 slots_init_available_upto_resources;
+
   		let (waiting_j_ids,h_waiting_jobs) =
         let limited_job_ids =
           if fairsharing_flag then
@@ -290,16 +309,18 @@ let _ =
       Conf.log ("Number of job waiting ids: "^ string_of_int (List.length waiting_j_ids));
 (*
       Conf.log ("job waiting ids: "^ (Helpers.concatene_sep "," string_of_int waiting_j_ids));
-      Hashtbl.iter (fun k j -> Conf.log (job_to_string j)) h_waiting_jobs ; 
+      Hashtbl.iter (fun k j -> Conf.log (job_to_string j)) h_waiting_jobs ;
 *)
       if (List.length waiting_j_ids) > 0 then (* Jobs to schedule ?*)
         begin
-          
+
           (* get types attributs of wating jobs *)
           ignore (Iolib.get_job_types conn waiting_j_ids h_waiting_jobs);
-          
+
           (* fill slots with prev scheduled jobs  *)
           let prev_scheduled_jobs = Iolib.get_scheduled_jobs conn init2ord_ids [] security_time_overhead now in (* TODO available_suspended_res_itvs *)
+          Conf.log ("nb of prev_scheduled_jobs:" ^ (string_of_int (List.length prev_scheduled_jobs)));
+
           if (not ( prev_scheduled_jobs = [])) then
             let (h_prev_scheduled_jobs_w_types, prev_scheduled_job_ids_tmp) = Iolib.get_job_types_hash_ids conn prev_scheduled_jobs in
             let prev_scheduled_job_ids =
@@ -307,12 +328,12 @@ let _ =
                 (* exclude besteffort jobs *)
                 begin
                 (* Conf.log ("excluding besteffort jobs, queue: " ^ queue); *)
-                let besteffort_mem_remove job_id = 
-                  let test_bt = List.mem_assoc "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_w_types job_id 
+                let besteffort_mem_remove job_id =
+                  let test_bt = List.mem_assoc "besteffort" ( try Hashtbl.find h_prev_scheduled_jobs_w_types job_id
                                                               with Not_found -> failwith "Must no failed here: besteffort_mem").types in
                                                               if test_bt then Hashtbl.remove h_prev_scheduled_jobs_w_types job_id else ();
-                                                              test_bt  
-                  in  
+                                                              test_bt
+                  in
                     List.filter (fun n -> (not (besteffort_mem_remove n))) prev_scheduled_job_ids_tmp;
  (*               Conf.log ("Previous Scheduled jobs no besteffort:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs_no_bt) ); *)
                 end
@@ -322,43 +343,35 @@ let _ =
                 prev_scheduled_job_ids_tmp
                 end
             in
-             
-            (* display previous scheduled jobs 
-            Hashtbl.iter (fun k v -> printf "prev job: %s,  %s\n" k ) h_prev_scheduled_jobs_types; 
-            *)
-            (* Conf.log ("length h_slots:"^(string_of_int (Hashtbl.length h_slots))); *)
-            (* 
-            let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
-            Conf.log ("slots_with_scheduled_jobs_before #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
-         
-            Conf.log ("length h_prev_scheduled_jobs_types:"^(string_of_int (Hashtbl.length h_prev_scheduled_jobs_types)));
-            *)
 
+            (* display previous scheduled jobs *)
+            (*
+            Hashtbl.iter (fun k v -> ignore (Conf.log ("prev " ^ (job_to_string v) ))) h_prev_scheduled_jobs_w_types;
+            display_hslot0 "h_slots before set_slots_with_prev_scheduled_jobs " h_slots;
+            *)
             (* fill slots function with previous scheduled jobs *)
             set_slots_with_prev_scheduled_jobs h_slots h_prev_scheduled_jobs_w_types prev_scheduled_job_ids security_time_overhead;
 
-            (*             
-             let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
-               Conf.log ("slots_with_scheduled_jobs after #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));
-            *)  
+            (* display_hslot0 "h_slots after set_slots_with_prev_scheduled_jobs " h_slots; *)
+            (* display_last_hslot0 "h_slots after set_slots_with_prev_scheduled_jobs "  h_slots 3 ; *)
 
           else ();
 
           Conf.log "go to make a schedule";
 
-          (* get jobs' dependencies information *) 
+          (* get jobs' dependencies information *)
           let h_jobs_dependencies = Iolib.get_current_jobs_dependencies conn    in
           let h_req_jobs_status   = Iolib.get_current_jobs_required_status conn in
 
           let all_ordered_waiting_j_ids =
             if fairsharing_flag then
-              (* ordering jobs indexes accordingly to fairsharing functions *) 
-              jobs_karma_sorting conn queue now karma_window_size waiting_j_ids h_waiting_jobs 
+              (* ordering jobs indexes accordingly to fairsharing functions *)
+              jobs_karma_sorting conn queue now karma_window_size waiting_j_ids h_waiting_jobs
             else
               waiting_j_ids
             in
           let ordered_waiting_j_ids =
-            (* limit the number of job to schedule in this round if correspondind variable is defined*)  
+            (* limit the number of job to schedule in this round if correspondind variable is defined*)
             if Conf.test_key("MAX_JOB_PER_SCHEDULING_ROUND") then
               begin
                 Conf.log ("MAX_JOB_PER_SCHEDULING_ROUND: " ^  (Conf.get_value "MAX_JOB_PER_SCHEDULING_ROUND"));
@@ -375,12 +388,12 @@ let _ =
           in
             Conf.log ((Printf.sprintf "Queue: %s, Now: %s" queue (Int64.to_string now)));
             (*Conf.log ("slot_init:\n  " ^  slot_to_string slot_init);*)
-            (* let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in 
+            (* let slots_with_scheduled_jobs = try Hashtbl.find h_slots 0 with  Not_found -> failwith "Can't slots #0" in
             Conf.log ("slots_with_scheduled_jobs #0:\n  " ^ (Helpers.concatene_sep "\n   " slot_to_string slots_with_scheduled_jobs));*)
 
-  				  (* Conf.log ("Resources found:\n   " ^ (Helpers.concatene_sep "\n   " resource_to_string resources) ); *)     
+  				  (* Conf.log ("Resources found:\n   " ^ (Helpers.concatene_sep "\n   " resource_to_string resources) ); *)
 	  		    (* Conf.log ("Waiting jobs:\n"^  (Helpers.concatene_sep "\n   " job_waiting_to_string waiting_jobs) ); *)
-            (* Conf.log ("Previous Scheduled jobs:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs) ); 
+            (* Conf.log ("Previous Scheduled jobs:\n"^  (Helpers.concatene_sep "\n\n" job_to_string prev_scheduled_jobs) );
 		        Conf.log ("Assigns:\n" ^  (Helpers.concatene_sep "\n\n" job_to_string assignement_jobs));
             *)
 
@@ -388,14 +401,14 @@ let _ =
             Conf.log ("Number of noscheduled jobs:" ^ string_of_int (List.length noscheduled_jids));
 
             (* save assignements into db *)
-            Iolib.save_assigns conn assignement_jobs ord2init_ids;  
+            Iolib.save_assigns conn assignement_jobs ord2init_ids;
             Conf.log "Terminated";
  		        exit 0
           end
         else
 	        Conf.log "No jobs to schedule, terminated";
-          exit 0 
-  with e -> 
-    let error_message = Printexc.to_string e in 
+          exit 0
+  with e ->
+    let error_message = Printexc.to_string e in
       Conf.error error_message;;
 

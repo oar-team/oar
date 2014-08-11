@@ -74,7 +74,7 @@ GetOptions ("state|s" => \$stateMode,
             "backward-compatible" => \$Old,
             "smp" => \$smp,
             "version|V" => \$Version
-           );
+           ) or exit(1);
 
 if ($usage){
     print <<EOS;

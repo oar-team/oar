@@ -194,5 +194,6 @@ int main(int ac, char **av){
             error("Cannot run the command", 52);
         }
     }
+    return 0;
 }
 

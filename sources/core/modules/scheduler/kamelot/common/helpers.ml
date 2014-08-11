@@ -67,7 +67,15 @@ let first_n l n =
   let rec aux buf l n = match n, l with 
       0, _ | _, [] -> List.rev buf
     | n, x::xs -> aux (x::buf) xs (n-1) in
-    aux [] l n 
+    aux [] l n
+     
+let last_n l n =     
+    let rec aux acc x = match x with 
+        | ([],x) -> acc
+        | ([],0) -> acc
+        | (lst,0) -> acc
+        | (h::t,i) -> aux (h::acc) (t,(i-1)) in
+        aux [] ((List.rev l),n);;
 
 let rec remove_first x = function 
     [] -> []

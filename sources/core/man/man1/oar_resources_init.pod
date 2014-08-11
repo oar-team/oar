@@ -2,28 +2,28 @@
 
 =head1 NAME
 
-oar_resource_init - Helper script to define OAR resources 
+oar_resource_init - Helper script to define OAR resources by SSHing to nodes
 
 =head1 SYNOPSIS
 
-B<oar_resource_init> I<host_list_file>
-
-B<oar_resource_init> -H I<host_list_file>
-
-B<oar_resource_init> -H -T I<host_list_file>
+B<oar_resource_init>  <hosts_file> [options]
 
 =head1 DESCRIPTION
 
-The script takes a list of hosts from the file given as parameter and generates the OAR commands to add the resources that define each of those hosts in the OAR database.
+The script takes a list of hosts from the file given as parameter and generates the OAR commands to add the resources which define those hosts in the OAR database.
 Generated commands are written by default in /tmp/oar_resources_init.cmd
 
-<host_list_file> must contain one host per line and the hosts must have their "oar-node" service started (this script connects to the hosts via ssh on the port 6667).
+B<host_file> must contain one host per line and the hosts must have their "oar-node" service started (this script connects to the hosts via ssh on the port 6667).
 
 The default resource hierarchy which is filled by this script is: host --> cpu --> core.
 
 =head1 OPTIONS
 
 =over 
+
+=item B<-o> [file]
+
+Pathname for the output file to store the generated commands
 
 =item B<-H>
 
@@ -33,9 +33,26 @@ This option can be used when Intel HyperThreading is enabled on the nodes. So fo
 
 This option can be used when Intel HyperThreading is enabled on the nodes. It adds the property "thread" in the OAR database and fills it with the hierarchy: host --> cpu --> core --> thread.
 
-=item B<host_list_file>
 
-The path of the file containing the host list.
+=item B<-c> [path]
+
+Path to oar.conf
+
+=item B<-e> [path]
+
+Path to the SSH command
+
+=item B<-n> [path]
+
+Path to the oarnodesetting command
+
+=item B<-p> [path]
+
+Path to the oarproperty command
+
+=item B<-c> [path]
+
+Path to oar.conf
 
 =back
 
@@ -61,10 +78,10 @@ Path to the SSH command (default: /usr/bin/ssh).
 
 =over
 
-=item OARNODES_CMD
+=item OARNODESETTING_CMD
 
-Path to the oarnodes command (default: oarnodes). If oarnodes is not available on the local machine, one can set this variable to run oarnodes via SSH on another machine (this is the case if the oar-server package is not installed along with the oar-user package).
- 
+Path to the oarnodesetting command (default: oarproperty).
+
 =back
 
 =over

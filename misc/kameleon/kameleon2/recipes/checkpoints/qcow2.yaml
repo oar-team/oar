@@ -1,0 +1,38 @@
+create: |
+    if [ -e "$$container" ] ; then
+      parent_of_@microstep_id="$(readlink $$container)"
+      mkdir -p checkpoints
+      pushd checkpoints
+      rm -f @microstep_id_$${container}
+      qemu-img create -f qcow2 "@microstep_id_$${container}" \
+                      -o backing_file=$(basename "$parent_of_@microstep_id")
+      popd
+      ln -sf checkpoints/@microstep_id_$$container $$container
+
+      lsmod | grep nbd >/dev/null || modprobe nbd max_part=63
+
+      echo "sync" ; sync
+      qemu-nbd -d $$nbd_device
+      qemu-nbd -c $$nbd_device "$(readlink $$container)"
+    fi
+
+apply: |
+    # apply command use the backing file that represent the real state to restore
+    previous_id=$(qemu-img info "checkpoints/@microstep_id_$${container}" \
+                  | grep backing \
+                  | sed -e 's/.*checkpoints\/\(.*\)_$${container}\(.*\)/\1/p' \
+                  | uniq)
+    
+    ln -sf "checkpoints/${previous_id}_$${container}" "$$container"
+
+clear: |
+    if [ -d "checkpoints" ] ; then
+      ls checkpoints/ | \
+        xargs -I {} bash -c "echo Removing checkpoints/{} ; rm checkpoints/{}"
+      rm -f $$container
+    fi
+
+list: |
+    if [ -d "checkpoints" ] ; then
+      ls checkpoints/ | sed -e 's/\(.*\)_$${container}/\1/p' | uniq
+    fi

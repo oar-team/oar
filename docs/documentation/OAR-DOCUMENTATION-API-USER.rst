@@ -413,6 +413,7 @@ GET /jobs
   - **from** (timestamp): restrict the list to the jobs that are running or not yet started before this date. Using this parameters disables the default behavior of listing only the jobs that are in queue.
   - **to** (timestamp): restrict the list to the jobs that are running or not yet finished at this date. Using this parameters disables the default behavior of listing only the jobs that are in queue.
   - **user**: restrict the list to the jobs owned by this username
+  - **ids**: colon separated list of ids to get a set of jobs
 
 :output:
   *structure*: collection
@@ -734,10 +735,10 @@ GET /jobs/table
 
    wget -q -O - http://localhost/oarapi/jobs/table.yaml
 
-GET /jobs/<id>
---------------
+GET /jobs/<id>[/details]
+------------------------
 :description:
-  Get details about the given job
+  Get infos about the given job. If /details is appended, it gives more informations, such as the expanded list of resources allocated to the job.
 
 :parameters:
   - **id**: the id of a job
@@ -1335,8 +1336,8 @@ GET /resources
 
    wget -q -O - http://localhost/oarapi/resources.yaml
 
-GET /resources/full
--------------------
+GET /resources/details
+----------------------
 :description:
   Get the list of resources and all the details about them
 
@@ -1442,11 +1443,11 @@ GET /resources/full
 	      type: default
 	      uri: '/resources/3.html'
 	  links:
-	    - href: '/resources/full.yaml?limit=5&offset=2'
+	    - href: '/resources/details.yaml?limit=5&offset=2'
 	      rel: previous
-	    - href: '/resources/full.yaml?limit=5&offset=7'
+	    - href: '/resources/details.yaml?limit=5&offset=7'
 	      rel: self
-	    - href: '/resources/full.yaml?limit=5&offset=12'
+	    - href: '/resources/details.yaml?limit=5&offset=12'
 	      rel: next
      offset: 2
 	 total: 49
@@ -1454,7 +1455,7 @@ GET /resources/full
 :usage example:
   ::
 
-   wget -q -O - http://localhost/oarapi/resources/full.yaml
+   wget -q -O - http://localhost/oarapi/resources/details.yaml
    
    *note*: The following parameters can be passed through the requested URL
           - limit : limit of resources to be shown per page
@@ -2322,10 +2323,11 @@ Some equivalences with oar command line
       OAR command                   REST request
 =============================== ======================================
 oarstat                         GET /jobs.html
-oarstat -Y                      GET /jobs/details.yaml?structure=oar
-oarstat -Y -fj <id>             GET /jobs/<id>.yaml
+oarstat -Y                      GET /jobs/details.yaml
+oarstat -Y -j <id>              GET /jobs/<id>.yaml
+oarstat -Y -fj <id>             GET /jobs/<id>/details.yaml
 oardel <id>                     DELETE /jobs/<id>.yaml
 oardel <id> *(alternative way)* POST /jobs/deletions/<id>/new.yaml
-oarnodes -Y                     GET /resources/full.yaml?structure=oar
-oarnodes -Y -r1                 GET /resources/1.yaml?structure=oar
+oarnodes -Y                     GET /resources/details.yaml
+oarnodes -Y -r1                 GET /resources/1.yaml
 =============================== ======================================

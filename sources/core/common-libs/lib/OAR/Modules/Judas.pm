@@ -139,7 +139,7 @@ sub oar_warn($){
 sub oar_error($){
     my $string = shift;
 
-    send_log_by_email(undef,"[error] $string");
+    #send_log_by_email(undef,"[error] $string");
     my ($seconds, $microseconds) = gettimeofday();
     $microseconds = int($microseconds / 1000);
     $microseconds = sprintf("%03d",$microseconds);
@@ -231,11 +231,24 @@ sub notify_user($$$$$$$$){
 
     return() if (!defined($method));
 
-    if ($method =~ m/^\s*mail:(.+)$/m){
+    if ($method =~ m/^\s*\[\s*(.+)\s*\]\s*(mail|exec)\s*:.+$/m){
+        my $skip = undef;
+        foreach my $t (split('\s*,\s*',$1)){
+            $t =~ s/\s//g;
+            if (uc($t) eq uc($tag)){
+                $skip = 0;
+            }else{
+                $skip = 1 if (!defined($skip));
+            }
+        }
+        return() if (defined($skip) and ($skip == 1));
+    }
+
+    if ($method =~ m/^.*mail\s*:(.+)$/m){
         OAR::IO::add_new_event($base,"USER_MAIL_NOTIFICATION",$job_id,"[Judas] Send a mail to $1 --> $tag");
         my $server_hostname = hostname();
         send_mail($1,"*OAR* [$tag]: $job_id ($job_name) on $server_hostname",$comments,$job_id);
-    }elsif($method =~ m/\s*exec:([a-zA-Z0-9_.\/ -]+)$/m){
+    }elsif($method =~ m/^.*exec\s*:([a-zA-Z0-9_.\/ -]+)$/m){
         my $cmd = "$Openssh_cmd -x -T $host OARDO_BECOME_USER=$user oardodo $1 $job_id $job_name $tag \\\"$comments\\\" > /dev/null 2>&1";
         $SIG{PIPE} = 'IGNORE';
         my $pid = fork();

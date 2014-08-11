@@ -119,7 +119,7 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")){
         oar_debug("[sarko] Send checkpoint signal to the job $job->{job_id}\n");
         # Retrieve node names used by the job
         my @hosts = OAR::IO::get_job_current_hostnames($base,$job->{job_id});
-        my $types = OAR::IO::get_current_job_types($base,$job->{job_id});
+        my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
         my $host_to_connect = $hosts[0];
         if ((defined($types->{cosystem})) or ($#hosts < 0)){
             $host_to_connect = $Cosystem_hostname;

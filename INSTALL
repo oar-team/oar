@@ -4,7 +4,8 @@ Installing the OAR batch system
 Overview
 --------
 
-There are currently 3 methods to install OAR (All of them are documented in this page) :
+There are currently 3 methods to install OAR (All of them are documented in
+this page) :
 
  - using the Debian packages
  - using the RPM packages
@@ -14,10 +15,13 @@ There are currently 3 methods to install OAR (All of them are documented in this
 Before going further, please have in mind OAR's architecture. A common OAR
 installation is composed of:
 
-    - a **server node** which will hold all of OAR "smartness". This node will run the OAR server daemon;
-    - **frontend nodes** on which users will have to login in order to reserve computing nodes (oarsub, oarstat, oarnodes, ...);
-    - several **computing nodes** (a.k.a. nodes), which the jobs will run on.
-    - and optionally a **visualisation server** which will host the visualisation web interfaces (monika, drawgantt, ...);
+    - a **server node** which will hold all of OAR "smartness". This node will
+      run the OAR server daemon;
+    - **frontend nodes** on which users will have to login in order to reserve
+      computing nodes (oarsub, oarstat, oarnodes, ...);
+    - several **computing nodes** (a.k.a. nodes), where the jobs will run on.
+    - and optionally a **visualisation server** which will host the
+      visualisation web interfaces (monika, drawgantt, ...);
 
 Computing nodes
 ---------------
@@ -32,20 +36,22 @@ ______________________________
         # Add the oar repository
         cat <<EOF > /etc/yum.repos.d/oar.repo
         [oar]
-        name=OAR Packages for Enterprise Linux 6 - \$basearch
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
-        enabled=1
-        gpgcheck=0
+        name=OAR
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
+        gpgcheck=1
+        gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
+        enabled=0
         EOF
 
         # Install OAR node
-        yum install oar-node
+        yum --enablerepo=OAR install oar-node
 
 *For the Debian like systems*::
   
-        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/Debian squeeze main" > /etc/apt/sources.list.d/oar.list
-        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        # Add the OAR repository (choose the right one. See
+        # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
+        wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
         apt-get update
 
         # Install OAR node
@@ -76,8 +82,8 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=...
-        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        OAR_VERSION=2.5.3
+        wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
 build/install/setup::
@@ -122,29 +128,31 @@ ______________________________
 
 *For RedHat like systems*::
 
-        # Add the epel repository (choose the right version depending on your operating system)
-        rpm -i http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-5.noarch.rpm
+        # Add the epel repository (choose the right version depending on your
+        # operating system)
+        rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
         
         # Add the oar repository
-        cat <<EOF > /etc/yum.repos.d/oar.repo
         [oar]
-        name=OAR Packages for Enterprise Linux 6 - \$basearch
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
-        enabled=1
-        gpgcheck=0
+        name=OAR
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
+        gpgcheck=1
+        gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
+        enabled=0
         EOF
         
         # Install OAR server for the PostgreSQL backend
-        yum install oar-server oar-server-pgsql
+        yum --enablerepo=OAR install oar-server oar-server-pgsql
         
         # or Install OAR server for the MySQL backend
-        yum install oar-server oar-server-mysql
+        yum --enablerepo=OAR install oar-server oar-server-mysql
 
 *For the Debian like systems*::
   
-        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/Debian squeeze main" > /etc/apt/sources.list.d/oar.list
-        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        # Add the OAR repository (choose the right one. See
+        # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
+        wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
         apt-get update
 
         # Install OAR server for the PostgreSQL backend
@@ -160,21 +168,21 @@ _____________________________
 
 *For RedHat like systems*::
 
-          # Add the epel repository (choose the right version depending on your operating system)
-          rpm -i http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-5.noarch.rpm
-
-          # Build dependencies
-          yum install gcc make tar python-docutils
-
-          # Common dependencies
-          yum install Perl Perl-base openssh Perl-DBI perl-Sort-Versions
-          
-          # MySQL dependencies
-          yum install mysql-server mysql perl-DBD-MySQL
-          
-          # PostgreSQL dependencies
-          yum install postgresql-server postgresql perl-DBD-Pg
-
+        # Add the epel repository (choose the right version depending on your
+        # operating system)
+        rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+        
+        # Build dependencies
+        yum install gcc make tar python-docutils
+        
+        # Common dependencies
+        yum install Perl Perl-base openssh Perl-DBI perl-Sort-Versions
+        
+        # MySQL dependencies
+        yum install mysql-server mysql perl-DBD-MySQL
+        
+        # PostgreSQL dependencies
+        yum install postgresql-server postgresql perl-DBD-Pg
 
 *For Debian like system*::
 
@@ -188,14 +196,14 @@ _____________________________
           apt-get install mysql-server mysql-client libdbd-mysql-perl
           
           # PostgreSQL dependencies
-          apt-get install postgresql-server postgresql-client libdbd-pg-perl
+          apt-get install postgresql postgresql-client libdbd-pg-perl
 
 **Instructions**
 
 Get the sources::
 
-        OAR_VERSION=...
-        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        OAR_VERSION=2.5.3
+        wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
 Build/Install/Setup the OAR server::
@@ -230,7 +238,6 @@ Create the database and the database users::
 
 Init.d scripts
 ~~~~~~~~~~~~~~
-
 
 If you have installed OAR from sources, you need to become root user and
 install manually the init.d/default/sysconfig scripts present in the folders::
@@ -269,11 +276,13 @@ installation, you can type::
 This will add a resource with <NODE_IP> as host IP address.
 
 
-You also can modify resources properties with **-p** option, for example::
+You can also modify resources properties with **-p** option, for example::
 
-        oarnodesetting -r 1 -p "deploy=YES"
+        oarnodesetting -r 1 -p "besteffort=YES"
 
-will allow the resource #1 to accept jobs of the type deploy.
+will allow the resource #1 to accept jobs of the type deploy (because there is
+an admission rule that enforces the besteffort jobs to go on resources with the
+property "besteffort=YES").
 
 Notes
 _____
@@ -287,6 +296,7 @@ to add this data in DB_BASE_LOGIN_RO and DB_BASE_PASSWD_RO in *oar.conf*.
 
 PostgreSQL : autovacuum
 ~~~~~~~~~~~~~~~~~~~~~~~
+
 Be sure to activate the "autovacuum" feature in the "postgresql.conf" file (OAR
 creates and deletes a lot of records and this setting cleans the postgres
 database from unneeded records).
@@ -304,20 +314,6 @@ server has the address <OAR_SERVER>, you can add the following lines in the
         host    oar         oar_ro            <OAR_SERVER>/32    md5
         host    oar         oar               <OAR_SERVER>/32    md5
 
-About X11 usage in OAR
-~~~~~~~~~~~~~~~~~~~~~~
-
-The easiest and scalable way to use X11 application on cluster nodes is to open
-X11 ports and set the right DISPLAY environment variable by hand.  Otherwise
-users can use X11 forwarding via ssh to access cluster frontal. After that you
-must configure ssh server on this frontal with ::
-
-    X11Forwarding yes
-    X11UseLocalhost no
-
-With this configuration, users can launch X11 applications after a 'oarsub -I'
-on the given node or "oarsh -X node12".
-
 Using Taktuk
 ~~~~~~~~~~~~
 
@@ -325,11 +321,11 @@ If you want to use taktuk to manage remote administration commands, you have to
 install it. You can find information about taktuk from its website: 
 http://taktuk.gforge.inria.fr.
 
-**Note**: Taktuk is scalable remote command execution without the need to
+**Note**: Taktuk is a scalable remote command execution without the need to
 install special stuffs on nodes. So it is very useful to administer a large
 amount of server.
 
-Then, you have to edit your oar configuration file and to fill in the different 
+Then, you have to edit your oar configuration file and fill in the different 
 related parameters: 
 
   - TAKTUK_CMD (the path to the taktuk command)
@@ -357,6 +353,7 @@ To activate this feature, you have to:
       (configure the path of those commands into the
       ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD and
       ENERGY_SAVING_NODE_MANAGER_SHUT_DOWN_CMD variables into oar.conf)
+      Thes 2 commands are executed by the oar user.
     - configure the "available_upto" property of all your nodes:
 
       - available_upto=0           : to disable the wake-up and halt      
@@ -364,7 +361,12 @@ To activate this feature, you have to:
       - available_upto=2147483647  : to disable the halt (but not the wake-up) 
       - available_upto=2147483646  : to enable wake-up/halt forever            
       - available_upto=<timestamp> : to enable the halt, and the wake-up until 
-        the date given by <timestamp> 
+        the date given by <timestamp>
+
+      Ex: to enable the feature on every nodes forever:
+        ::
+
+            oarnodesetting --sql true -p available_upto=2147483646
 
     - activate the energy saving module by setting ENERGY_SAVING_INTERNAL="yes"
       and configuring the ENERGY_* variables into oar.conf
@@ -377,31 +379,27 @@ You need to restart OAR each time you change an ENERGY_* variable.
 More informations are available inside the oar.conf file itself. For more
 details about the mechanism, take a look at the "Hulot" module documentation.
 
-
 Disabling SELinux
 ~~~~~~~~~~~~~~~~~
 
 On some distributions, SELinux is enabled by default. There is currently no OAR
 support for SELinux. So, you need to disable SELinux, if enabled.
 
+Cpuset id issue
+~~~~~~~~~~~~~~~
 
-Intel cpuset id issue
-~~~~~~~~~~~~~~~~~~~~~
-The cpuset ids on an intel platform are not persistent across reboot. So you need
+On some rare servers, the core ids are not persistent across reboot. So you need
 to update the cpuset ids in the resource database at startup for each computing
 node. You can do this by using the ``/etc/oar/update_cpuset_id.sh`` script. The
 following page give more informations on how configuring it:
 
     http://wiki-oar.imag.fr/index.php/Configuration_tips#Start.2Fstop_of_nodes_using_ssh_keys
 
-
 Other issues
 ~~~~~~~~~~~~
-
 You can take a look at the "Customizaion tips" on the OAR Wiki:
     
     http://wiki-oar.imag.fr/index.php/Customization_tips
-
 
 Frontend nodes
 --------------
@@ -413,8 +411,18 @@ ______________________________
 
 *For RedHat like systems*::
 
-        # Add the epel repository (choose the right version depending on your operating system)
-        rpm -i http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-5.noarch.rpm
+        # Add the epel repository (choose the right version depending on your
+        # operating system)
+        rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+        
+        cat <<EOF > /etc/yum.repos.d/oar.repo
+        [oar]
+        name=OAR
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
+        gpgcheck=1
+        gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
+        enabled=0
+        EOF
 
         # Add the oar repository
         cat <<EOF > /etc/yum.repos.d/oar.repo
@@ -426,16 +434,17 @@ ______________________________
         EOF
 
         # Install OAR user for the PostgreSQL backend
-        yum install oar-user oar-user-pgsql
+        yum --enablerepo=OAR install oar-user oar-user-pgsql
         
         # or Install OAR user for the MySQL backend
-        yum install oar-user oar-user-mysql
+        yum --enablerepo=OAR install oar-user oar-user-mysql
 
 *For the Debian like systems*::
   
-        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/Debian squeeze main" > /etc/apt/sources.list.d/oar.list
-        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        # Add the OAR repository (choose the right one. See
+        # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
+        wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
         apt-get update
 
         # Install OAR server for the PostgreSQL backend
@@ -443,7 +452,6 @@ ______________________________
         
         # or Install OAR server for the MySQL backend
         apt-get install oar-user oar-user-mysql
-
 
 Installation from the tarball
 _____________________________
@@ -483,8 +491,8 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=...
-        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        OAR_VERSION=2.5.3
+        wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
 Build/Install/setup::
@@ -507,50 +515,69 @@ You need to have a coherent oar configuration between the server node and the
 user nodes. So you can just copy the /etc/oar directory from to server node to
 the user nodes.
 
+About X11 usage in OAR
+~~~~~~~~~~~~~~~~~~~~~~
+
+The easiest and scalable way to use X11 application on cluster nodes is to open
+X11 ports and set the right DISPLAY environment variable by hand.  Otherwise
+users can use X11 forwarding via ssh to access cluster frontends. You
+must configure the ssh server on the frontends nodes with ::
+
+    X11Forwarding yes
+    X11UseLocalhost no
+
+With this configuration, users can launch X11 applications after a 'oarsub -I'
+on the given node or "oarsh -X node12".
 
 OAR RESTful API Installation
-____________________________
+----------------------------
 
-Since the version ..., OAR offers an API for users and admins interactions. This api
-must be installed on a frontend node (with the user module installed).
+Description
+___________
 
-From the packaging
-~~~~~~~~~~~~~~~~~~
+Since the version X.X.X, OAR offers an API for users and admins interactions.
+This api must be installed on a frontend node (with the user module installed).
+
+Installation from the packages
+______________________________
+
+**Instructions**
 
 *For RedHat like systems*::
 
         # Add the oar repository
-        cat <<EOF > /etc/yum.repos.d/oar.repo
         [oar]
-        name=OAR Packages for Enterprise Linux 6 - \$basearch
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
-        enabled=1
-        gpgcheck=0
+        name=OAR
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
+        gpgcheck=1
+        gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
+        enabled=0
         EOF
 
         # Install apache FastCGI module (optional but highly recommended)
         FIXME:
 
         # Install OAR Restful api
-        yum install oar-restful-api
+        yum --enablerepo=OAR install oar-restful-api
 
 *For the Debian like systems*::
   
-        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/Debian squeeze main" > /etc/apt/sources.list.d/oar.list
-        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        # Add the OAR repository (choose the right one. See
+        # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
+        wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
         apt-get update
- 
+        
         # Install apache FastCGI module (optional but highly recommended)
         apt-get install libapache2-mod-fastcgi 
-
+        
         # Install OAR Restful api
         apt-get install oar-restful-api
 
-From the sources
-~~~~~~~~~~~~~~~~
+Installation from the tarball
+_____________________________
 
-**Requirements**:
+**Requirements**
 
 *For RedHat like systems*::
 
@@ -564,10 +591,10 @@ From the sources
           FIXME:
           
           # MySQL dependencies
-          yum install mysql perl-DBD-MySQL
+          yum install perl-DBD-MySQL
           
           # PostgreSQL dependencies
-          yum install postgresql perl-DBD-Pg
+          yum install perl-DBD-Pg
 
 
 *For Debian like system*::
@@ -576,23 +603,23 @@ From the sources
           apt-get install gcc make tar python-docutils
           
           # Common dependencies
-          apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl httpd-cgi libcgi-fast-perl 
+          apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl apache2 libcgi-fast-perl 
           
           # FastCGI dependency (optional but highly recommended)
           apt-get install libapache2-mod-fastcgi
 
           # MySQL dependencies
-          apt-get install mysql-server mysql-client libdbd-mysql-perl
+          apt-get install libdbd-mysql-perl
           
           # PostgreSQL dependencies
-          apt-get install postgresql-server postgresql-client libdbd-pg-perl
+          apt-get install libdbd-pg-perl
 
 **Instructions**
 
 Get the sources::
 
-        OAR_VERSION=...
-        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        OAR_VERSION=2.5.3
+        wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
 build/install/setup::
@@ -604,16 +631,16 @@ build/install/setup::
         # setup
         make api-setup
 
-
 Configuration
-~~~~~~~~~~~~~
+_____________
 
 *Configuring OAR*
 
-    For the moment, the API needs the user tools to be installed on the same host
-    ('``make user-install``' or oar-user package). A suitable ``/etc/oar/oar.conf`` should
-    be present. For the API to work, you should have the oarstat/oarnodes/oarsub
-    commands to work (on the same host you installed the API)
+    For the moment, the API needs the user tools to be installed on the same
+    host ('``make user-install``' or oar-user package). A suitable
+    ``/etc/oar/oar.conf`` should be present. For the API to work, you should have
+    the oarstat/oarnodes/oarsub commands to work (on the same host you installed
+    the API)
 
 *Configuring Apache*
 
@@ -631,7 +658,8 @@ Configuration
 
 *YAML, JSON, XML*
 
-    You need at least one of the YAML or JSON perl module to be installed on the host running the API.
+    You need at least one of the YAML or JSON perl module to be installed on
+    the host running the API.
 
 *Test*
 
@@ -643,7 +671,6 @@ Configuration
     html page.  To test if the authentication works, you need to post a new job.
     See the example.txt file that gives you example queries with a ruby rest
     client.
-
 
 Visualization node
 ------------------
@@ -664,30 +691,30 @@ ______________________________
 *For RedHat like systems*::
 
         # Add the oar repository
-        cat <<EOF > /etc/yum.repos.d/oar.repo
         [oar]
-        name=OAR Packages for Enterprise Linux 6 - \$basearch
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
-        enabled=1
-        gpgcheck=0
+        name=OAR
+        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
+        gpgcheck=1
+        gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
+        enabled=0
         EOF
 
-        yum install oar-web-status
+        yum --enablerepo=OAR install oar-web-status
 
 *For the Debian like systems*::
   
-        # Add the OAR repository (choose the right one. See http://oar.imag.fr/repositories/)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/Debian squeeze main" > /etc/apt/sources.list.d/oar.list
-        curl http://oar-ftp.imag.fr/oar/oarmaster.asc | sudo apt-key add -
+        # Add the OAR repository (choose the right one. See
+        # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
+        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
+        wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
         apt-get update
 
         apt-get install oar-web-status
 
-
 Installation from the tarball
 _____________________________
 
-**Requirements**:
+**Requirements**
 
 *For RedHat like systems*::
 
@@ -722,8 +749,8 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=...
-        curl http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tgz | tar xzvf -
+        OAR_VERSION=2.5.3
+        wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
 build/install/setup::
@@ -746,7 +773,7 @@ _____________
 
  - Edit ``/etc/oar/drawgantt.conf`` to fit your configuration.
 
-**Drawgantt-SVG configuration**
+**Drawgantt-SVG configuration** (another drawgantt implementation)
 
  - Edit ``/etc/oar/drawgantt-config.inc.php`` to fit your configuration.
 

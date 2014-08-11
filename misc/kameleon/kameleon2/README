@@ -1,0 +1,14 @@
+
+#############################################
+# Kameleon2 recipes to build OAR appliances #
+#############################################
+
+# Get kameleon:
+  gem install kameleon-builder
+
+# Build appliance:
+  sudo kameleon build oar_devel_git2debian
+
+# Run appliance:
+  cd builds/oar_devel_git2debian
+  sudo kvm oar_devel_git2debian.qcow2 -redir tcp:2222::22 -redir tcp:8080::80 -m 512 -smp 4

@@ -1,65 +1,141 @@
 # Example Apache2 configuration for the OAR API
 
-    # Aliases to the API.
-    # Be aware that the oarapi directory should only be readable by the httpd 
-    # daemon and that the cgi inside are sgid oar. Any change to this permissions
-    # may cause your system to be vulnerable. 
-    ScriptAlias /oarapi %%CGIDIR%%/oarapi/oarapi.cgi
-    ScriptAlias /oarapi-debug %%CGIDIR%%/oarapi/oarapi-debug.cgi
+# Aliases to the API.
+# Be aware that the oarapi directory should only be readable by the httpd 
+# daemon and that the cgi inside are sgid oar. Any change to this permissions
+# may cause your system to be vulnerable. 
+# You should also check that you have a <Location> directive for each
+# of these aliases  (security issue, see later!)
+ScriptAlias /oarapi %%CGIDIR%%/oarapi/oarapi.cgi
+ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
+#ScriptAlias /oarapi-debug %%CGIDIR%%/oarapi-debug.cgi
+#ScriptAlias /oarapi-cigri %%CGIDIR%%/oarapi.cgi
 
-    # FastCGI server
-    <IfModule mod_fastcgi.c>
-    FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi
+# FastCGI server
+<IfModule mod_fastcgi.c>
+  FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi -processes 3
+</IfModule>
+
+# Default options for the oar api
+<Directory %%CGIDIR%%/oarapi>
+  Options +ExecCGI -MultiViews +FollowSymLinks
+
+  # FastCGI handler
+  <IfModule mod_fastcgi.c>
+     AddHandler fcgid-script .cgi
+  </IfModule>
+
+   # Control hosts that can access to the API
+   Order deny,allow
+   #Require all granted # <- seems to be the "Deny from all" syntax for apache > 2.3
+                        # but gives a 500 error with apache 2.2
+   Deny from all
+   Allow from             localhost
+   Allow from             localhost.localdomain
+</Directory>
+
+# By URI options
+# This is where you should pay attention to security!
+# The OAR API trusts the X_REMOTE_IDENT header variable to be the login name
+# of the user that makes the query if there is no other authentication mechanism
+# (ie basic auth).
+# Such a header variable is set by the http client. So, you should at least
+# unset this variable (to disable auth) or erase it with something generated or
+# filtered by the current apache configuration. 
+# Note that you can disable the X_REMOTE_IDENT trusting by setting API_TRUST_IDENT
+# to 0 into the oar.conf file.
+
+# In this first example, we set up a public API that will never satisfy requests
+# that need authentication (for example /jobs/100 will do a 401)
+<Location /oarapi-public>
+  # IMPORTANT: if you have not the headers_module, you are vulnerable to 
+  # identity stealing as the X_REMOTE_IDENT may be set by the client!
+  # If you are in this case, please, set API_TRUST_IDENT=0 into oar.conf
+  <IfModule headers_module>
+    RequestHeader unset X_REMOTE_IDENT
+  </IfModule>
+</Location>
+
+# In this second example, we set up a "pident" authentication if possible and an
+# an ldap basic auth for the hosts that are not in the "Allow from" directives above.
+# If the ident module is not setup, we unset the X_REMOTE_IDENT variable to
+# protect from malicious users that could inject a login name.
+<Location /oarapi>
+
+  # THIS IS IMPORTANT!!
+  # You need at least the headers_module or a properly ident setup.
+  # In other words, if you have not the ident_module, nor headers_module,
+  # you are vulnerable to identity stealing!
+  # If you are in this case, please, set API_TRUST_IDENT=0 into oar.conf.
+  <IfModule !ident_module>
+    <IfModule headers_module>
+      RequestHeader unset X_REMOTE_IDENT
     </IfModule>
+  </IfModule>
 
-    # Authentication configuration for access to the API    
-    <Directory %%CGIDIR%%/oarapi>
-          Options ExecCGI -MultiViews FollowSymLinks
-
-         # FastCGI handler
-         <IfModule mod_fastcgi.c>
-         AddHandler fcgid-script .cgi
-         </IfModule>
-
-         # Deny access by default, except from localhost
-          Order deny,allow
-          Deny from all
-          #Allow from             trusted.host.mydomain
-          Allow from             localhost
-          Allow from             localhost.localdomain
-         # Pidentd may be useful for testing without a login/passwd or when you
-         # fully trust some hosts (ie users have no way to fake their login name).
-         # Ident trust may be disabled into the api itself.
-         <IfModule ident_module>
-           IdentityCheck On
-
-           <IfModule headers_module>
-             # Set the X-REMOTE_IDENT http header value to REMOTE_IDENT env value
-             RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}e
-             # or For https:
-             #RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}s
-             # Or if it doesn't work, enable mod_rewrite and try this:
-             <IfModule rewrite_module>
-                RewriteEngine On
-                RewriteCond %{REMOTE_IDENT} (.*)
-                RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
-                RequestHeader add X-REMOTE_IDENT %{MY_REMOTE_IDENT}e
-             </IfModule>
-           </IfModule>
-
-         </IfModule>
+  # Pidentd (or authd) is a daemon that should run on the client host to tell
+  # to the server who is making the query. So, be aware that with this kind of 
+  # authentication, you have to trust the client host!
+  # In other words, if you accept connections from a user's laptop for example, 
+  # you are vulnerable as long as the user can create a login name of its choice
+  # on his laptop! So, be sure of your "Allow from" directives above!
+  <IfModule ident_module>
+     IdentityCheck On
+     <IfModule headers_module>
+        # Set the X_REMOTE_IDENT http header value to REMOTE_IDENT env value
+        RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}e
+        # or For https:
+        #RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}s
+        # Or if it doesn't work, do this with mod_rewrite (depends on apache version):
+        <IfModule rewrite_module>
+           RewriteEngine On
+           RewriteCond %{REMOTE_IDENT} (.*)
+           RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
+           RequestHeader add X_REMOTE_IDENT %{MY_REMOTE_IDENT}e
+        </IfModule>
+     </IfModule>
+  </IfModule>
  
-         # Ldap auth, except for some local hosts that we trust with pident.
-         # In this example, we suppose that the users have an ldap account
-         # common to the authentication used by the oar server.
-         <IfModule authnz_ldap_module>
-           AuthType               basic
-           AuthBasicProvider      ldap
-           AuthName               "Authorized Users Only"
-           AuthzLDAPAuthoritative  off
-           AuthLDAPURL            "ldaps://myldaphost.mydomain/dc=mydomain,dc=fr?uid?sub?(objectClass=posixAccount)"
-           Require valid-user
-           Satisfy any
-         </IfModule> 
-    </Directory>
+  # Ldap auth for external users (not in the "Allow from" list)
+  # In this example, we suppose that the users have an ldap account
+  # common to the authentication used by the oar server.
+  <IfModule authnz_ldap_module>
+    AuthType               basic
+    AuthBasicProvider      ldap
+    AuthName               "Authorized Users Only"
+    AuthzLDAPAuthoritative  off
+    AuthLDAPURL            "ldaps://myldaphost.mydomain/dc=mydomain,dc=fr?uid?sub?(objectClass=posixAccount)"
+    Require valid-user
+    Satisfy any
+  </IfModule> 
+</Location>
+
+# In this last example, we set up a trusted connection with a client that 
+# has a specific SSL certificate. This client may do queries for whatever login
+# name that it sends through the X_REMOTE_IDENT header variable.
+# This is commonly the case for a grid middleware that has already authenticated 
+# users and that may be trusted by OAR.
+#<Location /oarapi-cigri>
+#  <IfModule ssl>
+#    # Require SSL on this location
+#    SSLRequireSSL
+#    # Check the validity of the client SSL certificate
+#    SSLVerifyClient require
+#    SSLVerifyDepth  1
+#    # In this example, we check that the client is the cigri middleware of the 
+#    # Ciment project: the organisational unit presented by the certificatethe 
+#    # should be "CIMENT" and the DN should be "CIGRI"
+#    SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq "CIMENT" \
+#                 and %{SSL_CLIENT_S_DN_CN} eq "CIGRI" )
+#    # We can also do some filtering on the X_REMOTE_IDENT header
+#    ## This example only allows users kameleon and oar to be authenticated to the API
+#    # RewriteEngine On
+#    # RewriteCond %{HTTP:X_REMOTE_IDENT}  (.*)
+#    # RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
+#    # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=kameleon
+#    # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=oar
+#    # RewriteRule .* - [E=MY_REMOTE_IDENT:]
+#    # RequestHeader set X_REMOTE_IDENT %{MY_REMOTE_IDENT}e
+#  </IfModule>
+#</Location>
 

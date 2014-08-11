@@ -7,14 +7,16 @@ OAR_PERLLIB = $(SRCDIR)/lib
 
 OARDIR_BINFILES = $(SRCDIR)/oarapi.pl
 
-EXAMPLEDIR_FILES = $(SRCDIR)/oarapi_examples.txt \
-		   $(SRCDIR)/chandler.rb \
-		   $(SRCDIR)/apache2.conf.in \
+SHAREDIR_FILES = $(SRCDIR)/apache2.conf.in \
 		   $(SRCDIR)/api_html_header.pl \
 		   $(SRCDIR)/api_html_postform.pl \
 		   $(SRCDIR)/api_html_postform_resources.pl \
 		   $(SRCDIR)/api_html_postform_rule.pl \
-		   $(SRCDIR)/stress_factor.sh \
+		   $(SRCDIR)/stress_factor.sh
+
+EXAMPLEDIR_FILES = $(SRCDIR)/examples/oarapi_examples.txt \
+		   $(SRCDIR)/examples/chandler.rb \
+		   $(SRCDIR)/examples/chandler_timesharing.rb \
 		   $(SRCDIR)/INSTALL \
 		   $(SRCDIR)/TODO
 

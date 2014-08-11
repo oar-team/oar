@@ -1,6 +1,72 @@
 OAR CHANGELOG
 =============
 
+version 2.5.4:
+--------------
+  - [api] Implemented GET /resources/<property>/jobs to get jobs running on
+          resources, groupped by a given property
+  - [kamelot] BUGFIX: fix hierarchies manipulation (remove toplevel resource)
+  - [api] implemented HTTP_X_API_PATH_PREFIX header variable to prefix all
+          returned uris.
+  - [kamelot] BUGFIX: in split_slots_prev_scheduled_one_job function 
+              oblivion of a left part of list
+  - [api] added GET /jobs/<id>/details support
+  - [api] implemented the ability to get a set of jobs at once with
+    GET /jobs?ids=<id1>:<id2>:<id3>:...
+  - [api] BUGFIX: stderr and stdout where reversed
+  - [api] BUGFIX: memory leak into the api when used with FastCGI
+  - [accounting] fixed a memory leak and a rare case of bad consumption count
+  - [almighty] rewrite the handling of finished oarexec
+               launch bipbip processes with MAX_CONCURRENT_JOB_TERMINATIONS 
+               to not overload the server.
+  - [oarexec] introduce BASH_ENV=~oar/.batch_job_bashrc for batch jobs
+              Batch jobs with bash shell have some difficulties to source the
+              right bash scripts when launching.
+              Now we set BASH_ENV=~oar/.batch_job_bashrc before launching the
+              user bash process so we can handle which script must be sourced.
+              By default we source ~/.bashrc.
+  - [api] Rewritten/commented apache config file
+  - [oaradmin] Disabled deprecated "conf" sub-command (the config file may 
+               be edited by the REST-API)
+  - [commands] exit immediately on wrong arguments
+  - [oarsh] propagate OAR shell environment variables
+            The users have access to the same OAR environment variables when
+            connecting on all the job nodes with oarsh
+  - [job_uid] remove job uid feature (not used).
+  - [job_resource_manager] Activate MEMORY cgroup by default.
+                           Use fstrim (for SSD) when cleaning files.
+  - [deploy] do not check the nodes when ACTIVATE_PINGCHECKER_AT_JOB_END is on
+             and the job is of the deploy type (bug #17128).
+  - [judas] disable sending log by emails on errors. This could generate too
+            much mails.
+  - [noop] add the 'noop' job type. If specified nothing is done on computing
+           nodes. The job just reserves the resources for the specified
+           walltime.
+  - [quotas] add the possibility to make quotas on:
+               - the number of used resources
+               - the number of running jobs
+               - the resourcesXhours in use
+
+  - [runner] add runner bipbip processes in the bipbip_laucher in Almighty.
+  - [database] replace the field "maintenance" by "drain".
+               So the administrator can disable resources without killing
+               current jobs by::
+                    
+                    oarnodesetting -h n12 -p drain=YES
+
+               :ATTENTION: the admission rule with "maintenance" must be
+                          changed with the "drain" keyword.
+  - [cpuset] cpuset resources filed is now varchar.
+             It is now possible to specify several core id in 1 cpuset field
+             like::
+
+                1+4+8
+
+  - [oarsub] add filter on notifications
+             It is possible to specify which TAGs must be triggered::
+
+                oarsub --notify "[END,ERROR]mail:name@domain.com" -I
+
 version 2.5.3:
 --------------
   - Add the "Name" field on the main Monika page. This is easier for the users

@@ -1,0 +1,34 @@
+- save_as_vdi:
+  - check_cmd_out: VBoxManage
+  # - exec_in: |
+  #     echo "Nullify freespace"
+  #     dd if=/dev/zero of=/bigemptyfile bs=4M || true
+  #     rm -f /bigemptyfile
+  - exec_out: echo "sync..." ; sync
+  - exec_out: qemu-img convert -O vdi $(readlink $$container) $$filename.vdi
+  - exec_out: |
+      echo "Compact the vdi disk"
+      VBoxManage modifyhd $$filename.vdi --compact 2>&1
+  - exec_out: echo "Saved vdi appliance to $(pwd)/$$filename.vdi"
+
+- create_virtualbox_vm:
+  - exec_out: |
+      BOX_NAME="$${kameleon_recipe_name}_$${kameleon_short_uuid}"
+  - exec_out: VBoxManage createvm --name "$BOX_NAME" --register
+  - exec_out: VBoxManage modifyvm "$BOX_NAME" --ostype $$os_type
+  - exec_out: VBoxManage modifyvm "$BOX_NAME" --memory $$memory
+  - exec_out: VBoxManage modifyvm "$BOX_NAME" --acpi on
+  - exec_out: VBoxManage modifyvm "$BOX_NAME" --nic1 nat
+  - exec_out: VBoxManage modifyvm "$BOX_NAME" --nictype1 virtio
+  - exec_out: VBoxManage storagectl "$BOX_NAME" --name "IDE Controller" --add ide
+  - exec_out: |
+      VBoxManage storageattach "$BOX_NAME" --storagectl "IDE Controller" \
+          --port 0 --device 0 --type hdd \
+          --medium $$filename.vdi
+  - on_export_clean:
+    - exec_out: VBoxManage unregistervm --delete "$BOX_NAME"
+
+- export_virtualbox_vm:
+  - exec_out: echo "Create vagrant package"
+  - exec_out: rm -f $$filename.box
+  - exec_out: vagrant package --base $BOX_NAME --output $$filename.box

@@ -141,32 +141,6 @@ sub clean_all(){
     kill(9,@{$children});
 }
 
-# read a line on a socket
-# arg1 --> socket
-# arg2 --> timeout
-# return 0 if the read times out
-sub read_socket_line($$){
-    my $sock = shift;
-    my $timeout = shift;
-
-    my $char = "a";
-    my $res = 1;
-    my $rin = '';
-    my $line;
-    vec($rin,fileno($sock),1) = 1;
-    my $rin_tmp;
-    while (($res > 0) && ($char ne "\n") && ($char ne "")){
-        $res = select($rin_tmp = $rin, undef, undef, $timeout);
-        if ($res > 0){
-            sysread($sock,$char,1);
-            if ($char ne "\n"){
-                $line .= $char;
-            }
-        }
-    }
-    return($res,$line);
-}
-
 #kill all child of the pid
 # arg1 --> child pid
 sub kill_children($){
@@ -186,6 +160,14 @@ sub send_kill_signal_to_myself($){
         kill($signal_to_send, $father);
         exit();
     }
+}
+
+# Append a string to a file owned by a user
+sub append_string_to_user_file($$$$){
+    my ($user, $file, $dir, $str) = @_;
+   
+    $str = "## OAR [".strftime("%F %T",localtime())."] $str ##";
+    system({"bash"} "bash","-c","echo '$str' | OARDO_BECOME_USER=$user oardodo bash --noprofile --norc -c \"cd '$dir' && tee -a '$file'\"");
 }
 
 # Retrieve job information from bipbip
@@ -486,8 +468,6 @@ if ($Job->{mode} eq "PASSIVE"){
 
 print("[oarexec $Job_id] child pid = $pid\n");
 
-my $kill_myself = 0;
-
 my $res_read;
 my $line_read;
 my $rin = '';
@@ -508,7 +488,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
     select($rin_tmp = $rin, undef, undef, undef);
     
     if (vec($rin_tmp, fileno(pipe_script_read), 1)){
-        ($res_read,$line_read) = read_socket_line(\*pipe_script_read,1);
+        ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_script_read,1);
         if (($res_read == 1) and ($line_read eq "")){
             # Script is finished
             close(pipe_script_read);
@@ -524,7 +504,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             }
         }
     }elsif (vec($rin_tmp, fileno(pipe_child_read), 1)){
-        ($res_read,$line_read) = read_socket_line(\*pipe_child_read,1);
+        ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_child_read,1);
         print("[oarexec $Job_id] PIPE reads : $res_read,$line_read\n");
         if ($line_read =~ m/(\d+) (\d+)/m){
             if ($1 == $pid){
@@ -534,7 +514,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             }
         }
     }elsif (vec($rin_tmp, fileno(pipe_kill_read), 1)){
-        ($res_read,$line_read) = read_socket_line(\*pipe_kill_read,1);
+        ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_kill_read,1);
         print("[oarexec $Job_id] pipe kill signal : $res_read,$line_read\n");
         if ($line_read eq "KILL"){
             print("[oarexec $Job_id] Kill children\n");
@@ -543,11 +523,10 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             }else{
                 kill_children($pid);
                 if (defined($Job->{stderr_file}) and ($Job->{stderr_file} ne "")){
-                    my $date = strftime("%F %T",localtime());
-                    system({"bash"} "bash","-c","cd $Job->{launching_directory} && echo '## OAR [$date] Job $Job_id KILLED' | OARDO_BECOME_USER=$Job->{job_user} oardodo tee -a '$Job->{stderr_file}'");
+                    append_string_to_user_file($Job->{job_user}, $Job->{stderr_file}, $Job->{launching_directory}, "Job $Job_id KILLED");
                 }
             }
-            $kill_myself = 1;
+            $Kill_myself = 1;
         }elsif ($line_read eq "STOP"){
             print("[oarexec $Job_id] Receive STOP notification\n");
             if ($Job->{mode} eq "INTERACTIVE"){
@@ -561,8 +540,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
                 print("[oarexec $Job_id] Checkpoint received, send signal $Job->{checkpoint_signal} to the pid $user_cmd_pid\n");
                 system({"oardodo"} "oardodo","kill","-s",$Job->{checkpoint_signal},$user_cmd_pid);
                 if (defined($Job->{stderr_file}) and ($Job->{stderr_file} ne "")){
-                    my $date = strftime("%F %T",localtime());
-                    system({"bash"} "bash","-c","cd $Job->{launching_directory} && echo '## OAR [$date] Job $Job_id CHECKPOINTED with signal $Job->{checkpoint_signal}' | OARDO_BECOME_USER=$Job->{job_user} oardodo tee -a '$Job->{stderr_file}'");
+                    append_string_to_user_file($Job->{job_user}, $Job->{stderr_file}, $Job->{launching_directory}, "Job $Job_id CHECKPOINTED with signal $Job->{checkpoint_signal}");
                 }
             }else{
                 print("[oarexec $Job_id] Cannot find pid of user process. I will retry in 5 seconds\n");
@@ -576,8 +554,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
                 print("[oarexec $Job_id] Signal URG received, send signal $signal to the pid $user_cmd_pid\n");
                 system({"oardodo"} "oardodo","kill","-s",$signal,$user_cmd_pid);
                 if (defined($Job->{stderr_file}) and ($Job->{stderr_file} ne "")){
-                    my $date = strftime("%F %T",localtime());
-                    system({"bash"} "bash","-c","cd $Job->{launching_directory} && echo '## OAR [$date] Job $Job_id SIGNALED with $signal' | OARDO_BECOME_USER=$Job->{job_user} oardodo tee -a '$Job->{stderr_file}'");
+                    append_string_to_user_file($Job->{job_user}, $Job->{stderr_file}, $Job->{launching_directory}, "Job $Job_id SIGNALED with $signal");
                 }
             }else{
                 print("[oarexec $Job_id] Cannot find pid of user process. I will retry in 5 seconds\n");
@@ -645,7 +622,7 @@ if (defined($Job->{epilogue})){
 }
 
 clean_all();
-if ($kill_myself == 1){
+if ($Kill_myself == 1){
     quit_oarexec(3,$Job);
 }elsif($Stop_signal == 1){
     quit_oarexec(34,$Job);

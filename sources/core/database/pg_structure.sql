@@ -4,7 +4,7 @@ CREATE TABLE schema (
   version VARCHAR( 255 ) NOT NULL,
   name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.5.0','');
+INSERT INTO schema VALUES ('2.5.4','');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
@@ -24,6 +24,8 @@ CREATE INDEX accounting_type ON accounting (consumption_type);
 
 CREATE TABLE admission_rules (
   id bigserial,
+  priority integer NOT NULL DEFAULT '0',
+  enabled varchar(3) check (enabled in ('YES','NO')) NOT NULL default 'YES',
   rule text NOT NULL,
   PRIMARY KEY  (id)
 );
@@ -292,7 +294,7 @@ CREATE TABLE resources (
   state_num integer NOT NULL default '0',
   suspended_jobs varchar(3) check (suspended_jobs in ('YES','NO')) NOT NULL default 'NO',
   scheduler_priority integer NOT NULL default '0',
-  cpuset integer NOT NULL default '0',
+  cpuset varchar(255) NOT NULL default '0',
   besteffort varchar(3) check (besteffort in ('YES','NO')) NOT NULL default 'YES',
   deploy varchar(3) check (deploy in ('YES','NO')) NOT NULL default 'NO',
   expiry_date integer NOT NULL default '0',
@@ -300,6 +302,7 @@ CREATE TABLE resources (
   last_job_date integer NOT NULL default '0',
   available_upto integer NOT NULL default '2147483647',
   last_available_upto integer NOT NULL default '0',
+  drain varchar(3) check (drain in ('YES','NO')) NOT NULL default 'NO',
   PRIMARY KEY (resource_id)
 );
 CREATE INDEX resource_state ON resources (state);
