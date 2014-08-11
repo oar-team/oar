@@ -322,7 +322,6 @@ rm -rf tmp
 %attr(0755, root, root) /usr/lib/oar/oarnotify
 %attr(0755, root, root) /usr/lib/oar/oarproperty
 %attr(0755, root, root) /usr/lib/oar/oarremoveresource
-%attr(0755, root, root) /usr/lib/oar/runner
 %attr(0755, root, root) /usr/lib/oar/sarko
 %attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing
 %attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
@@ -491,6 +490,7 @@ user_setup
 * Wed Aug 5 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-1.el6
 - New upstream release
 - Removed dependancies on ruby: removed oar-admin and its associated backends, removed drawgantt
+- Do not package runner, since it vanished from sources
 
 * Wed Jun 19 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
 - New upstream release
