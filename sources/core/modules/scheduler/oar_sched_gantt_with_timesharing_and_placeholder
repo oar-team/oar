@@ -112,24 +112,20 @@ foreach my $i (@{$order}){
     my $use_placeholder_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
-    my $types = OAR::IO::get_current_job_types($base,$i);
+    my $types = OAR::IO::get_job_types_hash($base,$i);
     # Ignore besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
+        my $resource_list_vec = $already_scheduled_jobs{$i}->[10];
         my $job_duration = $already_scheduled_jobs{$i}->[1];
         if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
             # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
-            @resource_list = OAR::IO::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
+            ($resource_list_vec, @resource_list) = OAR::IO::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
             next if ($#resource_list < 0);
         }
         if ($already_scheduled_jobs{$i}->[8] eq "YES"){
             # This job was suspended so we must recalculate the walltime
             $job_duration += OAR::IO::get_job_suspended_sum_duration($base,$i,$current_time);
-        }
-
-        my $vec = '';
-        foreach my $r (@resource_list){
-            vec($vec,$r,1) = 1;
         }
 
         if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
@@ -146,14 +142,14 @@ foreach my $i (@{$order}){
             $container_id = $i;
             oar_debug("[$scheduler_name] [$i] container job: create gantt ($container_id,,,)\n");
             $Gantt->{$container_id}->{""}->{""}->{""} = 
-                OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec, $All_resource_list_vec);
+                OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $resource_list_vec, $All_resource_list_vec);
         } else {
             ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
                 OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6], $types, $inner_id, "[$scheduler_name] [$i]");
         }
 
         #Fill all other gantts
-        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec, $inner_id ,$set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[$scheduler_name] [$i]"); 
+        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $resource_list_vec, $inner_id ,$set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[$scheduler_name] [$i]"); 
 
     }
 }
@@ -256,7 +252,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     my $use_placeholder_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
-    my $types = OAR::IO::get_current_job_types($base,$i);
+    my $types = OAR::IO::get_job_types_hash($base,$i);
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         $inner_id = $1;
         if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
@@ -311,10 +307,8 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             oar_debug("[$scheduler_name] [$i] using Gantt PARALLEL algorithm\n");
             @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
         }
-        my @res_trees;
         my @resources;
         foreach my $t (@{$hole[1]}){
-            push(@res_trees, $t);
             foreach my $r (OAR::Schedulers::ResourceTree::get_tree_leafs($t)){
                 push(@resources, OAR::Schedulers::ResourceTree::get_current_resource_value($r));
             }

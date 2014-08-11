@@ -86,13 +86,22 @@ bash_oar() {
 
 bash_oar
 EOF
+    # Default bash sourced file in a batch job (BASH_ENV)
+    [ ! -f "${OARHOMEDIR}/.batch_job_bashrc" ] && cat > ${OARHOMEDIR}/.batch_job_bashrc <<EOF
+#
+# OAR bash environnement file for only the batch job users
+#
+
+source ~/.bashrc
+
+EOF
     touch ${OARHOMEDIR}/.bash_profile
     touch ${OARHOMEDIR}/.bashrc
-    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bash_profile; then
+    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bash_profile 2> /dev/null; then
         echo '' >> ${OARHOMEDIR}/.bash_profile
         echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bash_profile
     fi
-    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bashrc; then
+    if ! grep -q "${OARHOMEDIR}/.bash_oar" ${OARHOMEDIR}/.bashrc 2> /dev/null; then
         echo '' >> ${OARHOMEDIR}/.bashrc
         echo "[ -f ${OARHOMEDIR}/.bash_oar ] && . ${OARHOMEDIR}/.bash_oar" >> ${OARHOMEDIR}/.bashrc
     fi
@@ -129,23 +138,23 @@ common_setup() {
     mkdir -p ${OARCONFDIR}/
 
     install_conffile \
-        ${EXAMPLEDIR}/oar.conf \
+        ${SHAREDIR}/oar.conf \
         ${OARCONFDIR}/oar.conf \
         0600 ${OAROWNER}:${ROOTGROUP}
 
     install_conffile \
-        ${EXAMPLEDIR}/oarnodesetting_ssh \
+        ${SHAREDIR}/oarnodesetting_ssh \
         ${OARCONFDIR}/oarnodesetting_ssh \
         0755
 
     install_conffile \
-        ${EXAMPLEDIR}/update_cpuset_id.sh \
+        ${SHAREDIR}/update_cpuset_id.sh \
         ${OARCONFDIR}/update_cpuset_id.sh \
         0755
 
     set_rights ${OARDIR}/oarsh_oardo     6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oarnodesetting 6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarnodesetting 6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
 
-    set_rights ${OARDIR}/oardodo/oardodo 6754 ${ROOTUSER} ${OAROWNERGROUP}
+    set_rights ${OARDIR}/oardodo/oardodo 6750 ${ROOTUSER} ${OAROWNERGROUP}
     set_rights ${OARDIR}/oardodo         0755 ${ROOTUSER} ${OAROWNERGROUP}
 }

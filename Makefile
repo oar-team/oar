@@ -3,7 +3,7 @@
 export SHELL=/bin/bash
 
 # Modules that can be builded
-MODULES = server user node monika drawgantt drawgantt-svg doc tools api scheduler-ocaml kamelot kamelot-pg www-conf common common-libs database  
+MODULES = server user node monika drawgantt drawgantt-svg doc tools api kamelot-mysql kamelot-postgresql www-conf common common-libs database  
 
 
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
@@ -20,11 +20,11 @@ TARGETS_UNINSTALL = $(MODULES:=-uninstall)
 TARGETS = $(TARGETS_BUILD) $(TARGETS_CLEAN) $(TARGETS_INSTALL) $(TARGETS_UNINSTALL) $(TARGETS_SETUP)
 
 all:       usage
-build:     $(filter-out scheduler-ocaml% , $(TARGETS_BUILD))
-install:   $(filter-out scheduler-ocaml% , $(TARGETS_INSTALL))
-clean:     $(filter-out scheduler-ocaml% , $(TARGETS_CLEAN))
-uninstall: $(filter-out scheduler-ocaml% , $(TARGETS_UNINSTALL))
-setup:     $(filter-out scheduler-ocaml% , $(TARGETS_SETUP))
+build:     $(TARGETS_BUILD)
+install:   $(TARGETS_INSTALL)
+clean:     $(TARGETS_CLEAN)
+uninstall: $(TARGETS_UNINSTALL)
+setup:     $(TARGETS_SETUP)
 
 tarball: .git
 	./misc/make_tarball
@@ -152,10 +152,12 @@ $(P_TARGETS):
 	# oar-server
 	mkdir -p $(PACKAGES_DIR)/oar-server/var/lib/oar
 	$(MAKE) -f Makefiles/server.mk $(P_ACTION)\
+    SHAREDIR=/usr/share/oar/oar-server \
                 DESTDIR=$(PACKAGES_DIR)/oar-server
 	
 	$(MAKE) -f Makefiles/database.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-server \
+    SHAREDIR=/usr/share/oar/oar-server \
 		DOCDIR=/usr/share/doc/oar-server
 	
 	# oar-node
@@ -173,18 +175,22 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/monika.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
+		SHAREDIR=/usr/share/oar/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
 	$(MAKE) -f Makefiles/drawgantt.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
+		SHAREDIR=/usr/share/oar/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
 	$(MAKE) -f Makefiles/drawgantt-svg.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
+		SHAREDIR=/usr/share/oar/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
 	$(MAKE) -f Makefiles/www-conf.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
+		SHAREDIR=/usr/share/oar/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
 	
 	# oar-admin
@@ -201,6 +207,3 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/keyring.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-keyring 
 	
-	# scheduler-ocaml-mysql
-	#$(MAKE) -f Makefiles/scheduler-ocaml.mk $(P_ACTION) \
-	#    DESTDIR=$(PACKAGES_DIR)/oar-scheduler-ocaml-mysql 

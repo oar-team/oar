@@ -1,6 +1,8 @@
+$LOAD_PATH << '.'
+
 require 'oarrestapi_lib'
 require 'shared_examples'
-APIURI="http://oar:kameleon@localhost/oarapi-priv/" 
+APIURI="http://oar:#{ENV['USER']}@localhost/oarapi-priv/"
 
 describe OarApi do
   before :all do

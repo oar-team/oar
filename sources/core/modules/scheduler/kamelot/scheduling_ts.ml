@@ -9,7 +9,7 @@
 (* - multiple resource types *) (* NOT TESTED *)
 (* - job container *) (* NOT TESTED *)
 (* - dependencies *) (* NOT TESTED *)
-(* - security_time_overhead *) 
+(* - security_time_overhead *)
 (* *)
 (* Not supported features: *)
 (* - moldable jobs (use only first request set*)
@@ -36,7 +36,7 @@ type slot = {
 }
 
 let itvs_to_string itvs = let itv2str itv = Printf.sprintf "[%d,%d]" itv.b itv.e  in
-              "itvs:={ " ^  (String.concat ", " (List.map itv2str itvs)) ^ "}\n" 
+              "itvs:={ " ^  (String.concat ", " (List.map itv2str itvs)) ^ "}\n"
 
 let ts_to_string x = let ts2str a = let (user, jb_name, itvs) = a in "(" ^ user ^ "," ^ jb_name ^ "," ^ (itvs_to_string itvs) ^ ")\n"
                       in
@@ -59,7 +59,7 @@ let find_contiguous_slots_time slot_l jbs = (* TODO optimize *)
   (*  take into account time_b *)
 	let rec find_ctg_slots slots ctg_slots prev_slots = match slots with
 		| s::n when (s.time_e >= (add (add jbs.time_b jbs.w_time) minus_one)) -> (ctg_slots @ [s], prev_slots , n)
-		| s::n when ((add s.time_e one) <> (List.hd n).time_s) -> 
+		| s::n when ((add s.time_e one) <> (List.hd n).time_s) ->
 			 jbs.time_b <- (List.hd n).time_s;
 			 find_ctg_slots n [] (prev_slots @ ctg_slots @ [s])
 		| s::n -> find_ctg_slots n (ctg_slots @ [s]) prev_slots
@@ -72,11 +72,11 @@ let find_contiguous_slots_time slot_l jbs = (* TODO optimize *)
 (* No exclusive hierarchy assignement  TODO why No exclusive ???*) (* TODO: to adapt for moldable *)
 (* TODO: only need of jreq simply adaptation for moldable support ??? job -> jrq  *)
 
-let find_resource_hierarchies_job itv_slot jrq hy_levels = 
+let find_resource_hierarchies_job itv_slot jrq hy_levels =
   let rec requests_iter result hys r_rqts cts = match (hys, r_rqts, cts) with
     | ([],[],[]) -> List.flatten (List.rev result) (* TODO to optimze ??? *)
-    | (x::n,y::m,z::o) -> 
-      begin 
+    | (x::n,y::m,z::o) ->
+      begin
         let h = List.map (fun k -> try List.assoc k hy_levels with  Not_found -> failwith ("Can't find corresponding hierarchy level, HIERARCHY_LABELS configuration variable must be completed: "^k)) x in
         let itv_cts_slot = inter_intervals itv_slot z in
         let sub_result = find_resource_hierarchies_scattered itv_cts_slot h y in
@@ -89,9 +89,9 @@ let find_resource_hierarchies_job itv_slot jrq hy_levels =
 
 let inter_slots slots =
   let rec iter_slots sls itv = match sls with
-    | x::n -> let itv1 = inter_intervals itv x.set_of_res in iter_slots n itv1 
+    | x::n -> let itv1 = inter_intervals itv x.set_of_res in iter_slots n itv1
     | [] -> itv
-  in  iter_slots (List.tl slots) (List.hd slots).set_of_res;; 
+  in  iter_slots (List.tl slots) (List.hd slots).set_of_res;;
 
 (*                                                                              *)
 (* extract available resources accordingly to user/jobname for timesharing case *)
@@ -99,20 +99,20 @@ let inter_slots slots =
 let slot2res_ts slot user jobname =
   let inter_ts accu ts_i = match ts_i with
   ("*","*",res)                                  ->  add_intervals accu res
-  | (u,"*",res) when (u = user)                  ->  add_intervals accu res 
-  | ("*",j,res) when (j = jobname)               ->  add_intervals accu res 
-  | (u,j,res)   when (u = user) && (j = jobname) -> add_intervals accu res 
+  | (u,"*",res) when (u = user)                  ->  add_intervals accu res
+  | ("*",j,res) when (j = jobname)               ->  add_intervals accu res
+  | (u,j,res)   when (u = user) && (j = jobname) -> add_intervals accu res
   | (_,_,_)                                      -> accu
-  in List.fold_left inter_ts slot.set_of_res slot.ts_i 
+  in List.fold_left inter_ts slot.set_of_res slot.ts_i
 
-(*                                                                             *) 
+(*                                                                             *)
 (* add placeholder resource accordingly to the presence of ph_name in the slot *)
 (*                                                                             *)
 
 let slot2res_ph res slot ph_name =
    let res_ph = try List.assoc ph_name slot.ph_i with  Not_found -> [] in
      let a = add_intervals res_ph res in
-      (* Conf.log ("slot2res_ph:" ^ (itvs_to_string  a) ); *)  
+      (* Conf.log ("slot2res_ph:" ^ (itvs_to_string  a) ); *)
       a
 (*                                                                                                           *)
 (* extract common available resources form list of slots and to accordingly user/jobname in timesharing case *)
@@ -120,9 +120,9 @@ let slot2res_ph res slot ph_name =
 
 let inter_slots_ts slots user jobname =
   let rec iter_slots_ts sls itv = match sls with
-    | x::n -> let itv1 = inter_intervals itv x.set_of_res in iter_slots_ts n itv1 
+    | x::n -> let itv1 = inter_intervals itv x.set_of_res in iter_slots_ts n itv1
     | [] -> itv
-   in iter_slots_ts (List.tl slots) (slot2res_ts (List.hd slots) user jobname);; 
+   in iter_slots_ts (List.tl slots) (slot2res_ts (List.hd slots) user jobname);;
 (*
 let s1 = {time_s = 0L; time_e = 10L; set_of_res = [{b = 1; e = 10}]; ts_i = [("*","*", [{b = 5; e = 15}])]};;
 let s2 = {time_s = 0L; time_e = 10L; set_of_res = [{b = 1; e = 10}]; ts_i = [("*","*", [{b = 5; e = 15}]); ("*","zop", [{b = 5; e = 20}] ) ]};;
@@ -139,34 +139,34 @@ let inter_slots_ts_ph slots user jobname ph ph_name =
                               slot2res_ts slt user jobname
   in
   let rec iter_slots_ts sls itv = match sls with
-    | x::n -> let itv1 = inter_intervals itv x.set_of_res in iter_slots_ts n itv1 
+    | x::n -> let itv1 = inter_intervals itv x.set_of_res in iter_slots_ts n itv1
     | [] -> itv
-   in iter_slots_ts (List.tl slots) (slot2res_ts_ph (List.hd slots));; 
+   in iter_slots_ts (List.tl slots) (slot2res_ts_ph (List.hd slots));;
 
 (*                                              *)
-(* find_first_suitable_contiguous_slots for job *) 
+(* find_first_suitable_contiguous_slots for job *)
 (* /!\ NOT moldable version                     *)
 (* TODO; to modify to support BEST -2 and ALL -1    // TODO done ???  *)
 
 let find_first_suitable_contiguous_slots slots j hy_levels = (* non moldable*)
 (*
   Conf.log ("Nb slot: " ^ (string_of_int (List.length slots))) ;
-  Conf.log ("Slot: "^(slots_to_string slots));   
+  Conf.log ("Slot: "^(slots_to_string slots));
 *)
 	let rec find_suitable_contiguous_slots slot_l pre_slots job =
 	   	let (next_ctg_time_slots, prev_slots, remain_slots) = find_contiguous_slots_time slot_l job  in
-      let itv_inter_slots = if (job.ts || (job.ph = Use_Placeholder)) then 
+      let itv_inter_slots = if (job.ts || (job.ph = Use_Placeholder)) then
                               inter_slots_ts_ph next_ctg_time_slots job.ts_user job.ts_jobname job.ph job.ph_name
                             else
-                              inter_slots next_ctg_time_slots                      
+                              inter_slots next_ctg_time_slots
       in (* TODO add test job.ts *)
       (* Conf.log ("before :  find_resource_hierarchies_job "); *)
       let itv_res_assignement = find_resource_hierarchies_job itv_inter_slots (List.hd job.rq) hy_levels in
       (* Conf.log ("after :  find_resource_hierarchies_job "); *)
       match  itv_res_assignement with
-        | [] -> find_suitable_contiguous_slots (List.tl next_ctg_time_slots @ remain_slots) 
+        | [] -> find_suitable_contiguous_slots (List.tl next_ctg_time_slots @ remain_slots)
                                                (pre_slots @ prev_slots @ [List.hd next_ctg_time_slots]) job
-        | itv -> (* Conf.log ("\n itv: " ^ (itvs_to_string itv) ^ 
+        | itv -> (* Conf.log ("\n itv: " ^ (itvs_to_string itv) ^
                             "\n next_ctg_time_slots: " ^ (slots_to_string  next_ctg_time_slots) ^
                             "\n pre_slots : " ^ (slots_to_string pre_slots) ^
                             "\n  prev_slots: " ^ (slots_to_string prev_slots) ^
@@ -196,7 +196,7 @@ let slot_before_job_begin slot jbs = {
   ph_i = slot.ph_i;
 }
 
-(* generate B slot *) 
+(* generate B slot *)
 let slot_during_job slot jbs = {
   time_s = max jbs.time_b slot.time_s;
   time_e = min (add (add jbs.time_b  jbs.w_time) minus_one) slot.time_e ;
@@ -205,7 +205,7 @@ let slot_during_job slot jbs = {
   ph_i = slot.ph_i;
 }
 
-(* generate B slot with timesharing support *) 
+(* generate B slot with timesharing support *)
 let slot_during_job_ts slot jbs = {
 		time_s = max jbs.time_b slot.time_s;
 		time_e = min (add (add jbs.time_b  jbs.w_time) minus_one) slot.time_e ;
@@ -220,7 +220,7 @@ let slot_during_job_ts slot jbs = {
                               let updated_set_of_res =  sub_intervals (List.assoc jbs.ph_name slot.ph_i) jbs.set_of_rs in
                                 (jbs.ph_name, updated_set_of_res)::(List.remove_assoc jbs.ph_name slot.ph_i); (* update the right pairs (ph_name,st_of_rs) *)
                             else
-                              slot.ph_i; 
+                              slot.ph_i;
       | Set_Placeholder -> (* Conf.log "slot_during_job_ts Set_Placeholder"; *)
                            (jbs.ph_name,jbs.set_of_rs)::slot.ph_i;
       | No_Placeholder  -> slot.ph_i;
@@ -237,7 +237,7 @@ let slot_after_job_end slot jbs = {
 }
 
 let split_slots slots jbs =
-(* TODO to rm 
+(* TODO to rm
   if (jbs.ts) then
         Conf.log("split_slots jbs.ts TRUE")
       else
@@ -247,7 +247,7 @@ let split_slots slots jbs =
     [],[],[] -> ac
     | _,_,_ -> s::ac
   in
-  let rec split_slts slts accu = match slts with 
+  let rec split_slts slts accu = match slts with
     [] ->  accu
     | slt ::l ->  if jbs.time_b > slt.time_s then (* AAA *)
 			              if  (add (add jbs.time_b jbs.w_time) minus_one) > slt.time_e then
@@ -263,9 +263,9 @@ let split_slots slots jbs =
 			  let a = add_no_empty (slot_during_job_ts slt jbs) accu in
           split_slts l a
 			else
-				(* B+C *) 
+				(* B+C *)
 				let a =add_no_empty ( slot_during_job_ts slt jbs) (add_no_empty (slot_after_job_end slt jbs ) accu) in
-          split_slts l a            
+          split_slts l a
     in split_slts slots []
 
 (*                                                                                                 *)
@@ -273,7 +273,7 @@ let split_slots slots jbs =
 (* Assign resources to a job and update the list of slots accordingly by splitting concerned slots *)
 (*                                                                                                 *)
 
-let assign_resources_job_split_slots job slots hy_levels = 
+let assign_resources_job_split_slots job slots hy_levels =
 	let (resource_assigned, ctg_slots, prev_slots, remain_slots) = find_first_suitable_contiguous_slots slots job hy_levels in
 	  job.set_of_rs <- resource_assigned;
 		(job, prev_slots @ (split_slots ctg_slots job) @ remain_slots);;
@@ -285,7 +285,7 @@ let assign_resources_mld_job_split_slots job slots hy_levels =
 (* TODO Modify see use_rq / rq in type_ts.ml *)
   let new_job moldable_id walltime constraints hy_level_rqt hy_nb_rqt =
         { (* construct job TODO: VERIFY that we don't need to copy all fields for remains steps to final assignement ??? *)
-          jobid = job.jobid;  
+          jobid = job.jobid;
           jobstate = ""; (* no need *)
           moldable_id = moldable_id;
           time_b = Int64.zero;
@@ -310,9 +310,9 @@ let assign_resources_mld_job_split_slots job slots hy_levels =
             else
               (* keep the previous one *)
               moldable_find_earliest_finish_contiguous_slots time_f reqs f_j f_res_asgnmt f_ctg_slots f_prev_slots f_remain_slots
-        in 
-      let (final_job,final_resource_assigned, final_ctg_slots, final_prev_slots, final_remain_slots ) = 
-             moldable_find_earliest_finish_contiguous_slots 2147483648L job.rq (new_job 0 0L [] [] [])  [] [] [] [] 
+        in
+      let (final_job,final_resource_assigned, final_ctg_slots, final_prev_slots, final_remain_slots ) =
+             moldable_find_earliest_finish_contiguous_slots 2147483648L job.rq (new_job 0 0L [] [] [])  [] [] [] []
         in
           (* Conf.log ("final_resource_assigned;" ^(itvs_to_string final_resource_assigned) ); *)
           final_job.set_of_rs <- final_resource_assigned;
@@ -326,7 +326,7 @@ let assign_resources_mld_job_split_slots job slots hy_levels =
  let schedule_id_jobs_ct_dep h_slots h_jobs hy_levels h_jobs_dependencies h_req_jobs_status jids security_time_overhead =
 
   let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (schedule_id_jobs_ct)" in
-  let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (schedule_id_jobs_ct)" in 
+  let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (schedule_id_jobs_ct)" in
   let test_type job job_type = try (true, (List.assoc job_type job.types)) with Not_found -> (false,"") in
 
   (* dependencies evaluation *)
@@ -335,7 +335,7 @@ let assign_resources_mld_job_split_slots job slots hy_levels =
 (*
   let test_job_scheduled = try (Hashtbl.find h_jobs j)  with Not_found -> failwith "Can't Hashtbl.find h_jobs (test_job_scheduled )" in
 *)
-    
+
   let dependencies_evaluation j_id job_init =
     (* are there denpendencies*)
     let (tst_no_dep, deps) = test_no_dep j_id in
@@ -369,7 +369,7 @@ let assign_resources_mld_job_split_slots job slots hy_levels =
                           jobs_required_iter n
       in
         jobs_required_iter deps
- 
+
   in
   (* assign ressource for all waiting jobs *)
   let rec assign_res_jobs j_ids scheduled_jobs nosched_jids = match j_ids with
@@ -383,34 +383,34 @@ let assign_resources_mld_job_split_slots job slots hy_levels =
                     let (test_container, value) = test_type j "container" in
                       let current_slots = find_slots num_set_slots in
 (* TODO: test moldable *)
-                      let (ok, ns_jids, (job, updated_slots) ) = try (true, nosched_jids, assign_resources_mld_job_split_slots j current_slots hy_levels) 
+                      let (ok, ns_jids, (job, updated_slots) ) = try (true, nosched_jids, assign_resources_mld_job_split_slots j current_slots hy_levels)
                                                       with _ -> (false, (jid::nosched_jids), (j_init, current_slots))
                                                       (*  with x -> raise x *)
 (*
-                      let (ok, ns_jids, (job, updated_slots) ) = try (true, nosched_jids, assign_resources_job_split_slots j current_slots hy_levels) 
-                                                        with _ -> (false, (jid::nosched_jids), (j_init, current_slots)) 
+                      let (ok, ns_jids, (job, updated_slots) ) = try (true, nosched_jids, assign_resources_job_split_slots j current_slots hy_levels)
+                                                        with _ -> (false, (jid::nosched_jids), (j_init, current_slots))
 *)
                       in
                         if ok then
-                          begin 
+                          begin
                             (* Conf.log ("Assign_resources_mld_job_split_slots OK"); *)
-                            Hashtbl.replace h_slots num_set_slots updated_slots; (* TODO IS NO NEED OR MUST BE OPTIMISED ??? *) 
+                            Hashtbl.replace h_slots num_set_slots updated_slots; (* TODO IS NO NEED OR MUST BE OPTIMISED ??? *)
                             if test_container then
                               (* create new slot / container *) (* substract j.walltime security_time_overhead *)
                               Hashtbl.add h_slots jid [{
-                                time_s = job.time_b; 
-                                time_e = add job.time_b (sub job.w_time security_time_overhead); 
+                                time_s = job.time_b;
+                                time_e = add job.time_b (sub job.w_time security_time_overhead);
                                 set_of_res=job.set_of_rs;
                                 ts_i=[];
                                 ph_i=[]}];
-                              (* replace updated/assgined job in job hashtable *) 
-                              Hashtbl.replace h_jobs jid job; (* TODO IS NO NEED ??? *) 
+                              (* replace updated/assgined job in job hashtable *)
+                              Hashtbl.replace h_jobs jid job; (* TODO IS NO NEED ??? *)
 
                             assign_res_jobs n (job::scheduled_jobs) ns_jids
                           end
-                       else 
+                       else
                         assign_res_jobs n scheduled_jobs ns_jids
-                  end 
+                  end
   in
     assign_res_jobs jids [] []
 
@@ -420,7 +420,7 @@ let assign_resources_mld_job_split_slots job slots hy_levels =
 let split_slots_prev_scheduled_jobs slots jobs =
 
   let rec find_first_slot left_slots right_slots job = match right_slots with
-    | x::n  when ((x.time_s > job.time_b) || ((x.time_s <= job.time_b) && (job.time_b <= x.time_e))) -> (left_slots,x,n) 
+    | x::n  when ((x.time_s > job.time_b) || ((x.time_s <= job.time_b) && (job.time_b <= x.time_e))) -> (left_slots,x,n)
     | x::n -> find_first_slot (left_slots @ [x]) n job
     | [] -> failwith "Argl cannot failed here"
 
@@ -428,7 +428,7 @@ let split_slots_prev_scheduled_jobs slots jobs =
 
   let rec find_slots_aux encompass_slots r_slots job = match r_slots with
     (* find timed slots *)
-    | x::n when (x.time_e >  (add job.time_b job.w_time)) -> (encompass_slots @ [x],n) 
+    | x::n when (x.time_e >  (add job.time_b job.w_time)) -> (encompass_slots @ [x],n)
     | x::n -> find_slots_aux (encompass_slots @ [x]) n job
     | [] -> failwith "Argl cannot failed here"
    in
@@ -444,9 +444,9 @@ let split_slots_prev_scheduled_jobs slots jobs =
         | [] -> prev_slots @ remain_slots
         | x::n -> let (l_slots, first_slot, r_slots) = find_first_slot prev_slots remain_slots x in
                   let (encompass_slots, ri_slots) =  find_slots_encompass first_slot r_slots x in
-                  let splitted_slots =  split_slots encompass_slots x in 
-                    split_slots_next_job l_slots (splitted_slots @ ri_slots) n 
-     in 
+                  let splitted_slots =  split_slots encompass_slots x in
+                    split_slots_next_job l_slots (splitted_slots @ ri_slots) n
+     in
         split_slots_next_job [] slots jobs
 
 
@@ -456,15 +456,15 @@ let split_slots_prev_scheduled_jobs slots jobs =
 let split_slots_prev_scheduled_one_job slots job =
 
   let rec find_first_slot left_slots right_slots job = match right_slots with
-    | x::n  when ((x.time_s > job.time_b) || ((x.time_s <= job.time_b) && (job.time_b <= x.time_e))) -> (left_slots,x,n) 
-    | x::n -> find_first_slot (left_slots @ [x]) n job 
+    | x::n  when ((x.time_s > job.time_b) || ((x.time_s <= job.time_b) && (job.time_b <= x.time_e))) -> (left_slots,x,n)
+    | x::n -> find_first_slot (left_slots @ [x]) n job
     | [] -> failwith "Argl cannot failed here"
 
   in
 
   let rec find_slots_aux encompass_slots r_slots job = match r_slots with
     (* find timed slots *)
-    | x::n when (x.time_e >  (add job.time_b job.w_time)) -> (encompass_slots @ [x],n) 
+    | x::n when (x.time_e >  (add job.time_b job.w_time)) -> (encompass_slots @ [x],n)
     | x::n -> find_slots_aux (encompass_slots @ [x]) n job
     | [] -> failwith "Argl cannot failed here"
    in
@@ -478,17 +478,17 @@ let split_slots_prev_scheduled_one_job slots job =
 
       let (l_slots, first_slot, r_slots) = find_first_slot [] slots job in
         let (encompass_slots, ri_slots) =  find_slots_encompass first_slot r_slots job in
-          let splitted_slots =  split_slots encompass_slots job in 
-            splitted_slots @ ri_slots 
+          let splitted_slots =  split_slots encompass_slots job in
+            l_slots @ splitted_slots @ ri_slots
 (*                                                                                 *)
 (* function insert previously scheduled job in slots with containers consideration *)
 (* job must be sorted by ascending start_time *)
 
-(* loop across ordered jobs' id by start_time and create new set_slots or split slots when needed *) 
+(* loop across ordered jobs' id by start_time and create new set_slots or split slots when needed *)
 
 let set_slots_with_prev_scheduled_jobs h_slots h_jobs ordered_id_jobs security_time_overhead =
-  let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (set_slots_with_prev_scheduled_jobs)" in 
-  let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (set_slots_with_prev_scheduled_jobs)" in 
+  let find_slots s_id =  try Hashtbl.find h_slots s_id with Not_found -> failwith "Can't Hashtbl.find slots (set_slots_with_prev_scheduled_jobs)" in
+  let find_job j_id = try Hashtbl.find h_jobs j_id with Not_found -> failwith "Can't Hashtbl.find job (set_slots_with_prev_scheduled_jobs)" in
   let test_type job job_type = try (true, (List.assoc job_type job.types)) with Not_found -> (false,"0") in
   let rec loop_jobs od_id_jobs = match od_id_jobs with
     | [] -> () (* terminated *)
@@ -500,14 +500,14 @@ let set_slots_with_prev_scheduled_jobs h_slots h_jobs ordered_id_jobs security_t
                   if test_container then
                     (* create new slot / container *) (* substract j.walltime security_time_overhead *)
                     Hashtbl.add h_slots jid [{
-                      time_s = j.time_b; 
-                      time_e = add j.time_b (sub j.w_time security_time_overhead); 
+                      time_s = j.time_b;
+                      time_e = add j.time_b (sub j.w_time security_time_overhead);
                       set_of_res = j.set_of_rs;
                       ts_i = [];
                       ph_i = []}];
-                  (* TODO perhaps we'll need to optimize split_slots_prev_scheduled_jobs...made for jobs list *) 
-                  Hashtbl.replace h_slots num_set_slots (split_slots_prev_scheduled_one_job (find_slots num_set_slots) j); 
+                  (* TODO perhaps we'll need to optimize split_slots_prev_scheduled_jobs...made for jobs list *)
+                  Hashtbl.replace h_slots num_set_slots (split_slots_prev_scheduled_one_job (find_slots num_set_slots) j);
                   loop_jobs m
-                end  
+                end
   in
     loop_jobs ordered_id_jobs

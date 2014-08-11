@@ -2,9 +2,13 @@
 # Please, run this test on a kameleon appliance
 # If this is the first time, run it twice and do not care about the first time.
 
+$LOAD_PATH << '.'
+
+USER=ENV['USER']
 require 'oarrestapi_lib'
 require 'shared_examples'
-APIURI="http://kameleon:kameleon@localhost/oarapi-priv/" 
+APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/"
+
 
 $jobid=""
 $rjobid=""
@@ -198,7 +202,7 @@ describe OarApi do
 
     context "(with state=Running [note: add a sleep if test jobs are not yet running])" do
       before(:all) do
-        @api.get_hash("jobs?state=Running&user=kameleon")
+        @api.get_hash("jobs?state=Running&user=#{USER}")
       end
       it "should return a few running jobs" do
         @api.value['items'].length.should > 0
@@ -218,8 +222,8 @@ describe OarApi do
         id=@api.value['items'][0]['id']
         @api.get_link_href_from_array(links,"resources").should == "/oarapi-priv/jobs/#{id}/resources"
       end
-      it "should return jobs owned by the kameleon user" do
-        @api.value['items'][0]['owner'].should == "kameleon"
+      it "should return jobs owned by the #{USER} user" do
+        @api.value['items'][0]['owner'].should == "#{USER}"
       end
     end
 
@@ -257,15 +261,15 @@ describe OarApi do
  
   end
 
-  describe "JOB DETAILS CHECKING: /jobs/<id> data structure" do
+  describe "JOB INFOS CHECKING: /jobs/<id> data structure" do
     context "(with normal job)" do
       before(:all) do
         @api = OarApi.new(APIURI)
         @api.get_hash("jobs/#{$jobid}")
       end
       it_should_behave_like "Job"
-      it "should be owned by the kameleon user" do
-        @api.value['owner'].should == "kameleon"
+      it "should be owned by the #{USER} user" do
+        @api.value['owner'].should == "#{USER}"
       end
     end
     context "(with non-existent job)" do
@@ -298,10 +302,72 @@ describe OarApi do
 
   end
 
-  describe "JOB DETAILS CHECKING: /jobs/details data structure" do
+
+  describe "JOB DETAILS CHECKING: /jobs/<id>/details data structure" do
+    context "(with normal job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+        @api.get_hash("jobs/#{$jobid}/details")
+        @value=@api.value
+      end
+      it_should_behave_like "Job"
+      it "should be owned by the #{USER} user" do
+        @api.value['owner'].should == "#{USER}"
+      end
+      it "should have resources and nodes details" do
+        @api.value['resources'].should be_an(Array)
+        @api.value['nodes'].should be_an(Array)
+      end
+      context "should have resources behaving correctly" do
+        before(:all) do
+          @api.value=@value['resources'][0]
+        end
+        it_should_behave_like "ResourceId"
+      end
+      context "should have nodes behaving correctly" do
+        before(:all) do
+          @api.value=@value['nodes'][0]
+        end
+        it_should_behave_like "Node"
+        it "should have a status" do
+          @api.value.should have_key('status')
+        end
+      end
+    end
+    context "(with non-existent job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+      end
+
+      it "should raise an exception" do
+        lambda {
+            @api.get_hash("jobs/00/details")
+        }.should raise_exception
+      end
+
+      it "should return a 404 error" do
+        begin
+          @api.get_hash("jobs/00/details")
+        rescue => e
+          e.should respond_to('http_code')
+          e.http_code.should == 404
+        end 
+      end
+    end
+    context "(with finished job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+        @api.get_hash("jobs/1/details")
+      end
+      it_should_behave_like "Job"
+    end
+  end
+
+  describe "JOBS LIST DETAILS CHECKING: /jobs/details data structure" do
     before(:all) do
       @api = OarApi.new(APIURI)
       @api.get_hash("jobs/details")
+      @values=@api.value
     end
     context "(basic structure)" do
       it_should_behave_like "All list structures"
@@ -317,13 +383,13 @@ describe OarApi do
       end
       context "should have resources behaving correctly" do
         before(:all) do
-          @api.value=@api.value['resources'][0]
+          @api.value=@values["items"][0]['resources'][0]
         end
         it_should_behave_like "ResourceId"
       end
       context "should have nodes behaving correctly" do
         before(:all) do
-          @api.value=@api.value['nodes'][0]
+          @api.value=@values["items"][0]['nodes'][0]
         end
         it_should_behave_like "Node"
         it "should have a status" do

@@ -99,7 +99,6 @@ my $job_key_pub = "";
 my $import_job_key_file = "";
 my $import_job_key_inline = "";
 my $export_job_key_file = "";
-my $Job_uid_resource_type;
 my $Initial_request_string = "oarsub @ARGV";
 
 # a non array-job is an array-job with 1 subjob
@@ -121,7 +120,7 @@ sub qdel($) {
             print(STDERR "\n\nCaught Interrupt (^C), ");
         }
         OAR::Sub::delete_jobs($Job_id_list_ref, $remote_host, $remote_port);
-        exit(1);
+        OAR::Sub::close_db_connection(); exit(1);
     }
 }
 
@@ -154,9 +153,7 @@ sub connect_job($$$){
             $ENV{OAR_CPUSET} = "";
         }
         my $moldable = OAR::Sub::get_current_moldable_job($job->{assigned_moldable_job});
-        my $job_cpuset_uid;
-        $job_cpuset_uid = OAR::Sub::get_job_cpuset_uid($job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if (defined($Job_uid_resource_type));
-        my $job_user = OAR::Sub::format_job_user($job->{job_user},$job_id,$job_cpuset_uid);
+        my $job_user = $job->{job_user};
         OAR::Sub::close_db_connection();
         my @passinfo = getpwnam($lusr) or die("Cannot retreive system information for user $lusr\n");
         my $shell=$passinfo[8];
@@ -531,16 +528,6 @@ sub parse_resource_descriptions($){
         }
         push(@result, \@resource_groups);
     }
-    # Add resource constraints for JOB_RESOURCE_MANAGER_JOB_UID_TYPE for each resource groups
-    if (defined($Job_uid_resource_type) and defined($Cpuset_field) and !(grep(/^desktop_computing$/, @Type))){
-        my %tmp = (
-                    property => "type = '$Job_uid_resource_type'",
-                    resources => [ {resource => $Cpuset_field, value => 1} ]
-                  );
-        foreach my $moldable (@result){
-            push(@{$moldable->[0]},\%tmp);
-        }
-    }
 
     return(@result);
 }
@@ -576,7 +563,6 @@ if (!defined($Cosystem_hostname)){
 
 $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
 $Cpuset_path = get_conf("CPUSET_PATH");
-$Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){
     OAR::Sub::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
@@ -635,7 +621,7 @@ GetOptions ("resource|l=s" => \@resource,
             "import-job-key-from-file|i=s" => \$import_job_key_file,
             "export-job-key-to-file|e=s" => \$export_job_key_file,
             "version|V" => \$Version
-           );
+           ) or exit(1);
 
 
 if (defined($Version)){
@@ -689,26 +675,36 @@ if (defined($Resubmit)){
 
 if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && (!defined($connect_job))){
     usage();
-    exit(5);
+    OAR::Sub::close_db_connection(); exit(5);
 }
 
 if (($Interactive == 1) and ($Reservation ne "0")){
     warn("/!\\ A reservation cannot be interactive.\n");
     usage();
-    exit(7);
+    OAR::Sub::close_db_connection(); exit(7);
 }
 
 if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
     warn("/!\\ A desktop computing job cannot be interactive.\n");
     usage();
-    exit(17);
+    OAR::Sub::close_db_connection(); exit(17);
 }
 
-if (defined($notify) && $notify =~ m/\s*exec:(.+)$/m){
+if (grep(/^noop$/, @Type)){
+    if ($Interactive == 1){
+        warn("/!\\ A NOOP job cannot be interactive.\n");
+        OAR::Sub::close_db_connection(); exit(17);
+    }elsif (defined($connect_job)){
+        warn("/!\\ It is not possible to connect to a NOOP job.\n");
+        OAR::Sub::close_db_connection(); exit(17);
+    }
+}
+
+if (defined($notify) && $notify =~ m/^.*exec\s*:.+$/m){
     my $notify_exec_regexp = '[a-zA-Z0-9_.\/ -]+';
-    unless ($notify =~ m/\s*exec:($notify_exec_regexp)$/m){
+    unless ($notify =~ m/.*exec\s*:($notify_exec_regexp)$/m){
       warn("/!\\ Insecure characters found in notification method (the allowed regexp is: $notify_exec_regexp).\n");
-      exit(16);
+      OAR::Sub::close_db_connection(); exit(16);
     }
 }
 
@@ -716,7 +712,7 @@ if (defined($notify) && $notify =~ m/\s*exec:(.+)$/m){
 if (defined($connect_job)){
     # Do not kill the job if the user close the window
     $SIG{HUP} = 'DEFAULT';
-    exit(connect_job($connect_job,0,$Openssh_cmd));
+    OAR::Sub::close_db_connection(); exit(connect_job($connect_job,0,$Openssh_cmd));
 }
 # End connection to a reservation
 
@@ -851,7 +847,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     if($array_job_nb <= 0){
         warn("/!\\ An array job must have a positive number of sub-jobs\n");
         usage();
-        exit(6);
+        OAR::Sub::close_db_connection(); exit(6);
     }
 
 
@@ -875,8 +871,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             $Reservation = OAR::Sub::sql_to_local("$1 $2");
         }else{
             warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
-            OAR::Sub::close_db_connection;
-            exit(7);
+            OAR::Sub::close_db_connection; exit(7);
         }
         ($Server, $server_port) = OAR::Sub::init_tcp_server();
     }
@@ -941,7 +936,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         warn("/!\\ A parameter file-based array job cannot be interactive.\n");
 # user defined array_ids, 0 if interactive and/or non-array job 
         usage();
-        exit(9);
+        OAR::Sub::close_db_connection(); exit(9);
     }
     
     $Project = $Project_default if (!defined($Project));
@@ -952,7 +947,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
     if ($array_job_nb != 1){
         warn("/!\\ An array job cannot be interactive.\n");
         usage();
-        exit(8);
+        OAR::Sub::close_db_connection(); exit(8);
     }
 
 #    job_key_management();
@@ -963,8 +958,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             $Reservation = OAR::Sub::sql_to_local("$1 $2");
         }else{
             warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
-            OAR::Sub::close_db_connection();
-            exit(7);
+            OAR::Sub::close_db_connection(); exit(7);
         }
     }
     
@@ -975,8 +969,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 }
 
 if ((!defined($Job_id_list_ref)) or (ref($Job_id_list_ref) ne "ARRAY")){
-    OAR::Sub::close_db_connection();
-    exit($Job_id_list_ref);
+    OAR::Sub::close_db_connection(); exit($Job_id_list_ref);
 }
 
 if(@{$Job_id_list_ref} > 1){

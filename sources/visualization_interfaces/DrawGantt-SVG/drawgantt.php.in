@@ -12,6 +12,10 @@ $CONF['nav_filters'] = array(
   'cluster2 only' => 'cluster="cluster2"',
   'cluster3 only' => 'cluster="cluster3"',
 );
+$CONF['nav_timezones'] = array(
+  'UTC' => "UTC",
+  'Paris' => "Europe/Paris",
+);
 $CONF['nav_custom_buttons'] = array(
   'my label' => 'http://my.url'
 );
@@ -24,6 +28,7 @@ if (is_readable(CONFIG_FILE)) {
 }
 
 $filter = array_key_exists('filter',$_GET)?$_GET['filter']:key($CONF['nav_filters']);
+$timezone = array_key_exists('timezone',$_GET)?$_GET['timezone']:key($CONF['nav_timezones']);
 
 
 $output = <<<EOT
@@ -69,8 +74,12 @@ $output = <<<EOT
   var zoom_relative_start = 0;
   var zoom_relative_stop = 0;
   var filterSQL = "";
+  var timezoneSQL = "";
   var scrolledX=0;
   var scrolledY=0;
+  function sleep(millis, callback) {
+    setTimeout(function() { callback(); } , millis);
+  }
   function show_panel() {
     var panelDiv=document.getElementById("panel");
     panelDiv.style.top = window.scrollY + "px";
@@ -126,16 +135,22 @@ $output = <<<EOT
     scrolledY = window.scrollY;
     show_panel();
     var svgObj=document.getElementById("svgObj");
-    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&relative_start=" + relative_start + "&relative_stop=" + relative_stop + ((filterSQL)?"&filter=" + filterSQL:"");
+    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&relative_start=" + relative_start + "&relative_stop=" + relative_stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezoneSQL)?"&timezone=" + timezoneSQL:"");
     svgObj.data = newURL;
     svgObj.innerHTML = newURL;
     document.getElementById("waiter").style.visibility="visible";
   }
-  function select_filter() {
+  function select_filter(reload) {
     var filterSelect=document.getElementById("filterSelect");
     filterSQL = filterSelect.value;
     window.scrollTo(0,0);
-    reload_content();
+    reload && reload_content();
+  }
+  function select_timezone(reload) {
+    var timezoneSelect=document.getElementById("timezoneSelect");
+    timezoneSQL = timezoneSelect.value;
+    window.scrollTo(0,0);
+    reload && reload_content();
   }
   function openURL(url) {
     window.open(url);
@@ -146,20 +161,27 @@ $output = <<<EOT
   }
   function init() {
     show_panel();
-    select_filter();
+    select_filter(false);
+    select_timezone(false);
+    sleep(100, reload_content);
   }
 </script>
 </head>
 <body onload="init()">
 <div id="panel" align="center">
-<select id="filterSelect" onchange="select_filter()">
-
 EOT;
-foreach ($CONF['nav_filters'] as $key => $value) {
-  $output .= "<option " . (($key == $filter)?"selected ":"") . "value=\"$value\">$key</option>\n";
+if (count($CONF['nav_filters']) > 1) {
+  $output .= <<<EOT
+<select id="filterSelect" onchange="select_filter(true)">
+EOT;
+  foreach ($CONF['nav_filters'] as $key => $value) {
+    $output .= "<option " . (($key == $filter)?"selected ":"") . "value=\"$value\">$key</option>\n";
+  }
+  $output .= <<<EOT
+</select>
+EOT;
 }
 $output .= <<<EOT
-</select>
 <button type="button" onclick="shift(-604800)">&lt;1w</button>
 <button type="button" onclick="shift(-86400)">&lt;1d</button>
 <button type="button" onclick="shift(-21600)">&lt;6h</button>
@@ -177,13 +199,24 @@ $output .= <<<EOT
 <button type="button" onclick="reset()">reset</button>
 
 EOT;
+if (count($CONF['nav_timezones']) > 1) {
+  $output .= <<<EOT
+<select id="timezoneSelect" onchange="select_timezone(true)">
+EOT;
+  foreach ($CONF['nav_timezones'] as $key => $value) {
+    $output .= "<option " . (($key == $timezone)?"selected ":"") . "value=\"$value\">$key</option>\n";
+  }
+  $output .= <<<EOT
+</select>
+EOT;
+}
 foreach ($CONF['nav_custom_buttons'] as $key => $value) {
   $output .= "<button tupe=\"button\" onclick=\"openURL('$value')\">$key</button>\n";
 }
 $output .= <<<EOT
 </div>
 <object id="svgObj" type="image/svg+xml" data="" onload="restore_scrolling()"></object>
-<div id="waiter">Please wait while data are being treated...</div>
+<div id="waiter">Processing data... please wait...</div>
 </body>
 </html>
 EOT;

@@ -30,6 +30,14 @@ endif
 
 define PROJ_kamelot_ts
 ifdef POSTGRESQL
+  PPFLAGS := -DPOSTGRESQL
+  THREADS := true
+  PACKS   := postgresql
+  LIBS := str
+  SOURCES := ./common/helpers.ml ./common/conf.ml ./common/interval.ml \
+             ./common/types_ts.ml ./common/postgresql_driver.ml iolib_ts.ml \
+             ./common/hierarchy.ml scheduling_ts.ml kamelot_ts.ml
+  RESULT  := kamelot_ts_postgresql
 else
   PACKS   := mysql oUnit
   LIBS    := str

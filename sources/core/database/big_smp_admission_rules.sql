@@ -6,9 +6,10 @@
 # The property "pnode" must have been defined to group resources 
 # (cpus) on "pnodes" (physical nodes).
 
+# WARNING: this SQL script is written for MySQL.Adataption will be required for PostgreSQL.
 
 # Memory management rule
-insert into admission_rules (rule) values ('
+insert into admission_rules (priority, enabled, rule) values (1, 'YES', '
 
   # Memory of a CPU bank:
   my $memory_bank_size=1947;
@@ -63,7 +64,7 @@ insert into admission_rules (rule) values ('
 
 
 # Physical nodes matching rule
-insert into admission_rules (rule) values ('
+insert into admission_rules (priority, enabled, rule) values (2, 'YES', '
 
   # Number of CPU per node
   my $ncpus=2;

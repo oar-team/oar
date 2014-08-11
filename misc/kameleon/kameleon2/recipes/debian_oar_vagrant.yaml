@@ -1,0 +1,133 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# RECIPE: oar-devel
+#
+# DESCRIPTION: Debian dev vagrant box with OAR-2.5 (node/server/frontend).
+#
+# TEMPLATE: debian-wheezy-chroot
+#
+#==============================================================================
+
+---
+# Loads some helpful aliases
+aliases: defaults.yaml
+# Enables qcow2 checkpoint
+checkpoint: qcow2.yaml
+#== Global variables use by Kameleon engine and the steps
+global:
+  ## User varibales : used by the recipe
+  cachedir: /var/cache/kameleon
+  rootfs: $$kameleon_cwd/rootfs
+  user_name: vagrant
+  arch: amd64
+  dns: 208.67.222.222
+
+  nbd_device: /dev/nbd1
+  container: "$${kameleon_recipe_name}_temp.qcow2"
+
+  distrib: debian
+  release: wheezy
+
+  ## System variables. Required by kameleon engine
+  # Include specific steps
+  include_steps:
+    - $$distrib/$$release
+    - $$distrib
+    - oar
+    - $${distrib}_oar
+
+  ## OAR
+  #
+  oar_git_directory: "/home/$$user_name/oar"
+  oar_git_repository: "git://scm.gforge.inria.fr/oar/oar.git"
+  oar_git_treeish: "2.5"
+  oar_prefix_install: "/usr/local"
+
+  # Shell session from where we launch exec_out commands. There is often a
+  # local bash session, but it can be a remote shell on other machines or on
+  # any shell. (eg. bash, chroot, fakechroot, ssh, tmux, lxc...)
+  out_context:
+    cmd: bash
+    workdir: $$kameleon_cwd
+
+  # Shell session that allows us to connect to the building machine in order to
+  # configure it and setup additional programs
+  default_env: "USER=root HOME=/root LC_ALL=POSIX"
+  in_context:
+    cmd: $$default_env chroot $$rootfs bash
+    workdir: /
+
+#== Bootstrap the new system and create the 'in_context'
+bootstrap:
+  - oar_precheck
+  - debootstrap:
+    - release: $$release
+    - arch: $$arch
+    - repository: http://ftp.fr.debian.org/debian/
+    - rootfs_archive: $$cachedir/$$distrib/$$release/$$arch/debootstrap.tar.gz
+  - create_disk_nbd:
+    - image_size: 10G
+    - filename: $$container
+    - device: $$nbd_device
+  - populate_disk:
+    - filename: $$container
+    - device: $$nbd_device
+    - mountdir: $$rootfs
+    - filesystem_type: ext4
+    - rootfs_archive: $$cachedir/$$distrib/$$release/$$arch/debootstrap.tar.gz
+  - start_chroot:
+    - rootfs: $$rootfs
+    - dns: $$dns
+  - install_bootloader:
+    - mountdir: $$rootfs
+    - device: $$nbd_device
+
+#== Install and configuration steps
+# WARNING: this part should be independante from the out context (whenever
+# possible...)
+setup:
+  # Install
+  - software_install:
+    - packages: >
+        debian-keyring ntp zip unzip rsync sudo less vim bash-completion
+        curl wget nfs-common openssh-server avahi-daemon libnss-mdns
+        inotify-tools
+  - config_kernel:
+    - arch: $$arch
+  # Configuration
+  - system_config:
+    - locales: en_US fr_FR
+    - lang: fr_FR.UTF-8
+    - timezone: Europe/Paris
+  - keyboard_config:
+    - layout: "fr,us"
+  - network_config:
+    - hostname: oar
+  - create_user:
+    - name: $$user_name
+    - group: admin
+    - password: $$user_name
+  - oar_prereq_install
+  - oar_devel_prereq_install
+  - oar_git_install
+  - oar_debian_config_server
+  - oar_debian_config_frontend
+  - oar_debian_config_node
+  - oar_config_node
+  - oar_config_server
+  - oar_config_frontend
+  - oar_config_system
+  - oar_config_devel
+  - oar_clean
+  - autologin
+  - copy_conf
+  - setup_vagrant_box
+
+#== Export the generated appliance in the format of your choice
+export:
+  - save_vagrant_appliance:
+    - os_type: Debian_64
+    - memory: "512"
+    - filename: "$${kameleon_recipe_name}"
