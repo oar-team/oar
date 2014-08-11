@@ -175,12 +175,12 @@ done
 TMP=tmp/oar-common
 mkdir -p $TMP/etc/oar
 mkdir -p $TMP/etc/logrotate.d
-cp $TMP/usr/share/doc/oar-common/examples/oar.conf \
-   $TMP/usr/share/doc/oar-common/examples/oarnodesetting_ssh \
-   $TMP/usr/share/doc/oar-common/examples/update_cpuset_id.sh \
+cp $TMP/usr/share/oar/oar-common/oar.conf \
+   $TMP/usr/share/oar/oar-common/oarnodesetting_ssh \
+   $TMP/usr/share/oar/oar-common/update_cpuset_id.sh \
      $TMP/etc/oar/
 
-cp $TMP/usr/share/doc/oar-common/examples/logrotate.d/oar-common \
+cp $TMP/usr/share/oar/oar-common/logrotate.d/oar-common \
       $TMP/etc/logrotate.d/oar
 
 # bug fix
@@ -189,21 +189,21 @@ sed -e "s/groupadd --quiet/groupadd/" -i $TMP/usr/lib/oar/setup/common.sh
 # restful-api
 TMP=tmp/oar-restful-api
 mkdir -p $TMP/etc/oar
-cp $TMP/usr/share/doc/oar-restful-api/examples/apache2.conf \
+cp $TMP/usr/share/oar/oar-api/apache2.conf \
      $TMP/etc/oar/apache-api.conf
-cp $TMP/usr/share/doc/oar-restful-api/examples/api_html_header.pl \
-   $TMP/usr/share/doc/oar-restful-api/examples/api_html_postform.pl \
-   $TMP/usr/share/doc/oar-restful-api/examples/api_html_postform_resources.pl \
-   $TMP/usr/share/doc/oar-restful-api/examples/api_html_postform_rule.pl \
-   $TMP/usr/share/doc/oar-restful-api/examples/stress_factor.sh \
+cp $TMP/usr/share/oar/oar-api/api_html_header.pl \
+   $TMP/usr/share/oar/oar-api/api_html_postform.pl \
+   $TMP/usr/share/oar/oar-api/api_html_postform_resources.pl \
+   $TMP/usr/share/oar/oar-api/api_html_postform_rule.pl \
+   $TMP/usr/share/oar/oar-api/stress_factor.sh \
      $TMP/etc/oar/
 
 # web-status
 TMP=tmp/oar-web-status
 mkdir -p $TMP/etc/oar
-cp $TMP/usr/share/doc/oar-web-status/examples/drawgantt-config.inc.php \
-   $TMP/usr/share/doc/oar-web-status/examples/monika.conf \
-   $TMP/usr/share/doc/oar-web-status/examples/apache.conf \
+cp $TMP/usr/share/oar/oar-web-status/drawgantt-config.inc.php \
+   $TMP/usr/share/oar/oar-web-status/monika.conf \
+   $TMP/usr/share/oar/oar-web-status/apache.conf \
      $TMP/etc/oar
 
 # node
@@ -212,16 +212,16 @@ mkdir -p $TMP/etc/oar
 mkdir -p $TMP/etc/cron.d
 mkdir -p $TMP/etc/rc.d/init.d
 mkdir -p $TMP/etc/sysconfig
-cp $TMP/usr/share/doc/oar-node/examples/epilogue \
-   $TMP/usr/share/doc/oar-node/examples/prologue \
-   $TMP/usr/share/doc/oar-node/examples/sshd_config \
+cp $TMP/usr/share/oar/oar-node/epilogue \
+   $TMP/usr/share/oar/oar-node/prologue \
+   $TMP/usr/share/oar/oar-node/sshd_config \
      $TMP/etc/oar
 
-#cp $TMP/usr/share/doc/oar-node/examples/cron.d/oar-node \
+#cp $TMP/usr/share/oar/oar-node/cron.d/oar-node \
 #     $TMP/etc/cron.d/oar-node
-cp $TMP/usr/share/doc/oar-node/examples/init.d/oar-node \
+cp $TMP/usr/share/oar/oar-node/init.d/oar-node \
      $TMP/etc/rc.d/init.d/oar-node
-cp $TMP/usr/share/doc/oar-node/examples/default/oar-node \
+cp $TMP/usr/share/oar/oar-node/default/oar-node \
      $TMP/etc/sysconfig/oar-node
  
 # server 
@@ -230,22 +230,22 @@ mkdir -p $TMP/etc/oar
 mkdir -p $TMP/etc/sysconfig
 mkdir -p $TMP/etc/rc.d/init.d
 mkdir -p $TMP/etc/cron.d
-cp $TMP/usr/share/doc/oar-server/examples/job_resource_manager.pl \
-   $TMP/usr/share/doc/oar-server/examples/job_resource_manager_cgroups.pl \
-   $TMP/usr/share/doc/oar-server/examples/suspend_resume_manager.pl \
-   $TMP/usr/share/doc/oar-server/examples/oarmonitor_sensor.pl \
-   $TMP/usr/share/doc/oar-server/examples/wake_up_nodes.sh \
-   $TMP/usr/share/doc/oar-server/examples/shut_down_nodes.sh \
-   $TMP/usr/share/doc/oar-server/examples/server_prologue \
-   $TMP/usr/share/doc/oar-server/examples/server_epilogue \
-   $TMP/usr/share/doc/oar-server/examples/scheduler_quotas.conf \
+cp $TMP/usr/share/oar/oar-server/job_resource_manager.pl \
+   $TMP/usr/share/oar/oar-server/job_resource_manager_cgroups.pl \
+   $TMP/usr/share/oar/oar-server/suspend_resume_manager.pl \
+   $TMP/usr/share/oar/oar-server/oarmonitor_sensor.pl \
+   $TMP/usr/share/oar/oar-server/wake_up_nodes.sh \
+   $TMP/usr/share/oar/oar-server/shut_down_nodes.sh \
+   $TMP/usr/share/oar/oar-server/server_prologue \
+   $TMP/usr/share/oar/oar-server/server_epilogue \
+   $TMP/usr/share/oar/oar-server/scheduler_quotas.conf \
      $TMP/etc/oar
 
-cp $TMP/usr/share/doc/oar-server/examples/cron.d/oar-server \
+cp $TMP/usr/share/oar/oar-server/cron.d/oar-server \
      $TMP/etc/cron.d/oar-server
-cp $TMP/usr/share/doc/oar-server/examples/init.d/oar-server \
+cp $TMP/usr/share/oar/oar-server/init.d/oar-server \
      $TMP/etc/rc.d/init.d/oar-server
-cp $TMP/usr/share/doc/oar-server/examples/default/oar-server \
+cp $TMP/usr/share/oar/oar-server/default/oar-server \
      $TMP/etc/sysconfig/oar-server
 
 # Reconstruct the whole system
@@ -491,6 +491,7 @@ user_setup
 - New upstream release
 - Removed dependancies on ruby: removed oar-admin and its associated backends, removed drawgantt
 - Do not package runner, since it vanished from sources
+- Adapt paths due to the disappearing of the use of the examples directories
 
 * Wed Jun 19 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
 - New upstream release
