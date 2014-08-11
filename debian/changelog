@@ -1,9 +1,9 @@
-oar (2.5.4~rc1-1) UNRELEASED; urgency=medium
+oar (2.5.4~rc2-1) unstable; urgency=medium
 
   * New upstream release
   * Drop tools with dependancies to Ruby
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 22 Jul 2014 21:44:23 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 11 Aug 2014 22:06:15 +0200
 
 oar (2.5.3-3) unstable; urgency=low
 
