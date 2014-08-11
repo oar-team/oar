@@ -264,131 +264,133 @@ rm -rf tmp
 
 
 ###### files and permissions ######
+# Override the definition of %{_libdir} = /uar/lib instead of /usr/lib64 on 64bits systems
+%define _libdir %{_exec_prefix}/lib
 
 %files common -f oar-common.files
 %defattr(0644,root,root)
-%config(noreplace) %attr(0600, oar, root) /etc/oar/oar.conf
-%config(noreplace) %attr(0755, root, root) /etc/oar/oarnodesetting_ssh
-%config(noreplace) %attr(0755, root, root) /etc/oar/update_cpuset_id.sh
-%config %attr(0755,root,root) /etc/logrotate.d/oar
-%attr(0755, root, root) /usr/bin/oarsh
-%attr(0755, root, root) /usr/bin/oarprint
-%attr(0755, root, root) /usr/bin/oarcp
-%attr(0755, root, root) /usr/lib/oar/oarsh_shell
-%attr(0755, root, root) /usr/lib/oar/oarnodesetting
-%attr(0755, root, root) /usr/lib/oar/oarsh
-%attr(0755, root, root) /usr/lib/oar/setup/common.sh
-%attr(0755, root, root) /usr/lib/oar/sentinelle.pl
-%attr(6755, root, oar) /usr/lib/oar/oarsh_oardo
-%attr(6754, root, oar) /usr/sbin/oarnodesetting
-%attr(6754, root, oar) /usr/lib/oar/oardodo/oardodo
+%config(noreplace) %attr(0600, oar, root) %{_sysconfdir}/oar/oar.conf
+%config(noreplace) %attr(0755, root, root) %{_sysconfdir}/oar/oarnodesetting_ssh
+%config(noreplace) %attr(0755, root, root) %{_sysconfdir}/oar/update_cpuset_id.sh
+%config %attr(0755,root,root) %{_sysconfdir}/logrotate.d/oar
+%attr(0755, root, root) %{_bindir}/oarsh
+%attr(0755, root, root) %{_bindir}/oarprint
+%attr(0755, root, root) %{_bindir}/oarcp
+%attr(0755, root, root) %{_libdir}/oar/oarsh_shell
+%attr(0755, root, root) %{_libdir}/oar/oarnodesetting
+%attr(0755, root, root) %{_libdir}/oar/oarsh
+%attr(0755, root, root) %{_libdir}/oar/setup/common.sh
+%attr(0755, root, root) %{_libdir}/oar/sentinelle.pl
+%attr(6755, root, oar) %{_libdir}/oar/oarsh_oardo
+%attr(6754, root, oar) %{_sbindir}/oarnodesetting
+%attr(6754, root, oar) %{_libdir}/oar/oardodo/oardodo
 
 %files server -f oar-server.files
 %defattr(0644,root,root)
-%config %attr(0755,root,root) /etc/rc.d/init.d/oar-server
-%config(noreplace) %attr(0644,root,root) /etc/sysconfig/oar-server
-%config %attr(0644,root,root) /etc/cron.d/oar-server
-%config(noreplace) /etc/oar/job_resource_manager.pl
-%config(noreplace) /etc/oar/job_resource_manager_cgroups.pl
-%config(noreplace) /etc/oar/oarmonitor_sensor.pl
-%config(noreplace) /etc/oar/server_epilogue
-%config(noreplace) /etc/oar/server_prologue
-%config(noreplace) /etc/oar/suspend_resume_manager.pl
-%config(noreplace) %attr(0755,root,root) /etc/oar/oar_phoenix.pl
-%config(noreplace) /etc/oar/shut_down_nodes.sh
-%config(noreplace) /etc/oar/wake_up_nodes.sh
-%config(noreplace) /etc/oar/scheduler_quotas.conf
-%attr(0755, root, root) /usr/sbin/oar-database
-%attr(0755, root, root) /usr/sbin/oar-server
-%attr(6754, root, oar) /usr/sbin/Almighty
-%attr(6754, root, oar) /usr/sbin/oar_checkdb
-%attr(6754, root, oar) /usr/sbin/oar_phoenix
-%attr(6754, root, oar) /usr/sbin/oar_resources_init
-%attr(6754, root, oar) /usr/sbin/oaraccounting
-%attr(6754, root, oar) /usr/sbin/oarmonitor
-%attr(6754, root, oar) /usr/sbin/oarnotify
-%attr(6754, root, oar) /usr/sbin/oarproperty
-%attr(6754, root, oar) /usr/sbin/oarremoveresource
-%attr(0755, root, root) /usr/lib/oar/Almighty
-%attr(0755, root, root) /usr/lib/oar/Leon
-%attr(0755, root, root) /usr/lib/oar/NodeChangeState
-%attr(0755, root, root) /usr/lib/oar/bipbip
-%attr(0755, root, root) /usr/lib/oar/finaud
-%attr(0755, root, root) /usr/lib/oar/oar_checkdb.pl
-%attr(0755, root, root) /usr/lib/oar/oar_meta_sched
-%attr(0755, root, root) /usr/lib/oar/oar_resources_init
-%attr(0755, root, root) /usr/lib/oar/oaraccounting
-%attr(0755, root, root) /usr/lib/oar/oarmonitor
-%attr(0755, root, root) /usr/lib/oar/oarnotify
-%attr(0755, root, root) /usr/lib/oar/oarproperty
-%attr(0755, root, root) /usr/lib/oar/oarremoveresource
-%attr(0755, root, root) /usr/lib/oar/sarko
-%attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing
-%attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
-%attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder
-%attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas
-%attr(0755, root, root) /usr/lib/oar/schedulers/oar_sched_gantt_with_timesharing_and_placeholder
-%attr(0755, root, root) /usr/lib/oar/setup/database.sh
-%attr(0755, root, root) /usr/lib/oar/setup/server.sh
-%attr(0755, root, root) /usr/lib/oar/NodeChangeState
+%config %attr(0755,root,root) %{_sysconfdir}/rc.d/init.d/oar-server
+%config(noreplace) %attr(0644,root,root) %{_sysconfdir}/sysconfig/oar-server
+%config %attr(0644,root,root) %{_sysconfdir}/cron.d/oar-server
+%config(noreplace) %{_sysconfdir}/oar/job_resource_manager.pl
+%config(noreplace) %{_sysconfdir}/oar/job_resource_manager_cgroups.pl
+%config(noreplace) %{_sysconfdir}/oar/oarmonitor_sensor.pl
+%config(noreplace) %{_sysconfdir}/oar/server_epilogue
+%config(noreplace) %{_sysconfdir}/oar/server_prologue
+%config(noreplace) %{_sysconfdir}/oar/suspend_resume_manager.pl
+%config(noreplace) %attr(0755,root,root) %{_sysconfdir}/oar/oar_phoenix.pl
+%config(noreplace) %{_sysconfdir}/oar/shut_down_nodes.sh
+%config(noreplace) %{_sysconfdir}/oar/wake_up_nodes.sh
+%config(noreplace) %{_sysconfdir}/oar/scheduler_quotas.conf
+%attr(0755, root, root) %{_sbindir}/oar-database
+%attr(0755, root, root) %{_sbindir}/oar-server
+%attr(6754, root, oar) %{_sbindir}/Almighty
+%attr(6754, root, oar) %{_sbindir}/oar_checkdb
+%attr(6754, root, oar) %{_sbindir}/oar_phoenix
+%attr(6754, root, oar) %{_sbindir}/oar_resources_init
+%attr(6754, root, oar) %{_sbindir}/oaraccounting
+%attr(6754, root, oar) %{_sbindir}/oarmonitor
+%attr(6754, root, oar) %{_sbindir}/oarnotify
+%attr(6754, root, oar) %{_sbindir}/oarproperty
+%attr(6754, root, oar) %{_sbindir}/oarremoveresource
+%attr(0755, root, root) %{_libdir}/oar/Almighty
+%attr(0755, root, root) %{_libdir}/oar/Leon
+%attr(0755, root, root) %{_libdir}/oar/NodeChangeState
+%attr(0755, root, root) %{_libdir}/oar/bipbip
+%attr(0755, root, root) %{_libdir}/oar/finaud
+%attr(0755, root, root) %{_libdir}/oar/oar_checkdb.pl
+%attr(0755, root, root) %{_libdir}/oar/oar_meta_sched
+%attr(0755, root, root) %{_libdir}/oar/oar_resources_init
+%attr(0755, root, root) %{_libdir}/oar/oaraccounting
+%attr(0755, root, root) %{_libdir}/oar/oarmonitor
+%attr(0755, root, root) %{_libdir}/oar/oarnotify
+%attr(0755, root, root) %{_libdir}/oar/oarproperty
+%attr(0755, root, root) %{_libdir}/oar/oarremoveresource
+%attr(0755, root, root) %{_libdir}/oar/sarko
+%attr(0755, root, root) %{_libdir}/oar/schedulers/oar_sched_gantt_with_timesharing
+%attr(0755, root, root) %{_libdir}/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
+%attr(0755, root, root) %{_libdir}/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder
+%attr(0755, root, root) %{_libdir}/oar/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas
+%attr(0755, root, root) %{_libdir}/oar/schedulers/oar_sched_gantt_with_timesharing_and_placeholder
+%attr(0755, root, root) %{_libdir}/oar/setup/database.sh
+%attr(0755, root, root) %{_libdir}/oar/setup/server.sh
+%attr(0755, root, root) %{_libdir}/oar/NodeChangeState
 
 %files node -f oar-node.files
 %defattr(0644,root,root)
-%config %attr(0755,root,root) /etc/rc.d/init.d/oar-node
-%config(noreplace) %attr(0644,root,root) /etc/sysconfig/oar-node
-%config(noreplace) /etc/oar/epilogue
-%config(noreplace) /etc/oar/prologue
-%config(noreplace) %attr(0600, oar, root) /etc/oar/sshd_config
-%config(noreplace) /etc/oar/check.d
-%config(noreplace) /var/lib/oar/checklogs
-%attr(0755, root, root) /usr/bin/oarnodecheckquery
-%attr(0755, root, root) /usr/bin/oarnodechecklist
-%attr(0755, root, root) /usr/lib/oar/setup/node.sh
-%attr(0755, root, root) /usr/lib/oar/oarnodecheckrun
+%config %attr(0755,root,root) %{_sysconfdir}/rc.d/init.d/oar-node
+%config(noreplace) %attr(0644,root,root) %{_sysconfdir}/sysconfig/oar-node
+%config(noreplace) %{_sysconfdir}/oar/epilogue
+%config(noreplace) %{_sysconfdir}/oar/prologue
+%config(noreplace) %attr(0600, oar, root) %{_sysconfdir}/oar/sshd_config
+%config(noreplace) %{_sysconfdir}/oar/check.d
+%config(noreplace) %{_sharedstatedir}/oar/checklogs
+%attr(0755, root, root) %{_bindir}/oarnodecheckquery
+%attr(0755, root, root) %{_bindir}/oarnodechecklist
+%attr(0755, root, root) %{_libdir}/oar/setup/node.sh
+%attr(0755, root, root) %{_libdir}/oar/oarnodecheckrun
 
 %files user -f oar-user.files
 %defattr(0644,root,root)
-%attr(6755, root, oar) /usr/bin/oarstat
-%attr(6755, root, oar) /usr/bin/oarnodes
-%attr(6755, root, oar) /usr/bin/oarresume
-%attr(6755, root, oar) /usr/bin/oarhold
-%attr(6755, root, oar) /usr/bin/oardel
-%attr(6755, root, oar) /usr/bin/oarsub
-%attr(0755, root, root) /usr/bin/oarmonitor_graph_gen
-%attr(0755, root, root) /usr/lib/oar/oarstat
-%attr(0755, root, root) /usr/lib/oar/setup/user.sh
-%attr(0755, root, root) /usr/lib/oar/oarnodes
-%attr(0755, root, root) /usr/lib/oar/oarresume
-%attr(0755, root, root) /usr/lib/oar/oarhold
-%attr(0755, root, root) /usr/lib/oar/oardel
-%attr(0755, root, root) /usr/lib/oar/oarsub
+%attr(6755, root, oar) %{_bindir}/oarstat
+%attr(6755, root, oar) %{_bindir}/oarnodes
+%attr(6755, root, oar) %{_bindir}/oarresume
+%attr(6755, root, oar) %{_bindir}/oarhold
+%attr(6755, root, oar) %{_bindir}/oardel
+%attr(6755, root, oar) %{_bindir}/oarsub
+%attr(0755, root, root) %{_bindir}/oarmonitor_graph_gen
+%attr(0755, root, root) %{_libdir}/oar/oarstat
+%attr(0755, root, root) %{_libdir}/oar/setup/user.sh
+%attr(0755, root, root) %{_libdir}/oar/oarnodes
+%attr(0755, root, root) %{_libdir}/oar/oarresume
+%attr(0755, root, root) %{_libdir}/oar/oarhold
+%attr(0755, root, root) %{_libdir}/oar/oardel
+%attr(0755, root, root) %{_libdir}/oar/oarsub
 
 %files web-status -f oar-web-status.files
 %defattr(0644,root,root)
-%config(noreplace) %attr (0600,apache,root) /etc/oar/drawgantt-config.inc.php
-%config(noreplace) %attr (0600,apache,root) /etc/oar/monika.conf
-%config(noreplace) %attr (0600,apache,root) /etc/oar/apache.conf
+%config(noreplace) %attr (0600,apache,root) %{_sysconfdir}/oar/drawgantt-config.inc.php
+%config(noreplace) %attr (0600,apache,root) %{_sysconfdir}/oar/monika.conf
+%config(noreplace) %attr (0600,apache,root) %{_sysconfdir}/oar/apache.conf
 %attr(0755, root, root) /var/www/cgi-bin/monika.cgi
-%attr(0755, root, root) /usr/lib/oar/setup/www-conf.sh
-%attr(0755, root, root) /usr/lib/oar/setup/drawgantt-svg.sh
-%attr(0755, root, root) /usr/lib/oar/setup/monika.sh
+%attr(0755, root, root) %{_libdir}/oar/setup/www-conf.sh
+%attr(0755, root, root) %{_libdir}/oar/setup/drawgantt-svg.sh
+%attr(0755, root, root) %{_libdir}/oar/setup/monika.sh
 
 %files doc -f oar-doc.files
 %defattr(0644,root,root)
-%docdir /usr/share/doc/oar-doc 
+%docdir %{_docdir}/oar-doc 
 
 %files restful-api -f oar-restful-api.files
 %defattr(0644,root,root)
-%config(noreplace) /etc/oar/apache-api.conf
-%config /etc/oar/api_html_header.pl
-%config /etc/oar/api_html_postform.pl
-%config /etc/oar/api_html_postform_resources.pl
-%config /etc/oar/api_html_postform_rule.pl
-%config /etc/oar/stress_factor.sh
+%config(noreplace) %{_sysconfdir}/oar/apache-api.conf
+%config %{_sysconfdir}/oar/api_html_header.pl
+%config %{_sysconfdir}/oar/api_html_postform.pl
+%config %{_sysconfdir}/oar/api_html_postform_resources.pl
+%config %{_sysconfdir}/oar/api_html_postform_rule.pl
+%config %{_sysconfdir}/oar/stress_factor.sh
 %attr(6755, root, oar) /var/www/cgi-bin/oarapi/oarapi-debug.cgi
 %attr(6755, root, oar) /var/www/cgi-bin/oarapi/oarapi.cgi
-%attr(0755, root, root) /usr/lib/oar/oarapi.pl
-%attr(0755, root, root) /usr/lib/oar/setup/api.sh
+%attr(0755, root, root) %{_libdir}/oar/oarapi.pl
+%attr(0755, root, root) %{_libdir}/oar/setup/api.sh
 
 %files -n perl-OAR -f liboar-perl.files
 %defattr(0644,root,root)
@@ -415,7 +417,7 @@ rm -rf tmp
 
 ###### oar-common scripts ######
 %post common
-. /usr/lib/oar/setup/common.sh
+. %{_libdir}/oar/setup/common.sh
 common_setup
 
 %postun common
@@ -423,29 +425,29 @@ if [ "$1" = 0 ];
 then
   userdel oar &> /dev/null || true
   groupdel oar &> /dev/null || true
-  rm -f /var/log/oar.log* || true
-  rm -rf /var/run/oar || true
+  rm -f %{_localstatedir}/log/oar.log* || true
+  rm -rf %{_localstatedir}/run/oar || true
 fi
 
 ###### oar-server scripts ######
 %post server
-. /usr/lib/oar/setup/server.sh
-. /usr/lib/oar/setup/database.sh
+. %{_libdir}/oar/setup/server.sh
+. %{_libdir}/oar/setup/database.sh
 server_setup
 database_setup
 chkconfig --add oar-server
 
 %preun server
-/etc/init.d/oar-server stop 2>/dev/null || true
+%{_sysconfdir}/init.d/oar-server stop 2>/dev/null || true
 
 ###### oar-node scripts ######
 %post node
-. /usr/lib/oar/setup/node.sh
+. %{_libdir}/oar/setup/node.sh
 node_setup
 chkconfig --add oar-node
 
 %preun node
-/etc/init.d/oar-node stop 2>/dev/null|| true
+%{_sysconfdir}/init.d/oar-node stop 2>/dev/null|| true
 
 %postun node
 if [ "$1" = 0 ];
@@ -455,9 +457,9 @@ fi
 
 ###### oar-web-status scripts ######
 %post web-status
-. /usr/lib/oar/setup/www-conf.sh
-. /usr/lib/oar/setup/monika.sh
-. /usr/lib/oar/setup/drawgantt-svg.sh
+. %{_libdir}/oar/setup/www-conf.sh
+. %{_libdir}/oar/setup/monika.sh
+. %{_libdir}/oar/setup/drawgantt-svg.sh
 www_conf_setup
 monika_setup
 drawgantt_svg_setup
@@ -465,24 +467,24 @@ service httpd reload || true
 
 %postun web-status
 if [ "$1" = "0" ] ; then # last uninstall
-  rm -f /etc/httpd/conf.d/oar-web-status.conf || true
+  rm -f %{_sysconfdir}/httpd/conf.d/oar-web-status.conf || true
 fi
 
 ###### oar-restful-api scripts ######
 %post restful-api
-. /usr/lib/oar/setup/api.sh
+. %{_libdir}/oar/setup/api.sh
 api_setup
 service httpd reload || true
 
 %postun restful-api
 if [ "$1" = "0" ] ; then # last uninstall
-  rm -f /etc/httpd/conf.d/oar-api.conf || true
+  rm -f %{_sysconfdir}/httpd/conf.d/oar-api.conf || true
   service httpd reload || true
 fi
 
 ###### oar-user scripts ######
 %post user
-. /usr/lib/oar/setup/user.sh
+. %{_libdir}/oar/setup/user.sh
 user_setup
 
 
@@ -492,6 +494,7 @@ user_setup
 - Removed dependancies on ruby: removed oar-admin and its associated backends, removed drawgantt
 - Do not package runner, since it vanished from sources
 - Adapt paths due to the disappearing of the use of the examples directories
+- Fix hard-coded paths using macros, to please rpmlint
 
 * Wed Jun 19 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
 - New upstream release
