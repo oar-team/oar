@@ -1,4 +1,3 @@
-oar-database-version.patch
 oar-node-init.patch
 oarsub-copyright.patch
 prologue-epilogue-permissions.patch
