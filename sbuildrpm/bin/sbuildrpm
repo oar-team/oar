@@ -13,7 +13,7 @@ die() {
 cleanup() {
   set +e
   if [ -n "$KEEP_SESSION" ]; then
-    [ -n "$CHROOT_SESSION" ] && echo "Keeping schroot session open, run 'schroot -c $CHROOT_SESSION -e' to end it"
+    [ -n "$CHROOT_SESSION" ] && echo "Keeping schroot session open, run 'schroot -c $CHROOT_SESSION -r/-e' to enter/end it"
     [ -n "$SBUILDRPM_BUILD_DIR" ] && echo "Build directory not deleted, run 'rm -rf $SBUILDRPM_BUILD_DIR' to delete it."
   else
     [ -n "$CHROOT_SESSION" ] && schroot -c $CHROOT_SESSION -e
@@ -64,7 +64,7 @@ fi
 ### Main ###
 ############
 
-while getopts "lkh" OPTIONS
+while getopts "blkh" OPTIONS
 do
   case $OPTIONS in
   l)
@@ -72,6 +72,9 @@ do
   ;;
   k)
     KEEP_SESSION=1
+  ;;
+  b)
+    STOP_BEFORE_BUILD=1
   ;;
   h)
     usage
@@ -116,6 +119,9 @@ install $TARBALLS_DIR/$TARBALL $SBUILDRPM_BUILD_DIR/SOURCES/
 schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -- rpmbuild -bs SPECS/$NAME.spec
 [ -n "$DO_RPMLINT" ] && schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -- rpmlint SRPMS/oar-$VERSION-$RELEASE.src.rpm
 schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -u root -- yum-builddep -y SRPMS/oar-$VERSION-$RELEASE.src.rpm
+if [ -n "$STOP_BEFORE_BUILD" ]; then
+  schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -u root
+fi
 schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -- rpmbuild -ba SPECS/$NAME.spec
 [ -n "$DO_RPMLINT" ] && schroot -c $CHROOT_SESSION -r -d /build/$CHROOT_SESSION -- rpmlint RPMS/*.rpm
 mkdir -p $RPMBUILD_DIR/SRPMS/ $RPMBUILD_DIR/RPMS/
