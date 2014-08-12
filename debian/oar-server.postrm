@@ -7,10 +7,10 @@ set -e
 #set -x 
 
 case "$1" in
-  remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-    true
+	remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+	  true
         ;;
-  purge)
+	purge)
             # Remove the possible conffiles 
             for conffile in /etc/oar/job_resource_manager.pl \
                             /etc/oar/job_resource_manager_cgroups.pl \

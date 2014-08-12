@@ -89,6 +89,8 @@ case "$1" in
         rm -f /var/lib/oar/.bash_profile
         rm -f /var/lib/oar/.bashrc
         rm -rf /var/lib/oar/.ssh
+        rmdir /var/lib/oar || true
+        rmdir /etc/oar || true
         ;;
   *)
     echo "postrm called with unknown argument \`$1'" >&2

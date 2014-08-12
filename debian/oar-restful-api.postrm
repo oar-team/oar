@@ -34,7 +34,8 @@ case "$1" in
                     ucfr --purge oar-restful-api $conffile
             fi
         done
-
+        rmdir /etc/oar/apache2 || true
+        rmdir /etc/oar || true
         ;;
   *)
     echo "postrm called with unknown argument \`$1'" >&2

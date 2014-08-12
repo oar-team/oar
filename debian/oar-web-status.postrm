@@ -32,11 +32,14 @@ case "$1" in
                         ucfr --purge oar-web-status $conffile
                 fi
             done
+            rmdir /etc/oar/apache2 || true
+            rmdir /etc/oar || true
 
             # Remove the drawgantt-files
             if [ -d "/var/lib/oar/drawgantt-files" ]; then
                 rm -rf /var/lib/oar/drawgantt-files
             fi
+            rmdir /var/lib/oar || true
         ;;
   *)
     echo "postrm called with unknown argument \`$1'" >&2
