@@ -9,6 +9,9 @@ Many tools are available to visualize the cluster state.
 Shell commands:
 ~~~~~~~~~~~~~~~
 
+* oarstat: this command shows information about running or planned jobs.
+  (The -f option shows full infomation)
+
 * oarnodes: this command shows the resources states. Warning: in our context, a
   resource is not necessary a machine. It is generally a cpu, a core or a host,
   but it can be much more... like licence tokens, vlan, ...
@@ -16,9 +19,6 @@ Shell commands:
   located this resource, its type, its state and many other (interesting) 
   information.
   
-* oarstat: this command shows information about running or planned jobs.
-  (The -f option shows full infomation)
-
 Graphical tools:
 ~~~~~~~~~~~~~~~~
 

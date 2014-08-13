@@ -36,31 +36,37 @@ This command prints jobs in execution mode on the terminal.
 Options
 ::
 
-  -j, --job                 show informations only for the specified job (even if it is finished)
+  -j, --job                 show informations only for the specified job
   -f, --full                show full informations
   -s, --state               show only the state of a job (optimized query)
   -u, --user                show informations for this user only
+      --array               show informations for the specified array_job(s) and
+                            toggle array view in
+  -c, --compact             prints a single line for array jobs
   -g, --gantt               show job informations between two date-times
   -e, --events              show job events
   -p, --properties          show job properties
       --accounting          show accounting informations between two dates
       --sql                 restricts display by applying the SQL where clause
                             on the table jobs (ex: "project = 'p1'")
+      --format              select the text output format. Available values
+                            are:
+                              - 1
+                              - 2
   -D, --dumper              print result in DUMPER format
   -X, --xml                 print result in XML format
   -Y, --yaml                print result in YAML format
-      --backward-compatible OAR 1.* version like display
-  -V, --version             print OAR version number
-  -h, --help                show this help screen
+  -J, --json                print result in JSON format
+
 
 Examples
 ::
             
   # oarstat
   # oarstat -j 42 -f
-  # oarstat --sql "project = 'p1'"
+  # oarstat --sql "project='p1' and state='Waiting'"
   # oarstat -s -j 42
-                    
+
 *oarnodes*
 ----------
 
@@ -70,14 +76,18 @@ which resources, resource properties, ...).
 Options
 ::
 
-  -a                : shows all resources with their properties
-  -r                : show only properties of a resource
-  -s                : shows only resource states
-  -l                : shows only resource list
-  --sql "sql where" : Display resources which matches this sql where clause
-  -D                : formats outputs in Perl Dumper
-  -X                : formats outputs in XML
-  -Y                : formats outputs in YAML
+ -r, --resource     show the properties of the resource whose id is given as
+                    parameter
+ -s, --state        show the states of the nodes
+ -l, --list         show the nodes list
+ -e, --events       show the events recorded for a node either since the date
+                    given as parameter or the last 20
+     --sql          display resources which matches the SQL where clause
+                    (ex: "state = 'Suspected'")
+ -D, --dumper       print result in Perl Data::Dumper format
+ -X, --xml          print result in XML format
+ -Y, --yaml         print result in YAML format
+ -J, --json         print result in JSON format
 
 Examples
 ::
@@ -120,7 +130,10 @@ Options::
                                specifies the duration before the job must be 
                                automatically terminated if still running.
                                Walltime format is [hour:mn:sec|hour:mn|hour].
-                               Ex: nodes=4/cpu=1,walltime=2:00:00
+                               Ex: host=4/cpu=1,walltime=2:00:00
+     --array <number>          Specify an array job with 'number' subjobs
+     --array-param-file <file> Specify an array job on which each subjob will 
+                               receive one line of the file as parameter
  -S, --scanscript              Batch mode only: asks oarsub to scan the given
                                script for OAR directives (#OAR -l ...)
  -q, --queue=<queue>           Set the queue to submit the job to
@@ -136,7 +149,7 @@ Options::
                                Use signal numbers, default is 12 (SIGUSR2)
  -t, --type=<type>             Specify a specific type (deploy, besteffort,
                                cosystem, checkpoint, timesharing)
- -d, --directory=<dir>         Specify the directory where OAR will launch the
+ -d, --directory=<dir>         Specify the directory where to launch the
                                command (default is current directory)
      --project=<txt>           Specify a name of a project the job belongs to
  -n, --name=<txt>              Specify an arbitrary name for the job
@@ -144,15 +157,15 @@ Options::
                                this new one
      --notify=<txt>            Specify a notification method
                                (mail or command to execute). Ex: 
-                                   --notify "mail:name\@domain.com"
+                                   --notify "mail:name@domain.com"
                                    --notify "exec:/path/to/script args"
      --resubmit=<job id>       Resubmit the given job as a new one
- -k, --use-job-key             Activate the job-key mechanism.
+ -k, --use-job-key             Activate the job-key mechanism. 
  -i, --import-job-key-from-file=<file>
                                Import the job-key to use from a files instead
                                of generating a new one.
      --import-job-key-inline=<txt>
-                               Import the job-key to use inline instead of
+                               Import the job-key to use inline instead of 
                                generating a new one.
  -e  --export-job-key-to-file=<file>
                                Export the job key to a file. Warning: the
@@ -167,11 +180,12 @@ Options::
      --hold                    Set the job state into Hold instead of Waiting,
                                so that it is not scheduled (you must run
                                "oarresume" to turn it into the Waiting state)
+ -s, --stagein=<dir|tgz>       Set the stagein directory or archive
+     --stagein-md5sum=<md5sum> Set the stagein file md5sum
  -D, --dumper                  Print result in DUMPER format
  -X, --xml                     Print result in XML format
  -Y, --yaml                    Print result in YAML format
- -h, --help                    Print this help message
- -V, --version                 Print OAR version number
+ -J, --json                    Print result in JSON format
 
 Wanted resources have to be described in a hierarchical manner using the  
 "-l" syntax option.
@@ -267,10 +281,16 @@ their identifier.
 Option
 ::
   
-  --sql     : delete/checkpoint jobs which respond to the SQL where clause
-              on the table jobs (ex: "project = 'p1'")
-  -c job_id : send checkpoint signal to the job (signal was
-              definedwith "--signal" option in oarsub)
+  -c, --checkpoint        send checkpoint signal to the jobs
+  -s, --signal <SIG>      send signal SIG to the jobs
+  -b, --besteffort        change the specified jobs to besteffort jobs (or
+                          remove them if they are already besteffort)
+      --array             handle array job ids, and their sub jobs.
+      --sql <SQL>         select jobs using a SQL WHERE clause on table jobs
+                          (e.g. "project = 'p1'")
+      --force-terminate-finishing-job
+                          force jobs stuck in the Finishing state to switch to
+                          Terminated (Warning: only use as a last resort)
 
 Examples
 ::
@@ -291,28 +311,28 @@ This command is used to remove a job from the scheduling queue if it is in
 the "Waiting" state.
 
 Moreover if its state is "Running" oarhold_ can suspend the execution and
-enable other jobs to use its resources. In that way, a **SIGINT** signal
-is sent to every processes.
+enable other jobs to use its resources.
 
 Options
 ::
 
-  --sql : hold jobs which respond to the SQL where clause on the table
-          jobs (ex: "project = 'p1'")
-  -r    : Manage not only Waiting jobs but also Running one
-          (can suspend the job)
-
+  -r, --running manage not only Waiting jobs but also Running one
+                (can suspend the job)
+      --array   hold array job(s) passed as parameter (all the sub-jobs)
+      --sql     hold jobs which respond to the SQL where clause on the table
+                jobs (ex: "project = 'p1'")
 
 *oarresume*
 -----------
 
 This command resumes jobs in the states *Hold* or *Suspended*
 
-Option
+Options
 ::
 
-  --sql : resume jobs which respond to the SQL where clause on the table
-          jobs (ex: "project = 'p1'")
+      --array   resume array job(s) passed as parameter (all the sub-jobs)
+      --sql     resume jobs which respond to the SQL where clause on the table
+                jobs (ex: "project = 'p1'")
 
 Desktop computing
 =================
@@ -350,8 +370,8 @@ to the DB, gets relevant information then format data in a html page.
 Thus you can have a global view of cluster state and where your jobs are
 running.
 
-DrawOARGantt
-------------
+Drawgantt
+---------
 
 This is also a web cgi. It creates a Gantt chart which shows job repartition on
 nodes in the time. It is very useful to see cluster occupation in the past

@@ -1,7 +1,7 @@
 package OAR::Version;
 require Exporter;
 
-my $OARVersion = "2.5.4+rc2";
+my $OARVersion = "2.5.4+rc3";
 my $OARName = "Froggy Summer";
 
 sub get_version(){
