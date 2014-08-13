@@ -1,11 +1,11 @@
-oar (2.5.4~rc2-1) unstable; urgency=medium
+oar (2.5.4~rc3-1) unstable; urgency=medium
 
   * New upstream release
   * Drop tools with dependancies to Ruby
   * Bump Standard-Version (no change needed)
   * Remove unused patches (applied upstream)
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 12 Aug 2014 14:27:18 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 13 Aug 2014 15:41:51 +0200
 
 oar (2.5.3-3) unstable; urgency=low
 
