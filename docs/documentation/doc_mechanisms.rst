@@ -88,11 +88,15 @@ Example::
 Suspend/resume
 --------------
 
-Jobs can be suspended with the command oarhold_ (send a "SIGSTOP" on every
-processes on every nodes) to allow other jobs to be executed.
+Jobs can be suspended with the command oarhold_ to allow other jobs to be
+executed. There are 2 ways used to do this by default:
 
-"Suspended" jobs can be resumed with the command oarresume_ (send a "SIGSTOP"
-on every suspended processes on every nodes). They will
+  - send a "SIGSTOP" on every processes on every nodes.
+  - or if the "freezer" cgroup exists then it freezes all the processes on
+    every nodes.
+
+"Suspended" jobs can be resumed with the command oarresume_ (send a "SIGCONT"
+or unfreeze every suspended processes on every nodes). They will
 pass into "Running" when assigned resources will be free.
 
 IMPORTANT: This feature is available only if CPUSET_ is configured.
@@ -112,6 +116,9 @@ it thanks to the file */tmp/oar/pid_of_oarexec_for_jobId_id*) and sends a
 "SIGTERM" signal. Then the script catch it and normally end the job (kill
 processes that it has launched).
 
+After JOBDEL_WALLTIME seconds, if the job is not finished then Leon will try
+clean every processes of the job.
+
 If this method didn't succeed then Leon will flush the OAR database for the
 job and nodes will be "Suspected" by NodeChangeState.
 
@@ -129,7 +136,7 @@ If the user uses "--checkpoint" option then Sarko will ask the OAR Perl script r
 on the first node to send the signal to the process (SIGUSR2 or the one
 specified with "--signal").
 
-You can also use oardel_ command to send the signal.
+You can also use oardel_ command with "-c "option to send the signal.
 
 Scheduling
 ----------
@@ -187,6 +194,15 @@ This section explains how the "--notify" oarsub_ option is handled by OAR:
   - SUSPENDED : when the job is suspended
   - RESUMING : when the job is resumed
 
+By default all tag events are triggered.
+It is possible to specify which TAGs must be triggered; Ex:
+::
+
+            --notify "[END,ERROR]mail:name@domain.com"
+            --notify "[RUNNING]mail:name@domain.com"
+            --notify "[RUNNING,END,ERROR]exec:/path/to/script args"
+
+
 Accounting aggregator
 ---------------------
 
@@ -196,6 +212,9 @@ table accounting.
 
 So this is very easily and faster to get usage statistics of the cluster. We
 can see that like a "data warehousing" information extraction method.
+
+These data are updated via the command "oaraccounting". By default, it is
+launched every hours in a crontab.
 
 Dynamic nodes coupling features
 -------------------------------
@@ -246,7 +265,7 @@ Container jobs
 With this functionality it is possible to execute jobs within another one. So
 it is like a sub-scheduling mechanism.
 
-First a job of the type *container* must be submitted, for example::
+First, a job of the type *container* must be submitted, for example::
 
     oarsub -I -t container -l nodes=10,walltime=2:10:00
     ...
@@ -289,7 +308,7 @@ specify that this is a besteffort job.
 Important : a besteffort job cannot be a reservation.
 
 If your job is of the type *besteffort* and *idempotent* (oarsub_ "-t"
-option) and killed by the OAR scheduler then another job is automatically
+option) and is killed by the OAR scheduler then another job is automatically
 created and scheduled with same behaviours.
 
 Cosystem jobs
@@ -310,6 +329,14 @@ These jobs are stopped by the oardel_ command or when they reach their
 walltime or their command has finished.
 They also use the node COSYSTEM_HOSTNAME to launch the specified program
 or shell.
+
+Noop jobs
+---------
+
+A job with the type "noop" does nothing except reserving the resources. It is
+ended at the end of it walltime or when using the oardel command.
+
+So it is like the "cosystem" type but it does not launch a script.
 
 Deploy jobs
 -----------
@@ -338,10 +365,22 @@ This feature acts like quotas. When one of the defined rules is reached then
 next jobs will not be scheduled at this time. The scheduler will find another
 slot when the quotas will be satisfied.
 
-This feature is available in queues which use the scheduler
+This feature is only available in queues which use the scheduler
 "oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas".
 
+For example, if you want to have quotas on the default queue:
+::
+
+    oarnotify --remove_queue default
+    oarnotify --add_queue "default,2,oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas"
+
 The quota rules are defined in "/etc/oar/scheduler_quotas.conf".
+It applies quotas on 3 metrics:
+
+   - the amount of busy resources at a time
+   - the number of running jobs at a time
+   - the resource time in use at a time (nb_resources X hours)
+     This can be seen like a surface used by users, projects, types, ...
 
 By default no quota is applied.
 
@@ -370,3 +409,4 @@ OAR just has to be able to contact OAR HTTP server.
 In this situation we don't have a NFS file system to share the same directories
 over all nodes so we have to use a stagein/stageout solution. In this case you
 can use the oarsub_ option "stagein" to migrate your data.
+

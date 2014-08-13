@@ -303,7 +303,7 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 #
 # Specify the number of job to take care at each time
 # Default is 30
-SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=100
+SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 
 # Number of seconds to consider for the fairsharing
 # Default is 30 days

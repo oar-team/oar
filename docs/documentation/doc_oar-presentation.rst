@@ -12,12 +12,12 @@ Its design is based on high level tools:
 
   - relational database engine MySQL or PostgreSQL,
   - scripting language Perl,  
-  - confinement system mechanism cpuset,
+  - confinement kernel system mechanism cpuset,
   - scalable exploiting tool Taktuk.
 
 It is flexible enough to be suitable for production clusters and research
 experiments.
-It currently manages over than 5000 nodes and has executed more than 5 million
+It currently manages over than 5000 nodes and has executed more than 20 million
 jobs.
 
 OAR advantages:

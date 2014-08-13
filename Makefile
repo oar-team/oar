@@ -177,11 +177,6 @@ $(P_TARGETS):
 		DOCDIR=/usr/share/doc/oar-web-status \
 		SHAREDIR=/usr/share/oar/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
-	$(MAKE) -f Makefiles/drawgantt.mk $(P_ACTION) \
-                DESTDIR=$(PACKAGES_DIR)/oar-web-status \
-		DOCDIR=/usr/share/doc/oar-web-status \
-		SHAREDIR=/usr/share/oar/oar-web-status \
-		WWWDIR=/usr/share/oar-web-status
 	$(MAKE) -f Makefiles/drawgantt-svg.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
 		DOCDIR=/usr/share/doc/oar-web-status \
@@ -192,11 +187,6 @@ $(P_TARGETS):
 		DOCDIR=/usr/share/doc/oar-web-status \
 		SHAREDIR=/usr/share/oar/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
-	
-	# oar-admin
-	$(MAKE) -f Makefiles/tools.mk $(P_ACTION) \
-                DESTDIR=$(PACKAGES_DIR)/oar-admin \
-		DOCDIR=/usr/share/doc/oar-admin
 	
 	# oar-restful-api
 	$(MAKE) -f Makefiles/api.mk $(P_ACTION) \
