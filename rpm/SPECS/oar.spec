@@ -1,5 +1,5 @@
 %define version 2.5.4+rc3
-%define release 1.el6
+%define release 2.el6
 
 %define oaruser  oar
 
@@ -305,8 +305,10 @@ rm -rf tmp
 %attr(6754, root, oar) %{_sbindir}/Almighty
 %attr(6754, root, oar) %{_sbindir}/oar_checkdb
 %attr(6754, root, oar) %{_sbindir}/oar_phoenix
+%attr(6754, root, oar) %{_sbindir}/oar_resources_add
 %attr(6754, root, oar) %{_sbindir}/oar_resources_init
 %attr(6754, root, oar) %{_sbindir}/oaraccounting
+%attr(6754, root, oar) %{_sbindir}/oaradmissionrules
 %attr(6754, root, oar) %{_sbindir}/oarmonitor
 %attr(6754, root, oar) %{_sbindir}/oarnotify
 %attr(6754, root, oar) %{_sbindir}/oarproperty
@@ -318,8 +320,10 @@ rm -rf tmp
 %attr(0755, root, root) %{_libdir}/oar/finaud
 %attr(0755, root, root) %{_libdir}/oar/oar_checkdb.pl
 %attr(0755, root, root) %{_libdir}/oar/oar_meta_sched
+%attr(0755, root, root) %{_libdir}/oar/oar_resources_add
 %attr(0755, root, root) %{_libdir}/oar/oar_resources_init
 %attr(0755, root, root) %{_libdir}/oar/oaraccounting
+%attr(0755, root, root) %{_libdir}/oar/oaradmissionrules
 %attr(0755, root, root) %{_libdir}/oar/oarmonitor
 %attr(0755, root, root) %{_libdir}/oar/oarnotify
 %attr(0755, root, root) %{_libdir}/oar/oarproperty
@@ -489,6 +493,9 @@ user_setup
 
 
 %changelog
+* Wed Aug 13 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-2.el6
+- Fix file mode for the oar_resources_add and oaradmissionrules commands
+
 * Wed Aug 5 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-1.el6
 - New upstream release
 - Removed dependancies on ruby: removed oar-admin and its associated backends, removed drawgantt
