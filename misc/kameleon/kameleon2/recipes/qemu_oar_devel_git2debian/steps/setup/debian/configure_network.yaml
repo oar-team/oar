@@ -1,0 +1,30 @@
+# # Network Config
+
+# WARNING: The MTU is set to 1492 to avoid connection failure over some
+# network du to PPP header
+- mtu: 1492
+- network_interfaces:
+  - write_in:
+    - /etc/network/interfaces
+    - |
+      auto lo
+      iface lo inet loopback
+      
+      auto eth0
+      iface eth0 inet dhcp
+          pre-up ip link set mtu $$mtu eth0
+
+- set_hosts:
+  - write_in:
+    - /etc/hosts
+    - |
+      #
+      # /etc/hosts: static lookup table for host names
+      #
+      
+      #<ip-address> <hostname.domain.org> <hostname>
+      127.0.0.1 localhost.localdomain localhost $$hostname
+      ::1   localhost.localdomain localhost
+
+- set_hostname:
+  - exec_in: echo "$$hostname" > /etc/hostname
