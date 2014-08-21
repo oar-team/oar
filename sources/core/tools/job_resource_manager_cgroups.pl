@@ -44,7 +44,7 @@ sub exit_myself($$);
 sub print_log($$);
 
 # Put YES if you want to use the memory cgroup
-my $ENABLE_MEMCG = "YES";
+my $ENABLE_MEMCG = "NO";
 
 my $OS_cgroups_path = "/sys/fs/cgroup";  # Where the OS mounts by itself the cgroups
                                          # (systemd for example

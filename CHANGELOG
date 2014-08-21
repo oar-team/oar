@@ -29,8 +29,7 @@ version 2.5.4:
         The users have access to the same OAR environment variables when
         connecting on all the job nodes with oarsh
   - [job_uid] Removed job uid feature (not used).D
-  - [job_resource_manager] Activate MEMORY cgroup by default.
-        Use fstrim (for SSD) when cleaning files.
+  - [job_resource_manager] Use fstrim (for SSD) when cleaning files.
   - [deploy] Do not check the nodes when ACTIVATE_PINGCHECKER_AT_JOB_END is on
         and the job is of the deploy type (bug #17128).
   - [judas] Disabled sending log by emails on errors. This could generate too
