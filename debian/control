@@ -78,7 +78,7 @@ Description: OAR batch scheduler node package
 
 Package: oar-user
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version}), oar-user-pgsql (= ${binary:Version}) | oar-user-mysql (= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version}), oar-user-mysql | oar-user-postgresql
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: oar-doc, openssh-client | ssh, xauth
 Description: OAR batch scheduler user package
@@ -109,7 +109,7 @@ Description: OAR batch scheduler PostgreSQL user backend package
 
 Package: oar-web-status
 Architecture: all
-Depends: ${misc:Depends}, ${shlibs:Depends}, apache2 | httpd-cgi, ruby, libdbd-mysql-ruby | libdbd-pg-ruby, libgd-ruby1.8, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl, libjs-jquery
+Depends: ${misc:Depends}, ${shlibs:Depends}, apache2 | httpd-cgi, ruby, ruby-dbd-mysql | ruby-dbd-pg, ruby-gd, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl, libjs-jquery
 Suggests: oar-doc
 Description: OAR batch scheduler visualization tool package
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -130,7 +130,7 @@ Description: OAR batch scheduler documentation package
 
 Package: oar-admin
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, ruby, libdbd-mysql-ruby|libdbd-pg-ruby, libyaml-perl, oar-user (>> 2.5.0)
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, ruby, ruby-dbd-mysql | ruby-dbd-pg, libyaml-perl, oar-user (>> 2.5.0)
 Suggests: oar-doc, oar-server
 Description: OAR batch scheduler administration tools package
  OAR is a versatile resource and task manager (also called a batch scheduler)
