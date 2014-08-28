@@ -1,5 +1,5 @@
-%define version 2.5.4+rc3
-%define release 2.el6
+%define version 2.5.4+rc4
+%define release 1.el6
 
 %define oaruser  oar
 
@@ -493,15 +493,15 @@ user_setup
 
 
 %changelog
-* Wed Aug 13 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-2.el6
-- Fix file mode for the oar_resources_add and oaradmissionrules commands
-
-* Wed Aug 5 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-1.el6
+* Wed Aug 28 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-1.el6
 - New upstream release
 - Removed dependancies on ruby: removed oar-admin and its associated backends, removed drawgantt
 - Do not package runner, since it vanished from sources
 - Adapt paths due to the disappearing of the use of the examples directories
 - Fix hard-coded paths using macros, to please rpmlint
+- Fix file mode for the oar_resources_add and oaradmissionrules commands
+- Fix deps for oar-web-status: add perl-CGI
+
 
 * Wed Jun 19 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
 - New upstream release
