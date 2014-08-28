@@ -1,0 +1,60 @@
+# Software Install
+- enable_contrib: true
+- enable_nonfree: true
+
+
+- configure_apt_to_use_less_disk_space:
+  - write_in:
+    - /etc/apt/apt.conf.d/02compress_indexes
+    - |
+      Acquire::GzipIndexes "true";
+      Acquire::CompressionTypes::Order:: "gz";
+  - write_in:
+    - /etc/apt/apt.conf.d/02nocache
+    - |
+      Dir::Cache {
+        srcpkgcache "";
+        pkgcache "";
+      }
+  - write_in:
+    - /etc/dpkg/dpkg.cfg.d/01_nodoc
+    - |
+      path-exclude /usr/share/doc/*
+      # we need to keep copyright files for legal reasons
+      path-include /usr/share/doc/*/copyright
+      path-exclude /usr/share/man/*
+      path-exclude /usr/share/groff/*
+      path-exclude /usr/share/info/*
+      # lintian stuff is small, but really unnecessary
+      path-exclude /usr/share/lintian/*
+      path-exclude /usr/share/linda/*
+      path-exclude /usr/share/locale/*
+      path-include /usr/share/locale/en*
+  - write_in:
+    - /etc/locale.nopurge
+    - |
+      MANDELETE
+      DONTBOTHERNEWLOCALE
+      SHOWFREEDSPACE
+      #QUICKNDIRTYCALC
+      #VERBOSE
+
+- add_contribs_and_nonfree_sources:
+  - exec_in: |
+      if [ $$enable_contrib = true ]; then
+        REPO_CONTRIB="contrib"
+      fi
+  - exec_in: |
+      if [ $$enable_nonfree = true ]; then
+        REPO_NONFREE="non-free"
+      fi
+  - exec_in: perl -pi -e "s/main$/main $REPO_CONTRIB $REPO_NONFREE/" /etc/apt/sources.list
+
+- update_repositories:
+  - exec_in: apt-get -y --force-yes update
+  - exec_in: apt-get -y --force-yes install localepurge
+  - on_setup_clean:
+    - exec_in: apt-get -y --force-yes autoclean
+    - exec_in: apt-get -y --force-yes clean
+    - exec_in: apt-get -y --force-yes autoremove
+    - exec_in: localepurge

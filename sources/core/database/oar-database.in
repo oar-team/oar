@@ -519,7 +519,7 @@ unless ($db_name) {
 if ($action eq "create" or $action eq "drop" or $action eq "fix-ro-user-priv") {
     unless ($db_is_local and $db_type eq "Pg") {
         unless ($db_admin_user) {
-            print "Error: You need to specify the admin user (--db-admin-user) and probably the password (--db-admin-pass) to use. See the manual for more information.\n";
+            print "Error: Please provide --db-admin-user and --db-admin-pass options (MySQL) or --db-is-local (PgSQL).\n";
             exit(1);
         }
         unless ($db_admin_pass) {

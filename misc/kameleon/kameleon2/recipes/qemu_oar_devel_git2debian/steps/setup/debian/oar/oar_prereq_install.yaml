@@ -1,0 +1,17 @@
+# OAR prereq install
+- packages: >
+    vim less bzip2 openssh-server rsync gnupg locales debian-keyring ruby1.8
+    libyaml-perl libjson-perl libdbi-perl taktuk oidentd console-tools
+    mingetty curl git-core make python-docutils
+    libjson-perl libwww-perl ntp libgd-ruby1.8 perl libdbi-perl
+    libtie-ixhash-perl libappconfig-perl libsort-naturally-perl
+    libsort-versions-perl openjdk-6-jre libcgi-fast-perl
+    libpostgresql-ocaml libpostgresql-ocaml-dev ocaml-findlib ocaml-nox
+    libounit-ocaml-dev librestclient-ruby1.8 librspec-ruby1.8 postgresql
+    libdbd-pg-ruby1.8 libpostgresql-ocaml-dev libdbd-pg-ruby1.8 rubygems1.8
+    libmysql-ocaml-dev libdbd-pg-perl libjson-ruby1.8 ruby-switch
+    libapache2-mod-fastcgi
+- req_packages:
+  - exec_in: apt-get -y --force-yes install $$packages
+- switch_to_ruby_18:
+  - exec_in: ruby-switch --set ruby1.8

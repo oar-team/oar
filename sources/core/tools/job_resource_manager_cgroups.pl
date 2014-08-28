@@ -44,7 +44,7 @@ sub exit_myself($$);
 sub print_log($$);
 
 # Put YES if you want to use the memory cgroup
-my $ENABLE_MEMCG = "YES";
+my $ENABLE_MEMCG = "NO";
 
 my $OS_cgroups_path = "/sys/fs/cgroup";  # Where the OS mounts by itself the cgroups
                                          # (systemd for example
@@ -415,7 +415,7 @@ EOF
                 PROCESSES=$(cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks)
                 while [ "$PROCESSES" != "" ]
                 do
-                    oardodo kill -9 $PROCESSES >& /dev/null
+                    oardodo kill -9 $PROCESSES > /dev/null 2>&1
                     PROCESSES=$(cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks)
                 done'
               );
@@ -431,7 +431,7 @@ EOF
                         for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'; do
                           [ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty
                           if [ -d $d ]; then
-                            oardodo rmdir $d >& /dev/null || exit 1
+                            oardodo rmdir $d > /dev/null 2>&1 || exit 1
                           fi
                         done
                        ')){
@@ -444,65 +444,65 @@ EOF
             my @cpusets = ();
             if (opendir(DIR, $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/')) {
                 @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
-		        closedir DIR;
-		    } else {
-		        exit_myself(18,"Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}");
-		    }
-		    if ($#cpusets < 0) {
+                closedir DIR;
+            } else {
+              exit_myself(18,"Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}");
+            }
+            if ($#cpusets < 0) {
                 # No other jobs on this node at this time
-		        my $useruid=getpwnam($Cpuset->{user});
-		        my $ipcrm_args="";
-		        if (open(IPCMSG,"< /proc/sysvipc/msg")) {
-		            <IPCMSG>;
-		            while (<IPCMSG>) {
-		                if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
+                my $useruid=getpwnam($Cpuset->{user});
+                my $ipcrm_args="";
+                if (open(IPCMSG,"< /proc/sysvipc/msg")) {
+                    <IPCMSG>;
+                    while (<IPCMSG>) {
+                        if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
                             $ipcrm_args .= " -q $1";
-		            	    print_log(3,"Found IPC MSG for user $useruid: $1.");
-		                }
-		            }
-		            close (IPCMSG);
-		        } else {
-		            print_log(3,"Cannot open /proc/sysvipc/msg: $!.");
-		        }
-		        if (open(IPCSHM,"< /proc/sysvipc/shm")) {
-		            <IPCSHM>;
-		            while (<IPCSHM>) {
-		                if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
-		                    $ipcrm_args .= " -m $1";
-		            	    print_log(3,"Found IPC SHM for user $useruid: $1.");
-		                }
-		            }
-		            close (IPCSHM);
-		        } else {
-		            print_log(3,"Cannot open /proc/sysvipc/shm: $!.");
-		        }
-		        if (open(IPCSEM,"< /proc/sysvipc/sem")) {
-		            <IPCSEM>;
-		            while (<IPCSEM>) {
-		                if (/^\s*[\d\-]+\s+(\d+)(?:\s+\d+){2}\s+$useruid(?:\s+\d+){5}/) {
-		                    $ipcrm_args .= " -s $1";
-		            	    print_log(3,"Found IPC SEM for user $useruid: $1.");
-		                }
-		            }
-		            close (IPCSEM);
-		        } else {
-		            print_log(3,"Cannot open /proc/sysvipc/sem: $!.");
-		        }
-		        if ($ipcrm_args) {
-		            print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args.");
-		            system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
-		        }
-		        print_log (3,"Purging @TMP_DIRECTORIES_TO_CLEAR.");
-		        system('for d in '."@TMP_DIRECTORIES_TO_CLEAR".'; do
+                            print_log(3,"Found IPC MSG for user $useruid: $1.");
+                        }
+                    }
+                    close (IPCMSG);
+                } else {
+                    print_log(3,"Cannot open /proc/sysvipc/msg: $!.");
+                }
+                if (open(IPCSHM,"< /proc/sysvipc/shm")) {
+                    <IPCSHM>;
+                    while (<IPCSHM>) {
+                        if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
+                            $ipcrm_args .= " -m $1";
+                            print_log(3,"Found IPC SHM for user $useruid: $1.");
+                        }
+                    }
+                    close (IPCSHM);
+                } else {
+                    print_log(3,"Cannot open /proc/sysvipc/shm: $!.");
+                }
+                if (open(IPCSEM,"< /proc/sysvipc/sem")) {
+                    <IPCSEM>;
+                    while (<IPCSEM>) {
+                        if (/^\s*[\d\-]+\s+(\d+)(?:\s+\d+){2}\s+$useruid(?:\s+\d+){5}/) {
+                            $ipcrm_args .= " -s $1";
+                            print_log(3,"Found IPC SEM for user $useruid: $1.");
+                        }
+                    }
+                    close (IPCSEM);
+                } else {
+                    print_log(3,"Cannot open /proc/sysvipc/sem: $!.");
+                }
+                if ($ipcrm_args) {
+                    print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args.");
+                    system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
+                }
+                print_log (3,"Purging @TMP_DIRECTORIES_TO_CLEAR.");
+                system('for d in '."@TMP_DIRECTORIES_TO_CLEAR".'; do
                             oardodo find $d -user '.$Cpuset->{user}.' -delete
-                            [ -x '.$FSTRIM_CMD.' ] && oardodo '.$FSTRIM_CMD.' $d >& /dev/null
+                            [ -x '.$FSTRIM_CMD.' ] && oardodo '.$FSTRIM_CMD.' $d > /dev/null 2>&1
                         done
                        ');
-		    } else {
-		        print_log(3,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.");
-		    }
-	        flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
-	        close(LOCK);
+            } else {
+                print_log(3,"Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host.");
+            }
+            flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
+            close(LOCK);
         } 
         print_log(3,"Remove file $Cpuset->{oar_tmp_directory}/$Cpuset->{name}.env");
         unlink("$Cpuset->{oar_tmp_directory}/$Cpuset->{name}.env");
