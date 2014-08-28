@@ -61,7 +61,7 @@ This package install the submission and query part of the OAR batch scheduler
 %package web-status
 Summary:        OAR batch scheduler web-status package
 Group:          System Environment/Base
-Requires:       httpd, perl-DBI, perl-Tie-IxHash, perl-AppConfig, perl(Sort::Naturally), php, oar-web-status-backend = %version-%release
+Requires:       httpd, perl-CGI, perl-DBI, perl-Tie-IxHash, perl-AppConfig, perl(Sort::Naturally), php, oar-web-status-backend = %version-%release
 Provides:       Perl(OAR::Monika), DrawGantt-SVG
 %description web-status
 This package installs the OAR batch scheduler status web pages: jobs and resources status and gantt diagrams.
