@@ -1509,13 +1509,13 @@ sub check_admission_rule($$) {
   }
 
   # Admission rule must have a "priority" field
-  unless ( $admission_priority->{priority}) {
+  unless ( $admission_rule->{priority}) {
     ERROR 400, 'Missing Required Field',
       'An admission priority must have a priority field';
     exit 0;
   }
   # Admission rule must have a "enabled" field
-  unless ( $admission_enabled->{enabled}) {
+  unless ( $admission_rule->{enabled}) {
     ERROR 400, 'Missing Required Field',
       'An admission enabled must have a enabled field';
     exit 0;

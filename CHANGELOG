@@ -29,8 +29,7 @@ version 2.5.4:
         The users have access to the same OAR environment variables when
         connecting on all the job nodes with oarsh
   - [job_uid] Removed job uid feature (not used).D
-  - [job_resource_manager] Activate MEMORY cgroup by default.
-        Use fstrim (for SSD) when cleaning files.
+  - [job_resource_manager] Use fstrim (for SSD) when cleaning files.
   - [deploy] Do not check the nodes when ACTIVATE_PINGCHECKER_AT_JOB_END is on
         and the job is of the deploy type (bug #17128).
   - [judas] Disabled sending log by emails on errors. This could generate too
@@ -46,16 +45,22 @@ version 2.5.4:
   - [database] Replaced the field "maintenance" by "drain".
         So the administrator can disable resources without killing
         current jobs by::
+
             oarnodesetting -h n12 -p drain=YES
-        or
+
+        or::
+
             oarnodesetting --drain -h n12
+
         :WARNING: any admission rule using the "maintenance" keyword
             must be adapted to use the "drain" keyword.
   - [oar_resources_init] Added support for SMT (hyperthreading)
   - [cpuset] The cpuset resources filed is now a varchar.
         It is now possible to specify several logical cpu id in the cpuset
         field as needed in some case where SMT is enabled on nodes, e.g.::
+
             1+4+8
+
   - [oarsub] Added a filter for notifications
         It now is possible to specify which TAGs must trigger motifications::
             oarsub --notify "[END,ERROR]mail:name@domain.com" -I

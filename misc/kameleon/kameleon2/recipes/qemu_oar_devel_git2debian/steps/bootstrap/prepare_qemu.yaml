@@ -1,0 +1,41 @@
+- insecure_ssh_key: $$kameleon_cwd/insecure_ssh_key
+
+- download_boot2kameleon_iso:
+  - download_file_local:
+    - $$boot2kameleon_url
+    - $$kameleon_cwd/boot2kameleon.iso
+
+- create_initial_image:
+  - check_cmd_local: qemu-img
+  - exec_local: |
+      rm -f $$qemu_image_disk
+      qemu-img create -f qcow2 $$qemu_image_disk $$qemu_image_size
+
+- delete_initial_image:
+  - on_checkpoint: skip
+  - on_export_clean:
+    - exec_local: rm -f $$qemu_image_disk
+
+- configure_ssh_access:
+  - download_file_local:
+    - $$insecure_ssh_key_url
+    - $$insecure_ssh_key
+  - exec_local: chmod 600 $$insecure_ssh_key
+
+- create_ssh_config:
+  - write_local:
+    - $$ssh_config_file
+    - |
+      Host $${kameleon_recipe_name}
+      HostName 127.0.0.1
+      Port $${qemu_ssh_port}
+      User root
+      IdentityFile $$insecure_ssh_key
+      UserKnownHostsFile /dev/null
+      StrictHostKeyChecking no
+      PasswordAuthentication no
+      IdentitiesOnly yes
+      LogLevel FATAL
+      ForwardAgent yes
+      Compression yes
+      Protocol 2

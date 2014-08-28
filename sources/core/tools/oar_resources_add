@@ -65,11 +65,11 @@ while [ $# -ge 1 ]; do
     shift
     ;; 
   -c|--core)
-    CORE=$2
+    CORES=$2
     shift
     ;;
   -t|--thread)
-    THREAD=$2
+    THREADS=$2
     shift
     ;;
   -P|--host-prefix)
