@@ -77,6 +77,11 @@ version 2.5.4:
         oaradmission rules.
   - [oarnodesetting] Removed dependnency to oarnodes.
   - [drawgantt-svg] Various bugfixes and improvements
+  - [metasched] If a besteffort job has a checkpoint duration defined
+        (oarsub --checkpoint) then OAR tries to checkpoint it before killing it.
+        It is possible to define a limit of the checkpoint duration with an
+        admission rule ($checkpoint variable).
+
 
 version 2.5.3:
 --------------
