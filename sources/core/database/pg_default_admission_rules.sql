@@ -1,16 +1,6 @@
 -- Default admission rules for OAR 2
 -- $Id$
 
-CREATE TABLE admission_rules (
-  id bigserial,
-  priority integer NOT NULL DEFAULT '0',
-  enabled varchar(3) check (enabled in ('YES','NO')) NOT NULL default 'YES',
-  rule text NOT NULL,
-  PRIMARY KEY  (id)
-);
-
--- Default admission rules
-
 -- Specify the default value for queue parameter
 INSERT INTO admission_rules (priority, enabled, rule) VALUES (1, 'YES', E'# Set default queue is no queue is set
 if (not defined($queue_name)) {$queue_name="default";}

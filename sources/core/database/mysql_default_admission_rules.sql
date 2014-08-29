@@ -1,17 +1,6 @@
 # Default admission rules for OAR 2
 # $Id$
 
-#DROP TABLE IF EXISTS admission_rules;
-CREATE TABLE IF NOT EXISTS admission_rules (
-id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-priority INT UNSIGNED NOT NULL DEFAULT 0,
-enabled ENUM('YES','NO') NOT NULL DEFAULT 'YES',
-rule TEXT NOT NULL,
-PRIMARY KEY (id)
-);
-
-# Default admission rules
-
 # Specify the default value for queue parameter
 INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (1, 'YES', '# Set default queue is no queue is set
 if (not defined($queue_name)) {$queue_name="default";}
