@@ -195,7 +195,7 @@ If you want to enable a node to be woke up the next 12 hours::
 
 Otherwise you can disable the wake up of nodes (but not the halt) by::
 
-    oarnodesetting -h host_name -p vailable_upto=1
+    oarnodesetting -h host_name -p available_upto=1
 
 If you want to disable the halt on a node (but not the wakeup)::
 
