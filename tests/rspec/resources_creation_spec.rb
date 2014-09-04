@@ -3,6 +3,7 @@ $LOAD_PATH << '.'
 require 'oarrestapi_lib'
 require 'shared_examples'
 APIURI="http://oar:#{ENV['USER']}@localhost/oarapi-priv/"
+APIURI=ENV['APIURI'] if ENV['APIURI']
 
 describe OarApi do
   before :all do

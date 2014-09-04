@@ -1,6 +1,6 @@
 SPEC_OPTS=--colour --format nested
 
-all: format_checking job_submit resources_creation
+all: format_checking job_submit
 usage:
 	@echo "usage: make < format_checking | job_submit | resources_creation >"
 format_checking:

@@ -8,7 +8,7 @@ USER=ENV['USER']
 require 'oarrestapi_lib'
 require 'shared_examples'
 APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/"
-
+APIURI=ENV['APIURI'] if ENV['APIURI']
 
 $jobid=""
 $rjobid=""

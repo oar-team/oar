@@ -5,6 +5,8 @@ require 'oarrestapi_lib'
 USER=ENV['USER']
 $jobid = ""
 APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/"
+APIURI=ENV['APIURI'] if ENV['APIURI']
+
 describe OarApi do
   before :all do
     # Custom variables
