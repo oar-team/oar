@@ -781,6 +781,12 @@ SWITCH: for ($q) {
     my $tmpfilename = "";
     my $tmpparamfilename = "";
     my @user_infos;
+    # Alias resources=resource
+    if (defined($job->{resources})) {
+      $job->{resource} = $job->{resources} ;
+      delete($job->{resources});
+    }
+    # Options parsing
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "script_path") {
         $job->{script_path} =~ s/(\\*)"/$1$1\\"/g;
@@ -811,9 +817,6 @@ SWITCH: for ($q) {
         # Expand ~ to home directory
         @user_infos=getpwnam($authenticated_user);
         $workdir =~ s|/~/|$user_infos[7]/|;  
-      }
-      elsif ($option eq "resources") {
-        $oarcmd .= " --resource=$job->{resources}";
       }
       elsif (ref($job->{$option}) eq "ARRAY") {
         foreach my $elem (@{$job->{$option}}) {
