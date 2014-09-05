@@ -1,5 +1,5 @@
 %define version 2.5.4+rc4
-%define release 1.el6
+%define release 2.el6
 
 %define oaruser  oar
 
@@ -77,7 +77,7 @@ This package installs some documentation for OAR batch scheduler
 %package restful-api
 Summary:        OAR RESTful user API
 Group:          System Environment/Base
-Requires:       oar-common = %version-%release, oar-user = %version-%release, httpd, perl(CGI) 
+Requires:       oar-common = %version-%release, oar-user = %version-%release, httpd, perl(CGI), perl(FCGI)
 Provides:       perl(OAR::API), oar-api
 Obsoletes:      oar-api
 %description    restful-api
