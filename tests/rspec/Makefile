@@ -1,5 +1,5 @@
 RSPEC=rspec
-SPEC_OPTS=--colour --format nested
+SPEC_OPTS=--colour --format documentation
 
 all: format_checking job_submit
 usage:
