@@ -7,8 +7,6 @@ $LOAD_PATH << '.'
 USER=ENV['USER']
 require 'oarrestapi_lib'
 require 'shared_examples'
-APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/"
-APIURI=ENV['APIURI'] if ENV['APIURI']
 
 $jobid=""
 $rjobid=""
@@ -144,10 +142,10 @@ describe OarApi do
         @api.value['offset'].to_i.should == 0
       end
       it "should return a correct self link" do
-        @api.get_self_link_href.should == "/oarapi-priv/jobs?state=Running%2CLaunching%2CWaiting&limit=2&offset=0"
+        @api.get_self_link_href.should == "#{APIPATH}jobs?state=Running%2CLaunching%2CWaiting&limit=2&offset=0"
       end
       it "should return a correct next link" do
-        @api.get_next_link_href.should == "/oarapi-priv/jobs?state=Running%2CLaunching%2CWaiting&limit=2&offset=2"
+        @api.get_next_link_href.should == "#{APIPATH}jobs?state=Running%2CLaunching%2CWaiting&limit=2&offset=2"
       end
     end
 
@@ -169,13 +167,13 @@ describe OarApi do
         @api.value['offset'].to_i.should == 3
       end
       it "should return a correct self link" do
-        @api.get_self_link_href.should == "/oarapi-priv/jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=3"
+        @api.get_self_link_href.should == "#{APIPATH}jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=3"
       end
       it "should return a correct previous link" do
-        @api.get_previous_link_href.should == "/oarapi-priv/jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=1"
+        @api.get_previous_link_href.should == "#{APIPATH}jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=1"
       end
       it "should return a correct next link" do
-        @api.get_next_link_href.should == "/oarapi-priv/jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=5"
+        @api.get_next_link_href.should == "#{APIPATH}jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=5"
       end
     end
 
@@ -215,12 +213,12 @@ describe OarApi do
       it "should return jobs having a correct self link" do
         links=@api.value['items'][0]['links']
         id=@api.value['items'][0]['id']
-        @api.get_link_href_from_array_by_rel(links,"self").should == "/oarapi-priv/jobs/#{id}"
+        @api.get_link_href_from_array_by_rel(links,"self").should == "#{APIPATH}jobs/#{id}"
       end
       it "should return jobs having a correct resources link" do
         links=@api.value['items'][0]['links']
         id=@api.value['items'][0]['id']
-        @api.get_link_href_from_array(links,"resources").should == "/oarapi-priv/jobs/#{id}/resources"
+        @api.get_link_href_from_array(links,"resources").should == "#{APIPATH}jobs/#{id}/resources"
       end
       it "should return jobs owned by the #{USER} user" do
         @api.value['items'][0]['owner'].should == "#{USER}"
@@ -478,10 +476,10 @@ describe OarApi do
         @api.value['offset'].to_i.should == 0
       end
       it "should return a correct self link" do
-        @api.get_self_link_href.should == "/oarapi-priv/resources?limit=2&offset=0"
+        @api.get_self_link_href.should == "#{APIPATH}resources?limit=2&offset=0"
       end
       it "should return a correct next link" do
-        @api.get_next_link_href.should == "/oarapi-priv/resources?limit=2&offset=2"
+        @api.get_next_link_href.should == "#{APIPATH}resources?limit=2&offset=2"
       end
     end
 
@@ -502,13 +500,13 @@ describe OarApi do
         @api.value['offset'].to_i.should == 2
       end
       it "should return a correct self link" do
-        @api.get_self_link_href.should == "/oarapi-priv/resources?limit=2&offset=2"
+        @api.get_self_link_href.should == "#{APIPATH}resources?limit=2&offset=2"
       end
       it "should return a correct next link" do
-        @api.get_next_link_href.should == "/oarapi-priv/resources?limit=2&offset=4"
+        @api.get_next_link_href.should == "#{APIPATH}resources?limit=2&offset=4"
       end
       it "should return a correct previous link" do
-        @api.get_previous_link_href.should == "/oarapi-priv/resources?limit=2&offset=0"
+        @api.get_previous_link_href.should == "#{APIPATH}resources?limit=2&offset=0"
       end
     end
     
@@ -655,7 +653,7 @@ describe OarApi do
       @api.submit_job(jhash)
       $ljobid = @api.jobstatus['id']
       @api.value= @api.jobstatus
-      @api.get_self_link_href.should == "/oarapi-priv/jobs/#{$ljobid}"
+      @api.get_self_link_href.should == "#{APIPATH}jobs/#{$ljobid}"
     end
     it "should return a 400 error on bad reservation date" do
       jhash = { 'resource' => "/nodes=1/core=1" , 'script' => "ls;pwd;whoami;sleep 60",
@@ -717,10 +715,10 @@ describe OarApi do
       end
     end
     it "should have a self link" do
-      @api.get_self_link_href.should == "/oarapi-priv/jobs/#{@api.value['id']}"
+      @api.get_self_link_href.should == "#{APIPATH}jobs/#{@api.value['id']}"
     end
     it "should have a parent link" do
-      @api.get_link_href_by_rel('parent').should == "/oarapi-priv/jobs/#{$jobid+1}"
+      @api.get_link_href_by_rel('parent').should == "#{APIPATH}jobs/#{$jobid+1}"
     end
     it "should delete the test job (cleaning)" do
       @api.del_job(@api.value['id'])
