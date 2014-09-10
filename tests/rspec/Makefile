@@ -9,5 +9,5 @@ format_checking:
 job_submit:
 	${RSPEC} job_submit_spec.rb ${SPEC_OPTS}
 resources_creation:
-	${RSPEC} rspec resources_creation_spec.rb ${SPEC_OPTS}
+	${RSPEC} resources_creation_spec.rb ${SPEC_OPTS}
 
