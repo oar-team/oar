@@ -42,10 +42,21 @@ Other required tools are :
  * gperf perfect hash function generator,
   
 All these requirements are availble in major GNU/Linux distribution. 
- 
+
+For ``Debian``::
+
+  $ apt-get install libjson-glib-dev libcurl3 
+
+For ``Centos``::
+
+  $ yum install glib2 glib2-devel  libcurl libcurl-devel json-glib json-glib-devel
+
+Note for ``Centos 6.5`` json-glib package can be found at: https://github.com/project-hatohol/json-glib-for-distribution/blob/master/RPMS/x86_64/
+
 To compile the library just go to main source directory and type::
 
   $ ./configure [--prefix=/installation/directory] && make
+  $ make install
 
 
 Configuration
@@ -143,8 +154,8 @@ Configuration file example
 DRMAA attributes support and Native Specification
 ==================================================
 
-DRMAA for OAR support main DRMAA attributes at the exception of `drmaa_start_time`, `drmaa_block_email` and `drmaa_block_email`.
-The two laters will be implemented in a next release, for `drmaa_start_time` is not planned in the OAR roadmap if you please contact the developers. 
+DRMAA for OAR support main DRMAA attributes at the exception of `drmaa_start_time`  and `drmaa_block_email`.
+There are not currently planned in the OAR roadmap if you need them please contact the developers. 
 
 DRMAA interface allows to pass DRM dependant job submission options.
 Those options may be specified by settings ``drmaa_native_specification`` and corresponds to `oarsub` 
@@ -197,9 +208,10 @@ Attributes set in native specification overrides corresponding DRMAA job attribu
 Test-suite
 ==========
 
-The DRMAA for OAR library was successfully tested with OAR_ 2.5.3 on Linux OS.  Following
+The DRMAA for OAR library was successfully tested with OAR_ 2.5.3 and 2.5.4 on Debian and Centos.  Following
 table presents results of tests from `Official DRMAA test-suite`_ (originally developed for Sun Grid Engine).
-Note, that tests with Suspending/Resuming job test need particular setting (see OAR configuration file `oar.conf`).
+
+Note, the test with Suspending/Resuming job test require the ``USERS_ALLOWED_HOLD_RESUME="yes"`` is set on frontend's  OAR configuration file (`oar.conf`).
 
 Known bugs and limitations
 ==========================
@@ -219,7 +231,8 @@ Known bugs and limitations
 Release notes
 =============
 
- * 1.0.0 first release
+ * 1.0.1 support for 1.0.2 oarapi version and use pbs-drmaa-1.0.17 as intermediate library.
+ * 1.0.0 first release 
 
 Developers
 ==========
