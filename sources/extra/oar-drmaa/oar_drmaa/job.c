@@ -267,7 +267,7 @@ oardrmaa_job_update( fsd_job_t *self, struct batch_status *b_status )
 
 	fsd_log_enter(( "({job_id=%s})", self->job_id ));
 #ifdef DEBUGGING
-        oardrmaa_dump_attrl( attribs, NULL );
+	//        oardrmaa_dump_attrl( attribs, NULL );
 #endif
         fsd_assert( !strcmp( self->job_id, b_status->name ) );
 /* TODO: to adapt */

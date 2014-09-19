@@ -31,12 +31,16 @@ static char rcsid[]
         = "$Id: $";
 #endif
 
+#define INT_1_0_2 0x010002 
+
 int oar_errno = 0;
 
 char *oar_api_server_url;
 char oar_api_server_url_default[]="http://localhost";
 
-const char *drmaa_control_to_oar_rest[]={
+int api_version = 0;
+
+const char *drmaa_control_to_oar_rest[] = {
     "/rholds/new.json",         /* DRMAA_CONTROL_SUSPEND   0 */
     "/resumptions/new.json",    /* DRMAA_CONTROL_RESUME    1 */
     "/holds/new.json",          /* DRMAA_CONTROL_HOLD      2 */
@@ -127,6 +131,9 @@ int oar_connect(char *server)
     char *env_oar_api_server_url;
     char rest_url[256];
     long http_code = 0;
+    char *api_version_str;
+    char *token;
+    int i = 0;
 
 #ifdef DEBUG
     fsd_set_verbosity_level(FSD_LOG_ALL);
@@ -140,7 +147,7 @@ int oar_connect(char *server)
     /* set oar_api_server_url */
     env_oar_api_server_url = getenv("OAR_API_SERVER_URL");
     if (env_oar_api_server_url != NULL) {
-       oar_api_server_url = env_oar_api_server_url;
+      oar_api_server_url = env_oar_api_server_url;
     } else {
       oar_api_server_url = oar_api_server_url_default; /* set default url as server url */
     }
@@ -164,7 +171,8 @@ int oar_connect(char *server)
     /* some servers don't like requests that are made without a user-agent field, so we provide one */
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
-    sprintf(rest_url,"%s/oarapi/resources.json",oar_api_server_url);
+    /* retreive oarapi version*/
+    sprintf(rest_url,"%s/oarapi/version.json",oar_api_server_url);
 
     curl_easy_setopt(curl_handle, CURLOPT_URL, rest_url);
     res = curl_easy_perform(curl_handle); /* */
@@ -182,9 +190,17 @@ int oar_connect(char *server)
     oar_api_http_error(http_code, reader);
 
     /* printf("number of members: %d\n", json_reader_count_members (reader)); */
-    json_reader_read_member (reader, "total");
-    json_reader_is_value (reader);
-    /* printf("total: %d\n",json_reader_get_int_value (reader)); */
+    json_reader_read_member (reader, "api_version");
+    api_version_str = json_reader_get_string_value(reader);
+    fsd_log_debug(("oarapi version:%s\n", api_version_str));
+
+    token = strtok(api_version_str, ".");
+    while( token != NULL ) {
+      api_version += (atoi(token)) << (16 - i);
+      i += 8;
+      token = strtok(NULL, ".");
+    }
+
     g_object_unref (reader);
     g_object_unref (parser);
 
@@ -301,27 +317,33 @@ struct batch_status *oar_statjob(int connect, char *id)
 
         if (!json_reader_get_null_value(reader))
         {
-            exit_code_str = json_reader_get_string_value(reader);
-            exit_code = atoi(exit_code_str);
 
-            if((exit_code & 0x7f) == 0)
-            {
-                exit_code = exit_code >> 8;
-            } else
-            {
-                exit_code = (exit_code & 0x7f) + 128;
-            }
+	  if (api_version >= INT_1_0_2) { 
+	    exit_code = json_reader_get_int_value (reader);
+	  } else {
+	    exit_code_str = json_reader_get_string_value(reader);
+            exit_code = atoi(exit_code_str);
+	  }
+	  
+	  if ((exit_code & 0x7f) == 0) {
+	      exit_code = exit_code >> 8;
+            } else {
+	    exit_code = (exit_code & 0x7f) + 128;
+	  }
             /* fsd_log_debug(("exit_code_str: %s exit_code8: %d\n",exit_code_str, exit_code)); */
         }
         json_reader_end_element (reader);
 
         json_reader_read_member (reader,"walltime");
-        if (!json_reader_get_null_value(reader))
-        {
-            walltime = atoi(json_reader_get_string_value(reader));
-        }
-        json_reader_end_element (reader);
-
+	if (api_version >= INT_1_0_2) {
+	  walltime = json_reader_get_int_value (reader);
+	} else {
+	  if (!json_reader_get_null_value(reader))   {
+	    walltime = atoi(json_reader_get_string_value(reader));
+	  }
+	}
+	json_reader_end_element (reader);
+	  
         json_reader_read_member (reader,"queue");
         queue = json_reader_get_string_value(reader);
         json_reader_end_element (reader);

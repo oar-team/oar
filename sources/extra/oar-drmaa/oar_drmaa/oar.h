@@ -48,7 +48,7 @@
 *   - DRMAA_CONTROL_TERMINATE 4
 */
 
-const char *drmaa_control_to_oar_rest[];
+const char *drmaa_control_to_oar_rest[5];
 
 struct attrl {
         struct attrl *next;
