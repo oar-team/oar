@@ -267,9 +267,9 @@ MKDIR_P = /bin/mkdir -p
 NM = /usr/bin/nm -B
 NMEDIT = 
 OAR_DRMAA_MAJOR = 1
-OAR_DRMAA_MICRO = 0
+OAR_DRMAA_MICRO = 1
 OAR_DRMAA_MINOR = 0
-OAR_DRMAA_VERSION_INFO = 1:0:0
+OAR_DRMAA_VERSION_INFO = 1:0:1
 OBJDUMP = objdump
 OBJEXT = o
 OTOOL = 
@@ -277,10 +277,10 @@ OTOOL64 =
 PACKAGE = oar-drmaa
 PACKAGE_BUGREPORT = http://oar.imag.fr
 PACKAGE_NAME = DRMAA for OAR
-PACKAGE_STRING = DRMAA for OAR 1.0.0
+PACKAGE_STRING = DRMAA for OAR 1.0.1
 PACKAGE_TARNAME = oar-drmaa
 PACKAGE_URL = 
-PACKAGE_VERSION = 1.0.0
+PACKAGE_VERSION = 1.0.1
 PATH_SEPARATOR = :
 PTHREAD_CFLAGS = -pthread
 PTHREAD_LIBS = -pthread
@@ -289,7 +289,7 @@ SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/bash
 STRIP = strip
-VERSION = 1.0.0
+VERSION = 1.0.1
 abs_builddir = /home/auguste/prog/oar/sources/extra/oar-drmaa/oar_drmaa
 abs_srcdir = /home/auguste/prog/oar/sources/extra/oar-drmaa/oar_drmaa
 abs_top_builddir = /home/auguste/prog/oar/sources/extra/oar-drmaa
@@ -363,7 +363,7 @@ BUILT_SOURCES = oar_attrib.c
 EXTRA_DIST = oar_attrib.c
 dist_sysconf_DATA = oar_drmaa.conf.example
 libdrmaa_la_LIBADD = ../drmaa_utils/drmaa_utils/libdrmaa_utils.la 
-libdrmaa_la_LDFLAGS = -lcurl -version-info 1:0:0 -ljson-glib-1.0
+libdrmaa_la_LDFLAGS = -lcurl -version-info 1:0:1 -ljson-glib-1.0
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -714,7 +714,7 @@ uninstall-am: uninstall-dist_sysconfDATA uninstall-libLTLIBRARIES
 
 # see ../m4/ax_pbs.m4 for @OAR_xxx@ 
 #liboardrmaa_la_LIBADD  = ../drmaa_utils/drmaa_utils/libdrmaa_utils.la @OAR_LIBS@
-#liboardrmaa_la_LDFLAGS = @OAR_LDFLAGS@ -version-info 1:0:0
+#liboardrmaa_la_LDFLAGS = @OAR_LDFLAGS@ -version-info 1:0:1
 
 .gperf.c:
 	$(GPERF) $(GPERFFLAGS) --output-file=$@ $<

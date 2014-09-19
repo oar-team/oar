@@ -1,4 +1,4 @@
-AC_INIT([DRMAA for OAR], [1.0.0], [http://oar.imag.fr], [oar-drmaa])
+AC_INIT([DRMAA for OAR], [1.0.1], [http://oar.imag.fr], [oar-drmaa])
 AC_PREREQ(2.59)
 AC_REVISION([$Id: $])
 AC_COPYRIGHT([
@@ -23,8 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 OAR_DRMAA_MAJOR=1
 OAR_DRMAA_MINOR=0
-OAR_DRMAA_MICRO=0
-OAR_DRMAA_VERSION_INFO=1:0:0
+OAR_DRMAA_MICRO=1
+OAR_DRMAA_VERSION_INFO=1:0:1
 AC_SUBST([OAR_DRMAA_MAJOR])
 AC_SUBST([OAR_DRMAA_MINOR])
 AC_SUBST([OAR_DRMAA_MICRO])
