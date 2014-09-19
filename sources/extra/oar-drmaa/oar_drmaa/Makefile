@@ -105,7 +105,6 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/scripts/depcomp $(dist_sysconf_DATA)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
-	$(top_srcdir)/m4/ax_docutils.m4 \
 	$(top_srcdir)/m4/ax_gcc_warnings.m4 \
 	$(top_srcdir)/m4/ax_gperf.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -286,8 +285,6 @@ PATH_SEPARATOR = :
 PTHREAD_CFLAGS = -pthread
 PTHREAD_LIBS = -pthread
 RANLIB = ranlib
-RST2HTML = rst2html
-RST2LATEX = rst2latex
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/bash
