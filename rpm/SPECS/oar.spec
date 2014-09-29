@@ -1,5 +1,5 @@
-%define version 2.5.4+rc4
-%define release 2.el6
+%define version 2.5.4+rc5
+%define release 1.el6
 
 %define oaruser  oar
 
@@ -493,7 +493,7 @@ user_setup
 
 
 %changelog
-* Wed Aug 28 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-1.el6
+* Wed Sep 29 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-1.el6
 - New upstream release
 - Removed dependancies on ruby: removed oar-admin and its associated backends, removed drawgantt
 - Do not package runner, since it vanished from sources
