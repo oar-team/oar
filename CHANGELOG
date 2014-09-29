@@ -3,6 +3,8 @@ OAR CHANGELOG
 
 version 2.5.4:
 --------------
+  
+  - [drmaa] new oar-drmaa version: oar-drmaa-1.0.1
   - [api] Implemented GET /resources/<property>/jobs to get jobs running on
         resources, groupped by a given property
   - [api] Implemented HTTP_X_API_PATH_PREFIX header variable to prefix all
@@ -77,6 +79,11 @@ version 2.5.4:
         oaradmission rules.
   - [oarnodesetting] Removed dependnency to oarnodes.
   - [drawgantt-svg] Various bugfixes and improvements
+  - [metasched] If a besteffort job has a checkpoint duration defined
+        (oarsub --checkpoint) then OAR tries to checkpoint it before killing it.
+        It is possible to define a limit of the checkpoint duration with an
+        admission rule ($checkpoint variable).
+
 
 version 2.5.3:
 --------------

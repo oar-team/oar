@@ -322,7 +322,7 @@ http://taktuk.gforge.inria.fr.
 
 **Note**: Taktuk is a scalable remote command execution without the need to
 install special stuffs on nodes. So it is very useful to administer a large
-amount of servers.
+amount of machines.
 
 Then, you have to edit your oar configuration file and fill in the different 
 related parameters: 

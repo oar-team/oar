@@ -4,7 +4,7 @@ require 'oarrestapi_lib'
 
 USER=ENV['USER']
 $jobid = ""
-APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/"
+
 describe OarApi do
   before :all do
     # Custom variables
@@ -17,7 +17,7 @@ describe OarApi do
     it "should submit a job successfully " do
       script="#!/bin/bash
 #OAR --name rspec_test
-wc -l $OAR_FILE_NODES > /tmp/$OAR_JOB_ID.count
+wc -l $OAR_FILE_NODES > #{ENV['HOME']}/$OAR_JOB_ID.count
 echo \"Hello World\"
 pwd
 whoami
@@ -61,12 +61,12 @@ sleep 120
       @oar_server.specific_job_details($jobid)
       @oar_server.specificjobdetails["name"].should == "rspec_test"
     end
-    it "should have created a file into /tmp" do
+    it "should have created a file into $HOME" do
       sleep 1
-      File.exists?("/tmp/#{$jobid}.count").should == true
+      File.exists?("#{ENV['HOME']}/#{$jobid}.count").should == true
     end
     it "should return the good number of resources into the created file" do
-      f = File.open("/tmp/#{$jobid}.count")
+      f = File.open("#{ENV['HOME']}/#{$jobid}.count")
       f.gets.to_i.should == 2
     end
   end 
