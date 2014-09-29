@@ -56,7 +56,7 @@ sub read_conf_file($){
             $msg = "Syntax error in file $quota_file: $@";
         }
     }else{
-        $msg = "Cannot open  file $quota_file: $!";
+        $msg = "Cannot open file $quota_file: $!";
     }
     # Check if the values are just an integer (nb resources) or an array ref
     foreach my $q (keys(%{$Gantt_quotas})){
@@ -64,7 +64,7 @@ sub read_conf_file($){
             foreach my $t (keys(%{$Gantt_quotas->{$q}->{$p}})){
                 foreach my $u (keys(%{$Gantt_quotas->{$q}->{$p}->{$t}})){
                     if (! ref($Gantt_quotas->{$q}->{$p}->{$t}->{$u})){
-                        $Gantt_quotas->{$q}->{$p}->{$t}->{$u} = [$Gantt_quotas->{$q}->{$p}->{$t}->{$u}, -1];
+                        $Gantt_quotas->{$q}->{$p}->{$t}->{$u} = [$Gantt_quotas->{$q}->{$p}->{$t}->{$u}, -1, -1];
                     }elsif ($#{$Gantt_quotas->{$q}->{$p}->{$t}->{$u}} < 2){
                         $Gantt_quotas->{$q}->{$p}->{$t}->{$u}->[2] = -1;
                     }

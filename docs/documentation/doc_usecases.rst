@@ -487,6 +487,7 @@ file in the OpenMPI installation directory named
 So, with this configuration, this is transparent for the users.
 
 **Note**: In OpenMPI 1.6, "pls_rsh_agent" was replaced by "orte_rsh_agent".
+**Note**: In OpenMPI 1.8, "orte_rsh_agent" was replaced by "plm_rsh_agent".
 
 Intel MPI
 ~~~~~~~~~

@@ -4,6 +4,11 @@ require 'json'
 require 'pp'
 require 'uri'
 
+APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/" unless ENV['APIURI']
+APIURI=ENV['APIURI'] if ENV['APIURI']
+api_uri = URI(APIURI)
+APIPATH=api_uri.path
+
 #######################################################################
 #Coded By Narayanan K - GSOC Testsuites project  - RESTful API Library
 # Modified by B. Bzeznik 2010-2011

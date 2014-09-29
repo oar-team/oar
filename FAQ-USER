@@ -54,7 +54,7 @@ Example:
   2. Once your reservation has begun then you can launch:
      ::
 
-        oarsub -I -l /node=2,walltime=0:50:00 -p 'switch="cheduled_switch_name'\
+        oarsub -I -l /node=2,walltime=0:50:00 -p 'switch="'scheduled_switch_name'\
         -t 'timesharing=user,*'
 
      So this job will be scheduled on nodes assigned from the previous reservation.
