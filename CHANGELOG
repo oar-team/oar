@@ -4,7 +4,6 @@ OAR CHANGELOG
 version 2.5.4:
 --------------
   
-  - [drmaa] new oar-drmaa version: oar-drmaa-1.0.1
   - [api] Implemented GET /resources/<property>/jobs to get jobs running on
         resources, groupped by a given property
   - [api] Implemented HTTP_X_API_PATH_PREFIX header variable to prefix all
@@ -83,6 +82,7 @@ version 2.5.4:
         (oarsub --checkpoint) then OAR tries to checkpoint it before killing it.
         It is possible to define a limit of the checkpoint duration with an
         admission rule ($checkpoint variable).
+  - [drmaa] new oar-drmaa version: oar-drmaa-1.0.1
 
 
 version 2.5.3:
