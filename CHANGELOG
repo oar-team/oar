@@ -82,7 +82,6 @@ version 2.5.4:
         (oarsub --checkpoint) then OAR tries to checkpoint it before killing it.
         It is possible to define a limit of the checkpoint duration with an
         admission rule ($checkpoint variable).
-  - [drmaa] new oar-drmaa version: oar-drmaa-1.0.1
   - [drawgantt] Drawgantt is not now deprecated (and not shipped with packages)
   - [misc] OAR packaged components do not require Ruby anymore.
 
