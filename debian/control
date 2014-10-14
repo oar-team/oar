@@ -5,7 +5,7 @@ Maintainer: Pierre Neyron <pierre.neyron@free.fr>
 Uploaders: Philippe Le Brouster <plb@nebkha.net>,
   Vincent Danjean <vdanjean@debian.org>
 Build-Depends: debhelper (>= 9~), po-debconf, python-docutils, perl
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Vcs-Git: git://scm.gforge.inria.fr/oar/oar.git/
 Homepage: http://oar.imag.fr/
 
