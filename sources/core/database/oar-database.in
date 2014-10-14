@@ -186,34 +186,27 @@ sub reset_database() {
 }
 
 sub upgrade_database() {
-    my ($to_version, $to_file);
-
-    my $current_version = get_current_schema_version();
-    while($current_version ne $DEFAULT_LAST_VERSION) {
-	if ($DEFAULT_UPGRADES{$current_version}) {
-		($to_version, $to_file) = @{$DEFAULT_UPGRADES{$current_version}};
-                print "Uprgading from '$current_version' to '$to_version'...\n";
-		&$exec_sql_file($to_file) == 0 or die "Fail to upgrade the database from $current_version to $to_file with $to_file\n.";
-	} else {
-		die "Unable to upgrade from the version '$current_version'\n";
-	}
-        $current_version = get_current_schema_version();
-    }
-}
-
-sub setup_database() {
     check_user_db_access($db_user,$db_pass);
     # Retrieve the current version (check if shema table exist before)
-    my $db_version = get_current_schema_version();
+    my $current_version = get_current_schema_version();
 
-    if (!$db_version) {
+    if (!$current_version) {
         print "No schema version found. Initialising the database.\n";
         init_database();
-    } elsif ($db_version eq $DEFAULT_LAST_VERSION) {
-        print "The database is up to date (version $db_version).\n";
+    } elsif ($current_version eq $DEFAULT_LAST_VERSION) {
+        print "The database is up to date (version $current_version).\n";
     } else {
-        print "The current schema version is $db_version. Upgrading to $DEFAULT_LAST_VERSION.\n"; 
-        upgrade_database();
+        print "The current schema version is $current_version. Upgrading to $DEFAULT_LAST_VERSION.\n"; 
+        while($current_version ne $DEFAULT_LAST_VERSION) {
+            if ($DEFAULT_UPGRADES{$current_version}) {
+                my ($to_version, $to_file) = @{$DEFAULT_UPGRADES{$current_version}};
+                print "Uprgading from '$current_version' to '$to_version'...\n";
+	    	    &$exec_sql_file($to_file) == 0 or die "Fail to upgrade the database from $current_version to $to_file with $to_file\n.";
+            } else {
+               	die "Unable to upgrade from the version '$current_version'\n";
+            }
+            $current_version = get_current_schema_version();
+        }
     }
 }
 
@@ -400,7 +393,8 @@ GetOptions ("help|h"                => \$usage,
             "debug|d"               => \$debug,
             "force-sql|f"           => \$force_sql,
             "force-yes|y"           => \$force_yes,
-            "setup|s"               => sub { $action = 'setup' },
+            "upgrade|s"             => sub { $action = 'upgrade' },
+            "setup|s"               => sub { $action = 'upgrade' }, #  keep "--setup" for backward compatibility
             "reset|r"               => sub { $action = 'reset' },
             "create|c"              => sub { $action = 'create' },
             "drop"                  => sub { $action = 'drop' },
@@ -619,7 +613,7 @@ if ($action eq "check") {
     if($force_yes || $term->ask_yn(
             prompt => "Are you sure you want to upgrade your database ? (Please backup the database before)", 
             default => 'n')) {
-        setup_database();
+        upgrade_database();
     } else {
         print "The database hasn't been changed\n."
     }
@@ -639,9 +633,3 @@ if ($action eq "check") {
 } elsif ($action eq "fix-ro-user-priv") {
     fix_ro_user_privileges();
 }
-
-
-
-
-
-
