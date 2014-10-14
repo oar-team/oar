@@ -84,7 +84,7 @@ do_start() {
         fail_msg "OAR database seems not ready. See \`oar-database --check'"
         exit 0
     fi
-    if pidofproc -p $PIDFILE > /dev/null; then
+    if pidofproc -p $PIDFILE $DAEMON > /dev/null; then
         fail_msg "$DESC is already running."
         exit 1
     fi
