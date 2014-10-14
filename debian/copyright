@@ -7,10 +7,6 @@ Files: *
 Copyright:  2009-2012 LIG http://lig.imag.fr
 License: GPL-2+
 
-Files: sources/extra/oar-drmaa/*
-Copyright:  2006-2009 FedStage Systems
-License: GPL-3+
-
 Files: sources/visualization_interfaces/DrawGantt/js/overlib.js
   sources/visualization_interfaces/Monika/overlib.js
 Copyright: Erik Bosrup 1998-2002. All rights reserved.
