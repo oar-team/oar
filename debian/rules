@@ -68,7 +68,7 @@ override_dh_clean:
 	rm -f debian/oar-node.cron.d
 
 override_dh_installinit:
-	dh_installinit --no-start
+	dh_installinit
 
 override_dh_compress:
 	# avoid to compress examples as we use ucf after.
