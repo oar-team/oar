@@ -1,5 +1,0 @@
-This directory contains Debian source packages for 3rd party software that are not packaged in official Debian distributions yet, but needed by OAR
-
-= Note about the Debian packaging of CPAN modules =
-Packaging is pretty straightforward using the following command:
- dh-make-perl --dh 7 --cpan Module::Perl

@@ -75,7 +75,6 @@ server_setup() {
     set_rights ${SBINDIR}/oarproperty        6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
     set_rights ${SBINDIR}/oarmonitor         6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
     set_rights ${SBINDIR}/oar_resources_init 6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oar_checkdb        6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
     set_rights ${SBINDIR}/oar_phoenix        6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
 
 }

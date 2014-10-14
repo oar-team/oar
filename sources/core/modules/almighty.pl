@@ -48,8 +48,8 @@ if (defined($ENV{OARDIR})){
     exit(1);
 }
 
-
-my $scheduler_command = $binpath."oar_meta_sched";
+my $meta_sched_command = get_conf_with_default_param("META_SCHED_CMD", "oar_meta_sched");
+my $scheduler_command = (($meta_sched_command =~ /^\//)?"":$binpath).$meta_sched_command;
 my $check_for_villains_command = $binpath."sarko";
 my $check_for_node_changes = $binpath."finaud";
 my $leon_command = $binpath."Leon";
