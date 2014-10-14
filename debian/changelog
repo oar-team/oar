@@ -1,16 +1,17 @@
-oar (2.5.4~rc6-1) unstable; urgency=medium
+oar (2.5.4~rc7-1) unstable; urgency=medium
 
   [ Pierre Neyron ]
   * New upstream release
-  * Drop tools with dependencies to Ruby
+  * Drop tools with dependencies to Ruby (oaradmin, drawgantt legacy)
   * Bump Standard-Version (no change needed)
   * Remove unused patches (applied upstream)
+  * Fix oar-server (oar-database) depends to libterm-ui-perl
 
   [ Vincent Danjean ]
   * Bump Standards-Version
   * (re)start service on upgrade/start
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 14 Oct 2014 19:44:32 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 15 Oct 2014 00:21:24 +0200
 
 oar (2.5.3-3) unstable; urgency=low
 
