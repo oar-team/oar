@@ -73,3 +73,16 @@ override_dh_installinit:
 override_dh_compress:
 	# avoid to compress examples as we use ucf after.
 	dh_compress -Xexamples
+
+override_dh_fixperms:
+	dh_fixperms
+	chmod +x debian/oar-server/usr/share/oar/oar-server/server_epilogue
+	chmod +x debian/oar-server/usr/share/oar/oar-server/server_prologue
+	chmod +x debian/oar-server/usr/share/oar/oar-server/shut_down_nodes.sh
+	chmod +x debian/oar-server/usr/share/oar/oar-server/wake_up_nodes.sh
+	chmod +x debian/oar-common/usr/share/oar/oar-common/oarnodesetting_ssh
+	chmod +x debian/oar-common/usr/share/oar/oar-common/update_cpuset_id.sh
+	chmod +x debian/oar-web-status/usr/share/oar/oar-web-status/userInfos.cgi
+	chmod +x debian/oar-restful-api/usr/share/oar/oar-api/stress_factor.sh
+	chmod +x debian/oar-node/usr/share/oar/oar-node/epilogue
+	chmod +x debian/oar-node/usr/share/oar/oar-node/prologue

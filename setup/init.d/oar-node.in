@@ -11,7 +11,8 @@
 # Required-Stop:    $all
 # Default-Start:    2 3 4 5
 # Default-Stop:     0 1 6
-# Short-Description:    OAR compute node initialization script (launch its own sshd)
+# Short-Description:    OAR compute node
+# Description:    OAR compute node initialization script (launch its own sshd)
 ### END INIT INFO
 
 LANG=C

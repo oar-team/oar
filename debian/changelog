@@ -2,7 +2,7 @@ oar (2.5.4~rc5-1) unstable; urgency=medium
 
   [ Pierre Neyron ]
   * New upstream release
-  * Drop tools with dependancies to Ruby
+  * Drop tools with dependencies to Ruby
   * Bump Standard-Version (no change needed)
   * Remove unused patches (applied upstream)
 
@@ -14,7 +14,7 @@ oar (2.5.4~rc5-1) unstable; urgency=medium
 
 oar (2.5.3-3) unstable; urgency=low
 
-  * Fix oar-user dependancy on oar-user-mysql or oar-user-postgresql
+  * Fix oar-user dependency on oar-user-mysql or oar-user-postgresql
   * Fix prologues and epilogues configuration files permissions:
     add patch to set mod 0755
   * Fix oarsub copyright in pod (man), this corrects the "FTBFS with perl 5.18: POD failure" reported by Debian

@@ -7,7 +7,7 @@ Files: *
 Copyright:  2009-2012 LIG http://lig.imag.fr
 License: GPL-2+
 
-Files: sources/extra/oar_drmaa/*
+Files: sources/extra/oar-drmaa/*
 Copyright:  2006-2009 FedStage Systems
 License: GPL-3+
 
@@ -18,7 +18,7 @@ License: Artistic
 
 Files: sources/extra/orpheus/modules/lua-signal/lsignal.c
 Copyright: 2010  Patrick J. Donnelly (batrick@batbytes.com) 
-License: MIT/X11 (BSD like)
+License: MIT/X11
 
 Files:  sources/extra/ocaml-schedulers/common/OCamlMakefile
 Copyright: 1999-2007  Markus Mottl
@@ -67,7 +67,7 @@ License: LGPL-2.1
  On Debian systems you can find a copy of this license in
  /usr/share/common-licenses/LGPL-2.1
  
-License: MIT/X11 (BSD like)
+License: MIT/X11
  Permission is hereby granted, free of charge, to any person obtaining
  a copy of this software and associated documentation files (the
  "Software"), to deal in the Software without restriction, including
