@@ -32,7 +32,7 @@ Description: OAR batch scheduler common package
 
 Package: oar-server
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, openssh-client | ssh, cron, lsb-base, libsort-versions-perl, libdbi-perl,  oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version}), oar-server-pgsql (= ${binary:Version}) | oar-server-mysql (= ${binary:Version}), libterm-ui-perl
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, openssh-client | ssh, cron, lsb-base, libsort-versions-perl, libdbi-perl,  oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version}), oar-server-pgsql (= ${binary:Version}) | oar-server-mysql (= ${binary:Version}), perl (<< 5.17) | libterm-ui-perl
 Recommends: libxml-dumper-perl, libyaml-perl
 Suggests: taktuk , phpmyadmin, oar-node, oar-doc, openssh-server | ssh
 Description: OAR batch scheduler server package
