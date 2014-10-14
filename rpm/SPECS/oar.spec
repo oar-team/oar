@@ -1,4 +1,4 @@
-%define version 2.5.4+rc5
+%define version 2.5.4+rc6
 %define release 1.el6
 
 %define oaruser  oar
@@ -303,7 +303,6 @@ rm -rf tmp
 %attr(0755, root, root) %{_sbindir}/oar-database
 %attr(0755, root, root) %{_sbindir}/oar-server
 %attr(6754, root, oar) %{_sbindir}/Almighty
-%attr(6754, root, oar) %{_sbindir}/oar_checkdb
 %attr(6754, root, oar) %{_sbindir}/oar_phoenix
 %attr(6754, root, oar) %{_sbindir}/oar_resources_add
 %attr(6754, root, oar) %{_sbindir}/oar_resources_init
@@ -318,7 +317,6 @@ rm -rf tmp
 %attr(0755, root, root) %{_libdir}/oar/NodeChangeState
 %attr(0755, root, root) %{_libdir}/oar/bipbip
 %attr(0755, root, root) %{_libdir}/oar/finaud
-%attr(0755, root, root) %{_libdir}/oar/oar_checkdb.pl
 %attr(0755, root, root) %{_libdir}/oar/oar_meta_sched
 %attr(0755, root, root) %{_libdir}/oar/oar_resources_add
 %attr(0755, root, root) %{_libdir}/oar/oar_resources_init
