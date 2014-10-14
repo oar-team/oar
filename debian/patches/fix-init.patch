@@ -1,28 +1,14 @@
 Fix init scripts (to be included upstream)
---- a/setup/init.d/oar-server.in
-+++ b/setup/init.d/oar-server.in
-@@ -10,8 +10,10 @@
- 
- ### BEGIN INIT INFO
+Index: oar/setup/init.d/oar-server.in
+===================================================================
+--- oar.orig/setup/init.d/oar-server.in	2014-10-14 19:35:48.000000000 +0200
++++ oar/setup/init.d/oar-server.in	2014-10-14 19:41:14.479404293 +0200
+@@ -12,6 +12,8 @@
  # Provides:          oar-server
--# Required-Start:    $network $local_fs $remote_fs $all
-+# Required-Start:    $network $local_fs $remote_fs
+ # Required-Start:    $network $local_fs $remote_fs
  # Required-Stop:     $network $local_fs $remote_fs
 +# Should-Start:      postgresql mysql-server
 +# Should-Stop:       postgresql mysql-server
  # Default-Start:     2 3 4 5
  # Default-Stop:      0 1 6
  # Short-Description: OAR server
---- a/setup/init.d/oar-node.in
-+++ b/setup/init.d/oar-node.in
-@@ -7,8 +7,8 @@
- #
- ### BEGIN INIT INFO
- # Provides:         oar-node
--# Required-Start:   $all
--# Required-Stop:    $all
-+# Required-Start:   $network $local_fs $remote_fs
-+# Required-Stop:    $network $local_fs $remote_fs
- # Default-Start:    2 3 4 5
- # Default-Stop:     0 1 6
- # Short-Description:    OAR compute node
