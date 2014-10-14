@@ -1,4 +1,4 @@
-oar (2.5.4~rc5-1) unstable; urgency=medium
+oar (2.5.4~rc6-1) unstable; urgency=medium
 
   [ Pierre Neyron ]
   * New upstream release
@@ -10,7 +10,7 @@ oar (2.5.4~rc5-1) unstable; urgency=medium
   * Bump Standards-Version
   * (re)start service on upgrade/start
 
- -- Vincent Danjean <vdanjean@debian.org>  Tue, 14 Oct 2014 13:50:30 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 14 Oct 2014 19:44:32 +0200
 
 oar (2.5.3-3) unstable; urgency=low
 
