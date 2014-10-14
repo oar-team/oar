@@ -186,7 +186,7 @@ function resource_id_sort($r2, $r1) {
       return $cmp;
     }
   }
-  return ($r1->cpuset - $r2->cpuset);
+  return ($r2->cpuset - $r1->cpuset);
 }
 
 // class to compute colors for jobs

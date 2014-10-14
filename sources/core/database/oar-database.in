@@ -121,33 +121,33 @@ sub print_usage() {
     print <<EOS;
 Usage: $0 <ACTION> [OPTIONS]
 
-Setup the database used by OAR
+Setup OAR database.
 
 Actions:
-     --create                       create a new db user / database
-     --check                        check if the database is ready to be used
-     --drop                         drop the current db user / database
-     --setup                        Setup the oar database with an exisiting db user / database
-     --reset                        Reset the oar database with an exisiting db user / database
+     --create                       Create OAR database
+     --drop                         Drop OAR database
+     --upgrade                      Upgrade OAR database
+     --reset                        Reset OAR database
+     --check                        Check if database is ready
 
 Options:
- -h, --help                         Show this help screen
- -d, --debug                        Print debug information
- -f, --force-sql                    Force the execution even if an sql instruction fails
- -y, --force-yes                    This option will cause oar-database to continue without prompting if it is doins something potentially harmful
-     --conf=OAR_CONF_FILE           Use the configuration file given in parameters. Default '%%OARCONFDIR%%/oar.conf'
-     --db-type=DB_TYPE              Specify the database type ('mysql' or 'Pg')
-     --db-host=DB_HOST              Specify the database hostname
-     --db-port=DB_PORT              Specify the database port
-     --db-user=DB_USER              Specify the database user
-     --db-pass=DB_PASS              Specify the database password
-     --db-name=DB_NAME              Specify the database name
-     --db-ro-user=DB_RO_USER        Specify the read-only database user 
-     --db-ro-pass=DB_RO_PASS        Specify the read-only database pass 
+     --conf=OAR_CONF_FILE           Use a different OAR configuration file. Default is '%%OARCONFDIR%%/oar.conf'
+     --db-type=DB_TYPE              Set the database type ('mysql' or 'Pg')
+     --db-host=DB_HOST              Set the database hostname
+     --db-port=DB_PORT              Set the database port
+     --db-user=DB_USER              Set the database user
+     --db-pass=DB_PASS              Set the database password
+     --db-name=DB_NAME              Set the database name
+     --db-ro-user=DB_RO_USER        Set the read-only database user 
+     --db-ro-pass=DB_RO_PASS        Set the read-only database pass 
 
-     --db-is-local                  Tell that the database is local. oar-database can use local admin account to execute command (usefull for postgres). Only used when using --create
-     --db-admin-user=DB_ADMIN_USER  Specify the database admin user needed to create user/database. Only used when using --create
-     --db-admin-pass=DB_ADMIN_PASS  Specify the database admin user needed to create user/database. Only used when using --create
+     --db-is-local                  The database is local, the script can use the local admin account to execute command (for PostgreSQL)
+     --db-admin-user=DB_ADMIN_USER  Set the database admin user to create the database. Only used with the --create action
+     --db-admin-pass=DB_ADMIN_PASS  Set the database admin password to create the database. Only used with the --create action
+ -y, --force-yes                    Force oar-database to continue without prompt even if it could be harmful
+ -f, --force-sql                    Force the execution even if a SQL command fails
+ -d, --debug                        Print debug information
+ -h, --help                         Show this message
 
 For more information, see the manual page.
 EOS
@@ -432,7 +432,7 @@ if ($usage){ print_usage(); exit(0); }
 # Check the action
 #
 if ( !$action ) {
-    print "Error: You must specify the action do be done.\n";
+    print "Error: You must specify the action do be done.\n\n";
     print_usage();
     exit(1);
 }
@@ -446,7 +446,7 @@ if ( ! $conffile ) {
 
 }
 unless ( -r $conffile ) {
-    print "Error: The configuration file is not readable.\n";
+    print "Error: The configuration file is not readable.\n\n";
     print_usage();
     exit(1);
 }
@@ -465,12 +465,12 @@ if (! $db_type) {
             $db_port = OAR::Conf::get_conf("DB_PORT");
         }
     } else {
-        print "Error: The database type is not set.\n";
+        print "Error: The database type is not set.\n\n";
         print_usage();
         exit(1);
     }
 } elsif ( $db_type ne "Pg" && $db_type ne "mysql") {
-    print "Error: The database type must be either 'Pg' or 'mysql'.\n";
+    print "Error: The database type must be either 'Pg' or 'mysql'.\n\n";
     print_usage();
     exit(1);
 }
@@ -596,15 +596,25 @@ $Term::UI::VERBOSE = 0;
 
 if ($action eq "check") {
     $ENV{'OARCONFFILE'} = "%%OARCONFDIR%%/oar.conf";
-    if (defined(OAR::IO::connect_ro_one_log("log"))) {
-        print "Success: The OAR database is accessible and ready to be used.\n";
-        exit 0;
-    }
-    else {
-        print "Error: The OAR database is not ready.\n";
+    if (not defined(OAR::IO::connect_ro_one_log("log"))) {
+        print "Error: Cannot connect to OAR database.\n";
         exit 1;
+    } else {
+        check_user_db_access($db_user,$db_pass);
+        # Retrieve the current version (check if shema table exist before)
+        my $db_version = get_current_schema_version();
+        if (not defined($db_version)) {
+            print "Error: No OAR database schema version found.\n";
+            exit 1;
+        }
+        if ($db_version ne $DEFAULT_LAST_VERSION) {
+            print "Error: OAR database version mismatch. Current version is $db_version while $DEFAULT_LAST_VERSION is required.\n";
+            exit 1;
+        }
     }
-} elsif ($action eq "setup") {
+    print "Success: The OAR database is accessible and ready to be used.\n";
+    exit 0;
+} elsif ($action eq "setup" or $action eq "upgrade") {
     check_user_db_access($db_user,$db_pass);
     if($force_yes || $term->ask_yn(
             prompt => "Are you sure you want to upgrade your database ? (Please backup the database before)", 
