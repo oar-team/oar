@@ -59,13 +59,13 @@ override_dh_clean:
 	$(MAKE) -e packages-clean   PACKAGES_DIR=$(CURDIR)/$(INSTALLDIR)
 		
 	# Cleaning package
-	rm -f debian/oar-server.init
-	rm -f debian/oar-node.init
-	rm -f debian/oar-server.default
-	rm -f debian/oar-node.default
-	rm -f debian/oar-common.logrotate
-	rm -f debian/oar-server.cron.d
-	rm -f debian/oar-node.cron.d
+	$(RM) debian/oar-server.init
+	$(RM) debian/oar-node.init
+	$(RM) debian/oar-server.default
+	$(RM) debian/oar-node.default
+	$(RM) debian/oar-common.logrotate
+	$(RM) debian/oar-server.cron.d
+	$(RM) debian/oar-node.cron.d
 
 override_dh_installinit:
 	dh_installinit
