@@ -1,4 +1,4 @@
-%define version 2.5.4+rc6
+%define version 2.5.4+rc7
 %define release 1.el6
 
 %define oaruser  oar
@@ -499,7 +499,7 @@ user_setup
 - Fix hard-coded paths using macros, to please rpmlint
 - Fix file mode for the oar_resources_add and oaradmissionrules commands
 - Fix deps for oar-web-status: add perl-CGI
-
+- Remove oar_dbcheck (replaced by oar-database --check)
 
 * Wed Jun 19 2013 Pierre Neyron <pierre.neyron@imag.fr> 2.5.3-1.el6
 - New upstream release
