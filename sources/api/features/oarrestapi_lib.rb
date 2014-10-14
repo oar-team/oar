@@ -596,6 +596,27 @@ if !@deletehash.is_a?(Hash) or @deletehash.empty?
 end
 end
 
+########################################################################
+#
+# Method: oar_whoami
+#
+# Usecase24: Gives authenticated user seen by  OAR API. 
+#
+# Input: Nil
+#
+# Result: GETs the authenticated user details(hash)and stores in Hash oarv
+#
+########################################################################
+
+
+def  oar_whoami
+@oarv = get(@api, '/whoami')
+if !@oarv.is_a?(Hash) or @oarv.empty?
+	raise 'Error: In return value of GET /version API' 
+end
+end
+
+############################################
 def get_link_href(rel)
   @value['links'].each do |link|
     if link.is_a?(Hash) && link['rel'] == rel 

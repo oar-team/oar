@@ -21,19 +21,21 @@ my $exitValue = 0;
 # Display command help
 sub usage {
     print <<EOS;
-Usage: $0 [-c|-b|-s][--array][job_ids][-h][-V]
-Delete or send checkpoint signal to jobs.
+Usage: $0 [options] <job_id> [job_id [...] ] 
+       $0 [options] --sql <SQL WHERE clause>
+
 Options:
   -h, --help              show this help screen
-  -c, --checkpoint        send checkpoint signal to the job_ids
-  -s, --signal		  send the signal given as parameter to the job_ids
-  -b, --besteffort        tag specified jobs as besteffort (or remove it
-                          if they are already besteffort)
-      --array             delete/checkpoint array job(s) passed as parameter 
-                          (all the sub-jobs)
-      --sql               delete/checkpoint jobs which respond to the SQL
-                          where clause on the table jobs
-                          (ex: "project = 'p1'")
+  -c, --checkpoint        send checkpoint signal to the jobs
+  -s, --signal <SIG>      send signal SIG to the jobs
+  -b, --besteffort        change the specified jobs to besteffort jobs (or
+                          remove them if they are already besteffort)
+      --array             handle array job ids, and their sub jobs.
+      --sql <SQL>         select jobs using a SQL WHERE clause on table jobs
+                          (e.g. "project = 'p1'")
+      --force-terminate-finishing-job
+                          force jobs stuck in the Finishing state to switch to
+                          Terminated (Warning: only use as a last resort)
   -V, --version           print OAR version number
 EOS
     exit(1);
@@ -74,15 +76,17 @@ my $Version;
 my $Sql_property;
 my $Besteffort;
 my $array;
+my $Force_terminate_finishing_job;
 
 GetOptions ("checkpoint|c" => \$Checkpoint,
-            "signal|s:s" => \$signal,
+            "signal|s=s" => \$signal,
             "besteffort|b" => \$Besteffort,
             "help|h" => \$sos,
             "array" => \$array,
             "sql=s"   => \$Sql_property,
+            "force-terminate-finishing-job" => \$Force_terminate_finishing_job,
             "version|V" => \$Version
-           );
+           ) or exit(1);
 
 if (defined($sos)){
     usage();
@@ -161,7 +165,7 @@ if (defined($Checkpoint)){
             my $strComment;
             # Retrieve node names used by the job
             my @hosts = OAR::IO::get_job_current_hostnames($base,$idJob);
-            my $types = OAR::IO::get_current_job_types($base,$idJob);
+            my $types = OAR::IO::get_job_types_hash($base,$idJob);
             my $host_to_connect = $hosts[0];
             if ((defined($types->{cosystem})) or ($#hosts < 0)){
                 $host_to_connect = $Cosystem_hostname;
@@ -217,7 +221,7 @@ if (defined($Checkpoint)){
             my $strComment;
             # Retrieve node names used by the job
             my @hosts = OAR::IO::get_job_current_hostnames($base,$idJob);
-            my $types = OAR::IO::get_current_job_types($base,$idJob);
+            my $types = OAR::IO::get_job_types_hash($base,$idJob);
             my $host_to_connect = $hosts[0];
             if ((defined($types->{cosystem})) or ($#hosts < 0)){
                 $host_to_connect = $Cosystem_hostname;
@@ -253,6 +257,37 @@ if (defined($Checkpoint)){
             }
         }
     }
+}elsif (defined($Force_terminate_finishing_job)){
+    my $lusr= $ENV{OARDO_USER};
+    if (($lusr ne "oar") and ($lusr ne "root")){
+        $exitValue = 8;
+        warn("You must be oar or root to use the --force-terminate-finishing-job option\n");
+    }else{
+        my $max_duration = 2 * OAR::Tools::get_taktuk_timeout() + OAR::Conf::get_conf_with_default_param("SERVER_PROLOGUE_EPILOGUE_TIMEOUT",0);
+        foreach my $j (@job_ids){
+            print("Force the termination of the job = $j ...");
+            if (OAR::IO::get_job_state($base, $j) eq "Finishing"){
+                my $duration = OAR::IO::get_job_duration_in_state($base, $j, "Finishing");
+                if ($duration > $max_duration){
+                    OAR::IO::add_new_event($base,"FORCE_TERMINATE_FINISHING_JOB",$j,"[oardel] Force to Terminate the job $j which is in Finishing state");
+                    print("REGISTERED.\n");
+                }else{
+                    $exitValue = 11;
+                    print("ERROR.\n");
+                    warn("The job $j is not in the Finishing state for more than ".$max_duration."s (".$duration."s).\n");
+                }
+            }else{
+                $exitValue = 10;
+                print("ERROR.\n");
+                warn("The job $j is not in the Finishing state.\n");
+            }
+        }
+        my $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+        if (defined($strError)){
+            warn("$strError\n");
+            $exitValue = 2;
+        }
+    }
 }elsif (defined($Besteffort)){
     my $lusr= $ENV{OARDO_USER};
     if (($lusr ne "oar") and ($lusr ne "root")){
@@ -263,7 +298,7 @@ if (defined($Checkpoint)){
             OAR::IO::lock_table($base,["jobs","job_types","resources","assigned_resources","event_logs"]);
             my $job = OAR::IO::get_job($base, $j);
             if (defined($job->{state}) and ($job->{state} eq "Running")){ 
-                my $types = OAR::IO::get_current_job_types($base,$j);
+                my $types = OAR::IO::get_job_types_hash($base,$j);
                 if (defined($types->{besteffort})){
                     OAR::IO::update_current_scheduler_priority($base,$job->{job_id},$job->{assigned_moldable_job},"-2","STOP");
                     OAR::IO::remove_current_job_types($base,$job->{job_id},"besteffort");
@@ -281,7 +316,6 @@ if (defined($Checkpoint)){
             }
             OAR::IO::unlock_table($base);
         }
-        OAR::IO::disconnect($base);
         my $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         if (defined($strError)){
             warn("$strError\n");
@@ -291,6 +325,7 @@ if (defined($Checkpoint)){
 }else{
     # oardel is used to delete some jobs
     my @jobRegistered;
+    my $notify_almighty = 0;
     foreach my $idJob (@job_ids) {
         print("Deleting the job = $idJob ...");
         # Try to insert delete informations in the database
@@ -304,15 +339,16 @@ if (defined($Checkpoint)){
         }elsif ($err == -2){
             print("ERROR.\n");
             warn("Cannot frag $idJob ; This job was already killed.\n");
+            $notify_almighty = 1;
             $exitValue = 6;
 	}else{
             print("REGISTERED.\n");
+            $notify_almighty = 1;
             push(@jobRegistered,$idJob);
         }
 
     }
-    OAR::IO::disconnect($base);
-    if (@jobRegistered){
+    if ($notify_almighty > 0){
         #Signal Almigthy
         my $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
         $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Qdel") if (!defined($strError));
@@ -320,10 +356,11 @@ if (defined($Checkpoint)){
             warn("$strError\n");
             $exitValue = 2;
         }else{
-            print("The job(s) [ @jobRegistered ] will be deleted in a near future.\n");
+            print("The job(s) [ @jobRegistered ] will be deleted in a near future.\n") if (@jobRegistered);
         }
     }
 }
 
 
+OAR::IO::disconnect($base);
 exit($exitValue);

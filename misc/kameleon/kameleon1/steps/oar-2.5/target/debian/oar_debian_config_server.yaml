@@ -1,0 +1,10 @@
+oar_debian_config_server:
+ - configure_mysql:
+   - exec_chroot: /etc/init.d/mysql start
+   - exec_on_clean: chroot $$chroot bash -c "/etc/init.d/mysql stop || true"
+   
+ - configure_initd:
+   - exec_chroot: cp $$oar_prefix_install/share/oar/oar-server/init.d/oar-server /etc/init.d/
+   - exec_chroot: cp $$oar_prefix_install/share/oar/oar-server/default/oar-server /etc/default/
+   - exec_chroot: update-rc.d oar-server defaults
+

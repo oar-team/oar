@@ -1,0 +1,10 @@
+
+drawgantt_svg_setup() {
+
+    install_conffile \
+        ${SHAREDIR}/drawgantt-config.inc.php \
+        ${OARCONFDIR}/drawgantt-config.inc.php \
+        0600 \
+        ${WWWUSER}
+
+}

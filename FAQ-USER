@@ -12,7 +12,7 @@ Since the version 2.2, release numbers are divided into 3 parts:
 How can I submit a moldable job?
 --------------------------------
 
-You just have to use several "-l" oarsub_ option(one for each moldable
+You just have to use several "-l" oarsub_ option (one for each moldable
 description). By default the OAR scheduler will launch the moldable job which
 will end first.
 
@@ -26,7 +26,7 @@ How can I submit a job with a non uniform description?
 Example:
 ::
     
-    oarsub -I -l '{switch = "sw1" or switch = "sw5"}/switch=1+/node=1'
+    oarsub -I -l '{switch="sw1" or switch="sw5"}/switch=1+/node=1'
 
 This example asks OAR to reserve all resources from the switch sw1 or the
 switch sw2 **and** a node on another switch.
@@ -54,7 +54,7 @@ Example:
   2. Once your reservation has begun then you can launch:
      ::
 
-        oarsub -I -l /node=2,walltime=0:50:00 -p 'switch = "nom_du_switch_schedule"'\
+        oarsub -I -l /node=2,walltime=0:50:00 -p 'switch="'scheduled_switch_name'\
         -t 'timesharing=user,*'
 
      So this job will be scheduled on nodes assigned from the previous reservation.

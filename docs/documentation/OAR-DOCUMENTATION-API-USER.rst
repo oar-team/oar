@@ -342,6 +342,34 @@ GET /version
 
    wget -q -O - http://localhost/oarapi/version.yaml
 
+GET /whoami
+-----------
+:description:
+  Gives the name of authenticated user seen by OAR API. The name for a not authenticated user is the null string. 
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  public
+
+:output:
+  *structure*:
+    hash
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1245582255
+     authenticated_user: kameleon
+
+:usage example:
+  ::
+
+   wget -q -O - http://localhost/oarapi/whoami.yaml
+
+
 GET /timezone
 -------------
 :description:
@@ -385,6 +413,7 @@ GET /jobs
   - **from** (timestamp): restrict the list to the jobs that are running or not yet started before this date. Using this parameters disables the default behavior of listing only the jobs that are in queue.
   - **to** (timestamp): restrict the list to the jobs that are running or not yet finished at this date. Using this parameters disables the default behavior of listing only the jobs that are in queue.
   - **user**: restrict the list to the jobs owned by this username
+  - **ids**: colon separated list of ids to get a set of jobs
 
 :output:
   *structure*: collection
@@ -400,7 +429,11 @@ GET /jobs
            - href: /jobs/58
              rel: self
            - href: /jobs/58/resources
-             rel: resources
+             rel: collection
+             title: resources
+           - href: /oarapi/jobs/58/nodes
+             rel: collection
+             title: nodes
          name: ~
          owner: kameleon
          queue: default
@@ -412,7 +445,11 @@ GET /jobs
            - href: /jobs/59
              rel: self
            - href: /jobs/59/resources
-             rel: resources
+             rel: collection
+             title: resources
+           - href: /oarapi/jobs/59/nodes
+             rel: collection
+             title: nodes
          name: ~
          owner: kameleon
          queue: default
@@ -456,128 +493,135 @@ GET /jobs/details
   *yaml example*:
     ::
      
-     api_timestamp: 1286896291
+     api_timestamp: 1352707511
      items:
-       - api_timestamp: 1286896291
-         array_id: 0
-         array_index: 10
-         command: ~
-         cpuset_name: kameleon_58
+       - api_timestamp: 1352707511
+         array_id: 5540
+         array_index: ~
+         command: sleep 300
+         cpuset_name: kameleon_5540
          dependencies: []
-         events:
-           - date: 1284109395
-             description: '[bipbip 58] Ask to change the job state'
-             event_id: 84
-             job_id: 58
-             to_check: NO
-             type: SWITCH_INTO_TERMINATE_STATE
+         events: []
          exit_code: ~
-         id: 58
-         initial_request: ~
-         launching_directory: ~
+         id: 5540
+         initial_request: oarsub sleep 300
+         launching_directory: /home/kameleon
          links:
-           - href: /jobs/58
+           - href: /oarapi/jobs/5540
              rel: self
-           - href: /jobs/58/resources
-             rel: resources
-         message: ~
+           - href: /oarapi/jobs/5540/resources
+             rel: collection
+             title: resources
+           - href: /oarapi/jobs/5540/nodes
+             rel: collection
+             title: nodes
+         message: Karma = 0.000
          name: ~
          nodes:
-           - api_timestamp: 1286896291
-             id: 0
+           - api_timestamp: 1352707511
              links:
-               - href: /resources/nodes/fake2
+               - href: /oarapi/resources/nodes/node1
                  rel: self
-             network_address: fake2
-         owner: kameleon
-         project: ~
-         properties: ~
-         queue: default
-         reservation: ~
-         resources:
-           - api_timestamp: 1286896291
-             id: 5
-             links:
-               - href: /resources/5
-                 rel: self
-               - href: /resources/5/jobs
-                 rel: jobs
-             resource_id: 5
+             network_address: node1
              status: assigned
-         resubmit_job_id: 0
-         scheduled_start: 0
-         start_time: 0
-         state: Terminated
-         submission_time: 1284109267
-         type: ~
+         owner: kameleon
+         project: default
+         properties: desktop_computing = 'NO'
+         queue: default
+         reservation: None
+         resources:
+           - api_timestamp: 1352707511
+             id: 1
+             links:
+               - href: /oarapi/resources/1
+                 rel: self
+               - href: /oarapi/resources/1/jobs
+                 rel: collection
+                 title: jobs
+             status: assigned
+         resubmit_job_id: ~
+         scheduled_start: 1352707488
+         start_time: 1352707488
+         state: Running
+         stderr_file: OAR.5540.stdout
+         stdout_file: OAR.5540.stderr
+         stop_time: 0
+         submission_time: 1352707487
+         type: PASSIVE
          types: []
          walltime: 7200
-         wanted_resources: "-l \"{type = 'default'}/network_address=1/core=1,walltime=2:0:0\" "
-       - api_timestamp: 1286896291
-         array_id: 0
-         array_index: 1
-         command: ~
-         cpuset_name: kameleon_59
+         wanted_resources: "-l \"{type = 'default'}/resource_id=1,walltime=2:0:0\" "
+       - api_timestamp: 1352707511
+         array_id: 5542
+         array_index: ~
+         command: sleep 300
+         cpuset_name: kameleon_5542
          dependencies: []
-         events:
-           - date: 1284109910
-             description: '[bipbip 59] Ask to change the job state'
-             event_id: 85
-             job_id: 59
-             to_check: NO
-             type: SWITCH_INTO_TERMINATE_STATE
+         events: []
          exit_code: ~
-         id: 59
-         initial_request: ~
-         launching_directory: ~
+         id: 5542
+         initial_request: oarsub -l /core=2 sleep 300
+         launching_directory: /home/kameleon
          links:
-           - href: /jobs/59
+           - href: /oarapi/jobs/5542
              rel: self
-           - href: /jobs/59/resources
-             rel: resources
-         message: ~
+           - href: /oarapi/jobs/5542/resources
+             rel: collection
+             title: resources
+           - href: /oarapi/jobs/5542/nodes
+             rel: collection
+             title: nodes
+         message: Karma = 0.000
          name: ~
          nodes:
-           - api_timestamp: 1286896291
-             id: 0
+           - api_timestamp: 1352707511
              links:
-               - href: /resources/nodes/fake2
+               - href: /oarapi/resources/nodes/node1
                  rel: self
-             network_address: fake2
-         owner: kameleon
-         project: ~
-         properties: ~
-         queue: default
-         reservation: ~
-         resources:
-           - api_timestamp: 1286896291
-             id: 5
-             links:
-               - href: /resources/5
-                 rel: self
-               - href: /resources/5/jobs
-                 rel: jobs
-             resource_id: 5
+             network_address: node1
              status: assigned
-         resubmit_job_id: 0
-         scheduled_start: 0
-         start_time: 0
-         state: Terminated
-         submission_time: 1284109846
-         type: ~
+         owner: kameleon
+         project: default
+         properties: desktop_computing = 'NO'
+         queue: default
+         reservation: None
+         resources:
+           - api_timestamp: 1352707511
+             id: 3
+             links:
+               - href: /oarapi/resources/3
+                 rel: self
+               - href: /oarapi/resources/3/jobs
+                 rel: collection
+                 title: jobs
+             status: assigned
+           - api_timestamp: 1352707511
+             id: 4
+             links:
+               - href: /oarapi/resources/4
+                 rel: self
+               - href: /oarapi/resources/4/jobs
+                 rel: collection
+                 title: jobs
+             status: assigned
+         resubmit_job_id: ~
+         scheduled_start: 1352707510
+         start_time: 1352707510
+         state: Running
+         stderr_file: OAR.5542.stdout
+         stdout_file: OAR.5542.stderr
+         stop_time: 0
+         submission_time: 1352707509
+         type: PASSIVE
          types: []
          walltime: 7200
-         wanted_resources: "-l \"{type = 'default'}/network_address=1/core=1,walltime=2:0:0\" "
+         wanted_resources: "-l \"{type = 'default'}/core=2,walltime=2:0:0\" "
      links:
-       - href: /jobs/details.yaml?state=Terminated&limit=2&offset=48
+       - href: /oarapi/jobs/details.yaml?offset=0
          rel: self
-       - href: /jobs/details.yaml?state=Terminated&limit=2&offset=50
-         rel: next
-       - href: /jobs/details.yaml?state=Terminated&limit=2&offset=46
-         rel: previous
-     offset: 48
-     total: 206
-     
+     offset: 0
+     total: 2
+
 usage example:
   ::
 
@@ -691,10 +735,10 @@ GET /jobs/table
 
    wget -q -O - http://localhost/oarapi/jobs/table.yaml
 
-GET /jobs/<id>
---------------
+GET /jobs/<id>[/details]
+------------------------
 :description:
-  Get details about the given job
+  Get infos about the given job. If /details is appended, it gives more informations, such as the expanded list of resources allocated to the job.
 
 :parameters:
   - **id**: the id of a job
@@ -711,68 +755,65 @@ GET /jobs/<id>
   *yaml example*:
     ::
 
-     ---
-     Job_Id: 547
-     id: 547
-     uri: /jobs/547
-     array_id: 547
-     array_index: 1
-     assigned_network_address:
-       - liza-2
-     assigned_resources:
-       - 6
-     command: ''
-     cpuset_name: bzizou_547
+     api_timestamp: 1352707658
+     array_id: 5230
+     array_index: 3
+     command: /home/kameleon/cigri-3/tmp/test1.sh param48 48
+     cpuset_name: kameleon_5232
      dependencies: []
      events:
-       - date: 1245775464
-         description: User root requested to frag the job 547
-         event_id: 1315
-         job_id: 547
+       - date: 1351087783
+         description: Scheduler priority for job 5232 updated (network_address/resource_id)
+         event_id: 14454
+         job_id: 5232
          to_check: NO
-         type: FRAG_JOB_REQUEST
-       - date: 1245775464
-         description: '[sarko] Job [547] from 1245768251 with 7200; current time=1245775463 (Elapsed)'
-         event_id: 1316
-         job_id: 547
+         type: SCHEDULER_PRIORITY_UPDATED_STOP
+       - date: 1351087782
+         description: '[bipbip 5232] Ask to change the job state'
+         event_id: 14451
+         job_id: 5232
          to_check: NO
-         type: WALLTIME
-       - date: 1245775464
-         description: '[Leon] Send kill signal to oarexec on liza-2 for the job 547'
-         event_id: 1318
-         job_id: 547
+         type: SWITCH_INTO_TERMINATE_STATE
+       - date: 1351087660
+         description: Scheduler priority for job 5232 updated (network_address/resource_id)
+         event_id: 14446
+         job_id: 5232
          to_check: NO
-         type: SEND_KILL_JOB
-       - date: 1245775469
-         description: '[bipbip 547] Ask to change the job state'
-         event_id: 1320
-         job_id: 547
-         to_check: NO
-         type: SWITCH_INTO_ERROR_STATE
-     exit_code: ~
-     initial_request: ''
-     jobType: INTERACTIVE
-     job_uid: ~
-     job_user: bzizou
-     launchingDirectory: /home/bzizou
-     message: FIFO scheduling OK
+         type: SCHEDULER_PRIORITY_UPDATED_START
+     exit_code: 0
+     id: 5232
+     initial_request: oarsub --resource=core=1 --type=besteffort /home/kameleon/cigri-3/tmp/test1.sh --array-param-file=/tmp/oarapi.paramfile.7QPM0
+     launching_directory: /home/kameleon
+     links:
+       - href: /oarapi/jobs/5232
+         rel: self
+       - href: /oarapi/jobs/5232/resources
+         rel: collection
+         title: resources
+       - href: /oarapi/jobs/5232/nodes
+         rel: collection
+         title: nodes
+     message: Karma = 0.000
      name: ~
-     owner: bzizou
+     owner: kameleon
      project: default
-     properties: desktop_computing = 'NO'
-     queue: default
+     properties: (besteffort = 'YES') AND desktop_computing = 'NO'
+     queue: besteffort
      reservation: None
-     resources_uri: /jobs/547/resources
      resubmit_job_id: 0
-     scheduledStart: ~
-     startTime: 1245768251
-     state: Error
-     submissionTime: 1245768249
-     types: []
+     scheduled_start: ~
+     start_time: 1351087660
+     state: Terminated
+     stderr_file: OAR.5232.stderr
+     stdout_file: OAR.5232.stdout
+     stop_time: 1351087782
+     submission_time: 1351087659
+     type: PASSIVE
+     types:
+       - besteffort
      walltime: 7200
-     wanted_resources: "-l \"{type = 'default'}/resource_id=1,walltime=2:0:0\" "
-
-
+     wanted_resources: "-l \"{type = 'default'}/core=1,walltime=2:0:0\" "
+     
 :usage example:
   ::
 
@@ -798,20 +839,23 @@ GET /jobs/<id>/resources
   *yaml example*:
     ::
 
-     ---
-     api_timestamp: 1253279408
-     assigned_nodes:
-       - node: liza-1
-         node_uri: /resources/nodes/liza-1
-     assigned_resources:
-       - resource_id: 4
-         resource_uri: /resources/4
-       - resource_id: 5
-         resource_uri: /resources/5
-     job_id: 622
-     job_uri: /jobs/622
-     reserved_resources: []
-
+     api_timestamp: 1352707730
+     items:
+       - api_timestamp: 1352707730
+         id: 7
+         links:
+           - href: /oarapi/resources/7
+             rel: self
+           - href: /oarapi/resources/7/jobs
+             rel: collection
+             title: jobs
+         status: assigned
+     links:
+       - href: /oarapi/jobs/5232/resources.yaml
+         rel: self
+     offset: 0
+     total: 1
+     
 :usage example:
   ::
 
@@ -1292,8 +1336,8 @@ GET /resources
 
    wget -q -O - http://localhost/oarapi/resources.yaml
 
-GET /resources/full
--------------------
+GET /resources/details
+----------------------
 :description:
   Get the list of resources and all the details about them
 
@@ -1399,11 +1443,11 @@ GET /resources/full
 	      type: default
 	      uri: '/resources/3.html'
 	  links:
-	    - href: '/resources/full.yaml?limit=5&offset=2'
+	    - href: '/resources/details.yaml?limit=5&offset=2'
 	      rel: previous
-	    - href: '/resources/full.yaml?limit=5&offset=7'
+	    - href: '/resources/details.yaml?limit=5&offset=7'
 	      rel: self
-	    - href: '/resources/full.yaml?limit=5&offset=12'
+	    - href: '/resources/details.yaml?limit=5&offset=12'
 	      rel: next
      offset: 2
 	 total: 49
@@ -1411,7 +1455,7 @@ GET /resources/full
 :usage example:
   ::
 
-   wget -q -O - http://localhost/oarapi/resources/full.yaml
+   wget -q -O - http://localhost/oarapi/resources/details.yaml
    
    *note*: The following parameters can be passed through the requested URL
           - limit : limit of resources to be shown per page
@@ -1508,7 +1552,7 @@ GET /resources/nodes/<network_address>
 POST /resources/generate
 ------------------------
 :description:
-  Generates (outputs) a set of resources using oaradmin. The result may then be directly sent to /resources for actual creation.
+  Generates (outputs) a set of resources. The result may then be directly sent to /resources for actual creation.
 
 :formats:
   html , yaml , json
@@ -1522,7 +1566,7 @@ POST /resources/generate
   *structure*: hash describing the resources to generate
 
   *fields*:
-     - **resources** (*string*): A string corresponding to the resources definition as it could have been passed to the "oaradmin resources -a" command (see man oaradmin).
+     - **resources** (*string*): A string corresponding to the resources definition.
      - **properties** (*hash*): an optional hash defining some common properties for these new resources
 
   *yaml example*:
@@ -1749,7 +1793,7 @@ GET /admission_rules
   html , yaml , json
 
 :authentication:
-  public
+  oar
 
 :output:
   *structure*: hash
@@ -1817,7 +1861,7 @@ GET /admission_rules/<id>
   html , yaml , json
 
 :authentication:
-  public
+  oar
 
 :output:
   *structure*: 1 element array of hash
@@ -1869,6 +1913,80 @@ DELETE /admission_rule/<id>
   :note:
   	Not all clients support the DELETE method, especially some www browsers. So, you can do the same thing with a POST of a {"method":"delete"} hash on the /admission_rule/<id> rule.
   	If the admission rule could not be deleted, returns a 403 and the reason into the message body.
+
+POST /admission_rules
+---------------------
+:description:
+  Add a new admission rule
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:input:
+  *structure*: hash 
+
+  *fields*:
+     - **rule** (*text*): The admission rule to add
+
+  *yaml example*:
+    ::
+
+     ---
+     rule: |
+       echo "This is a test rule"
+
+:output:
+  A 201 (created) header is returned if the rule is successfully created, with a location value.
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1340180126
+     id: 19
+     rule: echo "This is a test rule"
+     uri: /oarapi-priv/admission_rules/19
+
+POST /admission_rules/<id>
+--------------------------
+:description:
+  Update or delete the admission rule given by *id*
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:input:
+  *structure*: hash 
+
+  *fields*:
+     - **rule** (*text*): The content of the admission rule to update
+     - **method=delete** : If given, the admission rule is deleted
+
+  *yaml example*:
+    ::
+
+     ---
+     rule: |
+       echo "This is a test rule"
+
+:output:
+  A 201 (created) header is returned if the rule is successfully updated, with a location value.
+
+  *yaml example*:
+    ::
+
+     ---
+     api_timestamp: 1340180126
+     id: 19
+     rule: echo"test rule"
+     uri: /oarapi-priv/admission_rules/19
+
 
 GET /config
 -----------
@@ -1947,6 +2065,29 @@ GET /config
 
    curl -i -X GET http://login:password@localhost/oarapi-priv/config.yaml
 
+GET /config/file
+----------------
+:description:
+  Get the raw config file of OAR. It also output the path of the file used by the API.
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  oar
+
+:output:
+  *structure*: hash
+
+  *fields*:
+     - **path** : The path of the config file
+     - **file** : The raw content of the config file (text)
+
+:usage example:
+  ::
+
+   curl -i -X GET http://kameleon:kameleon@localhost/oarapi-priv/config/file.yaml
+
 GET /config/<variable>
 ----------------------
 :description:
@@ -2019,10 +2160,82 @@ POST /config/<variable>
 :note:
   config.yaml contains the value of the variable.
 
+GET /media/ls/<file_path>
+-------------------------
+:description:
+  Get a list of the directory from the path given by *file_path*. The *file_path* may contain the special character "~" that is expanded to the home directory of the user that is making the request.
+
+:formats:
+  html , yaml , json
+
+:authentication:
+  user
+
+:output:
+ *structure*: array of hashes giving for each listed file: the name, the mode, the size, the modification time and the type (*f* for a file or *d* for a directory)
+ 
+ *yaml example*:
+  ::
+
+     ---
+     api_timestamp: 1340095354
+     items:
+       - mode: 33188
+         mtime: 1339685040
+         name: API.pm
+         size: 58620
+         type: f
+       - mode: 16877
+         mtime: 1340094660
+         name: bart
+         size: ~
+         type: d
+       - mode: 16877
+         mtime: 1338993000
+         name: cigri-3
+         size: ~
+         type: d
+       - mode: 16877
+         mtime: 1340095200
+         name: oar
+         size: ~
+         type: d
+       - mode: 16877
+         mtime: 1334132940
+         name: oar_install
+         size: ~
+         type: d
+       - mode: 33261
+         mtime: 1339685040
+         name: oarapi.pl
+         size: 75939
+         type: f
+       - mode: 33261
+         mtime: 1340027400
+         name: test.sh
+         size: 43
+         type: f
+     links:
+       - href: /oarapi-priv/media/ls/~/
+         rel: self
+     offset: 0
+     total: 7
+
+:usage example:
+  ::
+
+   curl -i -X GET http://kameleon:kameleon@localhost/oarapi-priv/media/ls/~/  -H'Content-Type: text/yaml'
+   
+:note:
+  returns a 404 if the path does not exist, or a 403 if the path is not readable. Errors in debug mode (with ?debug=1) are formated into yaml.
+
 GET /media/<file_path>
 ----------------------
 :description:
   Get a file located on the API host, into the path given by *file_path*. The *file_path* may contain the special character "~" that is expanded to the home directory of the user that is making the request. 
+
+:parameters:
+  - **tail**: specifies an optional number of lines for printing only the tail of a text file  
 
 :formats:
   application/octet-stream
@@ -2060,6 +2273,30 @@ POST /media/<file_path>
 
    curl -i -X POST -H'Content-Type: application/octet-stream' --data-binary @/etc/group http://kameleon:kameleon@localhost/oarapi-priv/media/~/testdir/testfile
 
+POST /media/chmod/<file_path>
+-----------------------------
+:description:
+  Changes the permissions on a file: do a chmod(1) on *file_path*. The special character "~" is expanded as the home of the user that makes the query.
+
+:formats:
+  html , yaml , json  
+
+:authentication:
+  user
+
+:input:
+  A [mode] entry is mandatory
+
+  *mode*: A mode definition as passed to the "chmod" unix command.
+
+:output:
+  202 if ok
+
+:usage example:
+  ::
+
+   curl -i -X POST http://kameleon:kameleon@localhost/oarapi-priv/media/chmod/~/param9  -H'Content-Type: application/json' -d '{"mode":"755"}'
+
 DELETE /media/<file_path>
 -------------------------
 :description:
@@ -2086,10 +2323,11 @@ Some equivalences with oar command line
       OAR command                   REST request
 =============================== ======================================
 oarstat                         GET /jobs.html
-oarstat -Y                      GET /jobs/details.yaml?structure=oar
-oarstat -Y -fj <id>             GET /jobs/<id>.yaml
+oarstat -Y                      GET /jobs/details.yaml
+oarstat -Y -j <id>              GET /jobs/<id>.yaml
+oarstat -Y -fj <id>             GET /jobs/<id>/details.yaml
 oardel <id>                     DELETE /jobs/<id>.yaml
 oardel <id> *(alternative way)* POST /jobs/deletions/<id>/new.yaml
-oarnodes -Y                     GET /resources/full.yaml?structure=oar
-oarnodes -Y -r1                 GET /resources/1.yaml?structure=oar
+oarnodes -Y                     GET /resources/details.yaml
+oarnodes -Y -r1                 GET /resources/1.yaml
 =============================== ======================================

@@ -2,31 +2,101 @@
 
 =head1 NAME
 
-oar_resource_init - Help to define the resources provided by a given set of
-nodes.
+oar_resource_init - Helper script to define OAR resources by SSHing to nodes
 
 =head1 SYNOPSIS
 
-B<oar_resource_init> I<host_list_file>
+B<oar_resource_init>  <hosts_file> [options]
 
 =head1 DESCRIPTION
 
-This script take a list of hosts from a file given in the parameter
-and write the OAR commands to execute to add the corresponding
-resources in the oar database to the file
-/tmp/oar_resources_init.txt
+The script takes a list of hosts from the file given as parameter and generates the OAR commands to add the resources which define those hosts in the OAR database.
+Generated commands are written by default in /tmp/oar_resources_init.cmd
 
-The <host_list_file> must contain one host per line and the
-corresponding hosts must be configured to allow OAR to access by
-ssh.
+B<host_file> must contain one host per line and the hosts must have their "oar-node" service started (this script connects to the hosts via ssh on the port 6667).
+
+The default resource hierarchy which is filled by this script is: host --> cpu --> core.
 
 =head1 OPTIONS
 
 =over 
 
-=item B<host_list_file>
+=item B<-o> [file]
 
-The path of the file containing the host list.
+Pathname for the output file to store the generated commands
+
+=item B<-H>
+
+This option can be used when Intel HyperThreading is enabled on the nodes. So for each declared core in the OAR database, the 2 corresponding threads are assigned.
+
+=item B<-T>
+
+This option can be used when Intel HyperThreading is enabled on the nodes. It adds the property "thread" in the OAR database and fills it with the hierarchy: host --> cpu --> core --> thread.
+
+
+=item B<-c> [path]
+
+Path to oar.conf
+
+=item B<-e> [path]
+
+Path to the SSH command
+
+=item B<-n> [path]
+
+Path to the oarnodesetting command
+
+=item B<-p> [path]
+
+Path to the oarproperty command
+
+=item B<-c> [path]
+
+Path to oar.conf
+
+=back
+
+=head1 ENVIRONMENT VARIABLES
+
+The following environment variables can be set to control the script:
+
+=over
+ 
+=item OARCONFFILE
+
+Path to OAR configuration file (default: /etc/oar/oar.conf).
+
+=back
+
+=over
+
+=item OPENSSH_CMD
+
+Path to the SSH command (default: /usr/bin/ssh).
+
+=back
+
+=over
+
+=item OARNODESETTING_CMD
+
+Path to the oarnodesetting command (default: oarproperty).
+
+=back
+
+=over
+
+=item OARPROPERTY_CMD
+
+Path to the oarproperty command (default: oarproperty).
+
+=back
+
+=over
+
+=item GENERATED_COMMANDS_FILE
+
+Path to the file to be created, containing the generated commands (default: /tmp/oar_resources_init.cmd).
 
 =back
 

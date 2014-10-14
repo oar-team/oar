@@ -6,29 +6,34 @@ api_setup() {
         mv ${OARCONFDIR}/apache-api.conf ${OARCONFDIR}/apache2/oar-restful-api.conf
     fi
     install_conffile \
-        ${EXAMPLEDIR}/apache2.conf \
+        ${SHAREDIR}/apache2.conf \
         ${OARCONFDIR}/apache2/oar-restful-api.conf \
         0600 ${WWWUSER}
 
     install_conffile \
-        ${EXAMPLEDIR}/api_html_header.pl \
+        ${SHAREDIR}/api_html_header.pl \
         ${OARCONFDIR}/api_html_header.pl \
         0600 ${OAROWNER}
 
     install_conffile \
-        ${EXAMPLEDIR}/api_html_postform.pl \
+        ${SHAREDIR}/api_html_postform.pl \
         ${OARCONFDIR}/api_html_postform.pl \
         0644 ${OAROWNER}
 
     install_conffile \
-        ${EXAMPLEDIR}/api_html_postform_resources.pl \
+        ${SHAREDIR}/api_html_postform_resources.pl \
         ${OARCONFDIR}/api_html_postform_resources.pl \
         0644 ${OAROWNER}
 
     install_conffile \
-        ${EXAMPLEDIR}/api_html_postform_rule.pl \
+        ${SHAREDIR}/api_html_postform_rule.pl \
         ${OARCONFDIR}/api_html_postform_rule.pl \
         0644 ${OAROWNER}
+
+    install_conffile \
+        ${SHAREDIR}/stress_factor.sh \
+        ${OARCONFDIR}/stress_factor.sh \
+        0700 ${OAROWNER}
 
     # install the apache2 configuration file
     if [ -d ${APACHECONFDIR}/conf.d ]; then

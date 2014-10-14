@@ -8,8 +8,11 @@ use Data::Dumper;
 #use OAR::IO;
 use Getopt::Long;
 #use OAR::Version;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use OAR::Stat;
+
+$SIG{HUP} = sub {OAR::Stat::close_db_connection(); exit(10)};
+$SIG{PIPE} = sub {OAR::Stat::close_db_connection(); exit(10)};
 
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
@@ -17,7 +20,6 @@ umask(oct("022"));
 # Read config
 init_conf($ENV{OARCONFFILE});
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
-my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 
 
 #Try to load XML module
@@ -49,6 +51,7 @@ my $Printed_jobs = 0;
 
 my @job_ids;
 my $array_id;
+my $compact;
 my $full_view;
 my $state;
 my $sql_property;
@@ -62,8 +65,9 @@ my $events_query;
 my $properties_query;
 my $usage;
 my $version;
-
 my $user;
+my $text_format = get_conf_with_default_param("OARSTAT_DEFAULT_OUTPUT_FORMAT", "1");
+$text_format = $ENV{OAR_OARSTAT_OUTPUT_FORMAT} if (defined($ENV{OAR_OARSTAT_OUTPUT_FORMAT}));
 ### END Variables declaration ###
 
 
@@ -78,6 +82,7 @@ GetOptions ("help|h" => \$usage,
             "state|s"  => \$state,
             "user|u:s" => \$user,
             "array:i" => \$array_id,
+            "compact|c" => \$compact,
             "gantt|g=s"   => \$gantt_query,
             "events|e" => \$events_query,
             "properties|p" => \$properties_query,
@@ -86,8 +91,9 @@ GetOptions ("help|h" => \$usage,
             "xml|X" => \$XML_mode,
             "yaml|Y" => \$YAML_mode,
             "json|J" => \$JSON_mode,
-            "dumper|D" => \$DUMPER_mode
-           );
+            "dumper|D" => \$DUMPER_mode,
+            "format=s" => \$text_format
+           ) or exit(1);
 
 if ($usage){
     &print_usage;
@@ -119,6 +125,11 @@ if (defined($array_id) && $array_id !=0 && (scalar @job_ids > 0)){
     exit(1);
 }
 
+if (defined($compact) && (defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode) || defined($full_view))) {
+    warn("/!\\ ERROR : compact view cannot be used with exports or full view\n");
+    exit(1);
+}
+
 OAR::Stat::open_db_connection() or die "DB connection error, exiting.\n";
 
 if (defined ($gantt_query)) {
@@ -145,7 +156,7 @@ exit(0);
 
 sub print_usage{
     print <<EOS;
-Usage: oarstat [-X|-Y|-D|-f|-s] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array]
+Usage: oarstat [-X|-Y|-D|-f|-s] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array] [--compact] [--format num]
        oarstat [-e|-p] [-j jobid|--array array_id] 
        oarstat [-X|-Y|-J|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
        oarstat --accounting "YYYY-MM-DD, YYYY-MM-DD"
@@ -159,12 +170,17 @@ Options:
   -u, --user                show informations for this user only
       --array               show informations for the specified array_job(s) and
                             toggle array view in
+  -c, --compact             prints a single line for array jobs
   -g, --gantt               show job informations between two date-times
   -e, --events              show job events
   -p, --properties          show job properties
       --accounting          show accounting informations between two dates
       --sql                 restricts display by applying the SQL where clause
                             on the table jobs (ex: "project = 'p1'")
+      --format              select the text output format. Available values
+                            are:
+                              - 1
+                              - 2
   -D, --dumper              print result in DUMPER format
   -X, --xml                 print result in XML format
   -Y, --yaml                print result in YAML format
@@ -234,23 +250,27 @@ sub print_job {
 			$jobs = OAR::Stat::get_array_subjobs($array_id);
         }else{
             $jobs = OAR::Stat::get_all_jobs_for_user($user);
+            if ($compact) {
+              $jobs = OAR::Stat::compact_arrays($jobs);
+            }
         }
     }
     elsif ( $#job_ids >= 0 ) {
         $jobs = OAR::Stat::get_specific_jobs(\@job_ids);
     }
-    my %data_to_print;
-    foreach my $g (@$jobs) {
-		$data_to_print{ $g->{job_id} } = OAR::Stat::get_job_data($g,$full_view);
-    }
-    print_job_data( \%data_to_print, $jobs );
+    print_job_data( $jobs );
 }
 
-sub print_job_data($$){
-    my $data = shift;
+sub print_job_data($){
     my $job_array = shift;
 
-   
+    my $data;
+    if (defined($DUMPER_mode) or defined($XML_mode) or defined($YAML_mode) or defined($JSON_mode) or defined($full_view)){
+		foreach my $j (@{$job_array}){
+            $data->{ $j->{job_id} } = OAR::Stat::get_job_data($j,$full_view);
+        }
+    }
+ 
     if (defined($DUMPER_mode)){
         print(Dumper($data));
     }elsif(defined($XML_mode)){
@@ -274,7 +294,8 @@ sub print_job_data($$){
 			'Finishing' => 'F',
 			'Suspended' => 'S',
 			'Resuming' => 'S',
-			'toAckReservation' => 'W'
+			'toAckReservation' => 'W',
+			'NA' => '-'
         );
 		
 		foreach my $job_info (@{$job_array}){
@@ -342,10 +363,6 @@ sub print_job_data($$){
                 if (defined($data->{$job_info->{job_id}}->{cpuset_name})){
                     print("    cpuset_name = $data->{$job_info->{job_id}}->{cpuset_name}\n");
                 }
-                if (defined($data->{$job_info->{job_id}}->{job_uid})){
-                    print("    job_user = $data->{$job_info->{job_id}}->{job_user}\n");
-                    print("    job_uid = $data->{$job_info->{job_id}}->{job_uid}\n");
-                }
                 if ((defined($job_info->{initial_request})) and
                     (($ENV{OARDO_USER} eq $job_info->{job_user}) or
                      ($ENV{OARDO_USER} eq "oar") or
@@ -371,48 +388,87 @@ sub print_job_data($$){
                 print("\n\n");
 			}else{
 				if(defined($array_id)){
-                    if ($Printed_jobs == 0){
-                        print <<EOS;
+                    if ($text_format eq "2"){
+    					if ($Printed_jobs == 0){
+	    					print <<EOS;
+Job id    A. id     index S User     Duration   System message
+--------- --------- ----- - -------- ---------- --------------------------------
+EOS
+		    			}
+					    $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
+					    $job_info->{message} = '' if (!defined($job_info->{message}));
+    					printf("%-9.9s %-9.9s %-5.5s %1.1s %-8.8s %10.10s %s\n",
+	    					$job_info->{job_id},
+                            $job_info->{'array_id'},
+                            $job_info->{'array_index'},
+					    	$hashestat{$job_info->{state}},
+			    			$job_info->{job_user},
+                            OAR::Stat::get_job_duration($job_info->{start_time},$job_info->{stop_time}),
+						    $job_info->{message}
+    					);
+                        $Printed_jobs ++;
+                    }else{
+                        if ($Printed_jobs == 0){
+                            print <<EOS;
 Job id    A. id     A. index  Name       User     Submission Date     S Queue
 --------- --------- --------- ---------- -------- ------------------- - --------
 EOS
+                        }
+                        #$job_info->{'command'} = '' if (!defined($job_info->{'command'}));                              
+                        $job_info->{job_name} = '' if (!defined($job_info->{job_name}));            
+                        printf("%-9.9s %-9.9s %-9.9s %-10.10s %-8.8s %-19.19s %1.1s %-8.8s\n",
+                            $job_info->{'job_id'},
+                            $job_info->{'array_id'},
+                            $job_info->{'array_index'},
+						    $job_info->{'job_name'},
+                            $job_info->{'job_user'},
+                            OAR::Stat::local_to_sql($job_info->{'submission_time'}),
+                            $hashestat{$job_info->{'state'}},
+                            $job_info->{'queue_name'}
+                        );                    
+                        $Printed_jobs ++;
                     }
-                    #$job_info->{'command'} = '' if (!defined($job_info->{'command'}));                              
-                    $job_info->{job_name} = '' if (!defined($job_info->{job_name}));            
-                    printf("%-9.9s %-9.9s %-9.9s %-10.10s %-8.8s %-19.19s %1.1s %-8.8s\n",
-                        $job_info->{'job_id'},
-                        $job_info->{'array_id'},
-                        $job_info->{'array_index'},
-						$job_info->{'job_name'},
-                        $job_info->{'job_user'},
-                        OAR::Stat::local_to_sql($job_info->{'submission_time'}),
-                        $hashestat{$job_info->{'state'}},
-                        $job_info->{'queue_name'}
-                    );                    
-                    $Printed_jobs ++;
 				}else{
-					if ($Printed_jobs == 0){
-						print <<EOS;
+                    if ($text_format eq "2"){
+    					if ($Printed_jobs == 0){
+	    					print <<EOS;
+Job id    S User     Duration   System message
+--------- - -------- ---------- ------------------------------------------------
+EOS
+		    			}
+					    $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
+					    $job_info->{message} = '' if (!defined($job_info->{message}));
+    					printf("%-9.9s %1.1s %-8.8s %10.10s %s\n",
+	    					$job_info->{job_id},
+					    	$hashestat{$job_info->{state}},
+			    			$job_info->{job_user},
+                            OAR::Stat::get_job_duration($job_info->{start_time},$job_info->{stop_time}),
+						    $job_info->{message}
+    					);
+                    }else{
+    					if ($Printed_jobs == 0){
+	    					print <<EOS;
 Job id     Name           User           Submission Date     S Queue
 ---------- -------------- -------------- ------------------- - ----------
 EOS
-					}
-					
-					#$job_info->{'command'} = '' if (!defined($job_info->{'command'}));
-					$job_info->{job_name} = '' if (!defined($job_info->{job_name}));
-					printf("%-10.10s %-14.14s %-14.14s %-19.19s %1.1s %-10.10s\n",
-						$job_info->{'job_id'},
-						$job_info->{'job_name'},
-						$job_info->{'job_user'},
-						OAR::Stat::local_to_sql($job_info->{'submission_time'}),
-						$hashestat{$job_info->{'state'}},
-						$job_info->{'queue_name'}
-					);
-					$Printed_jobs ++;
-				}
-			}
-		}
-	}
+		    			}
+			    		
+				    	#$job_info->{'command'} = '' if (!defined($job_info->{'command'}));
+					    $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
+    					printf("%-10.10s %-14.14s %-14.14s %-19.19s %1.1s %-10.10s\n",
+	    					$job_info->{'job_id'},
+		    				$job_info->{'job_name'},
+			    			$job_info->{'job_user'},
+				    		OAR::Stat::local_to_sql($job_info->{'submission_time'}),
+					    	$hashestat{$job_info->{'state'}},
+						    $job_info->{'queue_name'}
+    					);
+                    }
+	    			$Printed_jobs ++;
+			    }
+		    }
+	    }
+    }
 }
 
 sub print_job_state_data($){
@@ -458,7 +514,10 @@ sub print_properties {
                 }
             }
             chop($line);
-            print("$line\n") or exit(5);
+            if (!print("$line\n")){
+                OAR::Stat::close_db_connection();
+                exit(5);
+            }
         }
     } else {
         warn("No job specified\n");
@@ -471,7 +530,7 @@ sub print_state {
     my %job_state;
     if ($#job_ids < 0){
         warn("--state can only be used with an id\n");
-          exit(1);
+        OAR::Stat::close_db_connection(); exit(1);
     }elsif($#job_ids >= 0){
         foreach my $j (@job_ids){
             my $state_string = OAR::Stat::get_job_state($j);
@@ -491,33 +550,39 @@ sub show_accounting {
     
         # One user output
         if (defined($user)) {
-            my $asked;
-            my $used;
-            if (defined($Consumptions->{$user}->{ASKED})) { $asked=$Consumptions->{$user}->{ASKED}; }
-            else { $asked=0; }
-            if (defined($Consumptions->{$user}->{USED})) { $used=$Consumptions->{$user}->{USED}; }
-            else { $used=0; }
-            if (!defined($Consumptions->{$user}->{begin})) {$Consumptions->{$user}->{begin}="No window found";}
-            if (!defined($Consumptions->{$user}->{end})) {$Consumptions->{$user}->{end}="No window found";}
+            my $asked = 0;
+            $asked=$Consumptions->{$user}->{ASKED} if (defined($Consumptions->{$user}->{ASKED}));
+            my $used =0;
+            $used=$Consumptions->{$user}->{USED} if (defined($Consumptions->{$user}->{USED}));
             print "Usage summary for user '$user' from $1 to $2:\n";
             print "-------------------------------------------------------------\n";
-            printf ("%-28s %s\n","Start of the first window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{begin}));
-            printf ("%-28s %s\n","End of the last window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{end}));
+            if (defined($Consumptions->{$user}->{begin})){
+                printf ("%-28s %s\n","Start of the first window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{begin}));
+            }else{
+                printf ("%-28s %s\n","Start of the first window:","No window found");
+            }
+            if (defined($Consumptions->{$user}->{end})){
+                printf ("%-28s %s\n","End of the last window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{end}));
+            }else{
+                printf ("%-28s %s\n","End of the last window:","No window found");
+            }
             printf ("%-28s %s ( %s)\n","Asked consumption:",$asked,OAR::Stat::get_duration($asked));
             printf ("%-28s %s ( %s)\n","Used consumption:",$used,OAR::Stat::get_duration($used));
             print "By project consumption:\n";
             $Consumptions=OAR::Stat::get_accounting_summary_byproject(OAR::Stat::sql_to_local($date1),OAR::Stat::sql_to_local($date2),$user);
             foreach my $project (keys %{$Consumptions}) {
-                 print "  $project:\n";
-                 $asked=$Consumptions->{$project}->{ASKED}->{$user};
-                 $used=$Consumptions->{$project}->{USED}->{$user};
-                 printf ("%-28s %s ( %s)\n","    Asked :",$asked,OAR::Stat::get_duration($asked));
-                 printf ("%-28s %s ( %s)\n","    Used :",$used,OAR::Stat::get_duration($used));
-                 if (my @last_karma=OAR::Stat::get_last_project_karma($user,$project,OAR::Stat::sql_to_local($date2))) {
-                     printf ("%-28s %s\n","    Last Karma :",$last_karma[0]);
-                 }
+                print "  $project:\n";
+                $asked=$Consumptions->{$project}->{ASKED}->{$user};
+                $used=$Consumptions->{$project}->{USED}->{$user};
+                printf ("%-28s %s ( %s)\n","    Asked :",$asked,OAR::Stat::get_duration($asked));
+                printf ("%-28s %s ( %s)\n","    Used :",$used,OAR::Stat::get_duration($used));
+                if (my @last_karma=OAR::Stat::get_last_project_karma($user,$project,OAR::Stat::sql_to_local($date2))) {
+                    if ($last_karma[0] =~ m/.*Karma\s*\=\s*(\d+\.\d+)/m){
+                        printf ("%-28s %s\n","    Last Karma :",$1);
+                    }
+                }
             }
-    
+
         # All users array output
         }else{
             print <<EOS;
@@ -539,8 +604,7 @@ EOS
         
     }else{
         print("Bad syntax for --accounting\n");
-		OAR::Stat::close_db_connection();
-        exit(1);
+		OAR::Stat::close_db_connection(); exit(1);
     }
 }
 

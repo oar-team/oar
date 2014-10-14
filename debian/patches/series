@@ -1,9 +1,0 @@
-fix-oardo-c-warning.patch
-fix-oar-common-post.patch
-dont-use-example-files-in-postinst.patch
-0001-Remove-the-desktop-computing-module-from-the-2.5-bra.patch
-0001-Remove-the-ability-to-uncompress-source-conffile-as-.patch
-0001-Use-ucfr-to-register-conffile-for-debian.patch
-pod-encoding.patch
-oar-database-version.patch
-prologue-epilogue-permissions.patch

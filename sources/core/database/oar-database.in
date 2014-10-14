@@ -119,11 +119,7 @@ while (<LIST>) {
 #
 sub print_usage() {
     print <<EOS;
-Usage: $0 [-h|--help]
-       $0 --init [OPTIONS]
-       $0 --reset [OPTIONS]
-       $0 --create [OPTIONS]
-       $0 --drop [OPTIONS]
+Usage: $0 <ACTION> [OPTIONS]
 
 Setup the database used by OAR
 
@@ -177,14 +173,14 @@ sub get_current_schema_version() {
 
 sub init_database() {
     check_user_db_access($db_user,$db_pass);
-    print "initializing the database '$db_name'...\n";
+    print "Initializing database '$db_name'...\n";
     &$exec_sql_file($DEFAULT_STRUCTURE) == 0       or die "Fail to execute $DEFAULT_STRUCTURE.\n";
     &$exec_sql_file($DEFAULT_DATA) == 0            or die "Fail to execute $DEFAULT_DATA.\n";
     &$exec_sql_file($DEFAULT_ADMISSION_RULES) == 0 or die "Fail to execute $DEFAULT_ADMISSION_RULES.\n";
 }
 
 sub reset_database() {
-    print "resetting the database '$db_name'...\n";
+    print "Resetting database '$db_name'...\n";
     &$exec_sql_file($DEFAULT_RESET) == 0  or die "Fail to execute $DEFAULT_RESET\n.";
     init_database();
 }
@@ -196,7 +192,7 @@ sub upgrade_database() {
     while($current_version ne $DEFAULT_LAST_VERSION) {
 	if ($DEFAULT_UPGRADES{$current_version}) {
 		($to_version, $to_file) = @{$DEFAULT_UPGRADES{$current_version}};
-                print "uprgading from '$current_version' to '$to_version'...\n";
+                print "Uprgading from '$current_version' to '$to_version'...\n";
 		&$exec_sql_file($to_file) == 0 or die "Fail to upgrade the database from $current_version to $to_file with $to_file\n.";
 	} else {
 		die "Unable to upgrade from the version '$current_version'\n";
@@ -436,7 +432,7 @@ if ($usage){ print_usage(); exit(0); }
 # Check the action
 #
 if ( !$action ) {
-    print "You must specify the action do be done.\n";
+    print "Error: You must specify the action do be done.\n";
     print_usage();
     exit(1);
 }
@@ -450,7 +446,7 @@ if ( ! $conffile ) {
 
 }
 unless ( -r $conffile ) {
-    print "The configuration file isn't readable ! Failing.\n";
+    print "Error: The configuration file is not readable.\n";
     print_usage();
     exit(1);
 }
@@ -469,12 +465,12 @@ if (! $db_type) {
             $db_port = OAR::Conf::get_conf("DB_PORT");
         }
     } else {
-        print "Your must set the database type ! Failing \n";
+        print "Error: The database type is not set.\n";
         print_usage();
         exit(1);
     }
 } elsif ( $db_type ne "Pg" && $db_type ne "mysql") {
-    print "The database type must be 'Pg' or 'mysql'. Failing.\n";
+    print "Error: The database type must be either 'Pg' or 'mysql'.\n";
     print_usage();
     exit(1);
 }
@@ -495,7 +491,7 @@ unless ($db_pass) {
     $db_pass = (OAR::Conf::is_conf("DB_BASE_PASSWD") ? OAR::Conf::get_conf("DB_BASE_PASSWD") : "");
 
     if (($db_pass eq "") or ($db_pass eq '""')) {
-        print "The user password is empty. Please define a password. Failing.\n";
+        print "Error: DB_BASE_PASSWD is not set in the config file.\n";
         exit(1);
     }
 }
@@ -511,7 +507,7 @@ unless ($db_ro_pass) {
         $db_ro_pass = OAR::Conf::get_conf("DB_BASE_PASSWD_RO");
     }
     if (($db_ro_pass eq "") or ($db_ro_pass eq '""')) {
-        print "The user read-only password is empty. Please define a password. Failing.\n";
+        print "Error: DB_BASE_PASSWD_RO is not set in the config file.\n";
         exit(1);
     }
 }
@@ -523,11 +519,11 @@ unless ($db_name) {
 if ($action eq "create" or $action eq "drop" or $action eq "fix-ro-user-priv") {
     unless ($db_is_local and $db_type eq "Pg") {
         unless ($db_admin_user) {
-            print "You need to specify the admin user (--db-admin-user) and probably the password (--db-admin-pass) to use. See the manual for more information. Failing.\n";
+            print "Error: Please provide --db-admin-user and --db-admin-pass options (MySQL) or --db-is-local (PgSQL).\n";
             exit(1);
         }
         unless ($db_admin_pass) {
-            print "The admin password is empty. Proceeding with an empty password.\n";
+            print "Warning: The admin password is empty. Proceeding with an empty password.\n";
             $db_admin_pass="";
         }
     }
@@ -570,8 +566,8 @@ sub check_user_db_access {
     my $dbc = "DBI:$db_type:database=$db_name;host=$db_host;port=$db_port";
     $dbh = DBI->connect($dbc, $user,$pass, {'InactiveDestroy' => 1, 'PrintError' => 1});
     if (!defined($dbh)) {
-        print "The connection to the database has failed (user=$user,host=$db_host,port=$db_port,database=$db_name). Please check if the database server is up and ready.\n";
-        print "Please see the file %%DOCDIR%%/README.database for the instructions.\n";
+        print "Error: The connection to the database failed (user=$user,host=$db_host,port=$db_port,database=$db_name). Please check if the database server is up and ready.\n";
+        print "       Please read %%DOCDIR%%/README.database for instructions.\n";
         exit(1);
     }
 }
@@ -601,11 +597,11 @@ $Term::UI::VERBOSE = 0;
 if ($action eq "check") {
     $ENV{'OARCONFFILE'} = "%%OARCONFDIR%%/oar.conf";
     if (defined(OAR::IO::connect_ro_one_log("log"))) {
-        print "The OAR database is accessible and ready to be used.\n";
+        print "Success: The OAR database is accessible and ready to be used.\n";
         exit 0;
     }
-    elsei {
-        print "The OAR database isn't ready.\n";
+    else {
+        print "Error: The OAR database is not ready.\n";
         exit 1;
     }
 } elsif ($action eq "setup") {

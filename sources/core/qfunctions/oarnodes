@@ -20,6 +20,9 @@ use Getopt::Long;
 use OAR::Nodes;
 use OAR::Tools;
 
+$SIG{HUP} = sub {OAR::Nodes::close_db_connection(); exit(10)};
+$SIG{PIPE} = sub {OAR::Nodes::close_db_connection(); exit(10)};
+
 ### CONFIG STUFF ###
 Getopt::Long::Configure ("gnu_getopt");
 
@@ -231,7 +234,7 @@ GetOptions ("state|s" => \$stateMode,
             "json|J" => \$JSON_mode,
             "dumper|D" => \$DUMPER_mode,
             "version|V" => \$Version
-           );
+           ) or exit(1);
 
 if ($usage){
     print_usage();

@@ -59,9 +59,10 @@ if (!defined($Debug_mode)){
     $Debug_mode = 0;
 }
 
-my $Detach_oarexec = $ENV{OAR_DETACH_OAREXEC}; # Must be defined by runner
- # ATTENTION: not initialized if executed by Almighty or another module because not needed
-#oar_debug("[bipbip $Job_id] OAR_DETACH_OAREXEC = $Detach_oarexec\n");
+my $Detach_oarexec = get_conf("DETACH_JOB_FROM_SERVER");
+if (!defined($Detach_oarexec)){
+    $Detach_oarexec = 0;
+}
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){
     OAR::Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
@@ -79,7 +80,6 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
     OAR::Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
 }
 
-my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 my $Job_user;
 
 my $base;
@@ -92,23 +92,21 @@ if (defined($Cpuset_path) and defined($Cpuset_field)){
     $Cpuset_full_path = $Cpuset_path.'/'.$Cpuset_name;
 }
 
-my $job = OAR::IO::get_job($base,$Job_id);
 my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($base,$Job_id);
-
 my @hosts = OAR::IO::get_job_current_hostnames($base,$Job_id);
-
-if (!(($job->{state} eq "Launching") or ($job->{state} eq "Running") or ($job->{state} eq "Suspended") or ($job->{state} eq "Resuming"))){
-    oar_error("[bipbip $Job_id] A Job is requested but it is already treated. This job must be already killed (exterminated) and come back from hell ???\n");
-    OAR::IO::add_new_event($base, "BIPBIP_BAD_JOBID", $Job_id, "A Job is requested but it is already treated. This job must be already killed (exterminated) and come back from hell ???");
-    OAR::IO::disconnect($base);
-    exit 1;
-}
-
-
-#deploy, cosystem and no host part
+my $job = OAR::IO::get_job($base,$Job_id);
+my @resources;
+my $moldable;
 
 #check if we must treate the end of a oarexec
-if (defined($Oarexec_reattach_exit_value)){
+if ((defined($Oarexec_reattach_exit_value)) and
+    (($job->{state} eq "Launching") or
+     ($job->{state} eq "Running") or
+     ($job->{state} eq "Suspended") or
+     ($job->{state} eq "Resuming")
+    )
+   ){
+    oar_debug("[bipbip $Job_id] OAREXEC end: $Oarexec_reattach_exit_value $Oarexec_reattach_script_exit_value\n");
     if ($Oarexec_reattach_exit_value =~ m/\d+/m){
         if ($Oarexec_challenge eq $job_challenge){
             OAR::IO::check_end_of_job($base, $Job_id, $Oarexec_reattach_script_exit_value, $Oarexec_reattach_exit_value, \@hosts, $Remote_host, $Remote_port,$job->{job_user},$job->{launching_directory},$Server_epilogue);
@@ -125,9 +123,31 @@ if (defined($Oarexec_reattach_exit_value)){
         OAR::IO::disconnect($base);
         exit(2);
     }
+}else{
+    @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
+    $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
+    $job = OAR::IO::get_job($base,$Job_id); # In case of the job state has changed since the last call :-(
+    if ($job->{state} eq "toLaunch"){
+        # Tell that the launching process is initiated
+        OAR::IO::set_job_state($base,$Job_id,"Launching");
+        $job->{state} = "Launching";
+    }else{
+        oar_warn("[bipbip $Job_id] Job already treated or deleted in the meantime\n");
+        OAR::IO::disconnect($base);
+        exit(1);
+    }
 }
 
-# ELSE we must launch oarexec on the first node
+# NOOP jobs
+my $types = OAR::IO::get_job_types_hash($base,$Job_id);
+if (defined($types->{noop})){
+    OAR::IO::set_job_state($base,$Job_id,"Running");
+    OAR::IO::disconnect($base);
+    oar_debug("[bipbip $Job_id] User: $job->{job_user}; Set NOOP job to Running\n");
+    exit(0);
+}
+
+# HERE we must launch oarexec on the first node
 oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
 if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
@@ -135,9 +155,8 @@ if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
     OAR::Tools::notify_tcp_socket($addr,$port,"Starting...");
 }
 
-my $job_cpuset_uid;
-$Job_user = OAR::Tools::format_job_user($job->{job_user},$Job_id,$job_cpuset_uid);
-my $types = OAR::IO::get_current_job_types($base,$Job_id);
+$Job_user = $job->{job_user};
+
 if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#hosts >= 0))){
     my $event_type;
     my @bad;
@@ -146,9 +165,8 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     ###############
     my $cpuset_nodes;
     $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job}) if (defined($Cpuset_field));
-    $job_cpuset_uid = OAR::IO::get_job_cpuset_uid($base, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
 
-    $Job_user = OAR::Tools::format_job_user($job->{job_user},$Job_id,$job_cpuset_uid);
+    $Job_user = $job->{job_user};
     $ssh_public_key = OAR::Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_full_path,$job->{job_user},$Job_user);
     my $cpuset_data_hash = {
         job_id => $Job_id,
@@ -168,8 +186,19 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         oar_tmp_directory => OAR::Tools::get_default_oarexec_directory(),
         user => $job->{job_user},
         job_user => $Job_user,
-        job_uid => $job_cpuset_uid,
         types => $types,
+        resources => \@resources,
+        node_file_db_fields => $Node_file_db_field,
+        node_file_db_fields_distinct_values => $Node_file_db_field_distinct_values,
+        array_id            => $job->{array_id},
+        array_index         => $job->{array_index},
+        stdout_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stdout_file},$Job_id),
+        stderr_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stderr_file},$Job_id),
+        launching_directory => $job->{launching_directory},
+        job_name            => $job->{job_name},
+        walltime_seconds    => $moldable->{moldable_walltime},
+        walltime            => OAR::IO::duration_to_sql($moldable->{moldable_walltime}),
+        project             => $job->{project},
         log_level => OAR::Modules::Judas::get_log_level()
     };
     if (defined($cpuset_nodes)){
@@ -198,7 +227,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                         push(@tmp_hosts, $n) if ($i > $#bad);
                     }
                     OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
-                    OAR::IO::set_job_message($base,$Job_id,"One or several nodes are not cpuset responding correctly");
+                    OAR::IO::set_job_message($base,$Job_id,"One or several nodes are not responding correctly(CPUSET_ERROR)");
                     OAR::IO::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR cpuset suspects nodes for the job $Job_id : @bad",\@bad);
                     OAR::IO::archive_some_moldable_job_nodes($base,$job->{assigned_moldable_job},\@bad);
                     OAR::IO::unlock_table($base);
@@ -339,8 +368,6 @@ if (defined($Server_prologue)){
 ###############################################################################
 
 #CALL OAREXEC ON THE FIRST NODE
-my $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
-my @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
 my $pro_epi_timeout = OAR::Tools::get_default_prologue_epilogue_timeout();
 if (is_conf("PROLOGUE_EPILOGUE_TIMEOUT")){
    $pro_epi_timeout = get_conf("PROLOGUE_EPILOGUE_TIMEOUT"); 
@@ -474,7 +501,6 @@ eval {
 };
 if (($Detach_oarexec == 1) and ($error == 0)){
     oar_debug("[bipbip $Job_id] Exit from bipbip normally\n");
-    exit(0);
 }else{
     if ($init_done == 0){
         if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){

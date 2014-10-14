@@ -6,10 +6,6 @@ oaradmin - OAR administration tool.
 
 B<oaradmin> resources OPTIONS
 
-B<oaradmin> rules OPTIONS
-
-B<oaradmin> conf OPTIONS
-
 B<oaradmin> version
 
 =head1 DESCRIPTION
@@ -17,12 +13,6 @@ B<oaradmin> version
 This command is used to manage OAR configuration. 
 
 The command B<oaradmin resources> manages resources in OAR database : add, update and delete many resources in a single command line.
-
-The command B<oaradmin rules> manages admission rules : list, add, edit/update, delete, export, enable or disable one or several admission rules. A versioning feature, using Subversion, allows one to keep all admission rules changes.
-
-The command B<oaradmin conf> is useful for modify OAR conf files, register changes in a Subversion repository and revert to a conf file at a particular revision if needed.
-
-The command B<oaradmin version> print the version of OAR. 
 
 Each subcommand has a long and an optional short form :  B<oaradmin resources> or B<oaradmin re>, B<oaradmin rules> or B<oaradmin ru> for examples.
 
@@ -119,91 +109,11 @@ Print help message.
 
 =head2 Options for rules subcommand
 
-=over
-
-=item B<-l, --list> | B<-ll> | B<-lll> [rule_ids]
-
-The recommended format is as follows. The first line commented with # is the title of the rule. The following lines also commented contains the description or algorithm of the rule. The following lines contains the content of the Perl script. This format is not mandatory. Admission rules can contains only Perl script lines without comments. The -l option prints only the title line. The -ll option prints title and description lines and -lll prints the entire contents. If no rules numbers given, it prints all admission rules. Ex : 
-  oaradmin rules -l
-  oaradmin rules -lll 3 5 8  
-
-=item B<-a, --add> [rule_id] [-f file]
-
-Add an admission rule with a text editor or directly from a file. $EDITOR variable environment is used to launch the preferred text editor. If not defined, vi is used. Without rule_id, the new rule is added at the end of the admission rules table in OAR database. If rule_id is defined, the new rule is inserted at the rule_id position. The numbers above or equals to rule_id are increased by 1. This is useful to group the rules that have the same type of treatment. The filename must be specified just after -f option. Ex : 
-  oaradmin rules -a
-  oaradmin rules -a 10
-  oaradmin rules -a -f my_file
-
-=item B<-d, --delete> rule_id [rule_ids]
-
-Delete one or more admission rules. Ex :
-  oaradmin rules -d 2 
-  oaradmin rules -d 2 3 4
-
-=item B<-x, --export> [rule_ids] | B<-x, --export> rule_id -f file
-
-Export admission rules into files. The default filename used for export is admission_rule_<rule_id> and these files are created in the current directory. The -x option alone exports all admission rules. With -f file option, only one rule can be exported. If files already exists, oaradmin asks confirmation to overwrite. Ex : 
-  oaradmin rules -x
-  oaradmin rules -x 1 5 18
-  oaradmin rules -x 3 -f my_file
-  oaradmin rules -x 18 -f /my_directory/my_file
-
-=item B<-e, --edit> rule_id [-f file]
-
-Edit the rule_id admission rule using a text editor. A temporary file is used to edit the admission rule. This file is stored in the directory specified by OAR_RUNTIME_DIRECTORY in the OAR configuration file. If this parameter is not defined, /tmp is used. Oaradmin asks user to commit in database only if changes are made in the rule. Editing differents admission rules at the same time, into two consoles is possible. Editing the same admission rule into two consoles at the same time is also possible. But careful, in this case, depending on manipulations some data can be lost. Like add feature, $EDITOR variable environment can specify a text editor. If a filename is specified whith -f option, oaradmin directly update the rule_id admission rule in database without editing. Ex :
-  oaradmin rules -e 3
-  oaradmin rules -e 3 -f my_file
-
-=item B<-1, --enable> rule_id 
-
-Enable the rule_id admission rule. The # comments character at the beginning of each line is deleted. So the admission rule is enabled and evaluated in oarsub command. Ex :
-  oaradmin rules -1 10
-
-=item B<-0, --disable> rule_id 
-
-Disable the rule_id admission rule. The # comments character is added at the beginning of each line of the rule. So the admission rule is not evaluated and has no effect in oarsub command. Ex :
-  oaradmin rules -0 10
-
-=item B<-H, --history> rule_id [-n number]
-
-Show all changes made on the admission rule rule_id. Output is displayed in unified diff format. With -n number option, only the #number latest changes are displayed. Versioning feature can be activated with the parameter OARADMIN_VERSIONING in the OAR conf file. The repository is created when a change is made in an admission rule. Ex :
-  oaradmin rules -H 10
-
-=item B<-R, --revert> rule_id rev
-
-Revert to the admission rule rule_id as it existed in #rev revision. Ex :
-  oaradmin rules -R 10 3
-
-=item B<-h, --help> 
-
-Print help message.
-
-=back
+Oaradmin does not support managing admission rules anymore. Please look at the oaradminssionrules command instead.
 
 =head2 Options for conf subcommand
 
-=over
-
-=item B<-e, --edit> conf_file
-
-Edit the file conf_file using a text editor. $EDITOR variable environment is used to launch the preferred text editor. If $EDITOR is not defined, vi is used. If the versioning feature is enabled, after editing the file, changes are registered in a Subversion repository. Versioning feature can be activated with the parameter OARADMIN_VERSIONING in the OAR conf file. The repository is created when a change is made in the file. Ex :
-  oaradmin conf -e %%OARCONFDIR%%/oar.conf
-
-=item B<-H, --history> conf_file [-n number]
-
-Show all changes made on the file conf_file. Output is displayed in unified diff format. With -n number option, only the #number latest changes are displayed. Ex :
-  oaradmin conf -H oar.conf
-
-=item B<-R, --revert> conf_file rev
-
-Revert to the file conf_file as it existed in #rev revision. Ex :
-  oaradmin conf -R %%OARCONFDIR%%/oar.conf 3
-
-=item B<-h, --help> 
-
-Print help message.
-
-=back
+Oaradmin does not support managing the OAR configuration anymore.
 
 =head1 NOTES
 
@@ -212,8 +122,8 @@ Oaradmin resources subcommand uses oarnodes outputs with yaml format. So, Perl y
 
 =head1 SEE ALSO
 
-oarnodes(1), oarnodesetting(1), oarproperty(1), oarremoveresource(1), oarsub(1)
+oarnodes(1), oarnodesetting(1), oaradmissionrules(1), oar_resources_init(1), oar_resources_add(1), oarproperty(1), oarremoveresource(1), oarsub(1)
 
 =head1 COPYRIGHTS
 
- Copyright 2003 Laboratoire Id-Imag (http://www-id.imag.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2014 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

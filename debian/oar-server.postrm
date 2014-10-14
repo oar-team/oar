@@ -16,6 +16,9 @@ case "$1" in
                             /etc/oar/job_resource_manager_cgroups.pl \
                             /etc/oar/suspend_resume_manager.pl \
                             /etc/oar/oarmonitor_sensor.pl \
+                            /etc/oar/oarnodesetting_ssh \
+                            /etc/oar/scheduler_quotas.conf \
+                            /etc/oar/update_cpuset_id.sh \
                             /etc/oar/wake_up_nodes.sh \
                             /etc/oar/shut_down_nodes.sh \
                             /etc/oar/server_prologue \

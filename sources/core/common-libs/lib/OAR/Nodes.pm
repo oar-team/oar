@@ -15,7 +15,8 @@ sub open_db_connection(){
         else {return 0; }
 }
 sub close_db_connection(){
-	OAR::IO::disconnect($base);
+	OAR::IO::disconnect($base) if (defined($base));
+    $base = undef;
 }
 
 sub encode_result($$){

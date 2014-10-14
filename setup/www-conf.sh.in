@@ -7,7 +7,7 @@ www_conf_setup() {
         mv ${OARCONFDIR}/apache.conf ${OARCONFDIR}/apache2/oar-web-status.conf
     fi
     install_conffile \
-        ${EXAMPLEDIR}/apache.conf \
+        ${SHAREDIR}/apache.conf \
         ${OARCONFDIR}/apache2/oar-web-status.conf \
         0644 \
         ${WWWUSER}

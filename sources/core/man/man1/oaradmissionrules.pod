@@ -1,0 +1,121 @@
+=head1 NAME
+
+oaradmissionrules - manage admission rules
+
+=head1 SYNOPSIS
+
+=over
+
+=item B<oaradmissionrules> --show-all [options]
+
+Show all rules
+
+=item B<oaradmissionrules> --show <rule-id> [options]
+
+Show rule #rule-id
+
+=item B<oaradmissionrules> --new [options]
+
+Create a new rule
+
+=item B<oaradmissionrules> --modify <rule-id> [options]
+
+Modify rule #rule-id
+
+=item B<oaradmissionrules> --delete <rule-id>
+
+Delete rule #rule-id
+
+=back
+
+=head1 DESCRIPTION
+
+Show, create, modify or delete admission rules.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-s, --show-all>
+
+=over
+
+=item B<-Y, --enabled>
+
+Show enabled admission rules only
+
+=item B<-N, --disabled>
+
+Show disabled admission rules only
+
+=back
+
+=item B<-s, --show-all>
+
+=item B<-s, --show> [rule-id]
+
+=over
+
+=item B<-I, --id>
+
+Show #rule-id only
+
+=item B<-f, --full>
+
+Show full script
+
+=item B<-H, --no-header>
+
+Show script only
+
+=item B<-w, --to-file> [filename]
+
+Write script to file (%% replaced by #rule-id)
+
+=back
+
+=item B<-n, --new>
+
+=item B<-m, --modify> <rule-id>
+
+=over
+
+=item B<-e, --edit> [cmd]
+
+edit script using editor or cmd if provided
+
+=item B<-r, --from-file> <filename>
+
+Read script from file instead of running editor
+
+=item B<-P, --priotity> <priority>
+
+Set priority for rule
+
+=item B<-Y, --enabled>
+
+Enable admission rule
+
+=item B<-N, --disabled>
+
+Disable admission rule
+
+=back
+
+=item B<-d, --delete> <rule-id>
+
+No option
+
+=item B<-h, --help>
+
+Print usage
+
+=item B<-V, --version>
+
+Print OAR version
+
+=back
+
+=head1 COPYRIGHTS
+
+ Copyright 2003-2014 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

@@ -1,33 +1,101 @@
-Definition of the scheduler's interface:
 
-The scheduler can be any executable file, stored in the schedulers repository
-(/usr/lib/oar/schedulers/ for installations using the Debian packages).
-The scheduler is executed by the "metascheduler", that handles sequentially the
-different queues by priority order and makes the glue between them (besteffort
-jobs to kill, etc).
-The scheduler executable has the following interface:
+OAR's scheduler in ocaml
+========================
 
-  - it gets 3 arguments:
-      1. queue name
-      2. reference time in second
-      3. reference time in sql format (for conveniance only)
-  - only jobs of your queue and with the state "Waiting" or "Reservation =
-    None" should be manipulated
-  - any information stored in the database can however be taken into account
-    (read).
-  - previous decisions of the other schedulers (other queues) should be taken
-    into account: information from tables gantt_jobs_predictions_ and
-    gantt_jobs_resources_, in order to avoid conflicts between jobs of
-    different queues.
-  - decisions must be stored in the tables gantt_jobs_predictions_ and
-    gantt_jobs_resources_
-  - the state of some jobs can be set to "toError" so that OAR delete them
-    after the scheduler's run. If any job is set to that state, the scheduler
-    must return an exit code equal to 1, in order to notify the metascheduler,
-    otherwise exit code must be 0.
+Intro
+-----
+The main goal of this scheduler is to provide a better scalabily in comparaison to the schedulers in Perl.Up to now some features are missing see below.
 
-As an example, you can look at the default OAR scheduler
-"perl/oar_sched_gantt_with_timesharing".
-It uses a gantt and a resource tree libraries that are essential to take some
-decisions.
+This developement of this scheduler borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). 
 
+Features:
+---------
+ * conservative backfilling
+ * resources properties matching
+ * besteffort
+ * hierarchies
+ * multiple resource type [TO TEST]
+ * multiple resource requests ( + ) [TO TEST]
+ * time constant guards, [TO TEST]
+ * suspend/resume, 
+ * job depencies [TO TEST]
+ * job container  
+ * fairesharing [TO TEST]
+ * order_by on resources [TO FINISH / EVALUATE]
+ * ALL / BEST / BESTHALF for number of resources by level of hierarchy
+
+Missing:
+--------
+ * Timesharing (not planned for fisrt public version)
+ * Placeholder (not planned)
+ * Extensive test (no yet running on production cluster)
+ * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
+ * SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE (get_scheduled_jobs function is ready)
+
+Next:
+-----
+ * Support for null
+ * test hierarchy construction with different type of resource (exception raises when a field is missing)
+ * performance testing
+ * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
+ * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
+
+ * scheduler message (see perl version )
+ * job_error / job_message / scheduler message
+ * need to test multi-resource-type (since >= cbf_mb_h)
+ * need to test multi-request with non exclusive resource selection (since >= cbf_mb_h)
+ * errors logging (at least same error support as provide in perl scheduler)
+ * dump first k ready launchable jobs (for performance /reactivity issue)
+ * nb_asked_resource = 0 raise an error (>= cbf_mb_h) 
+ * unit test
+ * better compilation process (for unit tests)
+
+ToDo:
+-----
+  * ORDER_BY
+      * performance test
+      * production test
+      * ord2init_ids, init2ord_ids  more test
+
+  * switch name to kamelot
+  * test fairsharing
+  * test_unit: better compilation process
+  * Ounit (cf archive)
+    * test sub_intevals
+
+Misc:
+-----
+
+  * With 64 bits machine we can use ocaml's int with 63 bits instead of Int64.
+
+Done:
+-----
+ * resource order_by support (usable) 
+ * container
+ * Support of postgresql
+ * Preliminary performance comparaison (perl version timesharing only scheduler from oar-server_2.3.4-1_all.deb against cbf_mh_h). Perl scheduler doesn't seem to scale with number of resources)
+ * modify itv_intersect in Interval / remove itv2str, itvs2str (>= cbf_mh_h)
+ * multi-resource-type (since >= cbf_mh_h) (
+ * multi-request with non exclusive resource selection (since >= cbf_mh_h)
+
+Remarks and misc:
+-----------------
+ * http://martin.jambon.free.fr/ocaml.htm 
+
+Bugs:
+-----
+
+Debug:
+------
+  make bc
+  ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/helpers.cmo ../common/interval.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo ./simple_cbf_mb_h_ct.cmo
+
+ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/helpers.cmo \
+            ../common/interval.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo \
+            ./simple_cbf_mb_h_ct.cmo mysql/mysql.cma ./mysql_driver.cmo iolib.cmo ./simple_cbf_mb_h_ct_oar.cmo
+
+ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/helpers.cmo \
+            ../common/interval.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo \
+            ./simple_cbf_mb_h_ct.cmo mysql/mysql.cma ./mysql_driver.cmo iolib.cmo 
+
+rlwrap ./yop -I ../common -I .

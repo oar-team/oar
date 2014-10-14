@@ -123,5 +123,6 @@ int main(int ac, char **av){
     // execute the OAR command with oar privileges
     execv(CMD_WRAPPER, av);
     error("Cannot run with oar privileges "CMD_WRAPPER, 1);
+    return 0;
 }
 

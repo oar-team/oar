@@ -29,30 +29,30 @@ my $Disable_all;
 my $List_queues;
 my $sos;
 GetOptions ("version|V" => \$Version,
-            "enable_queue|e=s" => \@Enable_queue,
-            "disable_queue|d=s" => \@Disable_queue,
-            "Enable_all_queues|E" => \$Enable_all,
-            "Disable_all_queues|D" => \$Disable_all,
-            "add_queue=s" => \@Add_queue,
-            "remove_queue=s" => \@Remove_queue,
-            "list_queues|l" => \$List_queues,
+            "enable-queue|e=s" => \@Enable_queue,
+            "disable-queue|d=s" => \@Disable_queue,
+            "Enable-all-queues|E" => \$Enable_all,
+            "Disable-all-queues|D" => \$Disable_all,
+            "add-queue=s" => \@Add_queue,
+            "remove-queue=s" => \@Remove_queue,
+            "list-queues|l" => \$List_queues,
             "help|h" => \$sos
-           );
+           ) or exit(1);
 # Display command help
 sub usage {
     print <<EOS;
-Usage: $0 [-h] [-V] [-e str] [-d str] [-E] [-D] [--add_queue str] [--remove_queue]
+Usage: $0 [-h] [-V] [-e str] [-d str] [-E] [-D] [--add-queue str] [--remove-queue]
 [-l] [tag_to_Almighty]
 Send a tag to Almighty and manage queues
 Options:
-  -e, --enable_queue        active an existing queue
-  -d, --disable_queue       inactive an existing queue
-  -E, --Enable_all_queues   active all queues
-  -D, --Disable_all_queues  inactive all queues
-      --add_queue           add a new queue; syntax is name,priority,scheduler
-                            (ex: "name,3,oar_sched_gantt_with_timesharing")
-      --remove_queue        remove an existing queue
-  -l, --list_queues         list all queues and there status
+  -e, --enable-queue        active an existing queue
+  -d, --disable-queue       inactive an existing queue
+  -E, --Enable-all-queues   active all queues
+  -D, --Disable-all-queues  inactive all queues
+      --add-queue           add a new queue; syntax is name,priority,scheduler
+                            (ex: "name,3,oar-sched-gantt-with-timesharing")
+      --remove-queue        remove an existing queue
+  -l, --list-queues         list all queues and there status
   -h, --help                show this help screen
   -V, --version             print OAR version number
 EOS

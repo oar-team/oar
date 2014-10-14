@@ -23,53 +23,59 @@ create_phoenix_home() {
 
 server_setup() {
     install_conffile \
-        ${EXAMPLEDIR}/job_resource_manager.pl \
+        ${SHAREDIR}/job_resource_manager.pl \
         ${OARCONFDIR}/job_resource_manager.pl \
         0644
 
     install_conffile \
-        ${EXAMPLEDIR}/job_resource_manager_cgroups.pl \
+        ${SHAREDIR}/job_resource_manager_cgroups.pl \
         ${OARCONFDIR}/job_resource_manager_cgroups.pl \
         0644
 
     install_conffile \
-        ${EXAMPLEDIR}/suspend_resume_manager.pl \
+        ${SHAREDIR}/suspend_resume_manager.pl \
         ${OARCONFDIR}/suspend_resume_manager.pl \
         0644
 
     install_conffile \
-        ${EXAMPLEDIR}/oarmonitor_sensor.pl \
+        ${SHAREDIR}/oarmonitor_sensor.pl \
         ${OARCONFDIR}/oarmonitor_sensor.pl \
         0644
 
     install_conffile \
-        ${EXAMPLEDIR}/wake_up_nodes.sh \
+        ${SHAREDIR}/wake_up_nodes.sh \
         ${OARCONFDIR}/wake_up_nodes.sh
 
     install_conffile \
-        ${EXAMPLEDIR}/shut_down_nodes.sh \
+        ${SHAREDIR}/shut_down_nodes.sh \
         ${OARCONFDIR}/shut_down_nodes.sh
 
     install_conffile \
-        ${EXAMPLEDIR}/server_prologue \
-        ${OARCONFDIR}/server_prologue
+        ${SHAREDIR}/server_prologue \
+        ${OARCONFDIR}/server_prologue \
+        0755
 
     install_conffile \
-        ${EXAMPLEDIR}/server_epilogue \
-        ${OARCONFDIR}/server_epilogue
+        ${SHAREDIR}/server_epilogue \
+        ${OARCONFDIR}/server_epilogue \
+        0755
+
+    install_conffile \
+        ${SHAREDIR}/scheduler_quotas.conf \
+        ${OARCONFDIR}/scheduler_quotas.conf
 
     setup_oar_ssh
     create_phoenix_home
 
-    set_rights ${SBINDIR}/oar_resources_init 6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/Almighty           6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oarnotify          6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oarremoveresource  6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oaraccounting      6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oarproperty        6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oarmonitor         6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oar_resources_init 6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oar_checkdb        6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
-    set_rights ${SBINDIR}/oar_phoenix        6754 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oar_resources_init 6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/Almighty           6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarnotify          6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarremoveresource  6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oaraccounting      6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarproperty        6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oarmonitor         6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oar_resources_init 6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oar_checkdb        6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${SBINDIR}/oar_phoenix        6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
 
 }

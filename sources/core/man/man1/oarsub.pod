@@ -82,9 +82,13 @@ Specify the signal to use when checkpointing. Use signal numbers (see kill -l), 
 
 =item B<-t, --type> <TYPE>
 
-Specify a specific type (I<besteffort>, I<timesharing>, I<idempotent>, I<cosystem>, I<deploy>, I<container>, I<inner>, I<token:xxx=yy>)
+Specify a specific type (I<besteffort>, I<timesharing>, I<idempotent>, I<cosystem>, I<deploy>, I<noop>, I<container>, I<inner>, I<token:xxx=yy>)
 
-Note: a job with a type of B<idempotent> will be automatically resubmitted if its exit code is 99.
+Notes:
+  - a job with the type B<besteffort> will be scheduled with the lowest priority and will be killed if a "normal" job needs its resources.
+  - a job with the type B<idempotent> will be automatically resubmitted if its exit code is 99 and its duration > 60s.
+  - a job with the types B<idempotent> and B<besteffort> will be automatically resubmitted if it was killed by OAR to execute other none besteffort jobs in place.
+  - a job with the type B<noop> does nothing except reserving the resources. It is ended at the end of it walltime or when using the oardel command.
 
 =item B<-d, --directory> <DIR>
 
@@ -119,6 +123,12 @@ TAG can be:
   - SUSPENDED : when the job is suspended
   - RESUMING : when the job is resumed
 
+By default all TAGs are triggered. It is possible to specify which TAGs must be triggered.
+Ex:
+ --notify "[END,ERROR]mail:name@domain.com"
+ --notify "[RUNNING]mail:name@domain.com"
+ --notify "[RUNNING,END,ERROR]exec:/path/to/script args"
+
 =item B<--resubmit> <OAR JOB ID>
 
 Resubmit the given job as a new one.
@@ -143,11 +153,11 @@ I<Warning>: the file will be overwritten if it already exists.
 
 =item B<-O> <FILE>
 
-Specify the files that will store the standard output stream of the job. The %jobid% pattern is automatically replaced.
+Specify the files that will store the standard output stream of the job. The %jobid% and %jobname% patterns are automatically replaced.
 
 =item B<-E> <FILE>
 
-Specify the files that will store the standard error stream of the job. The %jobid% pattern is automatically replaced.
+Specify the files that will store the standard error stream of the job. The %jobid% and %jobname% patterns are automatically replaced.
 
 =item B<--hold>
 
@@ -319,5 +329,5 @@ oarsh(1), oardel(1), oarstat(1), oarnodes(1), oarhold(1), oarresume(1)
 
 =head1 COPYRIGHTS
 
- Copyright © 2008 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2013 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 

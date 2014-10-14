@@ -29,7 +29,7 @@ my $Default_suspend_resume_file_manager = "/etc/oar/suspend_resume_manager.pl";
 my $Default_oar_ssh_authorized_keys_file = ".ssh/authorized_keys";
 my $Default_node_file_db_field = "network_address";
 my $Default_node_file_db_field_distinct_values = "resource_id";
-my $Default_runner_sliding_window_size = 5;
+my $Default_notify_tcp_socket_enabled = 1;
 
 # Prototypes
 sub get_all_process_children();
@@ -63,6 +63,9 @@ sub get_default_oar_ssh_authorized_keys_file();
 sub get_default_node_file_db_field();
 sub get_default_node_file_db_field_distinct_values();
 sub replace_jobid_tag_in_string($$);
+sub inhibit_notify_tcp_socket();
+sub enable_notify_tcp_socket();
+sub read_socket_line($$);
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){
@@ -135,11 +138,6 @@ sub get_default_monitor_sensor_file(){
     return($Default_monitor_file_sensor);
 }
 
-# Get default value for RUNNER_SLIDING_WINDOW_SIZE tag
-sub get_default_runner_sliding_window_size(){
-    return($Default_runner_sliding_window_size);
-}
-
 # Get the name of the file of the private ssh key for the given cpuset name
 sub get_private_ssh_key_file_name($){
     my $cpuset_name = shift;
@@ -157,17 +155,6 @@ sub format_ssh_pub_key($$$$){
     $job_user = $user if (!defined($job_user));
     $cpuset = "undef" if (!defined($cpuset));
     return('environment="OAR_CPUSET='.$cpuset.'",environment="OAR_JOB_USER='.$job_user.'" '.$key."\n");
-}
-
-# Return the name of the user on the computing nodes
-sub format_job_user($$$){
-    my $user = shift;
-    my $jobid = shift;
-    my $uid = shift;
-
-    my $res = $user;
-    $res .= '_'.$jobid if (defined($uid));
-    return($res);
 }
 
 # return a hashtable of all child in arrays and a hashtable with process command names
@@ -213,10 +200,19 @@ sub get_one_process_children($){
     return(\@child_pids,$pid_cmd_hash->{$pid});
 }
 
+# Disable notify_tcp_socket of Almighty
+sub inhibit_notify_tcp_socket(){
+    $Default_notify_tcp_socket_enabled = 0;
+}
+# Enable notify_tcp_socket of Almighty
+sub enable_notify_tcp_socket(){
+    $Default_notify_tcp_socket_enabled = 1;
+}
 
 # Send a Tag on a socket
 # args = hostname, socket port, Tag 
 sub notify_tcp_socket($$$){
+    return(undef) if ($Default_notify_tcp_socket_enabled == 0);
     my $almighty_host = shift;
     my $almighty_port = shift;
     my $tag = shift;
@@ -476,20 +472,20 @@ sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$$$@){
 
     my $script = '
 $ENV{TERM} = "unknown";
-$ENV{BASH_ENV} = "$ENV{HOME}/.bashrc";
+$ENV{BASH_ENV} = "~oar/.batch_job_bashrc";
 
-$ENV{OAR_STDOUT} = "'.$stdout_file.'";
-$ENV{OAR_STDERR} = "'.$stderr_file.'";
-$ENV{OAR_FILE_NODES} = "'.$node_file.'";
+$ENV{OAR_STDOUT} = \''.$stdout_file.'\';
+$ENV{OAR_STDERR} = \''.$stderr_file.'\';
+$ENV{OAR_FILE_NODES} = \''.$node_file.'\';
 $ENV{OAR_JOBID} = '.$job_id.';
 $ENV{OAR_ARRAYID} = '.$array_id.';
 $ENV{OAR_ARRAYINDEX} = '.$array_index.';
-$ENV{OAR_USER} = "'.$user.'";
-$ENV{OAR_WORKDIR} = "'.$launching_directory.'";
-$ENV{OAR_RESOURCE_PROPERTIES_FILE} = "'.$resource_file.'";
-$ENV{OAR_JOB_NAME} = "'.$job_name.'";
-$ENV{OAR_PROJECT_NAME} = "'.$job_project.'";
-$ENV{OAR_JOB_WALLTIME} = "'.$job_walltime.'";
+$ENV{OAR_USER} = \''.$user.'\';
+$ENV{OAR_WORKDIR} = \''.$launching_directory.'\';
+$ENV{OAR_RESOURCE_PROPERTIES_FILE} = \''.$resource_file.'\';
+$ENV{OAR_JOB_NAME} = \''.$job_name.'\';
+$ENV{OAR_PROJECT_NAME} = \''.$job_project.'\';
+$ENV{OAR_JOB_WALLTIME} = \''.$job_walltime.'\';
 $ENV{OAR_JOB_WALLTIME_SECONDS} = '.$job_walltime_sec.';
 
 $ENV{OAR_NODEFILE} = $ENV{OAR_FILE_NODES};
@@ -528,6 +524,7 @@ my $tmp = "";
 while (<STDIN>){
     $tmp .= $_;
 }
+
 my $cmd_exec = eval($tmp);
 my $pid = fork;
 if($pid == 0){
@@ -539,6 +536,9 @@ if($pid == 0){
     warn("[OAR] Cannot find @{$cmd_exec}\n");
     exit(-1);
 }
+select(OLDSTDOUT);
+$| = 1;
+print(OLDSTDOUT "USER_CMD_PID $pid\n");
 waitpid($pid,0);
 
 print(OLDSTDOUT "EXIT_CODE $?");
@@ -575,6 +575,7 @@ sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$$){
         $exp_env .= "export $job_env ;";
     }
 
+    $launching_directory =~ s/\$/\\\$/s;
     my $script = '
 if [ "a$TERM" == "a" ] || [ "x$TERM" == "xunknown" ];
 then
@@ -609,9 +610,9 @@ export SHELL="'.$shell.'";
 export SUDO_COMMAND=OAR;
 SHLVL=1;
 
-if ( cd $OAR_WORKING_DIRECTORY &> /dev/null );
+if ( cd "$OAR_WORKING_DIRECTORY" &> /dev/null );
 then
-    cd $OAR_WORKING_DIRECTORY;
+    cd "$OAR_WORKING_DIRECTORY";
 else
     exit 2;
 fi;
@@ -866,6 +867,32 @@ sub manage_remote_commands($$$$$$$){
     }
 
     return(1,@bad);
+}
+
+# read a line on a socket
+# arg1 --> socket
+# arg2 --> timeout
+# return 0 if the read times out
+sub read_socket_line($$){
+    my $sock = shift;
+    my $timeout = shift;
+
+    my $char = "a";
+    my $res = 1;
+    my $rin = '';
+    my $line;
+    vec($rin,fileno($sock),1) = 1;
+    my $rin_tmp;
+    while (($res > 0) && ($char ne "\n") && ($char ne "")){
+        $res = select($rin_tmp = $rin, undef, undef, $timeout);
+        if ($res > 0){
+            sysread($sock,$char,1);
+            if ($char ne "\n"){
+                $line .= $char;
+            }
+        }
+    }
+    return($res,$line);
 }
 
 1;

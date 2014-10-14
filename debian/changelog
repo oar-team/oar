@@ -1,3 +1,42 @@
+oar (2.5.4~rc5-1) unstable; urgency=medium
+
+  * New upstream release
+  * Drop tools with dependancies to Ruby
+  * Bump Standard-Version (no change needed)
+  * Remove unused patches (applied upstream)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 29 Sep 2014 23:14:44 +0200
+
+oar (2.5.3-3) unstable; urgency=low
+
+  * Fix oar-user dependancy on oar-user-mysql or oar-user-postgresql
+  * Fix prologues and epilogues configuration files permissions:
+    add patch to set mod 0755
+  * Fix oarsub copyright in pod (man), this corrects the "FTBFS with perl 5.18: POD failure" reported by Debian
+    (Closes: #720431)
+  * Fix the database structure version: must be 2.5.2
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 09 Sep 2013 00:03:38 +0200
+
+oar (2.5.3-2) unstable; urgency=low
+
+  * Fix clean-up of oar-server and oar-web-status after remove/purge
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 02 Jul 2013 11:07:39 +0200
+
+oar (2.5.3-1) unstable; urgency=low
+
+  [ Philippe Le Brouster ]
+  * Remove the patches merged in upstream. 
+
+  [ Pierre Neyron ]
+  * Imported Upstream version 2.5.3
+  * Add drawgantt-svg to oar-web-status package
+  * Set Pierre Neyron as Maintainer
+  * Add Philippe Le Brouster as Uploader
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 26 Jun 2013 18:15:04 +0200
+
 oar (2.5.2-4.1) unstable; urgency=high
 
   * Non-maintainer upload.

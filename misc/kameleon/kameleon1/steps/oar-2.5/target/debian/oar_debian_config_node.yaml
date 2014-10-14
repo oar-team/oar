@@ -1,0 +1,6 @@
+oar_debian_config_node:
+ - configure_initd:
+   - exec_chroot: cp $$oar_prefix_install/share/oar/oar-node/init.d/oar-node /etc/init.d/
+   - exec_chroot: cp $$oar_prefix_install/share/oar/oar-node/default/oar-node /etc/default/
+   - exec_chroot: update-rc.d oar-node defaults
+

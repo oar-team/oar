@@ -145,6 +145,14 @@ let rec cross = function
 	(List.map (fun x -> List.map (fun a -> x::a) reste) l)
 
 
+(* as map without [] is f return it *)
+let rec map_wo_empty f = function
+    [] -> []
+  | a::l -> let r = f a in
+    match r with 
+      [] -> map_wo_empty f l
+     | x -> r :: map_wo_empty f l
+
 (* array manipulations *)
 
 let swap tab a b = 
@@ -184,7 +192,10 @@ let replace input output = Str.global_replace (Str.regexp_string input) output
 let replace_regexp input output = Str.global_replace (Str.regexp input) output
 let split a = Str.split (Str.regexp_string a);;
 
-let hash_iter f l h = List.iter (fun x-> let j = try Hashtbl.find h x with  Not_found -> failwith "Can't Hashtbl.find " in f j) l 
+let hash_iter f l h = List.iter (fun x-> let j = try Hashtbl.find h x with  Not_found -> failwith "Can't Hashtbl.find in hash_iter" in f j) l 
+let hash_map  f l h = List.map  (fun x-> let j = try Hashtbl.find h x with  Not_found -> failwith "Can't Hashtbl.find in hash_map" in f j) l 
+
+let hash2couple h = Hashtbl.fold (fun k v acc -> (k, v) :: acc) h []
 
 let couples2hash l = 
   let h = Hashtbl.create 10 in
@@ -202,3 +213,22 @@ let filter_map f_filter f_map =
 
 (* remove quotes from string *)
 let remove_quotes str = replace " " "" str
+
+(* split list *)
+let split_at l n =
+  let rec split_at_2 l i f =
+      match l with
+        [] -> (f,[])
+        | h::t -> if (i=0)
+          then (f,t)
+          else ( split_at_2 t (i-1) (f@[h]) )
+        in
+          split_at_2 l n [];;
+
+(* memoize function *)
+let memoize f =  
+  let h = Hashtbl.create 10 in
+  fun x -> try  
+    Hashtbl.find h x  
+    with Not_found ->  
+      let r = f x in ( Hashtbl.add h x r; r ) 

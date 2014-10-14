@@ -7,11 +7,13 @@ set -e
 #set -x 
 
 case "$1" in
-	remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-	    rm -f /etc/apache2/conf.d/oar-web-status.conf || true
+  remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+      rm -f /etc/apache2/conf.d/oar-web-status.conf || true
+      rm -f /usr/share/oar-web-status/drawgantt-svg/index.php || true
         ;;
-	purge)
-	    rm -f /etc/apache2/conf.d/oar-web-status.conf || true
+  purge)
+      rm -f /etc/apache2/conf.d/oar-web-status.conf || true
+      rm -f /usr/share/oar-web-status/drawgantt-svg/index.php || true
             # remove possible conffile
             for conffile in /etc/oar/drawgantt.conf /etc/oar/monika.conf /etc/oar/apache2/oar-web-status.conf; do
                 # we mimic dpkg as closely as possible, so we remove configuration

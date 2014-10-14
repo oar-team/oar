@@ -1,0 +1,20 @@
+# # Bootstrap
+- debootstrap:
+  - check_cmd_out: debootstrap
+  - exec_out: mkdir -p $$rootfs
+  - exec_out: |
+      debootstrap \
+      --variant=$$variant \
+      --no-check-gpg \
+      --arch=$$arch \
+      --include="$$include_pkg" \
+      $$release \
+      $$rootfs \
+      $$repository
+  - write_out:
+    - $$rootfs/etc/network/interfaces
+    - |
+      auto lo
+      iface lo inet loopback
+      auto eth0
+      iface eth0 inet dhcp

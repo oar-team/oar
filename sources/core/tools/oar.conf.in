@@ -6,13 +6,13 @@
 ###############################################################################
 #
 # Database type ("mysql" or "Pg")
-DB_TYPE="mysql"
+DB_TYPE="Pg"
 
 # DataBase hostname
-DB_HOSTNAME="localhost"
+DB_HOSTNAME="127.0.0.1"
 
 # DataBase port
-DB_PORT="3306"
+DB_PORT="5432"
 
 # Database base name
 DB_BASE_NAME="oar"
@@ -83,12 +83,10 @@ COSYSTEM_HOSTNAME="127.0.0.1"
 # SERVER_HOSTNAME)
 DETACH_JOB_FROM_SERVER="1"
 
-# If DETACH_JOB_FROM_SERVER=1 then OAR is able to launch jobs with a sliding
-# window to avoid the overload of the server (default is 5).
-# (This reduce the number of "bipbip" processes seen at a time.)
-# If you want to disable this sliding window feature then just put the value 0
-# to this tag.
-#RUNNER_SLIDING_WINDOW_SIZE="5"
+# MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING is the maximum number of jobs
+# treated simultaneously (default is 25).
+# This is the maximum number of bipbip processes launched at a time
+#MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING=25
 
 # Command to use to connect to other nodes (default is "ssh" in the PATH)
 OPENSSH_CMD="/usr/bin/ssh -p 6667"
@@ -139,7 +137,7 @@ FINAUD_FREQUENCY="300"
 # (sentinelle.pl is like a "for" of ssh but it adds timeout and window to 
 # avoid overloading the server)
 # (sentinelle.pl is provided with OAR in the install directory)
-PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 5 -w 20"
+PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 30 -w 20"
 
 # Taktuk
 # taktuk may be used to check aliveness of nodes.
@@ -224,7 +222,7 @@ SCHEDULER_TIMEOUT="30"
 
 # Number of processes to use when performing scheduling calculations
 # (default is 1)
-SCHEDULER_NB_PROCESSES=4
+SCHEDULER_NB_PROCESSES=1
 
 # Time to add between each jobs (for example: time for administration tasks or
 # time to let computers to reboot)
@@ -239,7 +237,7 @@ SCHEDULER_GANTT_HOLE_MINIMUM_TIME="300"
 
 # You can add an order preference on resources assigned by the
 # system(SQL ORDER syntax)
-SCHEDULER_RESOURCE_ORDER="scheduler_priority ASC, state_num ASC, available_upto DESC, suspended_jobs ASC, network_address DESC, resource_id ASC"
+SCHEDULER_RESOURCE_ORDER="scheduler_priority ASC, state_num ASC, available_upto DESC, suspended_jobs ASC, network_address ASC, resource_id ASC"
 
 # If next line is uncommented then OAR will automatically update the value of 
 # "scheduler_priority" field corresponding to the besteffort jobs.
@@ -274,14 +272,27 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 # policy. Default is 1 day (86400s)
 #ACCOUNTING_WINDOW="86400"
 
-##############################
-# OCAML Scheduler parameters #
+################################
+# KAMELOT Scheduler parameters #
 ###############################################################################
-# You can use hierarchy_extractor.rb to generate those variables
-#HIERARCHY_LABELS="node,cpu,core"
-#node="(1,16,2), (33,8,4)" 
-#cpu="(1,8,8)"
-#core="(1,1,64)"
+# Be carefull hierarchy labels must be declare below to be use in resource 
+# request. Labels' order does not matter here. Default value is
+# "resource_id,network_address,cpu,core" 
+#HIERARCHY_LABELS="resource_id,network_address,cpu,core" 
+
+# Number of jobs which will be scheduled by scheduling round for each queue where Kamelot is used 
+# ***NOT LIMITED by default***
+#MAX_JOB_PER_SCHEDULING_ROUND=1000
+
+# Mode to get resources and generate hierarchy levels, values are following:
+# default:     all is done dynamically, does not scale very beyond 5000 resourcess
+#
+# mono:        use only one hierarchy level resource_id or core (the FIRST label in HIERARCHY_LABELS)
+#              suitable to large platform and particular performance evaluation (only for expert users)
+#
+# precomputed: NOT YET IMPLEMENTED (upto now default mode will be used)
+#
+#KAMELOT_GET_RESOURCES_HIERARCHY_MODE="default"
 
 ##############################################
 
@@ -476,6 +487,11 @@ ENERGY_SAVING_INTERNAL="no"
 # Timeout for the two previous scripts
 #SUSPEND_RESUME_SCRIPT_TIMEOUT="60"
 
+
+# To allow users to hold or resume their jobs. By default it's restricted to oar and
+# root users due to global scheduling impact and possible priority bypassing.  
+#USERS_ALLOWED_HOLD_RESUME="yes"
+
 ###############################################################################
 
 ################################
@@ -493,7 +509,7 @@ JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD="cpuset"
 # Name of the perl script that manages cpuset.
 # (default is %%OARCONFDIR%%/job_resource_manager.pl which handles the linux kernel
 # cpuset, job keys, clean processes, ...)
-#JOB_RESOURCE_MANAGER_FILE="%%OARCONFDIR%%/job_resource_manager.pl"
+JOB_RESOURCE_MANAGER_FILE="%%OARCONFDIR%%/job_resource_manager_cgroups.pl"
 
 # Path of the relative directory where the cpusets will be created on each
 # nodes(same value than in /proc/self/cpuset).
@@ -502,10 +518,6 @@ JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD="cpuset"
 # if you only want to initialize job user without the cpuset, you have
 # to set OARSUB_FORCE_JOB_KEY="yes")
 CPUSET_PATH="/oar"
-
-# Resource "type" DB field to use if you want to enable the job uid feature.
-# (create a unique user id per job on each nodes of the job)
-#JOB_RESOURCE_MANAGER_JOB_UID_TYPE="userid"
 
 # Name of the perl script the retrieve monitoring data from compute nodes.
 # This is used in oarmonitor command.
@@ -519,7 +531,7 @@ CPUSET_PATH="/oar"
 #
 # This variable must be set to enable the use of oarsh from a frontale node
 # Otherwise you must not set this variable if you are not on a frontale
-#OARSH_OARSTAT_CMD="%%BINDIR%%/oarstat"
+OARSH_OARSTAT_CMD="%%BINDIR%%/oarstat"
 
 # The following variable adds options to ssh (or OPENSSH_CMD if configured).
 # If one option is not handled by your ssh version just remove it BUT be
@@ -535,6 +547,10 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 
 ###############################################################################
 
+# Default oarstat output format.
+# See oarstat "--format" option to know the available values
+# (default is 1)
+OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 
 #DESKTOP_COMPUTING_ALLOW_CREATE_NODE="0"
 #DESKTOP_COMPUTING_EXPIRY="300"
@@ -596,4 +612,22 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 # as you don't have to rewrite the uris, but due to the possible confusion 
 # between "resources" and "resources/", it may not work with some libraries 
 # like "ruby Restfully".
+# In addition, you can use the X_API_PATH_PREFIX http header variable to prepend each uris
+# returned by the API by a given prefix. (for example: curl -i -H'X_API_PATH_PREFIX: http://prefix_a/la/noix/' ...)
 #API_ABSOLUTE_URIS=1
+
+# Api stress_factor script
+# This script should return at least a real value between 0 and 1 that is given by 
+# the OAR api for the "GET /stress_factor" URI.
+# Warning: this script is run by root and the output is parsed as a list of
+# variables as is!
+# - A stress_factor of 0 means that everything is fine
+# - A stress_factor of 1 (or more) means that the resources manager is under
+# stress. That generally means that it doesn't want to manage anymore jobs!
+# - Any value between 0 and 1 is allowed to define the level of stress.
+# It allows the administrator to define custom criterias to tell other systems
+# (those using the API) that they maybe should reduce or stop to query this
+# OAR system for a while. So, this script is meant to be polled regularly.
+# The script should return at least the variable "GLOBAL_STRESS=" but it
+# may also provide other custom defined values.
+#API_STRESS_FACTOR_SCRIPT="/etc/oar/stress_factor.sh"

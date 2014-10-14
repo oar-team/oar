@@ -1,12 +1,15 @@
 
 OAR's scheduler in ocaml
----------------------------
+========================
 
+Intro
+-----
 The main goal of this scheduler is to provide a better scalabily in comparaison to the schedulers in Perl.Up to now some features are missing see below.
 
 This developement of this scheduler borrows lot of ideas and source codes from perl oar_2.x schedulers and (a large part of) moldable ocaml oar_1.6 scheduler (thanks respectively to Nicolas Capit and Lionel Eyraud for theirs codes). 
 
 Features:
+---------
  * conservative backfilling
  * resources properties matching
  * besteffort
@@ -17,56 +20,57 @@ Features:
  * suspend/resume, 
  * job depencies [TO TEST]
  * job container  
- * fairesharing [TO FINALIZE]
+ * fairesharing [TO TEST]
+ * order_by on resources [TO FINISH / EVALUATE]
+ * ALL / BEST / BESTHALF for number of resources by level of hierarchy
 
 Missing:
- * Timesharing
- * Placeholder
- * Best / All resource expression in submission requests
- * Fairsharing (in progress)
+--------
+ * Timesharing (not planned for fisrt public version)
+ * Placeholder (not planned)
  * Extensive test (no yet running on production cluster)
  * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
+ * SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE (get_scheduled_jobs function is ready)
 
-Next (becarefull outdated list) :
+Next:
+-----
+ * Support for null
+ * test hierarchy construction with different type of resource (exception raises when a field is missing)
+ * performance testing
+ * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
+ * SCHEDULER_TOKEN_SCRIPTS support (for legacy licence management)
 
- * unit test
- * better compilation process (for unit tests)
- * simple performance optimisation (threshold on percent of idle ressource at now and number of scheduled jobs)
- * BEST / ALL 
- * scheduler message (see perl version *)
+ * scheduler message (see perl version )
  * job_error / job_message / scheduler message
  * need to test multi-resource-type (since >= cbf_mb_h)
  * need to test multi-request with non exclusive resource selection (since >= cbf_mb_h)
- * Scalability performance testing
- * compute mode support
- * timesharing, container, faireshare, ComputeMode, Postgresql...
- * add always SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE (is it really needed ?)
  * errors logging (at least same error support as provide in perl scheduler)
- * how to emulate resource order ?, need of specifique scheduler for besteffort or use perl scheduler for besteffort ???
- * Do we need global scheduling timeout ??? (at timeout expiration we can save succesfully scheduled job, can also be the way for incremental assignement saving...)
  * dump first k ready launchable jobs (for performance /reactivity issue)
  * nb_asked_resource = 0 raise an error (>= cbf_mb_h) 
- * time_end_slot(n-1) = time_start_slot(n) for same resource must be time_start_slot(n) = time_end_slot(n-1) + 1 ! rajouter + 1 au walltime des jobs + une garde temporelle ?!! (can be address by the use of security_time_overhead ?) 
-
-
-To test:
- * DB postgresql / mysql
- * besteffort
- * container
- * available_upto (???)
- * multi-resource-type
- * multi-request with non exclusive resource selection
+ * unit test
+ * better compilation process (for unit tests)
 
 ToDo:
+-----
+  * ORDER_BY
+      * performance test
+      * production test
+      * ord2init_ids, init2ord_ids  more test
+
   * switch name to kamelot
-  * complete fairsharing
+  * test fairsharing
   * test_unit: better compilation process
   * Ounit (cf archive)
     * test sub_intevals
-  * With 64 bits machine we can use ocaml's int with 63 bits instead of Int64. 
- 
-Done:
 
+Misc:
+-----
+
+  * With 64 bits machine we can use ocaml's int with 63 bits instead of Int64.
+
+Done:
+-----
+ * resource order_by support (usable) 
  * container
  * Support of postgresql
  * Preliminary performance comparaison (perl version timesharing only scheduler from oar-server_2.3.4-1_all.deb against cbf_mh_h). Perl scheduler doesn't seem to scale with number of resources)
@@ -75,11 +79,23 @@ Done:
  * multi-request with non exclusive resource selection (since >= cbf_mh_h)
 
 Remarks and misc:
+-----------------
  * http://martin.jambon.free.fr/ocaml.htm 
 
 Bugs:
+-----
 
 Debug:
+------
   make bc
-  ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/interval.cmo ../common/helpers.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo ./simple_cbf_mb_h_ct.cmo
- rlwrap ./yop -I ../common -I .
+  ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/helpers.cmo ../common/interval.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo ./simple_cbf_mb_h_ct.cmo
+
+ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/helpers.cmo \
+            ../common/interval.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo \
+            ./simple_cbf_mb_h_ct.cmo mysql/mysql.cma ./mysql_driver.cmo iolib.cmo ./simple_cbf_mb_h_ct_oar.cmo
+
+ocamlmktop -I /usr/lib/ocaml/  -o yop str.cma unix.cma ../common/helpers.cmo \
+            ../common/interval.cmo ../common/conf.cmo types.cmo ../common/hierarchy.cmo \
+            ./simple_cbf_mb_h_ct.cmo mysql/mysql.cma ./mysql_driver.cmo iolib.cmo 
+
+rlwrap ./yop -I ../common -I .

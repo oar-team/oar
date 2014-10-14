@@ -1,0 +1,3 @@
+- apt_install:
+  - exec_out: apt-get update
+  - exec_out: apt-get -y --force-yes install $$packages 2>&1

@@ -2,9 +2,11 @@
 # Please, run this test on a kameleon appliance
 # If this is the first time, run it twice and do not care about the first time.
 
+$LOAD_PATH << '.'
+
+USER=ENV['USER']
 require 'oarrestapi_lib'
 require 'shared_examples'
-APIURI="http://kameleon:kameleon@localhost/oarapi-priv/" 
 
 $jobid=""
 $rjobid=""
@@ -140,10 +142,10 @@ describe OarApi do
         @api.value['offset'].to_i.should == 0
       end
       it "should return a correct self link" do
-        @api.get_self_link_href.should == "/oarapi-priv/jobs?state=Running%2CLaunching%2CWaiting&limit=2&offset=0"
+        @api.get_self_link_href.should == "#{APIPATH}jobs?state=Running%2CLaunching%2CWaiting&limit=2&offset=0"
       end
       it "should return a correct next link" do
-        @api.get_next_link_href.should == "/oarapi-priv/jobs?state=Running%2CLaunching%2CWaiting&limit=2&offset=2"
+        @api.get_next_link_href.should == "#{APIPATH}jobs?state=Running%2CLaunching%2CWaiting&limit=2&offset=2"
       end
     end
 
@@ -165,13 +167,13 @@ describe OarApi do
         @api.value['offset'].to_i.should == 3
       end
       it "should return a correct self link" do
-        @api.get_self_link_href.should == "/oarapi-priv/jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=3"
+        @api.get_self_link_href.should == "#{APIPATH}jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=3"
       end
       it "should return a correct previous link" do
-        @api.get_previous_link_href.should == "/oarapi-priv/jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=1"
+        @api.get_previous_link_href.should == "#{APIPATH}jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=1"
       end
       it "should return a correct next link" do
-        @api.get_next_link_href.should == "/oarapi-priv/jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=5"
+        @api.get_next_link_href.should == "#{APIPATH}jobs?state=Running%2CWaiting%2CLaunching&limit=2&offset=5"
       end
     end
 
@@ -198,7 +200,7 @@ describe OarApi do
 
     context "(with state=Running [note: add a sleep if test jobs are not yet running])" do
       before(:all) do
-        @api.get_hash("jobs?state=Running&user=kameleon")
+        @api.get_hash("jobs?state=Running&user=#{USER}")
       end
       it "should return a few running jobs" do
         @api.value['items'].length.should > 0
@@ -211,15 +213,15 @@ describe OarApi do
       it "should return jobs having a correct self link" do
         links=@api.value['items'][0]['links']
         id=@api.value['items'][0]['id']
-        @api.get_link_href_from_array_by_rel(links,"self").should == "/oarapi-priv/jobs/#{id}"
+        @api.get_link_href_from_array_by_rel(links,"self").should == "#{APIPATH}jobs/#{id}"
       end
       it "should return jobs having a correct resources link" do
         links=@api.value['items'][0]['links']
         id=@api.value['items'][0]['id']
-        @api.get_link_href_from_array(links,"resources").should == "/oarapi-priv/jobs/#{id}/resources"
+        @api.get_link_href_from_array(links,"resources").should == "#{APIPATH}jobs/#{id}/resources"
       end
-      it "should return jobs owned by the kameleon user" do
-        @api.value['items'][0]['owner'].should == "kameleon"
+      it "should return jobs owned by the #{USER} user" do
+        @api.value['items'][0]['owner'].should == "#{USER}"
       end
     end
 
@@ -257,15 +259,15 @@ describe OarApi do
  
   end
 
-  describe "JOB DETAILS CHECKING: /jobs/<id> data structure" do
+  describe "JOB INFOS CHECKING: /jobs/<id> data structure" do
     context "(with normal job)" do
       before(:all) do
         @api = OarApi.new(APIURI)
         @api.get_hash("jobs/#{$jobid}")
       end
       it_should_behave_like "Job"
-      it "should be owned by the kameleon user" do
-        @api.value['owner'].should == "kameleon"
+      it "should be owned by the #{USER} user" do
+        @api.value['owner'].should == "#{USER}"
       end
     end
     context "(with non-existent job)" do
@@ -288,12 +290,82 @@ describe OarApi do
         end 
       end
     end
+    context "(with finished job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+        @api.get_hash("jobs/1")
+      end
+      it_should_behave_like "Job"
+    end
+
   end
 
-  describe "JOB DETAILS CHECKING: /jobs/details data structure" do
+
+  describe "JOB DETAILS CHECKING: /jobs/<id>/details data structure" do
+    context "(with normal job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+        @api.get_hash("jobs/#{$jobid}/details")
+        @value=@api.value
+      end
+      it_should_behave_like "Job"
+      it "should be owned by the #{USER} user" do
+        @api.value['owner'].should == "#{USER}"
+      end
+      it "should have resources and nodes details" do
+        @api.value['resources'].should be_an(Array)
+        @api.value['nodes'].should be_an(Array)
+      end
+      context "should have resources behaving correctly" do
+        before(:all) do
+          @api.value=@value['resources'][0]
+        end
+        it_should_behave_like "ResourceId"
+      end
+      context "should have nodes behaving correctly" do
+        before(:all) do
+          @api.value=@value['nodes'][0]
+        end
+        it_should_behave_like "Node"
+        it "should have a status" do
+          @api.value.should have_key('status')
+        end
+      end
+    end
+    context "(with non-existent job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+      end
+
+      it "should raise an exception" do
+        lambda {
+            @api.get_hash("jobs/00/details")
+        }.should raise_exception
+      end
+
+      it "should return a 404 error" do
+        begin
+          @api.get_hash("jobs/00/details")
+        rescue => e
+          e.should respond_to('http_code')
+          e.http_code.should == 404
+        end 
+      end
+    end
+    context "(with finished job)" do
+      before(:all) do
+        @api = OarApi.new(APIURI)
+        @api.get_hash("jobs/1/details")
+      end
+      it_should_behave_like "Job"
+    end
+  end
+
+  describe "JOBS LIST DETAILS CHECKING: /jobs/details data structure" do
     before(:all) do
       @api = OarApi.new(APIURI)
       @api.get_hash("jobs/details")
+      @values=@api.value
     end
     context "(basic structure)" do
       it_should_behave_like "All list structures"
@@ -309,15 +381,18 @@ describe OarApi do
       end
       context "should have resources behaving correctly" do
         before(:all) do
-          @api.value=@api.value['resources'][0]
+          @api.value=@values["items"][0]['resources'][0]
         end
         it_should_behave_like "ResourceId"
       end
       context "should have nodes behaving correctly" do
         before(:all) do
-          @api.value=@api.value['nodes'][0]
+          @api.value=@values["items"][0]['nodes'][0]
         end
         it_should_behave_like "Node"
+        it "should have a status" do
+          @api.value.should have_key('status')
+        end
       end
     end
   end
@@ -401,10 +476,10 @@ describe OarApi do
         @api.value['offset'].to_i.should == 0
       end
       it "should return a correct self link" do
-        @api.get_self_link_href.should == "/oarapi-priv/resources?limit=2&offset=0"
+        @api.get_self_link_href.should == "#{APIPATH}resources?limit=2&offset=0"
       end
       it "should return a correct next link" do
-        @api.get_next_link_href.should == "/oarapi-priv/resources?limit=2&offset=2"
+        @api.get_next_link_href.should == "#{APIPATH}resources?limit=2&offset=2"
       end
     end
 
@@ -425,13 +500,13 @@ describe OarApi do
         @api.value['offset'].to_i.should == 2
       end
       it "should return a correct self link" do
-        @api.get_self_link_href.should == "/oarapi-priv/resources?limit=2&offset=2"
+        @api.get_self_link_href.should == "#{APIPATH}resources?limit=2&offset=2"
       end
       it "should return a correct next link" do
-        @api.get_next_link_href.should == "/oarapi-priv/resources?limit=2&offset=4"
+        @api.get_next_link_href.should == "#{APIPATH}resources?limit=2&offset=4"
       end
       it "should return a correct previous link" do
-        @api.get_previous_link_href.should == "/oarapi-priv/resources?limit=2&offset=0"
+        @api.get_previous_link_href.should == "#{APIPATH}resources?limit=2&offset=0"
       end
     end
     
@@ -578,7 +653,7 @@ describe OarApi do
       @api.submit_job(jhash)
       $ljobid = @api.jobstatus['id']
       @api.value= @api.jobstatus
-      @api.get_self_link_href.should == "/oarapi-priv/jobs/#{$ljobid}"
+      @api.get_self_link_href.should == "#{APIPATH}jobs/#{$ljobid}"
     end
     it "should return a 400 error on bad reservation date" do
       jhash = { 'resource' => "/nodes=1/core=1" , 'script' => "ls;pwd;whoami;sleep 60",
@@ -640,10 +715,10 @@ describe OarApi do
       end
     end
     it "should have a self link" do
-      @api.get_self_link_href.should == "/oarapi-priv/jobs/#{@api.value['id']}"
+      @api.get_self_link_href.should == "#{APIPATH}jobs/#{@api.value['id']}"
     end
     it "should have a parent link" do
-      @api.get_link_href_by_rel('parent').should == "/oarapi-priv/jobs/#{$jobid+1}"
+      @api.get_link_href_by_rel('parent').should == "#{APIPATH}jobs/#{$jobid+1}"
     end
     it "should delete the test job (cleaning)" do
       @api.del_job(@api.value['id'])

@@ -1,0 +1,38 @@
+- configure_monika:
+  - exec_in: sed -e "s/^\(username.*\)oar.*/\1oar_ro/" -i /etc/oar/monika.conf
+  - exec_in: sed -e "s/^\(password.*\)oar.*/\1oar_ro/" -i /etc/oar/monika.conf
+  - exec_in: sed -e "s/^\(dbtype.*\)mysql.*/\1psql/" -i /etc/oar/monika.conf
+  - exec_in: sed -e "s/^\(dbport.*\)3306.*/\15432/" -i /etc/oar/monika.conf
+
+- configure_drawgantt_svg:
+  - exec_in: |
+      sed -i "s/\$CONF\['db_type'\]=\"mysql\"/\$CONF\['db_type'\]=\"pg\"/g" /etc/oar/drawgantt-config.inc.php
+      sed -i "s/\$CONF\['db_port'\]=\"3306\"/\$CONF\['db_port'\]=\"5432\"/g" /etc/oar/drawgantt-config.inc.php
+
+- configure_open_api:
+  - exec_in: perl -pi -e "s/Deny from all/#Deny from all/" /etc/oar/apache2/oar-restful-api.conf
+
+- configure_basic_auth_api_priv:
+  - write_in:
+    - /etc/oar/apache2/oar-restful-api-priv.conf
+    - |
+      ScriptAlias /oarapi-priv $$oar_prefix_install/lib/cgi-bin/oarapi/oarapi.cgi
+      ScriptAlias /oarapi-priv-debug $$oar_prefix_install/lib/cgi-bin/oarapi/oarapi.cgi
+      <Location /oarapi-priv>
+        Options ExecCGI -MultiViews FollowSymLinks
+        AuthType      basic
+        AuthUserfile  /etc/oar/api-users
+        AuthName      "OAR API authentication"
+        Require valid-user
+        #RequestHeader set X_REMOTE_IDENT %{REMOTE_USER}e
+        RewriteEngine On
+        RewriteCond %{REMOTE_USER} (.*)
+        RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
+        RequestHeader add X-REMOTE_IDENT %{MY_REMOTE_IDENT}e
+      </Location>
+  - exec_in: htpasswd -b -c /etc/oar/api-users $$user_name $$user_name
+  - exec_in: htpasswd -b /etc/oar/api-users oar $$user_name
+
+- install_chandler:
+  - exec_in: gem install naturalsort --no-ri --no-rdoc
+  - exec_in: cp /home/$$user_name/oar/sources/api/examples/chandler.rb /usr/local/bin/chandler

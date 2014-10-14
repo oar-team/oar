@@ -1,0 +1,10 @@
+# oar_drmaa.conf - Sample oar_drmaa configuration file.
+
+#wait_thread: 1,
+#pool_delay: 5,
+
+## Mapping of `drmaa_job_category` values to native specification.
+job_categories: {
+  be : "--type besteffort",
+},
+

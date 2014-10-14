@@ -9,7 +9,7 @@ We present below some points that explain benefits of the new version of OAR.
 A better resource management
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Using Linux kernel new feature called cpuset, OAR2 allows a more reliable 
+Using Linux kernel new feature called cpuset, OAR allows a more reliable 
 management of the resources:
 
   * No unattended processes should remain from previous jobs.
@@ -30,7 +30,7 @@ A cpuset is attached to every process, and allows:
 Multi-cluster
 ~~~~~~~~~~~~~
 
-OAR 2 can manage complex hierarchies of resources. For example:
+OAR can manage complex hierarchies of resources. For example:
    1. clusters
    2. switchs
    3. nodes
@@ -40,7 +40,7 @@ OAR 2 can manage complex hierarchies of resources. For example:
 A modern cluster management system
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By providing a mechanism to isolate the jobs at the core level, OAR 2 is one of 
+By providing a mechanism to isolate the jobs at the core level, OAR is one of 
 the most modern cluster management systems. Users developing cluster or grid 
 algorithms and programs will then work in a today's up-to-date environment 
 similar to the ones they will meet with other recent cluster management systems 
@@ -49,21 +49,21 @@ on production platforms for instance.
 Optimization of the resources usage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now a day, machines with more than 4 cores become common. Thus, it is then very 
+Now a day, machines with more than 10 cores become common. Thus, it is then very 
 important to be able to handle cores efficiently. By providing resources 
-selection and processes isolation at the core level, OAR 2 allows users running 
+selection and processes isolation at the core level, OAR allows users running 
 experiments that do not require the exclusivity of a node (at least during a 
 preparation phase) to have access to many nodes on one core only, but leave the 
 remaining cores free for other users. This can allow to optimize the number of 
 available resources.
 
-Beside, OAR 2 also provide a time-sharing feature which will allow to share a 
+Beside, OAR also provide a time-sharing feature which will allow to share a 
 same set of resources among users.
 
 Easier access to the resources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Using OAR 2 OARSH connector to access the job resources, basic usages will not 
+Using OAR OARSH connector to access the job resources, basic usages will not 
 anymore require the user to configure his SSH environment as everything is 
 handled internally (known host keys management, etc). Beside, users that would 
 actually prefer not using OARSH can still use SSH with just the cost of some 
@@ -75,16 +75,15 @@ Grid resources interconnection
 
 As access to one cluster resources is restricted to an attached job, one may 
 wonder if connections from job to job, from cluster to cluster, from site to 
-site would still be possible. OAR 2 provides a mechanism called job-key than 
-allows inter job communication, even on several sites managed by several OAR 2 
+site would still be possible. OAR provides a mechanism called job-key than 
+allows inter job communication, even on several sites managed by several OAR 
 servers (this mechanism is indeed used by OARGrid2 for instance).
 
 Management of abstract resources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-OAR 2 features a mechanism to manage resources like software licenses or other 
+OAR features a mechanism to manage resources like software licenses or other 
 non-material resources the same way it manages classical resources.
-
 
 OAR Uses and Users
 ------------------

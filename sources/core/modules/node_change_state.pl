@@ -35,12 +35,17 @@ foreach my $i (@events_to_check){
     # Check if we must resubmit the idempotent jobs    #
     ####################################################
     if ((($i->{type} eq "SWITCH_INTO_TERMINATE_STATE") or ($i->{type} eq "SWITCH_INTO_ERROR_STATE")) and (defined($job->{exit_code}) and ( ($job->{exit_code} >> 8) == 99))){
-        my $jobtypes = OAR::IO::get_current_job_types($base, $i->{job_id});
+        my $jobtypes = OAR::IO::get_job_types_hash($base, $i->{job_id});
         if ((defined($jobtypes->{idempotent}))){
-            if (($job->{reservation} eq "None") and ($job->{job_type} eq "PASSIVE") and (OAR::IO::is_job_already_resubmitted($base, $i->{job_id}) == 0) and (OAR::IO::is_an_event_exists($base, $i->{job_id},"SEND_KILL_JOB") <= 0)){
+            if (($job->{reservation} eq "None")
+                 and ($job->{job_type} eq "PASSIVE")
+                 and (OAR::IO::is_job_already_resubmitted($base, $i->{job_id}) == 0)
+                 and (OAR::IO::is_an_event_exists($base, $i->{job_id},"SEND_KILL_JOB") <= 0)
+                 and ($job->{stop_time} - $job->{start_time} > 60)
+                ){
                 my $new_job_id = OAR::IO::resubmit_job($base,$i->{job_id});
                 oar_warn("[NodeChangeState] We resubmit the job $i->{job_id} (new id = $new_job_id) because it is of the type idempotent and its exit code is 99.\n");
-                OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},"idempotent job type + exit code of 99 = resubmit it (new id = $new_job_id).");
+                OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},"idempotent job type + exit code of 99 + duration > 60s = resubmit it (new id = $new_job_id).");
             }
         }
     }
@@ -50,7 +55,10 @@ foreach my $i (@events_to_check){
     ####################################################
     if ($i->{type} eq "SWITCH_INTO_TERMINATE_STATE"){
         OAR::IO::set_job_state($base,$i->{job_id},"Terminated");
-    }elsif ($i->{type} eq "SWITCH_INTO_ERROR_STATE"){
+    }elsif (
+            ($i->{type} eq "SWITCH_INTO_ERROR_STATE") ||
+            ($i->{type} eq "FORCE_TERMINATE_FINISHING_JOB")
+           ){
         OAR::IO::set_job_state($base,$i->{job_id},"Error");
     }
 
@@ -98,6 +106,7 @@ foreach my $i (@events_to_check){
     # Check if we must suspect some nodes #
     #######################################
     if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") ||
+        ($i->{type} eq "PING_CHECKER_NODE_SUSPECTED_END_JOB") ||
         ($i->{type} eq "CPUSET_ERROR") ||
         ($i->{type} eq "CPUSET_CLEAN_ERROR") ||
         ($i->{type} eq "SUSPEND_ERROR") ||
@@ -112,12 +121,14 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "SSH_TRANSFER_TIMEOUT") ||
         ($i->{type} eq "BAD_HASHTABLE_DUMP") ||
         ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT") ||
-        ($i->{type} eq "EXIT_VALUE_OAREXEC")
+        ($i->{type} eq "EXIT_VALUE_OAREXEC") ||
+        ($i->{type} eq "FORCE_TERMINATE_FINISHING_JOB")
        ){
         my @hosts;
         my $finaud_tag = "NO";
         # Restrict Suspected state to the first node (node really connected with OAR) for some event types
-        if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED")
+        if (($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") or
+            ($i->{type} eq "PING_CHECKER_NODE_SUSPECTED_END_JOB")
         ){
             @hosts = OAR::IO::get_hostname_event($base,$i->{event_id});
             $finaud_tag = "YES";
@@ -133,7 +144,8 @@ foreach my $i (@events_to_check){
                 ($i->{type} ne "PROLOGUE_ERROR") &&
                 ($i->{type} ne "EPILOGUE_ERROR") &&
                 ($i->{type} ne "CPUSET_ERROR") &&
-                ($i->{type} ne "CPUSET_CLEAN_ERROR")
+                ($i->{type} ne "CPUSET_CLEAN_ERROR") &&
+                ($i->{type} ne "FORCE_TERMINATE_FINISHING_JOB")
             ){
                 @hosts = ($hosts[0]);
             }else{
@@ -141,7 +153,6 @@ foreach my $i (@events_to_check){
                 # then the CPUSET clean will tell us which nodes are dead
                 my $cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
                 if (defined($cpuset_field) && ($i->{type} eq "EXTERMINATE_JOB")){
-                    #@hosts = ($hosts[0]);
                     @hosts = ();
                 }
             }
@@ -153,20 +164,14 @@ foreach my $i (@events_to_check){
             foreach my $j (@hosts){
                 next if ((defined($already_treated_host{$j}) or ($j eq "")));
                 $already_treated_host{$j} = 1;
-                #my @free_resources = OAR::IO::get_current_free_resources_of_node($base, $j);
-                #if ($#free_resources >= 0){
-                #    foreach my $r (@free_resources){
-                        #OAR::IO::set_resource_state($base,$r,"Suspected",$finaud_tag);
-                        OAR::IO::set_node_state($base,$j,"Suspected",$finaud_tag);
-                        foreach my $r (OAR::IO::get_all_resources_on_node($base,$j)){
-                          push(@resources_to_heal,"$r $j");
-                        }
-                        $Exit_code = 1;
-                #    }
-                #}
+                OAR::IO::set_node_state($base,$j,"Suspected",$finaud_tag);
+                foreach my $r (OAR::IO::get_all_resources_on_node($base,$j)){
+                    push(@resources_to_heal,"$r $j");
+                }
+                $Exit_code = 1;
             }
-            oar_warn("[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
-            send_log_by_email("Suspecting nodes","[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting corresponding free resources\n");
+            oar_warn("[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting them\n");
+            send_log_by_email("Suspecting nodes","[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting them\n");
         }
     }
     
@@ -226,76 +231,82 @@ foreach my $i (@events_to_check){
             OAR::IO::set_job_state($base,$job->{job_id},"Suspended");
             OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Term");
         }elsif (($i->{type} eq "HOLD_RUNNING_JOB") and ($job->{state} eq "Running")){
-            # Launch suspend command on all nodes
-
-            ################
-            # SUSPEND PART #
-            ################
-            if (defined($Cpuset_field)){
-                my $cpuset_name = OAR::IO::get_job_cpuset_name($base, $i->{job_id}) if (defined($Cpuset_field));
-                my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job});
-                my $suspend_data_hash = {
-                    name => $cpuset_name,
-                    job_id => $i->{job_id},
-                    oarexec_pid_file => OAR::Tools::get_oar_pid_file_name($i->{job_id}),
-                };
-                if (defined($cpuset_nodes)){
-                    my $taktuk_cmd = get_conf("TAKTUK_CMD");
-                    my $openssh_cmd = get_conf("OPENSSH_CMD");
-                    $openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
-                    if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
-                        OAR::Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
-                    }
-                    my $suspend_file = get_conf("SUSPEND_RESUME_FILE");
-                    $suspend_file = OAR::Tools::get_default_suspend_resume_file() if (!defined($suspend_file));
-                    $suspend_file = "$ENV{OARDIR}/$suspend_file" if ($suspend_file !~ /^\//);
-                    my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_file,"suspend",$openssh_cmd,$taktuk_cmd,$base);
-                    if ($tag == 0){
-                        my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] Bad suspend/resume file : $suspend_file\n";
-                        oar_error($str);
-                        OAR::IO::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $i->{job_id}, $str);
-                    }else{
-                        if (($#bad < 0)){
-                            OAR::IO::suspend_job_action($base,$i->{job_id},$job->{assigned_moldable_job});
-                            
-                            my $suspend_script = get_conf("JUST_AFTER_SUSPEND_EXEC_FILE");
-                            my $timeout = get_conf("SUSPEND_RESUME_SCRIPT_TIMEOUT");
-                            $timeout = OAR::Tools::get_default_suspend_resume_script_timeout() if (!defined($timeout));
-                            if (defined($suspend_script)){
-                                # Launch admin script
-                                my $script_error = 0;
-                                eval {
-                                    $SIG{ALRM} = sub { die "alarm\n" };
-                                    alarm($timeout);
-                                    oar_debug("[NodeChangeState] [$i->{job_id}] LAUNCH the script just after the suspend : $suspend_script $i->{job_id}\n");
-                                    $script_error = system("$suspend_script $i->{job_id}");
-                                    oar_debug("[NodeChangeStat]e [$i->{job_id}] END the script just after the suspend : $suspend_script $i->{job_id}\n");
-                                    alarm(0);
-                                };
-                                if( $@ || ($script_error != 0)){
-                                    my $str = "[NodeChangeState] [$i->{job_id}] Suspend script error (so we are resuming it): $@; return code = $script_error\n";
-                                    oar_warn($str);
-                                    send_log_by_email("Suspend script error","$str");
-                                    OAR::IO::add_new_event($base,"SUSPEND_SCRIPT_ERROR",$i->{job_id},$str);
-                                    OAR::IO::set_job_state($base,$i->{job_id},"Resuming");
-                                    OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qresume");
-                                }
-                            }
-                        }else{
-                            my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] Error on several nodes : @bad\n";
+            my $jobtypes = OAR::IO::get_job_types_hash($base, $job->{job_id});
+            if (defined($jobtypes->{noop})){
+                OAR::IO::suspend_job_action($base,$job->{job_id},$job->{assigned_moldable_job});
+                oar_debug("[NodeChangeStat]e [$job->{job_id}] Suspend NOOP job OK\n");
+                OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Term");
+            }else{
+                # Launch suspend command on all nodes
+                ################
+                # SUSPEND PART #
+                ################
+                if (defined($Cpuset_field)){
+                    my $cpuset_name = OAR::IO::get_job_cpuset_name($base, $i->{job_id}) if (defined($Cpuset_field));
+                    my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job});
+                    my $suspend_data_hash = {
+                        name => $cpuset_name,
+                        job_id => $i->{job_id},
+                        oarexec_pid_file => OAR::Tools::get_oar_pid_file_name($i->{job_id}),
+                    };
+                    if (defined($cpuset_nodes)){
+                        my $taktuk_cmd = get_conf("TAKTUK_CMD");
+                        my $openssh_cmd = get_conf("OPENSSH_CMD");
+                        $openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+                        if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+                            OAR::Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+                        }
+                        my $suspend_file = get_conf("SUSPEND_RESUME_FILE");
+                        $suspend_file = OAR::Tools::get_default_suspend_resume_file() if (!defined($suspend_file));
+                        $suspend_file = "$ENV{OARDIR}/$suspend_file" if ($suspend_file !~ /^\//);
+                        my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_file,"suspend",$openssh_cmd,$taktuk_cmd,$base);
+                        if ($tag == 0){
+                            my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] Bad suspend/resume file : $suspend_file\n";
                             oar_error($str);
-                            OAR::IO::add_new_event_with_host($base,"SUSPEND_ERROR",$i->{job_id},$str,\@bad);
-                            OAR::IO::frag_job($base,$i->{job_id});
-                            # A Leon must be run
-                            $Exit_code = 2;
+                            OAR::IO::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $i->{job_id}, $str);
+                        }else{
+                            if (($#bad < 0)){
+                                OAR::IO::suspend_job_action($base,$i->{job_id},$job->{assigned_moldable_job});
+                                
+                                my $suspend_script = get_conf("JUST_AFTER_SUSPEND_EXEC_FILE");
+                                my $timeout = get_conf("SUSPEND_RESUME_SCRIPT_TIMEOUT");
+                                $timeout = OAR::Tools::get_default_suspend_resume_script_timeout() if (!defined($timeout));
+                                if (defined($suspend_script)){
+                                    # Launch admin script
+                                    my $script_error = 0;
+                                    eval {
+                                        $SIG{ALRM} = sub { die "alarm\n" };
+                                        alarm($timeout);
+                                        oar_debug("[NodeChangeState] [$i->{job_id}] LAUNCH the script just after the suspend : $suspend_script $i->{job_id}\n");
+                                        $script_error = system("$suspend_script $i->{job_id}");
+                                        oar_debug("[NodeChangeStat]e [$i->{job_id}] END the script just after the suspend : $suspend_script $i->{job_id}\n");
+                                        alarm(0);
+                                    };
+                                    if( $@ || ($script_error != 0)){
+                                        my $str = "[NodeChangeState] [$i->{job_id}] Suspend script error (so we are resuming it): $@; return code = $script_error\n";
+                                        oar_warn($str);
+                                        send_log_by_email("Suspend script error","$str");
+                                        OAR::IO::add_new_event($base,"SUSPEND_SCRIPT_ERROR",$i->{job_id},$str);
+                                        OAR::IO::set_job_state($base,$i->{job_id},"Resuming");
+                                        OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qresume");
+                                    }
+                                }
+                            }else{
+                                my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] Error on several nodes : @bad\n";
+                                oar_error($str);
+                                OAR::IO::add_new_event_with_host($base,"SUSPEND_ERROR",$i->{job_id},$str,\@bad);
+                                OAR::IO::frag_job($base,$i->{job_id});
+                                # A Leon must be run
+                                $Exit_code = 2;
+                            }
                         }
                     }
+                    OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Term");
                 }
-                OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Term");
+                ######################
+                # SUSPEND PART, END  #
+                ######################
             }
-            ######################
-            # SUSPEND PART, END  #
-            ######################
         }elsif (($i->{type} eq "RESUME_JOB") and ($job->{state} eq "Suspended")){
             OAR::IO::set_job_state($base,$i->{job_id},"Resuming");
             OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qresume");

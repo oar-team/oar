@@ -1,0 +1,5 @@
+- enable_checkpoint:
+  - on_checkpoint: redo
+  - on_bootstrap_init:
+    - exec_local: rm -f $$kameleon_cwd/checkpoint_enabled
+  - exec_local: touch $$kameleon_cwd/checkpoint_enabled

@@ -8,9 +8,7 @@
 
 .. include:: doc_abstract.rst
 
-**BE CAREFULL : THIS DOCUMENTATION IS FOR OAR >= 2.3.0**
-
-PDF version : `<OAR-DOCUMENTATION-ADMIN.pdf>`_
+**BE CAREFULL : THIS DOCUMENTATION IS FOR OAR 2.5.4**
 
 .. section-numbering::
 .. contents:: Table of Contents
@@ -43,7 +41,6 @@ Options are: ::
 Examples: ::
 
   # oarproperty -a cpu_freq
-  # oarproperty -a type
   # oarproperty -r "cpu_freq,freq"
 
 *oarnodesetting*
@@ -57,22 +54,60 @@ By default the node name used by `oarnodesetting`_ is the result of the command
 
 Options are: ::
 
- -a    : add a new resource
- -s    : state to assign to the node:
-         * "Alive" : a job can be run on the node.
-         * "Absent" : administrator wants to remove the node from the pool
-            for a moment.
-         * "Dead" : the node will not be used and will be deleted. 
- -h    : specify the node name (override hostname).
- -r    : specify the resource number
- --sql : get resource identifiers which respond to the
-         SQL where clause on the table jobs
-         (ex: "type = 'default'")
- -p    : change the value of a property specified resources.
- -n    : specify this option if you do not want to wait the end of jobs running
-         on this node when you change its state into "Absent" or "Dead".
+ -r, --resource [resource_id]         Resource id of the resource to modify
+ -h, --hostname [hostname]            Hostname for the resources to modify
+ -f, --file [file]                    Get a hostname list from a file (1
+                                      hostname by line) for resources to modify
+     --sql [SQL]                      Select resources to modify from database
+                                      using a SQL where clause on the resource
+                                      table (e.g.: "type = 'default'")
+ -a, --add                            Add a new resource
+ -s, --state=state                    Set the new state of the node
+ -m, --maintenance [on|off]           Set/unset maintenance mode for resources,
+                                      this is equivalent to setting its state
+                                      to Absent and its available_upto to 0
+ -d, --drain [on|off]                 Prevent new job to be scheduled on 
+                                      resources, this is equivalent to setting
+                                      the drain property to YES
+ -p, --property ["property=value"]    Set the property of the resource to the
+                                      given value
+ -n, --no-wait                        Do not wait for job end when the node
+                                      switches to Absent or Dead
+     --last-property-value [property] Get the last value used for a property (as
+                                      sorted by SQL's ORDER BY DESC)
          
-.. include:: oaradmin.rst       
+*oaradmissionrules*
+-------------------
+
+This command is used to add, edit or remove the admission rules.
+
+The admission rules are a piece of Perl code that is executed in the oarsub
+command just before to submit the job to the system.
+
+Options are:
+::
+
+  -S, --show-all
+    -Y, --enabled              show enabled admission rules only
+    -N, --disabled             show disabled admission rules only
+    
+  -S, --show-all
+  -s, --show [rule-id]
+    -I, --id                   show #rule-id only
+    -f, --full                 show full script
+    -H, --no-header            show script only
+    -w, --to-file [filename]   write script to file (%% replaced by #rule-id)
+    
+  -n, --new
+  -m, --modify <rule-id>
+    -e, --edit [cmd]           edit script using editor or cmd if provided
+    -r, --from-file <filename> read script from file instead of running editor
+    -P, --priority <priority>  set priority for rule
+    -Y, --enabled              enable admission rule
+    -N, --disabled             disable admission rule
+    
+  -d, --delete <rule-id>
+    no option
          
 *oarremoveresource*
 -------------------
@@ -81,6 +116,9 @@ This command permits to remove a resource from the database.
 
 The node must be in the state "Dead" (use `oarnodesetting`_ to do this) and then
 you can use this command to delete it.
+
+Be aware that it also removes the history of all the jobs that have run on this
+resource.
 
 *oaraccounting*
 ---------------
@@ -114,37 +152,16 @@ Option are: ::
   -E                  active all queues
   -D                  inactive all queues
   --add_queue         add a new queue; syntax is name,priority,scheduler
-                      (ex: "name,3,"oar_sched_gantt_with_timesharing"
+                      (ex: "name,3,oar_sched_gantt_with_timesharing"
   --remove_queue      remove an existing queue
   -l                  list all queues and there status
   -h                  show this help screen
   -v                  print OAR version number
 
-*oarmonitor*
-------------
+*oar-database*
+--------------
 
-This command collects monitoring data from compute nodes and stores them into
-the database.
-
-The TAKTUK_CMD_ is mandatory in the *oar.conf* and data comes from the sensor
-file OARMONITOR_SENSOR_FILE_ (parse */proc* filesystem for example) and print
-it in the right way.
-
-For example, the user "oar" or "root" can run the following command on the
-server:
-
-    oarmonitor -j 4242 -f 10
-
-(Retrieve data from compute nodes of the job 4242 every 10 seconds and store
-them into database tables monitoring_*)
-
-For now, there is just a very minimalist command for the user to view these
-data. It creates PNG images and a movie...
-
-    oarmonitor_graph_gen.pl -j 4242
-
-Then the user can look into the directory *OAR.1653.monitoring* in the current
-directory.
+This command create/initialize/upgrade/reset/drop the oar database.
 
 Database scheme
 ===============
@@ -207,6 +224,24 @@ regenerate this table completely in this way :
 You can change the amount of time for each window : edit the oar configuration
 file and change the value of the tag ACCOUNTING_WINDOW_.
 
+*schema*
+--------
+
+================  ====================  =======================================
+Fields            Types                 Descriptions
+================  ====================  =======================================
+version           VARCHAR(255)          database schema version number
+name              VARCHAR(255)          optional name
+================  ====================  =======================================
+
+This table is used to store the version of the database schema.
+
+So the oar-database command be used to automatically upgrade the schema from
+any version with:
+::
+
+    oar-database --setup
+
 *admission_rules*
 -----------------
 
@@ -226,30 +261,30 @@ submitted. So each admission rule is executed in the order of the id field and
 it can set several variables. If one of them exits then the others will not
 be evaluated and oarsub returns an error.
 
-Some examples are better than a long description :
+The rules can be added with the following command:
+::
+
+    oaradmissionrules -n
+
+Some examples are better than a long description:
 
  - Specify the default value for queue parameter
    ::
       
-      INSERT INTO admission_rules (rule) VALUES('
         if (not defined($queue_name)) {
             $queue_name="default";
         }
-      ');
 
  - Avoid users except oar to go in the admin queue
    ::
       
-      INSERT INTO admission_rules (rule) VALUES ('
         if (($queue_name eq "admin") && ($user ne "oar")) {
-          die("[ADMISSION RULE] Only oar user can submit jobs in the admin queue\\n");
+          die("[ADMISSION RULE] Only oar user can submit jobs in the admin queue\n");
         }
-      ');
 
  - Restrict the maximum of the walltime for interactive jobs
    ::
  
-      INSERT INTO admission_rules (rule) VALUES ('
         my $max_walltime = OAR::IO::sql_to_duration("12:00:00");
         if ($jobType eq "INTERACTIVE"){ 
           foreach my $mold (@{$ref_resource_list}){
@@ -257,40 +292,53 @@ Some examples are better than a long description :
               (defined($mold->[1])) and
               ($max_walltime < $mold->[1])
             ){
-              print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\\n");
+              print("[ADMISSION RULE] Walltime to big for an INTERACTIVE job so it is set to $max_walltime.\n");
               $mold->[1] = $max_walltime;
             }
           }
         }
-      ');
 
  - Specify the default walltime
    ::
    
-    INSERT INTO admission_rules (rule) VALUES ('
       my $default_wall = OAR::IO::sql_to_duration("2:00:00");
       foreach my $mold (@{$ref_resource_list}){
         if (!defined($mold->[1])){
-          print("[ADMISSION RULE] Set default walltime to $default_wall.\\n");
+          print("[ADMISSION RULE] Set default walltime to $default_wall.\n");
           $mold->[1] = $default_wall;
         }
       }
-    ');
  
  - How to perform actions if the user name is in a file
    ::
   
-    INSERT INTO admission_rules (rule) VALUES ('
       open(FILE, "/tmp/users.txt");
       while (($queue_name ne "admin") and ($_ = <FILE>)){
         if ($_ =~ m/^\\s*$user\\s*$/m){
-          print("[ADMISSION RULE] Change assigned queue into admin\\n");
+          print("[ADMISSION RULE] Change assigned queue into admin\n");
           $queue_name = "admin";
         }
       }
       close(FILE);
-    ');
-    
+
+ - How to automatically add a job type depending of the walltime and an
+   estimation of the number of resources of the job
+   ::
+
+      foreach my $e (estimate_job_nb_resources($dbh_ro, $ref_resource_list, $jobproperties)){
+        #print("AREA: $e->{nbresources} x $e->{walltime} = ".$e->{nbresources} * $e->{walltime}."\n");
+        if ($e->{nbresources} * $e->{walltime} > 24*3600*1){
+          print("[ADMISSION RULE] Your job is of the 'big' type\n");
+          push(@{$type_list},"big");
+          last;
+        }
+      }
+
+You can print all the admission rules with
+::
+
+    oaradmissionrules -S -f
+
 *event_logs*
 ------------
 
@@ -510,6 +558,9 @@ tools. It is made up to date in an atomic action (with a lock).
 Fields                Types                   Descriptions
 ===================== ======================  =======================================
 job_id                INT UNSIGNED            job identifier
+array_id              INT                     array identifier
+array_index           INT                     index of the job in the array
+initial_request       TEXT                    oarsub initial arguments
 job_name              VARCHAR(100)            name given by the user
 cpuset_name           VARCHAR(255)            name of the cpuset directory used for
                                               this job on each nodes
@@ -892,15 +943,15 @@ Each configuration tag found in /etc/oar.conf is now described:
   - Database type : you can use a MySQL or a PostgreSQL database (tags are
     "mysql" or "Pg")::
       
-      DB_TYPE=mysql
+      DB_TYPE=Pg
   
   - Database hostname::
   
-      DB_HOSTNAME=localhost
+      DB_HOSTNAME=127.0.0.1
       
 	- Database port::
   
-      DB_PORT=3306
+      DB_PORT=5432
 
   - Database base name::
   
@@ -960,11 +1011,6 @@ Each configuration tag found in /etc/oar.conf is now described:
 
 .. _DETACH_JOB_FROM_SERVER:
 
-  - Set DETACH_JOB_FROM_SERVER to 1 if you do not want to keep a ssh
-    connection between the node and the server. Otherwise set this tag to 0::
-      
-      DETACH_JOB_FROM_SERVER=1
-
   - Set the directory where OAR will store its temporary files on each nodes
     of the cluster. This value MUST be the same in all oar.conf on
     all nodes::
@@ -989,11 +1035,11 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       * OAR taktuk::
       
-          PINGCHECKER_TAKTUK_ARG_COMMAND="-t 3 broadcast exec [ true ]"
+          PINGCHECKER_TAKTUK_ARG_COMMAND="-t 30 broadcast exec [ true ]"
 
         If you use sentinelle.pl then you must use this tag::
 
-          PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="/var/lib/oar/sentinelle.pl -t 5 -w 20"
+          PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="/var/lib/oar/sentinelle.pl -t 30 -w 20"
 
       * OAR fping::
       
@@ -1078,7 +1124,7 @@ Each configuration tag found in /etc/oar.conf is now described:
 
   - Maximum of seconds used by a scheduler::
 
-      SCHEDULER_TIMEOUT=10
+      SCHEDULER_TIMEOUT=20
 
   - Time to wait when a reservation has not got all resources that it has
     reserved (some resources could have become Suspected or Absent since the
@@ -1241,14 +1287,6 @@ Each configuration tag found in /etc/oar.conf is now described:
 
       OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 
-.. _OARMONITOR_SENSOR_FILE:
-
-  - Name of the perl script the retrive monitoring data from compute nodes.
-    This is used in oarmonitor command.
-
-      OARMONITOR_SENSOR_FILE="/etc/oar/oarmonitor_sensor.pl"
-
-      
 .. include:: doc_modules.rst
 
 .. include:: doc_internal_mechanisms.rst
@@ -1256,4 +1294,6 @@ Each configuration tag found in /etc/oar.conf is now described:
 .. include:: FAQ-ADMIN
 
 .. include:: CHANGELOG
+
+.. include:: doc_archives.rst
 

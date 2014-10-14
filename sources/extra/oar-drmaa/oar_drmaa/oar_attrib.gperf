@@ -1,0 +1,157 @@
+%{
+/* $Id: pbs_attrib.gperf 2677 2009-09-08 14:32:22Z mmamonski $ */
+/*
+ *  FedStage DRMAA for PBS Pro
+ *  Copyright (C) 2006-2009  FedStage Systems
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+/*
+ * Adapted from pbs_drmaa/pbs_attrib.gperf
+ */
+
+#ifdef HAVE_CONFIG_H
+#	include <config.h>
+#endif
+
+#include <drmaa_utils/drmaa_attrib.h>
+#include <drmaa_utils/template.h>
+#include <oar_drmaa/oar_attrib.h>
+
+#ifndef lint
+static char rcsid[]
+#	ifdef __GNUC__
+		__attribute__ ((unused))
+#	endif
+	= "$Id: pbs_attrib.gperf 2677 2009-09-08 14:32:22Z mmamonski $";
+#endif
+
+extern const fsd_attribute_t oardrmaa_oar_attributes[];
+#define t(code) \
+        ( & oardrmaa_oar_attributes[ code ] )
+%}
+
+%language=ANSI-C
+%includes
+%readonly-tables
+%pic
+%define lookup-function-name oardrmaa_oar_attrib_lookup
+%struct-type
+struct oar_attrib { int name; const fsd_attribute_t *attr; }
+
+%%
+name,        t(OARDRMAA_ATTR_JOB_NAME)
+stdout,      t(OARDRMAA_ATTR_STDOUT_FILE)
+stderr,      t(OARDRMAA_ATTR_STDERR_FILE)
+resource,    t(OARDRMAA_ATTR_RESOURCE)
+args,        t(OARDRMAA_ATTR_ARGS)
+job_state,   t(OARDRMAA_ATTR_JOB_STATE)
+hold,        t(OARDRMAA_ATTR_HOLD)
+property,    t(OARDRMAA_ATTR_PROPERTY)
+reservation, t(OARDRMAA_ATTR_RESERVATION)
+checkpoint,  t(OARDRMAA_ATTR_CHECKPOINT)
+signal,      t(OARDRMAA_ATTR_SIGNAL)
+type,        t(OARDRMAA_ATTR_TYPE)
+directory,   t(OARDRMAA_ATTR_DIRECTORY)
+project,     t(OARDRMAA_ATTR_PROJECT)
+anterior,    t(OARDRMAA_ATTR_ANTERIOR)
+notify,      t(OARDRMAA_ATTR_NOTIFY)
+resubmit,    t(OARDRMAA_ATTR_RESUBMIT)
+import-job-key-from-file,  t(OARDRMAA_ATTR_I_JOB_KEY_FROM_FILE)
+import-job-key-inline,     t(OARDRMAA_ATTR_I_JOB_KEY_INLINE)
+use-job-key,               t(OARDRMAA_ATTR_USE_JOB_KEY)
+%%
+#undef t
+
+int
+oardrmaa_oar_attrib_by_name( const char *name )
+{
+        const struct oar_attrib *found;
+        found = oardrmaa_oar_attrib_lookup( name, strlen(name) );
+	if( found )
+		return found->attr->code;
+	else
+		return -1;
+}
+
+static const fsd_attribute_t *
+oardrmaa_oar_template_by_name( const fsd_template_t *self, const char *name )
+{
+        const struct oar_attrib *found;
+        found = oardrmaa_oar_attrib_lookup( name, strlen(name) );
+	if( found != NULL )
+	 {
+                fsd_assert( found->attr - oardrmaa_oar_attributes == found->attr->code );
+		return found->attr;
+	 }
+	else
+		fsd_exc_raise_fmt(
+				FSD_ERRNO_INVALID_ARGUMENT,
+                                "invalid OAR attribute name: %s", name
+				);
+}
+
+
+static const fsd_attribute_t *
+oardrmaa_oar_template_by_code( const fsd_template_t *self, int code )
+{
+        if( 0 <= code  &&  code < OARDRMAA_N_OAR_ATTRIBUTES )
+	 {
+                fsd_assert( oardrmaa_oar_attributes[code].code == code );
+                return & oardrmaa_oar_attributes[ code ];
+	 }
+	else
+		fsd_exc_raise_fmt(
+				FSD_ERRNO_INVALID_ARGUMENT,
+                                "invalid OAR attribute code: %d", code
+				);
+}
+
+
+fsd_template_t *
+oardrmaa_oar_template_new(void)
+{
+	return fsd_template_new(
+                        oardrmaa_oar_template_by_name,
+                        oardrmaa_oar_template_by_code,
+                        OARDRMAA_N_OAR_ATTRIBUTES
+			);
+}
+
+const fsd_attribute_t oardrmaa_oar_attributes[ OARDRMAA_N_OAR_ATTRIBUTES ] = {
+    {"name",        OARDRMAA_ATTR_JOB_NAME, false },
+    {"stdout",      OARDRMAA_ATTR_STDOUT_FILE, false },
+    {"stderr",      OARDRMAA_ATTR_STDERR_FILE, false },
+    {"resource",    OARDRMAA_ATTR_RESOURCE,false },
+    {"args",        OARDRMAA_ATTR_ARGS, false },
+    {"job_state",   OARDRMAA_ATTR_JOB_STATE, false },
+    {"hold",        OARDRMAA_ATTR_HOLD, false },
+    {"property",    OARDRMAA_ATTR_PROPERTY, false },
+    {"reservation", OARDRMAA_ATTR_RESERVATION, false },
+    {"checkpoint",  OARDRMAA_ATTR_CHECKPOINT, false },
+    {"signal",      OARDRMAA_ATTR_SIGNAL, false },
+    {"type",        OARDRMAA_ATTR_TYPE, false },
+    {"directory",   OARDRMAA_ATTR_DIRECTORY, false },
+    {"project",     OARDRMAA_ATTR_PROJECT, false },
+    {"anterior",    OARDRMAA_ATTR_ANTERIOR, false },
+    {"notify",      OARDRMAA_ATTR_NOTIFY, false },
+    {"resubmit",    OARDRMAA_ATTR_RESUBMIT, false },
+    {"import-job-key-from-file",  OARDRMAA_ATTR_I_JOB_KEY_FROM_FILE, false },
+    {"import-job-key-inline",     OARDRMAA_ATTR_I_JOB_KEY_INLINE, false },
+    {"use-job-key",               OARDRMAA_ATTR_USE_JOB_KEY, false }
+};
+
+/* vim: set ft=c: */

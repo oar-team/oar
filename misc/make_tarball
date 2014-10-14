@@ -14,8 +14,8 @@ Options:
   -h   print this message and exit
   -q   quiet (only write relevant information for automation to stdout)
   -u   specify the git uri to use
-  -b   specify the git treeish to use
-  -r   use a remote repository
+  -t   specify the git treeish to use
+  -r   use a remote repository (by default, the local repository in the current folder is considered.)
   -f   make the tarball even if there are uncommited changes (only for local repository)
 EOF
 exit 1
@@ -28,7 +28,9 @@ log_info() {
 }
 
 check_if_uncommited_changes() {
-    if [ "$FORCE" != "yes" ] && [ -d ".git" ] && [ "$(git status |grep 'working directory clean')" = "" ]; then
+    local gitdir
+    gitdir="$1"
+    if [ "$FORCE" != "yes" ] && [ "$(git --git-dir=$gitdir/.git --work-tree=$gitdir status --porcelain 2>/dev/null)" != "" ]; then
         echo "You have uncommited local changes. check with 'git status'."
         echo "(or force the generation with '-f')"
         exit 1
@@ -61,13 +63,13 @@ FORCE=no
 GIT_URI=git://scm.gforge.inria.fr/oar/oar.git
 GIT_TREEISH=2.5
 
-while getopts "hqrfu:b:d:" options; do
+while getopts "hqrfu:t:d:" options; do
   case $options in
     q) QUIET=yes ;;
     r) REMOTE=yes ;;
-    f) FORCE=yes ;; 
+    f) FORCE=yes ;;
     u) GIT_URI="$OPTARG";;
-    b) GIT_TREEISH="$OPTARG" ;;
+    t) GIT_TREEISH="$OPTARG" ;;
     d) TARGET_DIRECTORY="$OPTARG";;
     *) usage ;;
   esac
@@ -84,14 +86,14 @@ fi
 cur_dir=$(pwd)
 
 if [ "$REMOTE" != "yes" ]; then
-    git_dir=$(pwd)
+    git_dir=$(git rev-parse --show-toplevel)
 
     if [ ! -d "$git_dir/.git" ]; then
         echo "$git_dir is not a working git directory. Fail."
         exit 1;
     fi
 
-    check_if_uncommited_changes
+    check_if_uncommited_changes $git_dir
     log_info "Using the Git repository '$(pwd)'"
 
 fi
@@ -125,7 +127,7 @@ set_oar_version_file "$tarball_srcdir" "$version"
 cd "$cur_dir"
 
 mkdir -p "$TARGET_DIRECTORY"
-tar czf "$TARGET_DIRECTORY/$tarball_prefix.tar.gz" -C "$tarball_dir" .
+tar czf "$TARGET_DIRECTORY/$tarball_prefix.tar.gz" -C "$tarball_dir" oar-$version
 echo "$TARGET_DIRECTORY/$tarball_prefix.tar.gz"
 
 [ -d "$TMPDIR" ] && rm -rf "$TMPDIR"

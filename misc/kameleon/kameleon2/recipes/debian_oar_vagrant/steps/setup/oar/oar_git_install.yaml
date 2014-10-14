@@ -1,0 +1,24 @@
+- fetch_repository:
+  - exec_in: mkdir -p $$oar_git_directory
+  - exec_in: git init $$oar_git_directory
+  - exec_in: git --git-dir $$oar_git_directory/.git --work-tree $$oar_git_directory fetch --depth 0 $$oar_git_repository $$oar_git_treeish
+  - exec_in: git --git-dir $$oar_git_directory/.git --work-tree $$oar_git_directory checkout FETCH_HEAD
+  - exec_in: make -C $$oar_git_directory clean
+
+- node:
+  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build
+  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install node-install
+  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install node-setup
+
+- frontend:
+  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build
+  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install user-install drawgantt-install monika-install www-conf-install api-install tools-install
+  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install user-setup drawgantt-setup monika-setup www-conf-setup api-setup tools-setup
+
+- server:
+  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install build
+  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install server-install doc-install
+  - exec_in: make -C $$oar_git_directory PREFIX=$$oar_prefix_install server-setup doc-setup
+
+- sync:
+  - exec_in: sync

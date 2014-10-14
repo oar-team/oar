@@ -37,7 +37,7 @@ GetOptions( "help|h"   => \$Help,
             "quiet|q"  => \$Quiet,
             "varchar|c"  => \$Varchar,
             "version|V" => \$Version
-          );
+          ) or exit(1);
 
 if (defined($Version)){
     print("OAR version : ".OAR::Version::get_version()."\n");

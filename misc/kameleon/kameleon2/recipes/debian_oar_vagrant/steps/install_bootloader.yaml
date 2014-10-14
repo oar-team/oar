@@ -1,0 +1,41 @@
+# Install extlinux bootloader
+
+- install_bootloader:
+  - rescue:
+    - exec_out: LC_ALL=POSIX chroot $$mountdir bash -c "command -V extlinux 2> /dev/null"
+    - breakpoint: "extlinux is missing"
+  - exec_out: LC_ALL=POSIX chroot $$mountdir extlinux --install /boot/extlinux 2>&1
+  - exec_out: |
+      MBR_PATH=
+      PATHS=("$$mountdir/usr/share/syslinux/mbr.bin"
+             "$$mountdir/usr/lib/bios/syslinux/mbr.bin"
+             "$$mountdir/usr/lib/syslinux/bios/mbr.bin"
+             "$$mountdir/usr/lib/extlinux/mbr.bin"
+             "$$mountdir/usr/lib/syslinux/mbr.bin")
+      for element in "${PATHS[@]}"
+      do
+        if [ -f "$element" ]; then
+          MBR_PATH="$element"
+          break
+        fi
+      done
+      if [ "$MBR_PATH" == "" ]; then
+        fail "unable to locate the extlinux mbr"
+      else
+        dd if="$MBR_PATH" of="$$device" bs=440  2>&1
+      fi
+  - exec_out: echo " sync..." ; sync
+  - write_out:
+    - $$mountdir/boot/extlinux/extlinux.conf
+    - |
+      default linux
+      timeout 1
+      
+      label linux
+      kernel ../`basename $$mountdir/boot/vmlinuz*`
+      append initrd=../`basename $$mountdir/boot/init*` root=UUID=`blkid -s UUID -o value $${device}p1` ro
+  - exec_out: echo " sync..." ; sync
+  - on_export_clean:
+    - exec_out: |
+        dir=$$mountdir/var/lib/os-prober/mount
+        test ! -d "$dir" || (umount -f -l "$dir" && rmdir "$dir")
