@@ -9,6 +9,13 @@ set -e
 
 PACKAGE=oar-server
 
+errorinit() {
+	echo "oar-server has been unable to start, probably to an unexistant database";
+	echo "or a database not upgraded"
+	echo "Please fix it and manually restart the oar-server daemon using";
+	echo " ´service start oar-server´";
+}
+
 case "$1" in
     configure)
         server_setup
