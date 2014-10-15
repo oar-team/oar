@@ -19,7 +19,6 @@ EOF
 case "$1" in
     configure)
         server_setup
-        database_setup
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
