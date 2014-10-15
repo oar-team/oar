@@ -8,27 +8,9 @@ set -e
 
 PACKAGE=oar-restful-api
 
-print_api_installation_message () {
-    echo "
-
-OAR API INSTALLATION
-Edit /etc/oar/apache-api.conf to fit your needs.
-You may have to enable some modules into apache if you want
-oar-restful-api to be fully operational (authentication). At least
-'a2enmod ident;a2enmod headers' and maybe 'a2enmod authnz_ldap'
-and 'a2enmod rewrite'.
-For 'ident' to work, you'll also need 'pidentd' to be installed
-and activated into your system (generally through xinetd).
-"
-}
-
-
-
 case "$1" in
     configure)
         api_setup
-
-        print_api_installation_message
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
