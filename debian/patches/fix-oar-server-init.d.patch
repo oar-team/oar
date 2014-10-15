@@ -1,0 +1,42 @@
+fix oar-server init.d script
+Index: oar/setup/init.d/oar-server.in
+===================================================================
+--- oar.orig/setup/init.d/oar-server.in	2014-10-15 12:08:39.175596123 +0200
++++ oar/setup/init.d/oar-server.in	2014-10-15 12:08:58.687707033 +0200
+@@ -69,30 +69,31 @@
+     }
+ else
+     echo "This system doesn't provide the LSB functions. Failing"
+-    exit 2
++    exit 1
+ fi
+ 
+ do_start() {
+     begin_msg "Starting $DESC"
+     if [ -n "$SELINUXENABLED_CMD" -a -x "$SELINUXENABLED_CMD" ] && "$SELINUXENABLED_CMD"; then
+         fail_msg "SELinux is enabled, $DESC cannot be started."	
+-        exit 0
++        exit 1
+     fi
+ 
+     CHECK_STRING=$(oar-database --check > /dev/null 2>&1) 
+     if [ "$?" -ne "0" ]; then
+         fail_msg "OAR database seems not ready. See \`oar-database --check'"
+-        exit 0
++        exit 1
+     fi
+     if pidofproc -p $PIDFILE $DAEMON > /dev/null; then
+-        fail_msg "$DESC is already running."
+-        exit 1
++        warn_msg "$DESC is already running."
++        exit 0
+     fi
+ 
+     start_daemon -p "$PIDFILE" "$DAEMON" $DAEMON_ARGS
+     RET=$?
+     if [ "$RET" != 0 ]; then
+         fail_msg "Unable to start $DESC."
++        exit 1
+     else
+         succ_msg
+ 
