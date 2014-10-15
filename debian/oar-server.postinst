@@ -5,14 +5,13 @@ set -e
 . /usr/share/debconf/confmodule
 
 . /usr/lib/oar/setup/server.sh
-. /usr/lib/oar/setup/database.sh
 
 PACKAGE=oar-server
 
 errorinit() {
 	cat <<EOF
 oar-server has been unable to start, probably because a configuration or a
-database setup is needed. Please fix it and manually restart the oar-server
+database setup is required. Please fix it and manually restart the oar-server
 daemon using ´service start oar-server´.
 EOF
 }
