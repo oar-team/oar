@@ -1,4 +1,4 @@
-%define version 2.5.4+rc7
+%define version 2.5.4+rc8
 %define release 1.el6
 
 %define oaruser  oar
