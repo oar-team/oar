@@ -38,13 +38,6 @@ License: GPL-2+
  License version 2 can be found in the file
  `/usr/share/common-licenses/GPL-2'.
 
-License: LGPL-2.1
- This software is free software; you can redistribute it and/or
- modify it under the terms of the GNU Lesser General Public License as
- published by the Free Software Foundation, version 2.1.
- On Debian systems you can find a copy of this license in
- /usr/share/common-licenses/LGPL-2.1
- 
 License: MIT/X11
  Permission is hereby granted, free of charge, to any person obtaining
  a copy of this software and associated documentation files (the
