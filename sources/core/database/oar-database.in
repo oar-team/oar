@@ -591,45 +591,55 @@ $Term::UI::VERBOSE = 0;
 if ($action eq "check") {
     $ENV{'OARCONFFILE'} = "%%OARCONFDIR%%/oar.conf";
     if (not defined(OAR::IO::connect_ro_one_log("log"))) {
-        print "Error: Cannot connect to OAR database.\n";
+        print "[Failed] Cannot connect to OAR database.\n";
         exit 1;
     } else {
         check_user_db_access($db_user,$db_pass);
         # Retrieve the current version (check if shema table exist before)
         my $db_version = get_current_schema_version();
         if (not defined($db_version)) {
-            print "Error: No OAR database schema version found.\n";
+            print "[Failed] No OAR database schema version found.\n";
             exit 1;
         }
         if ($db_version ne $DEFAULT_LAST_VERSION) {
-            print "Error: OAR database version mismatch. Current version is $db_version while $DEFAULT_LAST_VERSION is required.\n";
+            print "[Failed] OAR database version mismatch. Current version is $db_version while $DEFAULT_LAST_VERSION is required.\n";
             exit 1;
         }
     }
-    print "Success: The OAR database is accessible and ready to be used.\n";
+    print "[Success] The OAR database is accessible and ready.\n";
     exit 0;
 } elsif ($action eq "setup" or $action eq "upgrade") {
     check_user_db_access($db_user,$db_pass);
+    print "WARNING: Please make sure to stop oar-server service before upgrading.\n";
+    print "         Please consider backing up the database before upgrading.\n";
     if($force_yes || $term->ask_yn(
-            prompt => "Are you sure you want to upgrade your database ? (Please backup the database before)", 
+            prompt => "Continue?", 
             default => 'n')) {
         upgrade_database();
     } else {
-        print "The database hasn't been changed\n."
+        print "Aborted.\n.";
     }
 } elsif ($action eq "reset") {
     check_user_db_access($db_user,$db_pass);
+    print "WARNING: job history, resources, custom admission rules,... will be lost.\n";
     if ($force_yes || $term->ask_yn(
-            prompt => "Are you sure you want to reset your database ? (The database content will be lost)",
+            prompt => "Continue?", 
             default => 'n')) {
         reset_database();
     } else {
-        print "The database hasn't been changed\n."
+        print "Aborted.\n.";
     }
 } elsif ($action eq "create") {
     create_database();
 } elsif ($action eq "drop") {
-    drop_database();
+    print "WARNING: job history, resources, custom admission rules,... will be lost.\n";
+    if ($force_yes || $term->ask_yn(
+            prompt => "Continue?", 
+            default => 'n')) {
+        drop_database();
+    } else {
+        print "Aborted.\n."
+    }
 } elsif ($action eq "fix-ro-user-priv") {
     fix_ro_user_privileges();
 }
