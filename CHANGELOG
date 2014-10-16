@@ -84,6 +84,8 @@ version 2.5.4:
         admission rule ($checkpoint variable).
   - [drawgantt] Drawgantt is not now deprecated (and not shipped with packages)
   - [misc] OAR packaged components do not require Ruby anymore.
+  - [oaraccounting] Fix bug reported in Debian tracker #678976
+  - [sources] Clean-up some used or unrelevant files/codes
 
 
 version 2.5.3:
