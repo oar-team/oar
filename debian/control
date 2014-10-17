@@ -32,9 +32,9 @@ Description: OAR batch scheduler common package
 
 Package: oar-server
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, openssh-client | ssh, cron, lsb-base, libsort-versions-perl, libdbi-perl,  oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version}), oar-server-pgsql (= ${binary:Version}) | oar-server-mysql (= ${binary:Version}), perl (<< 5.17) | libterm-ui-perl
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, openssh-client, cron, lsb-base, libsort-versions-perl, libdbi-perl,  oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version}), oar-server-pgsql (= ${binary:Version}) | oar-server-mysql (= ${binary:Version}), perl (<< 5.17) | libterm-ui-perl
 Recommends: libxml-dumper-perl, libyaml-perl
-Suggests: taktuk , phpmyadmin, oar-node, oar-doc, openssh-server | ssh
+Suggests: taktuk , phpmyadmin, oar-node, oar-doc, openssh-server
 Breaks: oar-admin
 Description: OAR batch scheduler server package
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -68,7 +68,7 @@ Description: OAR batch scheduler PostgreSQL server backend package
 
 Package: oar-node
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, openssh-client | ssh, openssh-server | ssh, oar-common (= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, openssh-client, openssh-server, oar-common (= ${binary:Version})
 Suggests: oar-doc, xauth
 Description: OAR batch scheduler node package
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -80,7 +80,7 @@ Package: oar-user
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, libdbi-perl, oar-common (= ${binary:Version}), liboar-perl (= ${binary:Version}), oar-user-pgsql (= ${binary:Version}) | oar-user-mysql (= ${binary:Version})
 Recommends: libxml-dumper-perl, libyaml-perl
-Suggests: oar-doc, openssh-client | ssh, xauth
+Suggests: oar-doc, openssh-client, xauth
 Breaks: oar-admin
 Description: OAR batch scheduler user package
  OAR is a versatile resource and task manager (also called a batch scheduler)

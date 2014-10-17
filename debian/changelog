@@ -3,6 +3,7 @@ oar (2.5.4-2) UNRELEASED; urgency=medium
   * New upstream release 
   * Fix oaraccounting bug (Closes: #678976) 
   * Remove Ruby dependencies (Closes: #732540) 
+  * Force depends to OpenSSH's ssh
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 16 Oct 2014 23:44:46 +0200
 
