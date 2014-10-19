@@ -86,6 +86,11 @@ version 2.5.4:
   - [misc] OAR packaged components do not require Ruby anymore.
   - [oaraccounting] Fix bug reported in Debian tracker #678976
   - [sources] Clean-up some used or unrelevant files/codes
+  - [scheduler] change default schedulers to quota
+        The default scheduler of the queues default, admin and besteffort is
+        now oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas.
+        The configuration file /etc/oar/scheduler_quotas.conf contains no quota
+        enforcement so the behaviour remains the same as before.
 
 
 version 2.5.3:
