@@ -271,7 +271,7 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 
 # Set the granularity of the OAR accounting feature (in seconds)
 # Used by the oaraccounting command and the 
-# oar_sched_gantt_with_timesharing_and_fairsharing to calculate the timesharing
+# oar_sched_gantt_with_timesharing_and_fairsharing* to calculate the timesharing
 # policy. Default is 1 day (86400s)
 #ACCOUNTING_WINDOW="86400"
 
@@ -299,9 +299,9 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 
 ##############################################
 
-##############################################################
-# Parameters available if you are using the                  #
-# oar_sched_gantt_with_timesharing_and_fairsharing scheduler #
+###############################################################
+# Parameters available if you are using the                   #
+# oar_sched_gantt_with_timesharing_and_fairsharing* scheduler #
 ###############################################################################
 #
 # Specify the number of job to take care at each time
@@ -333,10 +333,10 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 
 ##############################################
 
-##############################################################
-# TOKEN feature                                              #
-# Parameters available if you are using the                  #
-# oar_sched_gantt_with_timesharing_and_fairsharing scheduler #
+###############################################################
+# TOKEN feature                                               #
+# Parameters available if you are using the                   #
+# oar_sched_gantt_with_timesharing_and_fairsharing scheduler* #
 ###############################################################################
 #
 # With this token feature you are able to filter which jobs can be scheduled
