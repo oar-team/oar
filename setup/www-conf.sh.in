@@ -16,7 +16,7 @@ www_conf_setup() {
     #
     # Starting with Debian8, Apache configs are managed using a2enconf/a2disconf/a2query -c, 
     # and stored in the conf-{available,enabled} directories
-    if a2query -c >& /dev/null; then # a2query is available on Debian8++
+    if a2query -c > /dev/null 2>&1; then # a2query is available on Debian8++
         if [ ! -e ${APACHECONFDIR}/conf-available/oar-web-status.conf ]; then
             ln -s ${OARCONFDIR}/apache2/oar-web-status.conf ${APACHECONFDIR}/conf-available/oar-web-status.conf
         fi
