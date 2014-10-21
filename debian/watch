@@ -1,2 +1,3 @@
 version=3
-http://oar-ftp.imag.fr/oar/2.5/sources/stable oar-(.+)\.tar\.gz
+opts=uversionmangle=s/(\d)[_\.\-\+]?((RC|rc|pre|dev|beta|alpha)\d*)$/$1~$2/ \
+  http://oar-ftp.imag.fr/oar/2.5/sources/(stable|testing)/oar-(.+)\.tar\.gz

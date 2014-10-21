@@ -1,12 +1,46 @@
-oar (2.5.3-3~bpo70+1) wheezy-backports; urgency=low
+oar (2.5.4~rc9-1~bpo70+1) wheezy-backports; urgency=medium
 
   * Rebuild for wheezy-backports.
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 09 Sep 2013 01:03:44 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 21 Oct 2014 11:17:47 +0200
+
+oar (2.5.4~rc9-1) UNRELEASED; urgency=medium
+
+  * New upstream release 
+  * Fix oaraccounting bug (Closes: #678976) 
+  * Remove Ruby dependencies (Closes: #732540) 
+  * Force depends to OpenSSH's ssh
+  * Remove patch fix-oar-server-init.d: applied upstream 
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 16 Oct 2014 23:44:46 +0200
+
+oar (2.5.4~rc8-2) unstable; urgency=medium
+
+  * stop oar-server and oar-node on upgrade from an old version
+    (their prerm script did not stop their service)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Thu, 16 Oct 2014 14:36:45 +0200
+
+oar (2.5.4~rc8-1) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * New upstream release
+  * Drop tools with dependencies to Ruby (oaradmin, drawgantt legacy)
+  * Bump Standard-Version (no change needed)
+  * Remove unused patches (applied upstream)
+  * Fix oar-server (oar-database) depends to libterm-ui-perl
+
+  [ Vincent Danjean ]
+  * Bump Standards-Version
+  * (re)start service on upgrade/start
+  * add a Breaks: to the old oar-admin package. The database schema has
+    been modified so old utilities did not work anymore
+
+ -- Vincent Danjean <vdanjean@debian.org>  Wed, 15 Oct 2014 10:31:17 +0200
 
 oar (2.5.3-3) unstable; urgency=low
 
-  * Fix oar-user dependancy on oar-user-mysql or oar-user-postgresql
+  * Fix oar-user dependency on oar-user-mysql or oar-user-postgresql
   * Fix prologues and epilogues configuration files permissions:
     add patch to set mod 0755
   * Fix oarsub copyright in pod (man), this corrects the "FTBFS with perl 5.18: POD failure" reported by Debian
@@ -33,6 +67,42 @@ oar (2.5.3-1) unstable; urgency=low
   * Add Philippe Le Brouster as Uploader
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 26 Jun 2013 18:15:04 +0200
+
+oar (2.5.2-4.1) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * Replace transitional ruby packages with real ones.
+    (Closes: #735745)
+
+ -- Christian Hofstaedtler <zeha@debian.org>  Thu, 13 Feb 2014 00:36:35 +0100
+
+oar (2.5.2-4) unstable; urgency=low
+
+  [ Pierre Neyron ]
+  * Set Pierre Neyron as Maintainer
+  * Add Philippe Le Brouster as Uploader
+  * Fix piupart reported error: package uses files from /usr/share/doc
+    (Closes: #722621)
+  * Fix database schema version: 2.5.2
+  * Fix dependencies to the database backend packages
+  * Fix packages post scripts: purge /etc/oar, /var/lib/oar
+  * Fix oardo.c compilation warning
+  * Fix prologues and epilogues configuration files permissions
+
+  [ Vincent Danjean ]
+  * Bump Standard-Version (no change needed)
+  * Add header to new quilt patches
+
+ -- Vincent Danjean <vdanjean@debian.org>  Fri, 20 Sep 2013 14:17:34 +0200
+
+oar (2.5.2-3.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix "FTBFS with perl 5.18: POD failure":
+    add patch to add encoding to POD
+    (Closes: #720431)
+
+ -- gregor herrmann <gregoa@debian.org>  Fri, 30 Aug 2013 17:42:06 +0200
 
 oar (2.5.2-3) unstable; urgency=low
 

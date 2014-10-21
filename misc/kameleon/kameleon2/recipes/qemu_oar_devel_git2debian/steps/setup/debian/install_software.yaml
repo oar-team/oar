@@ -1,0 +1,2 @@
+- core_packages:
+  - exec_in: apt-get -y --force-yes install $$packages 2>&1

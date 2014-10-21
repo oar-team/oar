@@ -1,1 +1,1 @@
-../../sources/extra/oar-drmaa-1.0.0/doc_drmaa1.rst
+../../sources/extra/oar-drmaa/doc_drmaa1.rst

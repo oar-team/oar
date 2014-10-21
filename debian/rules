@@ -33,22 +33,22 @@ override_dh_auto_build:
 override_dh_auto_install:
 	$(MAKE) -e packages-install PACKAGES_DIR=$(CURDIR)/$(INSTALLDIR)
 	## oar-server
-	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/doc/oar-server/examples/init.d/oar-server > debian/oar-server.init
-	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/doc/oar-server/examples/default/oar-server > debian/oar-server.default
-	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/doc/oar-server/examples/cron.d/oar-server > debian/oar-server.cron.d
+	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/init.d/oar-server > debian/oar-server.init
+	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/default/oar-server > debian/oar-server.default
+	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/cron.d/oar-server > debian/oar-server.cron.d
 	
 	## oar-node
-	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/doc/oar-node/examples/init.d/oar-node > debian/oar-node.init
-	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/doc/oar-node/examples/default/oar-node > debian/oar-node.default
+	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/init.d/oar-node > debian/oar-node.init
+	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/default/oar-node > debian/oar-node.default
 	# disable the automatic installation of this cron, by default 
-	#cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/doc/oar-node/examples/cron.d/oar-node > debian/oar-node.cron.d
+	#cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/cron.d/oar-node > debian/oar-node.cron.d
 		
 	## oar-common
-	cat $(CURDIR)/$(INSTALLDIR)/oar-common/usr/share/doc/oar-common/examples/logrotate.d/oar-common > debian/oar-common.logrotate
+	cat $(CURDIR)/$(INSTALLDIR)/oar-common/usr/share/oar/oar-common/logrotate.d/oar-common > debian/oar-common.logrotate
 	## oar-web-status
 	# (poar) use libjs-jquery instead of the embedded one.
 	# -- poar is not in the debian packaging (still an experimental feature)
-	#rm $(CURDIR)/$(INSTALLDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
+	#rm $(CURDIR)/$(INSTALLDIR)/oar-web-status/usr/share/oar/oar-web-status/poar/external/jquery.js
 	#ln -s /usr/share/javascript/jquery/jquery.js  $(CURDIR)/$(INSTALLDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
 		
 	dh_install -i
@@ -59,17 +59,30 @@ override_dh_clean:
 	$(MAKE) -e packages-clean   PACKAGES_DIR=$(CURDIR)/$(INSTALLDIR)
 		
 	# Cleaning package
-	rm -f debian/oar-server.init
-	rm -f debian/oar-node.init
-	rm -f debian/oar-server.default
-	rm -f debian/oar-node.default
-	rm -f debian/oar-common.logrotate
-	rm -f debian/oar-server.cron.d
-	rm -f debian/oar-node.cron.d
+	$(RM) debian/oar-server.init
+	$(RM) debian/oar-node.init
+	$(RM) debian/oar-server.default
+	$(RM) debian/oar-node.default
+	$(RM) debian/oar-common.logrotate
+	$(RM) debian/oar-server.cron.d
+	$(RM) debian/oar-node.cron.d
 
 override_dh_installinit:
-	dh_installinit --no-start
+	dh_installinit --error-handler=errorinit
 
 override_dh_compress:
 	# avoid to compress examples as we use ucf after.
 	dh_compress -Xexamples
+
+override_dh_fixperms:
+	dh_fixperms
+	chmod +x debian/oar-server/usr/share/oar/oar-server/server_epilogue
+	chmod +x debian/oar-server/usr/share/oar/oar-server/server_prologue
+	chmod +x debian/oar-server/usr/share/oar/oar-server/shut_down_nodes.sh
+	chmod +x debian/oar-server/usr/share/oar/oar-server/wake_up_nodes.sh
+	chmod +x debian/oar-common/usr/share/oar/oar-common/oarnodesetting_ssh
+	chmod +x debian/oar-common/usr/share/oar/oar-common/update_cpuset_id.sh
+	chmod +x debian/oar-web-status/usr/share/oar/oar-web-status/userInfos.cgi
+	chmod +x debian/oar-restful-api/usr/share/oar/oar-api/stress_factor.sh
+	chmod +x debian/oar-node/usr/share/oar/oar-node/epilogue
+	chmod +x debian/oar-node/usr/share/oar/oar-node/prologue

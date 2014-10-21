@@ -45,7 +45,7 @@ then
         # set the .Xautority.{pid} file as the xauthority file.
         NEW_XAUTHORITY=$HOME/.Xauthority.$$
         # retrieve the X cookie from the user to user oar.
-        OARDO_BECOME_USER=${OARDO_USER%_*} oardodo bash --noprofile --norc -c "$XAUTH_LOCATION extract - ${DISPLAY/#localhost:/:}" | XAUTHORITY=$NEW_XAUTHORITY $XAUTH_LOCATION merge - 2> /dev/null
+        OARDO_BECOME_USER=${OARDO_USER} oardodo bash --noprofile --norc -c "$XAUTH_LOCATION extract - ${DISPLAY/#localhost:/:}" | XAUTHORITY=$NEW_XAUTHORITY $XAUTH_LOCATION merge - 2> /dev/null
         export XAUTHORITY=$NEW_XAUTHORITY
         # ssh will push that cookie in the connection.
     fi
@@ -70,7 +70,7 @@ then
     TMP_JOB_KEY_FILE=$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.$$
     TMPOLDUMASK=$(umask)
     umask 0177
-    OARDO_BECOME_USER=${OARDO_USER%_*} oardodo cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
+    OARDO_BECOME_USER=${OARDO_USER} oardodo cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
     if [ $? -ne 0 ]; then
         echo "oarsh: Failed to read job key: $OAR_JOB_KEY_FILE." 1>&2
         rm -f $TMP_JOB_KEY_FILE
@@ -132,11 +132,6 @@ if [ -n "$OAR_JOB_ID" ]; then
                 if [ "$l" != "" ]; then
                     if [ "${l##cpuset_name*}" = "" ] ;then
                         echo "OAR_CPUSET="${l/*cpuset_name = /}
-                    else
-                        if [ "${l##job_user*}" = "" ] ;then
-                            echo "OAR_JOB_USER="${l/*job_user = /}
-                            exit
-                        fi
                     fi
                 fi
             done)

@@ -1,8 +1,8 @@
 ScriptAlias /monika %%CGIDIR%%/monika.cgi
-ScriptAlias /drawgantt %%CGIDIR%%/drawgantt.cgi
 Alias /monika.css %%WWWDIR%%/monika.css
-Alias /drawgantt-files %%OARHOMEDIR%%/drawgantt-files
 Alias /drawgantt-svg %%WWWDIR%%/drawgantt-svg
+Alias /drawgantt %%WWWDIR%%/drawgantt-svg
 <Directory %%WWWDIR%%>
         Options Indexes FollowSymlinks
+        #Require all granted # <- seems to be needed for apache >= 2.3
 </Directory>

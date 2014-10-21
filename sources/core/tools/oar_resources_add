@@ -1,0 +1,172 @@
+#!/bin/bash
+
+HOSTS=
+CPUS=2
+CORES=4
+THREADS=1
+HOST_PREFIX="node-"
+
+usage() {
+  cat <<EOF
+Usage:
+    $0 -H <# of hosts> [other options]
+
+    Generate commands to add new resources to OAR database
+
+Options:
+    -H, --hosts <#>              # of hosts
+    -C, --cpus <#>               # of cpu per host
+    -c, --cores <#>              # of core per cpu
+    -t, --threads <#>            # of threads per core
+    --host-prefix <str>          hostname prefix (default: "node-")
+    --host-suffix <str>          hostname suffix (e.g. ".domain")
+    --host0 <#>                  first host number to use
+    --cpu0 <#>                   first cpu number to use
+    --core0 <#>                  first core number to use
+    --thread0 <#>                first thread number to use
+    --cpuset <#>                 # of cpusets/host (default=cpus*cores*threads)
+    -p, --other-properties <str> extra properties for every resources
+    -o, --write-to <file>        write commands to file
+    -a, --auto-offset            guess first host/cpu/core/thread from OAR db
+    -h, --help                   display this message
+
+EOF
+}
+
+die() {
+  cat <<EOF 2>&1
+Error: $1
+
+EOF
+  usage 2>&1
+  exit 1
+}
+
+LONG_OPTS="hosts:,cpus:,cores:,threads:,host-prefix:,host-suffix:,host0:,cpu0:,core0:,thread0:,cpuset:,other-properties:,write-to:,auto-offset,help"
+SHORT_OPTS="H:C:c:t:P:S:p:o:ah"
+args=$(getopt -l $LONG_OPTS -o $SHORT_OPTS -q -- "$@")
+[ $? -gt 0 ] && die "Syntax error, $(getopt -l $LONG_OPTS -o $SHORT_OPTS -Q -- "$@" 2>&1)"
+
+eval set -- "$args"
+
+while [ $# -ge 1 ]; do
+  case "$1" in
+  --)
+    # No more options left.
+    shift
+    break
+    ;;
+  -H|--hosts)
+    HOSTS=$2
+    shift
+    ;; 
+  -C|--cpu)
+    CPUS=$2
+    shift
+    ;; 
+  -c|--core)
+    CORES=$2
+    shift
+    ;;
+  -t|--thread)
+    THREADS=$2
+    shift
+    ;;
+  -P|--host-prefix)
+    HOST_PREFIX=$2
+    shift
+    ;;
+  -S|--host-suffix)
+    HOST_SUFFIX=$2
+    shift
+    ;;
+  --host0)
+    HOST0=$2
+    shift
+    ;;
+  --cpu0)
+    CPU0=$2
+    shift
+    ;;
+  --core0)
+    CORE0=$2
+    shift
+    ;;
+  --thread0)
+    THREAD0=$2
+    shift
+    ;;
+  --cpuset)
+    CPUSET=$2
+    shift
+    ;;
+  -p|--other-properties)
+    OTHER_PROPERTIES=$2
+    shift
+    ;;
+  -o|--write-to)
+    WRITE_TO=$2
+    shift
+    ;;
+  -a|--auto-offset)
+    AUTO_OFFSET=1
+    ;;
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  esac
+  shift
+done
+
+[ -n "$HOSTS" ] && [ $HOSTS -gt 0 ] || die "Syntax error, need a # of host"
+
+if [ -n "$WRITE_TO" ]; then
+  if [ -e "$WRITE_TO" ]; then
+    echo -n > $WRITE_TO
+  fi
+  exec 1> >(tee -a $WRITE_TO)
+fi
+
+CPUSET=${CPUSET:-$((CPUS*CORES*THREADS))}
+if [ -n "$AUTO_OFFSET" ]; then
+  [ -z "$HOST0" ] && echo "# Warning: guessing a new hostname is not really reliable because of a sort isssue for non-numeric properties. Please double-check."
+  HOST0=${HOST0:-$(oarnodesetting --last-property-value host | perl -pe 's/^[\d]*(\d+).*/\$1/')}
+  CPU0=${CPU0:-$(oarnodesetting --last-property-value cpu)}
+  CORE0=${CORE0:-$(oarnodesetting --last-property-value core)}
+  THREAD0=${THREAD0:-$(oarnodesetting --last-property-value thread)}
+else
+  HOST0=${HOST0:-1}
+  CPU0=${CPU0:-0}
+  CORE0=${CORE0:0}
+  THREAD0=${THREAD0:0}
+fi
+
+host=1
+thread=0
+core=0
+cpu=0
+
+cat <<EOF
+oarproperty -c -a host || true
+oarproperty -a cpu || true
+oarproperty -a core || true
+oarproperty -a thread || true
+EOF
+
+while [ $host -le $HOSTS ]; do
+  hostname="'$HOST_PREFIX$((host+HOST0-1))$HOST_SUFFIX'"
+  cpuset=0
+  while [ $cpu -lt $((CPUS * host)) ]; do
+    while [ $core -lt $((CORES * (cpu+1))) ]; do
+      while [ $thread -lt $((THREADS * (core+1))) ]; do
+        echo oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=$cpuset $OTHER_PROPERTIES
+        ((thread++))
+        cpuset=$(((cpuset+1) % CPUSET))
+      done
+      ((core++))
+    done
+    ((cpu++))
+  done
+  ((host++))
+done

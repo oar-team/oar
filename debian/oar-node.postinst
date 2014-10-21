@@ -22,6 +22,10 @@ case "$1" in
         ;;
 esac
 
+errorinit() {
+	return $?
+}
+
 #DEBHELPER#
 
 exit 0

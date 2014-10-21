@@ -127,14 +127,15 @@ oar_debug("[$scheduler_name] Begin phase 1 (running jobs)\n");
 # Take care of currently scheduled jobs (gantt in the database)
 my ($order,%already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
 foreach my $i (@{$order}){
-    my $types = OAR::IO::get_current_job_types($base,$i);
+    my $types = OAR::IO::get_job_types_hash($base,$i);
     # Do not take care of besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
         my $job_duration = $already_scheduled_jobs{$i}->[1];
+        my $resource_list_vec = $already_scheduled_jobs{$i}->[10];
         if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
             # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
-            @resource_list = OAR::IO::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
+            ($resource_list_vec, @resource_list) = OAR::IO::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
             next if ($#resource_list < 0);
         }
         if ($already_scheduled_jobs{$i}->[8] eq "YES"){
@@ -142,15 +143,10 @@ foreach my $i (@{$order}){
             $job_duration += OAR::IO::get_job_suspended_sum_duration($base,$i,$current_time);
         }
 
-        my $vec = '';
-        foreach my $r (@resource_list){
-            vec($vec,$r,1) = 1;
-        }
-
         my $gantt_to_use = $Container_gantt_hash{0};
         if (defined($types->{container})){
             oar_debug("[$scheduler_name] [$i] container job: create a new gantt for container $i\n");
-            $Container_gantt_hash{$i} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $vec, $All_resource_list_vec);
+            $Container_gantt_hash{$i} = OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $resource_list_vec, $All_resource_list_vec);
             $gantt_to_use = $Container_gantt_hash{$i};
         }
 
@@ -182,7 +178,7 @@ foreach my $i (@{$order}){
                 OAR::Schedulers::GanttHoleStorage::set_occupation(  $Container_gantt_hash{$g},
                                                      $already_scheduled_jobs{$i}->[0],
                                                      $job_duration + $security_time_overhead,
-                                                     $vec
+                                                     $resource_list_vec
                                                   );
             }
         }
@@ -194,7 +190,7 @@ foreach my $i (@{$order}){
                         OAR::Schedulers::GanttHoleStorage::set_occupation( $timesharing_gantts->{$c}->{$u}->{$n},
                                                             $already_scheduled_jobs{$i}->[0],
                                                             $job_duration + $security_time_overhead,
-                                                            $vec
+                                                            $resource_list_vec
                                                           );
                     } else {
                         oar_debug("[$scheduler_name] [$i] skip timesharing job occupation in gantt of timesharing ($c, $u, $n)\n");
@@ -305,7 +301,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
 
     my $gantt_to_use = $Container_gantt_hash{0};
     my $container_num = 0;
-    my $types = OAR::IO::get_current_job_types($base,$j->{job_id});
+    my $types = OAR::IO::get_job_types_hash($base,$j->{job_id});
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         if (defined($Container_gantt_hash{$1})){
             $gantt_to_use = $Container_gantt_hash{$1};

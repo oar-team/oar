@@ -6,42 +6,54 @@ api_setup() {
         mv ${OARCONFDIR}/apache-api.conf ${OARCONFDIR}/apache2/oar-restful-api.conf
     fi
     install_conffile \
-        ${EXAMPLEDIR}/apache2.conf \
+        ${SHAREDIR}/apache2.conf \
         ${OARCONFDIR}/apache2/oar-restful-api.conf \
         0600 ${WWWUSER}
 
     install_conffile \
-        ${EXAMPLEDIR}/api_html_header.pl \
+        ${SHAREDIR}/api_html_header.pl \
         ${OARCONFDIR}/api_html_header.pl \
         0600 ${OAROWNER}
 
     install_conffile \
-        ${EXAMPLEDIR}/api_html_postform.pl \
+        ${SHAREDIR}/api_html_postform.pl \
         ${OARCONFDIR}/api_html_postform.pl \
         0644 ${OAROWNER}
 
     install_conffile \
-        ${EXAMPLEDIR}/api_html_postform_resources.pl \
+        ${SHAREDIR}/api_html_postform_resources.pl \
         ${OARCONFDIR}/api_html_postform_resources.pl \
         0644 ${OAROWNER}
 
     install_conffile \
-        ${EXAMPLEDIR}/api_html_postform_rule.pl \
+        ${SHAREDIR}/api_html_postform_rule.pl \
         ${OARCONFDIR}/api_html_postform_rule.pl \
         0644 ${OAROWNER}
 
     install_conffile \
-        ${EXAMPLEDIR}/stress_factor.sh \
+        ${SHAREDIR}/stress_factor.sh \
         ${OARCONFDIR}/stress_factor.sh \
         0700 ${OAROWNER}
 
-    # install the apache2 configuration file
-    if [ -d ${APACHECONFDIR}/conf.d ]; then
-        # Check if an old configuration file already exists
+    # Install the apache2 configuration file
+    #
+    # Starting with Debian8, Apache configs are managed using a2enconf/a2disconf/a2query -c, 
+    # and stored in the conf-{available,enabled} directories
+    if a2query -c >& /dev/null; then 
+        if [ -L  ${APACHECONFDIR}/conf-available/oar-api.conf ]; then
+            rm ${APACHECONFDIR}/conf-available/oar-api.conf
+        elif [ -f ${APACHECONFDIR}/conf-available/oar-api.conf ]; then
+            mv ${APACHECONFDIR}/conf-available/oar-api.conf ${APACHECONFDIR}/conf-available/oar-restful-api.conf
+        fi
+        if [ ! -e ${APACHECONFDIR}/conf-available/oar-api-restful.conf ]; then
+            ln -s ${OARCONFDIR}/apache2/oar-api-restful.conf ${APACHECONFDIR}/conf-available/oar-restful-api.conf
+        fi
+    # UnTil Debian7, Centos6, Apache configs are stored in the conf.d directory
+    elif [ -d ${APACHECONFDIR}/conf.d ]; then
         if [ -L  ${APACHECONFDIR}/conf.d/oar-api.conf ]; then
             rm ${APACHECONFDIR}/conf.d/oar-api.conf
         elif [ -f ${APACHECONFDIR}/conf.d/oar-api.conf ]; then
-            mv ${APACHECONFDIR}/conf.d/oar-api.conf ${APACHECONFDIR}/conf.d/oar-restful-api.conf;
+            mv ${APACHECONFDIR}/conf.d/oar-api.conf ${APACHECONFDIR}/conf.d/oar-restful-api.conf
         fi
         if [ ! -e ${APACHECONFDIR}/conf.d/oar-restful-api.conf ]; then
             ln -s ${OARCONFDIR}/apache2/oar-restful-api.conf ${APACHECONFDIR}/conf.d/oar-restful-api.conf

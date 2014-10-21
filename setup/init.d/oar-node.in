@@ -7,11 +7,12 @@
 #
 ### BEGIN INIT INFO
 # Provides:         oar-node
-# Required-Start:   $all
-# Required-Stop:    $all
+# Required-Start:   $network $local_fs $remote_fs
+# Required-Stop:    $network $local_fs $remote_fs
 # Default-Start:    2 3 4 5
 # Default-Stop:     0 1 6
-# Short-Description:    OAR compute node initialization script (launch its own sshd)
+# Short-Description:    OAR compute node
+# Description:    OAR compute node initialization script (launch its own sshd)
 ### END INIT INFO
 
 LANG=C
@@ -74,7 +75,7 @@ fi
 
 do_start() {
     begin_msg "Starting $DESC"
-    if [ -n "$SELINUXENABLED_CMD" -a -x $SELINUXENABLED_CMD ] && $SELINUXENABLED_CMD; then
+    if [ -n "$SELINUXENABLED_CMD" ] && [ -x "$SELINUXENABLED_CMD" ] && $SELINUXENABLED_CMD; then
         fail_msg "SELinux is enabled, $DESC cannot be started."	
         exit 2
     fi

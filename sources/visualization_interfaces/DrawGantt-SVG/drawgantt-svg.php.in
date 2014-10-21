@@ -16,7 +16,7 @@ $CONF['db_passwd']="oar";
 
 // Data display configuration
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
-$CONF['resource_labels'] = array('network_address','cpuset'); // properties to use to describe resources (resource labels on the left)
+$CONF['resource_labels'] = array('network_address','cpuset'); // properties to describe resources (labels on the left). Must also be part of resource_hierarchy below 
 $CONF['cpuset_label_display_string'] = "%02d";
 $CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1
   'network_address' => '/^([^.]+)\..*$/',
@@ -25,16 +25,17 @@ $CONF['label_cmp_regex'] = array( // substring selection regex for comparing and
   'network_address' => '/^([^-]+)-(\d+)\..*$/',
   );
 $CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
-  'deploy', 'cpuset', 'besteffort', 'network_address', 'type');
+  'deploy', 'cpuset', 'besteffort', 'network_address', 'type', 'drain');
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
   'network_address','cpuset'); 
+$CONF['resource_drain_property'] = "drain"; // if set, must also be one of the resource_properties above to activate the functionnality
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
-  'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)');
+  'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)', 'Drain' => 'url(#drainPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
   'besteffort' => 'url(#besteffortPattern)', 
   'deploy' => 'url(#deployPattern)', 
   'container' => 'url(#containerPattern)', 
-  'timesharing=\w+,\w+' => 'url(#timesharingPattern)', 
+  'timesharing=(\*|user),(\*|name)' => 'url(#timesharingPattern)', 
   'set_placeholder=\w+' => 'url(#placeholderPattern)',
   );
 
@@ -56,8 +57,7 @@ $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
 // Colors and fill patterns for jobs and states
 $CONF['job_color_saturation_lightness'] = "75%,75%"; // default: "75%,75%"
 $CONF['job_color_saturation_lightness_highlight'] = "50%,50%"; // default: "50%,50%"
-$CONF['magic_number'] = (1+sqrt(5))/2; // magic number used to compute the function hue(jod_id) 
-$CONF['patterns'] = <<<EOT
+$CONF['static_patterns'] = <<<EOT
 <pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />
 </pattern> 
@@ -70,14 +70,17 @@ $CONF['patterns'] = <<<EOT
 <pattern id="standbyPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
 <line x1="5" y1="0" x2="0" y2="5" stroke="#00ff00" stroke-width="2" />
 </pattern> 
-<pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<text font-size="10" x="0" y="10" fill="#888888">B</text>
+<pattern id="drainPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="15" height="10" viewBox="0 0 10 10" >
+<circle cx="5" cy="5" r="4" fill="#ff0000" stroke="#ff0000" stroke-width="1" />
+<line x1="2" y1="5" x2="9" y2="5" stroke="#ffffff" stroke-width="2" />
 </pattern> 
 <pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="0" y="20" fill="#888888">C</text>
 </pattern> 
+<pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
+<text font-size="10" x="10" y="20" fill="#888888">B</text>
+</pattern> 
 <pattern id="placeholderPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
-<line x1="0" y1="0" x2="20" y2="20" stroke="#000000" stroke-width="2" />
 <text font-size="10" x="10" y="20" fill="#888888">P</text>
 </pattern> 
 <pattern id="deployPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
@@ -88,8 +91,46 @@ $CONF['patterns'] = <<<EOT
 </pattern> 
 EOT;
 
+// Besteffort job display options for the part shown in the future
+$CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
+$CONF['besteffort_pattern'] = <<<EOT
+<pattern id="%%PATTERN_ID%%" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
+<line x1="0" y1="0" x2="10" y2="10" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
+<line x1="-5" y1="5" x2="5" y2="15" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
+<line x1="5" y1="-5" x2="15" y2="5" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
+</pattern>'
+EOT;
+
+// Advanced customization for the computation of the colors of the jobs
+// Uncomment and adapt the following to override the default function
+//class MyShuffle extends Shuffle {
+//    // Default function: get the color's hue value as a function of the job_id
+//    function job2int($job) {
+//        // compute a suffled number for job_id, so that colors are not too close
+//        $magic_number = (1+sqrt(5))/2;
+//        return (int)(360 * fmod($job->job_id * $magic_number, 1));
+//    }
+//    // Other example: get the color's hue value as a function of the job_user value
+//    protected $cache = array(); 
+//    function job2int($job) { 
+//        // shuffled number based on the job_user:
+//        if (! array_key_exists($job->job_user, $this->cache)) {
+//            $n = (int) base_convert(substr(md5($job->job_user) ,0, 5), 16, 10);
+//            $magic_number = (1+sqrt(5))/2;
+//            $this->cache[$job->job_user] = (int)(360 * fmod($n * $magic_number, 1));
+//        }
+//        return $this->cache[$job->job_user];
+//    }
+//}
+//Shuffle::init(new MyShuffle()); // this line must be uncommented for the overiding to take effect
+
 // Debugging
 $CONF['debug'] = 0; // Set to 1 to enable php debug prints in the web server error logs
+
+
+////////////////////////////////////////////////////////////////////////////////
+// End of the embedded configuration settings
+////////////////////////////////////////////////////////////////////////////////
 
 // Overwrite configuration with values from drawgantt-config.inc.php
 define('CONFIG_DIR', '%%OARCONFDIR%%');
@@ -101,6 +142,7 @@ if (is_readable(CONFIG_FILE)) {
 ////////////////////////////////////////////////////////////////////////////////
 // Script parameters (GET)
 ////////////////////////////////////////////////////////////////////////////////
+date_default_timezone_set(array_key_exists('timezone',$_GET)?$_GET['timezone']:'UTC');
 $gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
 $gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
 $gantt_relative_start_date = array_key_exists('relative_start',$_GET)?$_GET['relative_start']:-86400;
@@ -110,7 +152,7 @@ $gantt_width = $CONF['gantt_min_width'];
 if (array_key_exists('width', $_GET) and $_GET['width'] > ($CONF['gantt_left_align'] + $CONF['gantt_min_width'] + $CONF['right_margin'])) {
         $gantt_width = $_GET['width'] - $CONF['gantt_left_align'] - $CONF['right_margin'];
 }
-
+$patterns = array();
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions and database wrapper class
@@ -144,9 +186,29 @@ function resource_id_sort($r2, $r1) {
       return $cmp;
     }
   }
-  return ($r1->cpuset - $r2->cpuset);
+  return ($r2->cpuset - $r1->cpuset);
 }
 
+// class to compute colors for jobs
+class Shuffle {
+    protected static $singleton;
+    function init($shuffle_instance) {
+        self::$singleton = $shuffle_instance;
+    }
+    function get_int($job) {
+        if (self::$singleton === null) {
+            self::init(new Shuffle());
+        }
+        return self::$singleton->job2int($job);
+    }
+    function job2int($job) {
+        // compute a suffled number for job_id, so that colors are not too close
+        $magic_number = (1+sqrt(5))/2;
+        return (int)(360 * fmod($job->job_id * $magic_number, 1));
+    }
+}
+
+// database functions
 class Db {
   function __construct($backend, $server, $port, $dbname, $user, $password) {
     $this->backend = $backend;
@@ -257,11 +319,12 @@ class State {
 
 // Storage class for jobs
 class Job {
-  public $job_id,$job_name,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time,$resource_ids,$network_addresses,$types;
-  protected $color;
-  function __construct($job_id,$job_name,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time) {
+  public $job_id,$job_name,$project,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time,$resource_ids,$network_addresses,$types;
+  protected $color, $colorHL;
+  function __construct($job_id,$job_name,$project,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time) {
     $this->job_id = $job_id;
     $this->job_name = $job_name;
+    $this->project = $project;
     $this->job_type = $job_type;
     $this->state = $state;
     $this->job_user = $job_user;
@@ -277,6 +340,7 @@ class Job {
     $this->network_addresses = array();
     $this->types = array();
     $this->color = NULL;
+    $this->colorHL = NULL;
   }
 
   function add_resource_id($resource_id) {
@@ -309,11 +373,12 @@ class Job {
   }
   function svg_text() {
     $output = "Jobid: {$this->job_id}";
-    $output .= "|User: {$this->job_user}";
+    $output .= "|User: ".htmlspecialchars($this->job_user);
     $output .= "|Kind: {$this->job_type}";
-    $output .= "|Queue: {$this->queue_name}";
-    $output .= "|Types: ".join(", ",$this->types);
-    $output .= "|Name: {$this->job_name}";
+    $output .= "|Queue: ".htmlspecialchars($this->queue_name);
+    $output .= "|Types: ".join(", ", array_map("htmlspecialchars", $this->types));
+    $output .= "|Name: ".htmlspecialchars($this->job_name);
+    $output .= "|Project: ".htmlspecialchars($this->project);
     $output .= "|Walltime: " . $this->moldable_walltime/3600 . "hr";
     $output .= "|Resources: ".count($this->resource_ids);
     $output .= "|Machines: ".count($this->network_addresses);
@@ -321,17 +386,17 @@ class Job {
     $output .= "|Start: ".date("r", $this->start_time);
     $output .= "|Stop: ".(($this->stop_time > 0)?(date("r", $this->stop_time)):(date("r", $this->start_time + $this->moldable_walltime)));
     $output .= "|State: {$this->state}";
-    //$output .= "|Properties: {$this->properties}";
+    //$output .= "|Properties: ".htmlspecialchars($this->properties);
     return $output;
   }
-  function color() {
+  function color($hl) {
     global $CONF;
-    if ($this->color == NULL) {
-      // compute a suffled number for job_id, so that colors are not too close
-      $shuffled = (int)(360 * fmod($this->job_id * $CONF['magic_number'], 1));
-      $this->color = "hsl(".$shuffled.",{$CONF['job_color_saturation_lightness']})";
+    if ($this->color == NULL or $this->colorHL == NULL) {
+      $hue = Shuffle::get_int($this);
+      $this->color = "hsl(".$hue.",{$CONF['job_color_saturation_lightness']})";
+      $this->colorHL = "hsl(".$hue.",{$CONF['job_color_saturation_lightness_highlight']})";
     }
-    return $this->color;
+    return (($hl)?$this->colorHL:$this->color);
   }
 }
 
@@ -387,7 +452,7 @@ class ResourceId {
     $sep = "";
     $output = "";
     foreach ($this->properties as $key => $value) {
-      $output .= $sep."{$key}: {$value}";
+      $output .= $sep.htmlspecialchars("{$key}: {$value}");
       $sep = "|";
     }
     return $output;
@@ -408,23 +473,30 @@ class ResourceId {
     $output = '<line x1="'.$CONF['gantt_left_align'].'" y1="'.$y.'" x2="'.($CONF['gantt_left_align'] + $gantt_width).'" y2="'.$y.'" stroke="'.($this->cpuset?"#888888":"#0000FF").'" stroke-width="1" />';
     return $output;
   }
+  function svg_drain($y) {
+    global $CONF, $gantt_now, $gantt_width;
+    $output = "";
+    if (array_key_exists($CONF['resource_drain_property'], $this->properties) and ($this->properties[$CONF['resource_drain_property']] == "YES")) {
+      $output .= '<rect x="'.date2px($gantt_now).'" y="'.$y.'" width="'.($gantt_width - date2px($gantt_now) + $CONF['gantt_left_align']).'" height="'.$CONF['scale'].'" fill="'.$CONF['state_colors']['Drain'].'" stroke-width="0" style="opacity: 0.5" onmouseover="mouseOver(evt, \'State: Draining (no new job accepted)\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)"/>';
+    }
+    return $output;
+  }
   function svg_states($y) {
     global $CONF;
     $output = '';
     foreach ($this->states as $state) {
-      $output .= '<rect x="'.date2px($state->start).'" y="'.$y.'" width="'.(date2px($state->stop) - date2px($state->start)).'" height="'.$CONF['scale'].'" fill="'.$CONF['state_colors'][$state->value].'" stroke="#00FF00" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$state->svg_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+      $output .= '<rect x="'.date2px($state->start).'" y="'.$y.'" width="'.(date2px($state->stop) - date2px($state->start)).'" height="'.$CONF['scale'].'" fill="'.$CONF['state_colors'][$state->value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$state->svg_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
     }
     return $output;
   }
   function svg_jobs($y) {
-    global $CONF, $gantt_now;
+    global $CONF, $gantt_now, $output_labels, $patterns;
     $output = '';
-    $labels_output = '';
     foreach ($this->job_resource_id_groups as $grp) {
       if($grp->job->stop_time > 0) {
         $width = date2px($grp->job->stop_time) - date2px($grp->job->start_time);
       } else {
-        if (in_array('besteffort', $grp->job->types) and ($grp->job->state == "Running")) {
+        if ($CONF['besteffort_truncate_job_to_now'] and in_array('besteffort', $grp->job->types) and ($grp->job->state == "Running")) {
           $width = date2px($gantt_now) - date2px($grp->job->start_time);
         } else {
           $width = date2px($grp->job->start_time + $grp->job->moldable_walltime) - date2px($grp->job->start_time);
@@ -435,14 +507,30 @@ class ResourceId {
           $output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$color.'" stroke-width="0"  style="opacity: 0.5" />';
         }
       }    
-      $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color().'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+      if (in_array('besteffort', $grp->job->types) and ($grp->job->state == "Running")) {
+        $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.(date2px($gantt_now) - date2px($grp->job->start_time)).'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color(false).'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+        if (! $CONF['besteffort_truncate_job_to_now']) { 
+          if (! array_key_exists($grp->job->job_id, $patterns)) {
+            $p = preg_replace("/%%PATTERN_ID%%/", "besteffort{$grp->job->job_id}Pattern", $CONF['besteffort_pattern']);
+            $p = preg_replace("/%%PATTERN_COLOR%%/", $grp->job->color(false), $p);
+            $patterns[$grp->job->job_id] = $p;
+            $p = preg_replace("/%%PATTERN_ID%%/", "besteffortHL{$grp->job->job_id}Pattern", $CONF['besteffort_pattern']);
+            $p = preg_replace("/%%PATTERN_COLOR%%/", $grp->job->color(true), $p);
+            $patterns[$grp->job->job_id] .= $p;
+          }
+          $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($gantt_now).'" y="'.$y.'" width="'.(date2px($grp->job->start_time + $grp->job->moldable_walltime) - date2px($gantt_now)).'" height="'.($grp->size() * $CONF['scale']).'" fill="'."url(#besteffort{$grp->job->job_id}Pattern)".'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+          $width = date2px($grp->job->start_time + $grp->job->moldable_walltime) - date2px($grp->job->start_time);
+        }
+      } else {
+        $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$width.'" height="'.($grp->size() * $CONF['scale']).'" fill="'.$grp->job->color(false).'" stroke="#000088" stroke-width="1"  style="opacity: 0.5" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+      }
       if ($width > $CONF['gantt_min_job_width_for_label']) {
-        $labels_output .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $width / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)">';
-        $labels_output .= $grp->job->job_id;
-        $labels_output .= '</text>';
+        $output_labels .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $width / 2).'" y="'.($y + ($grp->size() + 1) * $CONF['scale'] / 2).'" text-anchor="middle" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)">';
+        $output_labels .= $grp->job->job_id;
+        $output_labels .= '</text>';
       }
     }
-    return $output.$labels_output;
+    return $output;
   }
 }
 
@@ -625,6 +713,7 @@ $query = <<<EOT
 SELECT 
   jobs.job_id,
   jobs.job_name,
+  jobs.project,
   jobs.job_type,
   jobs.state,
   jobs.job_user,
@@ -661,7 +750,7 @@ EOT;
 $db->query($query);
 while ($line = $db->fetch_array()) {
   if (! array_key_exists($line['job_id'], $jobs)) {
-    $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
+    $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['project'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
   }
   if (array_key_exists($line['resource_id'], $resource_ids)) {
     $jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
@@ -679,6 +768,7 @@ $query = <<<EOT
 SELECT 
   jobs.job_id,
   jobs.job_name,
+  jobs.project,
   jobs.job_type,
   jobs.state,
   jobs.job_user,
@@ -710,7 +800,7 @@ EOT;
 $db->query($query);
 while ($line = $db->fetch_array()) {
   if (! array_key_exists($line['job_id'], $jobs)) {
-    $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
+    $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['project'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
   }
   if (array_key_exists($line['resource_id'], $resource_ids)) {
     $jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
@@ -741,9 +831,9 @@ $page_height = max($CONF['gantt_min_height'], $CONF['gantt_top'] + $gantt_height
 $page_width = $CONF['gantt_left_align'] + $gantt_width + $CONF['right_margin'];
 
 // labers will be printed at the end of the doc to be on top of the job boxes.
-$labels_output = "";
-// begin SVG doc + script + texture patterns
-$output = <<<EOT
+$output_labels = "";
+// SVG headers + script + defs
+$output_headers = <<<EOT
 <?xml version="1.0" standalone="no"?>
 <svg width="{$page_width}px" height="{$page_height}px" viewBox="0 0 {$page_width} {$page_height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" xml:space="preserve" zoomAndPan="magnify" onload="init(evt)" color-rendering="optimizeSpeed" image-rendering="optimizeSpeed" text-rendering="optimizeSpeed" shape-rendering="optimizeSpeed" onmousedown="rootMouseDown(evt)" onmouseup="rootMouseUp(evt)" onmousemove="rootMouseMove(evt)" onclick="rootClick(evt)" >
 
@@ -845,7 +935,10 @@ function mouseOver(evt, message, highlight) {
   if (highlight != '') {
     var elems = document.getElementsByClassName(highlight);
     for(var i = 0; i < elems.length; i++) {
-      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("{$CONF['job_color_saturation_lightness']}","{$CONF['job_color_saturation_lightness_highlight']}"));
+      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace(",{$CONF['job_color_saturation_lightness']})",",{$CONF['job_color_saturation_lightness_highlight']})"));
+      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("besteffort","besteffortHL"));
+//      elems[i].setAttribute("style", elems[i].getAttribute("style").replace("opacity: 0.5","opacity: 1"));
+      elems[i].setAttribute("stroke-width", 1.5);
     }
   }
   while (infoboxtext.hasChildNodes()) { 
@@ -869,7 +962,10 @@ function mouseOut(evt, highlight) {
   if (highlight != '') {
     var elems = document.getElementsByClassName(highlight);
     for(var i = 0; i < elems.length; i++) {
-      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("{$CONF['job_color_saturation_lightness_highlight']}","{$CONF['job_color_saturation_lightness']}"));
+      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace(",{$CONF['job_color_saturation_lightness_highlight']})",",{$CONF['job_color_saturation_lightness']})"));
+      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("besteffortHL","besteffort"));
+//      elems[i].setAttribute("style", elems[i].getAttribute("style").replace("opacity: 1","opacity: 0.5"));
+      elems[i].setAttribute("stroke-width", 1);
     }
   }
 }
@@ -890,13 +986,11 @@ function mouseMove(evt) {
   infobox.setAttribute("transform", "translate(" + x + "," + y + ")");
 }
 ]]></script>
+EOT;
 
-<defs>
-{$CONF['patterns']}
-</defs> 
-
+// begin diagram drawing
+$output = <<<EOT
 <rect x="{$CONF['gantt_left_align']}" y="{$CONF['gantt_top']}" width="{$gantt_width}" height="{$gantt_height}" stroke="#0000FF" stroke-width="1" fill="#FFFFFF" />';
-
 EOT;
 
 // compute the steps of the time rulers
@@ -955,6 +1049,7 @@ foreach ($CONF['resource_hierarchy'] as $rh) {
 $y = $CONF['gantt_top'];
 foreach ($resource_ids as $rid) {
   $output .= $rid->svg_lines($y);
+  $output .= $rid->svg_drain($y);
   $y += $CONF['scale'];
 }
 
@@ -973,21 +1068,15 @@ foreach ($resource_ids as $rid) {
   $y += $CONF['scale'];
 }
 
+// print labels
+$output .= $output_labels;
+
 // print now line
 if ($gantt_now < $gantt_start_date or $gantt_now > $gantt_stop_date) {
   $output .= '<line x1="'.date2px($gantt_now).'" y1="'.($CONF['gantt_top'] - 5).'" x2="'.date2px($gantt_now).'" y2="'.($CONF['gantt_top'] + $gantt_height + 5).'" stroke="#FF0000" stroke-width="2" stroke-dasharray="10,10"/>';
 } else {
   $output .= '<line x1="'.date2px($gantt_now).'" y1="'.($CONF['gantt_top'] - 5).'" x2="'.date2px($gantt_now).'" y2="'.($CONF['gantt_top'] + $gantt_height + 5).'" stroke="#FF0000" stroke-width="2"/>';
 }
-
-// print volatile stuff: infobox + zoom
-$output .= <<<EOT
-<g id="infobox" display="none">
-<rect id="infoboxrect" x="0" y="0" rx="10" ry="10" width="200" height="150" fill="#FFFFFF" stroke="#888888" stroke-width="1" style="opacity: 0.9" />
-<text font-size="10" id="infoboxtext" x="10" y="10" fill="#000000" />
-</g>
-<rect x="0" y="0" width="0" height="0" id="zoom" stroke="#0000FF" stroke-width="1" fill="#8888FF" style="opacity: 0.25" display="none" />
-EOT;
 
 // print mobile time ruler
 $output .= '<g id="timeruler" display="none">';
@@ -999,14 +1088,25 @@ while(($d += $ruler_step) < $gantt_stop_date) {
 }
 $output .= '</g>';
 
+// print volatile stuff: infobox + zoom
+$output .= <<<EOT
+<g id="infobox" display="none">
+<rect id="infoboxrect" x="0" y="0" rx="10" ry="10" width="200" height="150" fill="#FFFFFF" stroke="#888888" stroke-width="1" style="opacity: 0.9" />
+<text font-size="10" id="infoboxtext" x="10" y="10" fill="#000000" />
+</g>
+<rect x="0" y="0" width="0" height="0" id="zoom" stroke="#0000FF" stroke-width="1" fill="#8888FF" style="opacity: 0.25" display="none" />
+EOT;
+
 // end SVG doc
 $output .=  <<<EOT
 </svg>
 EOT;
 
+$output_defs = "<defs>".$CONF['static_patterns'].join("",array_values($patterns))."</defs>";
+
 // generate doc
 header("Content-Type: image/svg+xml");
 header('Content-Encoding: gzip');
-print gzencode($output);
+print gzencode($output_headers . $output_defs . $output);
 
 ?>

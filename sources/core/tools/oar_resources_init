@@ -1,8 +1,7 @@
 #!/bin/bash
-# Detect resources on a list of nodes and print corresponding OAR commands
-#set -x
+# Detect resources of a list of hosts and print OAR commands to create them in OAR database.
 
-while getopts "c:e:n:p:o:HTh" opt; do
+while getopts "c:e:p:n:o:HTh" opt; do
     case $opt in
     c)
         OARCONFFILE=$OPTARG
@@ -10,8 +9,8 @@ while getopts "c:e:n:p:o:HTh" opt; do
     e)
         OPENSSH_CMD=$OPTARG
         ;;
-    n)  
-        OARNODES_CMD=$OPTARG
+    n)
+        OARNODESETTING_CMD=$OPTARG
         ;;
     p)
         OARPROPERTY_CMD=$OPTARG
@@ -29,15 +28,15 @@ while getopts "c:e:n:p:o:HTh" opt; do
     h)
         cat <<EOF
 Usage:
-    $0 [-c <>] [-e <>] [-n <>] [-p <>] [-o <>] [-H] <node_file>
+    $0 <hosts file> [options]
 Options:
-    -c  path to oar.conf
-    -e  ssh command
-    -n  oarnodes command (may be remote, via ssh)
-    -p  oarproperty command
     -o  output file for generated commands
+    -e  ssh command to connect nodes
     -H  handle HyperThreading
     -T  handle HyperThreading + create thread property
+    -n  path to oarnodesetting
+    -p  path to oarproperty
+    -c  path to oar.conf
     -h  display this message
 
 EOF
@@ -52,8 +51,8 @@ done
 shift $((OPTIND-1))
 OARCONFFILE=${OARCONFFILE:-/etc/oar/oar.conf}
 OPENSSH_CMD=${OPENSSH_CMD:-/usr/bin/ssh}
-OARNODES_CMD=${OARNODES_CMD:-oarnodes}
 OARPROPERTY_CMD=${OARPROPERTY_CMD:-oarproperty}
+OARNODESETTING_CMD=${OARNODESETTING_CMD:-oarnodesetting}
 GENERATED_COMMANDS_FILE=${GENERATED_COMMANDS_FILE:-/tmp/oar_resources_init.cmd}
 
 . "$OARCONFFILE" || exit 20
@@ -64,13 +63,6 @@ if [ -z "$1" ] || [ ! -r "$1" ]; then
     echo "resources (this file must be readable by user oar)"
     exit 1
 fi
-
-if ! $OARNODES_CMD --sql false 2> /dev/null; then
-    echo "This script needs the oarnodes command from the oar-user package."
-    echo "You can set the OARNODES_CMD environment variable to set its location path,"
-    echo "or ssh command to run it from another host."
-    exit 21
-fi  
 
 echo "Did you configured the OAR SSH key on all the nodes? [yes/NO] "
 read l ; [ "$l" != "yes" -a "$l" != "YES" ] && exit 2
@@ -92,16 +84,16 @@ echo "$OARPROPERTY_CMD -c -a cpuset" >> $GENERATED_COMMANDS_FILE
 echo "$OARPROPERTY_CMD -a mem" >> $GENERATED_COMMANDS_FILE
 
 # Init CPU id
-CPU=$($OARNODES_CMD --sql true | grep 'cpu=' | awk -F " cpu=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
-[ -z "$CPU" ] && CPU=0
+CPU=$($OARNODESETTING_CMD --last-property-value cpu 2> /dev/null)
+[ -n "$CPU" ] && ((CPU++)) || CPU=0 
 # Init CORE id
-CORE=$($OARNODES_CMD --sql true | grep 'core=' | awk -F " core=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
-[ -z "$CORE" ] && CORE=0
+CORE=$($OARNODESETTING_CMD --last-property-value core 2> /dev/null)
+[ -n "$CORE" ] && ((CORE++)) || CORE=0
 # Init THREAD id
 if [ -n "$WITH_HT" -a -n "$CREATE_THREAD_PROPERTY" ]; then
-    THREAD=$($OARNODES_CMD --sql true | grep 'thread=' | awk -F " thread=" '{print $2}' | awk -F "," '{print $1}' | sort -r -n | head -1)
+    THREAD=$($OARNODESETTING_CMD --last-property-value thread 2> /dev/null)
 fi
-[ -z "$THREAD" ] && THREAD=0
+[ -n "$THREAD" ] && ((THREAD++)) || THREAD=0
 
 echo
 for host in $(< $1); do
@@ -155,7 +147,7 @@ for host in $(< $1); do
             [ "$cpu" != "$prev_cpu" ] && ((CPU++))
             ((CORE++))
             prev_cpu=$cpu
-            echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+            echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $GENERATED_COMMANDS_FILE
         done
     else
         prev_cpu="-1"
@@ -170,7 +162,7 @@ for host in $(< $1); do
             if [ -z "$CREATE_THREAD_PROPERTY" ]; then
                 if [ "$core" != "$prev_core" ]; then
                     if [ -n "$tmp_cpuset" ]; then
-                        echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+                        echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $GENERATED_COMMANDS_FILE
                     fi
                     tmp_cpuset="$thread"
                 else
@@ -181,13 +173,13 @@ for host in $(< $1); do
             [ "$core" != "$prev_core" ] && ((CORE++))
             ((THREAD++))
             if [ -n "$CREATE_THREAD_PROPERTY" ]; then
-                echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $GENERATED_COMMANDS_FILE
             fi
             prev_cpu=$cpu
             prev_core=$core
         done
         if [ -z "$CREATE_THREAD_PROPERTY" ]; then
-            echo "oarnodesetting -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+            echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $GENERATED_COMMANDS_FILE
         fi
     fi
     echo "OK"

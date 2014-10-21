@@ -235,7 +235,7 @@ let sub_intervals x_l y_l =
 					else 
 						sub_interval_l n (y::m) ({b=x.b;e=y.b-1}::sub_itv_l) (* x overlap partially y*)
 				else
-					if (y.e <  x.e) then 
+					if (y.e <  x.e) then
 						sub_interval_l ({b=y.e+1;e=x.e}::n) m sub_itv_l
 					else
 						sub_interval_l n (y::m) sub_itv_l

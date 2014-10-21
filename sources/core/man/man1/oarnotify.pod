@@ -4,7 +4,7 @@ oarnotify - Multi usage command for queues and Almighty notification.
 
 =head1 SYNOPSIS
 
-B<oarnotify> [-e str] [-d str] [-E] [-D] [--add_queue str] [--remove_queue str] [-l] [tag_to_Almighty]
+B<oarnotify> [-e str] [-d str] [-E] [-D] [--add-queue str] [--remove-queue str] [-l] [tag_to_Almighty]
 
 =head1 DESCRIPTION
 
@@ -14,32 +14,32 @@ This command is used to manage scheduling queues and to notify the OAR server (A
 
 =over
 
-=item B<-e, --enable_queue>
+=item B<-e, --enable-queue>
 
 Active an existing queue.
 
-=item B<-d, --disable_queue>
+=item B<-d, --disable-queue>
 
 Inactive an existing queue.
 
-=item B<-E, --Enable_all_queues>
+=item B<-E, --Enable-all-queues>
 
 Active all queues.
 
-=item B<-D, --Disable_all_queues>
+=item B<-D, --Disable-all-queues>
 
 Inactive all queues.
 
-=item B<--add_queue>
+=item B<--add-queue>
 
 Add a new queue; syntax is name,priority,scheduler.
 (ex: "name,3,oar_sched_gantt_with_timesharing")
 
-=item B<--remove_queue>
+=item B<--remove-queue>
 
 Remove an existing queue.
 
-=item B<-l, --list_queues>
+=item B<-l, --list-queues>
 
 List all queues and there status.
 
@@ -53,4 +53,4 @@ The non exhaustive list of these tags is:
 
 =head1 COPYRIGHTS
 
- Copyright 2003-2012 LIG http://lig.imag.fr This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2014 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

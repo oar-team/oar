@@ -27,13 +27,13 @@ clustername = OAR Cluster
 ##############################################################################
 ## DataBase : set the connection parameters for accessing the OAR DataBase
 ##############################################################################
-hostname = localhost
-dbport = 3306
+hostname = 127.0.0.1
+dbport = 5432
 # dbtype can be mysql or psql for postgresql
-dbtype = mysql
+dbtype = psql
 dbname = oar
-username = oar
-password = oar
+username = oar_ro
+password = oar_ro
 
 
 ##############################################################################
@@ -64,7 +64,7 @@ summary_display = default:nodes_synonym,resource_id
 ## - default is 10
 ## - ex: nodes_per_line = 5
 ##############################################################################
-nodes_per_line = 4
+nodes_per_line = 2
 
 ##############################################################################
 ## max_cores_per_line: set the number of cores to be displayed per line in the
@@ -83,7 +83,7 @@ max_cores_per_line = 16
 ## - ex: nodename_regex = (.+) ie to keep the whole word if really needed.
 ## Rq: this regex is used to sort nodes
 ##############################################################################
-nodename_regex = (\d+)
+nodename_regex = (.+)
 
 ##############################################################################
 ## nodename_regex_display: set the regex display on the page node names
@@ -189,7 +189,7 @@ color_pool = "#999999"
 hidden_property = network_address
 #hidden_property = besteffort
 hidden_property = expiry_date
-#hidden_property = desktop_computing
+hidden_property = desktop_computing
 hidden_property = cpu
 hidden_property = cpuset
 hidden_property = available_upto

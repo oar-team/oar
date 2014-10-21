@@ -11,16 +11,6 @@ PACKAGE=oar-common
 case "$1" in
     configure)
         common_setup
-        if [ -n "$2" ]; then
-            # Upgrading a package
-            if dpkg --compare-versions "$2" le 2.3.4; then
-                echo
-                echo "  WARNING! If you upgraded OAR from 2.3.4 or earlier, you have to upgrade"
-                echo "  the database scheme (stop OAR before)!"
-                echo "  Upgrade SQL scripts are available in the /usr/lib/oar/database directory"
-                echo
-            fi
-        fi
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

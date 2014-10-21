@@ -29,7 +29,7 @@ GetOptions(
   "token|T=s" => \$replace,
   "list|l" => \$list,
   "help|h" => sub {usage(); exit(0);}
-);
+) or exit(1);
 
 ################################################################################
 ## usage()

@@ -12,7 +12,7 @@ multiprocessors computers and to kill all processes of a same
 OAR job on several nodes.
 
 Moreover "oarsh" replaces the ssh or rsh commands in the user scripts (they
-don't have to configure ssh keys, oarsh works between all the nodes for a job). 
+don't have to configure ssh keys, "oarsh" works on all the nodes of a job). 
 
 CPUSET definition
 ~~~~~~~~~~~~~~~~~
@@ -98,5 +98,5 @@ Important notes
       DO NOT USE THIS IF YOU ARE UNSURE.
 
 If you want more tips how to use oarsh with, for example, different MPI
-implementation then take a look at http://oar.imag.fr/TIPS.html .
+implementation then take a look at http://oar.imag.fr/user-usecases/ .
 

@@ -25,7 +25,7 @@ sub new_with_1_hole($$$$$$);
 sub add_new_resources($$);
 sub set_occupation($$$$);
 sub get_free_resources($$$);
-sub find_first_hole($$$$$$$$$$$);
+sub find_first_hole($$$$$$$$$$$$);
 sub pretty_print($);
 sub get_infinity_value();
 
@@ -529,8 +529,19 @@ sub get_free_resources($$$){
 
 # Take a list of resource trees and find a hole that fit
 # args : gantt ref, initial time from which the search will begin, job duration, list of resource trees
-sub find_first_hole($$$$$$$$$$$){
-    my ($gantt, $initial_time, $duration, $tree_description_list, $timeout, $job_queue, $job_project, $job_types_arrayref, $job_user, $gantt_quotas,$accounting) = @_;
+sub find_first_hole($$$$$$$$$$$$){
+    my ($gantt,
+        $initial_time,
+        $duration,
+        $tree_description_list,
+        $timeout,
+        $job_queue,
+        $job_project,
+        $job_types_arrayref,
+        $job_user,
+        $gantt_quotas,
+        $accounting,
+        $only_default_type_resource_vec) = @_;
 
     # $tree_description_list->[0]  --> First resource group corresponding tree
     # $tree_description_list->[1]  --> Second resource group corresponding tree
@@ -586,31 +597,26 @@ sub find_first_hole($$$$$$$$$$$){
             my $i = 0;
             # Initiate already used resources with the empty vector
             my $already_occupied_resources_vec = $gantt->[0]->[3]; 
-            my $result_tree_accounting_nbresources_used = 0;
+            my $accounted_used_resources_vec = '';
+            my $tmp_leafs_vec = '';
+            my $tmp_leafs_hashref = {};
             do{
-                foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
-                    vec($already_occupied_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                }
+                $already_occupied_resources_vec |= $tmp_leafs_vec;
                 # clone the tree, so we can work on it without damage
                 $tree_clone = OAR::Schedulers::ResourceTree::clone($tree_description_list->[$i]);
-                #Remove tree leafs that are not free
-                foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
-                    if ((!vec($gantt->[$current_hole_index]->[1]->[$h]->[1],OAR::Schedulers::ResourceTree::get_current_resource_value($l),1)) or
-                        (vec($already_occupied_resources_vec,OAR::Schedulers::ResourceTree::get_current_resource_value($l),1))
-                       ){
-                        OAR::Schedulers::ResourceTree::delete_subtree($l);
-                    }
-                }
+                
                 #print(Dumper($tree_clone));
-                $tree_clone = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tree_clone);
-                $tree_clone = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree_clone);
+                $tree_clone = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees(
+                                    $tree_clone,
+                                    $gantt->[$current_hole_index]->[1]->[$h]->[1] & ~ $already_occupied_resources_vec);
                 
                 ## QUOTAS
                 # $current_time : start date of the hole
                 # $gantt->[$current_hole_index]->[1]->[$h]->[0] : stop date of the hole
                 if (defined($tree_clone)){
                     # Keep in mind the number of resources used by previous groups of the job
-                    $result_tree_accounting_nbresources_used += OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone);
+                    ($tmp_leafs_vec, $tmp_leafs_hashref) = OAR::Schedulers::ResourceTree::get_tree_leafs_vec($tree_clone);
+                    $accounted_used_resources_vec |= $tmp_leafs_vec;
                     my $gantt_next_hole_date_start = $Infinity;
                     $gantt_next_hole_date_start = $gantt->[$current_hole_index+1]->[0] if ($current_hole_index < $#{$gantt});
                     ($current_time,$comment) = OAR::Schedulers::QuotaStorage::check_quotas(
@@ -621,7 +627,7 @@ sub find_first_hole($$$$$$$$$$$){
                                                     $gantt_next_hole_date_start,
                                                     $duration,
                                                     $job_queue,$job_project,$job_types_arrayref,$job_user,
-                                                    $result_tree_accounting_nbresources_used
+                                                    unpack("%32b*", $accounted_used_resources_vec & $only_default_type_resource_vec)
                                                                                            );
                     if (($current_time + $duration >= $gantt->[$current_hole_index]->[1]->[$h]->[0])
                         or (($current_hole_index < $#{$gantt}) and ($gantt->[$current_hole_index+1]->[0] <= $current_time))
@@ -630,7 +636,8 @@ sub find_first_hole($$$$$$$$$$$){
                     }
                 }
                 ## QUOTAS
-                $result_tree_list[$i] = $tree_clone;
+                my @tmpa = keys(%{$tmp_leafs_hashref});
+                $result_tree_list[$i] = [$tree_clone, $tmp_leafs_vec, \@tmpa];
                 $i ++;
             }while(defined($tree_clone) && ($i <= $#$tree_description_list));
             if (defined($tree_clone)){
@@ -649,11 +656,13 @@ sub find_first_hole($$$$$$$$$$$){
             }
         }
         # Check timeout
-        if (($current_hole_index <= $#{$gantt}) and
-            (((time() - $timeout_initial_time) >= $timeout) or
-            (($gantt->[$current_hole_index]->[0] == $gantt->[0]->[5]->[0]) and ($gantt->[$current_hole_index]->[1]->[$h]->[0] >= $gantt->[0]->[5]->[1])) or
-            ($gantt->[$current_hole_index]->[0] > $gantt->[0]->[5]->[0])) and
-            ($gantt->[$current_hole_index]->[0] > $initial_time)){
+        if (($current_hole_index <= $#{$gantt})
+            and (((time() - $timeout_initial_time) >= $timeout)
+                 or (($gantt->[$current_hole_index]->[0] == $gantt->[0]->[5]->[0])
+                     and ($gantt->[$current_hole_index]->[1]->[$h]->[0] >= $gantt->[0]->[5]->[1]))
+                 or ($gantt->[$current_hole_index]->[0] > $gantt->[0]->[5]->[0]))
+            and ($gantt->[$current_hole_index]->[0] > $initial_time)
+           ){
             if (($gantt->[0]->[5]->[0] == $gantt->[$current_hole_index]->[0]) and
                 ($gantt->[0]->[5]->[1] > $gantt->[$current_hole_index]->[1]->[$h]->[0])){
                 $gantt->[0]->[5]->[1] = $gantt->[$current_hole_index]->[1]->[$h]->[0];
@@ -664,6 +673,7 @@ sub find_first_hole($$$$$$$$$$$){
             #print("TTTTTTT $gantt->[0]->[5]->[0] $gantt->[0]->[5]->[1] -- $gantt->[$current_hole_index]->[0] $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
             $current_time = $Infinity;
             @result_tree_list = ();
+            $comment = "TIMEOUT";
             $end_loop = 1;
         }
     }
@@ -671,236 +681,3 @@ sub find_first_hole($$$$$$$$$$$){
     return($current_time, $comment, \@result_tree_list);
 }
 
-# Take a list of resource trees and find a hole that fit
-# args : gantt ref, initial time from which the search will begin, job duration, list of resource trees
-sub find_first_hole_parallel($$$$$$$$$$$$){
-    my ($gantt, $initial_time, $duration, $tree_description_list, $timeout, $max_children, $job_queue, $job_project, $job_types_arrayref, $job_user, $gantt_quotas,$accounting) = @_;
-
-    # $tree_description_list->[0]  --> First resource group corresponding tree
-    # $tree_description_list->[1]  --> Second resource group corresponding tree
-    # ...
-
-    # Test if all groups are populated
-    my $comment = "no_matching_slot";
-    my $return_infinity = 0;
-    my $g = 0;
-    while (($return_infinity == 0) and ($g <= $#$tree_description_list)){
-        if (!defined($tree_description_list->[$g])){
-            $return_infinity = 1;
-        }
-        $g++;
-    }
-    return ($Infinity, $comment, ()) if ($return_infinity > 0);
-
-
-    my @result_tree_list = ();
-    my $end_loop = 0;
-    my $current_time = $initial_time;
-    my $timeout_initial_time = time();
-    my %children;
-    my $process_index = 0;
-    my $process_index_to_check = 0;
-    my @result_children;
-    # begin research at the first potential hole
-    my $current_hole_index = find_hole($gantt, $initial_time, $duration);
-    my $current_process_hole_index = 0;
-    my $h = 0;
-    while ($end_loop == 0){
-        # Go to a right hole
-        while (($current_hole_index <= $#{$gantt}) and
-                (($gantt->[$current_hole_index]->[0] + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0]) or
-                   (($initial_time > $gantt->[$current_hole_index]->[0]) and
-                        ($initial_time + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0])))){
-            while (($h <= $#{$gantt->[$current_hole_index]->[1]}) and
-                    (($gantt->[$current_hole_index]->[0] + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0]) or
-                        (($initial_time > $gantt->[$current_hole_index]->[0]) and
-                        ($initial_time + $duration > $gantt->[$current_hole_index]->[1]->[$h]->[0])))){
-                $h++;
-            }
-            if ($h > $#{$gantt->[$current_hole_index]->[1]}){
-                # in this hole no slot fits so we must search in the next hole
-                $h = 0;
-                $current_hole_index++;
-            }
-        }
-        if (($current_hole_index > $#{$gantt}) and (keys(%children) <= 0)){
-            # no hole fits
-            $current_time = $Infinity;
-            @result_tree_list = ();
-            $end_loop = 1;
-        }else{
-            my $select_timeout = 0.1;
-            if (($current_hole_index <= $#{$gantt}) and (keys(%children) < $max_children)){
-                $select_timeout = 0;
-                $current_process_hole_index = $current_hole_index if ($process_index == 0);
-                my $P1;
-                my $P2;
-                pipe($P1,$P2);
-                my $pid = fork();
-                if ($pid == 0){
-                    #Child
-                    close($P1);
-                    #print "PID $$ : $process_index ($current_hole_index)\n";
-                    #print("Treate hole $current_hole_index, $h : $gantt->[$current_hole_index]->[0] --> $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
-                    $current_time = $gantt->[$current_hole_index]->[0] if ($initial_time < $gantt->[$current_hole_index]->[0]);
-                    #Check all trees
-                    my $tree_clone;
-                    my $tree_list;
-                    my $i = 0;
-                    # Initiate already used resources with the empty vector
-                    my $already_occupied_resources_vec = $gantt->[0]->[3];
-                    my $result_tree_accounting_nbresources_used = 0;
-                    do{
-                        foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
-                            vec($already_occupied_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
-                        }
-                        $tree_clone = $tree_description_list->[$i];
-                        #Remove tree leafs that are not free
-                        foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
-                            if ((!vec($gantt->[$current_hole_index]->[1]->[$h]->[1],OAR::Schedulers::ResourceTree::get_current_resource_value($l),1)) or
-                                (vec($already_occupied_resources_vec,OAR::Schedulers::ResourceTree::get_current_resource_value($l),1))
-                               ){
-                                OAR::Schedulers::ResourceTree::delete_subtree($l);
-                            }
-                        }
-                        #print(Dumper($tree_clone));
-                        $tree_clone = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tree_clone);
-                        $tree_clone = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree_clone);
-
-                        ## QUOTAS
-                        # $current_time : start date of the hole
-                        # $gantt->[$current_hole_index]->[1]->[$h]->[0] : stop date of the hole
-                        if (defined($tree_clone)){
-                            # Keep in mind the number of resources used by previous groups of the job
-                            $result_tree_accounting_nbresources_used += OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone);
-                            my $gantt_next_hole_date_start = $Infinity;
-                            $gantt_next_hole_date_start = $gantt->[$current_hole_index+1]->[0] if ($current_hole_index < $#{$gantt});
-                            ($current_time, $comment) = OAR::Schedulers::QuotaStorage::check_quotas(
-                                                            $accounting,
-                                                            $gantt_quotas,
-                                                            $current_time,
-                                                            $gantt->[$current_hole_index]->[1]->[$h]->[0],
-                                                            $gantt_next_hole_date_start,
-                                                            $duration,
-                                                            $job_queue,$job_project,$job_types_arrayref,$job_user,
-                                                            $result_tree_accounting_nbresources_used
-                                                                                                   );
-                            if (($current_time + $duration >= $gantt->[$current_hole_index]->[1]->[$h]->[0])
-                                or (($current_hole_index < $#{$gantt}) and ($gantt->[$current_hole_index+1]->[0] <= $current_time))
-                               ){
-                                $tree_clone = undef;
-                            }
-                        }
-                        ## QUOTAS
-                        $tree_list->[$i] = $tree_clone;
-                        $i ++;
-                    }while(defined($tree_clone) && ($i <= $#$tree_description_list));
-
-                    my %result = (
-                        process_index => $process_index,
-                        current_time => $current_time,
-                        current_hole_index => $current_hole_index,
-                        comment => $comment
-                    );
-                    if (defined($tree_clone)){
-                        #print "PID $$; INDEX $process_index : I found a hole\n";
-                        $result{result_tree_list} = $tree_list;
-                    }else{
-                        $result{result_tree_list} = undef;
-                    }
-                    select($P2);
-                    $| = 1;
-                    store_fd(\%result, $P2);
-                    close($P2);
-                    exit(0);
-                }
-                #Father
-                $children{$pid} = {
-                                    process_index => $process_index,
-                                    pipe_read => $P1
-                                  };
-                $process_index++;
-                # Go to the next slot of this hole
-                if ($h >= $#{$gantt->[$current_hole_index]->[1]}){
-                    $h = 0;
-                    $current_hole_index++;
-                }else{
-                    $h++;
-                }
-            }
-            # check children results
-            my $rin = '';
-            foreach my $p (keys(%children)){
-                vec($rin, fileno($children{$p}->{pipe_read}), 1) = 1;
-            }
-            my $rout;
-            if (select($rout=$rin, undef, undef, $select_timeout)){
-                foreach my $p (keys(%children)){
-                    if (vec($rout,fileno($children{$p}->{pipe_read}),1)){
-                        my $fh = $children{$p}->{pipe_read};
-                        my $hash = fd_retrieve($fh);
-                        #print "MASTER child $children{$p}->{process_index} FINISHED\n";
-                        $result_children[$children{$p}->{process_index}] = $hash;
-                        delete($children{$p});
-                        close($fh);
-                    }
-                }
-            }
-
-            while ((defined($result_children[$process_index_to_check])) and ($end_loop == 0)){
-                if (defined($result_children[$process_index_to_check]->{result_tree_list})){
-                    # We find the first hole
-                    #print "MASTER using hole from process index $process_index_to_check\n";
-                    $current_time = $result_children[$process_index_to_check]->{current_time};
-                    @result_tree_list = @{$result_children[$process_index_to_check]->{result_tree_list}};
-                    $end_loop = 1;
-                }elsif (($result_children[$process_index_to_check]->{current_hole_index} < $#{$gantt})
-                        and ($result_children[$process_index_to_check]->{current_hole_index} >= $current_hole_index)
-                        and ($gantt->[$result_children[$process_index_to_check]->{current_hole_index}+1]->[0] <= $result_children[$process_index_to_check]->{current_time})
-                       ){
-                    # Quotas will be ok on the next hole: don't need to check the remaing holes with this start date
-                    $current_hole_index = $result_children[$process_index_to_check]->{current_hole_index} + 1;
-                }
-                $comment = $result_children[$process_index_to_check]->{comment};
-                $current_process_hole_index = $result_children[$process_index_to_check]->{current_hole_index};
-                $process_index_to_check++;
-            }
-            # Avoid zombies
-            my $kid = 1;
-            while ($kid > 0){
-                $kid = waitpid(-1, WNOHANG);
-            }
-        
-            # Check timeout
-            #print "CURRENT HOLE: $current_process_hole_index\n";
-            if (($end_loop == 0) and ($current_process_hole_index <= $#{$gantt}) and
-                (((time() - $timeout_initial_time) >= $timeout) or
-                (($gantt->[$current_process_hole_index]->[0] == $gantt->[0]->[5]->[0]) and ($gantt->[$current_process_hole_index]->[1]->[$h]->[0] >= $gantt->[0]->[5]->[1])) or
-                ($gantt->[$current_process_hole_index]->[0] > $gantt->[0]->[5]->[0])) and
-                ($gantt->[$current_process_hole_index]->[0] > $initial_time)){
-                if (($gantt->[0]->[5]->[0] == $gantt->[$current_process_hole_index]->[0]) and
-                    ($gantt->[0]->[5]->[1] > $gantt->[$current_process_hole_index]->[1]->[$h]->[0])){
-                    $gantt->[0]->[5]->[1] = $gantt->[$current_process_hole_index]->[1]->[$h]->[0];
-                }elsif ($gantt->[0]->[5]->[0] > $gantt->[$current_process_hole_index]->[0]){
-                    $gantt->[0]->[5]->[0] = $gantt->[$current_process_hole_index]->[0];
-                    $gantt->[0]->[5]->[1] = $gantt->[$current_process_hole_index]->[1]->[$h]->[0];
-                }
-                #print("TTTTTTT $gantt->[0]->[5]->[0] $gantt->[0]->[5]->[1] -- $gantt->[$current_hole_index]->[0] $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
-                $current_time = $Infinity;
-                @result_tree_list = ();
-                $end_loop = 1;
-            }
-        }
-    }
-
-    kill(9,keys(%children));
-    # Avoid zombies
-    my $kid = 1;
-    while ($kid > 0){
-        $kid = waitpid(-1, WNOHANG);
-    }
-    return($current_time, $comment, \@result_tree_list);
-}
-
-
-#return 1;

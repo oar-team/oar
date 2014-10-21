@@ -1,0 +1,12 @@
+- configure_postgres:
+  - on_checkpoint: redo
+  - exec_in: /etc/init.d/postgresql start
+- clean:
+  - on_checkpoint: redo
+  - on_export_init:
+    - exec_in: /etc/init.d/postgresql stop
+- configure_initd:
+  - exec_in: cp $$oar_prefix_install/share/oar/oar-server/init.d/oar-server /etc/init.d/
+  - exec_in: cp $$oar_prefix_install/share/oar/oar-server/default/oar-server /etc/default/
+  - exec_in: update-rc.d oar-server defaults
+

@@ -79,4 +79,4 @@ oarsub(1), oardel(1) oarstat(1), oarnodes(1), oarhold(1), oarresume(1)
 
 =head1 COPYRIGHTS
 
- Copyright 2008 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2013 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
