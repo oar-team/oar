@@ -7963,7 +7963,7 @@ sub job_finishing_sequence($$$$$$){
     
    
     my $types = OAR::IO::get_job_types_hash($dbh,$job_id);
-    if ((!defined($types->{deploy})) and (!defined($types->{cosystem}))){
+    if ((!defined($types->{deploy})) and (!defined($types->{cosystem})) and (!defined($types->{noop}))){
         ###############
         # CPUSET PART #
         ###############
@@ -8064,9 +8064,11 @@ sub job_finishing_sequence($$$$$$){
         }
     }
 
-    # Just to force commit
-    lock_table($dbh,["accounting"]);
-    unlock_table($dbh);
+    if (!defined($types->{noop})){
+        # Just to force commit
+        lock_table($dbh,["accounting"]);
+        unlock_table($dbh);
+    }
 
     OAR::Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{$events} >= 0);
 }

@@ -112,6 +112,7 @@ foreach my $j (OAR::IO::get_to_kill_jobs($base)){
             OAR::IO::set_finish_date($base,$j->{job_id});
             OAR::IO::set_job_state($base,$j->{job_id},"Terminated");
             OAR::IO::set_job_message($base,$j->{job_id},"NOOP job killed by Leon");
+            OAR::IO::job_finishing_sequence($base, $Server_epilogue, $Server_hostname, $Server_port, $j->{job_id}, []);
             $Exit_code = 1;
         }else{
             my @hosts = OAR::IO::get_job_current_hostnames($base,$j->{job_id});
