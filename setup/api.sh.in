@@ -39,14 +39,14 @@ api_setup() {
     #
     # Starting with Debian8, Apache configs are managed using a2enconf/a2disconf/a2query -c, 
     # and stored in the conf-{available,enabled} directories
-    if a2query -c >& /dev/null; then 
+    if a2query -c > /dev/null 2>&1; then 
         if [ -L  ${APACHECONFDIR}/conf-available/oar-api.conf ]; then
             rm ${APACHECONFDIR}/conf-available/oar-api.conf
         elif [ -f ${APACHECONFDIR}/conf-available/oar-api.conf ]; then
             mv ${APACHECONFDIR}/conf-available/oar-api.conf ${APACHECONFDIR}/conf-available/oar-restful-api.conf
         fi
-        if [ ! -e ${APACHECONFDIR}/conf-available/oar-api-restful.conf ]; then
-            ln -s ${OARCONFDIR}/apache2/oar-api-restful.conf ${APACHECONFDIR}/conf-available/oar-restful-api.conf
+        if [ ! -e ${APACHECONFDIR}/conf-available/oar-restful-api.conf ]; then
+            ln -s ${OARCONFDIR}/apache2/oar-restful-api.conf ${APACHECONFDIR}/conf-available/oar-restful-api.conf
         fi
     # UnTil Debian7, Centos6, Apache configs are stored in the conf.d directory
     elif [ -d ${APACHECONFDIR}/conf.d ]; then
