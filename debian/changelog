@@ -1,10 +1,10 @@
-oar (2.5.4~rc9-1~bpo70+1) wheezy-backports; urgency=medium
+oar (2.5.4~rc10-1~bpo70+1) wheezy-backports; urgency=medium
 
   * Rebuild for wheezy-backports.
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 21 Oct 2014 11:17:47 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 22 Oct 2014 11:16:12 +0200
 
-oar (2.5.4~rc9-1) UNRELEASED; urgency=medium
+oar (2.5.4~rc10-1) UNRELEASED; urgency=medium
 
   * New upstream release 
   * Fix oaraccounting bug (Closes: #678976) 
