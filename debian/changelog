@@ -1,4 +1,4 @@
-oar (2.5.4~rc9-1) UNRELEASED; urgency=medium
+oar (2.5.4~rc10-1) UNRELEASED; urgency=medium
 
   * New upstream release 
   * Fix oaraccounting bug (Closes: #678976) 
