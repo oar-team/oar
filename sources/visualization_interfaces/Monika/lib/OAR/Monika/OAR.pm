@@ -211,12 +211,12 @@ sub nodelistByProperty {
           my %hashProp= %{$hashRessProp{$ress}};
           foreach my $p (keys %hashProp) {
                   my $hidden = undef;
-                  my $prop= $p."=".$hashProp{$p};
+                  my $prop= $p."=".(defined($hashProp{$p})?$hashProp{$p}:"?");
                   if($prop eq $property){
                     unless (defined($alreadyCounted{$node})){
                       $alreadyCounted{$node}= 1;
-                      #push @nodesSelected, $node->name;
-                      push @nodesSelected, $node->displayHTMLname;
+                      push @nodesSelected, $node->name;
+                      #push @nodesSelected, $node->displayHTMLname;
                     }
                   }
           }
