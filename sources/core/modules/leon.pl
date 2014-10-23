@@ -48,7 +48,7 @@ if (is_conf("OAR_RUNTIME_DIRECTORY")){
 if (defined($ARGV[0])){
     my $job_id = $ARGV[0];
     if ($job_id !~ m/^\d+$/m){
-        oar_error("[Leon_exterminator] Leon was called to exterminate a job but \"$job_id\" is not a correct value\n");
+        oar_error("[Leon_exterminator] Leon was called to exterminate job \"$job_id\", which is not a correct job id\n");
     }
     my $base = OAR::IO::connect();
     my $frag_state = OAR::IO::get_job_frag_state($base, $job_id);
@@ -59,12 +59,12 @@ if (defined($ARGV[0])){
         $SIG{TERM} = 'IGNORE';
         my $str = "[Leon] I exterminate the job $job_id";
         my @events; push(@events, {type => "EXTERMINATE_JOB", string => $str});
-        oar_debug("[Leon_exterminator] Leon was called to exterminate ithe job \"$job_id\"\n");
+        oar_debug("[Leon_exterminator] Leon was called to exterminate job \"$job_id\"\n");
         OAR::IO::job_arm_leon_timer($base,$job_id);
         OAR::IO::job_finishing_sequence($base, $Server_epilogue, $Server_hostname, $Server_port, $job_id, \@events);
         OAR::Tools::notify_tcp_socket($Server_hostname, $Server_port, "ChState");
     }else{
-        oar_error("[Leon_exterminator] Leon was called to exterminate the job \"$job_id\" but its frag_state is not LEON_EXTERMINATE\n");
+        oar_error("[Leon_exterminator] Leon was called to exterminate job \"$job_id\" but its frag_state is not LEON_EXTERMINATE\n");
     }
     OAR::IO::disconnect($base);
     exit(0);
@@ -85,7 +85,7 @@ foreach my $j (OAR::IO::get_to_kill_jobs($base)){
         next;
     }
 
-    oar_debug("[Leon] Normal kill : I treate the job $j->{job_id}\n");
+    oar_debug("[Leon] Normal kill: treates job $j->{job_id}\n");
     if (($j->{state} eq "Waiting") || ($j->{state} eq "Hold")){
         oar_debug("[Leon] Job is not launched\n");
         OAR::IO::set_job_state($base,$j->{job_id},"Error");
@@ -112,6 +112,7 @@ foreach my $j (OAR::IO::get_to_kill_jobs($base)){
             OAR::IO::set_finish_date($base,$j->{job_id});
             OAR::IO::set_job_state($base,$j->{job_id},"Terminated");
             OAR::IO::set_job_message($base,$j->{job_id},"NOOP job killed by Leon");
+            OAR::IO::job_finishing_sequence($base, $Server_epilogue, $Server_hostname, $Server_port, $j->{job_id}, []);
             $Exit_code = 1;
         }else{
             my @hosts = OAR::IO::get_job_current_hostnames($base,$j->{job_id});
@@ -124,7 +125,7 @@ foreach my $j (OAR::IO::get_to_kill_jobs($base)){
             }
             #deploy, cosystem and no host part
             if (defined($host_to_connect_via_ssh)){
-                OAR::IO::add_new_event($base,"SEND_KILL_JOB",$j->{job_id},"[Leon] Send kill signal to oarexec on $host_to_connect_via_ssh for the job $j->{job_id}");
+                OAR::IO::add_new_event($base,"SEND_KILL_JOB",$j->{job_id},"[Leon] Send the kill signal to oarexec on $host_to_connect_via_ssh for job $j->{job_id}");
                 OAR::Tools::signal_oarexec($host_to_connect_via_ssh, $j->{job_id}, "TERM", 0, $base, $Openssh_cmd, '');
             }
         }
