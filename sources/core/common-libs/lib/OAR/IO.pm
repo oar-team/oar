@@ -7963,7 +7963,7 @@ sub job_finishing_sequence($$$$$$){
     
    
     my $types = OAR::IO::get_job_types_hash($dbh,$job_id);
-    if ((!defined($types->{deploy})) and (!defined($types->{cosystem}))){
+    if ((!defined($types->{deploy})) and (!defined($types->{cosystem})) and (!defined($types->{noop}))){
         ###############
         # CPUSET PART #
         ###############
@@ -8044,7 +8044,7 @@ sub job_finishing_sequence($$$$$$){
     }
 
     # Execute PING_CHECKER if asked
-    if ((is_conf("ACTIVATE_PINGCHECKER_AT_JOB_END")) and (lc(get_conf("ACTIVATE_PINGCHECKER_AT_JOB_END")) eq "yes") and (!defined($types->{deploy}))){
+    if ((is_conf("ACTIVATE_PINGCHECKER_AT_JOB_END")) and (lc(get_conf("ACTIVATE_PINGCHECKER_AT_JOB_END")) eq "yes") and (!defined($types->{deploy})) and (!defined($types->{noop}))){
         my @hosts = OAR::IO::get_job_current_hostnames($dbh,$job_id);
         oar_debug("[job_finishing_sequence] [$job_id] Run pingchecker to test nodes at the end of the job on nodes: @hosts\n");
         my @bad_pingchecker = OAR::PingChecker::test_hosts(@hosts);
@@ -8064,9 +8064,11 @@ sub job_finishing_sequence($$$$$$){
         }
     }
 
-    # Just to force commit
-    lock_table($dbh,["accounting"]);
-    unlock_table($dbh);
+    if (!defined($types->{noop})){
+        # Just to force commit
+        lock_table($dbh,["accounting"]);
+        unlock_table($dbh);
+    }
 
     OAR::Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{$events} >= 0);
 }
