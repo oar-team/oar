@@ -74,9 +74,12 @@ my $OARSUB_CMD  = "oarsub";
 my $OARDEL_CMD  = "oardel";
 my $OARHOLD_CMD  = "oarhold";
 my $OARRESUME_CMD  = "oarresume";
-my $OARADMIN_CMD = "oaradmin";
 my $OARNODES_CMD = "oarnodes";
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
+
+# Oar admin command (for new list of resources generation)
+my $API_RESOURCES_LIST_GENERATION_CMD = "";
+if (is_conf("API_RESOURCES_LIST_GENERATION_CMD")){ $API_RESOURCES_LIST_GENERATION_CMD = get_conf("API_RESOURCES_LIST_GENERATION_CMD"); }
 
 # OAR server
 my $remote_host = get_conf("SERVER_HOSTNAME");
@@ -1457,7 +1460,7 @@ SWITCH: for ($q) {
   };
   #}}}
   # 
-  #{{{ POST /resources/generate : Generate resources ('oaradmin re -a -Y' wrapping)
+  #{{{ POST /resources/generate : Generate resources (needs an external command like oar_resources_add)
   #
   $URI = qr{^/resources/generate(\.yaml|\.json|\.html)*$};
   OAR::API::POST( $_, $URI ) && do {
@@ -1477,6 +1480,13 @@ SWITCH: for ($q) {
       last;
     }
     $ENV{OARDO_BECOME_USER} = "oar";
+
+    # Check feature activation
+    if ($API_RESOURCES_LIST_GENERATION_CMD eq "" ) {
+       OAR::API::ERROR( 500, "Disabled feature",
+        "To enable this feature, please provide a command into the API_RESOURCES_LIST_GENERATION_CMD configuration variable" );
+      last;
+    }
 
     # Check and get the submited resource description
     # From encoded data
@@ -1513,7 +1523,7 @@ SWITCH: for ($q) {
       $auto_offset="--auto-offset ";
     }
     # command with arguments
-    $cmd = "PATH=\$PATH:/usr/sbin:/usr/local/sbin $OARADMIN_CMD resources -a -Y $auto_offset".$description->{resources}.$cmd_properties;
+    $cmd = "$API_RESOURCES_LIST_GENERATION_CMD $auto_offset".$description->{resources}.$cmd_properties;
     # execute the command
     my $cmdRes = OAR::API::send_cmd($cmd,"Oar");
     my $data = OAR::API::import_data($cmdRes,"yaml");
