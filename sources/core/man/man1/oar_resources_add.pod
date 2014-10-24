@@ -12,9 +12,9 @@ B<oar_resource_add> -H <# of hosts> [options]
 
 The script generate the oarproperty and oarnodesetting commands to generate resources following the host/cpu/core/thread hierarchy.
 
-If resources are already registered, offsets can be provided, or guessed from the database.
+If resources are already registered, offsets can be provided, or guessed from OAR database.
 
-This script is also a good example of how one could create resources by himself using shell loops and oarnodesetting.
+This script is also a good example of how one could create resources by himself using basic program loops and the oarnodesetting command.
 
 =head1 OPTIONS
 
@@ -46,35 +46,45 @@ Hostname suffix (e.g. ".domain")
 
 =item B<--host0> <#>
 
-First host number to use
+First host id to use
 
 =item B<--cpu0> <#>
 
-First cpu number to use
+First cpu id to use
 
 =item B<--core0> <#>
 
-First core number to use
+First core id to use
 
 =item B<--thread0> <#>
 
-First thread number to use
+First thread id to use
 
 =item B<--cpuset> <#>
 
 # of cpusets on host (default=cpus*cores*threads)
 
-=item B<-p>, B<--other-properties> <str>
+=item B<-A>, B<--append> <str>
 
-Extra properties for every resources
+Append a text string (extra properties)
 
 =item B<-o>, B<--write-to> <file>
 
 Write commands to file
 
+=item B<-p>, B<--no-create-properties>
+
+Do not generate oarproperty commands
+
 =item B<-a>, B<--auto-offset>
 
-Guess first host/cpu/core/thread number to use from the OAR database (unless host0/cpu0/core0/thread0 is set). Warning: host, cpu, core and thread properties must exist in your database or you will get errors.
+Guess the next host/cpu/core/thread ids to use from the OAR database (unless host0/cpu0/core0/thread0 is set)
+
+WARNING: host, cpu, core and thread properties must exist in your database or you will get errors
+
+=item B<-Y>, B<--yaml>
+
+Generate YAML output
 
 =item B<-h>, B<--help>
 
@@ -84,7 +94,7 @@ Display this message
 
 =head1 EXAMPLES
 
-$ oar_resources_add --hosts=2 --host0 5 --cpu0 8 --core0=64 --thread0=128 -p "mem=1024 gpu=NO"
+$ oar_resources_add --hosts=2 --host0 5 --cpu0 8 --core0=64 --thread0=128 -A "mem=1024 gpu=NO"
 
 oarproperty -c -a host || true
 
@@ -132,7 +142,7 @@ oarnodesetting(1), oarproperty(1), oar_resources_init(1), bash(1)
 
 =head1 COPYRIGHTS
 
- Copyright 2004-2013 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2004-2014 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =cut
 

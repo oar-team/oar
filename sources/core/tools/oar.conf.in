@@ -555,29 +555,6 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 # (default is 1)
 OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 
-#DESKTOP_COMPUTING_ALLOW_CREATE_NODE="0"
-#DESKTOP_COMPUTING_EXPIRY="300"
-
-# Remember to create these directories and give ownership to the oar user!
-#STAGEOUT_DIR="%%OARHOMEDIR%%/stageouts/"
-#STAGEIN_DIR="%%OARHOMEDIR%%/stageins"
-
-#STAGEIN_CACHE_EXPIRY="144"
-
-
-############
-# OARADMIN #
-#############
-#
-# Uncomment the next line in order to activate the versioning mechanism 
-# for admission rules and oar conf files
-# Repository is in %%OARHOMEDIR%%/.oaradmin
-#   %%OARHOMEDIR%%/.oaradmin/rp : contains repository
-#   %%OARHOMEDIR%%/.oaradmin/wc : contains working copy
-#OARADMIN_VERSIONING="yes"
-
-###############################################################################
-
 ###########
 # OAR API #
 ###############################################################################
@@ -634,3 +611,9 @@ OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 # The script should return at least the variable "GLOBAL_STRESS=" but it
 # may also provide other custom defined values.
 #API_STRESS_FACTOR_SCRIPT="/etc/oar/stress_factor.sh"
+
+# Command to generate a yaml list of resources to be created from
+# a resources definition syntax submitted to the OAR API
+# (POST /resources/generate)
+# If the variable is not defined, this feature is disabled
+#API_RESOURCES_LIST_GENERATION_CMD="/usr/sbin/oar_resources_add -Y"
