@@ -1,3 +1,9 @@
+oar (2.5.4-1) unstable; urgency=medium
+
+  * New upstream release. No change from rc12
+
+ -- Vincent Danjean <vdanjean@debian.org>  Fri, 24 Oct 2014 17:11:45 +0200
+
 oar (2.5.4~rc12-1) unstable; urgency=medium
 
   * New upstream release 
