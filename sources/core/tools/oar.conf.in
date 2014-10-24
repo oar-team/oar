@@ -634,3 +634,9 @@ OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 # The script should return at least the variable "GLOBAL_STRESS=" but it
 # may also provide other custom defined values.
 #API_STRESS_FACTOR_SCRIPT="/etc/oar/stress_factor.sh"
+
+# Command to generate a yaml list of resources to be created from
+# a resources definition syntax submitted to the OAR API
+# (POST /resources/generate)
+# If the variable is not defined, this feature is disabled
+#API_RESOURCES_LIST_GENERATION_CMD="/usr/sbin/oaradmin resources -a -Y"
