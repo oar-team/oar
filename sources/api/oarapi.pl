@@ -1460,7 +1460,7 @@ SWITCH: for ($q) {
   };
   #}}}
   # 
-  #{{{ POST /resources/generate : Generate resources (needs an external command like oaradmin)
+  #{{{ POST /resources/generate : Generate resources (needs an external command like oar_resources_add)
   #
   $URI = qr{^/resources/generate(\.yaml|\.json|\.html)*$};
   OAR::API::POST( $_, $URI ) && do {
