@@ -1,4 +1,4 @@
-oar (2.5.4~rc11-1) unstable; urgency=medium
+oar (2.5.4~rc12-1) unstable; urgency=medium
 
   * New upstream release 
   * Fix oaraccounting bug (Closes: #678976) 
@@ -6,7 +6,7 @@ oar (2.5.4~rc11-1) unstable; urgency=medium
   * Force depends to OpenSSH's ssh
   * Remove patch fix-oar-server-init.d: applied upstream 
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 23 Oct 2014 18:15:49 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 24 Oct 2014 15:09:46 +0200
 
 oar (2.5.4~rc8-2) unstable; urgency=medium
 
