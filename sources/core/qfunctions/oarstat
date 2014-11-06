@@ -11,13 +11,15 @@ use Getopt::Long;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use OAR::Stat;
 
+$SIG{HUP} = sub {OAR::Stat::close_db_connection(); exit(10)};
+$SIG{PIPE} = sub {OAR::Stat::close_db_connection(); exit(10)};
+
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
 
 # Read config
 init_conf($ENV{OARCONFFILE});
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
-my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 
 
 #Try to load XML module
@@ -361,10 +363,6 @@ sub print_job_data($){
                 if (defined($data->{$job_info->{job_id}}->{cpuset_name})){
                     print("    cpuset_name = $data->{$job_info->{job_id}}->{cpuset_name}\n");
                 }
-                if (defined($data->{$job_info->{job_id}}->{job_uid})){
-                    print("    job_user = $data->{$job_info->{job_id}}->{job_user}\n");
-                    print("    job_uid = $data->{$job_info->{job_id}}->{job_uid}\n");
-                }
                 if ((defined($job_info->{initial_request})) and
                     (($ENV{OARDO_USER} eq $job_info->{job_user}) or
                      ($ENV{OARDO_USER} eq "oar") or
@@ -405,7 +403,7 @@ EOS
                             $job_info->{'array_index'},
 					    	$hashestat{$job_info->{state}},
 			    			$job_info->{job_user},
-                            OAR::Stat::get_job_duration($job_info->{start_time}),
+                            OAR::Stat::get_job_duration($job_info->{start_time},$job_info->{stop_time}),
 						    $job_info->{message}
     					);
                         $Printed_jobs ++;
@@ -444,7 +442,7 @@ EOS
 	    					$job_info->{job_id},
 					    	$hashestat{$job_info->{state}},
 			    			$job_info->{job_user},
-                            OAR::Stat::get_job_duration($job_info->{start_time}),
+                            OAR::Stat::get_job_duration($job_info->{start_time},$job_info->{stop_time}),
 						    $job_info->{message}
     					);
                     }else{
@@ -516,7 +514,10 @@ sub print_properties {
                 }
             }
             chop($line);
-            print("$line\n") or exit(5);
+            if (!print("$line\n")){
+                OAR::Stat::close_db_connection();
+                exit(5);
+            }
         }
     } else {
         warn("No job specified\n");
@@ -529,7 +530,7 @@ sub print_state {
     my %job_state;
     if ($#job_ids < 0){
         warn("--state can only be used with an id\n");
-          exit(1);
+        OAR::Stat::close_db_connection(); exit(1);
     }elsif($#job_ids >= 0){
         foreach my $j (@job_ids){
             my $state_string = OAR::Stat::get_job_state($j);
@@ -549,18 +550,22 @@ sub show_accounting {
     
         # One user output
         if (defined($user)) {
-            my $asked;
-            my $used;
-            if (defined($Consumptions->{$user}->{ASKED})) { $asked=$Consumptions->{$user}->{ASKED}; }
-            else { $asked=0; }
-            if (defined($Consumptions->{$user}->{USED})) { $used=$Consumptions->{$user}->{USED}; }
-            else { $used=0; }
-            if (!defined($Consumptions->{$user}->{begin})) {$Consumptions->{$user}->{begin}="No window found";}
-            if (!defined($Consumptions->{$user}->{end})) {$Consumptions->{$user}->{end}="No window found";}
+            my $asked = 0;
+            $asked=$Consumptions->{$user}->{ASKED} if (defined($Consumptions->{$user}->{ASKED}));
+            my $used =0;
+            $used=$Consumptions->{$user}->{USED} if (defined($Consumptions->{$user}->{USED}));
             print "Usage summary for user '$user' from $1 to $2:\n";
             print "-------------------------------------------------------------\n";
-            printf ("%-28s %s\n","Start of the first window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{begin}));
-            printf ("%-28s %s\n","End of the last window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{end}));
+            if (defined($Consumptions->{$user}->{begin})){
+                printf ("%-28s %s\n","Start of the first window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{begin}));
+            }else{
+                printf ("%-28s %s\n","Start of the first window:","No window found");
+            }
+            if (defined($Consumptions->{$user}->{end})){
+                printf ("%-28s %s\n","End of the last window:",OAR::Stat::local_to_sql($Consumptions->{$user}->{end}));
+            }else{
+                printf ("%-28s %s\n","End of the last window:","No window found");
+            }
             printf ("%-28s %s ( %s)\n","Asked consumption:",$asked,OAR::Stat::get_duration($asked));
             printf ("%-28s %s ( %s)\n","Used consumption:",$used,OAR::Stat::get_duration($used));
             print "By project consumption:\n";
@@ -599,8 +604,7 @@ EOS
         
     }else{
         print("Bad syntax for --accounting\n");
-		OAR::Stat::close_db_connection();
-        exit(1);
+		OAR::Stat::close_db_connection(); exit(1);
     }
 }
 

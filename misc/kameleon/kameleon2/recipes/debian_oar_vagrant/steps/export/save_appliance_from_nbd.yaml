@@ -1,0 +1,65 @@
+# # Save Chroot Appliance
+- save_as_tgz:
+  - exec_out: echo "sync..." ; sync
+  - in2out:
+    - /etc/fstab
+    - ./fstab.bak
+  - on_clean:
+    - exec_out: rm -f ./fstab.bak
+  - write_in:
+    - /etc/fstab
+    - |
+      # UNCONFIGURED FSTAB FOR BASE SYSTEM
+  - pipe:
+    - exec_in: |
+        tar -zcf - --numeric-owner \
+        --exclude=tmp/* \
+        --exclude=dev/* \
+        --exclude=proc/* \
+        --exclude=sys/* \
+        --exclude=run/* \
+        --exclude=mnt/* \
+        --exclude=media/* \
+        --exclude=lost+found/* \
+        -C / .
+    - exec_out: cat > ./$$filename.tar.gz
+  - out2in:
+    - ./fstab.bak
+    - /etc/fstab
+  - exec_out: |
+      echo "Saved tar.gz appliance to $(pwd)/$$filename.tar.gz"
+
+- save_as_raw:
+  - exec_out: echo "sync..." ; sync
+  - exec_out: |
+      qemu-img convert -O raw $(readlink $$container) $$filename.raw
+  - exec_out: echo "Saved raw appliance to $(pwd)/$$filename.raw"
+
+- save_as_qcow2:
+  - exec_out: echo "sync..." ; sync
+  - exec_out: |
+      qemu-img convert -c -O qcow2 $(readlink $$container) $$filename.qcow2
+  - exec_out: echo "Saved qcow2 appliance to $(pwd)/$$filename.qcow2"
+
+- save_as_qed:
+  - exec_out: echo "sync..." ; sync
+  - exec_out: |
+      qemu-img convert -O qed $(readlink $$container) $$filename.qed
+  - exec_out: echo "Saved qed appliance to $(pwd)/$$filename.qed"
+
+- save_as_vmdk:
+  - exec_out: echo "sync..." ; sync
+  - exec_out: |
+      qemu-img convert -O vmdk $(readlink $$container) $$filename.vmdk
+  - exec_out: echo "Saved vmdk appliance to $(pwd)/$$filename.vmdk"
+
+- save_as_vdi:
+  - exec_out: echo "sync..." ; sync
+  - exec_out: qemu-img convert -O vdi $(readlink $$container) $$filename.vdi
+  - rescue:
+    - exec_out: |
+        echo "Compact the vdi disk"
+        VBoxManage modifyhd $$filename.vdi --compact 2>&1
+    - exec_out: |
+        echo "Cannot compact the vdi disk : VBoxManage is missing."
+  - exec_out: echo "Saved vdi appliance to $(pwd)/$$filename.vdi"

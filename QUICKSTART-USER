@@ -1,14 +1,17 @@
-Quick-start guide
-=================
+Using OAR - Basic steps
+=======================
 
 Visualising the cluster State
 -----------------------------
 
-There are many tools  available to visualize the cluster state.
+Many tools are available to visualize the cluster state.
 
 ~~~~~~~~~~~~~~~
 Shell commands:
 ~~~~~~~~~~~~~~~
+
+* oarstat: this command shows information about running or planned jobs.
+  (The -f option shows full infomation)
 
 * oarnodes: this command shows the resources states. Warning: in our context, a
   resource is not necessary a machine. It is generally a cpu, a core or a host,
@@ -16,28 +19,17 @@ Shell commands:
   The oarnodes command gives information about the network address where is
   located this resource, its type, its state and many other (interesting) 
   information.
-  
-* oarstat: this command shows information about running or planned jobs.
-  (The -f option shows full infomation)
 
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~  
 Graphical tools:
 ~~~~~~~~~~~~~~~~
 
-Monika
-~~~~~~
+* Monika: this web page shows current resources states and jobs information.
+  On this page you can have more information about a particular resource or job. 
 
-This is a web cgi normally installed on the cluster frontal. This tool connects
-to the DB, gets relevant information then format data in a html page. Thus you
-can have a global view of cluster state and where your jobs are running.
-
-DrawOARGantt
-~~~~~~~~~~~~
-
-This is also a web cgi. It creates a Gantt chart which shows job repartition on
-nodes in the time. It is very useful to see cluster occupation in the past and
-to know when a job will be launched in the future.
-
+* DrawGantt: this web page shows the gantt diagram of the scheduling. It
+  represents the current, former and future jobs.
+  
 Submitting a job in an interactive shell
 ----------------------------------------
 
@@ -91,15 +83,14 @@ Interactive submission on many resources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The "-l" option allows to specify wanted resources. For example, if we need to
-work in interactive mode on 2 cpu for a max duration of 30 minutes we will
-ask::
+work in interactive mode on 2 cpu for a max duration of 30 minutes we will ask::
 
   frontend:~$> oarsub -I -l /cpu=2,walltime=00:30:00
 
-The walltime is the job's max duration. If the job overruns its walltime, it
-will be killed by the system. Thus, you better have to set your walltime
-correctly depending on how long will take your job to prevent being killed if
-the walltime has been set too short or being scheduled later if it is too long.
+The walltime is the job's max duration. If the job overruns its walltime, it will
+be killed by the system. Thus, you better have to set your walltime correctly
+depending on how long will take your job to prevent being killed if the 
+walltime has been set too short or being scheduled later if it is too long.
 Then, once the job is scheduled and started, OAR connects you on the first
 reserved node. You still can access the list of the other resources via the
 $OAR_NODEFILE env variable.
@@ -109,10 +100,10 @@ Batch submission
 ----------------
 
 OAR allows to execute scripts in "passive mode". In this mode, the user
-specifies a script at the submission time. This script will be executed on the
+specifies a script at the submission time. This script will be executed on the 
 first reserved node. It's within this script that the user will define the way
-to operate parallel resources. All the $OAR_* env variables are reachable
-within the script.
+to operate parallel resources. All the $OAR_* env variables are reachable within
+the script.
 
 The script must be executable.
 
@@ -153,27 +144,3 @@ available through the "-r <date>" option::
   frontend:~$> oarsub -r '2008-03-07 16:45:00' -l nodes=2,walltime=0:10:00 ./hello_mpi.sh
 
 
-Desktop computing
------------------
-
-If you want to compute jobs on nodes without SSH connections then this
-feature is for you.
-
-On the nodes you have to run "oar-agent.pl". This script polls the OAR
-server via a CGI HTTP script.
-
-Usage examples:
- - if you want to run a program that you know is installed on nodes::
-
-    oarsub -t desktop_computing /path/to/program
-
-   Then /path/to/program is run and the files created in the
-   oar-agent.pl running directory is retrieved where oarsub was
-   launched.
-
- - if you want to copy a working environment and then launch the program::
-
-    oarsub -t desktop_computing -s . ./script.sh
-
-   The content of "." is transfred to the node, "./script.sh" is run and
-   everything will go back.

@@ -1,0 +1,11 @@
+# Create User
+
+- shell: /bin/bash
+
+- add_user:
+  - exec_in: useradd -m $$name -s $$shell
+  - exec_in: echo -n '$$name:$$password' | chpasswd
+
+- add_to_groups:
+  - exec_in: |
+      usermod -G "$(echo $$groups | tr ' ' ',')" $$name

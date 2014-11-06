@@ -77,6 +77,9 @@ $output = <<<EOT
   var timezoneSQL = "";
   var scrolledX=0;
   var scrolledY=0;
+  function sleep(millis, callback) {
+    setTimeout(function() { callback(); } , millis);
+  }
   function show_panel() {
     var panelDiv=document.getElementById("panel");
     panelDiv.style.top = window.scrollY + "px";
@@ -137,17 +140,17 @@ $output = <<<EOT
     svgObj.innerHTML = newURL;
     document.getElementById("waiter").style.visibility="visible";
   }
-  function select_filter() {
+  function select_filter(reload) {
     var filterSelect=document.getElementById("filterSelect");
     filterSQL = filterSelect.value;
     window.scrollTo(0,0);
-    reload_content();
+    reload && reload_content();
   }
-  function select_timezone() {
+  function select_timezone(reload) {
     var timezoneSelect=document.getElementById("timezoneSelect");
     timezoneSQL = timezoneSelect.value;
     window.scrollTo(0,0);
-    reload_content();
+    reload && reload_content();
   }
   function openURL(url) {
     window.open(url);
@@ -158,8 +161,9 @@ $output = <<<EOT
   }
   function init() {
     show_panel();
-    select_filter();
-    select_timezone();
+    select_filter(false);
+    select_timezone(false);
+    sleep(100, reload_content);
   }
 </script>
 </head>
@@ -168,7 +172,7 @@ $output = <<<EOT
 EOT;
 if (count($CONF['nav_filters']) > 1) {
   $output .= <<<EOT
-<select id="filterSelect" onchange="select_filter()">
+<select id="filterSelect" onchange="select_filter(true)">
 EOT;
   foreach ($CONF['nav_filters'] as $key => $value) {
     $output .= "<option " . (($key == $filter)?"selected ":"") . "value=\"$value\">$key</option>\n";
@@ -197,7 +201,7 @@ $output .= <<<EOT
 EOT;
 if (count($CONF['nav_timezones']) > 1) {
   $output .= <<<EOT
-<select id="timezoneSelect" onchange="select_timezone()">
+<select id="timezoneSelect" onchange="select_timezone(true)">
 EOT;
   foreach ($CONF['nav_timezones'] as $key => $value) {
     $output .= "<option " . (($key == $timezone)?"selected ":"") . "value=\"$value\">$key</option>\n";

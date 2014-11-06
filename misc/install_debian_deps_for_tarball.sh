@@ -34,9 +34,9 @@ PKG="$PKG postgresql-client libdbd-pg-perl"
 # Build dependencies
 PKG="$PKG gcc make tar python-docutils"
 # Common dependencies
-PKG="$PKG perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl apache2-bin libcgi-fast-perl"
+PKG="$PKG perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl apache2.2-bin libcgi-fast-perl"
 # FastCGI dependency (optional but highly recommended)
-PKG="$PKG libapache2-mod-fastcgi"
+PKG="$PKG libapache2-mod-scgi"
 # MySQL dependencies
 PKG="$PKG libdbd-mysql-perl"
 # PostgreSQL dependencies

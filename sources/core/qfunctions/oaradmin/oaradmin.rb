@@ -25,7 +25,7 @@ $msg = []
 $options= {}
 $subcommand = []
 $subcommand[0] = {:short_form=>"re",   :long_form=>"resources",  :description=>"manage resources in oar database"}
-$subcommand[1] = {:short_form=>"ru",   :long_form=>"rules",      :description=>"manage admission rules"}
+#$subcommand[1] = {:short_form=>"ru",   :long_form=>"rules",      :description=>"manage admission rules"}
 #$subcommand[2] = {:short_form=>"",     :long_form=>"conf",       :description=>"edit conf file and keep changes in Svn repository"}
 $subcommand[8] = {:short_form=>"",     :long_form=>"help",       :description=>"print this help message"}
 $subcommand[9] = {:short_form=>"ver",  :long_form=>"version",    :description=>"print OAR version number"}

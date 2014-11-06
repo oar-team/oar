@@ -29,7 +29,6 @@ my $Default_suspend_resume_file_manager = "/etc/oar/suspend_resume_manager.pl";
 my $Default_oar_ssh_authorized_keys_file = ".ssh/authorized_keys";
 my $Default_node_file_db_field = "network_address";
 my $Default_node_file_db_field_distinct_values = "resource_id";
-my $Default_runner_sliding_window_size = 5;
 my $Default_notify_tcp_socket_enabled = 1;
 
 # Prototypes
@@ -139,11 +138,6 @@ sub get_default_monitor_sensor_file(){
     return($Default_monitor_file_sensor);
 }
 
-# Get default value for RUNNER_SLIDING_WINDOW_SIZE tag
-sub get_default_runner_sliding_window_size(){
-    return($Default_runner_sliding_window_size);
-}
-
 # Get the name of the file of the private ssh key for the given cpuset name
 sub get_private_ssh_key_file_name($){
     my $cpuset_name = shift;
@@ -161,17 +155,6 @@ sub format_ssh_pub_key($$$$){
     $job_user = $user if (!defined($job_user));
     $cpuset = "undef" if (!defined($cpuset));
     return('environment="OAR_CPUSET='.$cpuset.'",environment="OAR_JOB_USER='.$job_user.'" '.$key."\n");
-}
-
-# Return the name of the user on the computing nodes
-sub format_job_user($$$){
-    my $user = shift;
-    my $jobid = shift;
-    my $uid = shift;
-
-    my $res = $user;
-    $res .= '_'.$jobid if (defined($uid));
-    return($res);
 }
 
 # return a hashtable of all child in arrays and a hashtable with process command names

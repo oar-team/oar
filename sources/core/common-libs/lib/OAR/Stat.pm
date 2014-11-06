@@ -13,7 +13,6 @@ my $current_date = -1;
 # Read config
 init_conf($ENV{OARCONFFILE});
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
-my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 
 sub open_db_connection(){
 	$base  = OAR::IO::connect_ro_one();
@@ -22,7 +21,8 @@ sub open_db_connection(){
 }
 
 sub close_db_connection(){
-	OAR::IO::disconnect($base);
+	OAR::IO::disconnect($base) if (defined($base));
+    $base = undef;
 }
 
 sub get_oar_version(){
@@ -152,7 +152,7 @@ sub count_jobs_for_user_query {
 }
 
 sub get_all_admission_rules() {
-	my @admission_rules = OAR::IO::list_admission_rules($base);
+	my @admission_rules = OAR::IO::list_admission_rules($base,undef);
 	return \@admission_rules;
 }
 
@@ -241,7 +241,7 @@ sub get_history($$){
     #print finished or running jobs
     my %jobs_history = OAR::IO::get_jobs_range_dates($base,$date_start,$date_stop);
     foreach my $i (keys(%jobs_history)){
-        my $types = OAR::IO::get_current_job_types($base,$i);
+        my $types = OAR::IO::get_job_types_hash($base,$i);
         if (!defined($job_gantt{$i}) || (defined($types->{besteffort}))){
             if (($jobs_history{$i}->{state} eq "Running") ||
                 ($jobs_history{$i}->{state} eq "toLaunch") ||
@@ -341,7 +341,6 @@ sub get_job_data($$){
     my @job_events;
     my %data_to_display;
     my $job_user;
-    my $job_cpuset_uid;
     my @job_dependencies;
     my @job_types = OAR::IO::get_job_types($dbh,$job_info->{job_id});
     my $cpuset_name;
@@ -366,9 +365,7 @@ sub get_job_data($$){
         @date_tmp = OAR::IO::get_gantt_job_start_time_visu($dbh,$job_info->{job_id});
         @job_events = OAR::IO::get_job_events($dbh,$job_info->{job_id});
         @job_dependencies = OAR::IO::get_current_job_dependencies($dbh,$job_info->{job_id});
-
-        $job_cpuset_uid = OAR::IO::get_job_cpuset_uid($dbh, $job_info->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
-        $job_user = OAR::Tools::format_job_user($job_info->{job_user},$job_info->{job_id},$job_cpuset_uid);
+        $job_user = $job_info->{job_user};
    
         #Get the job resource description to print -l option
         my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($dbh,$job_info->{job_id});
@@ -407,7 +404,6 @@ sub get_job_data($$){
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
             job_user => $job_user,
-            job_uid => $job_cpuset_uid,
             state => $job_info->{state},
             assigned_resources => \@nodes,
             assigned_network_address => \@node_hostnames,
@@ -562,15 +558,19 @@ sub compact_arrays($){
 
 # Use the current date in seconds from the EPOCH to determine the duration of a
 # running job (start_time>0)
-sub get_job_duration($){
+sub get_job_duration($$){
     my $start_date = shift;
+    my $stop_date = shift;
 
-    if ($current_date < 0){
-        $current_date = OAR::IO::get_date($base);
+    if ($stop_date < $start_date){
+        if ($current_date < 0){
+            $current_date = OAR::IO::get_date($base);
+        }
+        $stop_date = $current_date;
     }
     my ($h,$m,$s) = (0,0,0);
-    if (($start_date > 0) and ($start_date < $current_date)){
-        ($h,$m,$s) = OAR::IO::duration_to_hms($current_date - $start_date);
+    if (($start_date > 0) and ($start_date < $stop_date)){
+        ($h,$m,$s) = OAR::IO::duration_to_hms($stop_date - $start_date);
     }
     return(sprintf("%i:%02i:%02i", $h,$m,$s));
 }

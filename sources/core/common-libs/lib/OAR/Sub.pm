@@ -18,7 +18,7 @@ sub open_ro_db_connection(){
 	$base  = OAR::IO::connect_ro();
 }
 sub close_db_connection(){
-	OAR::IO::disconnect($base);
+	OAR::IO::disconnect($base) if (defined($base));
 	$base = undef;
 }
 
@@ -149,16 +149,16 @@ sub scan_script($$){
             }
         }
         if (!close(FILE)){
-            warn("[ERROR] Cannot open the file $file. Check if it is readable by everybody (744).\n");
-            exit(12);
+            warn("[ERROR] Cannot open the file $file.\n");
+            close_db_connection(); exit(12);
         }
     }else{
         warn("[ERROR] Cannot execute: oardodo cat $file\n");
-        exit(12);
+        close_db_connection(); exit(12);
     }
     if ($error > 0){
         warn("[ERROR] $error error(s) encountered while parsing the file $file.\n");
-        exit(12);
+        close_db_connection(); exit(12);
     }
 	$result{initial_request} = $Initial_request_string;
     return(\%result);
@@ -176,11 +176,11 @@ sub read_array_param_file($){
         }
         if (!close(PARAMETER_FILE)){
             warn("[ERROR] Cannot open the parameter file $array_param_file.\n");
-            exit(12);
+            close_db_connection(); exit(12);
         }
     }else{
         warn("[ERROR] Cannot execute: oardodo cat $array_param_file\n");
-        exit(12);
+        close_db_connection(); exit(12);
     }
     return \@array_params;
 }
@@ -193,7 +193,7 @@ sub get_job_current_hostnames($){
 
 sub get_current_job_types($){
 	my $job_id = shift;
-	return OAR::IO::get_current_job_types($base,$job_id);
+	return OAR::IO::get_job_types_hash($base,$job_id);
 }
 
 sub get_job_cpuset_name($){
@@ -204,20 +204,6 @@ sub get_job_cpuset_name($){
 sub get_current_moldable_job($){
 	my $moldable_job_id = shift;
 	return OAR::IO::get_current_moldable_job($base,$moldable_job_id);
-}
-
-sub get_job_cpuset_uid($$$){
-	my $job_id = shift;
-    my $resource_type = shift;
-    my $cpuset_field = shift;
-	return OAR::IO::get_job_cpuset_uid($base, $job_id, $resource_type, $cpuset_field);
-}
-
-sub format_job_user($$$){
-    my $user = shift;
-    my $job_id = shift;
-    my $uid = shift;
-	return OAR::Tools::format_job_user($user, $job_id, $uid);
 }
 
 sub get_default_oarexec_directory(){

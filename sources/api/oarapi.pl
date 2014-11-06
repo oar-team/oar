@@ -74,9 +74,12 @@ my $OARSUB_CMD  = "oarsub";
 my $OARDEL_CMD  = "oardel";
 my $OARHOLD_CMD  = "oarhold";
 my $OARRESUME_CMD  = "oarresume";
-my $OARADMIN_CMD = "oaradmin";
 my $OARNODES_CMD = "oarnodes";
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
+
+# Oar admin command (for new list of resources generation)
+my $API_RESOURCES_LIST_GENERATION_CMD = "";
+if (is_conf("API_RESOURCES_LIST_GENERATION_CMD")){ $API_RESOURCES_LIST_GENERATION_CMD = get_conf("API_RESOURCES_LIST_GENERATION_CMD"); }
 
 # OAR server
 my $remote_host = get_conf("SERVER_HOSTNAME");
@@ -177,6 +180,16 @@ else {
   {
     $authenticated_user = $q->http('X_REMOTE_IDENT');
   }
+}
+
+##############################################################################
+# URI prefix header variable
+##############################################################################
+
+if (defined( $q->http('HTTP_X_API_PATH_PREFIX') ) ) {
+  $OAR::API::HTTP_X_API_PATH_PREFIX=$q->http('HTTP_X_API_PATH_PREFIX');
+}else{
+  $OAR::API::HTTP_X_API_PATH_PREFIX="";
 }
 
 ##############################################################################
@@ -771,6 +784,12 @@ SWITCH: for ($q) {
     my $tmpfilename = "";
     my $tmpparamfilename = "";
     my @user_infos;
+    # Alias resources=resource
+    if (defined($job->{resources})) {
+      $job->{resource} = $job->{resources} ;
+      delete($job->{resources});
+    }
+    # Options parsing
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "script_path") {
         $job->{script_path} =~ s/(\\*)"/$1$1\\"/g;
@@ -801,9 +820,6 @@ SWITCH: for ($q) {
         # Expand ~ to home directory
         @user_infos=getpwnam($authenticated_user);
         $workdir =~ s|/~/|$user_infos[7]/|;  
-      }
-      elsif ($option eq "resources") {
-        $oarcmd .= " --resource=$job->{resources}";
       }
       elsif (ref($job->{$option}) eq "ARRAY") {
         foreach my $elem (@{$job->{$option}}) {
@@ -1116,11 +1132,6 @@ SWITCH: for ($q) {
   };
   #}}}
   #
-  #{{{ GET /resources/jobs : (NOT YET IMPLEMENTED) Jobs running on all resources
-  #
-  # TODO: should give an array of all resources plus a job array per resource
-  #}}}
-  #
   #{{{ GET /resources/(<id>)/jobs : Jobs running on a resource
   #
   $URI = qr{^/resources(/[0-9]+)+/jobs(\.yaml|\.json|\.html)*$};
@@ -1196,6 +1207,54 @@ SWITCH: for ($q) {
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export($jobs,$ext);
+    last;
+  };
+  #}}}
+  #
+  #{{{ GET /resources/<property>/jobs : List jobs running on resources, by property
+  #
+  $URI = qr{^/resources/([A-za-z0-9]+)*/jobs\.*(yaml|json|html)*$};
+  OAR::API::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext=OAR::API::set_ext($q,$2);
+    my $header, my $type;
+    my $property=$1;
+    ($header, $type)=OAR::API::set_output_format($ext,"GET");
+
+    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $jobs=OAR::IO::get_resources_jobs($dbh) or OAR::IO::disconnect($dbh), OAR::API::ERROR(500,
+                                                "Could not get resources jobs",
+                                                "Could not get resources jobs"
+                                                 );
+    my $resources=OAR::IO::get_resources_by_property($dbh,$property) or OAR::IO::disconnect($dbh), OAR::API::ERROR(500,
+                                                "Could not get resources by property $property",
+                                                "Could not get resources by property $property"
+                                                 );
+
+    my %resources_by_property_jobs;
+    foreach my $property (keys %$resources) {
+      if (!defined($resources_by_property_jobs{$property})) { @{$resources_by_property_jobs{$property}}=();}
+      foreach my $resource_id (@{$resources->{$property}}) {
+        foreach my $job_id (@{$jobs->{$resource_id}}) {
+          push(@{$resources_by_property_jobs{$property}}, $job_id);
+        }
+      }
+    }
+    # Formatting pass
+    my @items;
+    foreach my $r (keys %resources_by_property_jobs) {
+      push(@items,{ $property => $r, jobs => $resources_by_property_jobs{$r} });
+    }
+    my $output={ 'items' => \@items,
+                 'links' => [ { 'rel' => "self", 'href' => OAR::API::htmlize_uri(OAR::API::make_uri("/resources/$property/jobs",$ext,0),$ext) } ],
+                 'api_timestamp' => time() };
+    OAR::IO::disconnect($dbh);
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export($output,$ext);
     last;
   };
   #}}}
@@ -1401,7 +1460,7 @@ SWITCH: for ($q) {
   };
   #}}}
   # 
-  #{{{ POST /resources/generate : Generate resources ('oaradmin re -a -Y' wrapping)
+  #{{{ POST /resources/generate : Generate resources (needs an external command like oar_resources_add)
   #
   $URI = qr{^/resources/generate(\.yaml|\.json|\.html)*$};
   OAR::API::POST( $_, $URI ) && do {
@@ -1421,6 +1480,13 @@ SWITCH: for ($q) {
       last;
     }
     $ENV{OARDO_BECOME_USER} = "oar";
+
+    # Check feature activation
+    if ($API_RESOURCES_LIST_GENERATION_CMD eq "" ) {
+       OAR::API::ERROR( 500, "Disabled feature",
+        "To enable this feature, please provide a command into the API_RESOURCES_LIST_GENERATION_CMD configuration variable" );
+      last;
+    }
 
     # Check and get the submited resource description
     # From encoded data
@@ -1457,7 +1523,7 @@ SWITCH: for ($q) {
       $auto_offset="--auto-offset ";
     }
     # command with arguments
-    $cmd = "PATH=\$PATH:/usr/sbin:/usr/local/sbin $OARADMIN_CMD resources -a -Y $auto_offset".$description->{resources}.$cmd_properties;
+    $cmd = "$API_RESOURCES_LIST_GENERATION_CMD $auto_offset".$description->{resources}.$cmd_properties;
     # execute the command
     my $cmdRes = OAR::API::send_cmd($cmd,"Oar");
     my $data = OAR::API::import_data($cmdRes,"yaml");
@@ -1653,7 +1719,7 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
-    my $id = OAR::IO::add_admission_rule($dbh,$admission_rule->{rule});
+    my $id = OAR::IO::add_admission_rule($dbh,$admission_rule->{priority},$admission_rule->{enabled},$admission_rule->{rule});
     if ( $id && $id > 0) {
         print $q->header( -status => 201, -type => OAR::API::get_content_type($ext) , -location => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext) );
 
@@ -1661,6 +1727,8 @@ SWITCH: for ($q) {
       	print $HTML_HEADER if ($ext eq "html");
       	print OAR::API::export( { 
                       'id' => "$id",
+                      'priority' => "$admission_rule->{priority}",
+                      'enalbed' => "$admission_rule->{enabled}",
                       'rule' => OAR::API::nl2br($admission_rule->{rule}),
                       'api_timestamp' => time(),
                       'uri' => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext)
@@ -1700,11 +1768,14 @@ SWITCH: for ($q) {
     if (defined($admission_rule)) {
     	OAR::Stat::delete_specific_admission_rule($rule_id);
     	print $HTML_HEADER if ($ext eq "html");
-    	print OAR::API::export( { 'id' => "$admission_rule->{id}",
-    				            'rule' => "$admission_rule->{rule}",
-                    			'status' => "deleted",
-                    			'api_timestamp' => time()
-    						  } , $ext );
+    	print OAR::API::export( { 
+            'id' => "$admission_rule->{id}",
+            'priority' => "$admission_rule->{priority}",
+            'enalbed' => "$admission_rule->{enabled}",
+            'rule' => "$admission_rule->{rule}",
+            'status' => "deleted",
+            'api_timestamp' => time()
+        } , $ext );
         OAR::Stat::close_db_connection; 
     }
     else {
@@ -1760,14 +1831,16 @@ SWITCH: for ($q) {
             "Could not find admission rule to delete: id=$rule_id"
           );
         }
-    }elsif (defined($admission_rule->{rule})) {
-      my $id = OAR::IO::update_admission_rule($dbh,$rule_id,$admission_rule->{rule});
+    }elsif (defined($admission_rule->{priority}) and defined($admission_rule->{enabled}) and defined($admission_rule->{rule})) {
+      my $id = OAR::IO::update_admission_rule($dbh,$rule_id,$admission_rule->{priority},$admission_rule->{enabled},$admission_rule->{rule});
       OAR::IO::disconnect($dbh);
       if ( $id && $id > 0) {
           print $q->header( -status => 201, -type => OAR::API::get_content_type($ext) , -location => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext) );
           print $HTML_HEADER if ($ext eq "html");
           print OAR::API::export( {
                       'id' => "$id",
+                      'priority' => "$admission_rule->{priority}",
+                      'enalbed' => "$admission_rule->{enabled}",
                       'rule' => OAR::API::nl2br($admission_rule->{rule}),
                       'api_timestamp' => time(),
                       'uri' => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext)

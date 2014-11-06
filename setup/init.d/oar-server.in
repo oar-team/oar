@@ -10,8 +10,10 @@
 
 ### BEGIN INIT INFO
 # Provides:          oar-server
-# Required-Start:    $network $local_fs $remote_fs $all
+# Required-Start:    $network $local_fs $remote_fs
 # Required-Stop:     $network $local_fs $remote_fs
+# Should-Start:      postgresql mysql-server
+# Should-Stop:       postgresql mysql-server
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: OAR server
@@ -67,30 +69,31 @@ if [ -z "$NOLSB" ]; then
     }
 else
     echo "This system doesn't provide the LSB functions. Failing"
-    exit 2
+    exit 1
 fi
 
 do_start() {
     begin_msg "Starting $DESC"
     if [ -n "$SELINUXENABLED_CMD" -a -x "$SELINUXENABLED_CMD" ] && "$SELINUXENABLED_CMD"; then
         fail_msg "SELinux is enabled, $DESC cannot be started."	
-        exit 2
+        exit 1
     fi
 
-    CHECK_STRING=`oar_checkdb > /dev/null 2>&1` 
+    CHECK_STRING=$(oar-database --check > /dev/null 2>&1) 
     if [ "$?" -ne "0" ]; then
-        fail_msg "Database seems not ready, $DESC cannot be started."
-        exit 2
-    fi
-    if pidofproc -p $PIDFILE > /dev/null; then
-        fail_msg "$DESC is already running."
+        fail_msg "OAR database seems not ready. See \`oar-database --check'"
         exit 1
+    fi
+    if pidofproc -p $PIDFILE $DAEMON > /dev/null; then
+        warn_msg "$DESC is already running."
+        exit 0
     fi
 
     start_daemon -p "$PIDFILE" "$DAEMON" $DAEMON_ARGS
     RET=$?
     if [ "$RET" != 0 ]; then
         fail_msg "Unable to start $DESC."
+        exit 1
     else
         succ_msg
 

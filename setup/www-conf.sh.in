@@ -12,8 +12,16 @@ www_conf_setup() {
         0644 \
         ${WWWUSER}
 
-    # install the apache2 configuration file
-    if [ -d ${APACHECONFDIR}/conf.d ]; then
+    # Install the apache2 configuration file
+    #
+    # Starting with Debian8, Apache configs are managed using a2enconf/a2disconf/a2query -c, 
+    # and stored in the conf-{available,enabled} directories
+    if a2query -c > /dev/null 2>&1; then # a2query is available on Debian8++
+        if [ ! -e ${APACHECONFDIR}/conf-available/oar-web-status.conf ]; then
+            ln -s ${OARCONFDIR}/apache2/oar-web-status.conf ${APACHECONFDIR}/conf-available/oar-web-status.conf
+        fi
+    # UnTil Debian7, Centos6, Apache configs are stored in the conf.d directory
+    elif [ -d ${APACHECONFDIR}/conf.d ]; then # works for Debian7, Centos6 
         if [ ! -e ${APACHECONFDIR}/conf.d/oar-web-status.conf ]; then
             ln -s ${OARCONFDIR}/apache2/oar-web-status.conf ${APACHECONFDIR}/conf.d/oar-web-status.conf
         fi 

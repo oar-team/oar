@@ -3,3 +3,4 @@ third_party/rpm/BUILD
 third_party/rpm/BUILDROOT
 *~
 .vagrant
+.oardocker

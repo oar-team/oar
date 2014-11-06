@@ -2,7 +2,7 @@ open Interval
 open Types
 open Hierarchy
 open Helpers
-open Simple_cbf_mb_h_ct
+open Scheduling
 open OUnit
 
 let h0 = [{b = 1; e = 16};{b = 17; e = 32};];;
@@ -11,11 +11,11 @@ let h2 = [{b = 1; e = 4}; {b = 5; e = 8}; {b = 9; e =12}; {b = 13; e = 16};
           {b = 17; e = 20}; {b = 21; e = 24}; {b = 25; e = 28}; {b = 29; e = 32}];;
 
 hierarchy_levels := [ ("node",h0);("cpu",h1);("core",h2) ];;
-let master_top = {b = 1; e = 32} ;; 
+let master_top = {b = 1; e = 32} ;;
 
-let c0 = [{b = 1; e = 40}] ;; 
+let c0 = [{b = 1; e = 40}] ;;
 (*
- 
+
 let j1 = { time_b = 0L; walltime = 3L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[4]]; constraints =[c0]; set_of_rs = []; types = []};;
 
 let slots_init = [slot_max 100];;
@@ -43,11 +43,11 @@ let assign_ct_0 = [{time_b = 0L; walltime = 40L; hy_level_rqt = [["cpu"]]; hy_nb
 
 (* simple job scheduling *)
 let test_schedule_jobs_0 _ =
-  let c0 = [{b = 1; e = 40}] in  
+  let c0 = [{b = 1; e = 40}] in
   let j0 = { time_b = 0L; walltime = 3L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[4]]; constraints =[c0]; set_of_rs = []; types = []} in
   let assign_j0 = [ {time_b = 0L; walltime = 3L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[4]];
                     constraints = [[{b = 1; e = 40}]]; set_of_rs = [{b = 1; e = 8}; {b = 9; e = 16};{b = 17; e = 24}; {b = 25; e = 32}] ; types = []} ] in
-    
+
     assert_equal assign_j0 (schedule_jobs [j0] [slot_max 100])
 
 (* test with job start time (time_b) not equal to 0 needed to support job dependencies *)
@@ -57,7 +57,7 @@ let test_schedule_jobs_start_time _ =
   let j1 = { time_b = 0L; walltime = 300L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[4]]; constraints =[c0]; set_of_rs = []; types = []} in
   let j2 = { time_b = 0L; walltime = 30L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[4]]; constraints =[c0]; set_of_rs = []; types = []} in
   let assign_j012 = [
-    {time_b = 100L; walltime = 3L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[4]]; types = []; constraints = [[{b = 1; e = 40}]]; set_of_rs = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}]}; 
+    {time_b = 100L; walltime = 3L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[4]]; types = []; constraints = [[{b = 1; e = 40}]]; set_of_rs = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}]};
     {time_b = 103L; walltime = 300L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[4]]; types = []; constraints = [[{b = 1; e = 40}]]; set_of_rs = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}]};
       {time_b = 0L; walltime = 30L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[4]]; types = []; constraints = [[{b = 1; e = 40}]]; set_of_rs = [{b = 1; e = 8}; {b = 9; e = 16}; {b = 17; e = 24}; {b = 25; e = 32}]}
       ] in
@@ -72,18 +72,18 @@ let test_schedule_ct_0 _ =
     assert_equal assign_ct_0 (schedule_id_jobs_ct h_slots_0 h_j [1;2])
 
 
-(* test simple dependencies 
+(* test simple dependencies
 let test_schedule_ct_dep_0 _ =
   let c0 = [{b = 1; e = 40}] in
-  let j1 = { time_b = 0L; walltime = 100L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[1]]; constraints =[c0]; set_of_rs = []; types = []} in 
-  let j2 = { time_b = 0L; walltime = 50L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[1]]; constraints =[c0]; set_of_rs = []; types = []} in 
-  let j3 = { time_b = 0L; walltime = 30L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[1]]; constraints =[c0]; set_of_rs = []; types = []} in 
-  let h_deps =  couples2hash [(2,[1]);(3,[1;2])] in 
+  let j1 = { time_b = 0L; walltime = 100L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[1]]; constraints =[c0]; set_of_rs = []; types = []} in
+  let j2 = { time_b = 0L; walltime = 50L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[1]]; constraints =[c0]; set_of_rs = []; types = []} in
+  let j3 = { time_b = 0L; walltime = 30L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[1]]; constraints =[c0]; set_of_rs = []; types = []} in
+  let h_deps =  couples2hash [(2,[1]);(3,[1;2])] in
   let h_j_status = couples2hash [(1,{jr_state="Waiting";jr_jtype="PASSIVE";jr_exit_code=0});
                                  (2,{jr_state="Waiting";jr_jtype="PASSIVE";jr_exit_code=0});
-                                 (3,{jr_state="Waiting";jr_jtype="PASSIVE";jr_exit_code=0})] in 
-  let h_j = couples2hash [(1,j1);(2,j2);(3,j3)] in 
-  let h_slots_0 = couples2hash [(0,[slot_max 100])] in 
+                                 (3,{jr_state="Waiting";jr_jtype="PASSIVE";jr_exit_code=0})] in
+  let h_j = couples2hash [(1,j1);(2,j2);(3,j3)] in
+  let h_slots_0 = couples2hash [(0,[slot_max 100])] in
   let a = [{time_b = 0L; walltime = 100L; hy_level_rqt = [["cpu"]]; hy_nb_rqt = [[1]];
   types = []; constraints = [[{b = 1; e = 40}]];
   set_of_rs = [{b = 1; e = 8}]};
@@ -99,7 +99,25 @@ let test_schedule_ct_dep_0 _ =
 *)
 *)
 
-let suite = "Unit test for simple_cbf_mb_h_ct" >::: [
+let test_split_slots_prev_scheduled_one_job _ =
+  let lst_s11 = [{time_s = 0L; time_e = 9L; set_of_res = [{b = 5; e = 6}]};
+                {time_s = 10L; time_e = 99L; set_of_res = [{b = 11; e = 12}]};
+                {time_s = 100L; time_e = 2147483648L; set_of_res = [{b = 1; e = 12}]}]
+  and
+      j11 = {jobid = 2; jobstate = ""; user = ""; project = ""; moldable_id = 2;
+            time_b = 100L; w_time = 100L; types = []; set_of_rs = [{b = 1; e = 10}];
+            rq = []}
+  and
+      split_res = [{time_s = 0L; time_e = 9L; set_of_res = [{b = 5; e = 6}]};
+                  {time_s = 10L; time_e = 99L; set_of_res = [{b = 11; e = 12}]};
+                  {time_s = 100L; time_e = 199L; set_of_res = [{b = 11; e = 12}]};
+                  {time_s = 200L; time_e = 2147483648L; set_of_res = [{b = 1; e = 12}]}]
+  in
+    assert_equal split_res(split_slots_prev_scheduled_one_job lst_s11 j11 )
+
+let suite = "Unit test for scheduling" >::: [
+  "test_split_slots_prev_scheduled_one_job" >:: test_split_slots_prev_scheduled_one_job
+
   (*        "test_schedule_jobs_0" >:: test_schedule_jobs_0; *)
 (*          "test_schedule_jobs__start_time" >:: test_schedule_jobs_start_time;
           "test_schedule_ct_0" >:: test_schedule_ct_0;

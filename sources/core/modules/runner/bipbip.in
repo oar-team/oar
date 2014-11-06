@@ -59,9 +59,10 @@ if (!defined($Debug_mode)){
     $Debug_mode = 0;
 }
 
-my $Detach_oarexec = $ENV{OAR_DETACH_OAREXEC}; # Must be defined by runner
- # ATTENTION: not initialized if executed by Almighty or another module because not needed
-#oar_debug("[bipbip $Job_id] OAR_DETACH_OAREXEC = $Detach_oarexec\n");
+my $Detach_oarexec = get_conf("DETACH_JOB_FROM_SERVER");
+if (!defined($Detach_oarexec)){
+    $Detach_oarexec = 0;
+}
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){
     OAR::Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
@@ -79,7 +80,6 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
     OAR::Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
 }
 
-my $Job_uid_resource_type = get_conf("JOB_RESOURCE_MANAGER_JOB_UID_TYPE");
 my $Job_user;
 
 my $base;
@@ -92,23 +92,87 @@ if (defined($Cpuset_path) and defined($Cpuset_field)){
     $Cpuset_full_path = $Cpuset_path.'/'.$Cpuset_name;
 }
 
-my $job = OAR::IO::get_job($base,$Job_id);
 my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($base,$Job_id);
-
 my @hosts = OAR::IO::get_job_current_hostnames($base,$Job_id);
+my $job = OAR::IO::get_job($base,$Job_id);
+my @resources;
+my $moldable;
 
-if (!(($job->{state} eq "Launching") or ($job->{state} eq "Running") or ($job->{state} eq "Suspended") or ($job->{state} eq "Resuming"))){
-    oar_debug("[bipbip $Job_id] Job already treated\n");
-    #OAR::IO::add_new_event($base, "BIPBIP_BAD_JOBID", $Job_id, "A Job is requested but it is already treated. This job must be already killed (exterminated) and come back from hell ???");
-    OAR::IO::disconnect($base);
-    exit 1;
+sub call_server_prologue {
+    # PROLOGUE EXECUTED ON OAR SERVER #
+    # Script is executing with job id in arguments
+    if (defined($Server_prologue)){
+        my $cmd = "$Server_prologue $Job_id";
+        my $pid;
+        my $exit_value;
+        my $signal_num;
+        my $dumped_core;
+        my $timeout = OAR::Tools::get_default_server_prologue_epilogue_timeout();
+        if (is_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT")){
+            $timeout = get_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT"); 
+        }
+        eval{
+            $SIG{PIPE}  = 'IGNORE';
+            $SIG{ALRM} = sub { die "alarm\n" };
+            alarm($timeout);
+            $pid = fork();
+            if ($pid == 0){
+                undef($base);
+                exec($cmd);
+                warn("[ERROR] Cannot find $cmd\n");
+                exit(-1);
+            }
+            my $wait_res = 0;
+            # Avoid to be disrupted by a signal
+            while ($wait_res != $pid){
+                $wait_res = waitpid($pid,0);
+            }
+            alarm(0);
+            $exit_value  = $? >> 8;
+            $signal_num  = $? & 127;
+            $dumped_core = $? & 128;
+        };
+        if ($@){
+            if ($@ eq "alarm\n"){
+                if (defined($pid)){
+                    my ($children,$cmd_name) = OAR::Tools::get_one_process_children($pid);
+                    kill(9,@{$children});
+                }
+                my $str = "[bipbip $Job_id] Server prologue timeouted (cmd : $cmd)";
+                oar_error("$str\n");
+                OAR::IO::add_new_event($base,"SERVER_PROLOGUE_TIMEOUT",$Job_id,"$str");
+                OAR::IO::disconnect($base);
+                OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
+                if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
+                    my ($addr,$port) = split(/:/,$job->{info_type});
+                    OAR::Tools::notify_tcp_socket($addr,$port,"ERROR: SERVER PROLOGUE timeouted");
+                }
+                exit(2);
+            }
+        }elsif ($exit_value != 0){
+            my $str = "[bipbip $Job_id] Server prologue exit code $exit_value (!=0) (cmd : $cmd)";
+            oar_error("$str\n");
+            OAR::IO::add_new_event($base,"SERVER_PROLOGUE_EXIT_CODE_ERROR",$Job_id,"$str");
+            OAR::IO::disconnect($base);
+            OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
+            if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
+                my ($addr,$port) = split(/:/,$job->{info_type});
+                OAR::Tools::notify_tcp_socket($addr,$port,"ERROR: SERVER PROLOGUE returned a bad value");
+            }
+            exit(2);
+        }
+    }
 }
 
-
-#deploy, cosystem and no host part
-
 #check if we must treate the end of a oarexec
-if (defined($Oarexec_reattach_exit_value)){
+if ((defined($Oarexec_reattach_exit_value)) and
+    (($job->{state} eq "Launching") or
+     ($job->{state} eq "Running") or
+     ($job->{state} eq "Suspended") or
+     ($job->{state} eq "Resuming")
+    )
+   ){
+    oar_debug("[bipbip $Job_id] OAREXEC end: $Oarexec_reattach_exit_value $Oarexec_reattach_script_exit_value\n");
     if ($Oarexec_reattach_exit_value =~ m/\d+/m){
         if ($Oarexec_challenge eq $job_challenge){
             OAR::IO::check_end_of_job($base, $Job_id, $Oarexec_reattach_script_exit_value, $Oarexec_reattach_exit_value, \@hosts, $Remote_host, $Remote_port,$job->{job_user},$job->{launching_directory},$Server_epilogue);
@@ -125,9 +189,32 @@ if (defined($Oarexec_reattach_exit_value)){
         OAR::IO::disconnect($base);
         exit(2);
     }
+}else{
+    @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
+    $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
+    $job = OAR::IO::get_job($base,$Job_id); # In case of the job state has changed since the last call :-(
+    if ($job->{state} eq "toLaunch"){
+        # Tell that the launching process is initiated
+        OAR::IO::set_job_state($base,$Job_id,"Launching");
+        $job->{state} = "Launching";
+    }else{
+        oar_warn("[bipbip $Job_id] Job already treated or deleted in the meantime\n");
+        OAR::IO::disconnect($base);
+        exit(1);
+    }
 }
 
-# ELSE we must launch oarexec on the first node
+# NOOP jobs
+my $types = OAR::IO::get_job_types_hash($base,$Job_id);
+if (defined($types->{noop})){
+    OAR::IO::set_job_state($base,$Job_id,"Running");
+    OAR::IO::disconnect($base);
+    oar_debug("[bipbip $Job_id] User: $job->{job_user}; Set NOOP job to Running\n");
+    call_server_prologue();
+    exit(0);
+}
+
+# HERE we must launch oarexec on the first node
 oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
 if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
@@ -135,11 +222,8 @@ if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
     OAR::Tools::notify_tcp_socket($addr,$port,"Starting...");
 }
 
-my $job_cpuset_uid;
-$Job_user = OAR::Tools::format_job_user($job->{job_user},$Job_id,$job_cpuset_uid);
-my $types = OAR::IO::get_current_job_types($base,$Job_id);
-my @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
-my $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
+$Job_user = $job->{job_user};
+
 if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#hosts >= 0))){
     my $event_type;
     my @bad;
@@ -148,9 +232,8 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     ###############
     my $cpuset_nodes;
     $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job}) if (defined($Cpuset_field));
-    $job_cpuset_uid = OAR::IO::get_job_cpuset_uid($base, $job->{assigned_moldable_job}, $Job_uid_resource_type, $Cpuset_field) if ((defined($Job_uid_resource_type)) and (defined($Cpuset_field)));
 
-    $Job_user = OAR::Tools::format_job_user($job->{job_user},$Job_id,$job_cpuset_uid);
+    $Job_user = $job->{job_user};
     $ssh_public_key = OAR::Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_full_path,$job->{job_user},$Job_user);
     my $cpuset_data_hash = {
         job_id => $Job_id,
@@ -170,7 +253,6 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         oar_tmp_directory => OAR::Tools::get_default_oarexec_directory(),
         user => $job->{job_user},
         job_user => $Job_user,
-        job_uid => $job_cpuset_uid,
         types => $types,
         resources => \@resources,
         node_file_db_fields => $Node_file_db_field,
@@ -284,73 +366,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     # end CHECK
 }
 
-###################################
-# PROLOGUE EXECUTED ON OAR SERVER #
-###################################
-#
-# Script is executing with job id in arguments
-if (defined($Server_prologue)){
-    my $cmd = "$Server_prologue $Job_id";
-    my $pid;
-    my $exit_value;
-    my $signal_num;
-    my $dumped_core;
-    my $timeout = OAR::Tools::get_default_server_prologue_epilogue_timeout();
-    if (is_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT")){
-        $timeout = get_conf("SERVER_PROLOGUE_EPILOGUE_TIMEOUT"); 
-    }
-    eval{
-        $SIG{PIPE}  = 'IGNORE';
-        $SIG{ALRM} = sub { die "alarm\n" };
-        alarm($timeout);
-        $pid = fork();
-        if ($pid == 0){
-            undef($base);
-            exec($cmd);
-            warn("[ERROR] Cannot find $cmd\n");
-            exit(-1);
-        }
-        my $wait_res = 0;
-        # Avoid to be disrupted by a signal
-        while ($wait_res != $pid){
-            $wait_res = waitpid($pid,0);
-        }
-        alarm(0);
-        $exit_value  = $? >> 8;
-        $signal_num  = $? & 127;
-        $dumped_core = $? & 128;
-    };
-    if ($@){
-        if ($@ eq "alarm\n"){
-            if (defined($pid)){
-                my ($children,$cmd_name) = OAR::Tools::get_one_process_children($pid);
-                kill(9,@{$children});
-            }
-            my $str = "[bipbip $Job_id] Server prologue timeouted (cmd : $cmd)";
-            oar_error("$str\n");
-            OAR::IO::add_new_event($base,"SERVER_PROLOGUE_TIMEOUT",$Job_id,"$str");
-            OAR::IO::disconnect($base);
-            OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
-            if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
-                my ($addr,$port) = split(/:/,$job->{info_type});
-                OAR::Tools::notify_tcp_socket($addr,$port,"ERROR: SERVER PROLOGUE timeouted");
-            }
-            exit(2);
-        }
-    }elsif ($exit_value != 0){
-        my $str = "[bipbip $Job_id] Server prologue exit code $exit_value (!=0) (cmd : $cmd)";
-        oar_error("$str\n");
-        OAR::IO::add_new_event($base,"SERVER_PROLOGUE_EXIT_CODE_ERROR",$Job_id,"$str");
-        OAR::IO::disconnect($base);
-        OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
-        if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
-            my ($addr,$port) = split(/:/,$job->{info_type});
-            OAR::Tools::notify_tcp_socket($addr,$port,"ERROR: SERVER PROLOGUE returned a bad value");
-        }
-        exit(2);
-    }
-}
-###############################################################################
+call_server_prologue();
 
 #CALL OAREXEC ON THE FIRST NODE
 my $pro_epi_timeout = OAR::Tools::get_default_prologue_epilogue_timeout();
@@ -486,7 +502,6 @@ eval {
 };
 if (($Detach_oarexec == 1) and ($error == 0)){
     oar_debug("[bipbip $Job_id] Exit from bipbip normally\n");
-    exit(0);
 }else{
     if ($init_done == 0){
         if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){

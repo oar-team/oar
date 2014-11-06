@@ -12,6 +12,7 @@ our $ABSOLUTE_URIS;
 our $q;
 our $DEBUG_MODE;
 our $extension;
+our $HTTP_X_API_PATH_PREFIX;
 
 ##############################################################################
 # INIT
@@ -168,13 +169,13 @@ sub make_uri($$$) {
   my $absolute = shift; # deprecated, left here for compatibility
   if (defined($ext) && $ext eq "html") { $path.=".html"; }
   if (our $ABSOLUTE_URIS == 1) {
-    return $q->url(-absolute => 1)."/".$path;
+    return "$HTTP_X_API_PATH_PREFIX".$q->url(-absolute => 1)."/".$path;
   }
   else {
     if ($URIenabled) {
       my $base = URI->new($q->url().$q->path_info);
       my $goal = URI->new($q->url()."/".$path);
-      return "".$goal->rel($base);
+      return "$HTTP_X_API_PATH_PREFIX".$goal->rel($base);
     }
     else { 
       ERROR (500,
@@ -874,6 +875,8 @@ sub struct_admission_rule($$) {
   
   my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
   my $hashref = {
+                  priority => $admission_rule->{priority},
+                  enabled => $admission_rule->{enabled},
                   rule => nl2br($admission_rule->{rule}),
                   links => $current_rule_link
     };
@@ -898,6 +901,8 @@ sub struct_admission_rule_list($$) {
   foreach my $admission_rule (@$admission_rules) {
   	my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
     my $hashref = {
+                  priority => $admission_rule->{priority},
+                  enabled => $admission_rule->{enabled},
                   rule => nl2br($admission_rule->{rule}),
                   links => $current_rule_link
     };
@@ -1503,6 +1508,18 @@ sub check_admission_rule($$) {
     exit 0;
   }
 
+  # Admission rule must have a "priority" field
+  unless ( $admission_rule->{priority}) {
+    ERROR 400, 'Missing Required Field',
+      'An admission priority must have a priority field';
+    exit 0;
+  }
+  # Admission rule must have a "enabled" field
+  unless ( $admission_rule->{enabled}) {
+    ERROR 400, 'Missing Required Field',
+      'An admission enabled must have a enabled field';
+    exit 0;
+  }
   # Admission rule must have a "rule" field
   unless ( $admission_rule->{rule}) {
     ERROR 400, 'Missing Required Field',
@@ -1545,10 +1562,10 @@ sub check_admission_rule_update($$) {
     exit 0;
   }
   
-  # Admission rule must have a "method" or "rule" field
-  unless ( $admission_rule->{method} or $admission_rule->{rule} ) {
+  # Admission rule must have either a "method" or the "priority" and "enabled" and "rule" fields
+  unless ( $admission_rule->{method} or ( $admission_rule->{priorty} and $admission_rule->{enabled} and $admission_rule->{rule} ) ) {
     ERROR 400, 'Missing Required Field',
-      'An admission rule update must have a "method=delete" or "rule"=<rule> field!';
+      'An admission rule update must have either a "method=delete" or "priority"=<priority> and "enabled"=<enabled> and "rule"=<rule> fields!';
     exit 0;
   }
 

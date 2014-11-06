@@ -51,6 +51,10 @@ if (is_conf("ACCOUNTING_WINDOW")){
 }
 
 my $base = OAR::IO::connect_one();
+if (not defined($base)) {
+    warn "Error: Failed to connect to database\n";
+    exit 1;
+}
 
 my $lockName = "ACCOUNTING";
 OAR::IO::get_lock($base,$lockName,3600);

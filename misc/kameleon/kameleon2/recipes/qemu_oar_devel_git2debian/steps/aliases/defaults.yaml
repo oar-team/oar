@@ -1,0 +1,114 @@
+write_local:
+  - exec_local: |
+      mkdir -p $(dirname @1);
+      cat >@1 <<EOF
+      @2
+      EOF
+
+write_in:
+  - exec_in: |
+      mkdir -p $(dirname @1);
+      cat >@1 <<EOF
+      @2
+      EOF
+
+write_out:
+  - exec_out: |
+      mkdir -p $(dirname @1);
+      cat >@1 <<EOF
+      @2
+      EOF
+
+append_local:
+  - exec_local: |
+      mkdir -p $(dirname @1);
+      cat >>@1 <<EOF
+      @2
+      EOF
+
+append_in:
+  - exec_in: |
+      mkdir -p $(dirname @1);
+      cat >>@1 <<EOF
+      @2
+      EOF
+
+append_out:
+  - exec_out: |
+      mkdir -p $(dirname @1);
+      cat >>@1 <<EOF
+      @2
+      EOF
+
+local2out:
+  - exec_out: |
+      mkdir -p $(dirname @2)"
+  - pipe:
+      - exec_local: cat @1
+      - exec_out: cat > @2
+
+local2in:
+  - exec_in: mkdir -p $(dirname @2)
+  - pipe:
+      - exec_local: cat @1
+      - exec_in: cat > @2
+
+out2local:
+  - exec_local: mkdir -p $(dirname @2)
+  - pipe:
+      - exec_out: cat @1
+      - exec_local: cat > @2
+
+out2in:
+  - exec_in: mkdir -p $(dirname @2)
+  - pipe:
+      - exec_out: cat @1
+      - exec_in: cat > @2
+
+in2local:
+  - exec_local: mkdir -p $(dirname @2)
+  - pipe:
+      - exec_in: cat @1
+      - exec_local: cat > @2
+
+in2out:
+  - exec_out: mkdir -p $(dirname @2)
+  - pipe:
+      - exec_in: cat @1
+      - exec_out: cat > @2
+
+check_cmd_out:
+  - rescue:
+    - exec_out: command -V @1 2> /dev/null
+    - breakpoint: "@1 is missing from out_context"
+
+check_cmd_local:
+  - rescue:
+    - exec_local: command -V @1 2> /dev/null
+    - breakpoint: "@1 is missing from local_context"
+
+check_cmd_in:
+  - rescue:
+    - exec_in: command -V @1 2> /dev/null
+    - breakpoint: "@1 is missing from in_context"
+
+umount_out:
+  - exec_out: |
+      echo "try umount @1..." ; mountpoint -q "@1" && umount -f -l "@1" || true
+
+umount_local:
+  - exec_local: |
+      echo "try umount @1..." ; mountpoint -q "@1" && umount -f -l "@1" || true
+
+umount_in:
+  - exec_in: |
+      echo "try umount @1..." ; mountpoint -q "@1" && umount -f -l "@1" || true
+
+download_file_in:
+  - exec_in: __download "@1" "@2"
+
+download_file_out:
+  - exec_out: __download "@1" "@2"
+
+download_file_local:
+  - exec_local: __download "@1" "@2"

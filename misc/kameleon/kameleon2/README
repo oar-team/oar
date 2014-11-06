@@ -4,15 +4,21 @@
 #############################################
 
 # Get kameleon:
-  git clone git://scm.gforge.inria.fr/kameleon/kameleon.git
-  git co kameleon2-dev
- 
-  gem build kameleon.gemspec
-  gem install kameleon-2.0.0.dev.gem
+  gem install kameleon-builder
+
+# Choose an appliance:
+  cp -a recipes/qemu_oar_devel_git2debian /tmp
 
 # Build appliance:
-  sudo kameleon build oar_devel_git2debian
+  cd /tmp/qemu_oar_devel_git2debian
+  kameleon build qemu_oar_devel_git2debian.yaml
 
 # Run appliance:
-  cd builds/oar_devel_git2debian
-  sudo kvm oar_devel_git2debian.qcow2 -redir tcp:2222::22 -redir tcp:8080::80 -m 512 -smp 4
+  kvm build/qemu_oar_devel_git2debian/qemu_oar_devel_git2debian.qcow2 -redir tcp:2222::22 -redir tcp:8080::80 -m 512 -smp 4
+
+# Connect to it:
+  ssh -p 2222 kameleon@localhost
+  #(password is: "kameleon")
+
+# For example, run non-regression tests on the devel appliance:
+  kameleon@kameleon-debian:~$ cd oar/tests/rspec && make

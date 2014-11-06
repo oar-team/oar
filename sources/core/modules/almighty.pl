@@ -48,9 +48,8 @@ if (defined($ENV{OARDIR})){
     exit(1);
 }
 
-
-my $scheduler_command = $binpath."oar_meta_sched";
-my $runner_command = $binpath."runner";
+my $meta_sched_command = get_conf_with_default_param("META_SCHED_CMD", "oar_meta_sched");
+my $scheduler_command = (($meta_sched_command =~ /^\//)?"":$binpath).$meta_sched_command;
 my $check_for_villains_command = $binpath."sarko";
 my $check_for_node_changes = $binpath."finaud";
 my $leon_command = $binpath."Leon";
@@ -99,10 +98,29 @@ my $villainstimeout = 10;
 my $checknodestimeout = get_conf_with_default_param("FINAUD_FREQUENCY", 300);
 
 # Max number of concurrent bipbip processes
-my $Max_bipbip_processes = get_conf_with_default_param("MAX_CONCURRENT_JOB_TERMINATIONS", 25);
+my $Max_bipbip_processes = get_conf_with_default_param("MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING", 25);
+my $Detach_oarexec = get_conf_with_default_param("DETACH_JOB_FROM_SERVER",0);
+
+# Maximum duration a a bipbip process (after that time the process is killed)
+my $Max_bipbip_process_duration = 30*60;
+
+my $Log_file = get_conf_with_default_param("LOG_FILE", "/var/log/oar.log");
 
 # Regexp of the notification received from oarexec processes
+#   $1: job id
+#   $2: oarexec exit code
+#   $3: job script exit code
+#   $4: secret string that identifies the oarexec process (for security)
 my $OAREXEC_REGEXP = 'OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)';
+
+# Regexp of the notification received when a job must be launched
+#   $1: job id
+my $OARRUNJOB_REGEXP = 'OARRUNJOB_(\d+)';
+
+# Regexp of the notification received when a job must be exterminate
+#   $1: job id
+my $LEONEXTERMINATE_REGEXP = 'LEONEXTERMINATE_(\d+)';
+
 
 # Internal stuff, not relevant for average user
 my $lastscheduler;
@@ -244,14 +262,17 @@ sub comportement_appendice(){
         my $rin = $rin_pipe | $rin_sig;
         my $rin_tmp;
         my $stop = 0;
-        my %bipbip_children = ();
+        my %bipbip_children = (); my %bipbip_current_processing_jobs = ();
         my @bipbip_processes_to_run = ();
         while ($stop == 0){ 
             select($rin_tmp = $rin, undef, undef, undef);
+            my $current_time = time();
             if (vec($rin_tmp, fileno(pipe_bipbip_children_read), 1)){
                 my ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_bipbip_children_read,1);
                 if ($line_read =~ m/(\d+) (\d+)/m){
-                    oar_debug("[Almighty][bipbip_launcher] Process $1 for the job $bipbip_children{$1} ends with exit_code=$2\n");
+                    my $process_duration = $current_time -  $bipbip_current_processing_jobs{$bipbip_children{$1}}->[1];
+                    oar_debug("[Almighty][bipbip_launcher] Process $1 for the job $bipbip_children{$1} ends with exit_code=$2, duration=${process_duration}s\n");
+                    delete($bipbip_current_processing_jobs{$bipbip_children{$1}});
                     delete($bipbip_children{$1});
                 }else{
                     oar_warn("[Almighty][bipbip_launcher] Read a malformed string in pipe_bipbip_children_read: $line_read\n");
@@ -261,39 +282,79 @@ sub comportement_appendice(){
                 if (($res_read == 1) and ($line_read eq "")){
                     $stop = 1;
                     oar_warn("[Almighty][bipbip_launcher] Father pipe closed so we stop the process\n");
-                }elsif ($line_read =~ m/$OAREXEC_REGEXP/m){
-                #}elsif ($line_read =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
-                    oar_debug("[Almighty][bipbip_launcher] Read on pipe: $line_read\n");
-                    push(@bipbip_processes_to_run, $line_read);
+                }elsif (($line_read =~ m/$OAREXEC_REGEXP/m) or
+                        ($line_read =~ m/$OARRUNJOB_REGEXP/m) or
+                        ($line_read =~ m/$LEONEXTERMINATE_REGEXP/m)){
+                    if (!grep(/^$line_read$/,@bipbip_processes_to_run)){
+                        oar_debug("[Almighty][bipbip_launcher] Read on pipe: $line_read\n");
+                        push(@bipbip_processes_to_run, $line_read);
+                    }
                 }else{
                     oar_warn("[Almighty][bipbip_launcher] Read a bad string: $line_read\n");
                 }
             }
+            my @bipbip_processes_to_requeue = ();
             while(($stop == 0) and ($#bipbip_processes_to_run >= 0) and (keys(%bipbip_children) < $Max_bipbip_processes)){
                 my $str = shift(@bipbip_processes_to_run);
+                my $cmd_to_run;
+                my $bipbip_job_id = 0;
                 if ($str =~ m/$OAREXEC_REGEXP/m){
-                #if ($str =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
-                    my $pid=0;
-                    $pid=fork;
-                    if (!defined($pid)){
-                        oar_error("[Almighty][bipbip_launcher] Fork failed, I kill myself\n");
-                        exit(2);
+                    $cmd_to_run = "$bipbip_command $1 $2 $3 $4";
+                    $bipbip_job_id = $1;
+                }elsif ($str =~ m/$OARRUNJOB_REGEXP/m){
+                    $cmd_to_run = "$bipbip_command $1";
+                    $bipbip_job_id = $1;
+                }elsif ($str =~ m/$LEONEXTERMINATE_REGEXP/m){
+                    $cmd_to_run = "$leon_command $1";
+                    $bipbip_job_id = $1;
+                }
+                if ($bipbip_job_id > 0){
+                    if (defined($bipbip_current_processing_jobs{$bipbip_job_id})){
+                        if (!grep(/^$str$/,@bipbip_processes_to_run)){
+                            oar_debug("[Almighty][bipbip_launcher] A process is already running for the job $bipbip_job_id. We requeue: $str\n");
+                            push(@bipbip_processes_to_requeue, $str);
+                        }
+                    }else{
+                        my $pid=0;
+                        $pid=fork;
+                        if (!defined($pid)){
+                            oar_error("[Almighty][bipbip_launcher] Fork failed, I kill myself\n");
+                            exit(2);
+                        }
+                        if($pid==0){
+                            #CHILD
+                            $SIG{USR1} = 'IGNORE';
+                            $SIG{INT}  = 'IGNORE';
+                            $SIG{TERM} = 'IGNORE';
+                            $SIG{CHLD} = 'DEFAULT';
+                            open (STDIN, "</dev/null");
+                            open (STDOUT, ">> $Log_file");
+                            open (STDERR, ">&STDOUT");
+                            exec("$cmd_to_run");
+                            oar_error("[Almighty][bipbip_launcher] failed exec: $cmd_to_run\n");
+                            exit(1);
+                        }
+                        $bipbip_current_processing_jobs{$bipbip_job_id} = [$pid, $current_time];
+                        $bipbip_children{$pid} = $bipbip_job_id;
+                        oar_debug("[Almighty][bipbip_launcher] Run process: $cmd_to_run\n");
                     }
-                    if($pid==0){
-                        #CHILD
-                        $SIG{USR1} = 'IGNORE';
-                        $SIG{INT}  = 'IGNORE';
-                        $SIG{TERM} = 'IGNORE';
-                        $SIG{CHLD} = 'DEFAULT';
-                        exec("$bipbip_command $1 $2 $3 $4");
-                        oar_error("[Almighty][bipbip_launcher] failed exec: $bipbip_command $1 $2 $3 $4\n");
-                        exit(1);
-                    }
-                    $bipbip_children{$pid} = $1;
-                    oar_debug("[Almighty][bipbip_launcher] Called bipbip with params: $1 $2 $3 $4\n");
+                }else{
+                    oar_warn("[Almighty][bipbip_launcher] Bad string read in the bipbip queue: $str\n");
                 }
             }
+            push(@bipbip_processes_to_run, @bipbip_processes_to_requeue);
             oar_debug("[Almighty][bipbip_launcher] Nb running bipbip: ".keys(%bipbip_children)."/$Max_bipbip_processes; Waiting processes(".($#bipbip_processes_to_run + 1)."): @bipbip_processes_to_run\n");
+            # Check if some bipbip processes are blocked; this must never happen
+            if ($Detach_oarexec != 0){
+                foreach my $b (keys(%bipbip_current_processing_jobs)){
+                    my $process_duration = $current_time -  $bipbip_current_processing_jobs{$b}->[1];
+                    oar_debug("[Almighty][bipbip_launcher] Check bipbip process duration: job=$b, pid=$bipbip_current_processing_jobs{$b}->[0], time=$bipbip_current_processing_jobs{$b}->[1], current_time=$current_time, duration=${process_duration}s\n");
+                    if ($bipbip_current_processing_jobs{$b}->[1] < ($current_time - $Max_bipbip_process_duration)){
+                        oar_warn("[Almighty][bipbip_launcher] Max duration for the bipbip process $bipbip_current_processing_jobs{$b}->[0] reached (${Max_bipbip_process_duration}s); job $b\n");
+                        kill(9, $bipbip_current_processing_jobs{$b}->[0]);
+                    }
+                }
+            }
         }
         oar_warn("[Almighty][bipbip_launcher] End of process\n");
         exit(1);
@@ -303,9 +364,9 @@ sub comportement_appendice(){
     while (1){
         my $answer = qget_appendice();
         oar_debug("[Almighty] Appendice has read on the socket : $answer\n");
-        #if ($answer =~ m/OAREXEC_(\d+)_(\d+)_(\d+|N)_(\d+)/m){
-        if ($answer =~ m/$OAREXEC_REGEXP/m){
-            #launch_command("$bipbip_command $1 ATTACH &");
+        if (($answer =~ m/$OAREXEC_REGEXP/m) or
+            ($answer =~ m/$OARRUNJOB_REGEXP/m) or
+            ($answer =~ m/$LEONEXTERMINATE_REGEXP/m)){
             if (! print pipe_bipbip_write "$answer\n"){
                 oar_error("[Almighty] Appendice cannot communicate with bipbip_launcher process, I kill myself\n");
                 exit(2);
@@ -488,10 +549,6 @@ sub scheduler(){
     return launch_command $scheduler_command;
 }
 
-sub runner(){
-    return launch_command $runner_command;
-}
-
 sub time_update(){
     my $current = time;
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($current);
@@ -630,10 +687,10 @@ while (1){
                }
             my $scheduler_result=scheduler();
             $lastscheduler = time();
-            if ($scheduler_result == 1){
-                $state="Runner";
-            }elsif ($scheduler_result == 0){
+            if ($scheduler_result == 0){
                 $state="Time update";
+            }elsif ($scheduler_result == 1){
+                $state="Scheduler";
             }elsif ($scheduler_result == 2){
                 $state="Leon";
             }else{
@@ -643,18 +700,6 @@ while (1){
         }else{
             oar_error("[Almighty] $nodeChangeState_command returned an unknown value\n");
             $finishTag = 1;
-        }
-    }
-
-    # RUNNER
-    elsif($state eq "Runner"){
-        my $check_result=runner();
-        if ($check_result == 1){
-            $state="Leon";
-        }elsif ($check_result == 2){
-            $state="Scheduler";
-        }else{
-            $state="Time update";
         }
     }
 
@@ -698,8 +743,6 @@ while (1){
         $state="Time update";
         if ($check_result == 1){
             add_command("Term");
-        }elsif($check_result == 2){
-            $state = "Change node state";
         }
     }
 
