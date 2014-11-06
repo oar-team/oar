@@ -19,11 +19,12 @@ with oar user privileges.
 
 So if you encounter this error message it means that your OpenSSH does
 not know this option and you have to remove it from the oar.conf.
-There is a variable named OARSH_OPENSSH_DEFAULT_OPTIONS_ in oar.conf used by oarsh.
+There is a variable named :ref:`OARSH_OPENSSH_DEFAULT_OPTIONS <OARSH_OPENSSH_DEFAULT_OPTIONS>` in oar.conf used by oarsh.
 So you have just to remove the not yet implemented option.
 
 How to manage start/stop of the nodes?
 --------------------------------------
+
 You have to add a script in /etc/init.d which switches resources of the node
 into the "Alive" or "Absent" state.
 So when this script is called at boot time, it will change the state into
@@ -32,7 +33,7 @@ So when this script is called at boot time, it will change the state into
 There are two ways to perform this action:
 
  1. Install OAR "oar-libs" part on all nodes. Thus you will be able to launch
-    the command oarnodesetting_ (be careful to right configure "oar.conf" with
+    the command :doc:`commands/oarnodesetting` (be careful to right configure "oar.conf" with
     database login and password AND to allow network connections on this
     database).
     So you can execute::
@@ -58,7 +59,7 @@ Take a look in "/etc/default/oar-node" for Debian packaging and in
 
 How can I manage scheduling queues?
 -----------------------------------
-see oarnotify_.
+see :doc:`commands/oarnotify`.
 
 How can I handle licence tokens?
 --------------------------------
@@ -78,13 +79,12 @@ define resources that are not linked with a real node.
 So the steps to configure OAR with the possibility to reserve licences (or
 whatever you want that are other notions):
 
- 1. Add a new field in the table resources_ to specify the licence name.
+ 1. Add a new field in the table :ref:`database-resources-anchor` to specify the licence name.
     ::
 
         oarproperty -a licence -c
 
- 2. Add your licence name resources with oarnodesetting_.
-    ::
+ 2. Add your licence name resources with :doc:`commands/oarnodesetting`::
 
         oarnodesetting -a -h "" -p type=mathlab -p licence=l1
         oarnodesetting -a -h "" -p type=mathlab -p licence=l2
@@ -120,13 +120,11 @@ To configure this feature, you have to:
  1. Write a script that displays on the STDOUT the number free tokens.
 
  2. Edit /etc/oar/oar.conf on the OAR server and change the value of
-    SCHEDULER_TOKEN_SCRIPTS; for example:
-    ::
+    SCHEDULER_TOKEN_SCRIPTS; for example::
 
         SCHEDULER_TOKEN_SCRIPTS="{ fluent => '/usr/local/bin/check_fluent.sh' }"
 
-Then the users will be able to submit jobs like:
-::
+Then the users will be able to submit jobs like::
 
     oarsub -l nodes=1/core=12 -t token:fluent=12 ./script.sh
 
@@ -141,9 +139,9 @@ These are the steps to follow:
 
     (you can see this new property when you use oarnodes)
 
- 2. with oarnodesetting_ you have to fill this field for all resources; for
+ 2. with :doc:`commands/oarnodesetting` you have to fill this field for all resources; for
     example::
- 
+
         oarnodesetting -h node42.cluster1.com -p cluster=1
         oarnodesetting -h node43.cluster1.com -p cluster=1
         oarnodesetting -h node2.cluster2.com -p cluster=2
@@ -151,12 +149,12 @@ These are the steps to follow:
 
  3. Then you have to restrict properties for new job type.
     So an admission rule performs this job (you can insert this new rule with
-    the oaradmissionrules_ command)::
+    the :doc:`commands/oaradmissionrules` command)::
 
         my $cluster_constraint = 0;
         if (grep(/^cluster1$/, @{$type_list})){
             $cluster_constraint = 1;
-        }elsif (grep(/^cluster2$/, @{$type_list})){    
+        }elsif (grep(/^cluster2$/, @{$type_list})){
             $cluster_constraint = 2;
         }
         if ($cluster_constraint > 0){
@@ -176,7 +174,7 @@ with the property "cluster=2" is used. This is the same when you will use the
 "cluster1" type. For example::
 
     oarsub -I -t cluster2
-    #is equivalent to 
+    #is equivalent to
     oarsub -I -p "cluster = 2"
 
 How to configure a more ecological cluster (or how to make some power consumption economies)?
@@ -208,7 +206,7 @@ And if you want to disable the halt and the wakeup::
 
     oarnodesetting -h host_name -p available_upto=0
 
-Your `SCHEDULER_NODE_MANAGER_WAKE_UP_CMD`_ must be a script that reads node
+Your :ref:`SCHEDULER_NODE_MANAGER_WAKE_UP_CMD <SCHEDULER_NODE_MANAGER_WAKE_UP_CMD>` must be a script that reads node
 names and translate them into the right wake up commands.
 
 So with the right OAR and node configurations you can optimize the power
@@ -235,14 +233,14 @@ Thus you will be able to see resources identifier of these resources with
 oarnodes; try to type::
 
     oarnodes --sql "type='frontal'"
-    
-Then put this type name (here "frontal") into the *oar.conf* file on the OAR
-server into the tag SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE_.
+
+Then put this type name (here "frontal") into the :doc:`oar.conf <configuration>` file on the OAR
+server into the tag :ref:`SCHEDULER_NODE_MANAGER_WAKE_UP_CMD <SCHEDULER_RESOURCES_ALWAYS_ASSIGNED_TYPE>`.
 
 Notes:
  - if one of these resources become "Suspected" then the scheduling will
    stop.
- - you can disable this feature with oarnodesetting_ and put these resources
+ - you can disable this feature with :doc:`commands/oarnodesetting` and put these resources
    into the "Absent" state.
 
 A job remains in the "Finishing" state, what can I do?
@@ -262,8 +260,3 @@ Since OAR 2.5.3, you can directly use the command:
 ::
 
     oardel --force-terminate-finishing-job 42
-
-How can I write my own scheduler?
----------------------------------
-.. include:: scheduler/README
-

@@ -24,11 +24,12 @@ User Documentation
 .. toctree::
     :maxdepth: 2
 
-    user-quickstart
-    user-commands
-    mechanisms
-    user-api
-    user-faq
+    user/quickstart
+    user/commands
+    user/mechanisms
+    user/desktop-computing
+    user/api
+    user/faq
 
 .. _ref-admin-docs:
 
@@ -38,11 +39,22 @@ Admin Documentation
 .. toctree::
     :maxdepth: 2
 
+    admin/installation
+    admin/configuration
+    admin/commands
+    admin/api
+    admin/security
+    admin/modules
+    admin/internal-mechanisms
+    admin/database-scheme
+    admin/faq
+
+
 .. _ref-dev-docs:
 
 Developer Documentation
 =======================
 
-.. toctree::
-    :maxdepth: 2
+.. note::
+    This documentation is currently being written...
 

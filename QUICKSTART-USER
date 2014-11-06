@@ -17,19 +17,19 @@ Shell commands:
   resource is not necessary a machine. It is generally a cpu, a core or a host,
   but it can be much more... like licence tokens, vlan, ...
   The oarnodes command gives information about the network address where is
-  located this resource, its type, its state and many other (interesting) 
+  located this resource, its type, its state and many other (interesting)
   information.
 
-~~~~~~~~~~~~~~~~  
+~~~~~~~~~~~~~~~~
 Graphical tools:
 ~~~~~~~~~~~~~~~~
 
 * Monika: this web page shows current resources states and jobs information.
-  On this page you can have more information about a particular resource or job. 
+  On this page you can have more information about a particular resource or job.
 
 * DrawGantt: this web page shows the gantt diagram of the scheduling. It
   represents the current, former and future jobs.
-  
+
 Submitting a job in an interactive shell
 ----------------------------------------
 
@@ -42,11 +42,11 @@ To submit an interactive job we use the "oarsub" command with the "-I" option::
   frontend:~$> oarsub -I
 
 OAR returns then an unique job ID that will identify your job in the system::
-  
+
   OAR_JOB_ID=1234
 
-Once the job is scheduled, when the requested resources are available, OAR 
-connects you to the first allocated node. OAR initiates environment variables 
+Once the job is scheduled, when the requested resources are available, OAR
+connects you to the first allocated node. OAR initiates environment variables
 that inform you of your submission properties::
 
   node:~$> env | grep OAR
@@ -89,7 +89,7 @@ work in interactive mode on 2 cpu for a max duration of 30 minutes we will ask::
 
 The walltime is the job's max duration. If the job overruns its walltime, it will
 be killed by the system. Thus, you better have to set your walltime correctly
-depending on how long will take your job to prevent being killed if the 
+depending on how long will take your job to prevent being killed if the
 walltime has been set too short or being scheduled later if it is too long.
 Then, once the job is scheduled and started, OAR connects you on the first
 reserved node. You still can access the list of the other resources via the
@@ -100,10 +100,10 @@ Batch submission
 ----------------
 
 OAR allows to execute scripts in "passive mode". In this mode, the user
-specifies a script at the submission time. This script will be executed on the 
+specifies a script at the submission time. This script will be executed on the
 first reserved node. It's within this script that the user will define the way
-to operate parallel resources. All the $OAR_* env variables are reachable within
-the script.
+to operate parallel resources. All the ``$OAR_*`` env variables are reachable
+within the script.
 
 The script must be executable.
 
