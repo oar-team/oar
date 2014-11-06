@@ -3,28 +3,95 @@ OAR CHANGELOG
 
 version 2.5.4:
 --------------
-  - [api]: added GET /jobs/<id>/details support
-  - [api]: implemented the ability to get a set of jobs at once with
+  
+  - [api] Implemented GET /resources/<property>/jobs to get jobs running on
+        resources, grouped by a given property.
+  - [api] Implemented HTTP_X_API_PATH_PREFIX header variable to prefix all
+        returned URIs.
+  - [api] Added GET /jobs/<id>/details support.
+  - [api] Implemented the ability to get a set of jobs at once with
     GET /jobs?ids=<id1>:<id2>:<id3>:...
-  - [api] BUGFIX: stderr and stdout where reversed
-  - [api] BUGFIX: memory leak into the api when used with FastCGI
-  - [accounting]: fixed a memory leak and a rare case of bad consumption count
-  - [almighty]: rewrite the handling of finished oarexec
-                launch bipbip processes with MAX_CONCURRENT_JOB_TERMINATIONS 
-                to not overload the server.
-  - [oarexec]: introduce BASH_ENV=~oar/.batch_job_bashrc for batch jobs
-               Batch jobs with bash shell have some difficulties to source the
-               right bash scripts when launching.
-               Now we set BASH_ENV=~oar/.batch_job_bashrc before launching the
-               user bash process so we can handle which script must be sourced.
-               By default we source ~/.bashrc.
-  - [api]: Rewritten/commented apache config file
-  - [oaradmin]: Disabled deprecated "conf" sub-command (the config file may 
-                be edited by the REST-API)
-  - [commands]: exit immediately on wrong arguments
-  - [oarsh]: propagate OAR shell environment variables
-             The users have access to the same OAR environment variables when
-             connecting on all the job nodes with oarsh
+  - [api] BUGFIX: stderr and stdout where reversed.
+  - [api] BUGFIX: memory leak in the API when used with FastCGI.
+  - [api] Rewritten/commented apache config file.
+  - [kamelot] BUGFIX: fix hierarchies manipulation (remove toplevel resource).
+  - [accounting] Fixed a memory leak and a rare case of bad consumption count.
+  - [almighty] Rewrote the handling of finished oarexec:
+        launch bipbip processes with MAX_CONCURRENT_JOB_TERMINATIONS 
+        to not overload the server.
+  - [oarexec] Introduced BASH_ENV=~oar/.batch_job_bashrc for batch jobs
+        Batch jobs with bash shell have some difficulties to source the
+        right bash scripts when launching.
+        Now we set BASH_ENV=~oar/.batch_job_bashrc before launching the
+        user bash process so we can handle which script must be sourced.
+        By default we source ~/.bashrc.
+  - [commands] Exit immediately on wrong arguments.
+  - [oarsh] Propagate OAR shell environment variables:
+        The users have access to the same OAR environment variables when
+        connecting on all the job nodes with oarsh
+  - [job_uid] Removed job uid feature (not used).
+  - [job_resource_manager] Use fstrim (for SSD) when cleaning files.
+  - [deploy] Do not check the nodes when ACTIVATE_PINGCHECKER_AT_JOB_END is on
+        and the job is of the deploy type (bug #17128).
+  - [judas] Disabled sending log by email on errors as this could generate too
+        many mails.
+  - [noop] Added the 'noop' job type. If specified, nothing is done on computing
+        nodes. The job just reserves the resources for the specified
+        walltime.
+  - [quotas] Added the possibility to make quotas on:
+        - the number of used resources
+        - the number of running jobs
+        - the result of resources X hours of running jobs
+  - [runner] Added runner bipbip processes in the bipbip_laucher in Almighty.
+  - [database] Replaced field "maintenance" by "drain".
+        The administrator can disable resources without killing
+        current jobs by::
+
+            oarnodesetting -h n12 -p drain=YES
+
+        or::
+
+            oarnodesetting --drain -h n12
+
+        :WARNING: any admission rule using the "maintenance" keyword
+            must be adapted to use the "drain" keyword.
+  - [oar_resources_init] Added support for SMT (hyperthreading)
+  - [cpuset] The cpuset resources filed is now a varchar.
+        It is now possible to specify several cpu id in the cpuset field
+        as needed in some case where SMT is enabled on nodes, e.g.::
+
+            1+4+8
+
+  - [oarsub] Added a filter for notifications
+        It now is possible to specify which TAGs must trigger motifications::
+            oarsub --notify "[END,ERROR]mail:name@domain.com" -I
+  - [admission rules] Added priority to rules that allows to manage more easily
+        the rules execution order.
+  - [admission rules] Added a enable/disable flag to rules to allow activating 
+        or deactivating rules without having to comment the code.
+  - [oaradmin] The oaradmin rules command is now disabled since it does not
+        handle priority and enable flags. 
+  - [oaradmin] The oaradmin conf command is disabled.
+  - [oar_resources_add] Added the oar_resources_add command to help adding
+        resources and replace the oaradmin resources command.
+  - [oaradmissionrules] oaradminssionrules is a new command to manage the
+        oaradmission rules.
+  - [oarnodesetting] Removed dependnency to oarnodes.
+  - [drawgantt-svg] Various bugfixes and improvements
+  - [metasched] If a besteffort job has a checkpoint duration defined
+        (oarsub --checkpoint) then OAR tries to checkpoint it before killing it.
+        It is possible to define a limit of the checkpoint duration with an
+        admission rule ($checkpoint variable).
+  - [drawgantt] Drawgantt is not now deprecated (and not shipped with packages)
+  - [misc] OAR packaged components do not require Ruby anymore.
+  - [oaraccounting] Fix bug reported in Debian tracker #678976
+  - [sources] Clean-up some used or unrelevant files/codes
+  - [scheduler] change default schedulers to quota
+        The default scheduler of the queues default, admin and besteffort is
+        now oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas.
+        The configuration file /etc/oar/scheduler_quotas.conf contains no quota
+        enforcement so the behaviour remains the same as before.
+
 
 version 2.5.3:
 --------------

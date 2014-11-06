@@ -190,7 +190,7 @@ Mixing every together
 
 ::
 
-	oarsub -I -l "{memnode=4096 and ib10g='YES'}/cluster=1/nodes=2/core=1+{cpucore=2}/switch=1/nodes=2/cpu=1,walltime=4:0:0"
+	oarsub -I -l "{memnode=4096 and ib10g='YES'}/cluster=1/nodes=2/core=1+{nbcore=2}/switch=1/nodes=2/cpu=1,walltime=4:0:0"
 
 Warning
 _______
@@ -221,15 +221,7 @@ Moldable jobs
 Types of job
 ~~~~~~~~~~~~
 
-OAR2 feature the concept of job "type". Among them, the type deploy (that used
-to be a queue with OAR 1.6) and the type besteffort.
-
-- ask for 4 nodes on the same cluster in order to deploy a customized
-  environment: 
-
-::
-
-	oarsub -I -l cluster=1/nodes=4,walltime=6 -t deploy
+OAR features the concept of job "type". For example:
 
 - submit besteffort jobs 
 
@@ -239,34 +231,26 @@ to be a queue with OAR 1.6) and the type besteffort.
 	    oarsub -t besteffort -l core=1 "./my_script.sh $param"
 	done
 
+- ask for 4 nodes on the same cluster in order to deploy a customized
+  environment: 
+
+::
+
+	oarsub -I -l cluster=1/nodes=4,walltime=6 -t deploy
+
+Check the man of oarsub to get the other job types.
+
 
 X11 forwarding
 --------------
 
-Some users complained about the lack of X11 forwarding in oarsub or oarsh. It
-is now enabled.
-We are using xeyes to test X: 2 big eyes should appear on your screen, and
-follow the moves of your mouse. 
+If you have a DISPLAY configured in your shell then oarsub will automatically
+forward the X11 to it.
 
-Shell 1
-~~~~~~~
-
-Check DISPLAY
-_____________
-
-::
-
-	jdoe@idpot:~$ echo $DISPLAY
-	localhost:11.0
-
-Job submission
-______________
-
+For example:
 ::
 
 	jdoe@idpot:~$ oarsub -I -l /nodes=2/core=1
-	[ADMISSION RULE] Set default walltime to 7200.
-	[ADMISSION RULE] Modify resource description with type constraints
 	OAR_JOB_ID=4926 
 	Interactive mode : waiting...
 	[2007-03-07 09:01:16] Starting...
@@ -282,16 +266,6 @@ ______________
 	jdoe@idpot8:~$ oarsh idpot9 xeyes
 	Error: Can't open display: 
 	jdoe@idpot8:~$ oarsh -X idpot9 xeyes
-
-Shell 2
-~~~~~~~
-
-::
-
-	jdoe@idpot:~$ echo $DISPLAY
-	localhost:13.0
-	jdoe@idpot:~$ OAR_JOB_ID=4928 oarsh -X idpot9 xeyes
-
 
 Using a parallel launcher: taktuk
 ---------------------------------
@@ -385,7 +359,7 @@ ___________________________________________________________
 Using MPI with OARSH
 --------------------
 
-To use MPI, you must setup your MPI stack so that it use OARSH instead of the
+To use MPI, you must setup your MPI stack so that it uses OARSH instead of the
 default RSH or SSH connector. All required steps for the main different flavors
 of MPI are presented below. 
 
@@ -513,6 +487,14 @@ file in the OpenMPI installation directory named
 So, with this configuration, this is transparent for the users.
 
 **Note**: In OpenMPI 1.6, "pls_rsh_agent" was replaced by "orte_rsh_agent".
+**Note**: In OpenMPI 1.8, "orte_rsh_agent" was replaced by "plm_rsh_agent".
+
+Intel MPI
+~~~~~~~~~
+Example using the hydra launcher:
+::
+
+    mpiexec.hydra -genvall -f $OAR_NODE_FILE -bootstrap-exec oarsh -env I_MPI_DEBUG 5 -n 8 ./ring
 
 Tests of the CPUSET mechanism
 -----------------------------
@@ -520,7 +502,7 @@ Tests of the CPUSET mechanism
 Processus isolation
 ~~~~~~~~~~~~~~~~~~~
 
-In this test, we run 4 yes commands in a job whose resources is only one core.
+In this test, we run 4 "yes" commands in a job whose resources is only one core.
 (syntax tested with bash as the user's shell)
 
 ::
@@ -530,7 +512,7 @@ In this test, we run 4 yes commands in a job whose resources is only one core.
 	[ADMISSION RULE] Modify resource description with type constraints
 	OAR_JOB_ID=8683 
 
-Then we connect to the node and run top
+Then we connect to the node and run ps or top for monitoring purposes:
 
 ::
 
@@ -558,7 +540,7 @@ Using best effort mode jobs
 Best effort job campaign
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-OAR 2 provides a way to specify that jobs are best effort, which means that the
+OAR provides a way to specify that jobs are best effort, which means that the
 server can delete them if room is needed to fit other jobs. One can submit such
 jobs using the besteffort type of job.
 

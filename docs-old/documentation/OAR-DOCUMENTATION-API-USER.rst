@@ -1552,7 +1552,7 @@ GET /resources/nodes/<network_address>
 POST /resources/generate
 ------------------------
 :description:
-  Generates (outputs) a set of resources using oaradmin. The result may then be directly sent to /resources for actual creation.
+  Generates (outputs) a set of resources. The result may then be directly sent to /resources for actual creation.
 
 :formats:
   html , yaml , json
@@ -1566,7 +1566,7 @@ POST /resources/generate
   *structure*: hash describing the resources to generate
 
   *fields*:
-     - **resources** (*string*): A string corresponding to the resources definition as it could have been passed to the "oaradmin resources -a" command (see man oaradmin).
+     - **resources** (*string*): A string corresponding to the resources definition.
      - **properties** (*hash*): an optional hash defining some common properties for these new resources
 
   *yaml example*:

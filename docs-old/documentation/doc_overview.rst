@@ -1,7 +1,13 @@
 Overview
 ========
 
-This batch system is based on a database (MySql or PostgreSQL), a script language (Perl) and an optional scalable administrative tool (component of Taktuk framework). It is composed of modules which interact only with database and are executed as independent programs.  So formally, there is no API, the system is completely defined by the database schema. This approach eases the development of specific modules. Indeed, each module (such as schedulers) may be developed in any language having a database access library.
+This batch system is based on a database (MySql or PostgreSQL), a script
+language (Perl) and an optional scalable administrative tool (component of
+Taktuk framework). It is composed of modules which interact only with database
+and are executed as independent programs.
+A Restful API is implemented on top of the database. So it abstracts the
+mechanisms inside OAR and make it easier to implement some interfaces (like web
+interfaces).
 
 Main features :
 

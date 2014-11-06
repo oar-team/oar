@@ -23,6 +23,9 @@ installation is composed of:
     - and optionally a **visualisation server** which will host the
       visualisation web interfaces (monika, drawgantt, ...);
 
+Everything is stored and archived in a database. You have the choice to use
+PostgreSQL or MySQL. We recommend to use **PostgreSQL**.
+
 Computing nodes
 ---------------
 
@@ -82,7 +85,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.3
+        OAR_VERSION=2.5.4
         wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -202,7 +205,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.3
+        OAR_VERSION=2.5.4
         wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -254,12 +257,8 @@ launch ``oar_resources_init``. It will detect the resources from the nodes that
 you put in a file and store right OAR commands to initialize the database with
 the appropriate values for the memory and the cpuset properties. Just try...
 
-There is also a tool to help you managing your oar resources and admission 
-rules : ``oaradmin``.
-Take a look at the oaradmin documentation in the administrator commands section 
-for more details. You can also read this tips::
-    
-    http://wiki-oar.imag.fr/index.php/Customization_tips#Using_oaradmin_to_initiate_the_resources
+There is also a tool to help you managing your oar resources:
+``oar_resources_add``.
 
 *Otherwise:*
 
@@ -280,7 +279,7 @@ You can also modify resources properties with **-p** option, for example::
 
         oarnodesetting -r 1 -p "besteffort=YES"
 
-will allow the resource #1 to accept jobs of the type deploy (because there is
+will allow the resource #1 to accept jobs of the type besteffort (because there is
 an admission rule that enforces the besteffort jobs to go on resources with the
 property "besteffort=YES").
 
@@ -304,7 +303,7 @@ database from unneeded records).
 PostgreSQL : authentication
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In case you've installed a PostgreSQL database remotly, if your PostgreSQL
+In case you've installed a PostgreSQL database remotely, if your PostgreSQL
 installation doesn't authorize the local connections by default, you need to
 enable the connections to this database for the oar users. Supposing the OAR
 server has the address <OAR_SERVER>, you can add the following lines in the
@@ -323,7 +322,7 @@ http://taktuk.gforge.inria.fr.
 
 **Note**: Taktuk is a scalable remote command execution without the need to
 install special stuffs on nodes. So it is very useful to administer a large
-amount of server.
+amount of machines.
 
 Then, you have to edit your oar configuration file and fill in the different 
 related parameters: 
@@ -397,7 +396,7 @@ following page give more informations on how configuring it:
 
 Other issues
 ~~~~~~~~~~~~
-You can take a look at the "Customizaion tips" on the OAR Wiki:
+You can take a look at the "Customization tips" on the OAR Wiki:
     
     http://wiki-oar.imag.fr/index.php/Customization_tips
 
@@ -491,7 +490,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.3
+        OAR_VERSION=2.5.4
         wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -512,7 +511,7 @@ Coherent configuration files between server node and user nodes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You need to have a coherent oar configuration between the server node and the
-user nodes. So you can just copy the /etc/oar directory from to server node to
+user nodes. So you can just copy the /etc/oar/oar.conf directory from to server node to
 the user nodes.
 
 About X11 usage in OAR
@@ -535,7 +534,7 @@ OAR RESTful API Installation
 Description
 ___________
 
-Since the version X.X.X, OAR offers an API for users and admins interactions.
+Since the version 2.5.3, OAR offers an API for users and admins interactions.
 This api must be installed on a frontend node (with the user module installed).
 
 Installation from the packages
@@ -618,7 +617,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.3
+        OAR_VERSION=2.5.4
         wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar-${OAR_VERSION}/
 
@@ -637,7 +636,7 @@ _____________
 *Configuring OAR*
 
     For the moment, the API needs the user tools to be installed on the same
-    host ('``make user-install``' or oar-user package). A suitable
+    host ('``make user-install``' or oar-user packages). A suitable
     ``/etc/oar/oar.conf`` should be present. For the API to work, you should have
     the oarstat/oarnodes/oarsub commands to work (on the same host you installed
     the API)
@@ -645,7 +644,7 @@ _____________
 *Configuring Apache*
 
     The api provides a default configuration file (``/etc/oar/apache-api.conf``) that
-    is using a identd user identification enabled only from localhost.  Edit the
+    is using an identd user identification enabled only from localhost.  Edit the
     ``/etc/oar/apache-api.conf`` file and customize it to reflect the authentication
     mechanism you want to use. For ident, you may have to install a "identd" daemon
     on your distrib. The steps may be:
@@ -679,7 +678,7 @@ Description
 ___________
 
 There are two different tools. One, named Monika which displays the current
-cluster state with all active and waiting jobs. The other, named drawgantt
+cluster state with all active and waiting jobs. The other, named drawgantt-svg
 which displays node occupation in a lapse of time. These tools are CGI scripts
 and generate HTML pages.
 
@@ -749,7 +748,7 @@ _____________________________
 
 Get the sources::
 
-        OAR_VERSION=2.5.3
+        OAR_VERSION=2.5.4
         wget -O - http://oar-ftp.imag.fr/oar/2.5/sources/stable/oar-${OAR_VERSION}.tar.gz | tar xzvf -
         cd oar-${OAR_VERSION}/
 

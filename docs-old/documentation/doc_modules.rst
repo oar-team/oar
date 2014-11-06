@@ -7,13 +7,16 @@ Almighty
 --------
 
 This module is the OAR server. It decides what actions must be performed. It
-is divided into 2 processes:
+is divided into 3 processes:
 
  - One listens to a TCP/IP socket. It waits informations or commands from OAR
    user program or from the other modules.
    
  - Another one deals with commands thanks to an automaton and launch right
    modules one after one.
+
+ - The third one handles a pool of forked processes that are used to launch and
+   stop the jobs.
    
 It's behaviour is represented in these schemes.
     
@@ -122,40 +125,6 @@ There are 2 frag types :
    OAR doesn't know what occured on the node and Suspects it.
    
    
-Runner
-------
-
-This module launches OAR effective jobs. These processes are run asynchronously
-with all modules.
-
-For each job, the Runner_ uses OPENSSH_CMD_ to connect to the first node of the
-reservation and propagate a Perl script which handles the execution of the user
-command. 
-
-  - for each job in "toError" state, answer to the oarsub client: "BAD JOB". 
-    This will exit the client with an error code.
-
-  - for each job in "toAckReservation" state, try to acknowledge the 
-    oarsub client reservation. If runner cannot contact the client, it will 
-    frag the job.
-
-  - for each job to launch, launch job's bipbip.
-  
---------------------------------------------------------------------------------
-
-  - Runner schema:
-
-  .. image:: ../schemas/runner.png
-  
---------------------------------------------------------------------------------
-
-  - bipbip schema:
-      
-  .. image:: ../schemas/bipbip.png
-  
---------------------------------------------------------------------------------  
-
-
 NodeChangeState
 ---------------
 
@@ -174,13 +143,13 @@ Scheduler_ launches all gantt scheduler in the order of the priority specified
 in the database and update all visualization tables
 (gantt_jobs_predictions_visu_ and gantt_jobs_resources_visu_).
 
+It also trigger if a job has to be launched.
+
 oar_sched_gantt_with_timesharing
 ________________________________
 
-This is the default OAR scheduler. It implements all functionalities like
+This is a OAR scheduler. It implements functionalities like
 timesharing, moldable jobs, `besteffort jobs`, ...
-
-By default, this scheduler is used by all default queues.
 
 We have implemented the FIFO with backfilling algorithm. Some parameters
 can be changed in the `configuration file`_ (see SCHEDULER_TIMEOUT_,
@@ -219,8 +188,15 @@ Some parameters can be changed directly in the file::
     ###############################################################################
 
 This scheduler takes its historical data in the accounting_ table. To fill this,
-the command oaraccounting_ have to be run periodically (in a cron job for
+the command oaraccounting_ has to be run periodically (in a cron job for
 example). Otherwise the scheduler cannot be aware of new user consumptions.
+
+oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas
+___________________________________________________________
+
+This scheduler is the same than
+oar_sched_gantt_with_timesharingand_fairsharing but it implements quotas which
+are configured in "/etc/oar/scheduler_quotas.conf".
 
 Hulot
 -----
