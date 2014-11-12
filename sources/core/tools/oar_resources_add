@@ -140,7 +140,7 @@ fi
 
 CPUSET=${CPUSET:-$((CPUS*CORES*THREADS))}
 if [ -n "$AUTO_OFFSET" ]; then
-  [ -z "$HOST0" ] && echo "# Warning: guessing a new hostname is not really reliable because of a sort isssue for non-numeric properties. Please double-check."
+  [ -z "$HOST0" ] && echo "# Warning: guessing a new hostname is not really reliable because of a sort issue for non-numeric properties. Please double-check."
   HOST0=${HOST0:-$(($(oarnodesetting --last-property-value host | perl -pe 's/^[^\d]*(\d+).*/$1/') + 1))}
   CPU0=${CPU0:-$(($(oarnodesetting --last-property-value cpu) + 1))}
   CORE0=${CORE0:-$(($(oarnodesetting --last-property-value core) + 1))}
