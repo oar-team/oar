@@ -1032,7 +1032,7 @@ foreach ($CONF['resource_hierarchy'] as $rh) {
   $y0 = $CONF['gantt_top'];
   $y = $y0;
   foreach ($resource_ids as $rid) {
-    if (($r0 != NULL) and ($rid->resources[$rh]->id != $r0->id)) {
+    if ((($r0 != NULL) and ($rid->resources[$rh]->id != $r0->id)) or ($rh == 'cpuset')) {
       $output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
       $y0 = $y;
     }    
