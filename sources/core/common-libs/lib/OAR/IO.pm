@@ -6369,8 +6369,13 @@ sub update_gantt_visualization($){
 #    $dbh->do("DELETE FROM gantt_jobs_predictions_visu");
 #    $dbh->do("DELETE FROM gantt_jobs_resources_visu");
 ##    $dbh->do("OPTIMIZE TABLE ganttJobsResources_visu, ganttJobsPredictions_visu");
-    $dbh->do("TRUNCATE TABLE gantt_jobs_predictions_visu");
-    $dbh->do("TRUNCATE TABLE gantt_jobs_resources_visu");
+    if ($Db_type eq "Pg"){
+        $dbh->do("TRUNCATE TABLE gantt_jobs_predictions_visu");
+        $dbh->do("TRUNCATE TABLE gantt_jobs_resources_visu");
+    }else{
+        $dbh->do("DELETE FROM gantt_jobs_predictions_visu");
+        $dbh->do("DELETE FROM gantt_jobs_resources_visu");
+    }
 
     $dbh->do("INSERT INTO gantt_jobs_predictions_visu
               SELECT *
@@ -6482,8 +6487,13 @@ sub gantt_flush_tables($$$){
                         $sql
                  ");
     }else{
-        $dbh->do("TRUNCATE TABLE gantt_jobs_resources");
-        $dbh->do("TRUNCATE TABLE gantt_jobs_predictions");
+        if ($Db_type eq "Pg"){
+            $dbh->do("TRUNCATE TABLE gantt_jobs_resources");
+            $dbh->do("TRUNCATE TABLE gantt_jobs_predictions");
+        }else{
+            $dbh->do("DELETE FROM gantt_jobs_predictions");
+            $dbh->do("DELETE FROM gantt_jobs_resources");
+        }
     }
 }
 
