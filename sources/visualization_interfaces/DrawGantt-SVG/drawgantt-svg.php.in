@@ -357,12 +357,14 @@ class Job {
       array_push($this->network_addresses, $network_address);
     }
   }
+  // build groups of continuous resource ids
   function group_resource_ids($resource_ids) {
     $grp = NULL;
     foreach ($resource_ids as $rid) {
       if (array_key_exists($rid->id, $this->resource_ids)) {
         if ($grp == NULL) {
           $grp = new JobResourceIdGroup($this, $rid);
+          $rid->add_job_resource_id_group($grp);
         } else {
           $grp->add_resource_id($rid);
         }
@@ -400,13 +402,12 @@ class Job {
   }
 }
 
-// Container class for a job resource_ids, split wrt the resource_ids display order (resources part and not part of job may be interleaved)
+// Container class for a job resource_ids: since a job may not have continuous resources, it display can be split in serveral groups (rectangles)
 class JobResourceIdGroup {
   public $job, $resource_ids;
   function __construct($job, $resource_id) {
     $this->job = $job;
-    $resource_id->add_job_resource_id_group($this);
-    $this->resource_ids = array( $resource_id->id => $resource_id );
+    $this->resource_ids = array($resource_id);
   }
   function add_resource_id($resource_id) {
     array_push($this->resource_ids, $resource_id);
@@ -444,9 +445,12 @@ class ResourceId {
     global $CONF;
     if ($type == 'cpuset') {
       return sprintf($CONF['cpuset_label_display_string'],$this->cpuset);
-    } else {
-      return $this->resources[$type]->label();
     }
+    if (!array_key_exists($type, $this->resources)) {
+      error_log("resouce_labels: $type does not exist in resource_properties");
+      return "undef";
+    }
+    return $this->resources[$type]->label();
   }
   function svg_text() {
     $sep = "";
@@ -813,7 +817,7 @@ while ($line = $db->fetch_array()) {
 }
 $db->free();
 
-// Split resource_ids for jobs in groups for gantt display: resources which belong to the job may be interleaved with resources which don't
+// Split resource_ids for jobs in groups for gantt display: resources which belong to the job may not be continuous.
 foreach ($jobs as $job) {
   $job->group_resource_ids($resource_ids);
 }
