@@ -8,9 +8,9 @@
 // Navigation bar configuration
 $CONF['nav_filters'] = array(
   'all clusters' => "",
-  'cluster1 only' => 'cluster="cluster1"',
-  'cluster2 only' => 'cluster="cluster2"',
-  'cluster3 only' => 'cluster="cluster3"',
+  'cluster1 only' => 'cluster=\'cluster1\'',
+  'cluster2 only' => 'cluster=\'cluster2\'',
+  'cluster3 only' => 'cluster=\'cluster3\'',
 );
 $CONF['nav_timezones'] = array(
   'UTC' => "UTC",
