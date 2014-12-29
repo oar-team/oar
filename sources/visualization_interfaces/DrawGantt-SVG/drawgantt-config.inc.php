@@ -6,6 +6,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // Navigation bar configuration
+$CONF['nav_default_timespan'] = 6*3600;
+$CONF['nav_timespans'] = array(
+  '1 hour' => 3600,
+  '6 hours' => 6*3600,
+  '1 day' => 24*3600,
+  '1 week' => 7*24*3600,
+);
+
 $CONF['nav_filters'] = array(
   'all clusters' => "",
   'cluster1 only' => 'cluster=\'cluster1\'',
