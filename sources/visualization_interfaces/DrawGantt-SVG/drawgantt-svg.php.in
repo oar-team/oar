@@ -540,30 +540,75 @@ class ResourceId {
 
 // Storage for the abstract resources, e.g. host, cpu, core, a.s.o, i.e. not resource_id
 class Resource {
-  public $id, $type, $parent, $childs, $resource_ids;
+  public $id, $type, $parent, $childen, $resource_ids;
   function __construct($id, $type, $parent) {
     $this->id = $id;
     $this->type = $type;
     $this->parent = $parent;
-    $this->childs = array();
+    $this->childen = array();
     $this->resource_ids = array();
   }
   function add_child($id, $type) {
-    if (! array_key_exists($id,$this->childs)) {
-      $this->childs[$id] = new Resource($id, $type, $this);
+    if (! array_key_exists($id,$this->childen)) {
+      $this->childen[$id] = new Resource($id, $type, $this);
     }
-    return $this->childs[$id];
+    return $this->childen[$id];
   }
   function add_resource_id($rid) {
     $this->resource_ids[$rid->id] = $rid;
     $rid->add_resource($this);
   }
-  function svg_hierarchy_text() {
+  function hierarchy_text() {
     if ($this->parent == NULL) {
       return $this->type.": ".$this->id;
     } else {
-      return $this->parent->svg_hierarchy_text()."|".$this->type.": ".$this->id;
+      return $this->parent->hierarchy_text()."|".$this->type.": ".$this->id;
     }
+  }
+  function properties() {
+    $properties = array();
+    foreach ($this->resource_ids as $rid) {
+      foreach ($rid->properties as $key => $value) {
+        if (array_key_exists($key, $properties)) {
+          array_push($properties[$key], $value);
+        } else {
+          $properties[$key] = array($value);
+        }
+      }
+    }
+    return $properties;
+  }
+  function svg_hierarchy($x, $y, $labels=NULL)  {
+    global $CONF, $output;
+    $h = 0;
+    if (in_array($this->type, $CONF['resource_labels'])) {
+      if ($labels == NULL) {
+        $labels = array($this->label());
+      } else {
+        array_push($labels, $this->label());
+      }
+    }
+    if (($this->type != $CONF['resource_base_property']) and (count($this->resource_ids) > 1)) {
+      foreach ($this->childen as $child) {
+        $h += $child->svg_hierarchy($x+$CONF['hierarchy_resource_width'], $y+$h, $labels);
+      }
+      $output .= '<rect x="'.$x.'" y="'.$y.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.$h.'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$this->hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+    } else {
+      $properties = $this->properties();
+      if (in_array('cpuset', $CONF['resource_labels']) and array_key_exists('cpuset', $properties)) {
+        array_push($labels, join(",", array_map(function ($i) {global $CONF; return sprintf($CONF['cpuset_label_display_string'],$i);} , $properties['cpuset'])));
+      }
+      $popup = array();
+      foreach ($properties as $key => $value) {
+        array_push($popup, $key.": ".join(", ", array_unique($value)));
+      }
+      $output .= '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $CONF['scale']).'" text-anchor="end" onmouseover="mouseOver(evt, \''.htmlspecialchars(join("|", $popup)).'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)">';
+      $output .= join("/", $labels);
+      $output .= '</text>';
+      $output .= '<rect x="'.$x.'" y="'.$y.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.$CONF['scale'].'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$this->hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+      $h = $CONF['scale'];
+    }
+    return $h;
   }
   function svg_jobs($y) {
     global $CONF, $gantt_now, $output_labels, $patterns;
@@ -1086,31 +1131,32 @@ while(($d += $ruler_step) < $gantt_stop_date) {
 }
 
 // print resource_id labels
-$y = $CONF['gantt_top'];
-foreach ($resource_base_property_ids as $rid) {
-  $output .= $rid->svg_label($y);
-  $y += $CONF['scale'];
-}
+//$y = $CONF['gantt_top'];
+//foreach ($resource_base_property_ids as $rid) {
+//  $output .= $rid->svg_label($y);
+//  $y += $CONF['scale'];
+//}
 
 // print resource hierarchy
-$x = $CONF['hierarchy_left_align'];
-foreach ($CONF['resource_hierarchy'] as $rh) {
-  $r0 = NULL;
-  $y0 = $CONF['gantt_top'];
-  $y = $y0;
-  foreach ($resource_base_property_ids as $rid) {
-    if (($r0 != NULL) and (($rid->resources[$rh]->id != $r0->id) or ($rh == 'cpuset'))) {
-      $output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
-      $y0 = $y;
-    }    
-    $r0 = $rid->resources[$rh]; 
-    $y += $CONF['scale'];
-  }
-  if ($r0) {
-    $output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
-  $x += $CONF['scale'];
-  }
-}
+$resource_root->svg_hierarchy($CONF['hierarchy_left_align'], $CONF['gantt_top']);
+//$x = $CONF['hierarchy_left_align'];
+//foreach ($CONF['resource_hierarchy'] as $rh) {
+//  $r0 = NULL;
+//  $y0 = $CONF['gantt_top'];
+//  $y = $y0;
+//  foreach ($resource_base_property_ids as $rid) {
+//    if (($r0 != NULL) and (($rid->resources[$rh]->id != $r0->id) or ($rh == 'cpuset'))) {
+//      $output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+//      $y0 = $y;
+//    }    
+//    $r0 = $rid->resources[$rh]; 
+//    $y += $CONF['scale'];
+//  }
+//  if ($r0) {
+//    $output .= '<rect x="'.$x.'" y="'.$y0.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.($y-$y0).'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$r0->svg_hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+//  $x += $CONF['scale'];
+//  }
+//}
 
 // print resource_id lines
 $y = $CONF['gantt_top'];
