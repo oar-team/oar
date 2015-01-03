@@ -20,6 +20,13 @@ $CONF['nav_filters'] = array(
   'cluster2 only' => 'cluster=\'cluster2\'',
   'cluster3 only' => 'cluster=\'cluster3\'',
 );
+
+$CONF['nav_default_resource_base'] = 'cpuset';
+$CONF['nav_resource_bases'] = array(
+  'network_address',
+  'cpuset',
+);
+
 $CONF['nav_timezones'] = array(
   'UTC' => "UTC",
   'Paris' => "Europe/Paris",
@@ -50,6 +57,7 @@ $CONF['resource_properties'] = array( // properties to display in the pop-up on 
   'deploy', 'cpuset', 'besteffort', 'network_address', 'type', 'drain');
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
   'network_address','cpuset'); 
+$CONF['resource_base'] = "cpuset"; // ...
 $CONF['resource_drain_property'] = "drain"; // if set, must also be one of the resource_properties above to activate the functionnality
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)', 'Drain' => 'url(#drainPattern)');
@@ -64,6 +72,7 @@ $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
 // Geometry customization
 $CONF['hierarchy_resource_width'] = 10; // default: 10
 $CONF['scale'] = 10; // default: 10
+$CONF['text_scale'] = 10; // default: 10
 $CONF['time_ruler_scale'] = 6; // default: 6
 $CONF['time_ruler_steps'] = array(60,120,180,300,600,1200,1800,3600,7200,10800,21600,28800,43200,86400,172800,259200,604800);
 $CONF['gantt_top'] = 50; // default: 50
@@ -72,7 +81,7 @@ $CONF['right_margin'] = 30; // default 30
 $CONF['label_right_align'] = 105; // default: 105
 $CONF['hierarchy_left_align'] = 110; // default: 110
 $CONF['gantt_left_align'] = 160; // default: 160
-$CONF['gantt_min_width'] = 1000; // default: 1000
+$CONF['gantt_min_width'] = 900; // default: 900
 $CONF['gantt_min_height'] = 400; // default: 400
 $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
 

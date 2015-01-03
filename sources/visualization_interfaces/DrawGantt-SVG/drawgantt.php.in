@@ -21,6 +21,13 @@ $CONF['nav_filters'] = array(
   'cluster2 only' => 'cluster=\'cluster2\'',
   'cluster3 only' => 'cluster=\'cluster3\'',
 );
+
+$CONF['nav_default_resource_base'] = 'host';
+$CONF['nav_resource_bases'] = array(
+  'network_address',
+  'cpuset',
+);
+
 $CONF['nav_timezones'] = array(
   'UTC' => "UTC",
   'Paris' => "Europe/Paris",
@@ -36,6 +43,7 @@ if (is_readable(CONFIG_FILE)) {
     require CONFIG_FILE;
 }
 
+$resource_base = array_key_exists('resource_base',$_GET)?$_GET['resource_base']:$CONF['nav_default_resource_base'];
 $filter = array_key_exists('filter',$_GET)?$_GET['filter']:key($CONF['nav_filters']);
 $timezone = array_key_exists('timezone',$_GET)?$_GET['timezone']:key($CONF['nav_timezones']);
 $start = array_key_exists('start',$_GET)?$_GET['start']:"";
@@ -120,6 +128,7 @@ $output = <<<EOT
   var filterSQL = "";
   var timezone = "$timezone";
   var timezoneSQL = "";
+  var baseResource = "$resource_base";
   var scrolledX=0;
   var scrolledY=0;
   function sleep(millis, callback) {
@@ -220,12 +229,16 @@ $output = <<<EOT
     scrolledY = window.scrollY;
     show_panel();
     var svgObj=document.getElementById("svgObj");
-    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezoneSQL)?"&timezone=" + timezoneSQL:"");
+    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezoneSQL)?"&timezone=" + timezoneSQL:"") + ((baseResource)?"&resource_base=" + baseResource:"");
     svgObj.data = newURL;
     svgObj.innerHTML = newURL;
     document.getElementById("waiter").style.visibility="visible";
   }
   function set_misc(reload) {
+    var baseResourceSelect = document.getElementById("baseResourceSelect");
+    if (baseResourceSelect) {
+      baseResource = baseResourceSelect.value;
+    }
     var timezoneSelect = document.getElementById("timezoneSelect");
     if (timezoneSelect) {
       timezone = timezoneSelect.children[timezoneSelect.selectedIndex].innerHTML;
@@ -263,7 +276,7 @@ $output = <<<EOT
   }
   function show_misc() {
     var href = window.location.href
-    document.getElementById("permalink").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"");
+    document.getElementById("permalink").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"");
 	  document.getElementById("misc").style.visibility="visible";
   }
   function hide_misc() {
@@ -317,7 +330,18 @@ EOT;
 permalink:<a id="permalink" href=".">URL</a>
 
 EOT;
-if (count($CONF['nav_filters']) > 1 or count($CONF['nav_timezones']) > 1) {
+if (count($CONF['nav_resource_bases']) > 1 or count($CONF['nav_filters']) > 1 or count($CONF['nav_timezones']) > 1) {
+  if (count($CONF['nav_resource_bases']) > 1) {
+    $output .= <<<EOT
+base resource:<select id="baseResourceSelect">
+EOT;
+    foreach ($CONF['nav_resource_bases'] as $value) {
+      $output .= "<option " . (($value == $resource_base)?"selected ":"") . "value=\"$value\">$value</option>\n";
+    }
+    $output .= <<<EOT
+</select>
+EOT;
+  }
   if (count($CONF['nav_filters']) > 1) {
     $output .= <<<EOT
 resource filter:<select id="filterSelect">

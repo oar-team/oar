@@ -7,12 +7,12 @@
 
 $CONF=array();
 // Database access configuration
-$CONF['db_type']="mysql"; // choices: mysql for Mysql or pg for PostgreSQL
+$CONF['db_type']="pg"; // choices: mysql for Mysql or pg for PostgreSQL
 $CONF['db_server']="127.0.0.1";
-$CONF['db_port']="3306"; // usually 3306 for Mysql or 5432 for PostgreSQL
+$CONF['db_port']="5432"; // usually 3306 for Mysql or 5432 for PostgreSQL
 $CONF['db_name']="oar"; // OAR read only user account 
-$CONF['db_user']="oar";
-$CONF['db_passwd']="oar";
+$CONF['db_user']="oar_ro";
+$CONF['db_passwd']="oar_ro";
 
 // Data display configuration
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
@@ -28,6 +28,7 @@ $CONF['resource_properties'] = array( // properties to display in the pop-up on 
   'deploy', 'cpuset', 'besteffort', 'network_address', 'type', 'drain');
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
   'network_address','cpuset'); 
+$CONF['resource_base'] = "cpuset"; // ...
 $CONF['resource_drain_property'] = "drain"; // if set, must also be one of the resource_properties above to activate the functionnality
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)', 'Drain' => 'url(#drainPattern)');
@@ -42,6 +43,7 @@ $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
 // Geometry customization
 $CONF['hierarchy_resource_width'] = 10; // default: 10
 $CONF['scale'] = 10; // default: 10
+$CONF['text_scale'] = 10; // default: 10
 $CONF['time_ruler_scale'] = 6; // default: 6
 $CONF['time_ruler_steps'] = array(60,120,180,300,600,1200,1800,3600,7200,10800,21600,28800,43200,86400,172800,259200,604800);
 $CONF['gantt_top'] = 50; // default: 50
@@ -50,7 +52,7 @@ $CONF['right_margin'] = 30; // default 30
 $CONF['label_right_align'] = 105; // default: 105
 $CONF['hierarchy_left_align'] = 110; // default: 110
 $CONF['gantt_left_align'] = 160; // default: 160
-$CONF['gantt_min_width'] = 1000; // default: 1000
+$CONF['gantt_min_width'] = 900; // default: 900
 $CONF['gantt_min_height'] = 400; // default: 400
 $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
 
@@ -148,6 +150,7 @@ $gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
 $gantt_relative_start_date = array_key_exists('relative_start',$_GET)?$_GET['relative_start']:-86400;
 $gantt_relative_stop_date = array_key_exists('relative_stop',$_GET)?$_GET['relative_stop']:86400;
 $resource_filter = array_key_exists('filter', $_GET)?$_GET['filter']:"";
+$resource_base = array_key_exists('resource_base', $_GET)?$_GET['resource_base']:$CONF['resource_base'];
 $gantt_width = $CONF['gantt_min_width'];
 if (array_key_exists('width', $_GET) and $_GET['width'] > ($CONF['gantt_left_align'] + $CONF['gantt_min_width'] + $CONF['right_margin'])) {
         $gantt_width = $_GET['width'] - $CONF['gantt_left_align'] - $CONF['right_margin'];
@@ -292,7 +295,7 @@ class Db {
 
 // Storage class for State
 class State {
-  public $value, $start, $stop;
+  public $value, $start, $stop, $real_start, $real_stop;
   function __construct($value, $start, $stop) {
     global $gantt_start_date, $gantt_stop_date;
     $this->value = $value;
@@ -441,58 +444,6 @@ class ResourceId {
   function add_job_resource_id_group($job_resource_id_group) {
     array_push($this->job_resource_id_groups, $job_resource_id_group);
   }
-  function resource_label($type) {
-    global $CONF;
-    if ($type == 'cpuset') {
-      return sprintf($CONF['cpuset_label_display_string'],$this->cpuset);
-    }
-    if (!array_key_exists($type, $this->resources)) {
-      error_log("resouce_labels: $type does not exist in resource_properties");
-      return "undef";
-    }
-    return $this->resources[$type]->label();
-  }
-  function svg_text() {
-    $sep = "";
-    $output = "";
-    foreach ($this->properties as $key => $value) {
-      $output .= $sep.htmlspecialchars("{$key}: {$value}");
-      $sep = "|";
-    }
-    return $output;
-  }
-  function svg_label($y) {
-    global $CONF;
-    $output = '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $CONF['scale']).'" text-anchor="end" onmouseover="mouseOver(evt, \''.$this->svg_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)">';
-    $labels = array();
-    foreach ($CONF['resource_labels'] as $type) {
-      array_push($labels, $this->resource_label($type));
-    }
-    $output .= join("/", $labels);
-    $output .= '</text>';
-    return $output;
-  }
-  function svg_lines($y) {
-    global $CONF, $gantt_width;
-    $output = '<line x1="'.$CONF['gantt_left_align'].'" y1="'.$y.'" x2="'.($CONF['gantt_left_align'] + $gantt_width).'" y2="'.$y.'" stroke="'.($this->cpuset?"#888888":"#0000FF").'" stroke-width="1" />';
-    return $output;
-  }
-  function svg_drain($y) {
-    global $CONF, $gantt_now, $gantt_width;
-    $output = "";
-    if (array_key_exists($CONF['resource_drain_property'], $this->properties) and ($this->properties[$CONF['resource_drain_property']] == "YES")) {
-      $output .= '<rect x="'.date2px($gantt_now).'" y="'.$y.'" width="'.($gantt_width - date2px($gantt_now) + $CONF['gantt_left_align']).'" height="'.$CONF['scale'].'" fill="'.$CONF['state_colors']['Drain'].'" stroke-width="0" style="opacity: 0.5" onmouseover="mouseOver(evt, \'State: Draining (no new job accepted)\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)"/>';
-    }
-    return $output;
-  }
-  function svg_states($y) {
-    global $CONF;
-    $output = '';
-    foreach ($this->states as $state) {
-      $output .= '<rect x="'.date2px($state->start).'" y="'.$y.'" width="'.(date2px($state->stop) - date2px($state->start)).'" height="'.$CONF['scale'].'" fill="'.$CONF['state_colors'][$state->value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$state->svg_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
-    }
-    return $output;
-  }
   function svg_jobs($y) {
     global $CONF, $gantt_now, $output_labels, $patterns;
     $output = '';
@@ -540,19 +491,19 @@ class ResourceId {
 
 // Storage for the abstract resources, e.g. host, cpu, core, a.s.o, i.e. not resource_id
 class Resource {
-  public $id, $type, $parent, $childen, $resource_ids;
+  public $id, $type, $parent, $children, $resource_ids;
   function __construct($id, $type, $parent) {
     $this->id = $id;
     $this->type = $type;
     $this->parent = $parent;
-    $this->childen = array();
+    $this->children = array();
     $this->resource_ids = array();
   }
   function add_child($id, $type) {
-    if (! array_key_exists($id,$this->childen)) {
-      $this->childen[$id] = new Resource($id, $type, $this);
+    if (! array_key_exists($id,$this->children)) {
+      $this->children[$id] = new Resource($id, $type, $this);
     }
-    return $this->childen[$id];
+    return $this->children[$id];
   }
   function add_resource_id($rid) {
     $this->resource_ids[$rid->id] = $rid;
@@ -579,7 +530,7 @@ class Resource {
     return $properties;
   }
   function svg_hierarchy($x, $y, $labels=NULL)  {
-    global $CONF, $output;
+    global $CONF, $output, $gantt_width, $resource_base, $first_resource_base;
     $h = 0;
     if (in_array($this->type, $CONF['resource_labels'])) {
       if ($labels == NULL) {
@@ -588,8 +539,10 @@ class Resource {
         array_push($labels, $this->label());
       }
     }
-    if (($this->type != $CONF['resource_base_property']) and (count($this->resource_ids) > 1)) {
-      foreach ($this->childen as $child) {
+    if (($this->type != $resource_base) and (count($this->resource_ids) > 1)) {
+      $first_resource_base = true;
+      ksort($this->children);
+      foreach ($this->children as $child) {
         $h += $child->svg_hierarchy($x+$CONF['hierarchy_resource_width'], $y+$h, $labels);
       }
       $output .= '<rect x="'.$x.'" y="'.$y.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.$h.'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$this->hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
@@ -602,13 +555,88 @@ class Resource {
       foreach ($properties as $key => $value) {
         array_push($popup, $key.": ".join(", ", array_unique($value)));
       }
-      $output .= '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $CONF['scale']).'" text-anchor="end" onmouseover="mouseOver(evt, \''.htmlspecialchars(join("|", $popup)).'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)">';
+      $output .= '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $CONF['scale']/2).'" text-anchor="end" dominant-baseline="central" onmouseover="mouseOver(evt, \''.htmlspecialchars(join("|", $popup)).'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)">';
       $output .= join("/", $labels);
       $output .= '</text>';
       $output .= '<rect x="'.$x.'" y="'.$y.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.$CONF['scale'].'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$this->hierarchy_text().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+      if ($first_resource_base == true) {
+        $first_resource_base = false;
+        $output .= '<line x1="'.$CONF['gantt_left_align'].'" y1="'.$y.'" x2="'.($CONF['gantt_left_align'] + $gantt_width).'" y2="'.$y.'" stroke="#0000FF" stroke-width="1" />';
+      } else {
+        $output .= '<line x1="'.$CONF['gantt_left_align'].'" y1="'.$y.'" x2="'.($CONF['gantt_left_align'] + $gantt_width).'" y2="'.$y.'" stroke="#888888" stroke-width="1" />';
+      }
+      $this->svg_states($y);
+      $this->svg_drain($y);
       $h = $CONF['scale'];
     }
     return $h;
+  }
+  function svg_states($y) {
+    global $CONF, $output, $resource_base;
+    $states=array();
+    foreach (array_values($this->resource_ids) as $rid) {
+      foreach ($rid->states as $s) {
+        if (!array_key_exists($s->value, $states)) {
+          $states[$s->value] = array();
+        }
+        array_push($states[$s->value], array($s->start, 1,$s->real_start), array($s->stop, -1, $s->real_stop));
+      }
+    }
+    foreach ($states as $value => $date_weight_array) {
+      usort($date_weight_array, create_function('$a,$b','list($d1,$w1)=$a; list($d2,$w2)=$b; return ($d1 != $d2)?(($d1 < $d2)?-1:1):(($w1 != $w2)?(($w1 < $w2)?1:-1):0);'));
+      array_walk($date_weight_array, create_function('$e','list($d,$v)=$e; debug("$d:$v");'));
+      $weight = 0;
+      foreach ($date_weight_array as $dwr) {
+        list ($d,$w,$r) = $dwr;
+        debug("$value -> $d:$w");
+        if ($w == -1 and $weight == count($this->resource_ids)) {
+          debug("new full state $start -> $d");
+          # new state $start,$w,full
+          $info = ucfirst($resource_base).((count($this->resource_ids) > 1)?" fully":"")." $value|Since: ".date("r", $real_start)."|Until: ".(($r)?date("r", $r):"indefinite");
+          $output .= '<rect x="'.date2px($start).'" y="'.$y.'" width="'.(date2px($d) - date2px($start)).'" height="'.$CONF['scale'].'" fill="'.$CONF['state_colors'][$value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+        }
+        $weight += $w;
+        debug("weight: $weight");
+        if ($w == 1 and $weight == 1) {
+          $start = $d;
+          $real_start = $r;
+        } elseif ($weight == 0 and count($this->resource_ids) > 1) {
+          debug("new partial state: $start -> $d");
+          # new state $start,$d,partial
+          $info = ucfirst($resource_base)." partially $value|Since: ".date("r", $real_start)."|Until: ".(($r)?date("r", $r):"indefinite");
+          $output .= '<rect x="'.date2px($start).'" y="'.$y.'" width="'.(date2px($d) - date2px($start)).'" height="'.($CONF['scale']/2).'" fill="'.$CONF['state_colors'][$value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+        } 
+        if ($w == 1 and $weight == count($this->resource_ids)) {
+          debug("new partial state before a full state: $start -> $d");
+          # new state $start,$d,partial
+          $info = ucfirst($resource_base)." partially $value|Since: ".date("r", $real_start)."|Until: ".(($r)?date("r", $r):"indefinite");
+          $output .= '<rect x="'.date2px($start).'" y="'.$y.'" width="'.(date2px($d) - date2px($start)).'" height="'.($CONF['scale']/2).'" fill="'.$CONF['state_colors'][$value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+          $start = $d;
+        }
+      }
+    }
+  }
+  function svg_drain($y) {
+    global $CONF, $output, $gantt_now, $gantt_width, $resource_base;
+    $drain = 0;
+    foreach (array_values($this->resource_ids) as $rid) {
+      if (array_key_exists($CONF['resource_drain_property'], $rid->properties) and ($rid->properties[$CONF['resource_drain_property']] == "YES")) {
+        $drain++;
+      }
+    }
+    if ($drain > 0) {
+      debug("drain: $drain");
+      if ($drain < count($this->resource_ids)) {
+        $info = ucfirst($resource_base)." partial draining: no new job accepted";
+        $height = $CONF['scale']/2;
+        debug($info);
+      } else {
+        $info = ucfirst($resource_base).((count($this->resource_ids) > 1)?" full":"")." draining: no new job accepted";
+        $height = $CONF['scale'];
+        debug($info);
+      }
+      $output .= '<rect x="'.date2px($gantt_now).'" y="'.$y.'" width="'.($gantt_width - date2px($gantt_now) + $CONF['gantt_left_align']).'" height="'.$height.'" fill="'.$CONF['state_colors']['Drain'].'" stroke-width="0" style="opacity: 0.5" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)"/>';
+    }
   }
   function svg_jobs($y) {
     global $CONF, $gantt_now, $output_labels, $patterns;
@@ -654,8 +682,6 @@ class Resource {
       }
     }
     return $output;
-  }
-  function svg_states($y) {
   }
   function label() {
     global $CONF;
@@ -803,6 +829,25 @@ $jobs = array();
 // query filter based on the resource filter
 $query_filter = $resource_filter?' AND '.stripslashes($resource_filter):'';
 
+// common function used both for past and current jobs and predicted jobs
+function parse_jobs_from_db($query) {
+  global $db, $jobs, $resource_ids;
+  $db->query($query);
+  while ($line = $db->fetch_array()) {
+    if (! array_key_exists($line['job_id'], $jobs)) {
+      $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['project'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
+    }
+    if (array_key_exists($line['resource_id'], $resource_ids)) {
+      $jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
+    } else {
+      // create new resource_id so than the job gets the right resource_id count, even if that resource_id is not displayed in the grid... (filter)
+      $jobs[$line['job_id']]->add_resource_id(new ResourceId($line['resource_id'], -1));
+    }
+    $jobs[$line['job_id']]->add_network_address($line['network_address']);
+    $jobs[$line['job_id']]->add_type($line['type']);
+  }
+  $db->free();
+}
 // Retrieve past and current jobs 
 $query = <<<EOT
 SELECT 
@@ -842,21 +887,8 @@ WHERE
 ORDER BY 
   jobs.job_id
 EOT;
-$db->query($query);
-while ($line = $db->fetch_array()) {
-  if (! array_key_exists($line['job_id'], $jobs)) {
-    $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['project'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
-  }
-  if (array_key_exists($line['resource_id'], $resource_ids)) {
-    $jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
-  } else {
-    // create new resource_id so than the job gets the right resource_id count, even if that resource_id is not diplayed in the grid... (filter)
-    $jobs[$line['job_id']]->add_resource_id(new ResourceId($line['resource_id'], -1));
-  }
-  $jobs[$line['job_id']]->add_network_address($line['network_address']);
-  $jobs[$line['job_id']]->add_type($line['type']);
-}
-$db->free();
+
+parse_jobs_from_db($query);
 
 // Retrieve predicted jobs (future)
 $query = <<<EOT
@@ -892,21 +924,8 @@ WHERE
 ORDER BY 
   jobs.job_id
 EOT;
-$db->query($query);
-while ($line = $db->fetch_array()) {
-  if (! array_key_exists($line['job_id'], $jobs)) {
-    $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['project'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
-  }
-  if (array_key_exists($line['resource_id'], $resource_ids)) {
-    $jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
-  } else {
-    // create new resource_id so than the job gets the right resource_id count, even if that resource_id is not displayed in the grid... (filter)
-    $jobs[$line['job_id']]->add_resource_id(new ResourceId($line['resource_id'], -1));
-  }  
-  $jobs[$line['job_id']]->add_network_address($line['network_address']);
-  $jobs[$line['job_id']]->add_type($line['type']);
-}
-$db->free();
+
+parse_jobs_from_db($query);
 
 // Split resource_ids for jobs in groups for gantt display: resources which belong to the job may not be continuous.
 foreach ($jobs as $job) {
@@ -920,25 +939,10 @@ $db->close();
 // SVG document generation
 ///////////////////////////////////////////////////////////////////////////////
 
-
-// helper function to filter one resourceid by resource base property
-// $last_resource_base_property_filtered_id must be reset to "" before every call
-function resource_base_property_filter($rid) {
-  global $last_resource_base_property_filtered_id;
-  global $CONF;
-  debug(join("",array_keys($rid->resources)));
-  if ($last_resource_base_property_filtered_id != $rid->resources[$CONF['resource_base_property']]->id) {
-    $last_resource_base_property_filtered_id = $rid->resources[$CONF['resource_base_property']]->id;
-    return true;
-  }
-  return false;
-}
-// compute a array of resourceids with only one rid by base property
-$last_resource_base_property_filtered_id = "";
-$resource_base_property_ids = array_filter($resource_ids,"resource_base_property_filter");
+$output = "";
+$gantt_height = $resource_root->svg_hierarchy($CONF['hierarchy_left_align'], $CONF['gantt_top']);
 
 // compute sizes
-$gantt_height = count($resource_base_property_ids) * $CONF['scale'];
 $page_height = max($CONF['gantt_min_height'], $CONF['gantt_top'] + $gantt_height + $CONF['bottom_margin']);
 $page_width = $CONF['gantt_left_align'] + $gantt_width + $CONF['right_margin'];
 
@@ -1067,7 +1071,7 @@ function mouseOver(evt, message, highlight) {
     length = Math.max(length, tspan.getComputedTextLength());
   }
   infoboxrect.setAttribute("width", length + 20);
-  infoboxrect.setAttribute("height", array.length * {$CONF['scale']} + 20);
+  infoboxrect.setAttribute("height", array.length * {$CONF['text_scale']} + 20);
 }
 function mouseOut(evt, highlight) {
   infobox.setAttribute("display", "none");
@@ -1103,6 +1107,7 @@ EOT;
 // begin diagram drawing
 $output = <<<EOT
 <rect x="{$CONF['gantt_left_align']}" y="{$CONF['gantt_top']}" width="{$gantt_width}" height="{$gantt_height}" stroke="#0000FF" stroke-width="1" fill="#FFFFFF" />';
+$output
 EOT;
 
 // compute the steps of the time rulers
@@ -1138,7 +1143,6 @@ while(($d += $ruler_step) < $gantt_stop_date) {
 //}
 
 // print resource hierarchy
-$resource_root->svg_hierarchy($CONF['hierarchy_left_align'], $CONF['gantt_top']);
 //$x = $CONF['hierarchy_left_align'];
 //foreach ($CONF['resource_hierarchy'] as $rh) {
 //  $r0 = NULL;
@@ -1159,30 +1163,30 @@ $resource_root->svg_hierarchy($CONF['hierarchy_left_align'], $CONF['gantt_top'])
 //}
 
 // print resource_id lines
-$y = $CONF['gantt_top'];
-foreach ($resource_base_property_ids as $rid) {
-  $output .= $rid->svg_lines($y);
-  $output .= $rid->svg_drain($y);
-  $y += $CONF['scale'];
-}
+//$y = $CONF['gantt_top'];
+//foreach ($resource_base_property_ids as $rid) {
+//  $output .= $rid->svg_lines($y);
+//  $output .= $rid->svg_drain($y);
+//  $y += $CONF['scale'];
+//}
 
 // print resource states
-$y = $CONF['gantt_top'];
-$last_resource_base_property_filtered_id = "";
-foreach ($resource_base_property_ids as $rid) {
-  $output .= $rid->resources[$CONF['resource_base_property']]->svg_states($y);
-  $y += $CONF['scale'];
-}
+//$y = $CONF['gantt_top'];
+//$last_resource_base_property_filtered_id = "";
+//foreach ($resource_base_property_ids as $rid) {
+//  $output .= $rid->resources[$CONF['resource_base_property']]->svg_states($y);
+//  $y += $CONF['scale'];
+//}
 
 // print jobs
-$y = $CONF['gantt_top'];
-foreach ($resource_base_property_ids as $rid) {
-  $output .= $rid->resources[$CONF['resource_base_property']]->svg_jobs($y);
-  $y += $CONF['scale'];
-}
+//$y = $CONF['gantt_top'];
+//foreach ($resource_base_property_ids as $rid) {
+//  $output .= $rid->resources[$CONF['resource_base_property']]->svg_jobs($y);
+//  $y += $CONF['scale'];
+//}
 
 // print labels
-$output .= $output_labels;
+//$output .= $output_labels;
 
 // print now line
 if ($gantt_now < $gantt_start_date or $gantt_now > $gantt_stop_date) {
