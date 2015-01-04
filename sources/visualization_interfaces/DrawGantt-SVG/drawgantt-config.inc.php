@@ -6,7 +6,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // Navigation bar configuration
-$CONF['nav_default_timespan'] = 6*3600;
+$CONF['nav_default_scale'] = 10; // vertical scale of the grid
+$CONF['nav_scales'] = array(
+  'small' => 10,
+  'big' => 20,
+  'huge' => 40,
+);
+
+$CONF['nav_default_timespan'] = 6*3600; // proposed timespan in the "set" bar
 $CONF['nav_timespans'] = array(
   '1 hour' => 3600,
   '6 hours' => 6*3600,
@@ -14,7 +21,7 @@ $CONF['nav_timespans'] = array(
   '1 week' => 7*24*3600,
 );
 
-$CONF['nav_filters'] = array(
+$CONF['nav_filters'] = array( // proposed filters in the "misc" bar
   'all clusters' => "",
   'cluster1 only' => 'cluster=\'cluster1\'',
   'cluster2 only' => 'cluster=\'cluster2\'',
@@ -27,12 +34,13 @@ $CONF['nav_resource_bases'] = array(
   'cpuset',
 );
 
-$CONF['nav_timezones'] = array(
+$CONF['nav_timezones'] = array( // proposed timezones in the "misc" bar
   'UTC' => "UTC",
   'Paris' => "Europe/Paris",
 );
-$CONF['nav_custom_buttons'] = array(
-  'my label' => 'http://my.url'
+
+$CONF['nav_custom_buttons'] = array( // custom buttons
+  'my label' => 'http://my.url'      // click opens the url in a new window
 );
 
 // Database access configuration
@@ -126,9 +134,7 @@ EOT;
 $CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
 $CONF['besteffort_pattern'] = <<<EOT
 <pattern id="%%PATTERN_ID%%" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
-<line x1="0" y1="0" x2="10" y2="10" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
-<line x1="-5" y1="5" x2="5" y2="15" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
-<line x1="5" y1="-5" x2="15" y2="5" stroke="%%PATTERN_COLOR%%" stroke-width="5"/>
+<polygon points="0,0 7,0 10,5 7,10 0,10 3,5" fill="%%PATTERN_COLOR%%" stroke-width="0"/>
 </pattern>'
 EOT;
 
@@ -154,6 +160,9 @@ EOT;
 //    }
 //}
 //Shuffle::init(new MyShuffle()); // this line must be uncommented for the overiding to take effect
+
+// Minimum timespan the gantt can handle
+$CONF['min_timespan']= 480; // gantt does not show if (stop date - start date) < 8 minutes
 
 // Debugging
 $CONF['debug'] = 0; // Set to 1 to enable php debug prints in the web server error logs
