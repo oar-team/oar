@@ -34,9 +34,9 @@ $CONF['nav_resource_bases'] = array(
   'cpuset',
 );
 
-$CONF['nav_timezones'] = array( // proposed timezones in the "misc" bar
-  'UTC' => "UTC",
-  'Paris' => "Europe/Paris",
+$CONF['nav_timezones'] = array( // proposed timezones in the "misc" bar (the first one will be selected by default)
+  'UTC',
+  'Europe/Paris',
 );
 
 $CONF['nav_custom_buttons'] = array( // custom buttons
@@ -52,6 +52,7 @@ $CONF['db_user']="oar_ro";
 $CONF['db_passwd']="oar_ro";
 
 // Data display configuration
+$CONF['timezone'] = "UTC";
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
 $CONF['resource_labels'] = array('network_address','cpuset'); // properties to describe resources (labels on the left). Must also be part of resource_hierarchy below 
 $CONF['cpuset_label_display_string'] = "%02d";
@@ -64,7 +65,8 @@ $CONF['label_cmp_regex'] = array( // substring selection regex for comparing and
 $CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
   'deploy', 'cpuset', 'besteffort', 'network_address', 'type', 'drain');
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
-  'network_address','cpuset'); 
+  'network_address','cpuset',
+  ); 
 $CONF['resource_base'] = "cpuset"; // ...
 $CONF['resource_drain_property'] = "drain"; // if set, must also be one of the resource_properties above to activate the functionnality
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
@@ -92,22 +94,31 @@ $CONF['gantt_left_align'] = 160; // default: 160
 $CONF['gantt_min_width'] = 900; // default: 900
 $CONF['gantt_min_height'] = 400; // default: 400
 $CONF['gantt_min_job_width_for_label'] = 0; // default: 0
+$CONF['min_state_duration'] = 2; // default: 2
 
 // Colors and fill patterns for jobs and states
 $CONF['job_color_saturation_lightness'] = "75%,75%"; // default: "75%,75%"
 $CONF['job_color_saturation_lightness_highlight'] = "50%,50%"; // default: "50%,50%"
 $CONF['static_patterns'] = <<<EOT
-<pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
-<line x1="5" y1="0" x2="0" y2="5" stroke="#000000" stroke-width="2" />
+<pattern id="absentPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
+<polygon points="0,0 3,0 0,3" fill="#0000ff" stroke="#0000ff" stroke-width="1" />
+<polygon points="7,0 10,0 10,3 3,10 0,10 0,7" fill="#0000ff" stroke="#0000ff" stroke-width="1" />
+<polygon points="10,7 10,10 7,10" fill="#0000ff" stroke="#0000ff" stroke-width="1" />
 </pattern> 
-<pattern id="suspectedPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
-<line x1="5" y1="0" x2="0" y2="5" stroke="#ff0000" stroke-width="2" />
+<pattern id="suspectedPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
+<polygon points="0,0 3,0 0,3" fill="#ff0000" stroke="#ff0000" stroke-width="1" />
+<polygon points="7,0 10,0 10,3 3,10 0,10 0,7" fill="#ff0000" stroke="#ff0000" stroke-width="1" />
+<polygon points="10,7 10,10 7,10" fill="#ff0000" stroke="#ff0000" stroke-width="1" />
 </pattern> 
-<pattern id="deadPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
-<line x1="5" y1="0" x2="0" y2="5" stroke="#ff8080" stroke-width="2" />
+<pattern id="deadPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
+<polygon points="0,0 3,0 0,3" fill="#404040" stroke="#404040" stroke-width="1" />
+<polygon points="7,0 10,0 10,3 3,10 0,10 0,7" fill="#404040" stroke="#404040" stroke-width="1" />
+<polygon points="10,7 10,10 7,10" fill="#404040" stroke="#404040" stroke-width="1" />
 </pattern> 
-<pattern id="standbyPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="5" height="5" viewBox="0 0 5 5" >
-<line x1="5" y1="0" x2="0" y2="5" stroke="#00ff00" stroke-width="2" />
+<pattern id="standbyPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
+<polygon points="0,0 3,0 0,3" fill="#88ffff" stroke="#88ffff" stroke-width="1" />
+<polygon points="7,0 10,0 10,3 3,10 0,10 0,7" fill="#88ffff" stroke="#88ffff" stroke-width="1" />
+<polygon points="10,7 10,10 7,10" fill="#88ffff" stroke="#88ffff" stroke-width="1" />
 </pattern> 
 <pattern id="drainPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="15" height="10" viewBox="0 0 10 10" >
 <circle cx="5" cy="5" r="4" fill="#ff0000" stroke="#ff0000" stroke-width="1" />

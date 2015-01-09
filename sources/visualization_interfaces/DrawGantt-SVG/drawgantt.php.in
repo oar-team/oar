@@ -8,15 +8,14 @@
 $CONF=array();
 
 // Navigation bar configuration
-
-$CONF['nav_default_scale'] = 10;
+$CONF['nav_default_scale'] = 10; // vertical scale of the grid
 $CONF['nav_scales'] = array(
   'small' => 10,
   'big' => 20,
   'huge' => 40,
 );
 
-$CONF['nav_default_timespan'] = 6*3600;
+$CONF['nav_default_timespan'] = 6*3600; // proposed timespan in the "set" bar
 $CONF['nav_timespans'] = array(
   '1 hour' => 3600,
   '6 hours' => 6*3600,
@@ -24,25 +23,26 @@ $CONF['nav_timespans'] = array(
   '1 week' => 7*24*3600,
 );
 
-$CONF['nav_filters'] = array(
+$CONF['nav_filters'] = array( // proposed filters in the "misc" bar
   'all clusters' => "",
   'cluster1 only' => 'cluster=\'cluster1\'',
   'cluster2 only' => 'cluster=\'cluster2\'',
   'cluster3 only' => 'cluster=\'cluster3\'',
 );
 
-$CONF['nav_default_resource_base'] = 'host';
+$CONF['nav_default_resource_base'] = 'cpuset';
 $CONF['nav_resource_bases'] = array(
   'network_address',
   'cpuset',
 );
 
-$CONF['nav_timezones'] = array(
-  'UTC' => "UTC",
-  'Paris' => "Europe/Paris",
+$CONF['nav_timezones'] = array( // proposed timezones in the "misc" bar (the first one will be selected by default)
+  'UTC',
+  'Europe/Paris',
 );
-$CONF['nav_custom_buttons'] = array(
-  'my label' => 'http://my.url'
+
+$CONF['nav_custom_buttons'] = array( // custom buttons
+  'my label' => 'http://my.url'      // click opens the url in a new window
 );
 
 // Overwrite configuration with values from drawgantt-config.inc.php
@@ -54,7 +54,7 @@ if (is_readable(CONFIG_FILE)) {
 
 $resource_base = array_key_exists('resource_base',$_GET)?$_GET['resource_base']:$CONF['nav_default_resource_base'];
 $filter = array_key_exists('filter',$_GET)?$_GET['filter']:key($CONF['nav_filters']);
-$timezone = array_key_exists('timezone',$_GET)?$_GET['timezone']:key($CONF['nav_timezones']);
+$timezone = array_key_exists('timezone',$_GET)?$_GET['timezone']:reset($CONF['nav_timezones']);
 $start = array_key_exists('start',$_GET)?$_GET['start']:"";
 $stop = array_key_exists('stop',$_GET)?$_GET['stop']:"";
 $timespan = array_key_exists('timespan',$_GET)?$_GET['timespan']:$CONF['nav_default_timespan'];
@@ -82,6 +82,7 @@ $output = <<<EOT
   }
   #svgObj {
     position: absolute;
+    width: 100%;
     top: 0px;
     left: 0px;
     z-index: 0;
@@ -90,9 +91,13 @@ $output = <<<EOT
   #waiter {
     position: absolute;
     background-color: lightgreen;
-    bottom: 10px;
     visibility: hidden;
-    z-index: 2;  
+    z-index: 2;
+    bottom: 40px;
+    left: 35%;
+    right: 35%;
+    text-align: center;
+    border-radius: 20px;
   }
   #timepicker {
     position: absolute;
@@ -137,7 +142,6 @@ $output = <<<EOT
   var filter = "$filter";
   var filterSQL = "";
   var timezone = "$timezone";
-  var timezoneSQL = "";
   var baseResource = "$resource_base";
   var scale = "$scale";
   var scrolledX=0;
@@ -240,7 +244,7 @@ $output = <<<EOT
     scrolledY = window.scrollY;
     show_panel();
     var svgObj=document.getElementById("svgObj");
-    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezoneSQL)?"&timezone=" + timezoneSQL:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
+    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
     svgObj.data = newURL;
     svgObj.innerHTML = newURL;
     document.getElementById("waiter").style.visibility="visible";
@@ -256,8 +260,7 @@ $output = <<<EOT
     }
     var timezoneSelect = document.getElementById("timezoneSelect");
     if (timezoneSelect) {
-      timezone = timezoneSelect.children[timezoneSelect.selectedIndex].innerHTML;
-      timezoneSQL = timezoneSelect.value;
+      timezone = timezoneSelect.value;
     }
     var filterSelect = document.getElementById("filterSelect");
     if (filterSelect) {
@@ -328,7 +331,7 @@ foreach ($CONF['nav_custom_buttons'] as $key => $value) {
 $output .= <<<EOT
 </div>
 <object id="svgObj" type="image/svg+xml" data="" onload="restore_scrolling()"></object>
-<div id="waiter">Processing data... please wait...</div>
+<div id="waiter">PROCESSING DATA, PLEASE WAIT...</div>
 <div id="timepicker" align="center">
 reference time:<input id="datetime" type="datetime"/><button type="button" onclick="set_now()">now</button>
 timespan:<select id="timespan"/>
@@ -383,8 +386,8 @@ EOT;
     $output .= <<<EOT
 timezone:<select id="timezoneSelect">
 EOT;
-    foreach ($CONF['nav_timezones'] as $key => $value) {
-      $output .= "<option " . (($key == $timezone)?"selected ":"") . "value=\"$value\">$key</option>\n";
+    foreach ($CONF['nav_timezones'] as $tz) {
+      $output .= "<option " . (($tz == $timezone)?"selected ":"") . "value=\"$tz\">$tz</option>\n";
     }
     $output .= <<<EOT
 </select>
