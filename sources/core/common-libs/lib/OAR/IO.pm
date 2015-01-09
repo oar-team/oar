@@ -6432,7 +6432,7 @@ sub get_gantt_visu_date($){
 sub get_waiting_reservations_already_scheduled($){
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_job_id, gantt_jobs_predictions.start_time, gantt_jobs_resources.resource_id, moldable_job_descriptions.moldable_walltime
+    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_job_id, gantt_jobs_predictions.start_time, gantt_jobs_resources.resource_id, moldable_job_descriptions.moldable_walltime, moldable_job_descriptions.moldable_id
                                 FROM jobs, moldable_job_descriptions, gantt_jobs_predictions, gantt_jobs_resources
                                 WHERE
                                     (jobs.state = \'Waiting\'
@@ -6448,6 +6448,7 @@ sub get_waiting_reservations_already_scheduled($){
         push(@{$res->{$ref[0]}->{resources}}, $ref[2]);
         $res->{$ref[0]}->{start_time} = $ref[1];
         $res->{$ref[0]}->{walltime} = $ref[3];
+        $res->{$ref[0]}->{moldable_id} = $ref[4];
     }
     $sth->finish();
     return($res);
@@ -6475,9 +6476,12 @@ sub gantt_flush_tables($$$){
     }
 
     my $sql = "\'1\'";
-    my @jobs_to_keep = keys(%{$reservations_to_keep});
-    if ($#jobs_to_keep >= 0){
-        $sql = "moldable_job_id NOT IN (".join(',',@jobs_to_keep).")";
+    my @moldable_jobs_to_keep;
+    foreach my $i (keys(%{$reservations_to_keep})){
+        push(@moldable_jobs_to_keep, $reservations_to_keep->{$i}->{moldable_id});
+    }
+    if ($#moldable_jobs_to_keep >= 0){
+        $sql = "moldable_job_id NOT IN (".join(',',@moldable_jobs_to_keep).")";
         $dbh->do("  DELETE FROM gantt_jobs_predictions
                     WHERE
                         $sql

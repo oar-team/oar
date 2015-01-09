@@ -159,6 +159,7 @@ foreach my $i (keys(%{$reservation_already_there})){
     my $timesharing_name = "";
     my $vec = '';
     my $types = OAR::IO::get_job_types_hash($base,$i);
+    my $job_there = OAR::IO::get_job($base,$i);
     foreach my $r (@{$reservation_already_there->{$i}->{resources}}){
         vec($vec, $r, 1) = 1;
     }
@@ -179,7 +180,7 @@ foreach my $i (keys(%{$reservation_already_there})){
             OAR::Schedulers::GanttHoleStorage::new_with_1_hole($Max_resources, $Minimum_hole_time, $reservation_already_there->{$i}->{start_time}, $reservation_already_there->{$i}->{walltime} + $Security_time_overhead , $vec, $All_resource_list_vec);
     } else {
         ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
-            OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $reservation_already_there->{$i}->{job_user}, $reservation_already_there->{$i}->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
+            OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $job_there->{job_user}, $job_there->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
     }
 
     #Fill all other gantts
@@ -262,6 +263,8 @@ oar_debug("[MetaSched] End processing of current jobs\n");
 oar_debug("[MetaSched] Begin processing of waiting reservations (accepted reservations which do not have assigned resources yet)\n");
 my @Rjobs = OAR::IO::get_waiting_reservation_jobs($base);
 foreach my $job (@Rjobs){
+    next if (defined($reservation_already_there->{$job->{job_id}}));
+
     my $container_id = 0;
     my $inner_id = 0;
     my $set_placeholder_name = "";
@@ -274,7 +277,6 @@ foreach my $job (@Rjobs){
     my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
     # For reservation we take the first moldable job
     my $moldable = $job_descriptions->[0];
-    next if (defined($reservation_already_there->{$moldable->[2]}));
 
     # Get the list of resources where the reservation will be able to be launched
     my ($available_resources_vector, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
@@ -335,6 +337,7 @@ foreach my $job (@Rjobs){
         }
         my $tmp_tree;
         $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, "".$Order_part);
+        $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
         $tmp_tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tmp_tree);
         push(@tree_list, $tmp_tree);
         my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
@@ -581,6 +584,7 @@ sub check_reservation_jobs($$){
                         $tmp_properties = $m->{property};
                     }
                     my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+                    $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
                     push(@tree_list, $tmp_tree);
                 }
                 my @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name},$job->{start_time}, $duration + $Security_time_overhead, \@tree_list, 30);
