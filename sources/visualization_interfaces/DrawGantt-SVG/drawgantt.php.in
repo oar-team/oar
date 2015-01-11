@@ -79,23 +79,20 @@ $output = <<<EOT
     width: 100%;
     z-index: 1;
     opacity: 1;
+    visibility: hidden;
   }
   #svgObj {
     position: absolute;
-    width: 100%;
     top: 0px;
     left: 0px;
     z-index: 0;
     margin: 0px;
   }
   #waiter {
-    position: absolute;
     background-color: lightgreen;
     visibility: hidden;
     z-index: 2;
-    bottom: 40px;
-    left: 35%;
-    right: 35%;
+    top: 0px;
     text-align: center;
     border-radius: 20px;
   }
@@ -245,9 +242,10 @@ $output = <<<EOT
     show_panel();
     var svgObj=document.getElementById("svgObj");
     var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
+    document.getElementById("panel").style.visibility="hidden";
+    document.getElementById("waiter").style.visibility="visible";
     svgObj.data = newURL;
     svgObj.innerHTML = newURL;
-    document.getElementById("waiter").style.visibility="visible";
   }
   function set_misc(reload) {
     var scaleSelect = document.getElementById("scaleSelect");
@@ -277,6 +275,7 @@ $output = <<<EOT
   function restore_scrolling() {
     window.scrollTo(scrolledX,scrolledY);
     document.getElementById("waiter").style.visibility="hidden";
+    document.getElementById("panel").style.visibility="visible";
   }
   function init() {
     show_panel();

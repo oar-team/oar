@@ -1153,7 +1153,7 @@ function mouseMove(evt) {
   } else {
     x = ({$page_width} - width);
   }
-  if ((evt.pageY + 20 + height) < Math.min({$page_height}, window.scrollY + window.innerHeight)) {
+  if ((evt.pageY + 20 + height) < Math.min({$page_height}, parent_content.scrollY + parent_content.innerHeight)) {
     y = (evt.pageY + 20);
   } else {
     y = (evt.pageY - height - 5 );
