@@ -234,16 +234,17 @@ class Db {
   }
 
   function query($query) {
-    debug(3, "query: " . $query);
-    debug(2, "start of " . $this->backend . " query at: " . ($t0 = microtime(true))); 
+    debug(3, $this->backend . " query: " . $query);
+    $t0 = microtime(true); 
     if ($this->backend == "mysql") {
       $this->result = mysql_query($query, $this->handler) or die('Query failed: ' . mysql_error());
+      debug(2, "-> " . mysql_num_rows($this->result) . " lines (" . (microtime(true) - $t0) . "s)"); 
     } elseif ($this->backend == "pg") {
       $this->result = pg_query($this->handler, $query) or die('Query failed');
+      debug(2, "-> " . pg_num_rows($this->result) . " lines (" . (microtime(true) - $t0) . "s)"); 
     } else {
-      die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+      die ("Unknown database backend: " . $this-> backend . " (must be 'mysql' or 'pg'");
     }
-    debug(2, "end of " . $this->backend . " query at: " . ($t1 = microtime(true)) . " (" . ($t1 - $t0) . "s)"); 
   }
 
   function fetch_array() {
@@ -252,7 +253,7 @@ class Db {
     } elseif ($this->backend == "pg") {
       return pg_fetch_array($this->result, NULL, PGSQL_ASSOC);
     } else {
-      die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+      die ("Unknown database backend: " . $this->backend . " (must be 'mysql' or 'pg'");
     }
   }
 
@@ -262,7 +263,7 @@ class Db {
     } elseif ($this->backend == "pg") {
       return pg_free_result($this->result);
     } else {
-      die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+      die ("Unknown database backend: " . $this->backend . " (must be 'mysql' or 'pg'");
     }
   }
 
@@ -272,7 +273,7 @@ class Db {
     } elseif ($this->backend == "pg") {
       return pg_close($this->handler);
     } else {
-      die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+      die ("Unknown database backend: " . $this->backend . " (must be 'mysql' or 'pg'");
     }
   }
 
@@ -284,7 +285,7 @@ class Db {
       $this->query('SELECT EXTRACT(EPOCH FROM current_timestamp)');
       $array = pg_fetch_array($this->result, NULL, PGSQL_NUM);
     } else {
-      die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+      die ("Unknown database backend: " . $this->backend . " (must be 'mysql' or 'pg'");
     }
     $this->free();
     return (int)$array[0];
@@ -295,7 +296,7 @@ class Db {
     } elseif ($this->backend == "pg") {
       return $var."::".$type;
     } else {
-      die ("Unknown database backend: $backend (must be 'mysql' or 'pg'");
+      die ("Unknown database backend: " . $this->backend . " (must be 'mysql' or 'pg'");
     }
   }
 }
@@ -876,11 +877,16 @@ $query_filter = $resource_filter?' AND '.stripslashes($resource_filter):'';
 // common function used both for past and current jobs and predicted jobs
 function parse_jobs_from_db($query) {
   global $db, $jobs, $resource_ids;
+  $t0 = microtime(true); 
+  $l = 0;
+  $j = 0;
+  debug(2,"start parsing jobs");
   $db->query($query);
   while ($line = $db->fetch_array()) {
     if (! array_key_exists($line['job_id'], $jobs)) {
       debug(3, "got new job: ".$line['job_id']);
       $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['project'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
+      $j++;
     } else {
       debug(4, "got an additional line for job: ".$line['job_id']);
     }
@@ -888,13 +894,18 @@ function parse_jobs_from_db($query) {
       $jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
     } else {
       // create new resource_id so than the job gets the right resource_id count, even if that resource_id is not displayed in the grid... (filter)
-      debug(1, "create a phantom resource: " . $line['resource_id'] . " ,for job:" . $line['job_id']);
+      debug(2, "create a phantom resource: " . $line['resource_id'] . " ,for job:" . $line['job_id']);
       $jobs[$line['job_id']]->add_resource_id(new ResourceId($line['resource_id'], -1));
     }
     $jobs[$line['job_id']]->add_network_address($line['network_address']);
     $jobs[$line['job_id']]->add_type($line['type']);
+    $l++;
+    if (($l % 1000) == 0) {
+      debug(2, "$l lines parsed, got $j jobs, in " . (microtime(true) - $t0) . "s");
+    }
   }
   $db->free();
+  debug(2,"end parsing, got $j jobs, in "  . (microtime(true) - $t0) . "s");
 }
 // Retrieve past and current jobs 
 $query = <<<EOT
@@ -989,9 +1000,12 @@ $gantt_height = $resource_root->svg_hierarchy($CONF['hierarchy_left_align'], $CO
 debug(1, "has aggreagated resources: ".($has_aggregated_resources?"yes":"no"));
 
 // Split resources of jobs in continuous groups
+$t0=microtime(true);
+debug(1, "start grouping resources of jobs");
 foreach ($jobs as $job) {
   $job->group_resources($sorted_resources);
 }
+debug(1, "done in " . (microtime(true) - $t0) . "s");
 
 $y = $CONF['gantt_top'];
 foreach ($sorted_resources as $r) {
