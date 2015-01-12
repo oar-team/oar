@@ -67,7 +67,8 @@ $CONF['resource_properties'] = array( // properties to display in the pop-up on 
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
   'network_address','cpuset',
   ); 
-$CONF['resource_base'] = "cpuset"; // ...
+$CONF['resource_base'] = "cpuset"; // base resource of the hierarchy/grid
+$CONF['resource_group_level'] = "network_address"; // level of resources to separate with blue lines in the grid
 $CONF['resource_drain_property'] = "drain"; // if set, must also be one of the resource_properties above to activate the functionnality
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)', 'Drain' => 'url(#drainPattern)');
@@ -176,6 +177,6 @@ EOT;
 $CONF['min_timespan']= 480; // gantt does not show if (stop date - start date) < 8 minutes
 
 // Debugging
-$CONF['debug'] = 0; // Set to 1 to enable php debug prints in the web server error logs
+$CONF['debug'] = 0; // Set to > 0 to enable debug prints in the web server error logs
 
 ?>
