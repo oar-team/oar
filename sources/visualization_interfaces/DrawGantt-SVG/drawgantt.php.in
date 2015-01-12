@@ -401,3 +401,4 @@ $output .= <<<EOT
 </html>
 EOT;
 print $output;
+?>
