@@ -43,6 +43,8 @@ $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
   'timesharing=(\*|user),(\*|name)' => 'url(#timesharingPattern)', 
   'set_placeholder=\w+' => 'url(#placeholderPattern)',
   );
+$CONF['job_click_url'] = ''; // set a URL to open when a job is double-clicked, %%JOBID%% is to be replaced by the jobid in the URL
+$CONF['resource_click_url'] = ''; // set a URL to open when a resource is double-clicked, %%TYPE%% is to be replaced by the resource type and %%ID%% by the resource id in the URL
 
 // Geometry customization
 $CONF['hierarchy_resource_width'] = 10; // default: 10
@@ -533,7 +535,7 @@ class Resource {
       foreach ($this->children as $child) {
         $h += $child->svg_hierarchy($x+$CONF['hierarchy_resource_width'], $y+$h, $labels);
       }
-      $output .= '<rect x="'.$x.'" y="'.$y.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.$h.'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$this->get_hierarchy_info().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+      $output .= '<rect x="'.$x.'" y="'.$y.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.$h.'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$this->get_hierarchy_info().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" onclick="resourceclick(evt,\''.$this->type.'\',\''.$this->id.'\')"/>';
     } else {
       if (count($this->resource_ids) > 1) {
         $has_aggregated_resources = true;
@@ -549,10 +551,10 @@ class Resource {
       if(in_array("cpuset", $CONF['resource_labels']) and ! in_array("cpuset", $CONF['resource_hierarchy']) and ! $has_aggregated_resources) {
         array_push($labels, sprintf($CONF['cpuset_label_display_string'],reset($this->cpusets())));
       }   
-      $output .= '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $scale/2).'" text-anchor="end" dominant-baseline="central" onmouseover="mouseOver(evt, \''.htmlspecialchars(join("|", $popup)).'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)">';
+      $output .= '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $scale/2).'" text-anchor="end" dominant-baseline="central" onmouseover="mouseOver(evt, \''.htmlspecialchars(join("|", $popup)).'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" onclick="resourceclick(evt,\''.$this->type.'\',\''.$this->id.'\')">';
       $output .= join("/", $labels);
       $output .= '</text>';
-      $output .= '<rect x="'.$x.'" y="'.$y.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.$scale.'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$this->get_hierarchy_info().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+      $output .= '<rect x="'.$x.'" y="'.$y.'" width="'.$CONF['hierarchy_resource_width'].'" height="'.$scale.'" fill="#ffff80" stroke="#000000" stroke-width="1" style="opacity: 1" onmouseover="mouseOver(evt, \''.$this->get_hierarchy_info().'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" onclick="resourceclick(evt,\''.$this->type.'\',\''.$this->id.'\')"/>';
       if ($first_resource_base == true) {
         $first_resource_base = false;
         $output .= '<line x1="'.$gantt_left_align.'" y1="'.$y.'" x2="'.($gantt_left_align + $gantt_width).'" y2="'.$y.'" stroke="#0000FF" stroke-width="1" />';
@@ -586,7 +588,7 @@ class Resource {
           # new state $start,$w,full
           $info = ucfirst($resource_base)." $value|Since: ".date("r", $real_start)."|Until: ".(($r)?date("r", $r):"indefinite");
           $height = $scale;
-          $output .= '<rect x="'.date2px($start).'" y="'.$y.'" width="'.(date2px($d) - date2px($start)).'" height="'.$height.'" fill="'.$CONF['state_colors'][$value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+          $output .= '<rect x="'.date2px($start).'" y="'.$y.'" width="'.(date2px($d) - date2px($start)).'" height="'.$height.'" fill="'.$CONF['state_colors'][$value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" onclick="resourceclick(evt,\''.$this->type.'\',\''.$this->id.'\')"/>';
           $start = $d;
         }
         $weight += $w;
@@ -599,14 +601,14 @@ class Resource {
           # new state $start,$d,partial
           $info = ucfirst($resource_base)." partially $value|Since: ".date("r", $real_start)."|Until: ".(($r)?date("r", $r):"indefinite");
           $height = $scale/2;
-          $output .= '<rect x="'.date2px($start).'" y="'.$y.'" width="'.(date2px($d) - date2px($start)).'" height="'.$height.'" fill="'.$CONF['state_colors'][$value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+          $output .= '<rect x="'.date2px($start).'" y="'.$y.'" width="'.(date2px($d) - date2px($start)).'" height="'.$height.'" fill="'.$CONF['state_colors'][$value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" onclick="resourceclick(evt,\''.$this->type.'\',\''.$this->id.'\')"/>';
         } 
         if ($w == 1 and $weight == count($this->resource_ids) and ($d - $start) > $CONF['min_state_duration']) {
           debug(3, "new partial state before a full state: $start -> $d");
           # new state $start,$d,partial
           $info = ucfirst($resource_base)." partially $value|Since: ".date("r", $real_start)."|Until: ".(($r)?date("r", $r):"indefinite");
           $height = $scale/2;
-          $output .= '<rect x="'.date2px($start).'" y="'.$y.'" width="'.(date2px($d) - date2px($start)).'" height="'.$height.'" fill="'.$CONF['state_colors'][$value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" />';
+          $output .= '<rect x="'.date2px($start).'" y="'.$y.'" width="'.(date2px($d) - date2px($start)).'" height="'.$height.'" fill="'.$CONF['state_colors'][$value].'" stroke-width="0" style="opacity: 0.75" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" onclick="resourceclick(evt,\''.$this->type.'\',\''.$this->id.'\')"/>';
           $start = $d;
         }
       }
@@ -630,7 +632,7 @@ class Resource {
         $height = $scale;
         debug(4, $info);
       }
-      $output .= '<rect x="'.date2px($gantt_now).'" y="'.$y.'" width="'.($gantt_width - date2px($gantt_now) + $gantt_left_align).'" height="'.$height.'" fill="'.$CONF['state_colors']['Drain'].'" stroke-width="0" style="opacity: 0.5" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)"/>';
+      $output .= '<rect x="'.date2px($gantt_now).'" y="'.$y.'" width="'.($gantt_width - date2px($gantt_now) + $gantt_left_align).'" height="'.$height.'" fill="'.$CONF['state_colors']['Drain'].'" stroke-width="0" style="opacity: 0.5" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" onclick="resourceclick(evt,\''.$this->type.'\',\''.$this->id.'\')"/>';
     }
   }
   function svg_jobs($y) {
@@ -657,7 +659,7 @@ class Resource {
             $output .= '<rect x="'.date2px($job->start_time).'" y="'.$y.'" width="'.$w.'" height="'.$scale.'" fill="'.$color.'" stroke-width="0"  style="opacity: 0.5" />';
           }
         }    
-        $output .= '<rect class="job'.$job->job_id.'" x="'.date2px($job->start_time).'" y="'.$yy.'" width="'.$w.'" height="'.$h.'" fill="'.$job->color(false).'" stroke-width="0"  style="opacity: 0.3" onmouseover="mouseOver(evt,\''.$job->svg_text().'\', \'job'.$job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+        $output .= '<rect class="job'.$job->job_id.'" x="'.date2px($job->start_time).'" y="'.$yy.'" width="'.$w.'" height="'.$h.'" fill="'.$job->color(false).'" stroke-width="0"  style="opacity: 0.3" onmouseover="mouseOver(evt,\''.$job->svg_text().'\', \'job'.$job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$job->job_id.'\')" onclick="jobclick(evt, \''.$job->job_id.'\')" onmousemove="mouseMove(evt)" />';
         if (in_array('besteffort', $job->types) and ($job->state == "Running") and ! $CONF['besteffort_truncate_job_to_now']) { 
           foreach ($CONF['job_colors'] as $type => $color) {
             if (preg_grep("/^{$type}$/", $job->types)) {
@@ -672,7 +674,7 @@ class Resource {
             $p = preg_replace("/%%PATTERN_COLOR%%/", $job->color(true), $p);
             $patterns[$job->job_id] .= $p;
           }
-          $output .= '<rect class="job'.$job->job_id.'" x="'.date2px($gantt_now).'" y="'.$yy.'" width="'.(date2px($job->start_time + $job->moldable_walltime) - date2px($gantt_now)).'" height="'.$h.'" fill="'."url(#besteffort{$job->job_id}Pattern)".'" stroke-width="0"  style="opacity: 0.3" onmouseover="mouseOver(evt,\''.$job->svg_text().'\', \'job'.$job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+          $output .= '<rect class="job'.$job->job_id.'" x="'.date2px($gantt_now).'" y="'.$yy.'" width="'.(date2px($job->start_time + $job->moldable_walltime) - date2px($gantt_now)).'" height="'.$h.'" fill="'."url(#besteffort{$job->job_id}Pattern)".'" stroke-width="0"  style="opacity: 0.3" onmouseover="mouseOver(evt,\''.$job->svg_text().'\', \'job'.$job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$job->job_id.'\')" onclick="jobclick(evt, \''.$job->job_id.'\')" onmousemove="mouseMove(evt)" />';
         }
       }
     }
@@ -685,7 +687,7 @@ class Resource {
         $w = date2px($grp->job->start_time + $grp->job->moldable_walltime) - date2px($grp->job->start_time);
       }
       if ($has_aggregated_resources) { // we only have to display the base rectangle using the job group
-        $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$w.'" height="'.($grp->size() * $scale).'" fill="'.$grp->job->color(false).'" stroke="#000088" stroke-width="1"  style="opacity: 0.2" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+        $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$w.'" height="'.($grp->size() * $scale).'" fill="'.$grp->job->color(false).'" stroke="#000088" stroke-width="1"  style="opacity: 0.3" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onclick="jobclick(evt, \''.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
       } else { // we do everything using the job group
         foreach ($CONF['job_colors'] as $type => $color) {
           if (preg_grep("/^{$type}$/", $grp->job->types)) {
@@ -701,16 +703,16 @@ class Resource {
             $p = preg_replace("/%%PATTERN_COLOR%%/", $grp->job->color(true), $p);
             $patterns[$grp->job->job_id] .= $p;
           }
-          $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($gantt_now).'" y="'.$y.'" width="'.(date2px($grp->job->start_time + $grp->job->moldable_walltime) - date2px($gantt_now)).'" height="'.($grp->size() * $scale).'" fill="'."url(#besteffort{$grp->job->job_id}Pattern)".'" stroke-width="0"  style="opacity: 0.3" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+          $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($gantt_now).'" y="'.$y.'" width="'.(date2px($grp->job->start_time + $grp->job->moldable_walltime) - date2px($gantt_now)).'" height="'.($grp->size() * $scale).'" fill="'."url(#besteffort{$grp->job->job_id}Pattern)".'" stroke-width="0"  style="opacity: 0.3" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onclick="jobclick(evt, \''.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
           $ww = date2px($gantt_now) - date2px($grp->job->start_time);
         } else {
           $ww = $w;
         }
-        $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$ww.'" height="'.($grp->size() * $scale).'" fill="'.$grp->job->color(false).'" stroke-width="0"  style="opacity: 0.3" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
-        $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$w.'" height="'.($grp->size() * $scale).'" fill="'.$grp->job->color(false).'" stroke="#000088" stroke-width="1"  style="opacity: 0.2" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+        $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$ww.'" height="'.($grp->size() * $scale).'" fill="'.$grp->job->color(false).'" stroke-width="0"  style="opacity: 0.3" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onclick="jobclick(evt, \''.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
+        $output .= '<rect class="job'.$grp->job->job_id.'" x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$w.'" height="'.($grp->size() * $scale).'" fill="'.$grp->job->color(false).'" stroke="#000088" stroke-width="1"  style="opacity: 0.3" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onclick="jobclick(evt, \''.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)" />';
       }
       if ($w > $CONF['gantt_min_job_width_for_label']) {
-        $output_labels .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $w / 2).'" y="'.($y + $grp->size() * $scale / 2).'" text-anchor="middle" dominant-baseline="central" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)">';
+        $output_labels .= '<text font-size="10" x="'.(date2px($grp->job->start_time) + $w / 2).'" y="'.($y + $grp->size() * $scale / 2).'" text-anchor="middle" dominant-baseline="central" onmouseover="mouseOver(evt,\''.$grp->job->svg_text().'\', \'job'.$grp->job->job_id.'\')" onmouseout="mouseOut(evt, \'job'.$grp->job->job_id.'\')" onclick="jobclick(evt, \''.$grp->job->job_id.'\')" onmousemove="mouseMove(evt)">';
         $output_labels .= $grp->job->job_id;
         $output_labels .= '</text>';
       }
@@ -1137,6 +1139,18 @@ function drawTimeRuler(evt) {
     timeruler.setAttribute("display", "inline");
   } else {
     timeruler.setAttribute("display", "none");
+  }
+}
+function resourceclick(evt, type, id) {
+  var url = '{$CONF['resource_click_url']}';
+  if (url != '' && evt.detail > 1) {
+    window.open(url.replace('%%TYPE%%', type).replace('%%ID%%', id));
+  }
+}
+function jobclick(evt, jobid) {
+  var url = '{$CONF['job_click_url']}';
+  if (url != '' && evt.detail > 1) {
+    window.open(url.replace('%%JOBID%%', jobid));
   }
 }
 function mouseOver(evt, message, highlight) {
