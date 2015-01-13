@@ -13,6 +13,7 @@ $CONF['db_port']="5432"; // usually 3306 for Mysql or 5432 for PostgreSQL
 $CONF['db_name']="oar"; // OAR read only user account 
 $CONF['db_user']="oar_ro";
 $CONF['db_passwd']="oar_ro";
+$CONF['db_max_job_rows']=20000; // max number of job rows retrieved from database, which can be handled.
 
 // Data display configuration
 $CONF['timezone'] = "UTC";
@@ -238,13 +239,14 @@ class Db {
     $t0 = microtime(true); 
     if ($this->backend == "mysql") {
       $this->result = mysql_query($query, $this->handler) or die('Query failed: ' . mysql_error());
-      debug(2, "-> " . mysql_num_rows($this->result) . " lines (" . (microtime(true) - $t0) . "s)"); 
+      $this->num_rows = mysql_num_rows($this->result);
     } elseif ($this->backend == "pg") {
       $this->result = pg_query($this->handler, $query) or die('Query failed');
-      debug(2, "-> " . pg_num_rows($this->result) . " lines (" . (microtime(true) - $t0) . "s)"); 
+      $this->num_rows = pg_num_rows($this->result);
     } else {
       die ("Unknown database backend: " . $this-> backend . " (must be 'mysql' or 'pg'");
     }
+    debug(2, "-> " . $this->num_rows . " rows (" . (microtime(true) - $t0) . "s)"); 
   }
 
   function fetch_array() {
@@ -765,6 +767,8 @@ class Resource {
 // Main program
 ///////////////////////////////////////////////////////////////////////////////
 
+debug(1, "starting drawgantt-svg");
+$T0 = microtime(true);
 // Connecting database
 $db = new Db($CONF['db_type'], $CONF['db_server'], $CONF['db_port'], $CONF['db_name'], $CONF['db_user'], $CONF['db_passwd']);
 
@@ -876,12 +880,21 @@ $query_filter = $resource_filter?' AND '.stripslashes($resource_filter):'';
 
 // common function used both for past and current jobs and predicted jobs
 function parse_jobs_from_db($query) {
-  global $db, $jobs, $resource_ids;
+  global $CONF, $db, $jobs, $resource_ids, $aborted;
   $t0 = microtime(true); 
   $l = 0;
   $j = 0;
-  debug(2,"start parsing jobs");
+  if ($aborted) {
+    debug (1, "already aborted");
+    return;
+  }
+  debug(2,"start parsing jobs from " . $db->num_rows . " rows of data");
   $db->query($query);
+  if ($db->num_rows > $CONF['db_max_job_rows']) {
+    debug (1, "too many data ( > " . $CONF['db_max_job_rows'] . " rows), aborting");
+    $aborted = true;
+    return;
+  }
   while ($line = $db->fetch_array()) {
     if (! array_key_exists($line['job_id'], $jobs)) {
       debug(3, "got new job: ".$line['job_id']);
@@ -901,13 +914,14 @@ function parse_jobs_from_db($query) {
     $jobs[$line['job_id']]->add_type($line['type']);
     $l++;
     if (($l % 1000) == 0) {
-      debug(2, "$l lines parsed, got $j jobs, in " . (microtime(true) - $t0) . "s");
+      debug(2, "$l rows parsed, got $j jobs, in " . (microtime(true) - $t0) . "s");
     }
   }
   $db->free();
-  debug(2,"end parsing, got $j jobs, in "  . (microtime(true) - $t0) . "s");
+  debug(2,"parsing done, got $j jobs, in "  . (microtime(true) - $t0) . "s");
 }
 // Retrieve past and current jobs 
+$aborted = false;
 $query = <<<EOT
 SELECT 
   jobs.job_id,
@@ -997,15 +1011,17 @@ $output = "";
 $sorted_resources = array();
 $has_aggregated_resources = false;
 $gantt_height = $resource_root->svg_hierarchy($CONF['hierarchy_left_align'], $CONF['gantt_top']);
-debug(1, "has aggreagated resources: ".($has_aggregated_resources?"yes":"no"));
+debug(2, "has aggreagated resources: ".($has_aggregated_resources?"yes":"no"));
 
 // Split resources of jobs in continuous groups
-$t0=microtime(true);
-debug(1, "start grouping resources of jobs");
-foreach ($jobs as $job) {
-  $job->group_resources($sorted_resources);
+if (!$aborted) {
+  $t0=microtime(true);
+  debug(1, "start grouping resources of jobs");
+  foreach ($jobs as $job) {
+    $job->group_resources($sorted_resources);
+  }
+  debug(2, "grouping done in " . (microtime(true) - $t0) . "s");
 }
-debug(1, "done in " . (microtime(true) - $t0) . "s");
 
 $y = $CONF['gantt_top'];
 foreach ($sorted_resources as $r) {
@@ -1034,7 +1050,11 @@ var timeruler;
 var zoom, zoom_draw, zoom_x1, zoom_x2, zoom_y1, zoom_y2, zoom_width;
 var parent_content;
 function init(evt) {
-
+EOT;
+if ($aborted) {
+  $output_headers .= 'alert("Aborted, too many jobs. Mind narrowing your lookup... zoom/+");';
+}
+$output_headers .= <<<EOT
   svgDocument = evt.target.ownerDocument;
   infobox = svgDocument.getElementById("infobox");
   infoboxrect = svgDocument.getElementById("infoboxrect");
@@ -1247,4 +1267,5 @@ header("Content-Type: image/svg+xml");
 header('Content-Encoding: gzip');
 print gzencode($output_headers . $output_defs . $output);
 
+debug(1, "=> total execution time: " . (microtime(true) - $T0) . "s");
 ?>

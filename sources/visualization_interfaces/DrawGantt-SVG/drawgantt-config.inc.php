@@ -50,6 +50,7 @@ $CONF['db_port']="5432"; // usually 3306 for Mysql or 5432 for PostgreSQL
 $CONF['db_name']="oar"; // OAR read only user account 
 $CONF['db_user']="oar_ro";
 $CONF['db_passwd']="oar_ro";
+$CONF['db_max_job_rows']=20000; // max number of job rows retrieved from database, which can be handled.
 
 // Data display configuration
 $CONF['timezone'] = "UTC";
