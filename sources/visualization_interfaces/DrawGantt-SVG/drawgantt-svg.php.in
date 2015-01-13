@@ -58,7 +58,7 @@ $CONF['hierarchy_left_align'] = 110; // default: 110
 $CONF['gantt_left_align'] = 160; // default: 160
 $CONF['gantt_min_width'] = 900; // default: 900
 $CONF['gantt_min_height'] = 400; // default: 400
-$CONF['gantt_min_job_width_for_label'] = 0; // default: 0
+$CONF['gantt_min_job_width_for_label'] = 40; // default: 40
 $CONF['min_state_duration'] = 2; // default: 2
 
 // Colors and fill patterns for jobs and states
@@ -624,11 +624,11 @@ class Resource {
       if ($drain < count($this->resource_ids)) {
         $info = ucfirst($resource_base)." partial draining: no new job accepted";
         $height = $scale/2;
-        debug(1, $info);
+        debug(4, $info);
       } else {
         $info = ucfirst($resource_base).((count($this->resource_ids) > 1)?" full":"")." draining: no new job accepted";
         $height = $scale;
-        debug(1, $info);
+        debug(4, $info);
       }
       $output .= '<rect x="'.date2px($gantt_now).'" y="'.$y.'" width="'.($gantt_width - date2px($gantt_now) + $gantt_left_align).'" height="'.$height.'" fill="'.$CONF['state_colors']['Drain'].'" stroke-width="0" style="opacity: 0.5" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)"/>';
     }
@@ -768,12 +768,12 @@ class Resource {
 ///////////////////////////////////////////////////////////////////////////////
 
 debug(1, "starting drawgantt-svg");
-$T0 = microtime(true);
+$script_start_time = microtime(true);
 // Connecting database
 $db = new Db($CONF['db_type'], $CONF['db_server'], $CONF['db_port'], $CONF['db_name'], $CONF['db_user'], $CONF['db_passwd']);
 
 // Retrieve the "now" date
-debug(1,"retrieve time from DB");
+debug(2,"retrieve time from DB");
 $gantt_now = $db->get_timestamp();
 
 // Compute gantt start and stop dates 
@@ -783,10 +783,12 @@ if ($gantt_start_date == 0) {
 if ($gantt_stop_date == 0) {
   $gantt_stop_date = $gantt_now + $gantt_relative_stop_date;
 }
-if (($timespan = $gantt_stop_date - $gantt_start_date) < $CONF['min_timespan']) {
-  debug(1, "Timespan $timespan too small, using ".$CONF['min_timespan']);
-  $gantt_start_date = ($gantt_stop_date - $gantt_start_date)/2 + $gantt_start_date - $CONF['min_timespan'] / 2;
-  $gantt_stop_date = $gantt_start_date + $CONF['min_timespan'];
+$timespan = $gantt_stop_date - $gantt_start_date;
+if ($timespan < $CONF['min_timespan']) {
+  debug(2, "Timespan $timespan too small, using ".$CONF['min_timespan']);
+  $timespan = $CONF['min_timespan'];
+  $gantt_start_date = ($gantt_stop_date + $gantt_start_date)/2 - $timespan / 2;
+  $gantt_stop_date = $gantt_start_date + $timespan;
 }
 
 // Retrieve the resource hierarchy 
@@ -798,7 +800,7 @@ $resource_ids = array();
 ///////////////////////////////////////////////////////////////////////////////
 
 $query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources WHERE type=\'default\'' . ($resource_filter?' AND ('.stripslashes($resource_filter).')':'');
-debug(1,"retrieve resources from DB");
+debug(2,"retrieve resources from DB");
 $db->query($query);
 
 while ($line = $db->fetch_array()) {
@@ -841,7 +843,7 @@ AND (
 )
 EOT;
 $available_upto_lines = array();
-debug(1,"retrieve states from DB");
+debug(2,"retrieve states from DB");
 $db->query($query);
 while ($line = $db->fetch_array()) {
   if ($line['attribute'] == 'state') {
@@ -960,7 +962,7 @@ WHERE
 ORDER BY 
   jobs.job_id
 EOT;
-debug(1,"retrieve past and current jobs from DB");
+debug(2,"retrieve past and current jobs from DB");
 parse_jobs_from_db($query);
 
 // Retrieve predicted jobs (future)
@@ -997,7 +999,7 @@ WHERE
 ORDER BY 
   jobs.job_id
 EOT;
-debug(1,"retrieve predicted jobs from DB");
+debug(2,"retrieve predicted jobs from DB");
 parse_jobs_from_db($query);
 
 // Closing connection to the database
@@ -1016,7 +1018,7 @@ debug(2, "has aggreagated resources: ".($has_aggregated_resources?"yes":"no"));
 // Split resources of jobs in continuous groups
 if (!$aborted) {
   $t0=microtime(true);
-  debug(1, "start grouping resources of jobs");
+  debug(2, "start grouping resources of jobs");
   foreach ($jobs as $job) {
     $job->group_resources($sorted_resources);
   }
@@ -1252,6 +1254,9 @@ $output .= <<<EOT
 <rect x="0" y="0" width="0" height="0" id="zoom" stroke="#0000FF" stroke-width="1" fill="#8888FF" style="opacity: 0.25" display="none" />
 EOT;
 
+$script_exec_time = microtime(true) - $script_start_time;
+$output .= '<text font-size="10" x="'.($gantt_left_align + $gantt_width /2).'" y="'.($page_height - 5).'" text-anchor="middle" fill="#888888">OAR drawgantt-svg for '.$CONF['site'].' - ref date: '.date("Y-m-d H:i:s",($gantt_start_date + $gantt_stop_date) / 2).' timespan: '.(($timespan > 3600*24)?(floor($timespan/3600/24)."d"):"").gmdate("H\hi\ms\s",$timespan).' - generated in '.sprintf("%.3f",$script_exec_time).'s</text>'; 
+
 // end SVG doc
 $output .=  <<<EOT
 </svg>
@@ -1264,5 +1269,5 @@ header("Content-Type: image/svg+xml");
 header('Content-Encoding: gzip');
 print gzencode($output_headers . $output_defs . $output);
 
-debug(1, "=> total execution time: " . (microtime(true) - $T0) . "s");
+debug(1, "=> total execution time: " . $script_exec_time . "s");
 ?>

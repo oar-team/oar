@@ -16,8 +16,11 @@ $CONF['nav_scales'] = array(
 $CONF['nav_default_timespan'] = 6*3600; // proposed timespan in the "set" bar
 $CONF['nav_timespans'] = array(
   '1 hour' => 3600,
+  '3 hours' => 3*3600,
   '6 hours' => 6*3600,
+  '12 hours' => 12*3600,
   '1 day' => 24*3600,
+  '3 day' => 3*24*3600,
   '1 week' => 7*24*3600,
 );
 
@@ -95,7 +98,7 @@ $CONF['hierarchy_left_align'] = 110; // default: 110
 $CONF['gantt_left_align'] = 160; // default: 160
 $CONF['gantt_min_width'] = 900; // default: 900
 $CONF['gantt_min_height'] = 400; // default: 400
-$CONF['gantt_min_job_width_for_label'] = 0; // default: 0
+$CONF['gantt_min_job_width_for_label'] = 40; // default: 40
 $CONF['min_state_duration'] = 2; // default: 2
 
 // Colors and fill patterns for jobs and states

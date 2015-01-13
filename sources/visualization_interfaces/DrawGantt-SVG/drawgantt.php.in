@@ -18,8 +18,11 @@ $CONF['nav_scales'] = array(
 $CONF['nav_default_timespan'] = 6*3600; // proposed timespan in the "set" bar
 $CONF['nav_timespans'] = array(
   '1 hour' => 3600,
+  '3 hours' => 3*3600,
   '6 hours' => 6*3600,
+  '12 hours' => 12*3600,
   '1 day' => 24*3600,
+  '3 day' => 3*24*3600,
   '1 week' => 7*24*3600,
 );
 
@@ -166,14 +169,14 @@ $output = <<<EOT
     }
     if (isNaN(qstart)) { 
       var date = new Date();
-      start = Math.floor(date.getTime() / 1000) - qtimespan;
+      start = Math.floor(date.getTime() / 1000) - qtimespan / 2;
     } else {
       start = qstart;
       if (! isNaN(qstop)) {
         qtimespan = qstop - qstart;
       }
     }
-    stop = start + 2 * qtimespan;
+    stop = start + qtimespan;
     reload_content();
   }
   function shift(time) {
@@ -182,10 +185,10 @@ $output = <<<EOT
     reload_content();
   }
   function shift_to_now() {
-    var timespan = Math.floor((stop - start)/2);
+    var timespan = Math.floor(stop - start);
     var date = new Date();
     start = Math.floor(date.getTime() / 1000) - timespan;
-    stop = start + 2 * timespan;
+    stop = start + timespan;
     reload_content();
   }
   function next() {
@@ -226,8 +229,8 @@ $output = <<<EOT
   function set_time() {
     var time = Math.floor(Date.parse(document.getElementById("datetime").value) / 1000);
     var span = document.getElementById("timespan").value;
-    start = time - +span;
-    stop = time + +span;
+    start = time - +span / 2;
+    stop = time + +span / 2;
     reload_content();
     hide_timepicker();
   }
@@ -332,7 +335,7 @@ $output .= <<<EOT
 <object id="svgObj" type="image/svg+xml" data="" onload="restore_scrolling()"></object>
 <div id="waiter">PROCESSING DATA, PLEASE WAIT...</div>
 <div id="timepicker" align="center">
-reference time:<input id="datetime" type="datetime"/><button type="button" onclick="set_now()">now</button>
+ref date:<input id="datetime" type="datetime"/><button type="button" onclick="set_now()">now</button>
 timespan:<select id="timespan"/>
 EOT;
     foreach ($CONF['nav_timespans'] as $key => $value) {
