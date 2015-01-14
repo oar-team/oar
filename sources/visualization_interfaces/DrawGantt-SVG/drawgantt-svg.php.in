@@ -696,7 +696,7 @@ class Resource {
       } else { // we do everything using the job group
         foreach ($CONF['job_colors'] as $type => $color) {
           if (preg_grep("/^{$type}$/", $grp->job->types)) {
-            $output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$w.'" height="'.$scale.'" fill="'.$color.'" stroke-width="0"  style="opacity: 0.5" />';
+            $output .= '<rect x="'.date2px($grp->job->start_time).'" y="'.$y.'" width="'.$w.'" height="'.($grp->size() * $scale).'" fill="'.$color.'" stroke-width="0"  style="opacity: 0.5" />';
           }
         }    
         if (in_array('besteffort', $grp->job->types) and ($grp->job->state == "Running") and ! $CONF['besteffort_truncate_job_to_now']) { 
