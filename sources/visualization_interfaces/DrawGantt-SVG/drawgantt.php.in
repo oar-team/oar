@@ -192,7 +192,7 @@ $output = <<<EOT
   function shift_to_now() {
     var timespan = Math.floor(stop - start);
     var date = new Date();
-    start = Math.floor(date.getTime() / 1000) - timespan;
+    start = Math.floor(date.getTime() / 1000) - timespan / 2;
     stop = start + timespan;
     reload_content();
   }
