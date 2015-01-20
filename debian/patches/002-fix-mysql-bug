@@ -1,0 +1,43 @@
+Description: fix errors with MySQL used as the DB backend
+ Some queries were PostgreSQL specific. This patch fixes errors when MySQL is used.
+Author: Nicolas Capit <nicolas.capit@imag.fr>
+Origin: upstream
+Bug: https://github.com/oar-team/oar/issues/11
+Bug-Debian: #773790
+Applied-Upstream: 3e2d9d88d3ae62f8308c848bcfde125f29f9c8d3
+Index: oar/sources/core/common-libs/lib/OAR/IO.pm
+===================================================================
+--- oar.orig/sources/core/common-libs/lib/OAR/IO.pm
++++ oar/sources/core/common-libs/lib/OAR/IO.pm
+@@ -6369,8 +6369,13 @@ sub update_gantt_visualization($){
+ #    $dbh->do("DELETE FROM gantt_jobs_predictions_visu");
+ #    $dbh->do("DELETE FROM gantt_jobs_resources_visu");
+ ##    $dbh->do("OPTIMIZE TABLE ganttJobsResources_visu, ganttJobsPredictions_visu");
+-    $dbh->do("TRUNCATE TABLE gantt_jobs_predictions_visu");
+-    $dbh->do("TRUNCATE TABLE gantt_jobs_resources_visu");
++    if ($Db_type eq "Pg"){
++        $dbh->do("TRUNCATE TABLE gantt_jobs_predictions_visu");
++        $dbh->do("TRUNCATE TABLE gantt_jobs_resources_visu");
++    }else{
++        $dbh->do("DELETE FROM gantt_jobs_predictions_visu");
++        $dbh->do("DELETE FROM gantt_jobs_resources_visu");
++    }
+ 
+     $dbh->do("INSERT INTO gantt_jobs_predictions_visu
+               SELECT *
+@@ -6482,8 +6487,13 @@ sub gantt_flush_tables($$$){
+                         $sql
+                  ");
+     }else{
+-        $dbh->do("TRUNCATE TABLE gantt_jobs_resources");
+-        $dbh->do("TRUNCATE TABLE gantt_jobs_predictions");
++        if ($Db_type eq "Pg"){
++            $dbh->do("TRUNCATE TABLE gantt_jobs_resources");
++            $dbh->do("TRUNCATE TABLE gantt_jobs_predictions");
++        }else{
++            $dbh->do("DELETE FROM gantt_jobs_predictions");
++            $dbh->do("DELETE FROM gantt_jobs_resources");
++        }
+     }
+ }
+ 
