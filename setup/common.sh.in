@@ -113,8 +113,8 @@ EOF
 }
 
 install_run_dir() {
-    # Install run dir
-    install -o ${OAROWNER} -m 755 -d ${RUNDIR}/oar
+    # nothing to do
+    :
 }
 
 create_log_file() {
