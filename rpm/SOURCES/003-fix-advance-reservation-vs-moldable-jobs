@@ -1,0 +1,168 @@
+Description: fix advance reservation versus moldable jobs bug
+ Errors occurs with advance reservation when moldable jobs are used
+Author: Nicolas Capit <nicolas.capit@imag.fr>
+Origin: upstream
+Bug: https://github.com/oar-team/oar/issues/14
+Bug-Debian: #775957
+Applied-Upstream: 86e3aac682b1140868081238032f1f56208db638
+Index: oar/sources/core/common-libs/lib/OAR/IO.pm
+===================================================================
+--- oar.orig/sources/core/common-libs/lib/OAR/IO.pm
++++ oar/sources/core/common-libs/lib/OAR/IO.pm
+@@ -6432,7 +6432,7 @@ sub get_gantt_visu_date($){
+ sub get_waiting_reservations_already_scheduled($){
+     my $dbh = shift;
+ 
+-    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_job_id, gantt_jobs_predictions.start_time, gantt_jobs_resources.resource_id, moldable_job_descriptions.moldable_walltime
++    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_job_id, gantt_jobs_predictions.start_time, gantt_jobs_resources.resource_id, moldable_job_descriptions.moldable_walltime, moldable_job_descriptions.moldable_id
+                                 FROM jobs, moldable_job_descriptions, gantt_jobs_predictions, gantt_jobs_resources
+                                 WHERE
+                                     (jobs.state = \'Waiting\'
+@@ -6448,6 +6448,7 @@ sub get_waiting_reservations_already_sch
+         push(@{$res->{$ref[0]}->{resources}}, $ref[2]);
+         $res->{$ref[0]}->{start_time} = $ref[1];
+         $res->{$ref[0]}->{walltime} = $ref[3];
++        $res->{$ref[0]}->{moldable_id} = $ref[4];
+     }
+     $sth->finish();
+     return($res);
+@@ -6475,9 +6476,12 @@ sub gantt_flush_tables($$$){
+     }
+ 
+     my $sql = "\'1\'";
+-    my @jobs_to_keep = keys(%{$reservations_to_keep});
+-    if ($#jobs_to_keep >= 0){
+-        $sql = "moldable_job_id NOT IN (".join(',',@jobs_to_keep).")";
++    my @moldable_jobs_to_keep;
++    foreach my $i (keys(%{$reservations_to_keep})){
++        push(@moldable_jobs_to_keep, $reservations_to_keep->{$i}->{moldable_id});
++    }
++    if ($#moldable_jobs_to_keep >= 0){
++        $sql = "moldable_job_id NOT IN (".join(',',@moldable_jobs_to_keep).")";
+         $dbh->do("  DELETE FROM gantt_jobs_predictions
+                     WHERE
+                         $sql
+Index: oar/sources/core/common-libs/lib/OAR/Schedulers/ResourceTree.pm
+===================================================================
+--- oar.orig/sources/core/common-libs/lib/OAR/Schedulers/ResourceTree.pm
++++ oar/sources/core/common-libs/lib/OAR/Schedulers/ResourceTree.pm
+@@ -400,7 +400,7 @@ sub get_tree_leafs($){
+             if (is_node_a_leaf($current_node) == 1){
+                 #push(@result, $node_name_pile[0]);
+                 push(@result, $current_node);
+-                #print("Leaf: ".get_current_resource_value($current_node)."\n");
++                #print("Leaf: ".get_current_resource_name($current_node)." = ".get_current_resource_value($current_node)."\n");
+             }
+             # Look at brothers
+             while(defined($current_node) and (!defined(get_next_brother($current_node)))){
+@@ -442,7 +442,7 @@ sub get_tree_leafs_vec($){
+             if (is_node_a_leaf($current_node) == 1){
+                 vec($result_leafs_vec, get_current_resource_value($current_node), 1) = 1;
+                 $result_leafs_hash{get_current_resource_value($current_node)} = $current_node;
+-                #print("Leaf: ".get_current_resource_value($current_node)."\n");
++                #print("Leaf: ".get_current_resource_name($current_node)." = ".get_current_resource_value($current_node)."\n");
+             }
+             # Look at brothers
+             while($current_node and (!get_next_brother($current_node))){
+Index: oar/sources/core/modules/scheduler/oar_meta_sched
+===================================================================
+--- oar.orig/sources/core/modules/scheduler/oar_meta_sched
++++ oar/sources/core/modules/scheduler/oar_meta_sched
+@@ -159,6 +159,7 @@ foreach my $i (keys(%{$reservation_alrea
+     my $timesharing_name = "";
+     my $vec = '';
+     my $types = OAR::IO::get_job_types_hash($base,$i);
++    my $job_there = OAR::IO::get_job($base,$i);
+     foreach my $r (@{$reservation_already_there->{$i}->{resources}}){
+         vec($vec, $r, 1) = 1;
+     }
+@@ -179,7 +180,7 @@ foreach my $i (keys(%{$reservation_alrea
+             OAR::Schedulers::GanttHoleStorage::new_with_1_hole($Max_resources, $Minimum_hole_time, $reservation_already_there->{$i}->{start_time}, $reservation_already_there->{$i}->{walltime} + $Security_time_overhead , $vec, $All_resource_list_vec);
+     } else {
+         ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
+-            OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $reservation_already_there->{$i}->{job_user}, $reservation_already_there->{$i}->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
++            OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $job_there->{job_user}, $job_there->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
+     }
+ 
+     #Fill all other gantts
+@@ -262,6 +263,8 @@ oar_debug("[MetaSched] End processing of
+ oar_debug("[MetaSched] Begin processing of waiting reservations (accepted reservations which do not have assigned resources yet)\n");
+ my @Rjobs = OAR::IO::get_waiting_reservation_jobs($base);
+ foreach my $job (@Rjobs){
++    next if (defined($reservation_already_there->{$job->{job_id}}));
++
+     my $container_id = 0;
+     my $inner_id = 0;
+     my $set_placeholder_name = "";
+@@ -274,7 +277,6 @@ foreach my $job (@Rjobs){
+     my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
+     # For reservation we take the first moldable job
+     my $moldable = $job_descriptions->[0];
+-    next if (defined($reservation_already_there->{$moldable->[2]}));
+ 
+     # Get the list of resources where the reservation will be able to be launched
+     my ($available_resources_vector, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
+@@ -335,6 +337,7 @@ foreach my $job (@Rjobs){
+         }
+         my $tmp_tree;
+         $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, "".$Order_part);
++        $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
+         $tmp_tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tmp_tree);
+         push(@tree_list, $tmp_tree);
+         my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
+@@ -581,6 +584,7 @@ sub check_reservation_jobs($$){
+                         $tmp_properties = $m->{property};
+                     }
+                     my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
++                    $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
+                     push(@tree_list, $tmp_tree);
+                 }
+                 my @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name},$job->{start_time}, $duration + $Security_time_overhead, \@tree_list, 30);
+Index: oar/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing
+===================================================================
+--- oar.orig/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing
++++ oar/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing
+@@ -349,6 +349,7 @@ while (($job_index <= $#jobs) and ((time
+                 $tmp_properties = $m->{property};
+             }
+             my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
++            $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
+             push(@tree_list, $tmp_tree);
+             #my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
+             #foreach my $l (@leafs){
+Index: oar/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing
+===================================================================
+--- oar.orig/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing
++++ oar/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing
+@@ -469,6 +469,7 @@ while (($job_index <= $#jobs) and ((time
+                 $tmp_properties = $m->{property};
+             }
+             my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
++            $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
+             push(@tree_list, $tmp_tree);
+             #my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
+             #foreach my $l (@leafs){
+Index: oar/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder
+===================================================================
+--- oar.orig/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder
++++ oar/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder
+@@ -412,6 +412,7 @@ while (($job_index <= $#jobs) and ((time
+                 $tmp_properties = $m->{property};
+             }
+             my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
++            $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
+             push(@tree_list, $tmp_tree);
+         }
+         my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;
+Index: oar/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing_and_placeholder
+===================================================================
+--- oar.orig/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing_and_placeholder
++++ oar/sources/core/modules/scheduler/oar_sched_gantt_with_timesharing_and_placeholder
+@@ -295,6 +295,7 @@ while (($job_index <= $#jobs) and ((time
+                 $tmp_properties = $m->{property};
+             }
+             my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
++            $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
+             push(@tree_list, $tmp_tree);
+         }
+         my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;

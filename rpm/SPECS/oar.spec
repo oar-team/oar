@@ -1,5 +1,5 @@
 %define version 2.5.4
-%define release 1.el6
+%define release 2.el6
 
 %define oaruser  oar
 
@@ -16,6 +16,9 @@ Url:      http://oar.imag.fr
 # %define _unpackaged_files_terminate_build 0
 
 Source:         oar-%version.tar.gz
+Patch1:         001-fix_oar-node_pid_file
+Patch2:         002-fix-mysql-bug
+Patch3:         003-fix-advance-reservation-vs-moldable-jobs
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar python-docutils
 %description
@@ -139,6 +142,9 @@ This package installs the PostgreSQL dependencies for OAR web-status package
 
 %prep
 %setup -q
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
 
 # Modify Makefile for chown commands to be non-fatal as the permissions
 # are set by the packaging
@@ -491,6 +497,9 @@ user_setup
 
 
 %changelog
+* Sat Jan 24 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-2.el6
+- add patches: backport fixes from upstream
+
 * Fri Oct 24 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-1.el6
 - New upstream release
 - Removed dependancies on ruby: removed oar-admin and its associated backends, removed drawgantt

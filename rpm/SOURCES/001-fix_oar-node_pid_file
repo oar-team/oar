@@ -1,0 +1,19 @@
+Description: fix oar-node pid file
+ set oar-node pid file location to /var/run/oar-node_ssh.pid
+Author: Pierre Neyron <pierre.neyron@free.fr>
+Origin: upstream
+Bug-Debian: #772564
+Applied-Upstream: a91fa8651963c5a889f6885a4e36a1d7479
+Index: oar/setup/init.d/oar-node.in
+===================================================================
+--- oar.orig/setup/init.d/oar-node.in
++++ oar/setup/init.d/oar-node.in
+@@ -22,7 +22,7 @@ PATH=%%SBINDIR%%:%%BINDIR%%:/sbin:/bin:/
+ NAME=oar-node
+ DESC="OAR node"
+ OAR_SSHD_CONF="%%OARCONFDIR%%/sshd_config"
+-PIDFILE="%%RUNDIR%%/$NAME_sshd.pid"
++PIDFILE="%%RUNDIR%%/${NAME}_sshd.pid"
+ SSHD_OPTS="-f $OAR_SSHD_CONF -o PidFile=$PIDFILE"
+ SELINUXENABLED_CMD=$(which selinuxenabled 2>/dev/null)
+ NOLSB=
