@@ -1035,7 +1035,15 @@ if (!$aborted) {
 $y = $CONF['gantt_top'];
 foreach ($sorted_resources as $r) {
   $r->svg_states($y);
+  $y += $scale;
+}
+$y = $CONF['gantt_top'];
+foreach ($sorted_resources as $r) {
   $r->svg_drain($y);
+  $y += $scale;
+}
+$y = $CONF['gantt_top'];
+foreach ($sorted_resources as $r) {
   $r->svg_jobs($y);
   $y += $scale;
 }
