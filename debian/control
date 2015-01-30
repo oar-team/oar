@@ -131,9 +131,8 @@ Description: OAR batch scheduler documentation package
 
 Package: oar-restful-api
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, apache2 | httpd-cgi, perl-modules, libjson-perl, libwww-perl, libcgi-fast-perl, oar-user (>> 2.5.0)
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, apache2 | httpd-cgi, perl-modules, libjson-perl, libyaml-perl, libwww-perl, libcgi-fast-perl, oar-user (>> 2.5.0)
 Suggests: oar-doc, oar-server
-Recommends: libxml-simple-perl, libyaml-perl
 Replaces: oar-api (<< 2.5.0+dev515.519ec70-63)
 Breaks: oar-api (<< 2.5.0+dev515.519ec70-63)
 Description: OAR web services
