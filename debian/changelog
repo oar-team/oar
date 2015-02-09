@@ -1,7 +1,8 @@
-oar (2.5.4-2~rc1) UNRELEASED; urgency=medium
+oar (2.5.4-2~rc2) UNRELEASED; urgency=medium
 
   * Fix oar-node pid file location (Closes: #772564)
-  * Fix errors with MySQL used as the DB backend (Closes: #773790)
+  * Fix errors with the TRUNCATE SQL request which is incompatible with MySQL
+    and causes deadlocks with PostgreSQL (Closes: #773790)
   * Fix errors with advance reservation when moldable jobs are used (Closes: #775957)
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 08 Dec 2014 17:31:03 +0100
