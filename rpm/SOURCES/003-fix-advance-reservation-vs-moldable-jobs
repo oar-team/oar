@@ -9,7 +9,7 @@ Index: oar/sources/core/common-libs/lib/OAR/IO.pm
 ===================================================================
 --- oar.orig/sources/core/common-libs/lib/OAR/IO.pm
 +++ oar/sources/core/common-libs/lib/OAR/IO.pm
-@@ -6432,7 +6432,7 @@ sub get_gantt_visu_date($){
+@@ -6424,7 +6424,7 @@ sub get_gantt_visu_date($){
  sub get_waiting_reservations_already_scheduled($){
      my $dbh = shift;
  
@@ -18,7 +18,7 @@ Index: oar/sources/core/common-libs/lib/OAR/IO.pm
                                  FROM jobs, moldable_job_descriptions, gantt_jobs_predictions, gantt_jobs_resources
                                  WHERE
                                      (jobs.state = \'Waiting\'
-@@ -6448,6 +6448,7 @@ sub get_waiting_reservations_already_sch
+@@ -6440,6 +6440,7 @@ sub get_waiting_reservations_already_sch
          push(@{$res->{$ref[0]}->{resources}}, $ref[2]);
          $res->{$ref[0]}->{start_time} = $ref[1];
          $res->{$ref[0]}->{walltime} = $ref[3];
@@ -26,7 +26,7 @@ Index: oar/sources/core/common-libs/lib/OAR/IO.pm
      }
      $sth->finish();
      return($res);
-@@ -6475,9 +6476,12 @@ sub gantt_flush_tables($$$){
+@@ -6467,9 +6468,12 @@ sub gantt_flush_tables($$$){
      }
  
      my $sql = "\'1\'";

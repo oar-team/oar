@@ -1,5 +1,5 @@
 %define version 2.5.4
-%define release 2.el6
+%define release 3.el6
 
 %define oaruser  oar
 
@@ -17,7 +17,7 @@ Url:      http://oar.imag.fr
 
 Source:         oar-%version.tar.gz
 Patch1:         001-fix_oar-node_pid_file
-Patch2:         002-fix-mysql-bug
+Patch2:         002-replace-truncate-requests-by-delete
 Patch3:         003-fix-advance-reservation-vs-moldable-jobs
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar python-docutils
@@ -498,7 +498,14 @@ user_setup
 
 %changelog
 * Sat Jan 24 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-2.el6
-- add patches: backport fixes from upstream
+- Fix errors with the TRUNCATE SQL request which is incompatible with MySQL
+  and causes deadlocks with PostgreSQL (update previous patch)
+
+* Sat Jan 24 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-2.el6
+- Add 3 patches, backport fixes from upstream:
+- Fix oar-node pid file location
+- Fix errors with the TRUNCATE SQL request which is incompatible with MySQL
+- Fix errors with advance reservation when moldable jobs are used
 
 * Fri Oct 24 2014 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-1.el6
 - New upstream release
