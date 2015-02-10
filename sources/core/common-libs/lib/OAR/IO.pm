@@ -1175,7 +1175,7 @@ sub get_possible_wanted_resources($$$$$$$){
         my $father_ref = $result;
         foreach (my $i = 0; $i <= $#wanted_resources; $i++){
             # Feed the tree for all resources
-            $father_ref = OAR::Schedulers::ResourceTree::add_child($father_ref, $wanted_resources[$i]->{resource}, $sql[$i]);
+            $father_ref = OAR::Schedulers::ResourceTree::add_child($father_ref, $wanted_resources[$i]->{resource}, $sql[$i], $result);
 
             if ($i < $#wanted_resources){
                 $wanted_children_number = $wanted_resources[$i+1]->{value};

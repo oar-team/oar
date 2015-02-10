@@ -593,17 +593,18 @@ sub find_first_hole($$$$$$$$$$$$){
             #print("Treate hole $current_hole_index, $h : $gantt->[$current_hole_index]->[0] --> $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
             $current_time = $gantt->[$current_hole_index]->[0] if ($initial_time < $gantt->[$current_hole_index]->[0]);
             #Check all trees
-            my $tree_clone;
             my $i = 0;
             # Initiate already used resources with the empty vector
             my $already_occupied_resources_vec = $gantt->[0]->[3]; 
             my $accounted_used_resources_vec = '';
             my $tmp_leafs_vec = '';
             my $tmp_leafs_hashref = {};
+            my $tree_clone;
             do{
                 $already_occupied_resources_vec |= $tmp_leafs_vec;
                 # clone the tree, so we can work on it without damage
                 $tree_clone = OAR::Schedulers::ResourceTree::clone($tree_description_list->[$i]);
+                my $tree_clone_bck = $tree_clone;
                 
                 #print(Dumper($tree_clone));
                 $tree_clone = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees(
@@ -633,7 +634,12 @@ sub find_first_hole($$$$$$$$$$$$){
                         or (($current_hole_index < $#{$gantt}) and ($gantt->[$current_hole_index+1]->[0] <= $current_time))
                        ){
                         $tree_clone = undef;
+                        # Free memory
+                        OAR::Schedulers::ResourceTree::destroy($tree_clone_bck);
                     }
+                }else{
+                    # Free memory
+                    OAR::Schedulers::ResourceTree::destroy($tree_clone_bck);
                 }
                 ## QUOTAS
                 my @tmpa = keys(%{$tmp_leafs_hashref});
@@ -644,6 +650,10 @@ sub find_first_hole($$$$$$$$$$$$){
                 # We find the first hole
                 $end_loop = 1;
             }else{
+                # Free memory
+                foreach my $t (@{result_tree_list}){
+                    OAR::Schedulers::ResourceTree::destroy($t->[0]);
+                }
                 # Go to the next slot
                 if (($h >= $#{$gantt->[$current_hole_index]->[1]})
                      or (($current_hole_index < $#{$gantt}) and ($gantt->[$current_hole_index+1]->[0] <= $current_time))

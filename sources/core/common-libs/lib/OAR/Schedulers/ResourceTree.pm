@@ -13,8 +13,9 @@ use Storable qw(dclone);
 
 # Prototypes
 sub new();
+sub destroy($);
 sub clone($);
-sub add_child($$$);
+sub add_child($$$$);
 sub get_children_list($);
 sub is_node_a_leaf($);
 sub get_father($);
@@ -61,8 +62,25 @@ sub new(){
     $tree_ref->[9] = undef ;                    # first child ref
     $tree_ref->[10] = 0 ;                       # current children number
     $tree_ref->[11] = undef ;                   # last child ref
+    $tree_ref->[12] = [] ;                      # array with all tree node refs (only on the first tree node)
 
     return($tree_ref);
+}
+
+# Destroy data structure and tell Perl that the corresponding memory can be
+# reused
+# arg : ROOT tree ref
+sub destroy($){
+    my $tree_ref = shift;
+
+    if (defined($tree_ref->[12])){
+        foreach my $n (@{$tree_ref->[12]}){
+            undef(@{$n});
+            undef($n);
+        }
+        undef(@{$tree_ref});
+        undef($tree_ref);
+    }
 }
 
 # clone the tree
@@ -88,17 +106,19 @@ sub is_node_a_leaf($){
 
 # add a child to the given tree ref (if child resource name is undef it seems
 # that this child is a leaf of the tree)
-# arg : tree ref, resource name, resource value
+# arg : tree ref, resource name, resource value, tree root ref
 # return the ref of the child
-sub add_child($$$){
+sub add_child($$$$){
     my $tree_ref = shift;
     my $resource_name = shift;
     my $resource_value = shift;
+    my $tree_root_ref = shift;   # First node of the tree
 
     my $tmp_ref;
     if (!defined($tree_ref->[1]->{$resource_value})){
         # Create a new tree node
         $tmp_ref = [ $tree_ref, undef, $resource_name, $resource_value, $tree_ref->[4] + 1, 0, 0, undef, undef, undef, 0, undef ];
+        push(@{$tree_root_ref->[12]}, $tmp_ref);
         
         $tree_ref->[1]->{$resource_value} = $tmp_ref;
         $tree_ref->[6] += 1;
