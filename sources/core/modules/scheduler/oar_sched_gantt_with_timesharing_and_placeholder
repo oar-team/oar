@@ -295,6 +295,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 $tmp_properties = $m->{property};
             }
             my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
+            $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
             push(@tree_list, $tmp_tree);
         }
         my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;

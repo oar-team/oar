@@ -400,7 +400,7 @@ sub get_tree_leafs($){
             if (is_node_a_leaf($current_node) == 1){
                 #push(@result, $node_name_pile[0]);
                 push(@result, $current_node);
-                #print("Leaf: ".get_current_resource_value($current_node)."\n");
+                #print("Leaf: ".get_current_resource_name($current_node)." = ".get_current_resource_value($current_node)."\n");
             }
             # Look at brothers
             while(defined($current_node) and (!defined(get_next_brother($current_node)))){
@@ -442,7 +442,7 @@ sub get_tree_leafs_vec($){
             if (is_node_a_leaf($current_node) == 1){
                 vec($result_leafs_vec, get_current_resource_value($current_node), 1) = 1;
                 $result_leafs_hash{get_current_resource_value($current_node)} = $current_node;
-                #print("Leaf: ".get_current_resource_value($current_node)."\n");
+                #print("Leaf: ".get_current_resource_name($current_node)." = ".get_current_resource_value($current_node)."\n");
             }
             # Look at brothers
             while($current_node and (!get_next_brother($current_node))){
