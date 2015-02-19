@@ -4,7 +4,8 @@ oar (2.5.4-2) unstable; urgency=medium
   * Fix oar-node pid file location (Closes: #772564)
   * Fix errors with the TRUNCATE SQL request which is incompatible with MySQL
     and causes deadlocks with PostgreSQL (Closes: #773790)
-  * Fix errors with advance reservation when moldable jobs are used (Closes: #775957)
+  * Fix errors with advance reservation when moldable jobs are used
+    (Closes: #775957)
 
  -- Vincent Danjean <vdanjean@debian.org>  Fri, 13 Feb 2015 11:03:53 +0100
 
