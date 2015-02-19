@@ -1,3 +1,4 @@
 001-fix_oar-node_pid_file
-002-fix-mysql-bug
+002-replace-truncate-requests-by-delete
 003-fix-advance-reservation-vs-moldable-jobs
+004-fix-oar-node-init.d
