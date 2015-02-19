@@ -26,9 +26,10 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
   </IfModule>
 
    # Control hosts that can access to the API
+   # For Apache 2.4, use the following line and comment the next
+   # (See: https://wiki.debian.org/Apache/PackagingFor24)
+   #Require all granted
    Order deny,allow
-   #Require all granted # <- seems to be the "Deny from all" syntax for apache > 2.3
-                        # but gives a 500 error with apache 2.2
    Deny from all
    Allow from             localhost
    Allow from             localhost.localdomain

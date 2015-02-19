@@ -3,6 +3,10 @@ Alias /monika.css %%WWWDIR%%/monika.css
 Alias /drawgantt-svg %%WWWDIR%%/drawgantt-svg
 Alias /drawgantt %%WWWDIR%%/drawgantt-svg
 <Directory %%WWWDIR%%>
-        Options Indexes FollowSymlinks
-        #Require all granted # <- seems to be needed for apache >= 2.3
+   Options Indexes FollowSymlinks
+   # For Apache 2.4, use the following line and comment the next
+   # (See: https://wiki.debian.org/Apache/PackagingFor24)
+   #Require all granted
+   Order allow, deny
+   Allow from all
 </Directory>
