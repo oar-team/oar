@@ -266,7 +266,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     ('index', 'OAR', u'OAR Documentation',
-     u'Nicolas Nicolas, Emeras Joseph', 'OAR', 'One line description of project.', 'Miscellaneous'),
+     AUTHORS.split(", "), 'OAR', 'OAR is a versatile resource and task manager (also called a batch scheduler) for clusters and other computing infrastructures.', ''),
 ]
 
 # Documents to append as an appendix to all manuals.
