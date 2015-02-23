@@ -88,6 +88,7 @@ case "$1" in
         rm -f /var/lib/oar/.bash_oar
         rm -f /var/lib/oar/.bash_profile
         rm -f /var/lib/oar/.bashrc
+        rm -f /var/lib/oar/.batch_job_bashrc
         rm -rf /var/lib/oar/.ssh
         rmdir /var/lib/oar || true
         rmdir /etc/oar || true
