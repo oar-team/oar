@@ -1,3 +1,11 @@
+oar (2.5.4-3) UNRELEASED; urgency=medium
+
+  [ Pierre Neyron ]
+  * Fix oar-common, oar-web-status and oar-restful-api unowned files after
+    purge (Closes: #674657)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 23 Feb 2015 22:51:12 +0100
+
 oar (2.5.4-2) unstable; urgency=medium
 
   [ Pierre Neyron ]
