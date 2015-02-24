@@ -25,14 +25,23 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
      AddHandler fcgid-script .cgi
   </IfModule>
 
-   # Control hosts that can access to the API
-   # For Apache 2.4, use the following line and comment the next
-   # (See: https://wiki.debian.org/Apache/PackagingFor24)
-   #Require all granted
-   Order deny,allow
-   Deny from all
-   Allow from             localhost
-   Allow from             localhost.localdomain
+  <ifModule version.c>
+    <IfVersion >= 2.3>
+      Require local
+    </IfVersion> 
+    <IfVersion < 2.3>
+      Order Deny,Allow
+      Deny from all
+      Allow from             localhost
+      Allow from             localhost.localdomain
+    </IfVersion>   
+  </ifModule>
+  <ifModule !version.c>
+    Order Deny,Allow
+    Deny from all
+    Allow from             localhost
+    Allow from             localhost.localdomain
+  </ifModule>
 </Directory>
 
 # By URI options
