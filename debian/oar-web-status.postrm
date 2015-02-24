@@ -9,7 +9,6 @@ set -e
 case "$1" in
   remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
       rm -f /etc/apache2/conf.d/oar-web-status.conf || true
-      rm -f /etc/apache2/conf-enabled/oar-web-status.conf || true
       rm -f /etc/apache2/conf-available/oar-web-status.conf || true
       rm -f /usr/share/oar-web-status/drawgantt-svg/index.php || true
         ;;

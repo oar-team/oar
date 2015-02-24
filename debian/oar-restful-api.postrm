@@ -11,7 +11,6 @@ case "$1" in
     remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
         rm -f /etc/apache2/conf.d/oar-api.conf || true
         rm -f /etc/apache2/conf.d/oar-restful-api.conf || true
-        rm -f /etc/apache2/conf-enabled/oar-restful-api.conf || true
         rm -f /etc/apache2/conf-available/oar-restful-api.conf || true
         ;;
     purge)
