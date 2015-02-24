@@ -19,7 +19,7 @@ case "$1" in
                         /etc/oar/api_html_header.pl \
                         /etc/oar/api_html_postform.pl \
                         /etc/oar/api_html_postform_resources.pl \
-                        /etc/oar/api_html_postform_rule.pl; \
+                        /etc/oar/api_html_postform_rule.pl \
                         /etc/oar/stress_factor.sh;  do 
             # we mimic dpkg as closely as possible, so we remove configuration
             # files with dpkg backup extensions too:
@@ -37,8 +37,8 @@ case "$1" in
                     ucfr --purge oar-restful-api $conffile
             fi
         done
-        rmdir /etc/oar/apache2 || true
-        rmdir /etc/oar || true
+        rmdir /etc/oar/apache2 2> /dev/null || true
+        rmdir /etc/oar 2> /dev/null || true
         ;;
     *)
         echo "postrm called with unknown argument \`$1'" >&2
