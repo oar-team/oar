@@ -1,0 +1,68 @@
+Description: fix oar-web-status and oar-restful-api configuration for apache 2.4
+ use Apache 2.3+ require directive if relevant, see:
+ - https://wiki.debian.org/Apache/PackagingFor24
+ - http://httpd.apache.org/docs/2.4/mod/mod_authz_core.html
+Author: Pierre Neyron <pierre.neyron@free.fr>
+Origin: upstream
+Bug-Debian: n/a
+Applied-Upstream: 56a840ebf9f355439ecaea10bdc1e4a1b35c0867
+Index: oar/sources/api/apache2.conf.in
+===================================================================
+--- oar.orig/sources/api/apache2.conf.in
++++ oar/sources/api/apache2.conf.in
+@@ -25,13 +25,23 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oa
+      AddHandler fcgid-script .cgi
+   </IfModule>
+ 
+-   # Control hosts that can access to the API
+-   Order deny,allow
+-   #Require all granted # <- seems to be the "Deny from all" syntax for apache > 2.3
+-                        # but gives a 500 error with apache 2.2
+-   Deny from all
+-   Allow from             localhost
+-   Allow from             localhost.localdomain
++  <ifModule version.c>
++    <IfVersion >= 2.3>
++      Require local
++    </IfVersion> 
++    <IfVersion < 2.3>
++      Order Deny,Allow
++      Deny from all
++      Allow from             localhost
++      Allow from             localhost.localdomain
++    </IfVersion>   
++  </ifModule>
++  <ifModule !version.c>
++    Order Deny,Allow
++    Deny from all
++    Allow from             localhost
++    Allow from             localhost.localdomain
++  </ifModule>
+ </Directory>
+ 
+ # By URI options
+Index: oar/sources/visualization_interfaces/apache.conf.in
+===================================================================
+--- oar.orig/sources/visualization_interfaces/apache.conf.in
++++ oar/sources/visualization_interfaces/apache.conf.in
+@@ -3,6 +3,18 @@ Alias /monika.css %%WWWDIR%%/monika.css
+ Alias /drawgantt-svg %%WWWDIR%%/drawgantt-svg
+ Alias /drawgantt %%WWWDIR%%/drawgantt-svg
+ <Directory %%WWWDIR%%>
+-        Options Indexes FollowSymlinks
+-        #Require all granted # <- seems to be needed for apache >= 2.3
++  Options Indexes FollowSymlinks
++  <ifModule version.c>
++    <IfVersion >= 2.3>
++      Require all granted
++    </IfVersion> 
++    <IfVersion < 2.3>
++      Order Allow,Deny
++      Allow from all
++    </IfVersion>   
++  </ifModule>
++  <ifModule !version.c>
++    Order Allow,Deny
++    Allow from all
++  </ifModule>
+ </Directory>
