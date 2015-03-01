@@ -322,10 +322,12 @@ sub karma($$$$){
     my $karma_users = shift;
     my $j = shift;
 
+    my $project_targets = (defined($SCHEDULER_FAIRSHARING_PROJECT_TARGETS->{$j->{project}}))?$SCHEDULER_FAIRSHARING_PROJECT_TARGETS->{$j->{project}}/100:0;
+    my $user_targets = (defined($SCHEDULER_FAIRSHARING_USER_TARGETS->{$j->{job_user}}))?$SCHEDULER_FAIRSHARING_USER_TARGETS->{$j->{user}}/100:0;
     my $note = 0;
-    $note = $SCHEDULER_FAIRSHARING_COEF_PROJECT * (($karma_projects->{$j->{project}}->{USED} / $karma_sum_time->{USED}) - ($SCHEDULER_FAIRSHARING_PROJECT_TARGETS->{$j->{project}} / 100));
-    $note += $SCHEDULER_FAIRSHARING_COEF_USER * (($karma_users->{$j->{job_user}}->{USED} / $karma_sum_time->{USED}) - ($SCHEDULER_FAIRSHARING_USER_TARGETS->{$j->{job_user}} / 100));
-    $note += $SCHEDULER_FAIRSHARING_COEF_USER_ASK * (($karma_users->{$j->{job_user}}->{ASKED} / $karma_sum_time->{ASKED}) - ($SCHEDULER_FAIRSHARING_USER_TARGETS->{$j->{job_user}} / 100));
+    $note = $SCHEDULER_FAIRSHARING_COEF_PROJECT * (($karma_projects->{$j->{project}}->{USED} / $karma_sum_time->{USED}) - $project_targets);
+    $note += $SCHEDULER_FAIRSHARING_COEF_USER * (($karma_users->{$j->{job_user}}->{USED} / $karma_sum_time->{USED}) - $user_targets);
+    $note += $SCHEDULER_FAIRSHARING_COEF_USER_ASK * (($karma_users->{$j->{job_user}}->{ASKED} / $karma_sum_time->{ASKED}) - $user_targets);
 
     return($note);
 }
