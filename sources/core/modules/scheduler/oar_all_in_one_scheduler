@@ -399,8 +399,9 @@ foreach my $i (keys(%{$reservation_already_there})){
     my $timesharing_name = "";
     my $vec = '';
     my $types = OAR::IO::get_job_types_hash($base,$i);
-    my $job_there = $reservation_already_there->{$i};
-    foreach my $r (@{$job_there->{resources}}){
+    my @type_list = sort(keys(%{$types}));
+    my $job = $reservation_already_there->{$i};
+    foreach my $r (@{$job->{resources}}){
         vec($vec, $r, 1) = 1;
     }
 
@@ -413,19 +414,29 @@ foreach my $i (keys(%{$reservation_already_there})){
         }
         if (defined($gantt->{$container_name})) {
             oar_debug("[$SCHEDULER_NAME] [$i] container job: add a hole in gantt ($container_name,,,)\n");
-            $gantt->{$container_name}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage_with_quotas::add_1_hole($gantt->{$container_name}->{""}->{""}->{""}, $job_there->{start_time}, $job_there->{walltime} + $SCHEDULER_JOB_SECURITY_TIME, $vec);
+            $gantt->{$container_name}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage_with_quotas::add_1_hole($gantt->{$container_name}->{""}->{""}->{""}, $job->{start_time}, $job->{walltime} + $SCHEDULER_JOB_SECURITY_TIME, $vec);
         } else {
             oar_debug("[$SCHEDULER_NAME] [$i] container job: create gantt ($container_name,,,)\n");
             $gantt->{$container_name}->{""}->{""}->{""} = 
-                OAR::Schedulers::GanttHoleStorage_with_quotas::new_with_1_hole($Max_resources, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, $job_there->{start_time}, $job_there->{walltime} + $SCHEDULER_JOB_SECURITY_TIME, $vec, $All_resource_list_vec);
+                OAR::Schedulers::GanttHoleStorage_with_quotas::new_with_1_hole($Max_resources, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, $job->{start_time}, $job->{walltime} + $SCHEDULER_JOB_SECURITY_TIME, $vec, $All_resource_list_vec);
         }
     } else {
         ($gantt_name, $placeholder_name, $timesharing_name, $timesharing_user) = 
-            OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_hierarchy($gantt, $job_there->{job_name}, $job_there->{job_user}, $types, undef, "[$SCHEDULER_NAME] [$i]");
+            OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, undef, "[$SCHEDULER_NAME] [$i]");
     }
 
     #Fill all other gantts
-    OAR::Schedulers::GanttHoleStorage_with_quotas::fill_gantt_hierarchy($gantt, $job_there->{start_time}, $job_there->{walltime} + $SCHEDULER_JOB_SECURITY_TIME, $vec, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+    OAR::Schedulers::GanttHoleStorage_with_quotas::fill_gantt_hierarchy($gantt, $job->{start_time}, $job->{walltime} + $SCHEDULER_JOB_SECURITY_TIME, $vec, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+    OAR::Schedulers::QuotaStorage::update_accounting_counters(
+        $quota_accounting_data,
+        unpack("%32b*",$vec & $Only_default_type_resource_vec),
+        $job->{start_time},
+        $job->{walltime},
+        $job->{queue_name},
+        $job->{project},
+        \@type_list,
+        $job->{job_user}
+        );
 }
 oar_debug("[$SCHEDULER_NAME] End processing of already handled reservations\n");
 
@@ -537,6 +548,7 @@ foreach my $job (@Rjobs){
     $alive_resources_vector |= $tmp_veca | $tmp_vecs;
 
     my $types = OAR::IO::get_job_types_hash($base,$i);
+    my @type_list = sort(keys(%{$types}));
     if (defined($types->{inner})){
         $gantt_name = "container:$types>{inner}";
         if (not defined($gantt->{$gantt_name})){
@@ -642,6 +654,16 @@ foreach my $job (@Rjobs){
 
         #Fill all other gantts
         OAR::Schedulers::GanttHoleStorage_with_quotas::fill_gantt_hierarchy($gantt, $job->{start_time}, $moldable->[1] + $SCHEDULER_JOB_SECURITY_TIME, $vec, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+        OAR::Schedulers::QuotaStorage::update_accounting_counters(
+            $quota_accounting_data,
+            unpack("%32b*",$vec & $Only_default_type_resource_vec),
+            $job->{start_time},
+            $moldable->[1],
+            $job->{queue_name},
+            $job->{project},
+            \@type_list,
+            $job->{job_user}
+            );
 
         # Update database
         push(@resources, @Resources_to_always_add);
@@ -948,22 +970,20 @@ foreach my $queue (@queues){
                         oar_debug("[$SCHEDULER_NAME] [$i] container job, creating gantt: ($container_name,,,)\n");
                         $gantt->{$container_name}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage_with_quotas::new_with_1_hole($Max_resources, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, $moldable_results[$index_to_choose]->{start_time}, $moldable_results[$index_to_choose]->{duration}, $moldable_results[$index_to_choose]->{resources_vec}, $All_resource_list_vec);
                     }
-                }else{
-                    OAR::Schedulers::QuotaStorage::update_accounting_counters(
-                                                       $quota_accounting_data,
-                                                       unpack("%32b*",$moldable_results[$index_to_choose]->{resources_vec} & $Only_default_type_resource_vec),
-                                                       $moldable_results[$index_to_choose]->{start_time},
-                                                       $moldable_results[$index_to_choose]->{duration},
-                                                       $j->{queue_name},
-                                                       $j->{project},
-                                                       \@type_list,
-                                                       $j->{job_user}
-                                                     );
-                    #oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] ".OAR::Schedulers::QuotaStorage::pretty_print($quota_accounting_data));
                 }
         
                 #Fill all other gantts
                 OAR::Schedulers::GanttHoleStorage_with_quotas::fill_gantt_hierarchy($gantt, $moldable_results[$index_to_choose]->{start_time}, $moldable_results[$index_to_choose]->{duration}, $moldable_results[$index_to_choose]->{resources_vec}, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+                OAR::Schedulers::QuotaStorage::update_accounting_counters(
+                    $quota_accounting_data,
+                    unpack("%32b*",$moldable_results[$index_to_choose]->{resources_vec} & $Only_default_type_resource_vec),
+                    $moldable_results[$index_to_choose]->{start_time},
+                    $moldable_results[$index_to_choose]->{duration},
+                    $j->{queue_name},
+                    $j->{project},
+                    \@type_list,
+                    $j->{job_user}
+                );
         
                 #update database
                 push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
@@ -1205,23 +1225,20 @@ foreach my $queue (@queues){
                                 $gantt->{$container_name}->{""}->{""}->{""} = 
                                     OAR::Schedulers::GanttHoleStorage_with_quotas::new_with_1_hole($Max_resources, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, $job->{start_time}, $duration + $SCHEDULER_JOB_SECURITY_TIME, $res_vec, $All_resource_list_vec);
                             }
-                        } else {
-                            OAR::Schedulers::QuotaStorage::update_accounting_counters(
-                                $quota_accounting_data,
-                                unpack("%32b*",$res_vec & $Only_default_type_resource_vec),
-                                $job->{start_time},
-                                $duration,
-                                $job->{queue_name},
-                                $job->{project},
-                                \@type_list,
-                                $job->{job_user}
-                                );
-
-                            #oar_debug("[$SCHEDULER_NAME] [$job->{job_id}] ".OAR::Schedulers::QuotaStorage::pretty_print($quota_accounting_data));
                         }
             
                         #Fill all other gantts
                         OAR::Schedulers::GanttHoleStorage_with_quotas::fill_gantt_hierarchy($gantt, $job->{start_time}, $duration + $SCHEDULER_JOB_SECURITY_TIME, $res_vec, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+                        OAR::Schedulers::QuotaStorage::update_accounting_counters(
+                            $quota_accounting_data,
+                            unpack("%32b*",$res_vec & $Only_default_type_resource_vec),
+                            $job->{start_time},
+                            $duration,
+                            $job->{queue_name},
+                            $job->{project},
+                            \@type_list,
+                            $job->{job_user}
+                        );
 
                         # Update database
                         push(@resources, @Resources_to_always_add);
