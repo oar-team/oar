@@ -1,0 +1,57 @@
+=head1 NAME
+
+oarqueue - list OAR's scheduler queues or change them.
+
+=head1 SYNOPSIS
+
+B<oarqueue> [options]
+
+=head1 DESCRIPTION
+
+Manage OAR's queues.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-l, --list>
+
+List all queues (default action if no option is given).
+
+=item B<-e, --enable> <name>
+
+Enable a queue, given its name.
+
+=item B<-d, --disable> <name>
+
+Disable a queue, given its name.
+
+=item B<-E, --enable-all-queues>
+
+Enable all queues.
+
+=item B<-D, --disable-all>
+
+Disable all queues.
+
+=item B<--add> <name,priority,policy>
+
+Add a new queue (ex: "q1,3,fifo" or "q2,4,fairsharing").
+
+=item B<--change> <name,priority,policy>
+
+Change the priority/policy of a queue, given its name.
+
+=item B<--remove> <name>
+
+Remove a queue, given its name.
+
+=item B<-V, --version>
+
+Print OAR version.
+
+=back
+
+=head1 COPYRIGHTS
+
+ Copyright 2003-2015 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

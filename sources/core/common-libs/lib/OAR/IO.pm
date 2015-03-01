@@ -6166,6 +6166,18 @@ sub create_a_queue($$$$){
                 VALUES (\'$queue\',$priority,\'$policy\')");
 }
 
+# change a queue
+sub change_a_queue($$$$){
+    my $dbh = shift;
+    my $queue = shift;
+    my $policy = shift;
+    my $priority = shift;
+    
+    $dbh->do("  UPDATE queues 
+                SET priority=$priority,scheduler_policy=\'$policy\'
+                WHERE queue_name = \'$queue\'");
+}
+
 
 # GANTT MANAGEMENT
 

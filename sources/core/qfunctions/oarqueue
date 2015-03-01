@@ -1,0 +1,130 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use Getopt::Long;
+use OAR::Version;
+use OAR::IO;
+
+init_conf($ENV{OARCONFFILE});
+my $remote_host = get_conf("SERVER_HOSTNAME");
+my $remote_port = get_conf("SERVER_PORT");
+
+Getopt::Long::Configure("gnu_getopt");
+my @enable_queue;
+my @disable_queue;
+my @add_queue;
+my @remove_queue;
+my @change_queue;
+my $enable_all;
+my $disable_all;
+my $list_queues;
+
+sub usage() {
+    my ($command) = $0 =~ /([^\/]+)$/;
+    my $usage = <<EOS;
+Usage: 
+Usage: 
+  $command [options]
+
+  List OAR's scheduler queues or change them.
+
+Options:
+  -l, --list                       list all queues (default if no other option)
+  -e, --enable <name>              enable a queue, given its name
+  -d, --disable <name>             disable a queue, given its name
+  -E, --enable-all                 enable all queues
+  -D, --disable-all                disable all queues
+  --add <name,priority,policy>     add a new queue (eg: "q1,3,fifo" or
+                                   "q2,4,fairsharing")
+  --change <name,priority,policy>  change the priority/policy of a queue, given
+                                   its name
+  --remove <name>                  remove a queue, given its name
+  -h, --help                       print usage
+  -V, --version                    print OAR version
+  
+EOS
+    return $usage;
+}
+
+GetOptions (
+            "list|l" => \$list_queues,
+            "enable|e=s" => \@enable_queue,
+            "disable|d=s" => \@disable_queue,
+            "enable-all|E" => \$enable_all,
+            "disable-all|D" => \$disable_all,
+            "add=s" => \@add_queue,
+            "remove=s" => \@remove_queue,
+            "change=s" => \@change_queue,
+            "version|V" => sub { print("OAR version : ".OAR::Version::get_version()."\n"); exit(0) },
+            "help|h"   => sub { print usage(); exit(0); }
+          ) or die "\n".usage();
+
+my $base = OAR::IO::connect();
+my $done;
+foreach my $q (@add_queue){
+    my ($queue,$priority,$policy) = split(/\s*,\s*/,$q);
+    if (defined($queue)){
+        $priority = 0 if (!defined($priority));
+        $policy = "fifo" if (!defined($policy));
+        print("Adding queue $queue with priority $priority and policy $policy.\n");
+        OAR::IO::create_a_queue($base,$queue,$policy,$priority);
+    }
+    $done = 1;
+}
+
+foreach my $q (@change_queue){
+    my ($queue,$priority,$policy) = split(/\s*,\s*/,$q);
+    if (defined($queue)){
+        $priority = 0 if (!defined($priority));
+        $policy = "fifo" if (!defined($policy));
+        print("Changing queue $queue with priority $priority and policy $policy.\n");
+        OAR::IO::change_a_queue($base,$queue,$policy,$priority);
+    }
+    $done = 1;
+}
+
+foreach my $q (@remove_queue){
+    OAR::IO::delete_a_queue($base,$q);
+    print("Removing queue $q.\n");
+    $done = 1;
+}
+
+foreach my $q (@enable_queue){
+    OAR::IO::start_a_queue($base,$q);
+    print("Enabling queue $q.\n");
+    $done = 1;
+}
+
+foreach my $q (@disable_queue){
+    OAR::IO::stop_a_queue($base,$q);
+    print("Disabling queue $q.\n");
+    $done = 1;
+}
+
+if (defined($enable_all)){
+    print("Enabling all queues.\n");
+    OAR::IO::start_all_queues($base);
+    $done = 1;
+}
+
+if (defined($disable_all)){
+    print("Disabling all queues.\n");
+    OAR::IO::stop_all_queues($base);
+    $done = 1;
+}
+
+if (defined($list_queues) or not defined($done)){
+    my %queues = OAR::IO::get_all_queue_informations($base);
+    foreach my $q (keys(%queues)){
+        print("$q\n");
+        print("\tpriority = $queues{$q}->{priority}\n");
+        print("\tpolicy = $queues{$q}->{scheduler_policy}\n");
+        print("\tstate = $queues{$q}->{state}\n");
+    }
+}
+
+OAR::IO::disconnect($base);
+
+exit(0);

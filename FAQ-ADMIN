@@ -59,7 +59,7 @@ Take a look in "/etc/default/oar-node" for Debian packaging and in
 
 How can I manage scheduling queues?
 -----------------------------------
-see :doc:`commands/oarnotify`.
+see :doc:`commands/oarqueue`.
 
 How can I handle licence tokens?
 --------------------------------

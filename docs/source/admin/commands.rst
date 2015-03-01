@@ -5,6 +5,7 @@ Admin commands
 .. toctree::
     :maxdepth: 2
 
+    commands/oarqueue
     commands/oarproperty
     commands/oarnodesetting
     commands/oaradmissionrules

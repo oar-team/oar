@@ -1,53 +1,40 @@
 =head1 NAME
 
-oarnotify - Multi usage command for queues and Almighty notification.
+oarnotify - send a message tag to OAR's Almighty
 
 =head1 SYNOPSIS
 
-B<oarnotify> [-e str] [-d str] [-E] [-D] [--add-queue str] [--remove-queue str] [-l] [tag_to_Almighty]
+B<oarnotify> [options] [message tag]
 
 =head1 DESCRIPTION
 
-This command is used to manage scheduling queues and to notify the OAR server (Almighty).
+This command is used to trigger some actions of the OAR server (Almighty).
+
+=head1 MESSAGE TAGS
+
+=over
+
+=item B<Term>
+
+Ask OAR server to launch the scheduler (default tag). 
+
+=item B<Finaud>
+
+Ask OAR server to check empty and suspected nodes.
+
+=back
 
 =head1 OPTIONS
 
 =over
 
-=item B<-e, --enable-queue>
+=item B<-v, --verbose>
 
-Active an existing queue.
+Increase verbosity.
 
-=item B<-d, --disable-queue>
+=item B<-V, --version>
 
-Inactive an existing queue.
-
-=item B<-E, --Enable-all-queues>
-
-Active all queues.
-
-=item B<-D, --Disable-all-queues>
-
-Inactive all queues.
-
-=item B<--add-queue>
-
-Add a new queue; syntax is name,priority,scheduler.
-(ex: "name,3,oar_sched_gantt_with_timesharing")
-
-=item B<--remove-queue>
-
-Remove an existing queue.
-
-=item B<-l, --list-queues>
-
-List all queues and there status.
-
-=item B<tag_to_Almighty>
-
-The non exhaustive list of these tags is:
- - "Term" : ask OAR server to launch the scheduler
- - "Finaud" : ask OAR server to launch the check of empty and Suspected nodes
+Print OAR version.
 
 =back
 
