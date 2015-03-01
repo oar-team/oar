@@ -30,6 +30,7 @@ sub from_strips($$$$$);
 sub compute_constraints($$$);
 sub clone_with_constraints($$);
 sub clone_union($$);
+sub manage_gantt_for_container($$$$$$$$$$);
 sub manage_gantt_hierarchy($$$$$$);
 sub fill_gantt_hierarchy($$$$$$$$$);
 sub add_new_resources($$);
@@ -361,6 +362,35 @@ sub clone_union($$) {
     my $strips = to_strips([ @$gantt1, @$gantt2 ]);
     my $union = from_strips($strips, $gantt1->[0]->[2], $gantt1->[0]->[3], $gantt1->[0]->[4], $gantt1->[0]->[5]);
     return $union;
+}
+
+
+
+sub manage_gantt_for_container($$$$$$$$$$) {
+    my $gantt = shift;
+    my $container_type = shift;
+    my $job_id = shift;
+    my $start_time = shift;
+    my $walltime = shift;
+    my $vec = shift;
+    my $max_resources = shift;
+    my $all_vec = shift;
+    my $min_hole_time = shift;
+    my $log_prefix = shift;
+
+    my $container_name;
+    if ($container_type ne "true") { # != true when the user gives -t container=<str> (named container)
+        $container_name = "container:$container_type";
+    } else {
+        $container_name = "container:$job_id";
+    }
+    if (defined($gantt->{$container_name})) {
+        oar_debug("$log_prefix container job: add a hole in gantt ($container_name,,,)\n");
+        $gantt->{$container_name}->{""}->{""}->{""} = add_1_hole($gantt->{$container_name}->{""}->{""}->{""}, $start_time, $walltime, $vec);
+    } else {
+        oar_debug("$log_prefix container job: create gantt ($container_name,,,)\n");
+        $gantt->{$container_name}->{""}->{""}->{""} = new_with_1_hole($max_resources, $min_hole_time, $start_time, $walltime, $vec, $all_vec);
+    }
 }
 
 # Manage the different gantts used in the schedulers handling container, timesharing and placeholder
