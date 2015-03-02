@@ -40,6 +40,10 @@ COLS=config.getint('output','columns')
 NODENAME_REGEX=config.get('output','nodename_regex')
 COL_SIZE=config.getint('output','col_size')
 COL_SPAN=config.getint('output','col_span')
+try:
+  COMMENT_PROPERTY=config.get('output','comment_property')
+except:
+  COMMENT_PROPERTY=""
 
 # Functions
 def get(uri):
@@ -78,6 +82,10 @@ assigned_resources={ r["id"]: j["types"] for j in jobs
 # Compute sorted node list
 nodes=natsorted(set([ r["network_address"] for r in resources ]))
 
+# Get the comment property if necessary
+if COMMENT_PROPERTY != '':
+    comment={ r["network_address"]: r[COMMENT_PROPERTY] for r in resources }
+
 # Loop on nodes and resources
 col=0
 down=0
@@ -112,6 +120,8 @@ for node in nodes:
                     cprint (Back.GREEN+Fore.BLACK+"B")
     p=re.match(NODENAME_REGEX,node)
     node_str=p.group(1)
+    if COMMENT_PROPERTY != '':
+        node_str+=" ("+comment[node]+")"
     string=" "*(COL_SIZE - c)+node_str
     col+=1
     if col < COLS:
