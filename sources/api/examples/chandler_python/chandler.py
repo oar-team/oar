@@ -167,18 +167,21 @@ if USERS_STATS_BY_DEFAULT ^ options.toggle_users and len(jobs)>0:
    user_resources=defaultdict(int)
    user_running=defaultdict(int)
    user_waiting=defaultdict(int)
+   user_nodes=defaultdict(int)
    for j in jobs:
        if j["state"]=="Running" or j["state"]=="Finishing" or j["state"]=="Launching" :
            user_running[j["owner"]]+=1
            user_resources[j["owner"]]+=len(j["resources"])
+           user_nodes[j["owner"]]+=len(j["nodes"])
        elif j["state"]=="Waiting":
            user_waiting[j["owner"]]+=1
-           user_resources[j["owner"]]+=0         
+           user_resources[j["owner"]]+=0  
+           user_nodes[j["owner"]]+=0  
 
    print "               Jobs       Jobs"
-   print "User          running    waiting   Resources"
-   print "============================================="
+   print "User          running    waiting   Resources    Nodes"
+   print "====================================================="
    for u,r in user_resources.iteritems():
-       print "{:<16} {:<10} {:<10} {:<10} ".format(u,user_running[u],user_waiting[u],r)
+       print "{:<16} {:<10} {:<10} {:<10} {:<10}".format(u,user_running[u],user_waiting[u],r,user_nodes[u])
 # Reset terminal styles
 print(Fore.RESET + Back.RESET + Style.RESET_ALL)
