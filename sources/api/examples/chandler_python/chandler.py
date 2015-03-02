@@ -6,7 +6,10 @@ import sys,os,time,re
 from colorama import init, Fore, Back, Style
 init()
 import ConfigParser
+from optparse import OptionParser
+from collections import defaultdict
 
+# Configuration file opening
 config=ConfigParser.ConfigParser()
 DEFAULT_CONFIG_FILE="/etc/oar/chandler.conf"
 try:
@@ -22,6 +25,26 @@ except:
 else: 
     config.read(os.environ['CHANDLER_CONF_FILE'])
 
+# Get some variables from the configuration file
+APIURI=config.get('oarapi','uri')
+APILIMIT=config.get('oarapi','limit')
+COLS=config.getint('output','columns')
+NODENAME_REGEX=config.get('output','nodename_regex')
+COL_SIZE=config.getint('output','col_size')
+COL_SPAN=config.getint('output','col_span')
+USERS_STATS_BY_DEFAULT=config.getboolean('output','users_stats_by_default')
+try:
+  COMMENT_PROPERTY=config.get('output','comment_property')
+except:
+  COMMENT_PROPERTY=""
+
+# Options parsing
+parser = OptionParser()
+parser.add_option("-u", "--users",
+                  action="store_true", dest="toggle_users", default=False,
+                  help="Toggle printing users stats")
+(options, args) = parser.parse_args()
+
 # Get rid of http_proxy if necessary
 if config.getboolean('misc', 'ignore_proxy'):
     try:
@@ -32,18 +55,6 @@ if config.getboolean('misc', 'ignore_proxy'):
         del os.environ['https_proxy']
     except:
         pass
-
-# Get some variables from the configuration file
-APIURI=config.get('oarapi','uri')
-APILIMIT=config.get('oarapi','limit')
-COLS=config.getint('output','columns')
-NODENAME_REGEX=config.get('output','nodename_regex')
-COL_SIZE=config.getint('output','col_size')
-COL_SPAN=config.getint('output','col_span')
-try:
-  COMMENT_PROPERTY=config.get('output','comment_property')
-except:
-  COMMENT_PROPERTY=""
 
 # Functions
 def get(uri):
@@ -92,6 +103,14 @@ down=0
 for node in nodes:
     c=0
     node_resources = [ r for r in resources if r["network_address"]==node ]
+    p=re.match(NODENAME_REGEX,node)
+    node_str=p.group(1)
+    if COMMENT_PROPERTY != '':
+        node_str+=" ("+comment[node]+")"
+    else:
+        node_str+=": "
+    string=node_str + " "*(COL_SPAN-len(node_str))
+    cprint(Fore.RESET + Back.RESET + string)
     for r in node_resources:
         c+=1
         if r["state"] == "Dead":
@@ -118,16 +137,11 @@ for node in nodes:
                     cprint (Back.WHITE+Fore.BLACK+"J")
                 else:
                     cprint (Back.GREEN+Fore.BLACK+"B")
-    p=re.match(NODENAME_REGEX,node)
-    node_str=p.group(1)
-    if COMMENT_PROPERTY != '':
-        node_str+=" ("+comment[node]+")"
-    string=" "*(COL_SIZE - c)+node_str
+    cprint(Fore.RESET + Back.RESET)
     col+=1
     if col < COLS:
-        string+=" "*(COL_SPAN-len(node_str))
-    cprint(Fore.RESET + Back.RESET + string)
-    if col >= COLS:
+        cprint(" "*(COL_SIZE - COL_SPAN - c))
+    else:
         col=0
         print
 
@@ -138,7 +152,6 @@ cprint(Back.GREEN+" "+Back.RESET+"=Free ")
 cprint(Back.GREEN+Fore.BLACK+"B"+Back.RESET+Fore.RESET+"=Besteffort ")
 cprint(Back.CYAN+" "+Back.RESET+"=Standby ")
 cprint(Back.WHITE+Fore.BLACK+"J"+Back.RESET+Fore.RESET+"=Job ")
-print
 cprint(Back.RED+Fore.BLACK+"S"+Back.RESET+Fore.RESET+"=Suspected ")
 cprint(Back.RED+Fore.BLACK+"A"+Back.RESET+Fore.RESET+"=Absent ")
 cprint(Back.RED+Fore.BLACK+"D"+Back.RESET+Fore.RESET+"=Dead ")
@@ -148,5 +161,24 @@ print
 # Print summary
 print "{} jobs, {} resources, {} down, {} used".format(len(jobs),len(resources),down,len(assigned_resources))
 
+# Print users stats if necessary
+if USERS_STATS_BY_DEFAULT ^ options.toggle_users and len(jobs)>0:
+   print
+   user_resources=defaultdict(int)
+   user_running=defaultdict(int)
+   user_waiting=defaultdict(int)
+   for j in jobs:
+       if j["state"]=="Running" or j["state"]=="Finishing" or j["state"]=="Launching" :
+           user_running[j["owner"]]+=1
+           user_resources[j["owner"]]+=len(j["resources"])
+       elif j["state"]=="Waiting":
+           user_waiting[j["owner"]]+=1
+           user_resources[j["owner"]]+=0         
+
+   print "               Jobs       Jobs"
+   print "User          running    waiting   Resources"
+   print "============================================="
+   for u,r in user_resources.iteritems():
+       print "{:<16} {:<10} {:<10} {:<10} ".format(u,user_running[u],user_waiting[u],r)
 # Reset terminal styles
 print(Fore.RESET + Back.RESET + Style.RESET_ALL)
