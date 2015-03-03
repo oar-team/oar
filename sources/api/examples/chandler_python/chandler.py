@@ -44,6 +44,17 @@ try:
 except:
     SEPARATIONS=""
 SEPARATIONS=SEPARATIONS.split(',')
+CACHING=config.getboolean('oarapi','caching')
+if CACHING:
+    CACHING_RESOURCES_FILE=config.get('oarapi','caching_resources_file')
+    CACHING_RESOURCES_DELAY=config.getint('oarapi','caching_resources_delay')
+    CACHING_JOBS_FILE=config.get('oarapi','caching_jobs_file')
+    CACHING_JOBS_DELAY=config.getint('oarapi','caching_jobs_delay')
+else:
+    CACHING_RESOURCES_FILE=""
+    CACHING_RESOURCES_DELAY=0
+    CACHING_JOBS_FILE=""
+    CACHING_JOBS_DELAY=0
 
 # Compute the number of columns depending on the COLUMNS environment variable
 try:
@@ -75,7 +86,7 @@ if config.getboolean('misc', 'ignore_proxy'):
         pass
 
 # Functions
-def get(uri):
+def get_from_api(uri):
     """
         Get an object from the api
     """
@@ -89,6 +100,22 @@ def get(uri):
     else:
         return r.json
 
+def get(uri,cache_file,cache_delay):
+    """
+        Get from the cache or from the api
+    """
+    if CACHING and os.path.isfile(cache_file) and time.time() - os.path.getmtime(cache_file) < cache_delay:
+        json_data=open(cache_file)
+        return json.load(json_data)
+    else:
+        data=get_from_api(uri)
+    if CACHING:
+        file=open(cache_file,'w')
+        json.dump(data,file)
+        file.close
+        os.chmod(cache_file, 0666)
+    return data
+
 def cprint(str,*args):
     """
         Custom print function to get rid of trailing newline and space
@@ -100,8 +127,8 @@ print('Querying OAR API...\n\033[1A'),
 
 # Get the data from the API
 #TODO: paginated results management
-resources=get('/resources/details')["items"]
-jobs=get('/jobs/details')["items"]
+resources=get('/resources/details',CACHING_RESOURCES_FILE,CACHING_RESOURCES_DELAY)["items"]
+jobs=get('/jobs/details',CACHING_JOBS_FILE,CACHING_JOBS_DELAY)["items"]
 
 # Erase the waiting message
 print("\033[2K")
