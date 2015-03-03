@@ -110,10 +110,14 @@ def get(uri,cache_file,cache_delay):
     else:
         data=get_from_api(uri)
     if CACHING:
+        chmod=True
+        if os.path.isfile(cache_file):
+            chmod=False
         file=open(cache_file,'w')
         json.dump(data,file)
         file.close
-        os.chmod(cache_file, 0666)
+        if chmod:
+            os.chmod(cache_file, 0666)
     return data
 
 def cprint(str,*args):
@@ -179,12 +183,12 @@ for node in nodes:
             except:
                 cprint (Back.GREEN+Fore.WHITE+" ")
             else:
-                try:
-                    types.index("besteffort")
-                except:
-                    cprint (Back.WHITE+Fore.BLACK+"J")
-                else:
+                if "besteffort" in types:
                     cprint (Back.GREEN+Fore.BLACK+"B")
+                elif "timesharing" in types:
+                    cprint (Back.YELLOW+Fore.BLACK+"T")
+                else:
+                    cprint (Back.WHITE+Fore.BLACK+"J")
     cprint(Fore.RESET + Back.RESET)
     col+=1
     if col < COLS and node not in SEPARATIONS:
