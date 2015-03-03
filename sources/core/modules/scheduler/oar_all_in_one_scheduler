@@ -19,6 +19,8 @@ set_current_log_category('scheduler');
 
 my $SCHEDULER_NAME = "all_in_one_scheduler";
 
+init_conf($ENV{OARCONFFILE});
+
 ##########################
 # Fairsharing parameters #
 ##########################
@@ -78,7 +80,6 @@ my $exit_code = 0;
 my $base = OAR::IO::connect();
 my $base_ro = OAR::IO::connect_ro();
 
-init_conf($ENV{OARCONFFILE});
 my $SCHEDULER_RESOURCE_ORDER = get_conf("SCHEDULER_RESOURCE_ORDER");
 
 my $JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
