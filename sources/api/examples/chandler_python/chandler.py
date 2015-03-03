@@ -33,11 +33,28 @@ COLS=config.getint('output','columns')
 NODENAME_REGEX=config.get('output','nodename_regex')
 COL_SIZE=config.getint('output','col_size')
 COL_SPAN=config.getint('output','col_span')
+MAX_COLS=config.getint('output','max_cols')
 USERS_STATS_BY_DEFAULT=config.getboolean('output','users_stats_by_default')
 try:
-  COMMENT_PROPERTY=config.get('output','comment_property')
+    COMMENT_PROPERTY=config.get('output','comment_property')
 except:
-  COMMENT_PROPERTY=""
+    COMMENT_PROPERTY=""
+try:
+    SEPARATIONS=config.get('output','separations')
+except:
+    SEPARATIONS=""
+SEPARATIONS=SEPARATIONS.split(',')
+
+# Compute the number of columns depending on the COLUMNS environment variable
+try:
+    rows, columns = os.popen('stty size', 'r').read().split()
+    COLS=int(int(columns) / COL_SIZE)
+except:
+    pass
+if COLS==0:
+    COLS=1
+if COLS>MAX_COLS:
+    COLS=MAX_COLS
 
 # Options parsing
 parser = OptionParser()
@@ -143,7 +160,7 @@ for node in nodes:
                     cprint (Back.GREEN+Fore.BLACK+"B")
     cprint(Fore.RESET + Back.RESET)
     col+=1
-    if col < COLS:
+    if col < COLS and node not in SEPARATIONS:
         cprint(" "*(COL_SIZE - COL_SPAN - c))
     else:
         col=0
