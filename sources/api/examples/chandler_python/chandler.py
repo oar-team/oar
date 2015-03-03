@@ -72,6 +72,9 @@ parser = OptionParser()
 parser.add_option("-u", "--users",
                   action="store_true", dest="toggle_users", default=False,
                   help="Toggle printing users stats")
+parser.add_option("-r", "--reload-cache",
+                  action="store_true", dest="reload_cache", default=False,
+                  help="Reload the cache")
 (options, args) = parser.parse_args()
 
 # Get rid of http_proxy if necessary
@@ -104,7 +107,7 @@ def get(uri,cache_file,cache_delay):
     """
         Get from the cache or from the api
     """
-    if CACHING and os.path.isfile(cache_file) and time.time() - os.path.getmtime(cache_file) < cache_delay:
+    if CACHING and not options.reload_cache and os.path.isfile(cache_file) and time.time() - os.path.getmtime(cache_file) < cache_delay:
         json_data=open(cache_file)
         return json.load(json_data)
     else:
