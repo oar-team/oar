@@ -8,6 +8,7 @@ init()
 import ConfigParser
 from optparse import OptionParser
 from collections import defaultdict
+from distutils.version import StrictVersion as version
 
 # Configuration file opening
 config=ConfigParser.ConfigParser()
@@ -66,7 +67,10 @@ def get(uri):
     if r.status_code != 200:
         print ("Could not get "+APIURI+uri)
         r.raise_for_status()
-    return r.json
+    if version(requests.__version__) >= version("2.0.0"):
+        return r.json()
+    else:
+        return r.json
 
 def cprint(str,*args):
     """
