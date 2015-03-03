@@ -107,7 +107,7 @@ OPENSSH_CMD="/usr/bin/ssh -p 6667"
 #TAKTUK_CMD="/usr/bin/taktuk -t 30 -s"
 
 # Change the meta scheduler in use.
-#META_SCHED_CMD="oar_meta_sched"
+#META_SCHED_CMD="oar_all_in_one_scheduler"
 
 ###############################################################################
 

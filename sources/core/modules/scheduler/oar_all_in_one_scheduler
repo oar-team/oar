@@ -11,8 +11,8 @@ use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_para
 use Data::Dumper;
 use OAR::Tools;
 use OAR::Modules::Hulot;
-use OAR::Schedulers::GanttHoleStorage_with_quotas;
-use OAR::Schedulers::QuotaStorage;
+use OAR::Schedulers::Gantt;
+use OAR::Schedulers::Quotas;
 
 # Log category
 set_current_log_category('scheduler');
@@ -68,7 +68,7 @@ if (is_conf("SCHEDULER_TOKEN_SCRIPTS")) {
 # Quotas #
 ##########
 my $QUOTA_FILE = "/etc/oar/scheduler_quotas.conf";
-my ($quotas, $err) = OAR::Schedulers::QuotaStorage::read_conf_file("$QUOTA_FILE");
+my ($quotas, $err) = OAR::Schedulers::Quotas::read_conf_file("$QUOTA_FILE");
 if (defined($err)){
     oar_error("[$SCHEDULER_NAME] $err; QUOTA DISABLED\n");
 }
@@ -386,9 +386,9 @@ oar_debug("[$SCHEDULER_NAME] Initialize the gantt structure\n");
 my ($Max_resources, $All_resource_list_vec, $Only_default_type_resource_vec) = OAR::IO::get_vecs_resources($base);
 
 my $gantt = {};
-$gantt->{default}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage_with_quotas::new($Max_resources, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME);
-OAR::Schedulers::GanttHoleStorage_with_quotas::add_new_resources($gantt->{default}->{""}->{""}->{""}, $All_resource_list_vec);
-my $quota_accounting_data = OAR::Schedulers::QuotaStorage::new($SCHEDULER_JOB_SECURITY_TIME);
+$gantt->{default}->{""}->{""}->{""} = OAR::Schedulers::Gantt::new($Max_resources, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME);
+OAR::Schedulers::Gantt::add_new_resources($gantt->{default}->{""}->{""}->{""}, $All_resource_list_vec);
+my $quota_accounting_data = OAR::Schedulers::Quotas::new($SCHEDULER_JOB_SECURITY_TIME);
 
 oar_debug("[$SCHEDULER_NAME] Begin processing of already handled reservations\n");
 # Add already scheduled reservations into the gantt
@@ -407,16 +407,16 @@ foreach my $i (keys(%{$reservation_already_there})){
     }
 
     if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
-        OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_for_container($gantt, $types->{container}, $i, $job->{start_time}, $job->{walltime} + $SCHEDULER_JOB_SECURITY_TIME, $vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
+        OAR::Schedulers::Gantt::manage_gantt_for_container($gantt, $types->{container}, $i, $job->{start_time}, $job->{walltime} + $SCHEDULER_JOB_SECURITY_TIME, $vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
 
     } else {
         ($gantt_name, $placeholder_name, $timesharing_name, $timesharing_user) = 
-            OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, undef, "[$SCHEDULER_NAME] [$i]");
+            OAR::Schedulers::Gantt::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, undef, "[$SCHEDULER_NAME] [$i]");
     }
 
     #Fill all other gantts
-    OAR::Schedulers::GanttHoleStorage_with_quotas::fill_gantt_hierarchy($gantt, $job->{start_time}, $job->{walltime} + $SCHEDULER_JOB_SECURITY_TIME, $vec, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
-    OAR::Schedulers::QuotaStorage::update_accounting_counters(
+    OAR::Schedulers::Gantt::fill_gantt_hierarchy($gantt, $job->{start_time}, $job->{walltime} + $SCHEDULER_JOB_SECURITY_TIME, $vec, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+    OAR::Schedulers::Quotas::update_accounting_counters(
         $quota_accounting_data,
         unpack("%32b*",$vec & $Only_default_type_resource_vec),
         $job->{start_time},
@@ -470,16 +470,16 @@ foreach my $job (@initial_jobs){
         }
 
         if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
-            OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_for_container($gantt, $types->{container}, $i, $date, $job_duration + $SCHEDULER_JOB_SECURITY_TIME, $resource_list_vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
+            OAR::Schedulers::Gantt::manage_gantt_for_container($gantt, $types->{container}, $i, $date, $job_duration + $SCHEDULER_JOB_SECURITY_TIME, $resource_list_vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
 
         } else {
             ($gantt_name, $placeholder_name, $timesharing_name, $timesharing_user) = 
-            OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, undef, "[$SCHEDULER_NAME] [$i]");
+            OAR::Schedulers::Gantt::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, undef, "[$SCHEDULER_NAME] [$i]");
         }
 
         #Fill all other gantts
-        OAR::Schedulers::GanttHoleStorage_with_quotas::fill_gantt_hierarchy($gantt, $date, $job_duration + $SCHEDULER_JOB_SECURITY_TIME, $resource_list_vec, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
-        OAR::Schedulers::QuotaStorage::update_accounting_counters(
+        OAR::Schedulers::Gantt::fill_gantt_hierarchy($gantt, $date, $job_duration + $SCHEDULER_JOB_SECURITY_TIME, $resource_list_vec, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+        OAR::Schedulers::Quotas::update_accounting_counters(
             $quota_accounting_data,
             unpack("%32b*",$resource_list_vec & $Only_default_type_resource_vec),
             $job->{start_time},
@@ -535,7 +535,7 @@ foreach my $job (@Rjobs){
             next;
         }
     } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
-        my ($r, $max_constraint_duration) = OAR::Schedulers::GanttHoleStorage_with_quotas::compute_constraints($types->{constraints}, $job->{start_time}, $SCHEDULER_CONSTRAINTS_ITERATIONS);
+        my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $job->{start_time}, $SCHEDULER_CONSTRAINTS_ITERATIONS);
         $constraints->{$types->{constraints}} = $r;
         # Job cannot be scheduler if job duration does not fit in any constraint
         #if ($moldable->[1] + $SCHEDULER_JOB_SECURITY_TIME < $max_constraint_duration) {
@@ -552,10 +552,10 @@ foreach my $job (@Rjobs){
         # nothing more to do, Gantt for container will be created once the job is scheduled, below.
     } else {
         ($gantt_name, $placeholder_name, $allowed_name, $timesharing_name, $timesharing_user) =
-            OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, $constraints, "[$SCHEDULER_NAME] [$i]");
+            OAR::Schedulers::Gantt::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, $constraints, "[$SCHEDULER_NAME] [$i]");
     }
 
-    my $free_resources_vec = OAR::Schedulers::GanttHoleStorage_with_quotas::get_free_resources($gantt->{$gantt_name}->{$allowed_name}->{$timesharing_user}->{$timesharing_name}, 
+    my $free_resources_vec = OAR::Schedulers::Gantt::get_free_resources($gantt->{$gantt_name}->{$allowed_name}->{$timesharing_user}->{$timesharing_name}, 
                                                                         $job->{start_time},
                                                                         $moldable->[1] + $SCHEDULER_JOB_SECURITY_TIME,
                                                                    );
@@ -612,12 +612,12 @@ foreach my $job (@Rjobs){
 
         # Create gantt for the new container
         if (defined($types->{container})){
-            OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_for_container($gantt, $types->{container}, $i, $job->{start_time}, $moldable->[1] + $SCHEDULER_JOB_SECURITY_TIME, $vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
+            OAR::Schedulers::Gantt::manage_gantt_for_container($gantt, $types->{container}, $i, $job->{start_time}, $moldable->[1] + $SCHEDULER_JOB_SECURITY_TIME, $vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
         }
 
         #Fill all other gantts
-        OAR::Schedulers::GanttHoleStorage_with_quotas::fill_gantt_hierarchy($gantt, $job->{start_time}, $moldable->[1] + $SCHEDULER_JOB_SECURITY_TIME, $vec, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
-        OAR::Schedulers::QuotaStorage::update_accounting_counters(
+        OAR::Schedulers::Gantt::fill_gantt_hierarchy($gantt, $job->{start_time}, $moldable->[1] + $SCHEDULER_JOB_SECURITY_TIME, $vec, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+        OAR::Schedulers::Quotas::update_accounting_counters(
             $quota_accounting_data,
             unpack("%32b*",$vec & $Only_default_type_resource_vec),
             $job->{start_time},
@@ -692,9 +692,9 @@ foreach my $queue (@queues){
                         foreach my $u (keys(%{$gantt->{$c}->{$p}})){
                             foreach my $n (keys(%{$gantt->{$c}->{$p}->{$u}})){
                                 oar_debug("[$SCHEDULER_NAME] Queue $queue_name: add energy saving occupation in gantt ($c,$p,$u,$n)\n");
-                                OAR::Schedulers::GanttHoleStorage_with_quotas::set_occupation( $gantt->{$c}->{$p}->{$u}->{$n},
+                                OAR::Schedulers::Gantt::set_occupation( $gantt->{$c}->{$p}->{$u}->{$n},
                                                          $t,
-                                                         OAR::Schedulers::GanttHoleStorage_with_quotas::get_infinity_value(),
+                                                         OAR::Schedulers::Gantt::get_infinity_value(),
                                                          $vec
                                                       );
                             }
@@ -784,7 +784,7 @@ foreach my $queue (@queues){
                     next;
                 }
             } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
-                my ($r, $max_constraint_duration) = OAR::Schedulers::GanttHoleStorage_with_quotas::compute_constraints($types->{constraints}, $scheduler_init_date, $SCHEDULER_CONSTRAINTS_ITERATIONS);
+                my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $scheduler_init_date, $SCHEDULER_CONSTRAINTS_ITERATIONS);
                 $constraints->{$types->{constraints}} = $r;
                 # Job cannot be scheduler if job duration does not fit in any constraint
                 #if ($duration < $max_constraint_duration) {
@@ -800,7 +800,7 @@ foreach my $queue (@queues){
                 # nothing more to do, Gantt for container will be created once the job is scheduled, below.
             } else {
                 ($gantt_name, $placeholder_name, $allowed_name, $timesharing_name, $timesharing_user) =
-                    OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_hierarchy($gantt, $j->{job_name}, $j->{job_user}, $types, $constraints, "[$SCHEDULER_NAME] [$i]");
+                    OAR::Schedulers::Gantt::manage_gantt_hierarchy($gantt, $j->{job_name}, $j->{job_user}, $types, $constraints, "[$SCHEDULER_NAME] [$i]");
             }
             if (defined($types->{token})){
                 foreach my $t (keys(%{$types->{token}})){
@@ -837,8 +837,8 @@ foreach my $queue (@queues){
                 }
                 next if ($skip_job == 1);
             }
-            #OAR::Schedulers::GanttHoleStorage_with_quotas::pretty_print($gantt_to_use);
-            #oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Gantt data structure:\n".OAR::Schedulers::GanttHoleStorage_with_quotas::pretty_print($gantt_to_use));
+            #OAR::Schedulers::Gantt::pretty_print($gantt_to_use);
+            #oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Gantt data structure:\n".OAR::Schedulers::Gantt::pretty_print($gantt_to_use));
         
             my $job_properties = "\'1\'";
             if ((defined($j->{properties})) and ($j->{properties} ne "")){
@@ -867,7 +867,7 @@ foreach my $queue (@queues){
                 }
                 my $gantt_timeout =  ($SCHEDULER_TIMEOUT - (time() - $timer_start_time)) / 4;
                 oar_debug("[$SCHEDULER_NAME] [$i] find_first_hole in gantt ($gantt_name,$allowed_name,$timesharing_name,$timesharing_user) with a timeout of $gantt_timeout\n");
-                my @hole = OAR::Schedulers::GanttHoleStorage_with_quotas::find_first_hole(
+                my @hole = OAR::Schedulers::Gantt::find_first_hole(
                     $gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}->{$timesharing_user},
                     $scheduler_init_date,
                     $duration,
@@ -920,12 +920,12 @@ foreach my $queue (@queues){
                 oar_debug("[$SCHEDULER_NAME] [$i] job is successfully scheduled\n");
                 # Create gantt for the new container
                 if (defined($types->{container})){
-                    OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_for_container($gantt, $types->{container}, $i,  $moldable_results[$index_to_choose]->{start_time}, $moldable_results[$index_to_choose]->{duration}, $moldable_results[$index_to_choose]->{resources_vec}, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
+                    OAR::Schedulers::Gantt::manage_gantt_for_container($gantt, $types->{container}, $i,  $moldable_results[$index_to_choose]->{start_time}, $moldable_results[$index_to_choose]->{duration}, $moldable_results[$index_to_choose]->{resources_vec}, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
                 }
         
                 #Fill all other gantts
-                OAR::Schedulers::GanttHoleStorage_with_quotas::fill_gantt_hierarchy($gantt, $moldable_results[$index_to_choose]->{start_time}, $moldable_results[$index_to_choose]->{duration}, $moldable_results[$index_to_choose]->{resources_vec}, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
-                OAR::Schedulers::QuotaStorage::update_accounting_counters(
+                OAR::Schedulers::Gantt::fill_gantt_hierarchy($gantt, $moldable_results[$index_to_choose]->{start_time}, $moldable_results[$index_to_choose]->{duration}, $moldable_results[$index_to_choose]->{resources_vec}, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+                OAR::Schedulers::Quotas::update_accounting_counters(
                     $quota_accounting_data,
                     unpack("%32b*",$moldable_results[$index_to_choose]->{resources_vec} & $Only_default_type_resource_vec),
                     $moldable_results[$index_to_choose]->{start_time},
@@ -1093,7 +1093,7 @@ foreach my $queue (@queues){
                             next;
                         }
                    } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
-                       my ($r, $max_constraint_duration) = OAR::Schedulers::GanttHoleStorage_with_quotas::compute_constraints($types->{constraints}, $job->{start_time}, $SCHEDULER_CONSTRAINTS_ITERATIONS);
+                       my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $job->{start_time}, $SCHEDULER_CONSTRAINTS_ITERATIONS);
                        $constraints->{$types->{constraints}} = $r;
                        # Job cannot be scheduler if job duration does not fit in any constraint
                        #if ($duration < $max_constraint_duration) {
@@ -1109,7 +1109,7 @@ foreach my $queue (@queues){
                         # nothing more to do, Gantt for container will be created once the job is scheduled, below.
                     } else {
                         ($gantt_name, $placeholder_name, $allowed_name, $timesharing_name, $timesharing_user) =
-                            OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, $constraints, "[$SCHEDULER_NAME] [$i]");
+                            OAR::Schedulers::Gantt::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, $constraints, "[$SCHEDULER_NAME] [$i]");
                     }
 
                     my ($dead_resources_vec, @dead_resources) = OAR::IO::get_resource_ids_in_state($base,"Dead");
@@ -1131,7 +1131,7 @@ foreach my $queue (@queues){
                         push(@tree_list, $tmp_tree);
                     }
                     oar_debug("[$SCHEDULER_NAME] [$i] find_first_hole in gantt ($gantt_name,$allowed_name,$timesharing_name,$timesharing_user) with a timeout of $RESERVATION_VALIDATION_TIMEOUT\n");
-                    my @hole = OAR::Schedulers::GanttHoleStorage_with_quotas::find_first_hole(
+                    my @hole = OAR::Schedulers::Gantt::find_first_hole(
                         $gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}->{$timesharing_user},
                         $job->{start_time},
                         $duration + $SCHEDULER_JOB_SECURITY_TIME,
@@ -1162,12 +1162,12 @@ foreach my $queue (@queues){
 
                         # Create gantt for the new container
                         if (defined($types->{container})){
-                            OAR::Schedulers::GanttHoleStorage_with_quotas::manage_gantt_for_container($gantt, $types->{container}, $i, $job->{start_time}, $duration + $SCHEDULER_JOB_SECURITY_TIME, $res_vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
+                            OAR::Schedulers::Gantt::manage_gantt_for_container($gantt, $types->{container}, $i, $job->{start_time}, $duration + $SCHEDULER_JOB_SECURITY_TIME, $res_vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
                         }
             
                         #Fill all other gantts
-                        OAR::Schedulers::GanttHoleStorage_with_quotas::fill_gantt_hierarchy($gantt, $job->{start_time}, $duration + $SCHEDULER_JOB_SECURITY_TIME, $res_vec, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
-                        OAR::Schedulers::QuotaStorage::update_accounting_counters(
+                        OAR::Schedulers::Gantt::fill_gantt_hierarchy($gantt, $job->{start_time}, $duration + $SCHEDULER_JOB_SECURITY_TIME, $res_vec, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+                        OAR::Schedulers::Quotas::update_accounting_counters(
                             $quota_accounting_data,
                             unpack("%32b*",$res_vec & $Only_default_type_resource_vec),
                             $job->{start_time},
@@ -1186,7 +1186,7 @@ foreach my $queue (@queues){
                     }else{           
                         oar_warn("[$SCHEDULER_NAME] [$i] advance reservation cannot be validated, not enough resources\n");
                         OAR::IO::set_job_state($base, $job->{job_id}, "toError");
-                        if ($hole[0] == OAR::Schedulers::GanttHoleStorage_with_quotas::get_infinity_value()){
+                        if ($hole[0] == OAR::Schedulers::Gantt::get_infinity_value()){
                             OAR::IO::set_job_message($base, $job->{job_id}, "This reservation cannot run");
                         }else{
                             OAR::IO::set_job_message($base, $job->{job_id}, "This reservation could run at ".OAR::IO::local_to_sql($hole[0]));

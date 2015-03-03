@@ -1,7 +1,7 @@
 MODULE=server
 SRCDIR=sources/core
 
-OARDIR_BINFILES = $(SRCDIR)/modules/scheduler/oar_meta_sched \
+OARDIR_BINFILES = $(SRCDIR)/modules/scheduler/oar_all_in_one_scheduler \
 		  $(SRCDIR)/qfunctions/oarnotify \
 		  $(SRCDIR)/qfunctions/oarqueue \
 		  $(SRCDIR)/qfunctions/oarremoveresource \
@@ -16,14 +16,6 @@ OARDIR_BINFILES = $(SRCDIR)/modules/scheduler/oar_meta_sched \
 
 OAR_PERLLIB = $(SRCDIR)/server/lib
 OARDIR_DATAFILES = $(SRCDIR)/modules/runner/oarexec
-
-	  
-OARSCHEDULER_BINFILES = $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing \
-		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing \
-		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas \
-		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_placeholder \
-		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder  
-OARCONFDIR_BINFILES = $(SRCDIR)/tools/oar_phoenix.pl
 
 MANDIR_FILES = $(SRCDIR)/man/man1/Almighty.1 \
 	       $(SRCDIR)/man/man1/oaraccounting.1 \
@@ -89,7 +81,6 @@ build: build_shared
 	
 install: build install_shared
 	install -d $(DESTDIR)$(OARDIR)/schedulers
-	install -m 0755 $(OARSCHEDULER_BINFILES) $(DESTDIR)$(OARDIR)/schedulers 
 	
 	install -d $(DESTDIR)$(OARCONFDIR)
 	install -m 0750 $(OARCONFDIR_BINFILES) $(DESTDIR)$(OARCONFDIR)
@@ -114,7 +105,6 @@ install: build install_shared
 
 uninstall: uninstall_shared
 	@for file in $(OARCONFDIR_FILES); do rm -f $(DESTDIR)$(OARCONFDIR)/`basename $$file`; done
-	@for file in $(OARSCHEDULER_BINFILES); do rm -f $(DESTDIR)$(OARDIR)/schedulers/`basename $$file`; done
 	rm -f $(DESTDIR)$(OARDIR)/Almighty
 	rm -f $(DESTDIR)$(OARDIR)/Leon
 	rm -f $(DESTDIR)$(OARDIR)/sarko
