@@ -35,6 +35,7 @@ COL_SIZE=config.getint('output','col_size')
 COL_SPAN=config.getint('output','col_span')
 MAX_COLS=config.getint('output','max_cols')
 USERS_STATS_BY_DEFAULT=config.getboolean('output','users_stats_by_default')
+NODES_USAGE_BY_DEFAULT=config.getboolean('output','nodes_usage_by_default')
 try:
     COMMENT_PROPERTY=config.get('output','comment_property')
 except:
@@ -72,6 +73,9 @@ parser = OptionParser()
 parser.add_option("-u", "--users",
                   action="store_true", dest="toggle_users", default=False,
                   help="Toggle printing users stats")
+parser.add_option("-n", "--nodes",
+                  action="store_true", dest="toggle_nodes", default=False,
+                  help="Toggle printing nodes usage")
 parser.add_option("-r", "--reload-cache",
                   action="store_true", dest="reload_cache", default=False,
                   help="Reload the cache")
@@ -211,10 +215,13 @@ cprint(Back.RED+Fore.BLACK+"S"+Back.RESET+Fore.RESET+"=Suspected ")
 cprint(Back.RED+Fore.BLACK+"A"+Back.RESET+Fore.RESET+"=Absent ")
 cprint(Back.RED+Fore.BLACK+"D"+Back.RESET+Fore.RESET+"=Dead ")
 print
-print
+
+# Reset terminal styles
+print(Fore.RESET + Back.RESET + Style.RESET_ALL)
 
 # Print summary
 print "{} jobs, {} resources, {} down, {} used".format(len(jobs),len(resources),down,len(assigned_resources))
+
 
 # Print users stats if necessary
 if USERS_STATS_BY_DEFAULT ^ options.toggle_users and len(jobs)>0:
@@ -239,5 +246,19 @@ if USERS_STATS_BY_DEFAULT ^ options.toggle_users and len(jobs)>0:
    for u,r in user_resources.iteritems():
        nodes=set(user_nodes[u])
        print "{:<16} {:<10} {:<10} {:<10} {:<10}".format(u,user_running[u],user_waiting[u],r,len(nodes))
-# Reset terminal styles
-print(Fore.RESET + Back.RESET + Style.RESET_ALL)
+
+# Print nodes usage if necessary
+if NODES_USAGE_BY_DEFAULT ^ options.toggle_nodes and len(jobs)>0:
+    print
+    assigned_nodes=[ [r["network_address"],j] 
+                         for j in jobs 
+                         for r in j["nodes"] if r["status"]=="assigned" ]
+    nodes_usage=defaultdict(list)
+    for c in assigned_nodes:
+        nodes_usage[c[0]].append(c[1])
+    for node in natsorted(nodes_usage.keys()):
+        print node+":"
+        for job in nodes_usage[node]:
+            d=time.strftime("%H:%M:%S",time.gmtime(job["start_time"]+job["walltime"]-time.time()))
+            r=[ r for r in resources if r["network_address"] == node and r["id"] in [ rj["id"] for rj in job["resources"] ] ] 
+            print "    [{}] {:<12} {:<10} {:4} {:<12} end in {}".format(job["id"],job["owner"],"("+str(job["name"])+")",len(r),",".join(job["types"]),d)
