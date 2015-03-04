@@ -261,4 +261,4 @@ if NODES_USAGE_BY_DEFAULT ^ options.toggle_nodes and len(jobs)>0:
         for job in nodes_usage[node]:
             d=time.strftime("%H:%M:%S",time.gmtime(job["start_time"]+job["walltime"]-time.time()))
             r=[ r for r in resources if r["network_address"] == node and r["id"] in [ rj["id"] for rj in job["resources"] ] ] 
-            print "    [{}] {:<12} {:<10} {:4} {:<12} end in {}".format(job["id"],job["owner"],"("+str(job["name"])+")",len(r),",".join(job["types"]),d)
+            print "    [{}] {:<12} {:<16} {},{},end in {}".format(job["id"],job["owner"],"("+str(job["name"])+")",len(r),",".join(job["types"]),d)
