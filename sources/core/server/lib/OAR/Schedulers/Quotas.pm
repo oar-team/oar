@@ -1,5 +1,5 @@
 # $Id$
-package OAR::Schedulers::QuotaStorage;
+package OAR::Schedulers::Quotas;
 require Exporter;
 use POSIX qw(strftime);
 use Storable qw(dclone);

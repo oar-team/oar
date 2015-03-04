@@ -22,9 +22,13 @@ my $SCHEDULER_NAME = "all_in_one_scheduler";
 init_conf($ENV{OARCONFFILE});
 
 ##########################
-# Fairsharing parameters #
+# Fifo policy parameters #
 ##########################
+my $SCHEDULER_FIFO_MAX_JOB = 1000;
 
+#################################
+# Fairsharing policy parameters #
+#################################
 # Avoid problems if there are too many waiting jobs
 my $SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER = get_conf_with_default_param("SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER",30);
 # number of seconds to consider for the fairsharing
@@ -38,7 +42,6 @@ if (is_conf("SCHEDULER_FAIRSHARING_PROJECT_TARGETS")) {
         exit (1);
     }
 }
-
 # specify the target percentages for users (0 if not specified)
 my $SCHEDULER_FAIRSHARING_USER_TARGETS = { oar => 100 };
 if (is_conf("SCHEDULER_FAIRSHARING_USER_TARGETS")) {
@@ -48,11 +51,13 @@ if (is_conf("SCHEDULER_FAIRSHARING_USER_TARGETS")) {
         exit (1);
     }
 }
-
 # weight given to each criteria
 my $SCHEDULER_FAIRSHARING_COEF_PROJECT = get_conf_with_default_param("SCHEDULER_FAIRSHARING_COEF_PROJECT",0);
 my $SCHEDULER_FAIRSHARING_COEF_USER = get_conf_with_default_param("SCHEDULER_FAIRSHARING_COEF_USER",2);
 my  $SCHEDULER_FAIRSHARING_COEF_USER_ASK = get_conf_with_default_param("SCHEDULER_FAIRSHARING_COEF_USER_ASK",1);
+my $karma_sum_time;
+my $karma_users;
+my $karma_projects;
 
 ##########
 # Tokens #
@@ -713,16 +718,16 @@ foreach my $queue (@queues){
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: start scheduling waiting batch jobs with policy $policy\n");
         my @jobs;
         if ($policy eq "fifo") {
-            @jobs = OAR::IO::get_jobs_to_schedule($base,$queue,$max_waiting_jobs_to_schedule);
+            @jobs = OAR::IO::get_jobs_to_schedule($base,$queue,$SCHEDULER_FIFO_MAX_JOB);
         } elsif ($policy eq "fairsharing") {
             @jobs = OAR::IO::get_fairsharing_jobs_to_schedule($base,$queue_name,$SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER);
             # Sort jobs depending on their previous usage (karma)
-            my $karma_sum_time = OAR::IO::get_sum_accounting_window($base,$queue_name,$current_time_sec - $SCHEDULER_FAIRSHARING_WINDOW_SIZE,$current_time_sec);
+            $karma_sum_time = OAR::IO::get_sum_accounting_window($base,$queue_name,$current_time_sec - $SCHEDULER_FAIRSHARING_WINDOW_SIZE,$current_time_sec);
             $karma_sum_time->{ASKED} = 1 if (!defined($karma_sum_time->{ASKED}));
             $karma_sum_time->{USED} = 1 if (!defined($karma_sum_time->{USED}));
             
-            my $karma_projects = OAR::IO::get_sum_accounting_for_param($base,$queue_name,"accounting_project",$current_time_sec - $SCHEDULER_FAIRSHARING_WINDOW_SIZE,$current_time_sec);
-            my $karma_users = OAR::IO::get_sum_accounting_for_param($base,$queue_name,"accounting_user",$current_time_sec - $SCHEDULER_FAIRSHARING_WINDOW_SIZE,$current_time_sec);
+            $karma_projects = OAR::IO::get_sum_accounting_for_param($base,$queue_name,"accounting_project",$current_time_sec - $SCHEDULER_FAIRSHARING_WINDOW_SIZE,$current_time_sec);
+            $karma_users = OAR::IO::get_sum_accounting_for_param($base,$queue_name,"accounting_user",$current_time_sec - $SCHEDULER_FAIRSHARING_WINDOW_SIZE,$current_time_sec);
             @jobs = sort({karma($karma_sum_time, $karma_projects, $karma_users, $a) <=> karma($karma_sum_time, $karma_projects, $karma_users, $b)} @jobs);
         } else {
             oar_debug("[$SCHEDULER_NAME] Queue $queue: unknown policy $policy\n");
@@ -946,7 +951,7 @@ foreach my $queue (@queues){
                 OAR::IO::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_time},$moldable_results[$index_to_choose]->{resources});
         
                 # Feed message job field
-                my $message = OAR::IO::format_job_message_text($j->{job_name},$#{$moldable_results[$index_to_choose]->{resources}}+1,$moldable_results[$index_to_choose]->{walltime},$j->{job_type},$j->{reservation},$j->{queue_name},$j->{project},\@type_list,join(",",(($policy eq "fairsharing")?("Karma=".sprintf("%.3f",karma($karma_sum_time, $karma_projects, $karma_users, $j)):""),"$moldable_results[$index_to_choose]->{comment}")));
+                my $message = OAR::IO::format_job_message_text($j->{job_name},$#{$moldable_results[$index_to_choose]->{resources}}+1,$moldable_results[$index_to_choose]->{walltime},$j->{job_type},$j->{reservation},$j->{queue_name},$j->{project},\@type_list,join(",",(($policy eq "fairsharing")?("Karma=".sprintf("%.3f",karma($karma_sum_time, $karma_projects, $karma_users, $j))):""),"$moldable_results[$index_to_choose]->{comment}"));
                 OAR::IO::set_job_message($base,$j->{job_id},$message);
                 #OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Karma = ".sprintf("%.3f",karma($karma_sum_time, $karma_projects, $karma_users, $j)));
         
