@@ -17,6 +17,8 @@ OARDIR_BINFILES = $(SRCDIR)/modules/scheduler/oar_all_in_one_scheduler \
 OAR_PERLLIB = $(SRCDIR)/server/lib
 OARDIR_DATAFILES = $(SRCDIR)/modules/runner/oarexec
 
+OARCONFDIR_BINFILES = $(SRCDIR)/tools/oar_phoenix.pl
+
 MANDIR_FILES = $(SRCDIR)/man/man1/Almighty.1 \
 	       $(SRCDIR)/man/man1/oaraccounting.1 \
 	       $(SRCDIR)/man/man1/oarmonitor.1 \
@@ -80,8 +82,6 @@ build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix	
 	
 install: build install_shared
-	install -d $(DESTDIR)$(OARDIR)/schedulers
-	
 	install -d $(DESTDIR)$(OARCONFDIR)
 	install -m 0750 $(OARCONFDIR_BINFILES) $(DESTDIR)$(OARCONFDIR)
 	
