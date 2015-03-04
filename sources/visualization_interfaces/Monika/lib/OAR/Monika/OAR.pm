@@ -45,12 +45,11 @@ sub oarnodes {
   my $self = shift;
   my $hostname= OAR::Monika::Conf::myself->hostname;
   my $port = OAR::Monika::Conf::myself->dbport;
-  my $dbtype= OAR::Monika::Conf::myself->dbtype;
   my $dbname= OAR::Monika::Conf::myself->dbname;
   my $username= OAR::Monika::Conf::myself->username;
   my $pwd= OAR::Monika::Conf::myself->password;
 
-  my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbtype, $dbname, $username, $pwd);
+  my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbname, $username, $pwd);
   my @nodeNames= OAR::Monika::db_io::list_nodes($dbh);
   foreach my $currentNode (@nodeNames){
 	next unless $currentNode;
@@ -78,12 +77,11 @@ sub getJobProperties {
   my $cgi = shift;
   my $hostname= OAR::Monika::Conf::myself->hostname;
   my $port = OAR::Monika::Conf::myself->dbport;
-  my $dbtype= OAR::Monika::Conf::myself->dbtype;
   my $dbname= OAR::Monika::Conf::myself->dbname;
   my $username= OAR::Monika::Conf::myself->username;
   my $pwd= OAR::Monika::Conf::myself->password;
 
-  my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbtype, $dbname, $username, $pwd);
+  my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbname, $username, $pwd);
   
   my $jobInfos= OAR::Monika::db_io::get_job_stat_infos($dbh, $currentJobId);
   my $job = OAR::Monika::OARJob->new($currentJobId);
@@ -134,12 +132,11 @@ sub qstat {
   my $cgi = shift;
   my $hostname= OAR::Monika::Conf::myself->hostname;
   my $port = OAR::Monika::Conf::myself->dbport;
-  my $dbtype= OAR::Monika::Conf::myself->dbtype;
   my $dbname= OAR::Monika::Conf::myself->dbname;
   my $username= OAR::Monika::Conf::myself->username;
   my $pwd= OAR::Monika::Conf::myself->password;
 
-  my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbtype, $dbname, $username, $pwd);
+  my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbname, $username, $pwd);
   my @jobIds= OAR::Monika::db_io::get_queued_jobs($dbh);
   foreach my $currentJobId (@jobIds){
     my $jobInfos= OAR::Monika::db_io::get_job_stat_infos($dbh, $currentJobId);
@@ -427,11 +424,10 @@ sub htmlPropertyChooser {
   }
   my $hostname= OAR::Monika::Conf::myself->hostname;
   my $port = OAR::Monika::Conf::myself->dbport;
-  my $dbtype= OAR::Monika::Conf::myself->dbtype;
   my $dbname= OAR::Monika::Conf::myself->dbname;
   my $username= OAR::Monika::Conf::myself->username;
   my $pwd= OAR::Monika::Conf::myself->password;
-  my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbtype, $dbname, $username, $pwd);
+  my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbname, $username, $pwd);
   my $result = OAR::Monika::db_io::get_properties_values($dbh, \%hiddenHash);
   OAR::Monika::db_io::dbDisconnect($dbh);
   my %hashcheckboxes;

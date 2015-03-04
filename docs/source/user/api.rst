@@ -2090,16 +2090,16 @@ GET /config/<variable>
     ::
     
      ---
-     - id: DB_TYPE
+     - id: DB_BASE_NAME
        links:
-          href: /config/DB_TYPE
+          href: /config/DB_BASE_NAME
           rel: self
-       value: mysql
+       value: oar
 
 :usage example:
   ::
 
-   curl -i -X GET http://login:password@localhost/oarapi-priv/config/DB_TYPE.yaml
+   curl -i -X GET http://login:password@localhost/oarapi-priv/config/DB_BASE_NAME.yaml
 
 POST /config/<variable>
 -----------------------

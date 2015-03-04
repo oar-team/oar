@@ -23,8 +23,7 @@ installation is composed of:
     - and optionally a **visualisation server** which will host the
       visualisation web interfaces (monika, drawgantt, ...);
 
-Everything is stored and archived in a database. You have the choice to use
-PostgreSQL or MySQL. We recommend to use **PostgreSQL**.
+Everything is stored and archived in a PostgreSQL database.
 
 Computing nodes
 ---------------
@@ -147,9 +146,6 @@ ______________________________
         # Install OAR server for the PostgreSQL backend
         yum --enablerepo=OAR install oar-server oar-server-pgsql
 
-        # or Install OAR server for the MySQL backend
-        yum --enablerepo=OAR install oar-server oar-server-mysql
-
 *For the Debian like systems*::
 
         # Add the OAR repository (choose the right one. See
@@ -160,9 +156,6 @@ ______________________________
 
         # Install OAR server for the PostgreSQL backend
         apt-get install oar-server oar-server-pgsql
-
-        # or Install OAR server for the MySQL backend
-        apt-get install oar-server oar-server-mysql
 
 Installation from the tarball
 _____________________________
@@ -181,9 +174,6 @@ _____________________________
         # Common dependencies
         yum install Perl Perl-base openssh Perl-DBI perl-Sort-Versions
 
-        # MySQL dependencies
-        yum install mysql-server mysql perl-DBD-MySQL
-
         # PostgreSQL dependencies
         yum install postgresql-server postgresql perl-DBD-Pg
 
@@ -194,9 +184,6 @@ _____________________________
 
           # Common dependencies
           apt-get install perl perl-base openssh-client openssh-server libdbi-perl libsort-versions-perl
-
-          # MySQL dependencies
-          apt-get install mysql-server mysql-client libdbd-mysql-perl
 
           # PostgreSQL dependencies
           apt-get install postgresql postgresql-client libdbd-pg-perl
@@ -225,7 +212,7 @@ The oar database
 ~~~~~~~~~~~~~~~~
 
 Define the database configuration in /etc/oar/oar.conf. You need to set the
-variables ``DB_TYPE, DB_HOSTNAME, DB_PORT, DB_BASE_NAME, DB_BASE_LOGIN,
+variables ``DB_HOSTNAME, DB_PORT, DB_BASE_NAME, DB_BASE_LOGIN,
 DB_BASE_PASSWD, DB_BASE_LOGIN_RO, DB_BASE_PASSWD_RO``::
 
         vi /etc/oar/oar.conf
@@ -435,9 +422,6 @@ ______________________________
         # Install OAR user for the PostgreSQL backend
         yum --enablerepo=OAR install oar-user oar-user-pgsql
 
-        # or Install OAR user for the MySQL backend
-        yum --enablerepo=OAR install oar-user oar-user-mysql
-
 *For the Debian like systems*::
 
         # Add the OAR repository (choose the right one. See
@@ -448,9 +432,6 @@ ______________________________
 
         # Install OAR server for the PostgreSQL backend
         apt-get install oar-user oar-user-pgsql
-
-        # or Install OAR server for the MySQL backend
-        apt-get install oar-user oar-user-mysql
 
 Installation from the tarball
 _____________________________
@@ -465,9 +446,6 @@ _____________________________
           # Common dependencies
           yum install Perl Perl-base openssh Perl-DBI
 
-          # MySQL dependencies
-          yum install mysql perl-DBD-MySQL
-
           # PostgreSQL dependencies
           yum install postgresql perl-DBD-Pg
 
@@ -479,9 +457,6 @@ _____________________________
 
           # Common dependencies
           apt-get install perl perl-base openssh-client openssh-server libdbi-perl
-
-          # MySQL dependencies
-          apt-get install mysql-client libdbd-mysql-perl
 
           # PostgreSQL dependencies
           apt-get install postgresql-client libdbd-pg-perl
@@ -587,10 +562,6 @@ _____________________________
           yum install perl perl-base perl-DBI perl-CGI perl-JSON perl-YAML perl-libwww-perl httpd
 
           # FastCGI dependency (optional but highly recommended)
-          FIXME:
-
-          # MySQL dependencies
-          yum install perl-DBD-MySQL
 
           # PostgreSQL dependencies
           yum install perl-DBD-Pg
@@ -606,9 +577,6 @@ _____________________________
 
           # FastCGI dependency (optional but highly recommended)
           apt-get install libapache2-mod-fastcgi
-
-          # MySQL dependencies
-          apt-get install libdbd-mysql-perl
 
           # PostgreSQL dependencies
           apt-get install libdbd-pg-perl
@@ -723,9 +691,6 @@ _____________________________
           # Common dependencies
           yum install perl perl-base perl-DBI ruby-GD ruby-DBI perl-Tie-IxHash perl-Sort-Naturally perl-AppConfig php
 
-          # MySQL dependencies
-          yum install mysql perl-DBD-MySQL ruby-mysql php-mysql
-
           # PostgreSQL dependencies
           yum install postgresql perl-DBD-Pg ruby-pg php-pgsql
 
@@ -737,9 +702,6 @@ _____________________________
 
           # Common dependencies
           apt-get install perl perl-base ruby libgd-ruby1.8 libdbi-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libapache2-mod-php5
-
-          # MySQL dependencies
-          apt-get install libdbd-mysql-perl libdbd-mysql-ruby php5-mysql
 
           # PostgreSQL dependencies
           apt-get install libdbd-pg-perl libdbd-pg-ruby php5-pgsql

@@ -23,7 +23,7 @@ my @resources_to_heal;
 my $Exit_code = 0;
 
 my $base = OAR::IO::connect();
-OAR::IO::lock_table($base,["resources","assigned_resources","jobs","job_state_logs","event_logs","event_log_hostnames","frag_jobs","moldable_job_descriptions","challenges","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","resource_logs"]);
+$base->begin_work();
 
 # Check event logs
 my @events_to_check = OAR::IO::get_to_check_events($base);
@@ -339,7 +339,6 @@ my %debug_info;
 if (keys(%resources_to_change) > 0){
     $Exit_code = 1;
 
-    OAR::IO::get_lock($base,"nodechangestate",3600); # only for MySQL
     foreach my $i (keys(%resources_to_change)){
         my $resource_info = OAR::IO::get_resource_info($base,$i);
         if ($resource_info->{state} ne $resources_to_change{$i}){
@@ -368,7 +367,6 @@ if (keys(%resources_to_change) > 0){
             OAR::IO::set_resource_nextState($base,$i,'UnChanged');
         }
     }
-    OAR::IO::release_lock($base,"nodechangestate"); # only for MySQL
 }
 
 my $str;
@@ -384,7 +382,7 @@ if (defined($str)){
     send_log_by_email("Resource state modifications","[NodeChangeState] Resource state changes requested:\n$str\n");
 }
 
-OAR::IO::unlock_table($base);
+$base->commit();
 OAR::IO::disconnect($base);
 
 my $timeout_cmd = 10;

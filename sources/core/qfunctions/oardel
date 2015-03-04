@@ -295,7 +295,7 @@ if (defined($Checkpoint)){
         warn("You must be oar or root to use the -b option\n");
     }else{
         foreach my $j (@job_ids){
-            OAR::IO::lock_table($base,["jobs","job_types","resources","assigned_resources","event_logs"]);
+            $base->begin_work();
             my $job = OAR::IO::get_job($base, $j);
             if (defined($job->{state}) and ($job->{state} eq "Running")){ 
                 my $types = OAR::IO::get_job_types_hash($base,$j);
@@ -314,7 +314,7 @@ if (defined($Checkpoint)){
                 $exitValue = 9;
                 warn("The job $j is not in the Running state.\n");
             }
-            OAR::IO::unlock_table($base);
+            $base->commit();
         }
         my $strError = OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         if (defined($strError)){
@@ -329,9 +329,9 @@ if (defined($Checkpoint)){
     foreach my $idJob (@job_ids) {
         print("Deleting the job = $idJob ...");
         # Try to insert delete informations in the database
-        OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
+        $base->begin_work();
         my $err = OAR::IO::frag_job($base,$idJob);
-        OAR::IO::unlock_table($base);
+        $base->commit();
         if ($err == -1) {
             print("ERROR.\n");
             warn("Cannot frag $idJob ; You are not the right user.\n");

@@ -1,6 +1,11 @@
 OAR CHANGELOG
 =============
 
+version 2.6.0:
+--------------
+  
+  - Remove MySQL database support.
+
 version 2.5.4:
 --------------
   

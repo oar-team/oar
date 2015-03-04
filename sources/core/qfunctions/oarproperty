@@ -101,24 +101,8 @@ foreach my $p (@Rename_property){
     
     check_property_name($old_prop);
     check_property_name($new_prop);
-    if (OAR::IO::get_database_type() eq "Pg"){
-        $base->do(" ALTER TABLE resources RENAME $old_prop TO $new_prop")
-            or die("DB error: " . $base->errstr."\n");
-    }else{
-        my $sth = $base->prepare("  SHOW FIELDS
-                                    FROM resources
-                                 ");
-        $sth->execute() or die("DB error : ".$base->errstr."\n");
-        my $type;
-        my $field = "";
-        while (($field ne $old_prop) and (my @ref = $sth->fetchrow_array())){
-            $field = $ref[0];
-            $type = $ref[1];
-        }
-        $sth->finish();
-        die("Unknown field $old_prop\n") if ($field ne $old_prop);
-        $base->do(" ALTER TABLE resources CHANGE $old_prop $new_prop $type");
-    }
+    $base->do(" ALTER TABLE resources RENAME $old_prop TO $new_prop")
+        or die("DB error: " . $base->errstr."\n");
 
     $base->do(" UPDATE resource_logs
                 SET attribute = \'$new_prop\'

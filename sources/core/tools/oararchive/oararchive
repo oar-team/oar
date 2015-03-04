@@ -90,7 +90,7 @@ sub disconnect($);
 ## Retrieves oar database parameters
 reset_conf();
 init_conf($oar_conf_file);
-my $dbType = get_conf("DB_TYPE");
+my $dbType = "Pg";
 my $dbHost = get_conf("DB_HOSTNAME");
 my $dbName = get_conf("DB_BASE_NAME");
 my $dbUserName = get_conf("DB_BASE_LOGIN");
