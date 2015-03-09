@@ -16,7 +16,7 @@ This command is used to summarize information about the jobs. Hence this can be 
 
 =item B<--reinitialize>
 
-Delete everything and recheck every jobs and feed the table.
+Delete everything in the accounting table.
 
 =item B<--delete-before=number_of_seconds>
 

@@ -6217,7 +6217,6 @@ sub get_gantt_jobs_to_launch($$){
                 AND resources.state = \'Alive\'
            ";
 
-    }
     $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
@@ -7162,7 +7161,7 @@ sub check_end_of_job($$$$$$$$$$){
         set_finish_date($base,$job_id);
         set_job_state($base,$job_id,"Finishing");
         set_job_exit_code($base,$job_id,$exit_script_value) if ($exit_script_value =~ /^\d+$/);
-        $dbh->commit();
+        $base->commit();
         my @events;
         if($error == 0){
             OAR::Modules::Judas::oar_debug("[bipbip $job_id] User Launch completed OK\n");
@@ -7347,7 +7346,7 @@ sub check_end_of_job($$$$$$$$$$){
         }
     }else{
         OAR::Modules::Judas::oar_debug("[bipbip $job_id] I was previously killed or Terminated but I did not know that!!\n");
-        $dbh->commit();
+        $base->commit();
     }
 
     OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"BipBip");
@@ -7567,7 +7566,6 @@ sub inserts_from_file($$$) {
     my $dbh = shift;
     my $table = shift;
     my $values = shift;
-    my $query = "";
     my $filename = "/tmp/oar_insert_".$table.".req";
     open(INSERTOUTFILE, ">$filename");
     print INSERTOUTFILE $values;

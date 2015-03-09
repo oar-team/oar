@@ -22,6 +22,14 @@ sub close_db_connection(){
 	$base = undef;
 }
 
+sub start_transaction(){
+	$base->begin_work();
+}
+
+sub commit_transaction(){
+	$base->commit();
+}
+
 sub encode_result($$){
 	my $result = shift or die("[OAR::Nodes] encode_result: no result to encode");
 	my $encoding = shift or die("[OAR::Nodes] encode_result: no format to encode to");

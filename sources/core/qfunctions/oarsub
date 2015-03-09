@@ -897,7 +897,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             print "md5sum = $md5sum\n";
             print "(You may use the stagein-md5sum option with this md5sum for other job submitions with the same stagein)\n";
         }
-	    $base->begin_work();
+	    OAR::Sub::start_transaction();
 		OAR::Sub::lock_stagein() or die "Failed to lock stagein\n";
         $idFile = OAR::Sub::get_stagein_id($md5sum);
         if (defined $idFile) {
@@ -919,7 +919,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             $idFile=OAR::Sub::set_stagein(\%params);
             defined $idFile or die "Failed to setup stagein\n";
         }
-	    $base->commit();
+	    OAR::Sub::commit_transaction();
         #unlink($tempfile_to_delete) if (defined($tempfile_to_delete));
         print "Stagein completed.\n";
     }
