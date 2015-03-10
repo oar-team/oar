@@ -718,7 +718,7 @@ foreach my $queue (@queues){
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: start scheduling waiting batch jobs with policy $policy\n");
         my @jobs;
         if ($policy eq "fifo") {
-            @jobs = OAR::IO::get_jobs_to_schedule($base,$queue,$SCHEDULER_FIFO_MAX_JOB);
+            @jobs = OAR::IO::get_jobs_to_schedule($base,$queue_name,$SCHEDULER_FIFO_MAX_JOB);
         } elsif ($policy eq "fairsharing") {
             @jobs = OAR::IO::get_fairsharing_jobs_to_schedule($base,$queue_name,$SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER);
             # Sort jobs depending on their previous usage (karma)
@@ -730,9 +730,10 @@ foreach my $queue (@queues){
             $karma_users = OAR::IO::get_sum_accounting_for_param($base,$queue_name,"accounting_user",$current_time_sec - $SCHEDULER_FAIRSHARING_WINDOW_SIZE,$current_time_sec);
             @jobs = sort({karma($karma_sum_time, $karma_projects, $karma_users, $a) <=> karma($karma_sum_time, $karma_projects, $karma_users, $b)} @jobs);
         } else {
-            oar_debug("[$SCHEDULER_NAME] Queue $queue: unknown policy $policy\n");
+            oar_debug("[$SCHEDULER_NAME] Queue $queue_name: unknown policy $policy\n");
             next;
         }
+        oar_debug("[$SCHEDULER_NAME] Queue $queue_name: ".($#jobs + 1)." jobs for policy $policy\n");
         my $job_index = 0;
         while (($job_index <= $#jobs) and ((time() - $timer_start_time) < $SCHEDULER_TIMEOUT)){
             my $j = $jobs[$job_index];
