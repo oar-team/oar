@@ -91,7 +91,7 @@ my $max_successive_read = 100;
 # no notification)
 my $schedulertimeout = 60;
 # Min waiting time before 2 scheduling attempts
-my $scheduler_min_time_between_2_calls = get_conf_with_default_param("SCHEDULER_MIN_TIME_BETWEEN_2_CALLS", 5);
+my $scheduler_min_time_between_2_calls = get_conf_with_default_param("SCHEDULER_MIN_TIME_BETWEEN_2_CALLS", 1);
 my $scheduler_wanted = 0; # 1 if the scheduler must be run next time update
 
 # Max waiting time before check for jobs whose time allowed has elapsed
