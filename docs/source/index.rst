@@ -25,6 +25,7 @@ User Documentation
     :maxdepth: 2
 
     user/quickstart
+    user/usecases
     user/commands
     user/mechanisms
     user/desktop-computing
