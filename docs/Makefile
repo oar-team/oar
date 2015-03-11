@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-DOC_VERSION   = 2.5
+DOC_VERSION   = latest
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
