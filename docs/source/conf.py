@@ -19,7 +19,7 @@ import datetime
 
 HERE = os.path.dirname(__file__)
 YEAR = datetime.date.today().year
-AUTHORS = "Nicolas Capit, Joseph Emeras"
+AUTHORS = ["Nicolas Capit", "Bruno Bzeznik", "Joseph Emeras"]
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -193,7 +193,6 @@ htmlhelp_basename = 'OARdoc'
 
 latex_domain_indices = False
 
-latex_logo = '_static/pyvantagepro.jpg'
 latex_elements = {
     'tableofcontents': "\\tableofcontents",
     'preamble': '''%
@@ -206,8 +205,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', 'OAR.tex', u'OAR Documentation',
-     AUTHORS, 'manual'),
+    ('index', 'OAR.tex', u'OAR Documentation', ', '.join(AUTHORS), 'manual'),
 ]
 
 
@@ -240,8 +238,7 @@ latex_appendices = ["changelog"]
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'oar', u'OAR Manual',
-     AUTHORS.split(", "), 1)
+    ('index', 'oar', u'OAR Manual', AUTHORS, 1)
 ]
 
 
@@ -264,9 +261,13 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
+OAR_DESCRIPTION = "OAR is a versatile resource and task manager " \
+                  "(also called a batch scheduler) for clusters " \
+                  "and other computing infrastructures.'"
+
 texinfo_documents = [
     ('index', 'OAR', u'OAR Documentation',
-     AUTHORS.split(", "), 'OAR', 'OAR is a versatile resource and task manager (also called a batch scheduler) for clusters and other computing infrastructures.', ''),
+     ', '.join(AUTHORS), 'OAR', OAR_DESCRIPTION, 'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
