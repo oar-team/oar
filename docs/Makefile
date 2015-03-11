@@ -3,6 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
+DOC_VERSION   = 2.5
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
@@ -53,6 +54,9 @@ html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+publish_html: html
+	rsync -avh $(BUILDDIR)/html/ wiki.oar:/var/www/oar.imag.fr/docs/$(DOC_VERSION)
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
@@ -115,6 +119,9 @@ latexpdf:
 	@echo "Running LaTeX files through pdflatex..."
 	$(MAKE) -C $(BUILDDIR)/latex all-pdf
 	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
+
+publish_pdf: latexpdf
+	rsync -avh $(BUILDDIR)/latex/*.pdf wiki.oar:/var/www/oar.imag.fr/docs/$(DOC_VERSION)
 
 latexpdfja:
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex

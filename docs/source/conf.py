@@ -207,7 +207,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', 'OAR.tex', u'OAR Documentation', ', '.join(AUTHORS), 'manual'),
+    ('index', 'OAR-Documentation.tex', u'OAR Documentation', ', '.join(AUTHORS), 'manual'),
 ]
 
 
@@ -268,7 +268,7 @@ OAR_DESCRIPTION = "OAR is a versatile resource and task manager " \
                   "and other computing infrastructures.'"
 
 texinfo_documents = [
-    ('index', 'OAR', u'OAR Documentation',
+    ('index', 'OAR-Documentation', u'OAR Documentation',
      ', '.join(AUTHORS), 'OAR', OAR_DESCRIPTION, 'Miscellaneous'),
 ]
 
