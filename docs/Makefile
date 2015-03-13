@@ -122,6 +122,7 @@ latexpdf:
 
 publish_pdf: latexpdf
 	rsync -avh $(BUILDDIR)/latex/*.pdf wiki.oar:/var/www/oar.imag.fr/docs/$(DOC_VERSION)
+	rsync -avh $(BUILDDIR)/latex/*.tex wiki.oar:/var/www/oar.imag.fr/docs/$(DOC_VERSION)
 
 latexpdfja:
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
