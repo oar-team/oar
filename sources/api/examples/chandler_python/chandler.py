@@ -36,6 +36,8 @@ COL_SPAN=config.getint('output','col_span')
 MAX_COLS=config.getint('output','max_cols')
 USERS_STATS_BY_DEFAULT=config.getboolean('output','users_stats_by_default')
 NODES_USAGE_BY_DEFAULT=config.getboolean('output','nodes_usage_by_default')
+NODES_HEADER=config.get('output','nodes_header')
+NODES_FORMAT=config.get('output','nodes_format')
 try:
     COMMENT_PROPERTY=config.get('output','comment_property')
 except:
@@ -256,9 +258,10 @@ if NODES_USAGE_BY_DEFAULT ^ options.toggle_nodes and len(jobs)>0:
     nodes_usage=defaultdict(list)
     for c in assigned_nodes:
         nodes_usage[c[0]].append(c[1])
+    print NODES_HEADER
     for node in natsorted(nodes_usage.keys()):
         print node+":"
         for job in nodes_usage[node]:
             d=time.strftime("%H:%M:%S",time.gmtime(job["start_time"]+job["walltime"]-time.time()))
             r=[ r for r in resources if r["network_address"] == node and r["id"] in [ rj["id"] for rj in job["resources"] ] ] 
-            print "    [{}] {:<12} {:<16} {},{},end in {}".format(job["id"],job["owner"],"("+str(job["name"])+")",len(r),",".join(job["types"]),d)
+            print "    "+NODES_FORMAT.format(job["id"],job["owner"],str(job["name"]),len(r),",".join(job["types"]),d,job["project"])
