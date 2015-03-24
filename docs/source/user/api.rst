@@ -1634,16 +1634,15 @@ POST /resources
 
   *fields*:
      - **hostname** alias **network_address** (*string*): the network address given to the resource
-     - **properties** (*hash*): an optional hash defining some properties for this new resource
+     - **<properties>** : The hash may be appended with any other valid property 
 
   *yaml example*:
     ::
 
      ---
      hostname: test2
-     properties:
-       besteffort: "NO"
-       cpu: "10"
+     besteffort: "NO"
+     cpu: "10"
 
 :output:
   *structure*: hash returning the id of the newly created resource and status (or an array of hashes if a set of resources has been given on the input)
