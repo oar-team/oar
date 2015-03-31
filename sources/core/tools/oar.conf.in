@@ -617,3 +617,11 @@ OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 # (POST /resources/generate)
 # If the variable is not defined, this feature is disabled
 #API_RESOURCES_LIST_GENERATION_CMD="/usr/sbin/oar_resources_add -Y"
+
+# Colmet extractor script path
+#API_COLMET_EXTRACT_PATH="/usr/lib/oar/colmet_extract.py"
+#
+# Colmet hdf5 files path with filename prefix
+# The API will automatically append .<timestamp>.hdf5
+#API_COLMET_HDF5_PATH_PREFIX="/var/lib/colmet/hdf5/cluster"
+
