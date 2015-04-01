@@ -2426,7 +2426,7 @@ SWITCH: for ($q) {
   # Colmet
   ############################################
   #
-  #{{{ GET /colmet/job/<id>?[start=timestamp]&[end=timestamp]&[metrics=m1,m2...] : Extract colmet data for the given job
+  #{{{ GET /colmet/job/<id>?[from=timestamp]&[to=timestamp]&[metrics=m1,m2...] : Extract colmet data for the given job
   #
   $URI = qr{^/colmet/job/(\d+)\.*(json)*$};
   OAR::API::GET( $_, $URI ) && do {
@@ -2478,8 +2478,24 @@ SWITCH: for ($q) {
         $stop_time=OAR::IO::get_date($dbh);
         OAR::IO::disconnect($dbh);
     }
+    if (defined($q->param('to'))) {
+      my $to = $q->param('to');
+      if ($to < $stop_time) {
+        $stop_time=$to;
+      }
+    }
     my $start_time=@$job[0]->{'start_time'};
-    my $cmd="$COLMET_EXTRACT_PATH $COLMET_HDF5_PATH_PREFIX $jobid $start_time $stop_time cpu_run_real_total,ac_etime";
+    if (defined($q->param('from'))) {
+      my $from = $q->param('from');
+      if ($from > $start_time) {
+        $start_time=$from;
+      }
+    }
+    my $metrics="ac_etime,cpu_run_real_total,coremem,read_bytes,write_bytes";
+    if (defined($q->param('metrics'))) {
+      $metrics=$q->param('metrics'); 
+    }
+    my $cmd="$COLMET_EXTRACT_PATH $COLMET_HDF5_PATH_PREFIX $jobid $start_time $stop_time $metrics";
     my $cmdRes = OAR::API::send_cmd($cmd,"Oar");    
 
     print $header;
