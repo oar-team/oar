@@ -2428,15 +2428,15 @@ SWITCH: for ($q) {
   #
   #{{{ GET /colmet/job/<id>?[from=timestamp]&[to=timestamp]&[metrics=m1,m2...] : Extract colmet data for the given job
   #
-  $URI = qr{^/colmet/job/(\d+)\.*(json)*$};
+  $URI = qr{^/colmet/job/(\d+)$};
   OAR::API::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
-    my $ext=OAR::API::set_ext($q,$2);
+    my $ext=OAR::API::set_ext($q,undef);
     
-    if ( not $ext eq "json" ) {
+    if ( not $ext eq "tgz" ) {
       OAR::API::ERROR( 400, "Bad format",
-        "Colmet data is only available in JSON" );
+        "Colmet data is only available in compressed JSON , as application/x-gzip" );
     }    
 
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET");
