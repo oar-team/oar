@@ -63,16 +63,16 @@ while [ $# -ge 1 ]; do
   -H|--hosts)
     HOSTS=$2
     shift
-    ;; 
-  -C|--cpu)
+    ;;
+  -C|--cpus)
     CPUS=$2
     shift
-    ;; 
-  -c|--core)
+    ;;
+  -c|--cores)
     CORES=$2
     shift
     ;;
-  -t|--thread)
+  -t|--threads)
     THREADS=$2
     shift
     ;;
@@ -124,6 +124,10 @@ while [ $# -ge 1 ]; do
   -h|--help)
     usage
     exit 0
+    ;;
+  *)
+    usage
+    exit 1
     ;;
   esac
   shift
