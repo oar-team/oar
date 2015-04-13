@@ -86,7 +86,7 @@ if (grep(/^deploy$/, @{$type_list})){
 }
 ');
 
-# Restrict allowed properties for deploy jobs to force requesting entire nodes
+# Prevent deploy type jobs on non-entire nodes
 INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (9, 'YES', '# Restrict allowed properties for deploy jobs to force requesting entire nodes
 my @bad_resources = ("cpu","core","thread","resource_id",);
 if (grep(/^deploy$/, @{$type_list})){
@@ -95,7 +95,7 @@ if (grep(/^deploy$/, @{$type_list})){
             my $i = 0;
             while (($i <= $#{$r->{resources}})){
                 if (grep(/^$r->{resources}->[$i]->{resource}$/i, @bad_resources)){
-                    die("[ADMISSION RULE] the \'$r->{resources}->[$i]->{resource}\' resource property cannot be used with jobs of type deploy\\n");
+                    die("[ADMISSION RULE] \'$r->{resources}->[$i]->{resource}\' resource is not allowed with a deploy job\\n");
                 }
                 $i++;
             }
@@ -136,7 +136,7 @@ if ($reservationField eq "toSchedule") {
         close(FILE);
     }
     if ($unlimited > 0) {
-        print("[ADMISSION RULE] Unlimited advance reservation privilege granted\\n");
+        print("[ADMISSION RULE] $user is granted the privilege to do unlimited reservations\\n");
     } else {
         my $max_nb_resa = 2;
         my $nb_resa = $dbh->do("    SELECT job_id
