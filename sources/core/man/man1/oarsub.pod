@@ -116,12 +116,12 @@ Ex:
 args are job_id,job_name,TAG,comment
 
 TAG can be:
-  - RUNNING : when the job is launched
-  - END : when the job is finished normally
-  - ERROR : when the job is finished abnormally
-  - INFO : used when oardel is called on the job
-  - SUSPENDED : when the job is suspended
-  - RESUMING : when the job is resumed
+  - RUNNING: when the job is launched
+  - END: when the job is finished normally
+  - ERROR: when the job is finished abnormally
+  - INFO: used when oardel is called on the job
+  - SUSPENDED: when the job is suspended
+  - RESUMING: when the job is resumed
 
 By default all TAGs are triggered. It is possible to specify which TAGs must be triggered.
 Ex:
@@ -247,7 +247,7 @@ Script can contain the description of the job. Lines with options must begin by 
 
 =head1 EXAMPLES
 
-Job submission with arguments :
+Job submission with arguments:
 
 =over
 
@@ -315,7 +315,7 @@ Script example (file /home/users/toto/script.sh):
 
 =back
 
-Submit the script :
+Submit the script:
 
 =over
 
