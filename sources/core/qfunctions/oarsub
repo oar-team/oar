@@ -117,7 +117,7 @@ sub qdel($) {
     my $Al_dead = shift;
     if (defined($Job_id_list_ref)) {
         if ($Al_dead eq "INT" ) {
-            print(STDERR "\n\nCaught Interrupt (^C), ");
+            warn("\n\nCaught Interrupt (^C), ");
         }
         OAR::Sub::delete_jobs($Job_id_list_ref, $remote_host, $remote_port);
         OAR::Sub::close_db_connection(); exit(1);
@@ -155,13 +155,13 @@ sub connect_job($$$){
         my $moldable = OAR::Sub::get_current_moldable_job($job->{assigned_moldable_job});
         my $job_user = $job->{job_user};
         OAR::Sub::close_db_connection();
-        my @passinfo = getpwnam($lusr) or die("Cannot retreive system information for user $lusr\n");
+        my @passinfo = getpwnam($lusr) or die("# Error: cannot retreive system information for user $lusr\n");
         my $shell=$passinfo[8];
         unless ((defined($xauth_path)) and (-x $xauth_path) and ($ENV{DISPLAY} =~ /^[\w.-]*:\d+(?:\.\d+)?$/)) {
             $ENV{DISPLAY}="";
         }
         if ($ENV{DISPLAY} ne ""){
-            print("Initialize X11 forwarding...\n");
+            print("# Info: Initialize X11 forwarding...\n");
             # first, get rid of remaining unused .Xautority.{pid} files...
             system({"bash"} "bash","-c",'for f in $HOME/.Xauthority.*; do [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f; done');
             my $new_xauthority = $ENV{HOME}."/.Xauthority.$$";
@@ -216,13 +216,13 @@ sub connect_job($$$){
         #essential : you become oar instead of the user
         #UID=EUID
         $< = $>;
-        print("Connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
+        print("# Info: connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
         system({$cmd[0]} @cmd);
         my $exit_value = $? >> 8;
         if ($exit_value == 2){
-            warn("[ERROR] Cannot go into the working directory : $job->{launching_directory}\n");
+            warn("# Error: cannot enter working directory: $job->{launching_directory}\n");
         }elsif($exit_value != 0){
-            warn("[ERROR] An unknown error occured : $?\n");
+            warn("# Error: an unexpected error: $?\n");
         }
         if ($stop_oarexec > 0){
 			my %params = (
@@ -234,13 +234,13 @@ sub connect_job($$$){
 						  );
             OAR::Sub::signal_oarexec(\%params);
         }
-        print("Disconnected from OAR job $job_id\n");
+        print("# Info: disconnected from OAR job $job_id\n");
     }else{
         if ($job->{state} ne "Running"){
-            warn("/!\\ ERROR : the job $job_id is not running. Its current state is $job->{state}.\n");
+            warn("# Error: job $job_id is not running, current state is $job->{state}.\n");
         }
         if (($lusr ne $job->{job_user}) and ($lusr ne "oar")){
-            warn("/!\\ ERROR : you are not the right user for the job $job_id. This job is owned by $job->{job_user}.\n");
+            warn("# Error: user mismatch for job $job_id (job user is $job->{job_user}).\n");
         }
         OAR::Sub::close_db_connection();
         return(20);
@@ -495,7 +495,7 @@ sub parse_resource_descriptions($){
                     $tmp = $Nodes_resources if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -2 });
                 }else{
-                    die("/!\\ Cannot recognize the resource description : $l\n");
+                    die("# Error: unexpected resource description: $l\n");
                 }
             }
             $tmp_result{resources} = \@resources_list;
@@ -513,12 +513,12 @@ sub parse_resource_descriptions($){
                     }
                     $resource_groups[1] = OAR::Sub::sql_to_duration("$resource_groups[1]");
                 }else{
-                    die("/!\\ Cannot recognize walltime resource value\n");
+                    die("# Error: unexpected walltime value: $1.\n");
                 }
                 $r = $2;
             }
             if ($r eq $initial_resource){
-                die("/!\\ Cannot recognize -- $r -- resource\n");
+                die("# Error: unexpected resource specification: $r\n");
             }
             push(@{$resource_groups[0]}, \%tmp_result);
 
@@ -569,14 +569,14 @@ if (is_conf("OAR_RUNTIME_DIRECTORY")){
 }
 my $default_oar_dir = OAR::Sub::get_default_oarexec_directory();
 if (!(((-d $default_oar_dir) and (-O $default_oar_dir)) or (mkdir($default_oar_dir)))){
-    die("ERROR: Cannot create the OAR directory $default_oar_dir or bad permissions.\n");
+    die("# Error: failed to create the OAR directory $default_oar_dir, or bad permissions.\n");
 }
 
 my $binpath;
 if (defined($ENV{OARDIR})){
     $binpath = $ENV{OARDIR}."/";
 }else{
-    die("ERROR: OARDIR env variable must be defined.\n");
+    die("# Error: OARDIR environment variable is not defined.\n");
 }
 
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
@@ -625,7 +625,7 @@ GetOptions ("resource|l=s" => \@resource,
 
 
 if (defined($Version)){
-    print("OAR version : ".OAR::Sub::get_oar_version()."\n");
+    print("OAR version: ".OAR::Sub::get_oar_version()."\n");
     exit(0);
 }
 
@@ -644,30 +644,30 @@ if (is_conf("OARSUB_FORCE_JOB_KEY")){
 OAR::Sub::open_db_connection();
 
 if (defined($Resubmit)){
-    print("Resubmitting job $Resubmit ...");
+    print("# Resubmitting job $Resubmit ...");
     my $err = OAR::Sub::resubmit_job($Resubmit);
     OAR::Sub::close_db_connection();
     if ($err > 0){
         $Job_id = $err;
-        print("DONE\n");
+        print(" done.\n");
         print("OAR_JOB_ID=$Job_id\n");
         if (defined(OAR::Sub::signal_almighty($remote_host,$remote_port,"Qsub"))){
-            warn("Cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
-            exit(3);
+            warn("# Error: cannot connect to executor $remote_host:$remote_port. OAR server might be down.\n");
+            Exit(3);
         }
         exit(0);
     }else{
-        print("ERROR\n");
+        print(" error.\n");
         if ($err == -1){
-            warn("/!\\ An interactive job or a reservation cannot be resubmitted\n");
+            warn("# Error: interactive jobs and advance reservations cannot be resubmitted.\n");
         }elsif ($err == -2){
-            warn("/!\\ The job must be in Error or Terminated state\n");
+            warn("# Error: only jobs in the Error or Terminated state can be resubmitted.\n");
         }elsif ($err == -3){
-            warn("/!\\ You are not the right user\n");
+            warn("# Error: resubmitted job user mismatch.\n");
         }elsif ($err == -4){
-            warn("/!\\ Another active job is using the same ssh keys\n");
+            warn("# Error: another active job is using the same job key.\n");
         }else{
-            warn("/!\\ Unknown error\n");
+            warn("# Error: unknown error.\n");
         }
         exit(4);
     }
@@ -679,23 +679,23 @@ if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && (!defined($c
 }
 
 if (($Interactive == 1) and ($Reservation ne "0")){
-    warn("/!\\ A reservation cannot be interactive.\n");
+    warn("# Error: a advance reservation cannot be interactive.\n");
     usage();
     OAR::Sub::close_db_connection(); exit(7);
 }
 
 if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
-    warn("/!\\ A desktop computing job cannot be interactive.\n");
+    warn("# Error: a desktop computing job cannot be interactive.\n");
     usage();
     OAR::Sub::close_db_connection(); exit(17);
 }
 
 if (grep(/^noop$/, @Type)){
     if ($Interactive == 1){
-        warn("/!\\ A NOOP job cannot be interactive.\n");
+        warn("# Error: a NOOP job cannot be interactive.\n");
         OAR::Sub::close_db_connection(); exit(17);
     }elsif (defined($connect_job)){
-        warn("/!\\ It is not possible to connect to a NOOP job.\n");
+        warn("# Error: a NOOP job does not have a shell to connect to");
         OAR::Sub::close_db_connection(); exit(17);
     }
 }
@@ -703,7 +703,7 @@ if (grep(/^noop$/, @Type)){
 if (defined($notify) && $notify =~ m/^.*exec\s*:.+$/m){
     my $notify_exec_regexp = '[a-zA-Z0-9_.\/ -]+';
     unless ($notify =~ m/.*exec\s*:($notify_exec_regexp)$/m){
-      warn("/!\\ Insecure characters found in notification method (the allowed regexp is: $notify_exec_regexp).\n");
+      warn("# Error: insecure characters found in the notification method (the allowed regexp is: $notify_exec_regexp).\n");
       OAR::Sub::close_db_connection(); exit(16);
     }
 }
@@ -725,12 +725,12 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         if (defined($scan_result{queue}) && !defined($Queue_name)){
             $Queue_name = $scan_result{queue}
         }elsif(defined($scan_result{queue}) && defined($Queue_name)){
-            warn("/!\\ Ignore script value for queue parameter : $scan_result{queue}; another value was given on the command line.\n");
+            warn("# Warning: ignoring in script queue parameter: $scan_result{queue}; another value was given on the command line.\n");
         }
         if (defined($scan_result{property}) && ($Job_sql_properties eq "")){
             $Job_sql_properties = $scan_result{property};
         }elsif(defined($scan_result{property}) && ($Job_sql_properties ne "")){
-            warn("/!\\ Ignore script value for property parameter : $scan_result{property}; another value was given on the command line.\n");
+            warn("# Warning: ignoring in script property parameter: $scan_result{property}; another value was given on the command line.\n");
         }
         if (defined($scan_result{resources})){
             push(@resource, @{$scan_result{resources}});
@@ -744,12 +744,12 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         if (defined($scan_result{checkpoint}) && ($Checkpoint == 0)){
             $Checkpoint = $scan_result{checkpoint};
         }elsif(defined($scan_result{checkpoint}) && ($Checkpoint != 0)){
-            warn("/!\\ Ignore script value for checkpoint parameter : $scan_result{checkpoint}; another value was given on the command line.\n");
+            warn("# Warning: ignoring in script checkpoint parameter: $scan_result{checkpoint}; another value was given on the command line.\n");
         }
         if (defined($scan_result{notify}) && (!defined($notify))){
             $notify = $scan_result{notify};
         }elsif(defined($scan_result{notify}) && (defined($notify))){
-            warn("/!\\ Ignore script value for notify parameter : $scan_result{notify}; another value was given on the command line.\n");
+            warn("# Warning: ignoring in script notify parameter: $scan_result{notify}; another value was given on the command line.\n");
         }
         if (defined($scan_result{directory})){
             $Directory = $scan_result{directory};
@@ -757,77 +757,77 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         if (defined($scan_result{directory}) && (!defined($Directory))){
             $Directory = $scan_result{directory};
         }elsif(defined($scan_result{directory}) && (defined($Directory))){
-            warn("/!\\ Ignore script value for name parameter : $scan_result{directory}; another value was given on the command line.\n");
+            warn("# Warning: ignoring in script directory parameter: $scan_result{directory}; another value was given on the command line.\n");
         }
         if (defined($scan_result{name}) && (!defined($job_name))){
             $job_name = $scan_result{name};
         }elsif(defined($scan_result{name}) && (defined($job_name))){
-            warn("/!\\ Ignore script value for name parameter : $scan_result{name}; another value was given on the command line.\n");
+            warn("# Warning: ignoring in script name parameter: $scan_result{name}; another value was given on the command line.\n");
         }
         if (defined($scan_result{project}) && (!defined($Project))){
             $Project = $scan_result{project};
         }elsif(defined($scan_result{project}) && (defined($Project))){
-            warn("/!\\ Ignore script value for name parameter : $scan_result{project}; another value was given on the command line.\n");
+            warn("# Warning: ignoring in script lproject parameter: $scan_result{project}; another value was given on the command line.\n");
         }
         if (defined($scan_result{hold}) && (!defined($job_hold))){
             $job_hold = $scan_result{hold};
         }elsif(defined($scan_result{hold}) && (defined($job_hold))){
-            warn("/!\\ Ignore script value for hold parameter : $scan_result{hold}; another value was given on the command line.\n");
+            warn("# Warning: ignore in script hold parameter: $scan_result{hold}; another value was given on the command line.\n");
         }
         if (defined($scan_result{signal}) && (!defined($Checkpoint_signal))){
             $Checkpoint_signal = $scan_result{signal};
         }elsif(defined($scan_result{signal}) && (defined($Checkpoint_signal))){
-            warn("/!\\ Ignore script value for hold parameter : $scan_result{signal}; another value was given on the command line.\n");
+            warn("# Warning: ignoring in script signal parameter: $scan_result{signal}; another value was given on the command line.\n");
         }
         if (defined($scan_result{stdout}) && (!defined($Stdout_file))){
             $Stdout_file = $scan_result{stdout};
         }elsif(defined($scan_result{stdout}) && (defined($Stdout_file))){
-            warn("/!\\ Ignore script value for stdout parameter : $scan_result{stdout}; another value was given on the command line.\n");
+            warn("# Warning: ignoring in script stdout parameter: $scan_result{stdout}; another value was given on the command line.\n");
         }
         if (defined($scan_result{stderr}) && (!defined($Stderr_file))){
             $Stderr_file = $scan_result{stderr};
         }elsif(defined($scan_result{stderr}) && (defined($Stderr_file))){
-            warn("/!\\ Ignore script value for stderr parameter : $scan_result{stderr}; another value was given on the command line.\n");
+            warn("# Warning: ignore script value for stderr parameter : $scan_result{stderr}; another value was given on the command line.\n");
         }
         if (defined($scan_result{usejobkey}) && (!defined($use_job_key))){
             $use_job_key = $scan_result{usejobkey};
         }elsif(defined($scan_result{usejobkey}) && (defined($use_job_key))){
-            warn("/!\\ Ignore script value for use-job-key parameter : $scan_result{usejobkey}; another value was given on the command line.\n");
+            warn("# Warning: ignore in script use-job-key parameter : $scan_result{usejobkey}; another value was given on the command line.\n");
         }
         if (defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline eq "")){
             $import_job_key_inline = $scan_result{importjobkeyinlinepriv};
         }elsif(defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline ne "")){
-            warn("/!\\ Ignore script value for import-job-key-inline-priv parameter : $scan_result{importjobkeyinlinepriv}; another value was given on the command line.\n");
+            warn("# Warning: ignore in script import-job-key-inline-priv parameter: $scan_result{importjobkeyinlinepriv}; another value was given on the command line.\n");
         }
         if (defined($scan_result{importjobkeyfromfile}) && ($import_job_key_file eq "")){
             $import_job_key_file = $scan_result{importjobkeyfromfile};
         }elsif(defined($scan_result{importjobkeyfromfile}) && ($import_job_key_file ne "")){
-            warn("/!\\ Ignore script value for import-job-key-from-file parameter : $scan_result{importjobkeyfromfile}; another value was given on the command line.\n");
+            warn("# Warning: ignore in script import-job-key-from-file parameter: $scan_result{importjobkeyfromfile}; another value was given on the command line.\n");
         }
         if (defined($scan_result{exportjobkeytofile}) && ($export_job_key_file eq "")){
             $export_job_key_file = $scan_result{exportjobkeytofile};
         }elsif(defined($scan_result{exportjobkeytofile}) && ($export_job_key_file ne "")){
-            warn("/!\\ Ignore script value for export-job-key-to-file parameter : $scan_result{exportjobkeytofile}; another value was given on the command line.\n");
+            warn("# Warning: ignore in script export-job-key-to-file parameter: $scan_result{exportjobkeytofile}; another value was given on the command line.\n");
         }
         if (defined($scan_result{stagein}) && (!defined($stagein))){
             $stagein = $scan_result{stagein};
         }elsif (defined($scan_result{stagein}) && (defined($stagein))){
-            warn("/!\\ Ignore script value for stagein parameter : $scan_result{stagein}; another value was given on the command line.\n");
+            warn("# Warning: ignore in script stagein parameter: $scan_result{stagein}; another value was given on the command line.\n");
         }
         if (defined($scan_result{stageinmd5sum}) && (!defined($md5sum))){
             $md5sum = $scan_result{stageinmd5sum};
         }elsif(defined($scan_result{stageinmd5sum}) && (defined($md5sum))){
-            warn("/!\\ Ignore script value for stagein-md5sum parameter : $scan_result{stageinmd5sum}; another value was given on the command line.\n");
+            warn("# Warning: ignore in script stagein-md5sum parameter: $scan_result{stageinmd5sum}; another value was given on the command line.\n");
         }
         if (defined($scan_result{array}) && (!defined($array_job_nb))){
             $array_job_nb = $scan_result{array};
         }elsif(defined($scan_result{array}) && (defined($array_job_nb))){
-            warn("/!\\ Ignore script value for array parameter : $scan_result{array}; another value was given on the command line.\n");
+            warn("# Warning: ignore in script array parameter: $scan_result{array}; another value was given on the command line.\n");
         }
         if (defined($scan_result{arrayparamfile}) && (!defined($array_param_file))){
             $array_param_file = $scan_result{arrayparamfile};
         }elsif(defined($scan_result{arrayparamfile}) && (defined($array_param_file))){
-            warn("/!\\ Ignore script value for array-param-file parameter : $scan_result{arrayparamfile}; another value was given on the command line.\n");
+            warn("# Warning: ignore in script array-param-file parameter: $scan_result{arrayparamfile}; another value was given on the command line.\n");
         }
     }
 
@@ -845,7 +845,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     $array_job_nb = 1 if (!defined($array_job_nb));
     if($array_job_nb <= 0){
-        warn("/!\\ An array job must have a positive number of sub-jobs\n");
+        warn("Error: an array job must have a number of sub-jobs greater than 0.\n");
         usage();
         OAR::Sub::close_db_connection(); exit(6);
     }
@@ -870,43 +870,42 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
             $Reservation = OAR::Sub::sql_to_local("$1 $2");
         }else{
-            warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
+            warn("# Error: syntax error for the advance reservation start date specification. Expected format is: \"YYYY-MM-DD hh:mm:ss\"\n");
             OAR::Sub::close_db_connection; exit(7);
         }
         ($Server, $server_port) = OAR::Sub::init_tcp_server();
     }
-	# TODO: put in lib
-    # stagein machinery
+    # stagein machinery (dead code ?)
+	# TODO: put in lib or remove ?
     if ((defined $stagein) and (grep(/^desktop_computing$/, @Type))) {
         #my $tempfile_to_delete;
-        print "Setting up stagein...\n";
         if (-d $stagein) {
-            print "Archiving the content of the directory \"$stagein\" for the job stagein...\n";
+            print "# Info: archiving the content of the directory \"$stagein\" for the job stage-in...\n";
             my  (undef, $filename) = tempfile (SUFFIX=>".oar-stagein.tgz",OPEN => 0);
-            system "tar cfz $filename $stagein" and die "Failed to archive the directory: $?\n";
-            print "Stagein archive = $filename\n";
-            print "(You may save this file if you plan to submit other jobs later with the same stagein)\n";
+            system "tar cfz $filename $stagein" and die "# Error: Failed to archive the directory: $?\n";
+            print "# Info: stage-in archive file is $filename\n";
+            print "# Info: (you may save this file if you plan to submit other jobs later with the same stagein)\n";
             $stagein = $filename;
             #$tempfile_to_delete = $filename;
             $md5sum = undef;
         }
-        ( -r $stagein ) or die "Stagein file not found: $stagein\n";
+        ( -r $stagein ) or die "# Error: stage-in file not found: $stagein\n";
         unless (defined $md5sum) {
-            print "Computing stagein md5sum...\n";
+            print "# Info: computing the stage-in file md5sum...\n";
             ($md5sum) = split(" ",`md5sum $stagein`);
-            print "md5sum = $md5sum\n";
-            print "(You may use the stagein-md5sum option with this md5sum for other job submitions with the same stagein)\n";
+            print "# Info: md5sum = $md5sum\n";
+            print "# Info: (you may use the --stagein-md5sum option with this md5sum for other job submitions with the same stage-in)\n";
         }
-		OAR::Sub::get_lock($md5sum,3600) or die "Failed to lock stagein\n";
+		OAR::Sub::get_lock($md5sum,3600) or die "# Error: failed to lock the stage-in file\n";
         $idFile = OAR::Sub::get_stagein_id($md5sum);
         if (defined $idFile) {
-            print "This stagein is already stored on the server.\n";
+            print "# Info: this stagein is already stored on the server.\n";
         } else {
             my $location = "$stageindir/$md5sum";
             my $method = "FILE";
             my $compression = "tar.gz";
-            print "Uploading stagein...\n";
-            system "scp $stagein $location" and die "Stagein upload failed\n";
+            print "# Info: uploading stage-in data...\n";
+            system "scp $stagein $location" and die "# Error: stage-in upload failed\n";
             my @stats = stat $stagein;
 			my %params = (
 						  "md5sum" => $md5sum,
@@ -916,24 +915,23 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 						  "size" => $stats[7]
 			);
             $idFile=OAR::Sub::set_stagein(\%params);
-            defined $idFile or die "Failed to setup stagein\n";
+            defined $idFile or die "# Error: failed to setup stage-in\n";
         }
-        OAR::Sub::release_lock($md5sum) or die "Failed to unlock stagein\n";
+        OAR::Sub::release_lock($md5sum) or die "# Error: failed to unlock the stage-in file\n";
         #unlink($tempfile_to_delete) if (defined($tempfile_to_delete));
-        print "Stagein completed.\n";
     }
 
      $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }else{
     if ($ARGV[0] ne ""){
-        warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
+        warn("# Warning: asking for an interactive job (-I), so ignoring arguments: $ARGV[0].\n");
     }
     $Cmd_executor = "Qsub -I";
 
     my @resource_list = parse_resource_descriptions(\@resource);
  
     if (defined($array_param_file)){
-        warn("/!\\ A parameter file-based array job cannot be interactive.\n");
+        warn("# Error: a array job with parameters given in a file cannot be interactive.\n");
 # user defined array_ids, 0 if interactive and/or non-array job 
         usage();
         OAR::Sub::close_db_connection(); exit(9);
@@ -945,7 +943,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     $array_job_nb = 1 if (!defined($array_job_nb));
     if ($array_job_nb != 1){
-        warn("/!\\ An array job cannot be interactive.\n");
+        warn("# Error: an array job cannot be interactive.\n");
         usage();
         OAR::Sub::close_db_connection(); exit(8);
     }
@@ -957,7 +955,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
             $Reservation = OAR::Sub::sql_to_local("$1 $2");
         }else{
-            warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
+            warn("# Error: syntax error for the advance reservation start date specification. Expected format is: \"YYYY-MM-DD hh:mm:ss\"\n");
             OAR::Sub::close_db_connection(); exit(7);
         }
     }
@@ -993,19 +991,19 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode) or ($JSON_mod
                 $dump->dtd;
                 print($dump->pl2xml($tmp));
             }else{
-                warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+                warn("# Warning: XML module not available on the system. Ask your administrator to install it if needed.\n");
             }
         }elsif(defined($YAML_mode)){
             if ($YAML_enabled == 1){
                 print(YAML::Dump($tmp));
             }else{
-                warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
+                warn("# Warning: YAML module not available on the system. Ask your administrator to install it if needed.\n");
             }
         }elsif(defined($JSON_mode)){
             if ($JSON_enabled == 1){
                 print(JSON->new->pretty(1)->encode($tmp));
             }else{
-                warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
+                warn("# Warning: JSON module not available on the system. Ask your administrator to install it if needed.\n");
             }
         }
     }
@@ -1015,33 +1013,33 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode) or ($JSON_mod
 OAR::Sub::close_db_connection();
 
 if ((@{$Job_id_list_ref} < 1) or ($Job_id_list_ref->[-1] <= 0)){
-    warn("Oarsub failed: please verify your request syntax or ask for support to your admin.\n");
+    warn("# Error: command failed, please verify your syntax.\n");
     exit(8);
 }
 
 #Signal Almigthy
 if (defined(OAR::Sub::signal_almighty($remote_host,$remote_port,"$Cmd_executor"))){
     #qdel(1);
-    warn("Cannot connect to executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
+    warn("# Error: cannot connect to oar execution module $remote_host:$remote_port. Killing job.\n");
     exit(9);
 }
 
 my $answer;
 if ($Reservation ne "0"){
     #Reservation mode
-    print("Reservation mode : waiting validation...\n");
+    print("# Info: advance reservation request: waiting for approval from the scheduler...\n");
     my $client = $Server->accept();
     $answer = <$client>;
     chop($answer);
     if ($answer eq "GOOD RESERVATION"){
-        print("Reservation valid --> OK\n");
+        print("# Info: reservation accepted.\n");
     }else{
-        print("Reservation not valid --> KO ($answer)\n");
+        print("# Info: reservation rejected ($answer)\n");
         exit(10);
     }
 }elsif ($Interactive==1) {
     #Interactive mode
-    print("Interactive mode : waiting...\n");
+    print("# Info: interactive mode: waiting...\n");
     my $prev_str = "";
     do{
         my $client = $Server->accept();
@@ -1049,11 +1047,11 @@ if ($Reservation ne "0"){
         chop($answer);
         if ($answer =~ /\](.*)$/){
             if ($1 ne $prev_str){
-                print("$answer\n");
+                print("# Info: $answer\n");
                 $prev_str = $1;
             }
         }elsif ($answer ne "GOOD JOB"){
-            print("$answer\n");
+            print("# Info: $answer\n");
         }
     }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED") and ($answer !~ /^ERROR/));
     print("\n");

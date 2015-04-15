@@ -306,8 +306,8 @@ sub timeout_db($$) {
   my $dbh = shift;
   my $Max_db_connection_timeout = shift;
   if (!defined($dbh)) {
-        oar_warn("[IOlib] I will retry to connect to the database in $Timeout_db_connection s\n");
-        send_log_by_email("OAR database connection failed","[IOlib] I will retry to connect to the database in $Timeout_db_connection s\n");
+        oar_warn("Will retry to connect to the database in $Timeout_db_connection s\n");
+        send_log_by_email("OAR database connection failed","Will retry to connect to the database in $Timeout_db_connection s\n");
         my $sleep_time = 0;
         while ($sleep_time <= 1){
             $sleep_time = sleep($Timeout_db_connection);
@@ -1249,10 +1249,10 @@ sub estimate_job_nb_resources($$$){
                 if ($DBI::errstr ne ""){
                     my $tmp_err = $DBI::errstr;
                     chop($tmp_err);
-                    $tmp_moldable_result->{comment} = "Bad resource request ($tmp_err)";
+                    $tmp_moldable_result->{comment} = "# Bad resource request ($tmp_err)";
                     $tmp_moldable_result->{nbresources} = 0;
                 }else{
-                    $tmp_moldable_result->{comment} = "There are not enough resources for your request";
+                    $tmp_moldable_result->{comment} = "# There are not enough resources for your request";
                     $tmp_moldable_result->{nbresources} = 0;
                 }
                 last;
@@ -1282,12 +1282,12 @@ sub job_key_management($$$$) {
         $import_job_key_file=$ENV{OAR_JOB_KEY_FILE};
     }
     if ((!defined($use_job_key)) and (($import_job_key_inline ne "") or ($import_job_key_file ne "") or ($export_job_key_file ne ""))){
-        warn("Error: You must set the --use-job-key (or -k) option in order to use other job key related options.\n");
+        warn("# Error: you must set the --use-job-key (or -k) option in order to use other job key related options.\n");
         return(-15,'','');
     }
     if (defined($use_job_key)){
         if (($import_job_key_inline ne "") and ($import_job_key_file ne "")){
-            warn("Error: You cannot import a job key both inline and from a file at the same time.\n");
+            warn("# Error: you cannot import a job key both inline and from a file at the same time.\n");
             return(-15,'','');
         }
         my $tmp_job_key_file = OAR::Tools::get_default_oarexec_directory()."/oarsub_$$.jobkey";
@@ -1295,31 +1295,31 @@ sub job_key_management($$$$) {
             # job key is imported
             if ($import_job_key_inline ne "") {
                 # inline import
-                print ("Import job key inline.\n");
+                print ("# Info: importing job key inline.\n");
                 unless (sysopen(FH,"$tmp_job_key_file",O_CREAT|O_WRONLY,0600)) {
-                    warn("Error: Cannot open tmp file for writing: $tmp_job_key_file\n");
+                    warn("# Error: cannot open tmp file for writing: $tmp_job_key_file\n");
                     return(-14,'','');
                 }
                 syswrite(FH,$import_job_key_inline);
                 close(F);
             } else {
                 # file import
-                print ("Import job key from file: $import_job_key_file\n");
+                print ("# Info: import job key from file: $import_job_key_file\n");
                 my $lusr= $ENV{OARDO_USER};
                 # read key files: oardodo su - user needed in order to be able to read the file for sure
                 # safer way to do a `cmd`, see perl cookbook 
                 my $pid;
-                die "cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
+                die "# Error: cannot fork: $!" unless defined ($pid = open(SAFE_CHILD, "-|"));
                 if ($pid == 0) {
                     $ENV{OARDO_BECOME_USER} = $lusr;
                     unless (exec("oardodo cat $import_job_key_file")) {
-                        warn ("Error: Cannot read key file:$import_job_key_file\n");
+                        warn ("# Error: cannot read key file:$import_job_key_file\n");
                         exit(-14);
                     }
                     exit(0);
                 }else{
                     unless (sysopen(FH,"$tmp_job_key_file",O_CREAT|O_WRONLY,0600)) {
-                        warn("Error: Cannot open tmp file for writing: $tmp_job_key_file\n");
+                        warn("# Error: cannot open tmp file for writing: $tmp_job_key_file\n");
                         return(-14,'','');
                     }
                     while (<SAFE_CHILD>) {
@@ -1332,7 +1332,7 @@ sub job_key_management($$$$) {
             # extract the public key from the private one
             system({"bash"} "bash","-c","SSH_ASKPASS=/bin/true ssh-keygen -y -f $tmp_job_key_file < /dev/null 2> /dev/null > $tmp_job_key_file.pub");
             if ($? != 0){
-                warn ("Error: Fail to extract the public key. Please verify that the job key to import is valid.\n");
+                warn ("# Error: fail to extract the public key. Please verify that the job key to import is valid.\n");
                 if (-e $tmp_job_key_file) { 
                     unlink($tmp_job_key_file);
                 }
@@ -1343,17 +1343,17 @@ sub job_key_management($$$$) {
             }
         } else {
             # we must generate the key
-            print("Generate a job key...\n");
+            print("# info: generating a job key...\n");
             # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
             system({"bash"} "bash","-c",'ssh-keygen -b 1024 -N "" -t rsa -f "'.$tmp_job_key_file.'" > /dev/null');
             if ($? != 0) {
-                warn ("Error: Job key generation failed ($?).\n");
+                warn ("# Error: job key generation failed ($?).\n");
                 return(-14,'','');
             }
         }
         # priv and pub key file must now exist.
         unless (open(F, "< $tmp_job_key_file")){
-            warn ("Error: fail to read private key.\n");
+            warn ("# Error: fail to read private key.\n");
             return(-14,'','');
         }
         while ($_ = <F>){
@@ -1361,7 +1361,7 @@ sub job_key_management($$$$) {
         }
         close(F);
         unless (open(F, "< $tmp_job_key_file.pub")){
-            warn ("Error: fail to read private key.\n");
+            warn ("# Error: fail to read private key.\n");
             return(-14,'','');
         }
         while ($_ = <F>){
@@ -1374,15 +1374,15 @@ sub job_key_management($$$$) {
     # last checks
     if (defined($use_job_key)){
         if ($job_key_pub eq "") {
-            warn("Error: missing job public key (private key found).\n");
+            warn("# Error: missing job public key (private key found).\n");
             return(-15,'','');
         } 
         if ($job_key_priv eq "") {
-            warn("Error: missing job private key (public key found).\n");
+            warn("# Error: missing job private key (public key found).\n");
             return(-15,'','');
         } 
         if ($job_key_pub !~ /^(ssh-rsa|ssh-dss)\s.+\n*$/){
-            warn("Error: Bad job key format. The public key must begin with either `ssh-rsa' or `ssh-dss' and is only 1 line.\n");
+            warn("# Error: Bad job key format. The public key must begin with either `ssh-rsa' or `ssh-dss' and is only 1 line.\n");
             return(-14,'','');
         }
         $job_key_pub =~ s/\n//g;
@@ -1428,17 +1428,17 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     # Verify notify syntax
     if ((defined($notify)) and ($notify !~ m/^\s*(\[\s*(.+)\s*\]\s*)?(mail|exec)\s*:.+$/m)){
-        warn("/!\\Bad syntax for the notify option\n");
+        warn("# Error: bad syntax for the notify option.\n");
         return(-6);
     }
     
     # Check the stdout and stderr path validity
     if ((defined($stdout)) and ($stdout !~ m/^[a-zA-Z0-9_.\/\-\%\\ ]+$/m)) {
-      warn("/!\\ Invalid stdout file name (bad character)\n");
+      warn("# Error: invalid stdout file name (bad character)\n.");
       return(-12);
     }
     if (defined($stderr) and ($stderr !~ m/^[a-zA-Z0-9_.\/\-\%\\ ]+$/m)) {
-      warn("/!\\ Invalid stderr file name (bad character)\n");
+      warn("# Error: invalid stderr file name (bad character).\n");
       return(-13);
     }    
 
@@ -1456,7 +1456,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     
     # Verify the content of env variables
     if ( "$job_env" !~ m/^[\w\=\s\/\.\-\"]*$/m ){
-        warn("ERROR : The specified environnement variables contains bad characters -- $job_env\n");
+        warn("# Error: the specified environnement variables contains bad characters -- $job_env\n");
         return(-9);
     }
     #Retrieve Micheline's rules from the table
@@ -1473,14 +1473,14 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     #Apply rules
     eval $rules;
     if ($@) {
-        warn("Admission Rule ERROR : $@ \n");
+        warn("# Error: admission rule failure: $@ \n");
         return(-2);
     }
 
     #Test if the queue exists
     my %all_queues = get_all_queue_informations($dbh);
     if (!defined($all_queues{$queue_name})){
-        warn("ERROR : The queue $queue_name does not exist\n");
+        warn("# Error: queue $queue_name does not exist.\n");
         return(-8);
     }
       
@@ -1498,7 +1498,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my $array_index = 1;
     my @Job_id_list;
     if (($array_job_nb>1)  and (not defined($use_job_key))) { #to test  add_micheline_simple_array_job
-      warn("Simple array job submission is used\n"); 
+      warn("# Warning: simple array job submission is used\n"); 
       my $simple_job_id_list_ref = add_micheline_simple_array_job_non_contiguous($dbh, $dbh_ro, $jobType, $ref_resource_list, \@array_job_commands, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation);
     return($simple_job_id_list_ref);
     } else {
@@ -1527,7 +1527,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
           my $pid;
           # write the private job key with the user ownership
           unless (defined ($pid = open(SAFE_CHILD, "|-"))) {
-            warn ("Error: Cannot open pipe ($?)");
+            warn ("# Error: cannot open pipe ($?)");
             exit(-14);
           }
           if ($pid == 0) {
@@ -1535,19 +1535,19 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
               $ENV{OARDO_BECOME_USER} = $lusr;
               open(STDERR, ">/dev/null");
                   unless (exec("oardodo dd of=$export_job_key_file_tmp")) {
-                  warn ("Error: Cannot exec user shell ($?)");
+                  warn ("# Error: cannot exec user shell ($?)");
                   push(@Job_id_list,-14);
                   return(@Job_id_list);
               }
           } else {
               print SAFE_CHILD $ssh_priv_key;
               unless (close(SAFE_CHILD)) { 
-                  warn ("Error: Cannot close pipe {$?}");
+                  warn ("# Error: cannot close pipe {$?}");
                   push(@Job_id_list,-14);
                   return(@Job_id_list);
               }
           }
-          print "Export job key to file: ".$export_job_key_file_tmp."\n";
+          print "# Info: export job key to file: ".$export_job_key_file_tmp."\n";
         }
       }
    }
@@ -1619,14 +1619,14 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     if (($ssh_pub_key ne "") or ($ssh_priv_key ne "")){
         # Check if the keys are used by other jobs
         if (get_count_same_ssh_keys_current_jobs($dbh,$user,$ssh_priv_key,$ssh_pub_key) > 0){
-            warn("/!\\ Another job is using the same ssh keys\n");
+            warn("# Error:  another job is using the same ssh keys.\n");
             return(-10);
         }
     }
 
     # Check the user validity
     if (! $user =~ /[a-zA-Z0-9_-]+/ ) {
-      warn("/!\\ Invalid username: '$user'\n");
+      warn("# Error: invalid username: '$user'\n");
       return(-11);
     }
     
@@ -1773,13 +1773,13 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     # Check the user validity
     if (! $user =~ /[a-zA-Z0-9_-]+/ ) {
-      warn("/!\\ Invalid username: '$user'\n");
+      warn("# Error: invalid username: '$user'\n");
       return(-11);
     }
 
     # Check the jobs are no moldable
     if ($#{$ref_resource_list}>=1) {
-      die ("/!\\ array jobs cannot be moldable\n");
+      die ("# Error: array jobs cannot be moldable\n");
     }
 
     # Test if properties and resources are coherent
@@ -2007,13 +2007,13 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
     # Check the user validity
     if (! $user =~ /[a-zA-Z0-9_-]+/ ) {
-      warn("/!\\ Invalid username: '$user'\n");
+      warn("# Error: invalid username: '$user'\n");
       return(-11);
     }
 
     # Check the jobs are no moldable
     if ($#{$ref_resource_list}>=1) {
-      die ("/!\\ array jobs cannot be moldable\n");
+      die ("# Error: array jobs cannot be moldable\n");
     }
 
     # Test if properties and resources are coherent
