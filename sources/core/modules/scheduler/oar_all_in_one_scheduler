@@ -437,6 +437,8 @@ oar_debug("[$SCHEDULER_NAME] End processing of already handled reservations\n");
 
 oar_debug("[$SCHEDULER_NAME] Begin processing of current jobs\n");
 my @initial_jobs = OAR::IO::get_jobs_in_multiple_states($base, ["Running","toLaunch","Launching","Finishing","Suspended","Resuming"]);
+my $tmp_index_last_initial_job = $#initial_jobs;
+my $tmp_cur_index = 0;
 foreach my $job (@initial_jobs){
     my $gantt_name = "default";
     my $placeholder_name = "";
@@ -444,8 +446,18 @@ foreach my $job (@initial_jobs){
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $i = $job->{job_id};
+    $tmp_cur_index++;
 
     next if ($job->{assigned_moldable_job} == 0);
+    my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
+    if (defined($types->{inner}) and
+        ($tmp_cur_index <= $tmp_index_last_initial_job)
+       ){ # Treate inner jobs at the end, so init container gantts first
+        oar_debug("[$SCHEDULER_NAME] [$i] Forward inner job initialization at the end\n");
+        push(@initial_jobs, $job);
+        next;
+    }
+
     my $mold = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
     # The list of resources on which the job is running
     my ($resource_list_vec, @resource_list) = OAR::IO::get_job_current_resources($base, $job->{assigned_moldable_job},undef);
@@ -461,7 +473,6 @@ foreach my $job (@initial_jobs){
     oar_debug("[$SCHEDULER_NAME] [$i] Add job in the prediction table of the database\n");
     OAR::IO::add_gantt_scheduled_jobs($base,$job->{assigned_moldable_job},$date,\@resource_list);
 
-    my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
     my @type_list = sort(keys(%{$types}));
     # Ignore besteffort jobs
     if (!(defined($types->{besteffort}) and $job->{queue_name} ne "besteffort")){
