@@ -71,13 +71,14 @@
   - exec_local: echo system_reset | socat - UNIX-CONNECT:$$qemu_monitor_socket
   - exec_local: |
         NEXT_WAIT_TIME=0
-        until ssh-keyscan -T 1 -4 -p $$qemu_ssh_port localhost  2>&1 | grep -e ssh-rsa -e ssh-dsa &> /dev/null || [ $NEXT_WAIT_TIME -eq $$reboot_timeout ];
+        SSH_AVAILABLE=0
+        until ssh-keyscan -T 1 -4 -p $$qemu_ssh_port localhost  2>&1 | grep -e ssh-rsa -e ssh-dsa &> /dev/null && SSH_AVAILABLE=1 || [ $NEXT_WAIT_TIME -eq $$reboot_timeout ];
         do
-          echo -en "\rWaiting for SSH to become available for in_context...($(( $$reboot_timeout - 1 - NEXT_WAIT_TIME++ ))s)"
+          echo -en "\rWaiting for SSH to become available for out_context...($(( $$reboot_timeout - 1 - NEXT_WAIT_TIME++ ))s)"
         done
         echo ""
   - rescue:
-    - exec_local: ssh-keyscan -T 1 -4 -p $$qemu_ssh_port localhost  2>&1 | grep -e ssh-rsa -e ssh-dsa &> /dev/null
-    - breakpoint: Failed to connect to VM via SSH. Please verify the VM successfully booted by looking at the VirtualBox GUI.
+    - exec_local: test $SSH_AVAILABLE -eq 1
+    - breakpoint: Failed to connect to VM via SSH. Please verify the VM successfully booted with a vnc client.
 
   - reload_context: out

@@ -1,0 +1,72 @@
+#==============================================================================
+# vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
+#==============================================================================
+#
+# DESCRIPTION: Base template for Debian appliance.
+#
+#==============================================================================
+---
+# Loads some helpful aliases
+aliases: defaults.yaml
+#== Global variables use by Kameleon engine and the steps
+global:
+  ## User varibales : used by the recipe
+  user_name: kameleon
+  user_password: $$user_name
+
+  # Distribution
+  distrib: debian
+  arch: amd64
+  kernel_arch: $$arch
+  hostname: kameleon-$$distrib
+
+  ## System variables. Required by kameleon engine
+  # Include specific steps
+  include_steps:
+    - $$distrib/$$release
+    - $$distrib
+
+  # Apt recipe options
+  apt_repository: http://ftp.debian.org/debian/
+  apt_enable_contrib: true
+  apt_enable_nonfree: true
+
+#== Bootstrap the new system and create the 'in_context'
+bootstrap:
+  - debootstrap:
+    - include_pkg: apt-utils $$bootstrap_packages
+    - release: $$release
+    - arch: $$arch
+    - repository: http://ftp.debian.org/debian/
+    - variant: default  # default|minbase|buildd|fakechroot|scratchbox
+
+#== Install and configuration steps
+# WARNING: this part should be independante from the out context (whenever
+# possible...)
+setup:
+  # Install
+  - configure_apt:
+    - repository: $$apt_repository
+    - enable_contrib_repo: $$apt_enable_contrib
+    - enable_nonfree_repo: $$apt_enable_nonfree
+  - upgrade_system:
+    - dist_upgrade: true
+  - install_software:
+    - packages: >
+        debian-keyring $$setup_packages
+  - configure_kernel
+  - install_bootloader
+  # Configuration
+  - configure_system:
+    - locales: POSIX C en_US fr_FR de_DE
+    - lang: en_US.UTF-8
+    - timezone: UTC
+  - configure_keyboard:
+    - layout: "us,fr,de"
+  - configure_network
+  - create_group:
+    - name: admin
+  - create_user:
+    - name: $$user_name
+    - groups: sudo admin
+    - password: $$user_password

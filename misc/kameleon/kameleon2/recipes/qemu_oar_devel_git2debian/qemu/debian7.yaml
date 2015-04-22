@@ -2,29 +2,17 @@
 # vim: softtabstop=2 shiftwidth=2 expandtab fenc=utf-8 cc=81 tw=80
 #==============================================================================
 #
-# DESCRIPTION: Debian 7 (Wheezy) base system (amd64).
+# DESCRIPTION: Debian 7 (Wheezy) base system built with qemu-kvm.
 #
 #==============================================================================
-
 ---
-# Loads some helpful aliases
-aliases: defaults.yaml
-
+extend: ../base/debian.yaml
 # Enables qemu checkpoint
 checkpoint: qemu.yaml
-
 #== Global variables use by Kameleon engine and the steps
 global:
-  ## User varibales : used by the recipe
-  user_name: kameleon
-  user_password: $$user_name
-
   # Distribution
-  distrib: debian
   release: wheezy
-  arch: amd64
-  kernel_arch: $$arch
-  hostname: kameleon-$$distrib
 
   ## QEMU options
   qemu_enable_kvm: "$(egrep '(vmx|svm)' /proc/cpuinfo > /dev/null && echo true)"
@@ -46,18 +34,6 @@ global:
   rootfs: /rootfs
   filesystem_type: ext4
 
-  ## System variables. Required by kameleon engine
-  # Include specific steps
-  include_steps:
-    - $$distrib/$$release
-    - $$distrib
-
-  # Apt options
-  apt_repository: http://ftp.debian.org/debian/
-  apt_enable_contrib: true
-  apt_enable_nonfree: true
-  apt_install_recommends: false
-
   ssh_config_file: $$kameleon_cwd/ssh_config
   out_context:
     cmd: ssh -F $$ssh_config_file $${kameleon_recipe_name} -t /bin/bash
@@ -69,6 +45,15 @@ global:
     workdir: /root/kameleon_workdir
     proxy_cache: 10.0.2.2
 
+  bootstrap_packages: >
+    bsdutils ca-certificates locales man-db less libui-dialog-perl dialog
+    isc-dhcp-client ifupdown iptables iputils-ping iproute netbase net-tools
+    psmisc openssh-server acpid acpi-support-base sysvinit
+    linux-image-$$kernel_arch pciutils
+
+  setup_packages: >
+    sudo vim bash-completion curl resolvconf extlinux bzip2 dialog
+
 #== Bootstrap the new system and create the 'in_context'
 bootstrap:
   - prepare_qemu
@@ -77,45 +62,12 @@ bootstrap:
   - install_requirements:
     - packages: parted e2fsprogs debootstrap extlinux
   - initialize_disk
-  - debootstrap:
-    - include_pkg: > 
-        apt-utils ca-certificates locales less linux-image-$$kernel_arch
-        isc-dhcp-client ifupdown iptables iputils-ping iproute pciutils
-        psmisc acpid acpi-support-base openssh-server sysvinit
-    - release: $$release
-    - arch: $$arch
-    - repository: $$apt_repository
-    - variant: minbase
-  - switch_context_qemu
+  - "@base"
+  - reboot_qemu
 
 #== Install and configuration steps
 setup:
-  # Install
-  - configure_apt:
-    - repository: $$apt_repository
-    - enable_contrib_repo: $$apt_enable_contrib
-    - enable_nonfree_repo: $$apt_enable_nonfree
-  - upgrade_system:
-    - dist_upgrade: true
-  - install_software:
-    - packages: >
-        debian-keyring ntp sudo less vim bash-completion curl less bzip2 wget 
-        dialog htop tree extlinux
-  - install_bootloader
-  # Configuration
-  - configure_system:
-    - locales: POSIX C en_US fr_FR de_DE
-    - lang: en_US.UTF-8
-    - timezone: UTC
-  - configure_keyboard:
-    - layout: "us,fr,de"
-  - configure_network
-  - create_group:
-    - name: admin
-  - create_user:
-    - name: $$user_name
-    - groups: sudo admin
-    - password: $$user_password
+- "@base"
 
 #== Export the generated appliance in the format of your choice
 export:

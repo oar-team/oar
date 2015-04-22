@@ -8,7 +8,9 @@
              "/usr/lib/bios/syslinux/mbr.bin"
              "/usr/lib/syslinux/bios/mbr.bin"
              "/usr/lib/extlinux/mbr.bin"
-             "/usr/lib/syslinux/mbr.bin")
+             "/usr/lib/syslinux/mbr.bin"
+             "/usr/lib/syslinux/mbr/mbr.bin"
+             "/usr/lib/EXTLINUX/mbr.bin")
       for element in "${PATHS[@]}"
       do
         if [ -f "$element" ]; then

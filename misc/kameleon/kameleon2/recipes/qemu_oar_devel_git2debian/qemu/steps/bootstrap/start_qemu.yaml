@@ -22,6 +22,7 @@
           -cdrom $$kameleon_cwd/boot2kameleon.iso \
           -drive file="$$qemu_image_disk",cache=unsafe,media=disk,if=virtio,id=drive0 \
           -smp $${qemu_cpu} \
+          -cpu host \
           -m $$qemu_memory_size \
           -rtc base=localtime \
           -net nic,model=virtio -net user \
@@ -31,13 +32,14 @@
           -daemonize -vnc :1 $LOADVM
   - exec_local: |
         NEXT_WAIT_TIME=0
-        until ssh-keyscan -T 1 -4 -p $$qemu_ssh_port localhost  2>&1 | grep -e ssh-rsa -e ssh-dsa &> /dev/null || [ $NEXT_WAIT_TIME -eq $$boot_timeout ];
+        SSH_AVAILABLE=0
+        until ssh-keyscan -T 1 -4 -p $$qemu_ssh_port localhost  2>&1 | grep -e ssh-rsa -e ssh-dsa &> /dev/null && SSH_AVAILABLE=1 || [ $NEXT_WAIT_TIME -eq $$boot_timeout ];
         do
           echo -en "\rWaiting for SSH to become available for out_context...($(( $$boot_timeout - 1 - NEXT_WAIT_TIME++ ))s)"
         done
         echo ""
   - rescue:
-    - exec_local: ssh-keyscan -T 1 -4 -p $$qemu_ssh_port localhost  2>&1 | grep -e ssh-rsa -e ssh-dsa &> /dev/null
+    - exec_local: test $SSH_AVAILABLE -eq 1
     - breakpoint: Failed to connect to VM via SSH. Please verify the VM successfully booted with a vnc client.
 
 - force_shutdown_qemu_vm:

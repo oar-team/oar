@@ -28,7 +28,7 @@
 - save_as_qcow2:
   - check_cmd_local: qemu-img
   - exec_local: echo "Exporting appliance to $$output.qcow2..."
-  - exec_local: qemu-img convert -c -O qcow2 $$input $$output.qcow2
+  - exec_local: qemu-img convert -O qcow2 $$input $$output.qcow2
 
 - save_as_qed:
   - check_cmd_local: qemu-img
