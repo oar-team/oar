@@ -1109,6 +1109,7 @@ sub set_job_exit_code($$$) {
 }
 
 
+my $TREE_CACHE_HASH;
 # get_possible_wanted_resources
 # return a tree ref : a data structure with corresponding resources with what is asked
 sub get_possible_wanted_resources($$$$$$$){
@@ -1154,6 +1155,11 @@ sub get_possible_wanted_resources($$$$$$$){
     }
     chop($resource_string);
 
+    # Search if this was already seen
+    if (defined($TREE_CACHE_HASH->{$resource_string}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector})){
+        #oar_debug("[IOlib] Use tree cache to get ressource structure.\n");
+        return(OAR::Schedulers::ResourceTree::clone($TREE_CACHE_HASH->{$resource_string}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector}));
+    }
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resources
                              WHERE
@@ -1198,7 +1204,8 @@ sub get_possible_wanted_resources($$$$$$$){
     
     $sth->finish();
 
-    return($result);
+    $TREE_CACHE_HASH->{$resource_string}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector} = $result;
+    return(OAR::Schedulers::ResourceTree::clone($result));
 }
 
 # estimate_job_nb_resources
