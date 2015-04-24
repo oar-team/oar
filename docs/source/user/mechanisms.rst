@@ -156,11 +156,13 @@ Job dependencies
 ----------------
 
 A job dependency is a situation where a job needs the ending of another job
-to start. OAR deals with job dependency problems by refusing to schedule
-dependant jobs if their required job is in Terminated state and have an exit
-code != 0 (an error occured). If the required job is resubmited, its jobId is
-no longer the same and OAR updates the database and sets the job_id_required
-field to this new jobId for the dependant job.
+to start. OAR deals with job dependency problems by always launch the
+dependant jobs even if their required job is in Error state or have an exit
+code != 0 (an error occured).
+
+If the required job is resubmited, its jobId is no longer the same and OAR
+updates the database and sets the job_id_required field to this new jobId for
+the dependant job.
 
 User notification
 -----------------
