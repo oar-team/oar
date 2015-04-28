@@ -552,7 +552,7 @@ foreach my $job (@Rjobs){
             next;
         }
     } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
-        my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $job->{start_time}, $SCHEDULER_CONSTRAINTS_ITERATIONS);
+        my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $job->{start_time}, $SCHEDULER_CONSTRAINTS_ITERATIONS, "[$SCHEDULER_NAME] [$i]");
         $constraints->{$types->{constraints}} = $r;
         # Job cannot be scheduler if job duration does not fit in any constraint
         #if ($moldable->[1] + $SCHEDULER_JOB_SECURITY_TIME < $max_constraint_duration) {
@@ -806,7 +806,7 @@ foreach my $queue (@queues){
                     next;
                 }
             } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
-                my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $scheduler_init_date, $SCHEDULER_CONSTRAINTS_ITERATIONS);
+                my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $scheduler_init_date, $SCHEDULER_CONSTRAINTS_ITERATIONS, "[$SCHEDULER_NAME] [$i]");
                 $constraints->{$types->{constraints}} = $r;
                 # Job cannot be scheduler if job duration does not fit in any constraint
                 #if ($duration < $max_constraint_duration) {
@@ -1115,7 +1115,7 @@ foreach my $queue (@queues){
                             next;
                         }
                    } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
-                       my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $job->{start_time}, $SCHEDULER_CONSTRAINTS_ITERATIONS);
+                       my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $job->{start_time}, $SCHEDULER_CONSTRAINTS_ITERATIONS, "[$SCHEDULER_NAME] [$i]");
                        $constraints->{$types->{constraints}} = $r;
                        # Job cannot be scheduler if job duration does not fit in any constraint
                        #if ($duration < $max_constraint_duration) {

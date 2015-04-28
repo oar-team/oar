@@ -18,6 +18,7 @@ use Data::Dumper;
 
 # 2^32 is infinity in 32 bits stored time
 my $Infinity = 4294967296;
+my $local_tz = DateTime::TimeZone->new(name => 'local');
 
 # Prototypes
 # gantt chart management
@@ -26,7 +27,7 @@ sub new_with_1_hole($$$$$$);
 sub add_1_hole($$$$);
 sub to_strips($);
 sub from_strips($$$$$);
-sub compute_constraints($$$);
+sub compute_constraints($$$$);
 sub clone_with_constraints($$);
 sub clone_union($$);
 sub manage_gantt_for_container($$$$$$$$$$);
@@ -64,10 +65,10 @@ sub gantt2str($){
 
 sub strips2str($){
     my $strips = shift;
-    my $str = "";
+    my $str = "------------\n";
     foreach my $s (sort {$a <=> $b} keys(%$strips)) {
         my @bits = split(//, unpack("b*", $strips->{$s}));
-        $str .= "  $s(".strftime("%f_%t",localtime($s))."): @bits\n";
+        $str .= "  $s(".strftime('%F %T',localtime($s))."): @bits\n";
     }
     return($str);
 }  
@@ -225,27 +226,42 @@ sub from_strips($$$$$) {
     return $gantt;
 }
 
-sub compute_constraints($$$) {
+sub compute_constraints($$$$) {
     my $constraint_str = shift;
-    my $init_date = shift;
-    my $iterations = shift;
-
-    my $now = DateTime->from_epoch(epoch => $init_date);
+    my $now_date = shift;
+    my $default_iterations = shift;
+    my $log_prefix = shift;
+    my $now = DateTime->from_epoch(epoch => $now_date, time_zone => $local_tz);
     my $constraints = {};
     # parse constraints
     foreach (split(/\s*,\s*/,$constraint_str)) {
-        if (/^(\d+)\/(\d?\d):(\d\d)\/(\d+)(?::(\d\d))?$/) {
+        # format is: [days of week]/[start hour]:[start minute]/[duration hours](:[duration minutes])(/[start date YYYY-MM-DD]/[# iterations])
+        if (/^(\d+)\/(\d?\d):(\d\d)\/(\d+)(?::(\d\d))?(?:\/(\d\d\d\d)-(\d\d)-(\d\d)\/(\d+))?$/) {
             # Compute intervals, given the current date (e.g. what time interval is next tuesday, starting at 14:00 for 10 hours)
             my $c = { days => $1, start => { h => $2, m => $3 }, duration => { h => $4, m => defined($5)?$5:0 } };
             my $h = { map { $_ => 1 } split(//,$c->{days}) }; # make days unique
             my @days = keys (%$h);
+            my $init_date = $now;
+            my $iterations = $default_iterations;
+            if (defined($6)) {
+                $init_date = DateTime->new(
+                    year => $6,
+                    month => $7,
+                    day => $8,
+                    time_zone => $local_tz,
+                    );
+                $iterations = $9;
+                oar_debug("$log_prefix constraint $_ (fixed)\n");
+            } else {
+                oar_debug("$log_prefix constraint $_ (floating, $iterations iteration(s))\n");
+            }
             foreach my $d (@days) {
-                my $start = $now->clone();
-                $start->add(days => ($d - $now->day_of_week) % 7);
-                $start->set(hour => $c->{start}->{h}, minute => $c->{start}->{m}, second => 0);
+                my $start = $init_date->clone();
+                $start->add(days => ($d - $init_date->day_of_week) % 7);
+                $start->set(hour => $c->{start}->{h}, minute => $c->{start}->{m}, second => 0, );
                 my $stop = $start->clone();
                 $stop->add(hours => $c->{duration}->{h}, minutes => $c->{duration}->{m});
-                if ($stop < $now) {
+                if ($stop < $init_date) {
                     $start->add(days => 7);
                     $stop->add(days => 7);
                 }
@@ -261,6 +277,8 @@ sub compute_constraints($$$) {
                     $stop->add(days => 7);
                 }
             }
+        } else {
+            oar_debug("$log_prefix constraints: ignoring $_ (bad syntax)\n");
         }
     }
     # Merge constraints intervals in case of overlaps.
@@ -321,8 +339,6 @@ sub clone_with_constraints($$) {
         $e = shift(@strip_times) 
     }
 
-    #print strips2str($strips);
-
     # filter out doubles: delete every next strips if same vec value)
     @strip_times = sort {$a <=> $b} keys(%$strips);
     my $next = shift(@strip_times);
@@ -338,7 +354,9 @@ sub clone_with_constraints($$) {
     #print strips2str($strips);
 
     # Convert strips back to a gantt.
-    return from_strips($strips, $gantt->[0]->[2], $gantt->[0]->[3], $gantt->[0]->[4], $gantt->[0]->[5])
+    $gantt = from_strips($strips, $gantt->[0]->[2], $gantt->[0]->[3], $gantt->[0]->[4], $gantt->[0]->[5]);
+    #print gantt2str($gantt);
+    return $gantt;
 }
 
 # Build a new gantt from the union of the holes of two existing gantts
