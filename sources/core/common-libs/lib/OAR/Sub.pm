@@ -76,7 +76,7 @@ sub init_tcp_server(){
     my $server = IO::Socket::INET->new( Proto    => 'tcp',
                                         Reuse => 1,
                                         Listen => 1
-                                      ) or die("/!\\ Cannot initialize a TCP socket server.\n");
+                                      ) or die("# Error: cannot initialize a TCP socket server.\n");
     my $server_port = $server->sockport();
     return($server,$server_port);
 }
@@ -140,7 +140,7 @@ sub scan_script($$){
                     }elsif ($line =~ m/^#OAR\s+(--array-param-file)\s*(.+)\s*$/m) {
                         $result{arrayparamfile} = $2;
                     }else{
-                        warn("/!\\ Not able to scan file line: $line");
+                        warn("# Warning: not able to scan file line: $line.\n");
                         $error++;
                     }
                     chop($line);
@@ -149,15 +149,15 @@ sub scan_script($$){
             }
         }
         if (!close(FILE)){
-            warn("[ERROR] Cannot open the file $file.\n");
+            warn("# Error: cannot open the file $file.\n");
             close_db_connection(); exit(12);
         }
     }else{
-        warn("[ERROR] Cannot execute: oardodo cat $file\n");
+        warn("# Error: cannot execute: oardodo cat $file\n");
         close_db_connection(); exit(12);
     }
     if ($error > 0){
-        warn("[ERROR] $error error(s) encountered while parsing the file $file.\n");
+        warn("# Error: $error error(s) encountered while parsing the file $file.\n");
         close_db_connection(); exit(12);
     }
 	$result{initial_request} = $Initial_request_string;
@@ -175,11 +175,11 @@ sub read_array_param_file($){
             push (@array_params, $_);
         }
         if (!close(PARAMETER_FILE)){
-            warn("[ERROR] Cannot open the parameter file $array_param_file.\n");
+            warn("# Error: cannot open the parameter file $array_param_file.\n");
             close_db_connection(); exit(12);
         }
     }else{
-        warn("[ERROR] Cannot execute: oardodo cat $array_param_file\n");
+        warn("# Error: cannot execute: oardodo cat $array_param_file\n");
         close_db_connection(); exit(12);
     }
     return \@array_params;
@@ -324,12 +324,11 @@ sub delete_jobs($$$){
 	open_db_connection();
 	lock_tables(["frag_jobs","event_logs","jobs"]);
 	foreach my $Job_id (@{$job_ids}) {
-		warn("Deleting the job $Job_id ...\n");
+		print("# Info: deleting job $Job_id.\n");
 		my $err = frag_job($Job_id);
 	}
 	unlock_tables();
 	close_db_connection();
-	warn("Job(s) deleted\n");
 	#Signal Almigthy
 	signal_almighty($remote_host,$remote_port,"Qdel");
 }

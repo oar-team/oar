@@ -1473,7 +1473,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     #Apply rules
     eval $rules;
     if ($@) {
-        warn("# Error: admission rule failure: $@ \n");
+        warn("$@");
+        warn("# Error: a failed admission rule prevented submitting the job.\n");
         return(-2);
     }
 

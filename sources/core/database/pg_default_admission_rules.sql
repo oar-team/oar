@@ -9,7 +9,7 @@ if (not defined($queue_name)) {$queue_name="default";}
 -- Prevent root and oar to submit jobs.
 INSERT INTO admission_rules (priority, enabled, rule) VALUES (2, 'YES', E'# Prevent users oar and root to submit jobs
 # Note: do not change this unless you want to break oar !
-die ("#ADMISSION RULE> Error: root and oar users are not allowed to submit jobs.\\n") if ( $user eq "root" or $user eq "oar" );
+die ("# ADMISSION RULE> Error: root and oar users are not allowed to submit jobs.\\n") if ( $user eq "root" or $user eq "oar" );
 ');
 
 -- Avoid the jobs to go on resources in drain mode
@@ -25,7 +25,7 @@ if ($queue_name eq "admin") {
     (undef,undef,undef, $members) = getgrnam($admin_group);
     my %h = map { $_ => 1 } split(/\\s+/,$members);
     if ( $h{$user} ne 1 ) {
-        {die("#ADMISSION RULE> Error: only member of the group ".$admin_group." can submit jobs in the admin queue\\n");}
+        {die("# ADMISSION RULE> Error: only member of the group ".$admin_group." can submit jobs in the admin queue\\n");}
     }
 }
 ');
@@ -38,7 +38,7 @@ foreach my $mold (@{$ref_resource_list}){
         my $i = 0;
         while (($i <= $#{$r->{resources}})){
             if (grep(/^$r->{resources}->[$i]->{resource}$/i, @bad_resources)){
-                die("#ADMISSION RULE> Error: \'$r->{resources}->[$i]->{resource}\' resource is not allowed\\n");
+                die("# ADMISSION RULE> Error: \'$r->{resources}->[$i]->{resource}\' resource is not allowed\\n");
             }
             $i++;
         }
@@ -52,11 +52,11 @@ foreach my $mold (@{$ref_resource_list}){
 INSERT INTO admission_rules (priority, enabled, rule) VALUES (6, 'YES', E'# Tie the besteffort queue, job type and resource property together
 if (grep(/^besteffort$/, @{$type_list}) and not $queue_name eq "besteffort"){
     $queue_name = "besteffort";
-    print("#ADMISSION RULE> Info: automatically redirect in the besteffort queue\\n");
+    print("# ADMISSION RULE> Info: automatically redirect in the besteffort queue\\n");
 }
 if ($queue_name eq "besteffort" and not grep(/^besteffort$/, @{$type_list})) {
     push(@{$type_list},"besteffort");
-    print("#ADMISSION RULE> Info: automatically add the besteffort type\\n");
+    print("# ADMISSION RULE> Info: automatically add the besteffort type\\n");
 }
 if (grep(/^besteffort$/, @{$type_list})){
     if ($jobproperties ne ""){
@@ -64,14 +64,14 @@ if (grep(/^besteffort$/, @{$type_list})){
     }else{
         $jobproperties = "besteffort = ''YES''";
     }
-    print("#ADMISSION RULE> Info: automatically add the besteffort constraint on the resources\\n");
+    print("# ADMISSION RULE> Info: automatically add the besteffort constraint on the resources\\n");
 }
 ');
 
 -- Verify if besteffort jobs are not reservations
 INSERT INTO admission_rules (priority, enabled, rule) VALUES (7, 'YES', E'# Prevent besteffort advance-reservation
 if ((grep(/^besteffort$/, @{$type_list})) and ($reservationField ne "None")){
-    die("#ADMISSION RULE> Error: a job cannot both be of type besteffort and be a reservation.\\n");
+    die("# ADMISSION RULE> Error: a job cannot both be of type besteffort and be a reservation.\\n");
 }
 ');
 
@@ -95,7 +95,7 @@ if (grep(/^deploy$/, @{$type_list})){
             my $i = 0;
             while (($i <= $#{$r->{resources}})){
                 if (grep(/^$r->{resources}->[$i]->{resource}$/i, @bad_resources)){
-                    die("#ADMISSION RULE> Error: \'$r->{resources}->[$i]->{resource}\' resource is not allowed with a deploy job\\n");
+                    die("# ADMISSION RULE> Error: \'$r->{resources}->[$i]->{resource}\' resource is not allowed with a deploy job\\n");
                 }
                 $i++;
             }
@@ -107,7 +107,7 @@ if (grep(/^deploy$/, @{$type_list})){
 -- Force desktop_computing jobs to go on nodes with the desktop_computing property
 INSERT INTO admission_rules (priority, enabled, rule) VALUES (10, 'YES', E'# Tie desktop computing job type and resource property together
 if (grep(/^desktop_computing$/, @{$type_list})){
-    print("#ADMISSION RULE> Info: added automatically desktop_computing resource constraints\\n");
+    print("# ADMISSION RULE> Info: added automatically desktop_computing resource constraints\\n");
     if ($jobproperties ne ""){
         $jobproperties = "($jobproperties) AND desktop_computing = ''YES''";
     }else{
@@ -136,7 +136,7 @@ if ($reservationField eq "toSchedule") {
         close(FILE);
     }
     if ($unlimited > 0) {
-        print("#ADMISSION RULE> Info: $user is granted the privilege to do unlimited reservations\\n");
+        print("# ADMISSION RULE> Info: $user is granted the privilege to do unlimited reservations\\n");
     } else {
         my $max_nb_resa = 2;
         my $nb_resa = $dbh->do("    SELECT job_id
@@ -148,7 +148,7 @@ if ($reservationField eq "toSchedule") {
                                         (state = ''Waiting'' OR state = ''Hold'')
                                ");
         if ($nb_resa >= $max_nb_resa){
-            die("#ADMISSION RULE> Error: you cannot have more than $max_nb_resa waiting advance reservations.\\n");
+            die("# ADMISSION RULE> Error: you cannot have more than $max_nb_resa waiting advance reservations.\\n");
         }
     }
 }
@@ -159,7 +159,7 @@ INSERT INTO admission_rules (priority, enabled, rule) VALUES (12, 'NO', E'# Exam
 open(FILE, "/tmp/users.txt");
 while (($queue_name ne "admin") and ($_ = <FILE>)){
     if ($_ =~ m/^\\s*$user\\s*$/m){
-        print("#ADMISSION RULE> Info: change assigned queue to admin\\n");
+        print("# ADMISSION RULE> Info: change assigned queue to admin\\n");
         $queue_name = "admin";
     }
 }
@@ -172,7 +172,7 @@ my $max_walltime = OAR::IO::sql_to_duration("12:00:00");
 if (($jobType eq "INTERACTIVE") and ($reservationField eq "None")){ 
     foreach my $mold (@{$ref_resource_list}){
         if ((defined($mold->[1])) and ($max_walltime < $mold->[1])){
-            print("#ADMISSION RULE> warning: walltime ".$mold->[1]." to big for an INTERACTIVE job, set to $max_walltime.\\n");
+            print("# ADMISSION RULE> warning: walltime ".$mold->[1]." to big for an INTERACTIVE job, set to $max_walltime.\\n");
             $mold->[1] = $max_walltime;
         }
     }
@@ -184,7 +184,7 @@ INSERT INTO admission_rules (priority, enabled, rule) VALUES (14, 'YES', E'# Set
 my $default_wall = OAR::IO::sql_to_duration("2:00:00");
 foreach my $mold (@{$ref_resource_list}){
     if (!defined($mold->[1])){
-        print("#ADMISSION RULE> Info: no walltime defined, use default: $default_wall.\\n");
+        print("# ADMISSION RULE> Info: no walltime defined, use default: $default_wall.\\n");
         $mold->[1] = $default_wall;
     }
 }
@@ -209,7 +209,7 @@ foreach my $t ( @{$type_list} ) {
         }
     }
     unless ( $match ) {
-        die( "#ADMISSION RULE> Error: unknown job type: $t\n");
+        die( "# ADMISSION RULE> Error: unknown job type: $t\n");
     }
 }
 ');
@@ -228,6 +228,6 @@ foreach my $mold (@{$ref_resource_list}){
         }
     }
 }
-print("#ADMISSION RULE> Info: modify resource description with type constraints\\n");
+print("# ADMISSION RULE> Info: modify resource description with type constraints\\n");
 ');
 

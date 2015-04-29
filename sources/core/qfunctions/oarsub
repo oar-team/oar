@@ -117,7 +117,7 @@ sub qdel($) {
     my $Al_dead = shift;
     if (defined($Job_id_list_ref)) {
         if ($Al_dead eq "INT" ) {
-            warn("\n\nCaught Interrupt (^C), ");
+            warn("\n\n# Info: Caught Interrupt (^C), cancelling job...\n");
         }
         OAR::Sub::delete_jobs($Job_id_list_ref, $remote_host, $remote_port);
         OAR::Sub::close_db_connection(); exit(1);
@@ -1032,9 +1032,9 @@ if ($Reservation ne "0"){
     $answer = <$client>;
     chop($answer);
     if ($answer eq "GOOD RESERVATION"){
-        print("# Info: reservation accepted.\n");
+        print("# Info: advance reservation is GRANTED.\n");
     }else{
-        print("# Info: reservation rejected ($answer)\n");
+        print("# Info: advance reservation is REJECTED ($answer)\n");
         exit(10);
     }
 }elsif ($Interactive==1) {
