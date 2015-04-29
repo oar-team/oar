@@ -44,7 +44,7 @@ for interval in intervals:
         if m in f:
             for metric in metrics:
               if metric in output_metrics.keys():
-                  output_metrics[metric].append(f[m][metric].tolist())
+                  output_metrics[metric].extend(f[m][metric].tolist())
               else:
                   output_metrics[metric]=f[m][metric].tolist()
 
