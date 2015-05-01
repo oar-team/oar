@@ -779,7 +779,7 @@ foreach my $queue (@queues){
                         $skip_job = 1;
                         next;
                     }
-                }elsif (($dep_job->{job_type} eq "PASSIVE") and ($dep_job->{exit_code} != 0)){
+                }elsif (($dep_job->{job_type} eq "PASSIVE") and defined($dep_job->{exit_code}) and ($dep_job->{exit_code} != 0)){
                     my $message = "Cannot determine scheduling time due to dependency with the job $d (exit code != 0)";
                     OAR::IO::set_job_message($base,$i,$message);
                     OAR::IO::set_job_scheduler_info($base,$i,$message);
