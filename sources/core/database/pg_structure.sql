@@ -139,6 +139,7 @@ CREATE TABLE gantt_jobs_resources_log (
 CREATE TABLE job_dependencies (
   job_id integer NOT NULL default '0',
   job_id_required integer NOT NULL default '0',
+  gap integer NOT NULL default '0',
   job_dependency_index varchar(7) check (job_dependency_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
   PRIMARY KEY  (job_id,job_id_required)
 );

@@ -761,7 +761,7 @@ foreach my $queue (@queues){
                 next if ($skip_job == 1);
                 my $dep_job = OAR::IO::get_job($base,$d->[0]);
                 if (($dep_job->{state} ne "Terminated") and ($dep_job->{state} ne "Error")){
-                    my @date_tmp = OAR::IO::get_gantt_job_start_time($base,$d);
+                    my @date_tmp = OAR::IO::get_gantt_job_start_time($base,$d->[0]);
                     if (defined($date_tmp[0])){
                         my $mold_dep = OAR::IO::get_current_moldable_job($base,$date_tmp[1]);
                         my $sched_tmp = $date_tmp[0] + $mold_dep->{moldable_walltime} - $d->[1];

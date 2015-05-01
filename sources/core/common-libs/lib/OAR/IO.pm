@@ -1733,8 +1733,9 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     }
 
     foreach my $a (@{$anterior_ref}){
-        $dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required)
-                    VALUES ($job_id,$a)
+        my ($j,$d) = $a =~ /^(\d+)(?:,(\d+))*$/;
+        $dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required,gap)
+                    VALUES ($job_id,$j,".(defined($d)?$d:0).")
                  ");
     }
 
@@ -1948,10 +1949,11 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     #
     if ($#{$anterior_ref} >0) {
       $job_id = $first_array_job_id;
-      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required) VALUES ";
+      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required,gap) VALUES ";
       for (my $i=0; $i<$nb_jobs; $i++){
         foreach my $a (@{$anterior_ref}){
-          $query_job_dependencies = $query_job_dependencies . "($job_id,$a),";
+          my ($j,$d) = $a =~ /^(\d+)(?:,(\d+))*$/;
+          $query_job_dependencies = $query_job_dependencies . "($job_id,$j,".(defined($d)?$d:0)."),";
         } 
         $job_id++;
       }
@@ -3464,7 +3466,7 @@ sub get_current_job_dependencies($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT job_id_required
+    my $sth = $dbh->prepare("   SELECT job_id_required,gap
                                 FROM job_dependencies
                                 WHERE
                                     job_dependency_index = \'CURRENT\'
@@ -3473,7 +3475,7 @@ sub get_current_job_dependencies($$){
     $sth->execute();
     my @res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{job_id_required});
+        push(@res, [$ref->{job_id_required},$ref->{gap}]);
     }
     $sth->finish();
 

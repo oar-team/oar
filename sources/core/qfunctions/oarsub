@@ -287,8 +287,8 @@ Options are:
                                command (default is current directory)
      --project=<txt>           Specify a name of a project the job belongs to
  -n, --name=<txt>              Specify an arbitrary name for the job
- -a, --anterior=<job id>       Anterior job that must be terminated to start
-                               this new one
+ -a, --after=<job id>[,gap]    Add a job dependency: job will start after the
+                               end of the specified job, minus a gap if set
      --notify=<txt>            Specify a notification method
                                (mail or command to execute). Ex: 
                                    --notify "mail:name\@domain.com"
@@ -606,7 +606,7 @@ GetOptions ("resource|l=s" => \@resource,
             "hold" => \$job_hold,
             "array=i" => \$array_job_nb,
             "array-param-file=s" => \$array_param_file,
-            "anterior|a=i" => \@Anterior_job,
+            "after|a=s" => \@Anterior_job,
             "signal=i" => \$Checkpoint_signal,
             "stdout|O=s" => \$Stdout_file,
             "stderr|E=s" => \$Stderr_file,
