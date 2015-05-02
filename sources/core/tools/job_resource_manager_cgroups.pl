@@ -1,7 +1,5 @@
-# $Id$
-# 
-# The "job_resource_manager_cgroups.pl" script is a perl script that oar server
-# deploys on nodes to manage cpusets, users, job keys, ...
+# The job resource manager script is a perl script that oar server deploys on
+# nodes to manage cpusets, users, job keys, ...
 #
 # In this script some cgroup Linux features are incorporated:
 #     - [cpuset]  Restrict the job processes to use only the reserved cores;
@@ -42,6 +40,7 @@ use Fcntl ':flock';
 
 sub exit_myself($$);
 sub print_log($$);
+sub logstr($$);
 
 # Put YES if you want to use the memory cgroup
 my $ENABLE_MEMCG = "NO";
@@ -66,11 +65,11 @@ my $Cpuset_lock_file = "$ENV{HOME}/cpuset.lock.";
 # cgroups in the same place with the same hierarchy.
 my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 
-# Retrieve parameters from STDIN in the "Cpuset" structure which looks like: 
+# Retrieve parameters from STDIN in the "Cpuset" structure which looks like:
 # $Cpuset = {
-#               job_id => id of the corresponding job
-#               name => "cpuset name"
-#               cpuset_path => "relative path in the cpuset FS"
+#               job_id => id of the corresponding job,
+#               name => "cpuset name",
+#               cpuset_path => "relative path in the cpuset FS",
 #               nodes => hostname => [array with the content of the database cpuset field]
 #               ssh_keys => {
 #                               public => {
@@ -115,16 +114,12 @@ my @Cpuset_cpus;
 # Get the data structure only for this node
 if (defined($Cpuset->{cpuset_path})){
     $Cpuset_path_job = $Cpuset->{cpuset_path}.'/'.$Cpuset->{name};
-    foreach my $l (@{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}}){
-        foreach my $c (split("[, \+]",$l)){
-            push(@Cpuset_cpus, $c);
-        }
-    }
+    @Cpuset_cpus = map {s/\s*//g;split(/","/,$_)} @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}};
 }
 
 
 
-print_log(3,"$ARGV[0]");
+print_log(3,"$ARGV[0]\n");
 if ($ARGV[0] eq "init"){
     # Initialize cpuset for this node
     # First, create the tmp oar directory
@@ -171,21 +166,23 @@ if ($ARGV[0] eq "init"){
                     }
                 }
             }
-            if (!(-d $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path})){
+            # if (!(-d $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path})){
                 # Populate default oar cgroup
-                if (system( 'for d in '.$Cgroup_directory_collection_links.'/*; do
-                               oardodo mkdir -p $d/'.$Cpuset->{cpuset_path}.' || exit 1
-                               oardodo chown -R oar $d/'.$Cpuset->{cpuset_path}.' || exit 2
-                               /bin/echo 0 | cat > $d/'.$Cpuset->{cpuset_path}.'/notify_on_release || exit 3
-                             done
-                             /bin/echo 0 | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpu_exclusive &&
-                             cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.mems > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.mems &&
-                             cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.cpus > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpus &&
-                             /bin/echo 1000 | cat > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset->{cpuset_path}.'/blkio.weight
-                            ')){
-                    exit_myself(4,"Failed to create cgroup $Cpuset->{cpuset_path}");
+                my $bashcmd='for d in '.$Cgroup_directory_collection_links.'/*; do '.
+                               'oardodo mkdir -p $d/'.$Cpuset->{cpuset_path}.' && '.
+                               'oardodo chown -R oar $d/'.$Cpuset->{cpuset_path}.' && '.
+                               '/bin/echo 0 | cat > $d/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
+                            'done; '.
+                            '/bin/echo 0 | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpu_exclusive && '.
+                            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.mems > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.mems && '.
+                            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.cpus > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpus && '.
+                             '/bin/echo 1000 | cat > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset->{cpuset_path}.'/blkio.weight';
                 }
-            }
+                print_log(4, "$bashcmd\n");
+                if (system("bash -c '$bashcmd'")){
+                    exit_myself(4,'Failed to create cgroup '.$Cpuset->{cpuset_path});
+                }
+            #}
             flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");
             close(LOCKFILE);
         }else{
