@@ -166,70 +166,76 @@ if ($ARGV[0] eq "init"){
                     }
                 }
             }
-            # if (!(-d $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path})){
-                # Populate default oar cgroup
-                my $bashcmd='for d in '.$Cgroup_directory_collection_links.'/*; do '.
-                               'oardodo mkdir -p $d/'.$Cpuset->{cpuset_path}.' && '.
-                               'oardodo chown -R oar $d/'.$Cpuset->{cpuset_path}.' && '.
-                               '/bin/echo 0 > $d/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
-                            'done; '.
-                            '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpu_exclusive && '.
-                            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.mems > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.mems && '.                            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.cpus > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpus && '.
+            # Populate default oar cgroup
+            my $bashcmd=
+                'for d in '.$Cgroup_directory_collection_links.'/*; do '.
+                   'oardodo mkdir -p $d/'.$Cpuset->{cpuset_path}.' && '.
+                   'oardodo chown -R oar $d/'.$Cpuset->{cpuset_path}.' && '.
+                   '/bin/echo 0 > $d/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
+                'done; '.
+                '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpu_exclusive && '.
+                'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.mems > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.mems && '.
+                'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.cpus > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpus && '.
 
-                             '/bin/echo 1000 > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset->{cpuset_path}.'/blkio.weight';
-                }
-                print_log(4, "$bashcmd\n");
-                if (system("bash -c '$bashcmd'")){
-                    exit_myself(4,'Failed to create cgroup '.$Cpuset->{cpuset_path});
-                }
-            #}
+                '/bin/echo 1000 > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset->{cpuset_path}.'/blkio.weight';
+            }
+            print_log(4, "$bashcmd\n");
+            if (system("bash -c '$bashcmd'")){
+                exit_myself(4,'Failed to create cgroup '.$Cpuset->{cpuset_path});
+            }
             flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");
             close(LOCKFILE);
         }else{
             exit_myself(16,"Failed to open or create $Cpuset->{oar_tmp_directory}/job_manager_lock_file");
         }
 
-            # if (!(-d $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path})){
-                $Cpuset_cpus_comma = join(",",@Cpuset_cpus);
-                $bashcmd=
-                    'C="'.$Cpuset_cpus_comma.'" && '.
-                    'M=$(for f in /sys/devices/system/cpu/cpu{'.$Cpuset_cpus_comma.'}/node*; do n=${f##*node}; a[$n]=$n; done; IFS=','; echo ${a[*]}) && '.
-                if ($Cpuset_path_job =~ /,j=X$/) {
-        if (open(LOCKFILE,"> $Cpuset_lock_file.$Cpuset->{name}")){
-            flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
+        # Compute the cpus and memory nodes for the job
+        $Cpuset_cpus_comma = join(",",@Cpuset_cpus);
+        $bashcmd=
+            'C="'.$Cpuset_cpus_comma.'" && '.
+            'M=$(for f in /sys/devices/system/cpu/cpu{'.$Cpuset_cpus_comma.'}/node*; do n=${f##*node}; a[$n]=$n; done; IFS=','; echo ${a[*]}) && ';
 
-                    $bashcmd.=
-                        'for d in '.$Cgroup_directory_collection_links.'/*; do '.
-                            'mkdir -p $d/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'; '.
-                            '/bin/echo 0 > $d/'.$Cpuset_path_job.'/notify_on_release && '.
-                            '/bin/echo 0 > $d/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/notify_on_release; '.
-                        'done && '.
-                        '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive && '.
-                        '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.cpu_exclusive && '.
-                        'CX=$(< '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus) && '.
-                        '/bin/echo ${CX:+$CX,}$C > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus && '.
-                        '/bin/echo $C > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.cpus && '.
-                        'MX=$(< '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems) && ' .
-                        '/bin/echo ${MX:+$MX,}$M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems && '.
-                        '/bin/echo $M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.mems'
-            flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");
-            close(LOCKFILE);
-                } else {
-                    $bashcmd.=
-                        'for d in '.$Cgroup_directory_collection_links.'/*; do '.
-                            'mkdir -p $d/'.$Cpuset_path_job.' && '.
-                            '/bin/echo 0 > $d/'.$Cpuset_path_job.'/notify_on_release; '.
-                        'done && '.
-                        '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive && '.
-                        '/bin/echo $C > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus &&' .
-                        '/bin/echo $M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems'
-                }
-                print_log(4, "$bashcmd\n");
+        if ($Cpuset_path_job =~ /,j=X$/) {
+            $bashcmd.=
+                'for d in '.$Cgroup_directory_collection_links.'/*; do '.
+                    'mkdir -p $d/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'; '.
+                    '/bin/echo 0 > $d/'.$Cpuset_path_job.'/notify_on_release && '.
+                    '/bin/echo 0 > $d/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/notify_on_release; '.
+                'done && '.
+                '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive && '.
+                '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.cpu_exclusive && '.
+                'CX=$(< '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus) && '.
+                '/bin/echo ${CX:+$CX,}$C > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus && '.
+                '/bin/echo $C > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.cpus && '.
+                'MX=$(< '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems) && ' .
+                '/bin/echo ${MX:+$MX,}$M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems && '.
+                '/bin/echo $M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.mems'
+            print_log(4, "$bashcmd\n");
+            # need a look in case of extensible job
+            if (open(LOCKFILE,"> $Cpuset_lock_file.$Cpuset->{name}")){
+                flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
                 if (system("bash -c '$bashcmd'")){
                     exit_myself(4,'Failed to create cpuset '.$Cpuset_path_job);
                 }
-            #}
+                flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");
+                close(LOCKFILE);
+            }
+        } else {
+            $bashcmd.=
+                'for d in '.$Cgroup_directory_collection_links.'/*; do '.
+                    'mkdir -p $d/'.$Cpuset_path_job.' && '.
+                    '/bin/echo 0 > $d/'.$Cpuset_path_job.'/notify_on_release; '.
+                'done && '.
+                '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive && '.
+                '/bin/echo $C > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus &&' .
+                '/bin/echo $M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems'
+            print_log(4, "$bashcmd\n");
+            if (system("bash -c '$bashcmd'")){
+                exit_myself(4,'Failed to create cpuset '.$Cpuset_path_job);
+            }
+        }
 
+        # Compute the blkio values
         # Put a share of disk IO corresponding of the ratio between the number
         # of cores of this job cgroup and the number of cores of the node
         # Get the whole cores of the node
@@ -246,7 +252,9 @@ if ($ARGV[0] eq "init"){
         my $IO_ratio = sprintf("%.0f",(($#Cpuset_cpus + 1) / ($#node_cpus + 1) * 1000)) ;
         # TODO: Need to do more tests to validate so remove this feature
         #       Some values are not working when echoing
+        #       => using default value for now
         $IO_ratio = 1000;
+
         if ($Cpuset_path_job =~ /,j=X$/) {
             $bashcmd =
                 '/bin/echo 1000 > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset_path_job.'/blkio.weight &&'.
@@ -274,7 +282,7 @@ if ($ARGV[0] eq "init"){
                 exit_myself(5,"Failed to retrieve the global memory from /proc/meminfo");
             }
             if (!defined($mem_global_kb)) {
-                exit_myself(5,"Failed to parse /proc/meminfo to retrive MemTotal")'
+                exit_myself(5,"Failed to parse /proc/meminfo to retrive MemTotal");
             }
             my $mem_kb = sprintf("%.0f", (($#Cpuset_cpus + 1) / ($#node_cpus + 1) * $mem_global_kb));
             if ($Cpuset_path_job =~ /,j=X$/) {
@@ -437,39 +445,100 @@ EOF
 
     # Clean cpuset on this node
     if (defined($Cpuset_path_job)){
-        system('echo THAWED > '.$Cgroup_directory_collection_links.'/freezer/'.$Cpuset_path_job.'/freezer.state
-                PROCESSES=$(cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks)
-                while [ "$PROCESSES" != "" ]
-                do
-                    oardodo kill -9 $PROCESSES > /dev/null 2>&1
-                    PROCESSES=$(cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks)
-                done'
-              );
+        if ($Cpuset_path_job =~ /,j=X$/) {
+            $bashcmd = 
+                # Look for the existance of other extensible jobs 
+                'J=$(find '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.' -type d -name "oar.j=*" -a \! -name "oar.j='.$Cpuset->{job_id}.'");'.
+                'if [ -z "$J" ]; then '.
+                    # No extensible job -> killing
+                    'echo THAWED > '.$Cgroup_directory_collection_links.'/freezer/'.$Cpuset_path_job.'/freezer.state && '.
+                    'PROCESSES=$(cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks); '.
+                    'while [ "$PROCESSES" != "" ]; do '.
+                        'echo $PROCESSES | xargs echo "killing processes:"; '.
+                        'oardodo kill -9 $PROCESSES; '.
+                        'PROCESSES=$(< '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks); '.
+                    'done; '.
+                'else '.
+                    'echo $J |grep -o "j=[[:digit:]]\+" |xargs echo "Not killing processes, extensible jobs still running:"; '.
+                'fi && '.
+                # Remove the current job directories
+                'if [ -w '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/memory.force_empty ]; then '.
+                    'echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/memory.force_empty; '.
+                'fi; '.
+                'rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.' && '.
+                'for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'; do '.
+                    '[ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty;' .
+                    'rmdir $d > /dev/null 2>&1 || exit 1; ' .
+                'done && '.
+                # Compute the cpus of the remaining extensible job(s) 
+                'shopt -s nullglob && '.
+                'C="" && for f in '.$Cgroup_directory_collection_links.'/cpuset'.$Cpuset_path_job.'/oar.j=*/cpuset.cpus; do '.
+                    'C=${C:+$C,}$(< $f);'.
+                'done && '.
+                'if [ -n "$C" ]; then '.
+                    # Some cpus found in the job subdirectory, updating the extensible directory
+                    # Compute the memory nodes of the remaining extensible job(s) 
+                    'M="" && for f in '.$Cgroup_directory_collection_links.'/cpuset'.$Cpuset_path_job.'/oar.j=*/cpuset.mems; do '.
+                        'M=${M:+$M,}$(< $f); '.
+                    'done && '.
+                    # update the cpus and memory nodes of the remaining extensible jobs
+                    # retry setting the cpus until its ok
+                    'while ! /bin/echo $C 2> /dev/null > '.$Cgroup_directory_collection_links.'/cpuset'.$Cpuset_path_job.'/cpuset.cpus; do '.
+                        'sleep 0.05; '.
+                    'done; '.
+                    'while ! /bin/echo $M 2> /dev/null > '.$Cgroup_directory_collection_links.'/cpuset'.$Cpuset_path_job.'/cpuset.mems; do '.
+                        'sleep 0.05; '.
+                    'done; '.
+                'else '.
+                    # no more cpus in the extensible jobs -> dropping everything
+                    'if [ -w '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty ]; then '.
+                        'echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty; '.
+                    'fi; '.
+                    'rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.' && '.
+                    'for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'; do '.
+                        '[ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty;' .
+                        'rmdir $d > /dev/null 2>&1 || exit 1; ' .
+                    'done; '
+                'fi';
+            if (open(LOCKFILE,"> $Cpuset_lock_file.$Cpuset->{name}")){
+                flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
+                if (system("bash -c '$bashcmd'")){
+                    exit_myself(6,"Failed to delete the cpuset $Cpuset_path_job");
+                }
+                flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");
+                close(LOCKFILE);
+            }
+        } else {
+            $bashcmd = 
+                'echo THAWED > '.$Cgroup_directory_collection_links.'/freezer/'.$Cpuset_path_job.'/freezer.state && '.
+                'PROCESSES=$(< '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks); '.
+                'while [ "$PROCESSES" != "" ]; do '.
+                    'echo "killing processes: $PROCESSES"; '.
+                    'oardodo kill -9 $PROCESSES; '.
+                    'PROCESSES=$(< '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks); '.
+                'done && '.
+                'if [ -w '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty ]; then '.
+                    'echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty; '.
+                'fi; '.
+                'rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.' && '.
+                'for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'; do '.
+                    '[ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty; '.
+                    'rmdir $d > /dev/null 2>&1 || exit 1; '.
+                'done';
+            print_log(4, "$bashcmd\n");
+            if (system("bash -c '$bashcmd'") {
+                exit_myself(6,"Failed to delete the cpuset $Cpuset_path_job");
+            }
+        }
 
         # Locking around the cleanup of the cpuset for that user, to prevent a creation to occure at the same time
         # which would allow race condition for the user-based clean-up mechanism
         if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
             flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
-            if (system('if [ -w '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty ]; then
-                          echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty
-                        fi
-                        oardodo rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.' &&
-                        for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'; do
-                          [ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty
-                          if [ -d $d ]; then
-                            oardodo rmdir $d > /dev/null 2>&1 || exit 1
-                          fi
-                        done
-                       ')){
-                # Uncomment this line if you want to use several network_address properties
-                # which are the same physical computer (linux kernel)
-                #exit(0);
-                exit_myself(6,"Failed to delete the cpuset $Cpuset_path_job");
-            }
             # user-based cleanup: do cleanup only if that is the last job of the user on that host.
             my @cpusets = ();
             if (opendir(DIR, $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/')) {
-                @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
+                @cpusets = grep { /^oar.u=$Cpuset->{user},/ } readdir(DIR);
                 closedir DIR;
             } else {
               exit_myself(18,"Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}");
