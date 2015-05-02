@@ -464,15 +464,26 @@ sub get_job_cpuset_name($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT job_user
+    my $sth = $dbh->prepare("   SELECT job_user,job_name
                                 FROM jobs
                                 WHERE
                                     job_id = $job_id
                             ");
     $sth->execute();
-    my @res = $sth->fetchrow_array();
-    my $cpuset = $res[0]."_".$job_id;
-    return($cpuset);
+    my ($user,$name) = $sth->fetchrow_array();
+    $sth = $dbh->prepare("   SELECT type
+                             FROM job_types
+                             WHERE
+                                 job_id = $job_id AND
+                                 type = 'extensible'
+                         ");
+    $sth->execute();
+    my $cpuset;
+    my ($extensible) = $sth->fetchrow_array();
+    if (defined($extensible)) {
+        return "oar.u=$user,n=$name,j=X";
+    }
+    return "oar.u=$user,n=$name,j=$job_id";
 }
 
 
