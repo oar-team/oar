@@ -94,9 +94,9 @@ if ($ARGV[0] eq "init"){
                 if ($Cpuset_path_job =~ /,j=X$/) {
                     $bashcmd.=
                             'mkdir -p /dev/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.' &&'.
-                            'CX=$(< /dev/cpuset/'.$Cpuset_path_job.'/cpuset.cpus) &&' .
-                            '/bin/echo ${CX:+$CX,}$C > /dev/cpuset/'.$Cpuset_path_job.'/cpuset.cpus &&' .
-                            '/bin/echo $C > /dev/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.cpus &&' .
+                            'CX=$(< /dev/cpuset/'.$Cpuset_path_job.'/cpuset.cpus) &&'.
+                            '/bin/echo ${CX:+$CX,}$C > /dev/cpuset/'.$Cpuset_path_job.'/cpuset.cpus &&'.
+                            '/bin/echo $C > /dev/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.cpus &&'.
                             'cat /dev/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.mems > /dev/cpuset/'.$Cpuset_path_job.'/cpuset.mems && '.
                             'cat /dev/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.mems > /dev/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.mems';
                 } else {
@@ -107,7 +107,7 @@ if ($ARGV[0] eq "init"){
                 }
                 print_log(4, "$bashcmd\n");
                 if (system("bash -c '$bashcmd'")){
-                    exit_myself(4,'Failed to create cpuset '.$Cpuset->{cpuset_path}.'/oar.user='.$Cpuset->{user}.'/oar.name='.$Cpuset->{job_name}.'/oar.jobid='.$Cpuset->{job_id});
+                    exit_myself(4,'Failed to create cpuset '.$Cpuset_path_job);
                 }
             #}
             flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");

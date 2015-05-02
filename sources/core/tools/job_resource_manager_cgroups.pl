@@ -114,10 +114,10 @@ my @Cpuset_cpus;
 # Get the data structure only for this node
 if (defined($Cpuset->{cpuset_path})){
     $Cpuset_path_job = $Cpuset->{cpuset_path}.'/'.$Cpuset->{name};
-    @Cpuset_cpus = map {s/\s*//g;split(/","/,$_)} @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}};
+    # compute Cpuset cpus: e.g transform ("0,4","1,5","2,6","3,7") in get (0,1,2,3,4,5,6,7) + make sure cpus are unique
+    %tmp_hash = map {$_ => 1} (map {s/\s*//g;split(",",$_)} @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}};
+    @Cpuset_cpus = sort(keys(%h));
 }
-
-
 
 print_log(3,"$ARGV[0]\n");
 if ($ARGV[0] eq "init"){
@@ -171,12 +171,12 @@ if ($ARGV[0] eq "init"){
                 my $bashcmd='for d in '.$Cgroup_directory_collection_links.'/*; do '.
                                'oardodo mkdir -p $d/'.$Cpuset->{cpuset_path}.' && '.
                                'oardodo chown -R oar $d/'.$Cpuset->{cpuset_path}.' && '.
-                               '/bin/echo 0 | cat > $d/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
+                               '/bin/echo 0 > $d/'.$Cpuset->{cpuset_path}.'/notify_on_release && '.
                             'done; '.
-                            '/bin/echo 0 | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpu_exclusive && '.
-                            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.mems > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.mems && '.
-                            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.cpus > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpus && '.
-                             '/bin/echo 1000 | cat > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset->{cpuset_path}.'/blkio.weight';
+                            '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpu_exclusive && '.
+                            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.mems > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.mems && '.                            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.cpus > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpus && '.
+
+                             '/bin/echo 1000 > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset->{cpuset_path}.'/blkio.weight';
                 }
                 print_log(4, "$bashcmd\n");
                 if (system("bash -c '$bashcmd'")){
@@ -189,61 +189,80 @@ if ($ARGV[0] eq "init"){
             exit_myself(16,"Failed to open or create $Cpuset->{oar_tmp_directory}/job_manager_lock_file");
         }
 
-        # Be careful with the physical_package_id. Is it corresponding to the memory banch?
-        # Create job cgroup
-        if (system( 'for d in '.$Cgroup_directory_collection_links.'/*; do
-                       oardodo mkdir -p $d/'.$Cpuset_path_job.' || exit 1
-                       oardodo chown -R oar $d/'.$Cpuset_path_job.' || exit 2
-                       /bin/echo 0 | cat > $d/'.$Cpuset_path_job.'/notify_on_release || exit 3
-                     done
-                     /bin/echo 0 | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive &&
-                     MEM=
-                     for c in '."@Cpuset_cpus".'; do
-                       for n in /sys/devices/system/node/node* ; do
-                         if [ -r "$n/cpu$c" ]; then
-                           MEM=$(basename $n | sed s/node//g),$MEM
-                         fi
-                       done
-                     done
-                     echo $MEM > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems &&
-                     /bin/echo '.join(",",@Cpuset_cpus).' | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus
-                    ')){
-            exit_myself(5,"Failed to create and feed the cpuset $Cpuset_path_job");
-        }
+            # if (!(-d $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path})){
+                $Cpuset_cpus_comma = join(",",@Cpuset_cpus);
+                $bashcmd=
+                    'C="'.$Cpuset_cpus_comma.'" && '.
+                    'M=$(for f in /sys/devices/system/cpu/cpu{'.$Cpuset_cpus_comma.'}/node*; do n=${f##*node}; a[$n]=$n; done; IFS=','; echo ${a[*]}) && '.
+                if ($Cpuset_path_job =~ /,j=X$/) {
+        if (open(LOCKFILE,"> $Cpuset_lock_file.$Cpuset->{name}")){
+            flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
+
+                    $bashcmd.=
+                        'for d in '.$Cgroup_directory_collection_links.'/*; do '.
+                            'mkdir -p $d/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'; '.
+                            '/bin/echo 0 > $d/'.$Cpuset_path_job.'/notify_on_release && '.
+                            '/bin/echo 0 > $d/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/notify_on_release; '.
+                        'done && '.
+                        '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive && '.
+                        '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.cpu_exclusive && '.
+                        'CX=$(< '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus) && '.
+                        '/bin/echo ${CX:+$CX,}$C > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus && '.
+                        '/bin/echo $C > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.cpus && '.
+                        'MX=$(< '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems) && ' .
+                        '/bin/echo ${MX:+$MX,}$M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems && '.
+                        '/bin/echo $M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.mems'
+            flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");
+            close(LOCKFILE);
+                } else {
+                    $bashcmd.=
+                        'for d in '.$Cgroup_directory_collection_links.'/*; do '.
+                            'mkdir -p $d/'.$Cpuset_path_job.' && '.
+                            '/bin/echo 0 > $d/'.$Cpuset_path_job.'/notify_on_release; '.
+                        'done && '.
+                        '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive && '.
+                        '/bin/echo $C > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus &&' .
+                        '/bin/echo $M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems'
+                }
+                print_log(4, "$bashcmd\n");
+                if (system("bash -c '$bashcmd'")){
+                    exit_myself(4,'Failed to create cpuset '.$Cpuset_path_job);
+                }
+            #}
 
         # Put a share of disk IO corresponding of the ratio between the number
         # of cores of this job cgroup and the number of cores of the node
-        my @cpu_cgroup_uniq_list;
-        my %cpu_cgroup_name_hash;
-        foreach my $i (@Cpuset_cpus){
-            if (!defined($cpu_cgroup_name_hash{$i})){
-                $cpu_cgroup_name_hash{$i} = 1;
-                push(@cpu_cgroup_uniq_list, $i);
-            }
-        }
         # Get the whole cores of the node
         my @node_cpus;
-        if (open(CPUS, "$Cgroup_directory_collection_links/cpuset/cpuset.cpus")){
+        if (open(CPUS, "< $Cgroup_directory_collection_links/cpuset/cpuset.cpus")){
             my $str = <CPUS>;
-            chop($str);
-            $str =~ s/\-/\.\./g;
+            chomp($str);
+            $str =~ s/-/../g;
             @node_cpus = eval($str);
             close(CPUS);
         }else{
             exit_myself(5,"Failed to retrieve the cpu list of the node $Cgroup_directory_collection_links/cpuset/cpuset.cpus");
         }
-        my $IO_ratio = sprintf("%.0f",(($#cpu_cgroup_uniq_list + 1) / ($#node_cpus + 1) * 1000)) ;
+        my $IO_ratio = sprintf("%.0f",(($#Cpuset_cpus + 1) / ($#node_cpus + 1) * 1000)) ;
         # TODO: Need to do more tests to validate so remove this feature
         #       Some values are not working when echoing
         $IO_ratio = 1000;
-        if (system( '/bin/echo '.$IO_ratio.' | cat > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset_path_job.'/blkio.weight')){
+        if ($Cpuset_path_job =~ /,j=X$/) {
+            $bashcmd =
+                '/bin/echo 1000 > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset_path_job.'/blkio.weight &&'.
+                '/bin/echo '.$IO_ratio.' > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset_path_job.'/oar.job='.$Cpuset->{job_id}.'/blkio.weight'
+        } else {
+            $bashcmd = '/bin/echo '.$IO_ratio.' > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset_path_job.'/blkio.weight';
+        }
+        print_log(4, "$bashcmd\n");
+        if (system("bash -c '$bashcmd'") {
             exit_myself(5,"Failed to set the blkio.weight to $IO_ratio");
         }
 
         # Assign the corresponding share of memory if memory cgroup enabled.
         if ($ENABLE_MEMCG eq "YES"){
             my $mem_global_kb;
-            if (open(MEM, "/proc/meminfo")){
+            if (open(MEM, "< /proc/meminfo")){
                 while (my $line = <MEM>){
                     if ($line =~ /^MemTotal:\s+(\d+)\skB$/){
                         $mem_global_kb = $1 * 1024;
@@ -254,9 +273,19 @@ if ($ARGV[0] eq "init"){
             }else{
                 exit_myself(5,"Failed to retrieve the global memory from /proc/meminfo");
             }
-            exit_myself(5,"Failed to parse /proc/meminfo to retrive MemTotal") if (!defined($mem_global_kb));
-            my $mem_kb = sprintf("%.0f", (($#cpu_cgroup_uniq_list + 1) / ($#node_cpus + 1) * $mem_global_kb));
-            if (system( '/bin/echo '.$mem_kb.' | cat > '.$Cgroup_directory_collection_links.'/memory/'.$Cpuset_path_job.'/memory.limit_in_bytes')){
+            if (!defined($mem_global_kb)) {
+                exit_myself(5,"Failed to parse /proc/meminfo to retrive MemTotal")'
+            }
+            my $mem_kb = sprintf("%.0f", (($#Cpuset_cpus + 1) / ($#node_cpus + 1) * $mem_global_kb));
+            if ($Cpuset_path_job =~ /,j=X$/) {
+                $bashcmd =
+                    '/bin/echo '.$mem_global_kb.' > '.$Cgroup_directory_collection_links.'/memory/'.$Cpuset_path_job.'/memory.limit_in_bytes && '.
+                    '/bin/echo '.$mem_kb.' > '.$Cgroup_directory_collection_links.'/memory/'.$Cpuset_path_job.'/oar.job='.$Cpuset->{job_id}.'/memory.limit_in_bytes'
+            } else {
+                $bashcmd = '/bin/echo '.$mem_kb.' > '.$Cgroup_directory_collection_links.'/memory/'.$Cpuset_path_job.'/memory.limit_in_bytes';
+            }
+            print_log(4, "$bashcmd\n");
+            if (system("bash -c '$bashcmd'") {
                 exit_myself(5,"Failed to set the memory.limit_in_bytes to $mem_kb");
             }
         }
