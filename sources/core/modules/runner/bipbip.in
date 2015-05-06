@@ -2,6 +2,9 @@
 # $Id$
 #
 
+use strict;
+use warnings;
+
 use OAR::IO;
 use Sys::Hostname;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
@@ -219,7 +222,7 @@ oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job-
 
 if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
     my ($addr,$port) = split(/:/,$job->{info_type});
-    OAR::Tools::notify_tcp_socket($addr,$port,"Starting...");
+    OAR::Tools::notify_tcp_socket($addr,$port,"starting...");
 }
 
 $Job_user = $job->{job_user};
@@ -237,7 +240,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     $ssh_public_key = OAR::Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_full_path,$job->{job_user},$Job_user);
     my $cpuset_data_hash = {
         job_id => $Job_id,
-        name => $Cpuset_name,
+        name => defined($Cpuset_name)?$Cpuset_name:"",
         nodes => $cpuset_nodes,
         cpuset_path => $Cpuset_path,
         ssh_keys => {
@@ -262,7 +265,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         stdout_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stdout_file},$Job_id),
         stderr_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stderr_file},$Job_id),
         launching_directory => $job->{launching_directory},
-        job_name            => $job->{job_name},
+        job_name            => defined($job->{job_name})?$job->{job_name}:"",
         walltime_seconds    => $moldable->{moldable_walltime},
         walltime            => OAR::IO::duration_to_sql($moldable->{moldable_walltime}),
         project             => $job->{project},
@@ -415,7 +418,7 @@ my %data_to_transfer = (
         user                => $job->{job_user},
         job_user            => $Job_user,
         types               => $types,
-        name                => $job->{job_name},
+        name                => defined($job->{job_name})?$job->{job_name}:"",
         project             => $job->{project},
         reservation         => $job->{reservation},
         walltime_seconds    => $moldable->{moldable_walltime},
@@ -438,6 +441,7 @@ my %data_to_transfer = (
 my $error = 50;
 my $exit_script_value = 'N';
 my $init_done = 0;
+
 eval {
     my $pid;
     $SIG{ALRM} = sub { kill(9,$pid); die "alarm\n" };
