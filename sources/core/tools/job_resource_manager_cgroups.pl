@@ -35,6 +35,9 @@
 
 # TAKTUK_HOSTNAME environment variable must be defined and must be a key
 # of the transfered hash table ($Cpuset variable).
+use strict;
+use warnings;
+
 use Fcntl qw(:flock);
 
 sub exit_myself($$);
@@ -111,7 +114,7 @@ if (!defined($Cpuset->{log_level})){
 }
 $Log_level = $Cpuset->{log_level};
 my $Cpuset_path_job;
-my @Global_cpuslist;
+my @Global_cpulist;
 my @Job_cpulist;
 
 if($Log_level > 3) {
@@ -123,8 +126,8 @@ if($Log_level > 3) {
 if (defined($Cpuset->{cpuset_path})){
     $Cpuset_path_job = $Cpuset->{cpuset_path}.'/'.$Cpuset->{name};
     # compute Cpuset cpus: e.g transform ("0,4","1,5","2,6","3,7") in get (0,1,2,3,4,5,6,7) + make sure cpus are unique
-    %tmp_hash = map {$_ => 1} (map {s/\s*//g;split(",",$_)} @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}});
-    @Job_cpulist = sort(keys(%h));
+    my %tmp_hash = map {$_ => 1} (map {s/\s*//g;split(",",$_)} @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}});
+    @Job_cpulist = sort(keys(%tmp_hash));
 } else {
     exit_myself(2,"Cpuset->{cpuset_path} not set??");
 }
@@ -142,8 +145,8 @@ if ($ARGV[0] eq "init"){
         open(LOCKFILE,"> $Cpuset->{oar_tmp_directory}/job_manager_lock_file") or exit_myself(16,"Failed to open global lock file: $!");
         flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
         if (!(-r $Cgroup_directory_collection_links.'/cpuset/tasks')){
+            my $cgroup_list = "cpuset,cpu,cpuacct,devices,freezer,blkio";
             if (!(-r $OS_cgroups_path.'/cpuset/tasks')){
-                my $cgroup_list = "cpuset,cpu,cpuacct,devices,freezer,blkio";
                 $cgroup_list .= ",memory" if ($ENABLE_MEMCG);
                 $bashcmd =
                     'oardodo mkdir -p '.$Cgroup_mount_point.'; '.
@@ -167,7 +170,7 @@ if ($ARGV[0] eq "init"){
                     'oardodo ln -s '.$OS_cgroups_path.'/cpuset /dev/cpuset; '.
                     'oardodo mkdir -p '.$Cgroup_directory_collection_links.'; '.
                     'for cg in {'.$cgroup_list.'}; do '.
-                        'oardodo ln -s '.$OS_cgroups_path.'/cpu '.$Cgroup_directory_collection_links.'/$cg; ';
+                        'oardodo ln -s '.$OS_cgroups_path.'/cpu '.$Cgroup_directory_collection_links.'/$cg; '.
                     'done; ';
                 print_log(4, "$bashcmd\n");
                 if (system("bash -e -c '$bashcmd'")){
@@ -182,9 +185,9 @@ if ($ARGV[0] eq "init"){
         $bashcmd =
             'shopt -s nullglob; '.
             'for d in '.$Cgroup_directory_collection_links.'/*; do '.
-               'oardodo mkdir -p $d/'.$Cpuset->{cpuset_path}.'; '.
-               'oardodo chown -R oar $d/'.$Cpuset->{cpuset_path}.'; '.
-               '/bin/echo 0 > $d/'.$Cpuset->{cpuset_path}.'/notify_on_release; '.
+               'oardodo mkdir -p $d'.$Cpuset->{cpuset_path}.'; '.
+               'oardodo chown -R oar $d'.$Cpuset->{cpuset_path}.'; '.
+               '/bin/echo 0 > $d'.$Cpuset->{cpuset_path}.'/notify_on_release; '.
             'done; '.
             '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.cpu_exclusive; '.
             'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.mems > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/cpuset.mems; '.
@@ -207,11 +210,13 @@ if ($ARGV[0] eq "init"){
             $bashcmd =
                 'XC="'.join(",",@Job_cpulist).'"; '.
                 'for d in '.$Cgroup_directory_collection_links.'/*; do '.
-                    'mkdir -p $d/'.$Cpuset_path_job.'; '.
-                    '/bin/echo 0 > $d/'.$Cpuset_path_job.'/notify_on_release; '.
+                    'oardodo mkdir -p $d'.$Cpuset_path_job.'; '.
+                    'oardodo chown -R oar $d'.$Cpuset_path_job.'; '.
+                    '/bin/echo 0 > $d'.$Cpuset_path_job.'/notify_on_release; '.
                 'done; '.
                 '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive; '.
-                'mkdir -p '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'; '.
+                'oardodo mkdir -p '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'; '.
+                'oardodo chown -R oar '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'; '.
                 '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/notify_on_release; '.
                 '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/cpuset.cpu_exclusive; '.
                 # Compute and set the cpus for the extensible cpuset (current cpus + the ones of the new job) 
@@ -228,7 +233,7 @@ if ($ARGV[0] eq "init"){
             my @X_cpulist = get_cpuset_cpulist("$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job");
             $bashcmd =
                 'shopt -s nullglob; '.
-                'M=$(for f in /sys/devices/system/cpu/cpu{'.join(",",@X_cpulist).'}/node*; do n=${f##*node}; a[$n]=$n; done; IFS=","; echo "${a[*]})"; '.
+                'M=$(for f in /sys/devices/system/cpu/cpu{'.join(",",@X_cpulist).',}/node*; do n=${f##*node}; a[$n]=$n; done; IFS=","; echo "${a[*]})"; '.
                 '/bin/echo $M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems; ';
             #my $IO_ratio = sprintf("%.0f",@X_cpulist / @Global_cpulist * 1000) ;
             # TODO: Need to do more tests to validate so remove this feature
@@ -255,13 +260,14 @@ if ($ARGV[0] eq "init"){
             $bashcmd =
                 'C="'.join(",",@Job_cpulist).'"; '.
                 'for d in '.$Cgroup_directory_collection_links.'/*; do '.
-                    'mkdir -p $d/'.$Cpuset_path_job.'; '.
-                    '/bin/echo 0 > $d/'.$Cpuset_path_job.'/notify_on_release; '.
+                    'oardodo mkdir -p $d/'.$Cpuset_path_job.'; '.
+                    'oardodo chown -R oar $d/'.$Cpuset_path_job.'; '.
+                    '/bin/echo 0 > $d'.$Cpuset_path_job.'/notify_on_release; '.
                 'done; '.
                 '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive; '.
                 '/bin/echo $C > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus; '.
                 'shopt -s nullglob; '.
-                'M=$(for f in /sys/devices/system/cpu/cpu{'.join(",",@Job_cpulist).'}/node*; do n=${f##*node}; a[$n]=$n; done; IFS=","; echo "${a[*]}"); '.
+                'M=$(for f in /sys/devices/system/cpu/cpu{'.join(",",@Job_cpulist).',}/node*; do n=${f##*node}; a[$n]=$n; done; IFS=","; echo "${a[*]}"); '.
                 '/bin/echo $M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems; ';
                 #my $IO_ratio = sprintf("%.0f",@Job_cpulist / @Global_cpulist * 1000) ;
                 # TODO: Need to do more tests to validate so remove this feature
@@ -452,7 +458,7 @@ EOF
                 'if [ -w '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/memory.force_empty ]; then '.
                     'echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'/memory.force_empty; '.
                 'fi; '.
-                'rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'; '.
+                'oardodo rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/oar.j='.$Cpuset->{job_id}.'; '.
                 # Compute the cpus of the remaining extensible job(s) 
                 'shopt -s nullglob; '.
                 'C="" && for f in '.$Cgroup_directory_collection_links.'/cpuset'.$Cpuset_path_job.'/oar.j=*/cpuset.cpus; do '.
@@ -472,7 +478,7 @@ EOF
                     'rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'; '.
                     'for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'; do '.
                         '[ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty;' .
-                        'rmdir $d > /dev/null 2>&1; ' .
+                        'oardodo rmdir $d > /dev/null 2>&1; ' .
                     'done; '.
                 'fi; ';
             print_log(4, "$bashcmd\n");
@@ -487,7 +493,7 @@ EOF
                 my @X_cpulist = get_cpuset_cpulist("$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job");
                 $bashcmd =
                     'shopt -s nullglob; '.
-                    'M=$(for f in /sys/devices/system/cpu/cpu{'.join(",",@X_cpulist).'}/node*; do n=${f##*node}; a[$n]=$n; done; IFS=","; echo "${a[*]})"; '.
+                    'M=$(for f in /sys/devices/system/cpu/cpu{'.join(",",@X_cpulist).',}/node*; do n=${f##*node}; a[$n]=$n; done; IFS=","; echo "${a[*]})"; '.
                     '/bin/echo $M > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems; ';
                 #my $IO_ratio = sprintf("%.0f",@X_cpulist / @Global_cpulist * 1000) ;
                 # TODO: Need to do more tests to validate so remove this feature
@@ -525,7 +531,7 @@ EOF
                 'rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'; '.
                 'for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'; do '.
                     '[ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty; '.
-                    'rmdir $d > /dev/null 2>&1; '.
+                    'oardodo rmdir $d > /dev/null 2>&1; '.
                 'done; ';
             print_log(4, "$bashcmd\n");
             if (system("bash -c '$bashcmd'")) {
@@ -637,33 +643,29 @@ sub print_log($$){
 # return a array with all the cpus of a cpuset, from the cpuset fs
 # in scalare context: return the number of cpus (= $#cpulist+1)
 sub get_cpuset_cpulist($) {
-    $cpuset_path = shift;
-    if (open(CPUS, "< $cpuset_path/cpuset.cpus")){
-        my $cpustr = <CPUS>;
-        chomp($cpustr);
-        $cpustr =~ s/-/../g;
-        @cpuslist = eval($str);
-        close(CPUS);
-    }else{
+    my $cpuset_path = shift;
+    open(CPUS, "< $cpuset_path/cpuset.cpus") or 
         exit_myself(5,"Failed to retrieve the cpulist of $cpuset_path");
-    }
-    return @cpulist;
+    my $cpustr = <CPUS>;
+    close(CPUS);
+    chomp($cpustr);
+    $cpustr =~ s/-/../g;
+    return eval($cpustr);
 }
 
 # return the total memory of the system
 sub get_memtotal() {
-    if (open(MEM, "< /proc/meminfo")){
-        while (my $line = <MEM>){
-            if ($line =~ /^MemTotal:\s+(\d+)\skB$/){
-                $mem_global_kb = $1 * 1024;
-                last;
-            }
-        }
-        close(MEM);
-    }else{
+    open(MEM, "< /proc/meminfo") or
         exit_myself(5,"Failed to retrieve the global memory from /proc/meminfo");
+    my $mem_global_kb;
+    while (my $line = <MEM>){
+        if ($line =~ /^MemTotal:\s+(\d+)\skB$/){
+            $mem_global_kb = $1 * 1024;
+            last;
+        }
     }
-    if (!defined($mem_global_kb)) {
+    close(MEM);
+    defined($mem_global_kb) or
         exit_myself(5,"Failed to parse /proc/meminfo to retrive MemTotal");
-    }
+    return $mem_global_kb;
 }
