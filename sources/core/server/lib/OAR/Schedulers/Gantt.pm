@@ -1,4 +1,3 @@
-# $Id$
 package OAR::Schedulers::Gantt;
 require Exporter;
 use OAR::Schedulers::ResourceTree;
@@ -18,7 +17,7 @@ use Data::Dumper;
 
 # 2^32 is infinity in 32 bits stored time
 my $Infinity = 4294967296;
-my $local_tz = DateTime::TimeZone->new(name => 'local');
+my $local_tz;
 
 # Prototypes
 # gantt chart management
@@ -231,11 +230,16 @@ sub compute_constraints($$$$) {
     my $now_date = shift;
     my $default_iterations = shift;
     my $log_prefix = shift;
+    # Compute local tz as a singleton because it is said to be time consuming.
+    if (not defined($local_tz)) {
+        $local_tz = DateTime::TimeZone->new(name => 'local') or
+            oar_error($log_prefix." failed to retrieve the local timezone, please fix your system timezone\n");
+    }
     my $now = DateTime->from_epoch(epoch => $now_date, time_zone => $local_tz);
     my $constraints = {};
-    # parse constraints
+    # Parse constraints
     foreach (split(/\s*,\s*/,$constraint_str)) {
-        # format is: [days of week]/[start hour]:[start minute]/[duration hours](:[duration minutes])(/[start date YYYY-MM-DD]/[# iterations])
+        # Format is: [days of week]/[start hour]:[start minute]/[duration hours](:[duration minutes])(/[start date YYYY-MM-DD]/[# iterations])
         if (/^(\d+)\/(\d?\d):(\d\d)\/(\d+)(?::(\d\d))?(?:\/(\d\d\d\d)-(\d\d)-(\d\d)\/(\d+))?$/) {
             # Compute intervals, given the current date (e.g. what time interval is next tuesday, starting at 14:00 for 10 hours)
             my $c = { days => $1, start => { h => $2, m => $3 }, duration => { h => $4, m => defined($5)?$5:0 } };
@@ -284,7 +288,7 @@ sub compute_constraints($$$$) {
     # Merge constraints intervals in case of overlaps.
     my @starts = sort {$a <=> $b} keys(%$constraints);
     my $i = shift @starts;
-    my @result = ([0,84600]); # initialize with a fake first constraint, as required by the find_first_hole function
+    my @result = ([0,84600]); # Initialize with a fake first constraint, as required by the find_first_hole function
     my $max_constraint_duration = 0;
     while (defined $i) {
         my $j = shift @starts;
@@ -977,3 +981,4 @@ sub find_first_hole($$$$$$$$$$$$){
     return($current_time, $comment, \@result_tree_list);
 }
 
+return 1;
