@@ -552,7 +552,7 @@ sub show_accounting {
         if (defined($user)) {
             my $asked = 0;
             $asked=$Consumptions->{$user}->{ASKED} if (defined($Consumptions->{$user}->{ASKED}));
-            my $used =0;
+            my $used = 0;
             $used=$Consumptions->{$user}->{USED} if (defined($Consumptions->{$user}->{USED}));
             print "Usage summary for user '$user' from $1 to $2:\n";
             print "-------------------------------------------------------------\n";
@@ -572,8 +572,10 @@ sub show_accounting {
             $Consumptions=OAR::Stat::get_accounting_summary_byproject(OAR::Stat::sql_to_local($date1),OAR::Stat::sql_to_local($date2),$user);
             foreach my $project (keys %{$Consumptions}) {
                 print "  $project:\n";
-                $asked=$Consumptions->{$project}->{ASKED}->{$user};
-                $used=$Consumptions->{$project}->{USED}->{$user};
+                $asked = 0;
+                $asked=$Consumptions->{$project}->{ASKED}->{$user} if (defined($Consumptions->{$project}->{ASKED}->{$user}));
+                $used = 0;
+                $used=$Consumptions->{$project}->{USED}->{$user} if (defined($Consumptions->{$project}->{USED}->{$user}));
                 printf ("%-28s %s ( %s)\n","    Asked :",$asked,OAR::Stat::get_duration($asked));
                 printf ("%-28s %s ( %s)\n","    Used :",$used,OAR::Stat::get_duration($used));
                 if (my @last_karma=OAR::Stat::get_last_project_karma($user,$project,OAR::Stat::sql_to_local($date2))) {
