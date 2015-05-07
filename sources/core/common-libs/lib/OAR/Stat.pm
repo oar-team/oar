@@ -197,7 +197,7 @@ sub get_duration($){
     if ($minutes==1) { $duration .="1 minute ";}
     elsif ($minutes) { $duration .="$minutes minutes ";};
     $seconds=$time%60;
-    if ($seconds==1) { $duration .="1 second ";}
+    if ($seconds<=1) { $duration .="$seconds second ";}
     elsif ($seconds) { $duration .="$seconds seconds ";};
     if ($duration eq "") {$duration="0 seconds ";};
     return $duration;
