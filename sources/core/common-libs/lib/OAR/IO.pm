@@ -481,8 +481,8 @@ sub get_job_cpuset_name($$){
     my ($extensible) = $sth->fetchrow_array();
     # shorten the job name to 100 characters + sanitize
     $name = defined($name)?substr($name,0,100):"";
-    $name =~ s/[=,.]/_/g;
-    $user =~ s/[=,.]/_/g;
+    $name =~ s/[=,.\/]/_/g;
+    $user =~ s/[=,.\/]/_/g;
     my $cpuset = "oar.u=$user,n=$name".(defined($extensible)?",j=X":",j=$job_id");
     # limit cpuset name to 200 characters to prevent filename issues
     (length($cpuset)<200) or die "Error: cpuset name lenght overflow, $cpuset\n";
