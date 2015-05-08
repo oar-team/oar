@@ -63,7 +63,7 @@ fi
 # -1- try connection using a user provided job key file for a job using the job key mechanism
 if [ -n "$OAR_JOB_KEY_FILE" ] 
 then
-    # first, get rid of remaining unused .Xautority.{pid} files if any...
+    # first, get rid of remaining unused oarsh.jobkey.{pid} files if any...
     for f in $OAR_RUNTIME_DIRECTORY/oarsh.jobkey.*; do
         [ -e "/proc/${f#$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.}" ] || rm -f $f
     done
@@ -87,14 +87,6 @@ fi
 
 # -2- try connection using a job key pushed by OAR for a job using the job key mechanism. 
 # (oarsh is run from one of the node of the job) 
-TMP_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OARDO_USER.jobkey"
-if [ -r $TMP_JOB_KEY_FILE ]; then
-    umask $OLDUMASK
-    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
-    echo "oarsh: Failed to connect using the cpuset job key: $TMP_JOB_KEY_FILE"
-    exit 4
-fi
-
 if [ "$CPUSET_PATH" != "" ]; then
     if [ -r /proc/self/cpuset ]; then
         OAR_CPUSET=$(< /proc/self/cpuset)
@@ -127,31 +119,21 @@ if [ -n "$OAR_JOB_ID" ]; then
         echo "oarsh: Cannot connect using job id from this host." 1>&2
         exit 5
     fi
-    STR=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | \
-            while read l; do
-                if [ "$l" != "" ]; then
-                    if [ "${l##cpuset_name*}" = "" ] ;then
-                        echo "OAR_CPUSET="${l/*cpuset_name = /}
-                    fi
-                fi
-            done)
+    STR=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | bash -c 'while read l; do case $l in owner\ =\ *) echo "OAR_JOB_USER=${l#owner = };" ;; cpuset_name\ =\ *) echo "OAR_CPUSET=${l##cpuset_name = };" ;; esac; done')
 
+    unset OAR_CPUSET
+    unset OAR_JOB_USER
     eval $STR
 
     if [ "$OAR_CPUSET" = "" ]; then
         echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2
         exit 5
-    else
-        if [ "$OAR_CPUSET" != "$OARDO_USER"_"$OAR_JOB_ID" ]; then
-            echo "oarsh: Permission denied, seems like job $OAR_JOB_ID is not yours." 1>&2
-            exit 5
-        fi
+		fi
+    if [ "$OAR_JOB_USER" != "$OARDO_USER" ]; then
+        echo "oarsh: Permission denied, job $OAR_JOB_ID is not yours, it belongs to $OAR_JOB_USER." 1>&2
+        exit 5
     fi
 
-    # Check if we must use a tmp user id for this job
-    if [ "$OAR_JOB_USER" = "" ]; then
-        OAR_JOB_USER=$OARDO_USER
-    fi
     if [ "$CPUSET_PATH" != "" ]; then
         OAR_CPUSET="$CPUSET_PATH/$OAR_CPUSET"
     else
