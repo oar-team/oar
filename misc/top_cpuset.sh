@@ -39,11 +39,16 @@ while getopts "kWd:h" opt; do
 	esac
 done
 
+if ! [ -d $CGROOT ]; then
+  echo "No such directory: $CGROOT"
+  exit 0;
+fi
+
 kill_tasks() {
   echo "# Kill tasks:"
   find $CGROOT -name tasks -exec grep -H -o "[[:digit:]]\+" {} \;
   echo "# Remove directories:"
-	if [ -n "WIPE" ]; then
+	if [ -n "$WIPE" ]; then
     find $CGROOT -depth -type d
   else
     find $CGROOT -depth -type d -name "oar.*"
@@ -53,7 +58,7 @@ kill_tasks() {
   echo
   if [ "$ANSWER" == "y" ]; then
     find $CGROOT -name tasks -exec cat {} \; | sudo xargs -n 1 kill -9
-	  if [ -n "WIPE" ]; then
+	  if [ -n "$WIPE" ]; then
     	find $CGROOT -depth -type d -exec sudo rmdir {} \;
     else
     	find $CGROOT -depth -type d -name "oar.*" -exec sudo rmdir {} \;
