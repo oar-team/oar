@@ -89,6 +89,8 @@ fi
 if [ "$CPUSET_PATH" != "" ]; then
     if [ -r /proc/self/cpuset ]; then
         OAR_CPUSET=$(< /proc/self/cpuset)
+        # workaround to work with oardocker
+        OAR_CPUSET="/${OAR_CPUSET#/oardocker/node*/}"
         if [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH/" ]; then
             JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
             if [ -r $JOB_KEY_FILE ]; then
