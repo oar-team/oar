@@ -52,7 +52,9 @@ sub get_data_cpulist(@);
 sub get_extensible_jobs_data();
 sub get_job_nodes(@);
 sub get_job_resources(@);
-sub get_job_env($@);
+sub get_job_env($$);
+sub uniq(@);
+sub get_job_env_x($@);
 sub create_job_files($@);
 sub remove_job_files($);
 sub configure_job_cpuset($);
@@ -123,13 +125,13 @@ if (!defined($Data->{log_level})) {
 print_log(4,Dumper($Data));
 
 my $Lock_file = "$Data->{oar_tmp_directory}/job_resource_manager.lock_file";
-my @Global_cpulist;
 my $Job_cpuset_dir = (defined($Data->{cpuset_path}))?"$Data->{cpuset_path}/$Data->{name}":"";
 my $Job_data_dir = (defined($Data->{cpuset_path}))?"$Data->{oar_tmp_directory}/$Data->{name}":"$Data->{oar_tmp_directory}/$Data->{job_id}";
-my $Job_file_env = "oar.env";
-my $Job_file_resources = "oar.resources";
-my $Job_file_nodes = "oar.nodes";
-my $Job_file_data = "oar.data";
+my $Job_file_env = "env";
+my $Job_file_resources = "resources";
+my $Job_file_nodes = "nodes";
+my $Job_x_dir_prefix = "";
+my $Job_file_data = "data";
 
 my $bashcmd;
 print_log(2,"$Script_name $ARGV[0] (log level=$Data->{log_level})");
@@ -182,7 +184,6 @@ if ($ARGV[0] eq "init") {
                 }
             }
         }
-        @Global_cpulist = get_cpuset_cpulist($Cgroup_directory_collection_links.'/cpuset/');
         # Populate default oar cgroup
         $bashcmd =
             'shopt -s nullglob; '.
@@ -225,7 +226,7 @@ if ($ARGV[0] eq "init") {
             # add data form the current job to the extensible job hash
             $data_x->{$Data->{job_id}} = $Data;
             # save data from the current job data to filesystem
-            my $job_x_dir = "$Job_data_dir/oar.j=$Data->{job_id}";
+            my $job_x_dir = "$Job_data_dir/$Job_x_dir_prefix$Data->{job_id}";
             my $job_x_data = "$job_x_dir/$Job_file_data";
             mkdir($job_x_dir) or exit_myself(99,"Failed to create directory: $job_x_dir\n");
             open(FILE, "> $job_x_data") or exit_myself(19,"Failed to create the data file $job_x_data");
@@ -351,7 +352,7 @@ if ($ARGV[0] eq "init") {
             print_log(4,"Locked extensible job using $Lock_file.$Data->{name}");
 
             # remove current job's data file
-            my $job_x_dir = "$Job_data_dir/oar.j=$Data->{job_id}";
+            my $job_x_dir = "$Job_data_dir/$Job_x_dir_prefix$Data->{job_id}";
             my $job_x_data = "$job_x_dir/$Job_file_data";
             (-e $job_x_dir) or exit_myself(99,"Error: Job directory does not exist: $job_x_dir");
             (-e $job_x_data) or exit_myself(99,"Error: Job data file does not exist: $job_x_data");
@@ -534,7 +535,7 @@ sub get_extensible_jobs_data() {
     my $data_x = {};
     opendir(DIR, $Job_data_dir) or exit_myself(18,"Failed to open directory $Job_data_dir: $!");
     foreach my $x (readdir(DIR)) {
-        if (my $job_id = $x =~ /^oar.j=(\d+)$/) {; 
+        if (my $job_id = $x =~ /^$Job_x_dir_prefix(\d+)$/) {; 
             my $data_file = "$Job_data_dir/$x/$Job_file_data";
             open(FILE,"< $data_file") or exit_myself(99,"Failed to open file $data_file: $!");
             $slurp = do { local $/; <FILE> };
@@ -545,7 +546,7 @@ sub get_extensible_jobs_data() {
     return $data_x;
 }
 
-# retrieve the nodes list from one or more data structure
+# retrieve the nodes list from one or more data structures
 # with as many duplicates as there are distinct resources (e.g. resource_ids)
 sub get_job_nodes(@) {
     my $resource_node_hash = {};
@@ -562,7 +563,7 @@ sub get_job_nodes(@) {
     return join("\n",values(%$resource_node_hash))."\n";
 }
 
-# retrieve the resources list from one or more data structure
+# retrieve the resources list from one or more data structures
 # with merge if extensible job
 sub get_job_resources(@) {
     my $resources_lines_hash = {};
@@ -574,56 +575,113 @@ sub get_job_resources(@) {
                 $resources_lines_hash->{$r->{$data->{node_file_db_fields_distinct_values}}} = join(",",map { "$_ = '$r->{$_}'" } keys(%$r))."\n";
             }
         } else {
-            print_log(2,"Warning: extensible job resources could not be merges correctly");  
+            print_log(2,"Warning: extensible job resources could not be merged correctly");  
         }
     }
     return join("\n",values(%$resources_lines_hash))."\n";
 }
 
-# retrieve the env file from one or more data structure
-# use a bash array in case of extensible job (NB: with bash arrays, a == a[0])
-sub get_job_env($@) {
+# retrieve the env file of a job from one data structure
+sub get_job_env($$) {
+    my $dir=shift();
+    my $data = shift;
+    my $env = {};
+    $env->{OAR_JOBID} = $data->{job_id};
+    $env->{OAR_JOB_ID} = $data->{job_id};
+    $env->{OAR_ARRAYID} = $data->{array_id};
+    $env->{OAR_ARRAY_ID} = $data->{array_id};
+    $env->{OAR_ARRAYINDEX} = $data->{array_index};
+    $env->{OAR_ARRAY_INDEX} = $data->{array_index};
+    $env->{OAR_USER} = $data->{user};
+    $env->{OAR_JOB_NAME} = $data->{job_name};
+    $env->{OAR_WORKDIR} = $data->{launching_directory};
+    $env->{OAR_O_WORKDIR} = $data->{launching_directory};
+    $env->{OAR_WORKING_DIRECTORY} = $data->{launching_directory};
+    $env->{OAR_PROJECT_NAME} = $data->{project};
+    $env->{OAR_STDOUT} = $data->{stdout_file};
+    $env->{OAR_STDERR} = $data->{stderr_file};
+    $env->{OAR_WALLTIME} = $data->{walltime};
+    $env->{OAR_WALLTIME_SECONDS} = $data->{walltime_seconds};
+    $env->{OAR_NODEFILE} = "$dir/$Job_file_nodes";
+    $env->{OAR_NODE_FILE} = "$dir/$Job_file_nodes";
+    $env->{OAR_FILE_NODES} = "$dir/$Job_file_nodes";
+    $env->{OAR_RESOURCE_PROPERTIES_FILE} = "$dir/$Job_file_resources";
+    $env->{OAR_RESOURCE_FILE} = "$dir/$Job_file_resources";
+    my $bashcmd = "";
+    foreach my $key (sort(keys(%$env))){
+       $bashcmd .= "export $key='".$env->{$key}."'\n";
+    }
+    return $bashcmd;
+}
+
+# take an array and return an new array with only uniq values
+sub uniq(@) {
+    my $hash;
+    map { $hash->{$_} = 1 } @_;
+    return keys(%$hash);
+}
+
+# retrieve the env file from one or more data structures (extensible jobs)
+# NB: with bash arrays, a == a[0], but bash array cannot be exported...
+sub get_job_env_x($@) {
     my $dir=shift();
     my $env = {};
     foreach my $data (@_) {
-        push(@{$env->{OAR_JOBID}}, $data->{job_id});
-        push(@{$env->{OAR_JOB_ID}}, $data->{job_id});
-        push(@{$env->{OAR_ARRAYID}}, $data->{array_id});
-        push(@{$env->{OAR_ARRAY_ID}}, $data->{array_id});
-        push(@{$env->{OAR_ARRAYINDEX}}, $data->{array_index});
-        push(@{$env->{OAR_ARRAY_INDEX}}, $data->{array_index});
-        if (exists($env->{OAR_USER}) and (${$env->{OAR_USER}}[0] ne $data->{user})) {
-            print_log(2,"Warning: extensible jobs should not be from different users");
-        }
-        push(@{$env->{OAR_USER}}, $data->{user});
-        if (exists($env->{OAR_JOB_NAME}) and (${$env->{OAR_JOB_NAME}}[0] ne $data->{job_name})) {
-            print_log(2,"Warning: extensible jobs should not have different job names");
-        }
-        push(@{$env->{OAR_JOB_NAME}}, $data->{job_name});
-        push(@{$env->{OAR_WORKDIR}}, $data->{launching_directory});
-        push(@{$env->{OAR_O_WORKDIR}}, $data->{launching_directory});
-        push(@{$env->{OAR_WORKING_DIRECTORY}}, $data->{launching_directory});
-        push(@{$env->{OAR_PROJECT_NAME}}, $data->{project});
-        push(@{$env->{OAR_STDOUT}}, $data->{stdout_file});
-        push(@{$env->{OAR_STDERR}}, $data->{stderr_file});
-        push(@{$env->{OAR_WALLTIME}}, $data->{walltime});
-        push(@{$env->{OAR_WALLTIME_SECONDS}}, $data->{walltime_seconds});
-        push(@{$env->{OAR_NODEFILE}}, "$dir/$Job_file_nodes");
-        push(@{$env->{OAR_NODE_FILE}}, "$dir/$Job_file_nodes");
-        push(@{$env->{OAR_FILE_NODES}}, "$dir/$Job_file_nodes");
-        push(@{$env->{OAR_RESOURCE_PROPERTIES_FILE}}, "$dir/$Job_file_resources");
-        push(@{$env->{OAR_RESOURCE_FILE}}, "$dir/$Job_file_resources");
+        my $job_id = $data->{job_id};
+        $env->{OAR_JOBID}->{$job_id} = $job_id;
+        $env->{OAR_JOB_ID}->{$job_id} = $job_id;
+        $env->{OAR_ARRAYID}->{$job_id} = $data->{array_id};
+        $env->{OAR_ARRAY_ID}->{$job_id} = $data->{array_id};
+        $env->{OAR_ARRAYINDEX}->{$job_id} = $data->{array_index};
+        $env->{OAR_ARRAY_INDEX}->{$job_id} = $data->{array_index};
+        $env->{OAR_USER}->{$job_id} = $data->{user};
+        $env->{OAR_JOB_NAME}->{$job_id} = $data->{job_name};
+        $env->{OAR_WORKDIR}->{$job_id} = $data->{launching_directory};
+        $env->{OAR_O_WORKDIR}->{$job_id} = $data->{launching_directory};
+        $env->{OAR_WORKING_DIRECTORY}->{$job_id} = $data->{launching_directory};
+        $env->{OAR_PROJECT_NAME}->{$job_id} = $data->{project};
+        $env->{OAR_STDOUT}->{$job_id} = $data->{stdout_file};
+        $env->{OAR_STDERR}->{$job_id} = $data->{stderr_file};
+        $env->{OAR_WALLTIME}->{$job_id} = $data->{walltime};
+        $env->{OAR_WALLTIME_SECONDS}->{$job_id} = $data->{walltime_seconds};
+        $env->{OAR_NODEFILE}->{$job_id} = "$dir/$Job_x_dir_prefix$job_id/$Job_file_nodes";
+        $env->{OAR_NODE_FILE}->{$job_id} = "$dir/$Job_x_dir_prefix$job_id/$Job_file_nodes";
+        $env->{OAR_FILE_NODES}->{$job_id} = "$dir/$Job_x_dir_prefix$job_id/$Job_file_nodes";
+        $env->{OAR_RESOURCE_PROPERTIES_FILE}->{$job_id} = "$dir/$Job_x_dir_prefix$job_id/$Job_file_resources";
+        $env->{OAR_RESOURCE_FILE}->{$job_id} = "$dir/$Job_x_dir_prefix$job_id/$Job_file_resources";
+        $env->{OAR_JOB_ENV_FILE}->{$job_id} = "$dir/$Job_x_dir_prefix$job_id/$Job_file_env";
     }
-    my $bashcmd = "export OAR_JOB_ENV_FILE='$dir/$Job_file_env'\n";
-    foreach my $key (sort(keys(%$env))){
-        my $i = 0;
-        $bashcmd .= "unset $key\n";
-        foreach my $value (@{$env->{$key}}) {
-            $bashcmd .= "$key".(($i>0)?"[$i]":"")."='$value'\n";
-            $i++;
-        }
-        $bashcmd .= "export $key\n";
+    my $bashcmd; 
+    $bashcmd .= "export OAR_JOBID='X'\n";
+    $bashcmd .= "export OAR_JOB_ID='X'\n";
+    $bashcmd .= "export OAR_X_JOB_ID=\"(".join(" ",map {"'$_'" } values(%{$env->{OAR_JOB_ID}})).")\"\n";
+    my @users = uniq(values(%{$env->{OAR_USER}}));
+    if (@users > 1) {
+        print_log(2,"Warning: extensible jobs unexpectedly belong different users: ".join(", ",@users));
+    } else {
+        $bashcmd .= "export OAR_USER='".$users[0]."'\n";
     }
+    my @names = uniq(values(%{$env->{OAR_JOB_NAME}}));
+    if (@names > 1) {
+        print_log(2,"Warning: extensible jobs unexpected have different names: ".join(", ",@names));
+    } else {
+      $bashcmd .= "export OAR_JOB_NAME='".$names[0]."'\n";
+    }
+    $bashcmd .= "export OAR_NODEFILE='$dir/$Job_file_nodes'\n";
+    $bashcmd .= "export OAR_NODE_FILE='$dir/$Job_file_nodes'\n";
+    $bashcmd .= "export OAR_FILES_NODES='$dir/$Job_file_nodes'\n";
+    $bashcmd .= "export OAR_RESOURCE_PROPERTIES_FILE='$dir/$Job_file_resources'\n";
+    $bashcmd .= "export OAR_RESOURCE_FILE='$dir/$Job_file_resources'\n";
+    $bashcmd .= "export OAR_JOB_ENV_FILE='$dir/$Job_file_env'\n";
+    $bashcmd .= 'if [ "$USER" != "oar" ]; then'."\n";
+    $bashcmd .= '  if [ ${SHELL##*/} == "bash" ]; then'."\n";
+    foreach my $var (keys(%$env)) {
+        while (my ($key,$value) = each(%{$env->{$var}})){
+            $bashcmd .= "    $var"."[$key]='$value'\n";
+        }
+    }
+    $bashcmd .= "  fi\n";
+    $bashcmd .= "fi\n";
     return $bashcmd;
 }
 
@@ -653,7 +711,15 @@ sub create_job_files($@) {
     my $env_file = "$dir/$Job_file_env";
     print_log(4,"Create file $env_file");
     open(FILE, "> $env_file") or exit_myself(19,"Failed to create the env file $env_file");
-    print(FILE get_job_env($dir,@data)) or exit_myself(19,"Failed to write to the env file $env_file");
+    if ($dir =~ /X$/) {
+        # extensible job main env file
+        print(FILE get_job_env_x($dir,@data)) or exit_myself(19,"Failed to write to the env file $env_file");
+    } elsif(@data == 1) {
+        # here @data should only have one element
+        print(FILE get_job_env($dir,shift(@data))) or exit_myself(19,"Failed to write to the env file $env_file");
+    } else {
+        exit_myself(99,"Unexepected error when generating the job env file\n");
+    }
     close(FILE);
 }
 
@@ -695,11 +761,12 @@ sub configure_job_cpuset($) {
         print_log(4, "ok");
     }
     # Compute and set the memory nodes for the extensible cpuset
+    my @base_cpulist = get_cpuset_cpulist($Cgroup_directory_collection_links.'/cpuset/');
     $bashcmd =
         'shopt -s nullglob; '.
         'M=$(for f in /sys/devices/system/cpu/cpu{'.join(",",@$job_cpulist).',}/node*; do n=${f##*node}; a[$n]=$n; done; IFS=","; echo "${a[*]}"); '.
         '/bin/echo $M > '.$Cgroup_directory_collection_links.'/cpuset'.$Job_cpuset_dir.'/cpuset.mems; ';
-    #my $io_ratio = sprintf("%.0f",@$job_cpulist / @Global_cpulist * 1000) ;
+    #my $io_ratio = sprintf("%.0f",@$job_cpulist / @base_cpulist * 1000) ;
     # TODO: Need to do more tests to validate so remove this feature
     #       Some values are not working when echoing
     #       => using default value for now
@@ -707,7 +774,7 @@ sub configure_job_cpuset($) {
     $bashcmd .=
         '/bin/echo '.$io_ratio.' > '.$Cgroup_directory_collection_links.'/blkio'.$Job_cpuset_dir.'/blkio.weight; ';
     if ($ENABLE_MEMCG) {
-        my $mem_kb = sprintf("%.0f", @$job_cpulist / @Global_cpulist * get_memtotal());
+        my $mem_kb = sprintf("%.0f", @$job_cpulist / @base_cpulist * get_memtotal());
         $bashcmd .=
             '/bin/echo '.$mem_kb.' > '.$Cgroup_directory_collection_links.'/memory'.$Job_cpuset_dir.'/memory.limit_in_bytes; ';
     }
