@@ -1,4 +1,3 @@
-# $Id$
 #script executed on the first reserved node
 # Exit codes are:
 #     - 0 : everything worked normally
@@ -33,6 +32,7 @@ BEGIN{
 }
 
 use strict;
+use warnings;
 use Sys::Hostname;
 use POSIX qw(:signal_h :errno_h :sys_wait_h strftime);
 

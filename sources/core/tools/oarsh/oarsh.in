@@ -1,6 +1,5 @@
 #!/bin/bash
-# $Id$
-# In sshd_config you must have this line :
+# In sshd_config you must have this line:
 #     AcceptEnv OAR_CPUSET OAR_JOB_USER
 
 OLDUMASK=$(umask)
@@ -90,7 +89,7 @@ fi
 if [ "$CPUSET_PATH" != "" ]; then
     if [ -r /proc/self/cpuset ]; then
         OAR_CPUSET=$(< /proc/self/cpuset)
-        if [ "${OAR_CPUSET%/*}" = "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" = "$CPUSET_PATH/" ]; then
+        if [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH/" ]; then
             JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
             if [ -r $JOB_KEY_FILE ]; then
                 umask $OLDUMASK
@@ -125,7 +124,7 @@ if [ -n "$OAR_JOB_ID" ]; then
     unset OAR_JOB_USER
     eval $STR
 
-    if [ "$OAR_CPUSET" = "" ]; then
+    if [ "$OAR_CPUSET" == "" ]; then
         echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2
         exit 5
 		fi
