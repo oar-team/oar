@@ -199,7 +199,8 @@ my @types = (
     qr/^placeholder=\\w+$/,                    qr/^allowed=\\w+$/,
     qr/^inner=\\w+$/,                          qr/^timesharing=(?:(?:\\*|user),(?:\\*|name)|(?:\\*|name),(?:\\*|user))$/,
     qr/^token\\:\\w+\\=\\d+$/,                 qr/^extensible$/,
-    qr/^constraints=/,                         qr/^noop$/
+    qr/^constraints=/,                         qr/^noop$/,
+    qr/^expire=\d\d\d\d-\d\d-\d\d(?:\s+\d\d:\d\d(?::\d\d)?)?$/,
 );
 foreach my $t ( @{$type_list} ) {
     my $match = 0;

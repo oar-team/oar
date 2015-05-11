@@ -790,6 +790,18 @@ foreach my $queue (@queues){
             my $timesharing_name = "";
             my $types = OAR::IO::get_job_types_hash($base,$i);
             my @type_list = sort(keys(%{$types}));
+
+            if (defined($types->{expire})) {
+                my $expire_time_sec = OAR::IO::sql_to_local($types->{expire});
+                if ($current_time_sec > $expire_time_sec) {
+                    oar_debug("[$SCHEDULER_NAME] [$i] job is expired (> $types->{expire}), it will be set to error\n");
+                    OAR::IO::add_new_event($base,"EXPIRED JOB",$i," > $types->{expire}");
+                    OAR::IO::set_job_message($base, $i, "job is expired");
+                    OAR::IO::set_job_state($base, $i, "toError");
+                    next;
+                }
+            }
+
             if (defined($types->{inner})) {
                 $gantt_name = "container:$types->{inner}";
                 if (not defined($gantt->{$gantt_name})){
@@ -1084,7 +1096,7 @@ foreach my $queue (@queues){
 
                 #look if reservation is too old
                 if ($current_time_sec >= ($job->{start_time} + $duration)){
-                    oar_warn("[$SCHEDULER_NAME] [$i] Canceling job: reservation is too old\n");
+                    oar_warn("[$SCHEDULER_NAME] [$i] canceling job: reservation is too old\n");
                     OAR::IO::set_job_message($base, $job->{job_id}, "Reservation too old");
                     OAR::IO::set_job_state($base, $job->{job_id}, "toError");
                 }else{
@@ -1394,7 +1406,7 @@ foreach my $j (OAR::IO::get_gantt_waiting_interactive_prediction_date($base)){
     my ($addr,$port) = split(/:/,$j->{info_type});
     my $new_start_prediction = OAR::IO::local_to_sql($j->{start_time});
     oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Notifying user of the start prediction: $new_start_prediction (".$j->{message}.")\n");
-    OAR::Tools::notify_tcp_socket($addr,$port,"[$initial_time{sql}] Start prediction: $new_start_prediction (".$j->{message}.")");
+    OAR::Tools::notify_tcp_socket($addr,$port,"[$initial_time{sql}] start prediction: $new_start_prediction (".$j->{message}.")");
 }
 
 # Run the decisions
