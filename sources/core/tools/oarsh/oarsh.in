@@ -88,9 +88,11 @@ fi
 # (oarsh is run from one of the node of the job) 
 if [ "$CPUSET_PATH" != "" ]; then
     if [ -r /proc/self/cpuset ]; then
-        OAR_CPUSET=$(< /proc/self/cpuset)
-        # workaround to work with oardocker
-        OAR_CPUSET="/${OAR_CPUSET#/oardocker/node*/}"
+        if [ -n "$GET_CURRENT_CPUSET_CMD" ]; then
+            OAR_CPUSET=$(bash -c "$GET_CURRENT_CPUSET_CMD")
+        else
+            OAR_CPUSET=$(< /proc/self/cpuset)
+        fi
         if [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH/" ]; then
             JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
             if [ -r $JOB_KEY_FILE ]; then
