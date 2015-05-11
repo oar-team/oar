@@ -529,6 +529,11 @@ JOB_RESOURCE_MANAGER_FILE="%%OARCONFDIR%%/job_resource_manager_cgroups.pl"
 # to set OARSUB_FORCE_JOB_KEY="yes")
 CPUSET_PATH="/oar"
 
+# Command to get a process cpuset
+# If unset, OAR (oarsh) will read /proc/self/cpuset.
+#GET_CURRENT_CPUSET_CMD = "cat /proc/self/cpuset | sed -e 's@^/oardocker/node[[:digit:]]\+@@'" 
+#GET_CURRENT_CPUSET_CMD = "cat /proc/self/cpuset"
+
 # Name of the perl script the retrieve monitoring data from compute nodes.
 # This is used in oarmonitor command.
 #OARMONITOR_SENSOR_FILE="%%OARCONFDIR%%/oarmonitor_sensor.pl"
