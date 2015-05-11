@@ -180,7 +180,7 @@ sub check_jobs_to_kill(){
                             }
                         }
                         if ((!defined($checkpoint_first_date)) or ($current_time_sec <= ($checkpoint_first_date+$BESTEFFORT_RESOURCE_OCCUPATION{$r}->{checkpoint}))){
-                            oar_debug("[$SCHEDULER_NAME] Send checkpoint signal to the job $BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id}\n");
+                            oar_debug("[$SCHEDULER_NAME] Send checkpoint signal to job $BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id}\n");
                             # Retrieve node names used by the job
                             my @hosts = OAR::IO::get_job_current_hostnames($base,$BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id});
                             my $types = OAR::IO::get_job_types_hash($base,$BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id});
@@ -203,21 +203,21 @@ sub check_jobs_to_kill(){
                             };
                             if ($@){
                                 if ($@ eq "alarm\n"){
-                                    $str_comment = "[$SCHEDULER_NAME] Cannot contact $host_to_connect, operation timouted (".OAR::Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id}";
+                                    $str_comment = "[$SCHEDULER_NAME] Cannot contact $host_to_connect (timeout: ".OAR::Tools::get_ssh_timeout()." s), cannot send checkpoint signal to job $BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id}";
                                     oar_warn("$str_comment\n");
                                     OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id},$str_comment);
                                 }else{
-                                    $str_comment = "[$SCHEDULER_NAME] An unknown error occured during the sending of the checkpoint signal to the job $BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id} on the host $host_to_connect";
+                                    $str_comment = "[$SCHEDULER_NAME] An unknown error occured while sending the checkpoint signal to job $BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id} on host $host_to_connect";
                                     oar_warn("$str_comment\n");
                                     OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id},$str_comment);
                                 }
                             }else{
                                 if ($exit_codes[0] == 0){
-                                    $str_comment = "[$SCHEDULER_NAME] The job $BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id} was notified to checkpoint itself on the node $host_to_connect";
+                                    $str_comment = "[$SCHEDULER_NAME] Job $BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id} on node $host_to_connect was notified to checkpoint";
                                     oar_debug("$str_comment\n");
                                     OAR::IO::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id},$str_comment);
                                 }else{
-                                    $str_comment = "[$SCHEDULER_NAME] The kill command return a bad exit code (@exit_codes) for the job $BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id} on the node $host_to_connect";
+                                    $str_comment = "[$SCHEDULER_NAME] The kill command returned a bad exit code (@exit_codes) for the job $BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id} on the node $host_to_connect";
                                     oar_warn("$str_comment\n");
                                     OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$BESTEFFORT_RESOURCE_OCCUPATION{$r}->{job_id},$str_comment);
                                 }
@@ -252,7 +252,7 @@ sub notify_to_run_job($$){
 
     if (!defined($jobs_to_launch_but_already_handled{$job_id})){
         if (OAR::IO::is_job_desktop_computing($base, $job_id)){
-            oar_debug("[$SCHEDULER_NAME] $job_id : Desktop computing job, I don't handle it!\n");
+            oar_debug("[$SCHEDULER_NAME] [$job_id] Desktop computing job, run is not handled here\n");
         }else{
             my $err = OAR::Tools::notify_tcp_socket($SERVER_HOSTNAME,$SERVER_PORT,"OARRUNJOB_$job_id");
             if (!defined($err)){
@@ -299,7 +299,7 @@ sub check_jobs_to_launch(){
     my %jobs_to_launch = OAR::IO::get_gantt_jobs_to_launch($base,$current_time_sec);
     
     foreach my $i (keys(%jobs_to_launch)){
-        oar_debug("[$SCHEDULER_NAME] Set job $i state to toLaunch at $current_time_sql\n");
+        oar_debug("[$SCHEDULER_NAME] [$i] set job state to toLaunch at $current_time_sql\n");
         # We must look at reservations to not go after the initial stop time
         my $mold = OAR::IO::get_current_moldable_job($base,$jobs_to_launch{$i}->[0]);
         my $job = OAR::IO::get_job($base,$i);
@@ -367,12 +367,12 @@ if ($current_time_sec < $previous_ref_time_sec){
     # The system is very fast!!!
     my $tmp_delta = $previous_ref_time_sec - $current_time_sec;
     if ($tmp_delta > 60){
-        oar_error("[$SCHEDULER_NAME] init: the previous scheduler run was performed $tmp_delta seconds in the future. It is bad, the system clock of the DB server might have changed. This can results in wrong scheduling decisions.\n");
+        oar_error("[$SCHEDULER_NAME] The previous scheduler run was performed $tmp_delta seconds in the future. It is bad, the system clock of the DB server might have changed. This can results in wrong scheduling decisions.\n");
     }else{
         $current_time_sec = $previous_ref_time_sec;
         if ($tmp_delta > 1){
             # Avoid race condition that could increment too much the current time indefinitely
-            oar_debug("[$SCHEDULER_NAME] init: the previous scheduler run was performed $tmp_delta seconds in the future. We have to wait, otherwise the scheduling decisions will be wrong\n");
+            oar_debug("[$SCHEDULER_NAME] The previous scheduler run was performed $tmp_delta seconds in the future. We have to wait, otherwise the scheduling decisions will be wrong\n");
             sleep($tmp_delta);
         }
     }
@@ -453,7 +453,7 @@ foreach my $job (@initial_jobs){
     if (defined($types->{inner}) and
         ($tmp_cur_index <= $tmp_index_last_initial_job)
        ){ # Treate inner jobs at the end, so init container gantts first
-        oar_debug("[$SCHEDULER_NAME] [$i] Forward inner job initialization at the end\n");
+        oar_debug("[$SCHEDULER_NAME] [$i] postpone inner job initialization after other jobs\n");
         push(@initial_jobs, $job);
         next;
     }
@@ -470,7 +470,7 @@ foreach my $job (@initial_jobs){
     }else{
         $date = $job->{start_time};
     }
-    oar_debug("[$SCHEDULER_NAME] [$i] Add job in the prediction table of the database\n");
+    oar_debug("[$SCHEDULER_NAME] [$i] add job in the prediction table of the database\n");
     OAR::IO::add_gantt_scheduled_jobs($base,$job->{assigned_moldable_job},$date,\@resource_list);
 
     my @type_list = sort(keys(%{$types}));
@@ -565,7 +565,7 @@ foreach my $job (@Rjobs){
     }
 
     if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
-        oar_debug("[$SCHEDULER_NAME] [$i] Job is ($gantt_name,,,) and is a container\n");
+        oar_debug("[$SCHEDULER_NAME] [$i] job is ($gantt_name,,,) and is a container\n");
         # nothing more to do, Gantt for container will be created once the job is scheduled, below.
     } else {
         ($gantt_name, $placeholder_name, $allowed_name, $timesharing_name, $timesharing_user) =
@@ -647,11 +647,11 @@ foreach my $job (@Rjobs){
 
         # Update database
         push(@resources, @Resources_to_always_add);
-        oar_debug("[$SCHEDULER_NAME] [$i] Add job in database\n");
+        oar_debug("[$SCHEDULER_NAME] [$i] add job in database\n");
         OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
         #OAR::IO::set_job_message($base,$job->{job_id},"");
     }else{
-        oar_warn("[$SCHEDULER_NAME] [$i] Cannot find resources for reservation. Did some resources become Dead or get removed from database ?\n");
+        oar_warn("[$SCHEDULER_NAME] [$i] cannot find resources for reservation, did some resources become dead or get removed from database ?\n");
         OAR::IO::set_job_message($base,$job->{job_id},"Not able to find resources for this reservation");
     }
 }
@@ -694,7 +694,7 @@ foreach my $queue (@queues){
         # ENERGY SAVING: add fake occupations/holes from energy saving configuration 
         # CM part and Hulot part (wake up nodes in energy saving mode)
         if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD"))){
-            oar_debug("[$SCHEDULER_NAME] Queue $queue_name: Start the energy saving phase\n");
+            oar_debug("[$SCHEDULER_NAME] Queue $queue_name: start the energy saving phase\n");
             # Check the resources that can be waked_up or shut down
             my $upto_availability = OAR::IO::get_energy_saving_resources_availability($base, $current_time_sec);
             foreach my $t (keys(%{$upto_availability})){
@@ -750,7 +750,7 @@ foreach my $queue (@queues){
             my $j = $jobs[$job_index];
             my $i = $j->{job_id};
             $job_index ++;
-            oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Start scheduling".(($policy eq "fairsharing")?(" (Karma note = ".karma($karma_sum_time, $karma_projects, $karma_users, $j).")"):"")."\n");
+            oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] start scheduling".(($policy eq "fairsharing")?(" (Karma note = ".karma($karma_sum_time, $karma_projects, $karma_users, $j).")"):"")."\n");
             
             my $scheduler_init_date = $current_time_sec;
             # Search for dependencies
@@ -773,7 +773,7 @@ foreach my $queue (@queues){
                             }
                         }
                     }else{
-                        my $message = "Cannot determine scheduling time due to dependency with the job $d";
+                        my $message = "cannot determine scheduling time due to dependency with the job $d";
                         OAR::IO::set_job_message($base,$i,$message);
                         oar_debug("[$SCHEDULER_NAME] [$i] $message\n");
                         $skip_job = 1;
@@ -832,32 +832,32 @@ foreach my $queue (@queues){
             if (defined($types->{token})){
                 foreach my $t (keys(%{$types->{token}})){
                     next if ($skip_job == 1);
-                    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Check token: $t ($types->{token}->{$t}).\n");
+                    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] checking token: $t ($types->{token}->{$t}).\n");
                     # Check if we must execute the corresponding script
                     if ((!defined($Token_values{$t})) and (defined($SCHEDULER_TOKEN_SCRIPTS->{$t}))){
-                        oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Execute $SCHEDULER_TOKEN_SCRIPTS->{$t}\n");
+                        oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] executing $SCHEDULER_TOKEN_SCRIPTS->{$t}\n");
                         if (open(TOKSCRIPT, "$SCHEDULER_TOKEN_SCRIPTS->{$t} |")){
                             my $num = <TOKSCRIPT>;
                             chop($num);
                             if ($num =~ /^\d+$/){
                                 $Token_values{$t} = $num;
-                                oar_debug("[$SCHEDULER_NAME] [$j->{job_id}]  $SCHEDULER_TOKEN_SCRIPTS->{$t} returns $num\n");
+                                oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] $SCHEDULER_TOKEN_SCRIPTS->{$t} returned $num\n");
                             }else{
-                                oar_warn("[$SCHEDULER_NAME] [$j->{job_id}] The token script $SCHEDULER_TOKEN_SCRIPTS->{$t} does not return a number ($num).\n");
+                                oar_warn("[$SCHEDULER_NAME] [$j->{job_id}] token script $SCHEDULER_TOKEN_SCRIPTS->{$t} did not return a number ($num).\n");
                             }
                             close(TOKSCRIPT);
                         }
                     }
                     if (defined($Token_values{$t})){
                         if ($Token_values{$t} < $types->{token}->{$t}){
-                            oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] No enough Tokens: $t ($Token_values{$t} < $types->{token}->{$t}).\n");
-                            OAR::IO::set_job_message($base,$j->{job_id},"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
+                            oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] no enough tokens: $t ($Token_values{$t} < $types->{token}->{$t}).\n");
+                            OAR::IO::set_job_message($base,$j->{job_id},"no enough tokens: $t ($Token_values{$t} < $types->{token}->{$t})");
                             #OAR::IO::set_job_scheduler_info($base,$j->{job_id},"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
                             $skip_job = 1;
                         }
                     }else{
-                        oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Token value cannot be retrieved ($t).\n");
-                        OAR::IO::set_job_message($base,$j->{job_id},"Token value cannot be retrieved ($t)");
+                        oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] token value cannot be retrieved ($t).\n");
+                        OAR::IO::set_job_message($base,$j->{job_id},"token value cannot be retrieved ($t)");
                         #OAR::IO::set_job_scheduler_info($base,$j->{job_id},"Token value cannot be retrieved ($t)");
                         $skip_job = 1;
                     }
@@ -865,7 +865,7 @@ foreach my $queue (@queues){
                 next if ($skip_job == 1);
             }
             #OAR::Schedulers::Gantt::pretty_print($gantt_to_use);
-            #oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Gantt data structure:\n".OAR::Schedulers::Gantt::pretty_print($gantt_to_use));
+            #oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] gantt data structure:\n".OAR::Schedulers::Gantt::pretty_print($gantt_to_use));
         
             my $job_properties = "\'1\'";
             if ((defined($j->{properties})) and ($j->{properties} ne "")){
@@ -1072,7 +1072,7 @@ foreach my $queue (@queues){
             }
         }
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: end processing of reservations with missing resources\n");
-############################################################################################
+
         my $order_part = $SCHEDULER_RESOURCE_ORDER;
 
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: begin processing of new reservations\n");
@@ -1132,7 +1132,7 @@ foreach my $queue (@queues){
                        #}
                     }
                     if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
-                        oar_debug("[$SCHEDULER_NAME] [$i] Job is ($gantt_name,,,) and is a container\n");
+                        oar_debug("[$SCHEDULER_NAME] [$i] job is ($gantt_name,,,) and is a container\n");
                         # nothing more to do, Gantt for container will be created once the job is scheduled, below.
                     } else {
                         ($gantt_name, $placeholder_name, $allowed_name, $timesharing_name, $timesharing_user) =
@@ -1207,7 +1207,7 @@ foreach my $queue (@queues){
 
                         # Update database
                         push(@resources, @Resources_to_always_add);
-                        oar_debug("[$SCHEDULER_NAME] [$i] Add job in database\n");
+                        oar_debug("[$SCHEDULER_NAME] [$i] add job in database\n");
                         OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
                         OAR::IO::set_job_state($base, $job->{job_id}, "toAckReservation");
                     }else{           
@@ -1224,7 +1224,6 @@ foreach my $queue (@queues){
             }
         }
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: end processing of new reservations\n");
-############################################################################################
     }else{
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: no job\n");
     }
@@ -1297,7 +1296,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
     my @nodes = OAR::IO::get_gantt_hostname_to_wake_up($base, $current_time_sec, $wakeup_time);
 
     if ($#nodes >= 0){
-        oar_debug("[$SCHEDULER_NAME] Awaking some nodes: @nodes\n");
+        oar_debug("[$SCHEDULER_NAME] Waking up some nodes: @nodes\n");
         # Using the built-in energy saving module to wake up nodes
         if (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes") {
             if (OAR::Modules::Hulot::wake_up_nodes(\@nodes) ) {
@@ -1309,7 +1308,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
         else {
             my $SCHEDULER_NODE_MANAGER_WAKE_UP_CMD = get_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD");
             if (! defined(OAR::Tools::fork_and_feed_stdin($SCHEDULER_NODE_MANAGER_WAKE_UP_CMD, $SCHEDULER_TIMEOUT, \@nodes))){
-                oar_error("[$SCHEDULER_NAME] Error: command $SCHEDULER_NODE_MANAGER_WAKE_UP_CMD timeouted (${SCHEDULER_TIMEOUT}s) while trying to wake-up some nodes\n");
+                oar_error("[$SCHEDULER_NAME] Error: command $SCHEDULER_NODE_MANAGER_WAKE_UP_CMD timeouted (${SCHEDULER_TIMEOUT}s) while trying to wake up some nodes\n");
             }
         }
     }
@@ -1331,8 +1330,8 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
         oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Resuming job\n");
         my $jobtypes = OAR::IO::get_job_types_hash($base,$j->{job_id});
         if (defined($jobtypes->{noop})){
+            oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] call job resume action (noop job)\n");
             OAR::IO::resume_job_action($base,$j->{job_id});
-            oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Resume NOOP job OK\n");
         }else{
             ###############
             # RESUME PART #
@@ -1347,13 +1346,13 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
                 eval {
                     $SIG{ALRM} = sub { die "alarm\n" };
                     alarm($timeout);
-                    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Running post suspend script: `$script $j->{job_id}'\n");
+                    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] running post suspend script: `$script $j->{job_id}'\n");
                     $script_error = system("$script script $j->{job_id}");
                     oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] `$script $j->{job_id}' terminated\n");
                     alarm(0);
                 };
                 if( $@ || ($script_error != 0)){
-                    my $str = "[$SCHEDULER_NAME] [$j->{job_id}] Suspend script error: $@; return code = $script_error\n";
+                    my $str = "[$SCHEDULER_NAME] [$j->{job_id}] suspend script error: $@; return code = $script_error\n";
                     oar_error($str);
                     OAR::IO::add_new_event($base,"RESUME_SCRIPT_ERROR",$j->{job_id},$str);
                     OAR::IO::frag_job($base,$j->{job_id});
@@ -1377,14 +1376,15 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
                     $suspend_resume_file = "$ENV{OARDIR}/$suspend_resume_file" if ($suspend_resume_file !~ /^\//);
                     my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_resume_file,"resume",$OPENSSH_CMD,$TAKTUK_CMD,$base);
                     if ($tag == 0){
-                        my $str = "[$SCHEDULER_NAME] [SUSPEND_RESUME] [$j->{job_id}] Bad suspend/resume file: $suspend_resume_file\n";
+                        my $str = "[$SCHEDULER_NAME] [$j->{job_id}] bad suspend/resume file: $suspend_resume_file\n";
                         oar_error($str);
                         OAR::IO::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $j->{job_id}, $str);
                     }else{
                        if (($#bad < 0)){
+                            oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] call job resume action\n");
                             OAR::IO::resume_job_action($base,$j->{job_id});
                        }else{
-                            my $str = "[$SCHEDULER_NAME] [SUSPEND_RESUME] [$j->{job_id}] Error on several nodes: @bad\n";
+                            my $str = "[$SCHEDULER_NAME] [$j->{job_id}] suspend/resume has errors on nodes: @bad\n";
                             oar_error($str);
                             OAR::IO::add_new_event_with_host($base,"RESUME_ERROR",$j->{job_id},$str,\@bad);
                             OAR::IO::frag_job($base,$j->{job_id});
@@ -1405,41 +1405,41 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
 foreach my $j (OAR::IO::get_gantt_waiting_interactive_prediction_date($base)){
     my ($addr,$port) = split(/:/,$j->{info_type});
     my $new_start_prediction = OAR::IO::local_to_sql($j->{start_time});
-    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Notifying user of the start prediction: $new_start_prediction (".$j->{message}.")\n");
+    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] notifying the user of the start prediction: $new_start_prediction (".$j->{message}.")\n");
     OAR::Tools::notify_tcp_socket($addr,$port,"[$initial_time{sql}] start prediction: $new_start_prediction (".$j->{message}.")");
 }
 
 # Run the decisions
 ## Treate "toError" jobs
+oar_debug("[$SCHEDULER_NAME] Handle jobs in the toError state\n");
 foreach my $j (OAR::IO::get_jobs_in_state($base,"toError")){
     my ($addr,$port) = split(/:/,$j->{info_type});
-    oar_debug("[$SCHEDULER_NAME] Treate job $j->{job_id} in toError state\n");
     if (($j->{job_type} eq "INTERACTIVE") or
         (($j->{job_type} eq "PASSIVE") and
          ($j->{reservation} eq "Scheduled"))){
-        oar_debug("[$SCHEDULER_NAME] Notify oarsub job (num:$j->{job_id}) in error; jobInfo=$j->{info_type}\n");
+        oar_debug("[$SCHEDULER_NAME] [$j->job_id] notifying oarsub that job is in error; jobInfo=$j->{info_type}\n");
         if ((defined(OAR::Tools::notify_tcp_socket($addr,$port,"$j->{message}"))) or
             (defined(OAR::Tools::notify_tcp_socket($addr,$port,"BAD JOB")))){
-            oar_debug("[$SCHEDULER_NAME] Cannot open connection to oarsub client for job $j->{job_id} !\n");
+            oar_debug("[$SCHEDULER_NAME] [$j->job_id] cannot open connection to oarsub client\n");
         }
     }
-    oar_debug("[$SCHEDULER_NAME] Set job $j->{job_id} to state Error\n");
+    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] set job state to Error\n");
     OAR::IO::set_job_state($base, $j->{job_id}, "Error");
 }
 ## Treate toAckReservation jobs
+oar_debug("[$SCHEDULER_NAME] Handle jobs in the toAckReservation state\n");
 foreach my $j (OAR::IO::get_jobs_in_state($base,"toAckReservation")){
     my ($addr,$port) = split(/:/,$j->{info_type});
-    oar_debug("[$SCHEDULER_NAME] Treate job $j->{job_id} in toAckReservation state\n");
     my $err = OAR::Tools::notify_tcp_socket($addr,$port,"GOOD RESERVATION");
     if (defined($err)){
-        oar_warn("[$SCHEDULER_NAME] Frag job $j->{job_id}, I cannot notify oarsub for the reservation ($err)\n");
+        oar_warn("[$SCHEDULER_NAME] [$j->{job_id}] fragging job because I could not notify oarsub for the reservation ($err)\n");
         OAR::IO::add_new_event($base,"CANNOT_NOTIFY_OARSUB",$j->{job_id},"[$SCHEDULER_NAME] Can not notify oarsub for the job $j->{job_id} ($err)");
         OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
         OAR::IO::frag_job($base,$j->{job_id});
         OAR::IO::unlock_table($base);
         $exit_code = 2;
     }else{
-        oar_debug("[$SCHEDULER_NAME] Notify oarsub for a RESERVATION (idJob=$j->{job_id}) --> OK; jobInfo=$j->{info_type}\n");
+        oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] reservation is OK and oarsub is notified; jobInfo=$j->{info_type}\n");
         OAR::IO::set_job_state($base,$j->{job_id} , "Waiting");
         if ($j->{start_time} - 1 <= $current_time_sec){
             $exit_code = 1 if ($exit_code == 0);
