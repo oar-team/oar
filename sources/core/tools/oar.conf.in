@@ -531,8 +531,8 @@ CPUSET_PATH="/oar"
 
 # Command to get a process cpuset
 # If unset, OAR (oarsh) will read /proc/self/cpuset.
-#GET_CURRENT_CPUSET_CMD = "cat /proc/self/cpuset | sed -e 's@^/oardocker/node[[:digit:]]\+@@'" 
-#GET_CURRENT_CPUSET_CMD = "cat /proc/self/cpuset"
+#GET_CURRENT_CPUSET_CMD="cat /proc/self/cpuset | sed -e 's@^/oardocker/node[[:digit:]]\+@@'"
+#GET_CURRENT_CPUSET_CMD="cat /proc/self/cpuset"
 
 # Name of the perl script the retrieve monitoring data from compute nodes.
 # This is used in oarmonitor command.
