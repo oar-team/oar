@@ -1,5 +1,8 @@
-# This file must have the bash variable assignment syntax
-# $Id$
+###############################################################################
+## WARNING: OAR configuration file gets eval'ed in some bash shell contexts.
+## WARNING: As a result, syntax matters, every lines must comply to the bash
+## WARNING: syntax, e.g. there must be not space around the = characters.
+###############################################################################
 
 #########################
 # General configuration #
