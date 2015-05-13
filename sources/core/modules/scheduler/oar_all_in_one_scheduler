@@ -752,36 +752,77 @@ foreach my $queue (@queues){
             $job_index ++;
             oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] start scheduling".(($policy eq "fairsharing")?(" (Karma note = ".karma($karma_sum_time, $karma_projects, $karma_users, $j).")"):"")."\n");
             
-            my $scheduler_init_date = $current_time_sec;
             # Search for dependencies
             my $skip_job = 0;
+            my $all_deps_already_ended = 1;
+            my $min_start_time = $current_time_sec;
+            my $max_start_time = OAR::Schedulers::Gantt::get_infinity_value();
         
             # Check the job dependencies 
-            foreach my $d (OAR::IO::get_current_job_dependencies($base,$i)){
-                next if ($skip_job == 1);
-                my $dep_job = OAR::IO::get_job($base,$d->[0]);
+            foreach my $dep (OAR::IO::get_current_job_dependencies($base,$i)){
+                oar_debug("[$SCHEDULER_NAME] [$i] manage dependency to job $dep->[0], min start shift: $dep->[1], max start shift: $dep->[2]\n");
+                my $dep_job = OAR::IO::get_job($base,$dep->[0]);
+                my $dep_job_start_time;
+                my $dep_job_stop_time;
+                my $dep_min_start_time = 0;
+                my $dep_max_start_time = OAR::Schedulers::Gantt::get_infinity_value();
                 if (($dep_job->{state} ne "Terminated") and ($dep_job->{state} ne "Error")){
-                    my @date_tmp = OAR::IO::get_gantt_job_start_time($base,$d->[0]);
-                    if (defined($date_tmp[0])){
-                        my $mold_dep = OAR::IO::get_current_moldable_job($base,$date_tmp[1]);
-                        my $sched_tmp = $date_tmp[0] + $mold_dep->{moldable_walltime} - $d->[1];
-                        if ($scheduler_init_date < $sched_tmp){
-                            if ($d->[1] > 0) {
-                                $scheduler_init_date = $sched_tmp;
-                            } else {
-                                $scheduler_init_date = $sched_tmp + (2 * $SCHEDULER_JOB_SECURITY_TIME);
-                            }
-                        }
-                    }else{
-                        my $message = "cannot determine scheduling time due to dependency with the job $d";
+                    $all_deps_already_ended = 0;
+                    my $dep_moldable_job_id;
+                    ($dep_job_start_time,$dep_moldable_job_id) = OAR::IO::get_gantt_job_start_time($base,$dep->[0]);
+                    if (defined($dep_job_start_time)) {
+                        $dep_job_stop_time = $dep_job_start_time + OAR::IO::get_current_moldable_job($base,$dep_moldable_job_id)->{moldable_walltime};
+                    } else {
+                        my $message = "dependency: job not scheduled because job $dep->[0] is not scheduled yet";
                         OAR::IO::set_job_message($base,$i,$message);
                         oar_debug("[$SCHEDULER_NAME] [$i] $message\n");
                         $skip_job = 1;
-                        next;
+                        last;
                     }
+                } else {
+                    $dep_job_start_time = $dep_job->{start_time};
+                    $dep_job_stop_time = $dep_job->{stop_time};
+                }
+                if (my ($boundary,$time) = $dep->[1] =~ /^([\[\]])([+-]?\d+)$/) {
+                    if ($boundary eq '[') {
+                        $dep_min_start_time = $dep_job_start_time + $time;
+                    } elsif ($boundary eq ']') {
+                        $dep_min_start_time = $dep_job_stop_time + $time;
+                    }
+                } else {
+                    $dep_min_start_time = $dep_job_stop_time + 2 * $SCHEDULER_JOB_SECURITY_TIME;
+                }
+                if ($min_start_time < $dep_min_start_time){
+                    oar_debug("[$SCHEDULER_NAME] [$i] dependency: new job scheduling min start time is $dep_min_start_time (was $min_start_time)\n");
+                    $min_start_time = $dep_min_start_time;
+                }
+                if (my ($boundary,$time) = $dep->[2] =~ /^([\[\]])([+-]?\d+)$/) {
+                    if ($boundary eq '[') {
+                        $dep_max_start_time = $dep_job_start_time + $time;
+                    } elsif ($boundary eq ']') {
+                        $dep_max_start_time = $dep_job_stop_time + $time;
+                    }
+                } else {
+                }
+                if ($max_start_time > $dep_max_start_time){
+                    oar_debug("[$SCHEDULER_NAME] [$i] dependency: new job scheduling max start time is $dep_max_start_time (was $max_start_time)\n");
+                    $max_start_time = $dep_max_start_time;
                 }
             }
             next if ($skip_job == 1);
+            oar_debug("[$SCHEDULER_NAME] [$i] dependency: set job scheduling start time constraints [$min_start_time,$max_start_time]\n");
+            if ($max_start_time < $min_start_time) {
+                if ($all_deps_already_ended) {
+                    # job dep won't change, killing job
+                    my $message = "job cancelled because its dependency requirements will never be met";
+                    oar_debug("[$SCHEDULER_NAME] [$i] $message\n");
+                    OAR::IO::set_job_message($base, $i, $message);
+                    OAR::IO::set_job_state($base, $i, "toError");
+                } else {
+                    oar_debug("[$SCHEDULER_NAME] [$i] job is not scheduled because its dependency requirement are currently not met\n");
+                }
+                next;
+            }
         
             my $gantt_name = "default";
             my $placeholder_name = "";
@@ -795,7 +836,6 @@ foreach my $queue (@queues){
                 my $expire_time_sec = OAR::IO::sql_to_local($types->{expire});
                 if ($current_time_sec > $expire_time_sec) {
                     oar_debug("[$SCHEDULER_NAME] [$i] job is expired (> $types->{expire}), it will be set to error\n");
-                    OAR::IO::add_new_event($base,"EXPIRED JOB",$i," > $types->{expire}");
                     OAR::IO::set_job_message($base, $i, "job is expired");
                     OAR::IO::set_job_state($base, $i, "toError");
                     next;
@@ -811,7 +851,7 @@ foreach my $queue (@queues){
                     next;
                 }
             } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
-                my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $scheduler_init_date, $SCHEDULER_CONSTRAINTS_ITERATIONS, "[$SCHEDULER_NAME] [$i]");
+                my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $min_start_time, $SCHEDULER_CONSTRAINTS_ITERATIONS, "[$SCHEDULER_NAME] [$i]");
                 $constraints->{$types->{constraints}} = $r;
                 # Job cannot be scheduler if job duration does not fit in any constraint
                 #if ($duration < $max_constraint_duration) {
@@ -896,7 +936,7 @@ foreach my $queue (@queues){
                 oar_debug("[$SCHEDULER_NAME] [$i] find_first_hole in gantt ($gantt_name,$allowed_name,$timesharing_name,$timesharing_user) with a timeout of $gantt_timeout\n");
                 my @hole = OAR::Schedulers::Gantt::find_first_hole(
                     $gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}->{$timesharing_user},
-                    $scheduler_init_date,
+                    $min_start_time,
                     $duration,
                     \@tree_list,
                     $gantt_timeout,
@@ -943,6 +983,10 @@ foreach my $queue (@queues){
                 }
             }
             if ($index_to_choose >= 0){
+                if ($moldable_results[$index_to_choose]->{start_time} > $max_start_time) {
+                    oar_debug("[$SCHEDULER_NAME] [$i] not scheduling job because of its max start time dependency requirements: $moldable_results[$index_to_choose]->{start_time} > $max_start_time\n");
+                    next;
+                }
                 # We can schedule the job
                 oar_debug("[$SCHEDULER_NAME] [$i] job is successfully scheduled\n");
                 # Create gantt for the new container
