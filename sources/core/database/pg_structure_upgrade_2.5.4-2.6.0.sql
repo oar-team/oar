@@ -1,5 +1,5 @@
-
-ALTER TABLE job_dependencies ADD gap integer NOT NULL DEFAULT '0';
+ALTER TABLE job_dependencies ADD min_start_shift  varchar(12) NOT NULL default '';
+ALTER TABLE job_dependencies ADD max_start_shift  varchar(12) NOT NULL default '';
 
 -- Update the database schema version
 DELETE FROM schema;

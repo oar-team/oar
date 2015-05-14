@@ -115,7 +115,7 @@ sub scan_script($$){
                         $result{project} = $2;
                     }elsif ($line =~ m/^#OAR\s+(--hold)\s*$/m) {
                         $result{hold} = 1;
-                    }elsif ($line =~ m/^#OAR\s+(-a|--after)\s*(\d+(?:,\d+))*\s*$/m) {
+                    }elsif ($line =~ m/^#OAR\s+(-a|--after)\s*(\d+(?:,[\[\]][+-]?\d+){0,2})\s*$/m) {
                         push(@{$result{anterior}}, $2);
                     }elsif ($line =~ m/^#OAR\s+(--signal)\s*(\d+)\s*$/m) {
                         $result{signal} = $2;

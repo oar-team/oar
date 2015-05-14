@@ -1733,10 +1733,11 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     }
 
     foreach my $a (@{$anterior_ref}){
-        my ($j,$d) = $a =~ /^(\d+)(?:,(\d+))*$/;
-        $dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required,gap)
-                    VALUES ($job_id,$j,".(defined($d)?$d:0).")
-                 ");
+        if (my ($j,$min,$max) = $a =~ /^(\d+)(?:,([\[\]][-+]?\d+)?(?:,([\[\]][-+]?\d+)?)?)?$/) {
+            $dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required,min_start_shift,max_start_shift)
+                        VALUES ($job_id,$j,'".(defined($min)?$min:"")."','".(defined($max)?$max:"")."')
+                     ");
+        }
     }
 
     if (!defined($job_hold)) {
@@ -1947,18 +1948,18 @@ sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     #  
     # anterior job setting
     #
-    if ($#{$anterior_ref} >0) {
-      $job_id = $first_array_job_id;
-      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required,gap) VALUES ";
-      for (my $i=0; $i<$nb_jobs; $i++){
-        foreach my $a (@{$anterior_ref}){
-          my ($j,$d) = $a =~ /^(\d+)(?:,(\d+))*$/;
-          $query_job_dependencies = $query_job_dependencies . "($job_id,$j,".(defined($d)?$d:0)."),";
-        } 
-        $job_id++;
-      }
-      chop($query_job_dependencies);
-      $dbh->do($query_job_dependencies);
+    my @dependencies;
+    foreach my $a (@{$anterior_ref}){
+      if (my ($j,$min,$max) = $a =~ /^(\d+)(?:,([\[\]][-+]?\d+)?(?:,([\[\]][-+]?\d+)?)?)?$/) {
+        for (my $i=$first_array_job_id; $i<$first_array_job_id + $nb_jobs; $i++){
+          push(@dependencies,"($i,$j,'".(defined($min)?$min:"")."','".(defined($max)?$max:"")."')");
+        }
+      } 
+    }
+    if ($#dependencies >0) {
+      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required,min_start_shift,max_start_shift) VALUES ".
+        join(",",@dependencies);
+      $dbh->do($query_job_dependencies); 
     }
 
     #
@@ -2206,14 +2207,17 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     #  
     # anterior job setting
     #
-    if ($#{$anterior_ref} >0) {
-      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required) VALUES ";
-      foreach my $job_id (@Job_id_list){
-        foreach my $a (@{$anterior_ref}){
-          $query_job_dependencies = $query_job_dependencies . "($job_id,$a),";
+    my @dependencies;
+    foreach my $a (@{$anterior_ref}){
+      if (my ($j,$min,$max) = $a =~ /^(\d+)(?:,([\[\]][-+]?\d+)?(?:,([\[\]][-+]?\d+)?)?)?$/) {
+        foreach my $job_id (@Job_id_list){
+          push(@dependencies,"($job_id,$j,'".(defined($min)?$min:"")."','".(defined($max)?$max:"")."'),");
         } 
-      }
-      chop($query_job_dependencies);
+      } 
+    }
+    if ($#dependencies >0) {
+      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required,min_start_shift,max_start_shift) VALUES ".
+        join(",",@dependencies);
       $dbh->do($query_job_dependencies); 
     }
 
@@ -3466,7 +3470,7 @@ sub get_current_job_dependencies($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT job_id_required,gap
+    my $sth = $dbh->prepare("   SELECT job_id_required,min_start_shift,max_start_shift
                                 FROM job_dependencies
                                 WHERE
                                     job_dependency_index = \'CURRENT\'
@@ -3475,7 +3479,7 @@ sub get_current_job_dependencies($$){
     $sth->execute();
     my @res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, [$ref->{job_id_required},$ref->{gap}]);
+        push(@res, [$ref->{job_id_required},$ref->{min_start_shift},$ref->{max_start_shift}]);
     }
     $sth->finish();
 
@@ -3489,7 +3493,7 @@ sub get_job_dependencies($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT job_id_required
+    my $sth = $dbh->prepare("   SELECT job_id_required,min_start_shift,max_start_shift
                                 FROM job_dependencies
                                 WHERE
                                     job_id = $job_id
@@ -3497,7 +3501,7 @@ sub get_job_dependencies($$){
     $sth->execute();
     my @res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{job_id_required});
+        push(@res, [$ref->{job_id_required},$ref->{min_start_shift},$ref->{max_start_shift}]);
     }
     $sth->finish();
 

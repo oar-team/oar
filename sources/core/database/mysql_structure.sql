@@ -332,7 +332,8 @@ PRIMARY KEY (window_start,window_stop,accounting_user,accounting_project,queue_n
 CREATE TABLE IF NOT EXISTS job_dependencies (
 job_id INT UNSIGNED NOT NULL ,
 job_id_required INT UNSIGNED NOT NULL,
-gap INT UNSIGNED NOT NULL DEFAULT 0,
+min_start_shift VARCHAR(12) NOT NULL DEFAULT "",
+max_start_shift  VARCHAR(12) NOT NULL DEFAULT "",
 job_dependency_index ENUM('CURRENT','LOG') DEFAULT 'CURRENT' NOT NULL ,
 INDEX id (job_id),
 INDEX log (job_dependency_index),

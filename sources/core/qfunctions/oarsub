@@ -287,8 +287,8 @@ Options are:
                                command (default is current directory)
      --project=<txt>           Specify a name of a project the job belongs to
  -n, --name=<txt>              Specify an arbitrary name for the job
- -a, --after=<job id>[,gap]    Add a job dependency: job will start after the
-                               end of the specified job, minus a gap if set
+ -a, --after=<job id>[,m[,M]]  Add a dependency to a given job, with optional
+                               min and max relative start time constraints 
      --notify=<txt>            Specify a notification method
                                (mail or command to execute). Ex: 
                                    --notify "mail:name\@domain.com"
