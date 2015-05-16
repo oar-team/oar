@@ -752,13 +752,48 @@ foreach my $queue (@queues){
             $job_index ++;
             oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] start scheduling".(($policy eq "fairsharing")?(" (Karma note = ".karma($karma_sum_time, $karma_projects, $karma_users, $j).")"):"")."\n");
             
-            # Search for dependencies
-            my $skip_job = 0;
-            my $all_deps_already_ended = 1;
+            my $gantt_name = "default";
+            my $placeholder_name = "";
+            my $allowed_name = "";
+            my $timesharing_user = "";
+            my $timesharing_name = "";
+            my $types = OAR::IO::get_job_types_hash($base,$i);
+            my @type_list = sort(keys(%{$types}));
+
+            # job time boundaries
             my $min_start_time = $current_time_sec;
             my $max_start_time = OAR::Schedulers::Gantt::get_infinity_value();
         
+            if (defined($types->{postpone})) {
+                my $postpone_time_sec = OAR::IO::sql_to_local($types->{postpone});
+                if ($min_start_time < $postpone_time_sec) {
+                    $min_start_time = $postpone_time_sec;
+                    oar_debug("[$SCHEDULER_NAME] [$i] job is postponed to $types->{postpone}\n");
+                }
+            }
+
+            if (defined($types->{expire})) {
+                my $expire_time_sec = OAR::IO::sql_to_local($types->{expire});
+                if ($min_start_time > $expire_time_sec) {
+                    oar_debug("[$SCHEDULER_NAME] [$i] job will never run (expire=$types->{expire}), setting it to error\n");
+                    OAR::IO::set_job_message($base, $i, "job canceled because expired");
+                    OAR::IO::set_job_state($base, $i, "toError");
+                    next;
+                }
+            }
+            if (defined($types->{deadline})) {
+                my $deadline_time_sec = OAR::IO::sql_to_local($types->{deadline});
+                if ($min_start_time > $deadline_time_sec) {
+                    oar_debug("[$SCHEDULER_NAME] [$i] job will never run (deadline=$types->{deadline}), setting it to error\n");
+                    OAR::IO::set_job_message($base, $i, "job canceled because of its deadline");
+                    OAR::IO::set_job_state($base, $i, "toError");
+                    next;
+                }
+            }
+
             # Check the job dependencies 
+            my $skip_job = 0;
+            my $all_deps_already_ended = 1;
             foreach my $dep (OAR::IO::get_current_job_dependencies($base,$i)){
                 oar_debug("[$SCHEDULER_NAME] [$i] manage dependency to job $dep->[0], min start shift: $dep->[1], max start shift: $dep->[2]\n");
                 my $dep_job = OAR::IO::get_job($base,$dep->[0]);
@@ -824,24 +859,6 @@ foreach my $queue (@queues){
                 next;
             }
         
-            my $gantt_name = "default";
-            my $placeholder_name = "";
-            my $allowed_name = "";
-            my $timesharing_user = "";
-            my $timesharing_name = "";
-            my $types = OAR::IO::get_job_types_hash($base,$i);
-            my @type_list = sort(keys(%{$types}));
-
-            if (defined($types->{expire})) {
-                my $expire_time_sec = OAR::IO::sql_to_local($types->{expire});
-                if ($current_time_sec > $expire_time_sec) {
-                    oar_debug("[$SCHEDULER_NAME] [$i] job is expired (> $types->{expire}), it will be set to error\n");
-                    OAR::IO::set_job_message($base, $i, "job is expired");
-                    OAR::IO::set_job_state($base, $i, "toError");
-                    next;
-                }
-            }
-
             if (defined($types->{inner})) {
                 $gantt_name = "container:$types->{inner}";
                 if (not defined($gantt->{$gantt_name})){
@@ -983,8 +1000,12 @@ foreach my $queue (@queues){
                 }
             }
             if ($index_to_choose >= 0){
+                if ($best_stop_time > $deadline_time_sec) {
+                    oar_debug("[$SCHEDULER_NAME] [$i] not scheduling job because its deadline is not met: $best_stop_time > $deadline_time_sec\n");
+                    next;
+                }
                 if ($moldable_results[$index_to_choose]->{start_time} > $max_start_time) {
-                    oar_debug("[$SCHEDULER_NAME] [$i] not scheduling job because of its max start time dependency requirements: $moldable_results[$index_to_choose]->{start_time} > $max_start_time\n");
+                    oar_debug("[$SCHEDULER_NAME] [$i] not scheduling job because its max start time is exceeded: $moldable_results[$index_to_choose]->{start_time} > $max_start_time\n");
                     next;
                 }
                 # We can schedule the job
