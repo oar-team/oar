@@ -8,13 +8,10 @@
 # General configuration #
 ###############################################################################
 #
-# Database type ("mysql" or "Pg")
-DB_TYPE="Pg"
-
-# DataBase hostname
+# DataBase hostname (where the PostgreSQL server is runnin)
 DB_HOSTNAME="127.0.0.1"
 
-# DataBase port
+# DataBase port (default is 5432)
 DB_PORT="5432"
 
 # Database base name

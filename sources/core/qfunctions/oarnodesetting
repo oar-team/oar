@@ -406,7 +406,7 @@ if (defined ($drain)){
 
 # Update properties
 if ($#properties >= 0){
-    OAR::IO::lock_table($base, ["resources","resource_logs"]);
+    $base->begin_work();
     if (($#resource >= 0) or (defined($Sql_property))){
         foreach my $r (@resource){
             if (!defined(OAR::IO::get_resource_info($base,$r))){
@@ -426,7 +426,7 @@ if ($#properties >= 0){
             }
         }
     }
-    OAR::IO::unlock_table($base);
+    $base->commit();
     push(@notify_server_tag_list, "Term");
 }
 

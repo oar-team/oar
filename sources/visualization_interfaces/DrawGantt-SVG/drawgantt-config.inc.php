@@ -54,9 +54,8 @@ $CONF['nav_custom_buttons'] = array( // custom buttons
 );
 
 // Database access configuration
-$CONF['db_type']="pg"; // choices: mysql for Mysql or pg for PostgreSQL
 $CONF['db_server']="127.0.0.1";
-$CONF['db_port']="5432"; // usually 3306 for Mysql or 5432 for PostgreSQL
+$CONF['db_port']="5432"; // usually 5432 for PostgreSQL
 $CONF['db_name']="oar"; // OAR read only user account 
 $CONF['db_user']="oar_ro";
 $CONF['db_passwd']="oar_ro";

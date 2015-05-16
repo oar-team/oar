@@ -34,7 +34,7 @@ Usage: $0 [-h] [-V] [--reinitialize | --delete_before]
 Feed accounting table to make usage statistics.
 Options:
       --reinitialize
-                delete everything and recheck every jobs and feed the table
+                delete everything in the accounting table
       --delete-before=<number_of_seconds>
                 delete every records number_of_seconds ago
   -h, --help    show this help screen
@@ -56,8 +56,8 @@ if (not defined($base)) {
     exit 1;
 }
 
-my $lockName = "ACCOUNTING";
-OAR::IO::get_lock($base,$lockName,3600);
+$base->begin_work();
+$base->do("LOCK TABLE accounting IN SHARE UPDATE EXCLUSIVE MODE NOWAIT") or die("ERROR: another 'oaraccounting' instance is running");
 if (defined($Reinitialize)){
     print("Deleting all records from the acounting table...\n");
     OAR::IO::delete_all_from_accounting($base);
@@ -68,7 +68,7 @@ if (defined($Reinitialize)){
 }else{
     OAR::IO::check_accounting_update($base,$windowSize);
 }
-OAR::IO::release_lock($base,$lockName);
+$base->commit();
 
 OAR::IO::disconnect($base);
 

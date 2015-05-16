@@ -22,12 +22,12 @@ sub close_db_connection(){
 	$base = undef;
 }
 
-sub lock_tables($){
-	my $tables_to_lock = shift;
-	OAR::IO::lock_table($base,$tables_to_lock);
+sub start_transaction(){
+	$base->begin_work();
 }
-sub unlock_tables(){
-	OAR::IO::unlock_table($base);
+
+sub commit_transaction(){
+	$base->commit();
 }
 
 sub encode_result($$){
@@ -278,15 +278,8 @@ sub resubmit_job($){
 	return OAR::IO::resubmit_job($base, $job_id);
 }
 
-sub get_lock($$){
-	my $mutex = shift;
-	my $timeout = shift;
-	return OAR::IO::get_lock($base,$mutex,$timeout);
-}
-
-sub release_lock($){
-	my $mutex = shift;
-	return OAR::IO::release_lock($base,$mutex);
+sub lock_stagein(){
+	return $base->do("LOCK TABLE files IN ACCESS EXCLUSIVE MODE");
 }
 
 sub get_stagein_id($){
@@ -322,12 +315,12 @@ sub delete_jobs($$$){
 	my $remote_host = shift;
 	my $remote_port = shift;
 	open_db_connection();
-	lock_tables(["frag_jobs","event_logs","jobs"]);
+	$base->begin_work();
 	foreach my $Job_id (@{$job_ids}) {
 		print("# Info: deleting job $Job_id.\n");
 		my $err = frag_job($Job_id);
 	}
-	unlock_tables();
+	$base->commit();
 	close_db_connection();
 	#Signal Almigthy
 	signal_almighty($remote_host,$remote_port,"Qdel");

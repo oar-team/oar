@@ -6,16 +6,11 @@ you must be able to launch in bash 'source /etc/oar.conf' and have variables
 assigned).
 Each configuration tag found in /etc/oar.conf is now described:
 
-  - Database type : you can use a MySQL or a PostgreSQL database (tags are
-    "mysql" or "Pg")::
-
-      DB_TYPE=Pg
-
-  - Database hostname::
+  - Database hostname (where the PostgreSQL server is running)::
 
       DB_HOSTNAME=127.0.0.1
 
-	- Database port::
+  - Database port::
 
       DB_PORT=5432
 

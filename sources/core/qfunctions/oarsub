@@ -896,7 +896,8 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             print "# Info: md5sum = $md5sum\n";
             print "# Info: (you may use the --stagein-md5sum option with this md5sum for other job submitions with the same stage-in)\n";
         }
-		OAR::Sub::get_lock($md5sum,3600) or die "# Error: failed to lock the stage-in file\n";
+	    OAR::Sub::start_transaction();
+		OAR::Sub::lock_stagein() or die "# Error: failed to lock the stage-in file\n";
         $idFile = OAR::Sub::get_stagein_id($md5sum);
         if (defined $idFile) {
             print "# Info: this stagein is already stored on the server.\n";
@@ -917,7 +918,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             $idFile=OAR::Sub::set_stagein(\%params);
             defined $idFile or die "# Error: failed to setup stage-in\n";
         }
-        OAR::Sub::release_lock($md5sum) or die "# Error: failed to unlock the stage-in file\n";
+	    OAR::Sub::commit_transaction();
         #unlink($tempfile_to_delete) if (defined($tempfile_to_delete));
     }
 

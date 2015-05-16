@@ -127,7 +127,7 @@ $Reservation_waiting_timeout = $resa_admin_waiting_timeout if (defined($resa_adm
 
 # Take care of the currently (or nearly) running jobs
 # Lock to prevent bipbip update in same time
-OAR::IO::lock_table($base,["jobs","assigned_resources","gantt_jobs_predictions","gantt_jobs_resources","job_types","moldable_job_descriptions","resources","job_state_logs","gantt_jobs_predictions_log","gantt_jobs_resources_log"]);
+$base->begin_work();
 
 #calculate now date with no overlap with other jobs
 my $previous_ref_time_sec = OAR::IO::get_gantt_date($base);
@@ -273,7 +273,7 @@ foreach my $job (@initial_jobs){
         }
     }
 }
-OAR::IO::unlock_table($base);
+$base->commit();
 oar_debug("[MetaSched] End processing of current jobs\n");
 
 oar_debug("[MetaSched] Begin processing of accepted reservations which do not have assigned resources yet\n");
@@ -798,9 +798,9 @@ sub check_jobs_to_kill(){
                     if ($skip_kill == 0){
                         oar_debug("[MetaSched] Resource $r need to be freed for job $nodes_for_jobs_to_launch{$r}: killing besteffort job $besteffort_resource_occupation{$r}->{job_id}\n");
                         OAR::IO::add_new_event($base,"BESTEFFORT_KILL",$besteffort_resource_occupation{$r}->{job_id},"[MetaSched] kill the besteffort job $besteffort_resource_occupation{$r}->{job_id}");
-                        OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
+                        $base->begin_work();
                         OAR::IO::frag_job($base, $besteffort_resource_occupation{$r}->{job_id});
-                        OAR::IO::unlock_table($base);
+                        $base->commit();
                     }
                     $fragged_jobs{$besteffort_resource_occupation{$r}->{job_id}} = 1;
                     $return = 1;
@@ -1161,9 +1161,9 @@ foreach my $j (OAR::IO::get_jobs_in_state($base,"toAckReservation")){
     if (defined($err)){
         oar_warn("[MetaSched] Frag job $j->{job_id}, I cannot notify oarsub for the reservation ($err)\n");
         OAR::IO::add_new_event($base,"CANNOT_NOTIFY_OARSUB",$j->{job_id},"[MetaSched] Can not notify oarsub for the job $j->{job_id} ($err)");
-        OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
+        $base->begin_work();
         OAR::IO::frag_job($base,$j->{job_id});
-        OAR::IO::unlock_table($base);
+        $base->commit();
         $exit_code = 2;
     }else{
         oar_debug("[MetaSched] Notify oarsub for a RESERVATION (idJob=$j->{job_id}) --> OK; jobInfo=$j->{info_type}\n");

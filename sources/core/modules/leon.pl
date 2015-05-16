@@ -75,7 +75,7 @@ my $Exit_code = 0;
 my $base = OAR::IO::connect();
 
 #do it for all job in state LEON in the data base table fragJobs
-OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","event_logs","moldable_job_descriptions","job_types","job_resource_descriptions","job_resource_groups","challenges","job_dependencies","gantt_jobs_predictions"]);
+$base->begin_work();
 
 # Do not over notify Almighty
 OAR::Tools::inhibit_notify_tcp_socket();
@@ -145,7 +145,7 @@ foreach my $j (OAR::IO::get_to_exterminate_jobs($base)){
     OAR::IO::set_job_message($base,$j->{job_id},"Job exterminated by Leon");
     OAR::Tools::notify_tcp_socket($Server_hostname, $Server_port, "LEONEXTERMINATE_$j->{job_id}");
 }
-OAR::IO::unlock_table($base);
+$base->commit();
 
 OAR::IO::disconnect($base);
 
