@@ -781,8 +781,9 @@ foreach my $queue (@queues){
                     next;
                 }
             }
+            my $deadline_time_sec;
             if (defined($types->{deadline})) {
-                my $deadline_time_sec = OAR::IO::sql_to_local($types->{deadline});
+                $deadline_time_sec = OAR::IO::sql_to_local($types->{deadline});
                 if ($min_start_time > $deadline_time_sec) {
                     oar_debug("[$SCHEDULER_NAME] [$i] job will never run (deadline=$types->{deadline}), setting it to error\n");
                     OAR::IO::set_job_message($base, $i, "job canceled because of its deadline");
@@ -1000,7 +1001,7 @@ foreach my $queue (@queues){
                 }
             }
             if ($index_to_choose >= 0){
-                if ($best_stop_time > $deadline_time_sec) {
+                if (defined($deadline_time_sec) and $best_stop_time > $deadline_time_sec) {
                     oar_debug("[$SCHEDULER_NAME] [$i] not scheduling job because its deadline is not met: $best_stop_time > $deadline_time_sec\n");
                     next;
                 }
