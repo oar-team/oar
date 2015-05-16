@@ -1,4 +1,3 @@
-# $Id$
 {
 package OAR::Tools;
 
@@ -729,7 +728,7 @@ sub sentinelle($$$$$){
 sub check_resource_property($){
     my $prop = shift;
 
-    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|available_upto|walltime|nodes|type|suspended_jobs|scheduler_priority)$/){
+    if ($prop =~ /^(resource_id|network_address|state|state_num|next_state|finaud_decision|next_finaud_decision|besteffort|desktop_computing|deploy|expiry_date|last_job_date|available_upto|last_available_upto|walltime|nodes|type|suspended_jobs|scheduler_priority|cpuset|drain)$/){
         return(1);
     }else{
         return(0);
@@ -742,7 +741,7 @@ sub check_resource_property($){
 sub check_resource_system_property($){
     my $prop = shift;
 
-    if ($prop =~ /^(resource_id|state|state_num|next_state|finaud_decision|next_finaud_decision|last_job_date|suspended_jobs|expiry_date|scheduler_priority)$/ ) {
+    if ($prop =~ /^(resource_id|state|state_num|next_state|finaud_decision|next_finaud_decision|last_job_date|suspended_jobs|expiry_date|last_available_upto|scheduler_priority)$/ ) {
         return(1);
     }else{
         return(0);
