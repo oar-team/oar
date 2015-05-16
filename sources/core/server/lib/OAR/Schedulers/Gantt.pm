@@ -36,6 +36,7 @@ sub add_new_resources($$);
 sub set_occupation($$$$);
 sub get_free_resources($$$);
 sub find_first_hole($$$$$$$$$$$$);
+sub find_hole($$$);
 sub gantt2str($);
 sub strips2str($);
 sub get_infinity_value();

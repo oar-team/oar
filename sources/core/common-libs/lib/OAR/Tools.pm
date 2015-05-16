@@ -65,6 +65,15 @@ sub replace_jobid_tag_in_string($$);
 sub inhibit_notify_tcp_socket();
 sub enable_notify_tcp_socket();
 sub read_socket_line($$);
+sub get_default_cpuset_file();
+sub fork_and_feed_stdin($$$);
+sub set_ssh_timeout($);
+sub get_default_monitor_sensor_file();
+sub get_default_suspend_resume_script_timeout();
+sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$$$@);
+sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$$);
+sub manage_remote_commands($$$$$$$);
+
 
 # Get default value for PROLOGUE_EPILOGUE_TIMEOUT
 sub get_default_prologue_epilogue_timeout(){

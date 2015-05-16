@@ -1,13 +1,3 @@
-# This is the iolib, which manages the layer between the modules and the
-# database. This is the only base-dependent layer.
-# When adding a new function, the following comments are required before the code of the function:
-# - the name of the function
-# - a short description of the function
-# - the list of the parameters it expect
-# - the list of the return values
-# - the list of the side effects
-
-# $Id$
 package OAR::IO;
 require Exporter;
 
@@ -34,6 +24,15 @@ $Data::Dumper::Deepcopy = 1;
 sub connect();
 sub connect_ro();
 sub disconnect($);
+sub lock_table($$);
+sub unlock_table($);
+sub connect_ro_one();
+sub connect_one();
+sub timeout_db($$);
+sub get_last_insert_id($$);
+sub connect_db($$$$$$);
+sub connect_ro_one_log($);
+sub get_database_type();
 
 # JOBS MANAGEMENT
 sub get_job_challenge($$);
@@ -88,13 +87,46 @@ sub get_jobs_to_schedule($$$);
 sub get_job_types_hash($$);
 sub set_moldable_job_max_time($$$);
 sub is_timesharing_for_2_jobs($$$);
+sub get_job_duration_in_state($$$);
+sub archive_some_moldable_job_nodes($$$);
+sub set_job_scheduler_info($$$);
+sub get_next_job_date_on_node($$);
+sub job_key_management($$$$);
+sub get_job_frag_state($$);
+sub set_job_exit_code($$$);
+sub get_job_types($$);
+sub add_current_job_types($$$);
+sub suspend_job_action($$$);
+sub get_jobs_in_states_for_user($$$);
+sub get_moldable_job($$);
+sub get_jobs_in_multiple_states($$);
+sub remove_current_job_types($$$);
+sub is_job_already_resubmitted($$);
+sub get_current_job_dependencies($$);
+sub log_job($$);
+sub get_count_same_ssh_keys_current_jobs($$$$);
+sub get_job_dependencies($$);
+sub resume_job_action($$);
+sub get_job_cpuset_name($$);
+sub update_scheduler_last_job_date($$$);
+sub get_scheduled_job_description($$);
+sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$);
+sub get_job_suspended_sum_duration($$$);
+sub get_jobs_with_given_properties($$);
+sub check_end_of_job($$$$$$$$$$);
+sub get_fairsharing_jobs_to_schedule($$$);
+sub get_cpuset_values_for_a_moldable_job($$$);
+sub job_finishing_sequence($$$$$$);
+sub format_job_message_text($$$$$$$$$);
+sub get_job_network_address($$);
+sub resubmit_job($$);
+sub get_waiting_reservations_already_scheduled($);
 
 #ARRAY JOBS MANAGEMENT
 sub get_jobs_in_array($$);
 sub get_job_array_id($$);
 sub get_array_subjobs($$);
 sub get_array_job_ids($$);
-
 
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
 sub get_resource_job($$);
@@ -114,7 +146,7 @@ sub list_resources($);
 sub count_all_resources($);
 sub get_requested_resources($$$);
 sub get_resource_info($$);
-sub get_resource_next_value_for_property($$);
+sub get_resource_last_value_of_property($$);
 sub is_node_exists($$);
 sub get_resources_on_node($$);
 sub set_node_state($$$$);
@@ -129,13 +161,51 @@ sub get_resource_dead_range_date($$$);
 sub get_expired_resources($);
 sub is_node_desktop_computing($$);
 sub get_resources_data_structure_current_job($$);
-sub get_hosts_state($);
 sub get_alive_nodes_with_jobs($);
 sub get_resources_by_property($$);
+sub get_jobs_on_resuming_job_resources($$);
+sub get_energy_saving_resources_availability($$);
+sub list_resource_properties_fields($);
+sub get_resources_with_given_sql($$);
+sub get_all_resources_on_node($$);
+sub get_resources_that_can_be_waked_up($$);
+sub get_absent_suspected_resources_for_a_timeout($$);
+sub add_resources($$);
+sub get_current_resources_with_suspended_job($);
+sub get_current_assigned_job_resources($$);
+sub get_alive_resources($);
+sub get_resources_that_will_be_out($$);
+sub set_resource_state($$$$);
+sub get_current_assigned_resources($);
+sub get_vecs_resources($);
+sub get_resource_job_with_state($$$);
+sub get_last_resource_id($);
+sub estimate_job_nb_resources($$$);
+sub get_specific_resource_states($$);
+sub get_current_free_resources_of_node($$);
+sub get_resource_ids_in_state($$);
+sub get_nodes_with_given_sql($$);
+sub get_nodes_that_can_be_waked_up($$);
+sub update_node_nextFinaudDecision($$$);
+sub search_idle_nodes($$);
+sub get_node_info($$);
+sub get_finaud_nodes($);
+sub get_last_wake_up_date_of_node($$);
+sub set_node_nextState_if_necessary($$$);
+sub get_current_assigned_nodes($);
 
 # QUEUES MANAGEMENT
 sub get_active_queues($);
 sub get_all_queue_informations($);
+sub delete_a_queue($$);
+sub start_all_queues($);
+sub is_waiting_job_specific_queue_present($$);
+sub stop_a_queue($$);
+sub create_a_queue($$$$);
+sub start_a_queue($$);
+sub stop_all_queues($);
+sub change_a_queue($$$$);
+sub update_current_scheduler_priority($$$$$);
 
 # GANTT MANAGEMENT
 sub get_gantt_scheduled_jobs($);
@@ -151,6 +221,12 @@ sub get_gantt_resources_for_job($$);
 sub set_gantt_job_startTime($$$);
 sub update_gantt_visualization($);
 sub get_gantt_visu_scheduled_job_resources($$);
+sub remove_gantt_resource_job($$$);
+sub get_gantt_hostname_to_wake_up($$$);
+sub get_gantt_Alive_resources_for_job($$);
+sub get_gantt_job_start_time($$);
+sub get_gantt_waiting_interactive_prediction_date($);
+sub get_gantt_job_start_time_visu($$);
 
 # ADMISSION RULES MANAGEMENT
 sub add_admission_rule($$$$);
@@ -185,6 +261,9 @@ sub get_hostname_event($$);
 sub get_job_events($$);
 sub get_events_for_hostname($$$);
 sub get_last_event_from_type($$);
+sub is_an_event_exists($$$);
+sub add_event_maintenance_on($$$);
+sub add_event_maintenance_off($$$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
@@ -192,11 +271,20 @@ sub update_accounting($$$$$$$$$$);
 sub get_accounting_summary($$$$$);
 sub get_accounting_summary_byproject($$$$$$);
 sub get_last_project_karma($$$$);
+sub add_accounting_row($$$$$$$$$);
+sub delete_accounting_windows_before($$);
+sub get_sum_accounting_for_param($$$$$);
+sub get_sum_accounting_window($$$$);
+sub delete_all_from_accounting($);
 
 # SQL HELPER FUNCTIONS
 sub sql_count($$);
 sub sql_select($$$$);
 sub inserts_from_file($$$);
+
+# MONITORING
+sub register_monitoring_values($$$$);
+sub insert_monitoring_row($$$$);
 
 # END OF PROTOTYPES
 
@@ -4682,7 +4770,7 @@ sub get_resource_info($$) {
 }
 
 
-# get_resource_next_value_for_property
+# get_resource_last_value_of_property
 # returns the next possible numerical value for a property
 # parameters : base, property
 # return value : int

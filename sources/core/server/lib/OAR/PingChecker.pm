@@ -1,4 +1,3 @@
-# $Id$
 package OAR::PingChecker;
 require Exporter;
 
