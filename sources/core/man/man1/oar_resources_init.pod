@@ -2,103 +2,93 @@
 
 =head1 NAME
 
-oar_resource_init - Helper script to define OAR resources by SSHing to nodes
+oar_resource_init - Generate a script for the creation of the OAR resources of a list of hosts, by connecting to each host and gathering system information.
 
 =head1 SYNOPSIS
 
-B<oar_resource_init>  <hosts_file> [options]
+B<oar_resource_init> [options] <hostfile>
 
 =head1 DESCRIPTION
 
-The script takes a list of hosts from the file given as parameter and generates the OAR commands to add the resources which define those hosts in the OAR database.
-Generated commands are written by default in /tmp/oar_resources_init.cmd
+Hosts are read one per line from B<hostfile> (must be readable by user oar) or STDIN (if B<hostfile> is -).
 
-B<host_file> must contain one host per line and the hosts must have their "oar-node" service started (this script connects to the hosts via ssh on the port 6667).
+Every host in B<hostfile> must have the "oar-node" service started (the command connects to the hosts via SSH on the port 6667).
 
-The default resource hierarchy which is filled by this script is: host --> cpu --> core.
+This command works with (creates) the following OAR resource hierarchy: 
+
+=over
+
+host > cpu > core
+
+=back
+
+Or if the B<-T> option is set:
+
+=over
+
+host > cpu > core > thread
+
+=back
+
+The mem property is set along with the hierarchy.
+
+Other properties are not set, however the generated script can be modified to do so, or the oarnodesetting command can be used to set them afterward.
 
 =head1 OPTIONS
 
 =over 
 
-=item B<-o> [file]
-
-Pathname for the output file to store the generated commands
-
 =item B<-H>
 
-This option can be used when Intel HyperThreading is enabled on the nodes. So for each declared core in the OAR database, the 2 corresponding threads are assigned.
+Handle HyperThreading. Unless B<-T> is used, every logical cpus (threads) belonging to a same core will be assigned to the cpuset internal property, separated by commas.
 
 =item B<-T>
 
-This option can be used when Intel HyperThreading is enabled on the nodes. It adds the property "thread" in the OAR database and fills it with the hierarchy: host --> cpu --> core --> thread.
+Use the thread property for HyperThreading (imply -H).
 
+=item B<-o> [file]
 
-=item B<-c> [path]
+Script filename.
 
-Path to oar.conf
+=item B<-x>
+
+Execute the script at the end and remove it.
+
+=item B<-y>
+
+Assume "yes" as answer to all prompts and run non-interactively.
+
+=item B<-v>
+
+Print the generated script.
 
 =item B<-e> [path]
 
-Path to the SSH command
+Path to the ssh command.
 
 =item B<-n> [path]
 
-Path to the oarnodesetting command
+Path to the oarnodesetting command.
 
 =item B<-p> [path]
 
-Path to the oarproperty command
+Path to the oarproperty command.
 
 =item B<-c> [path]
 
-Path to oar.conf
+Path to the oar.conf file.
+
+=item B<-h>
+
+Print the command usage.
 
 =back
 
-=head1 ENVIRONMENT VARIABLES
+=head1 SEE ALSO
 
-The following environment variables can be set to control the script:
+oarnodesetting(1), oarproperty(1), oar_resources_add(1), bash(1)
 
-=over
- 
-=item OARCONFFILE
+=head1 COPYRIGHTS
 
-Path to OAR configuration file (default: /etc/oar/oar.conf).
-
-=back
-
-=over
-
-=item OPENSSH_CMD
-
-Path to the SSH command (default: /usr/bin/ssh).
-
-=back
-
-=over
-
-=item OARNODESETTING_CMD
-
-Path to the oarnodesetting command (default: oarproperty).
-
-=back
-
-=over
-
-=item OARPROPERTY_CMD
-
-Path to the oarproperty command (default: oarproperty).
-
-=back
-
-=over
-
-=item GENERATED_COMMANDS_FILE
-
-Path to the file to be created, containing the generated commands (default: /tmp/oar_resources_init.cmd).
-
-=back
-
-=cut
+ Copyright 2003-2015 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
