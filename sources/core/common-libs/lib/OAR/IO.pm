@@ -5347,13 +5347,13 @@ sub get_resources_change_state($){
 sub list_resource_properties_fields($){
     my $dbh = shift;
     
-    my $req = "SELECT column_name AS field FROM information_schema.columns WHERE table_name = \'resources\'";
+    my $req = "SELECT column_name,data_type FROM information_schema.columns WHERE table_name = \'resources\'";
     my $sth = $dbh->prepare($req);
     $sth->execute();
 
     my %results;
     while (my @ref = $sth->fetchrow_array()) {
-        $results{$ref[0]} = 1;
+        $results{$ref[0]} = ($ref[1] eq "character varying")?"varchar":"integer";
     }
     $sth->finish();
 

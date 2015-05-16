@@ -1,14 +1,14 @@
 =head1 NAME
 
-oarproperty - add or remove resource properties
+oarproperty - manage OAR resource properties
 
 =head1 SYNOPSIS
 
-B<oarproperty> [ -l | [ -a | -d ] ] [ -q ]
+B<oarproperty> <option>
 
 =head1 DESCRIPTION
 
-This command is used to add or remove resource properties in the resource table.
+This command is used to list, add, remove or rename OAR resource properties.
 
 =head1 OPTIONS
 
@@ -18,21 +18,33 @@ This command is used to add or remove resource properties in the resource table.
 
 List properties.
 
+=over
+
+=item B<-t, --type>
+
+Show the types of the properties.
+
+=back
+
 =item B<-a NAME, --add NAME>
 
-Add property
+Add property (integer).
+
+=over
 
 =item B<-c, --varchar>
 
-Ask for a new Sql field of type VARCHAR(255) (default is integer).
+Set added property as a character string (VARCHAR(255)).
+
+=back
 
 =item B<-d NAME, --delete> NAME
 
 Delete property.
 
-=item B<-r "OLD_NAME,NEW_NAME", --rename ...>
+=item B<-r OLD,NEW, --rename OLD,NEW>
 
-Rename property OLD_NAME into NEW_NAME.
+Rename property from OLD to NEW name.
 
 =item B<-q, --quiet>
 
@@ -40,6 +52,10 @@ Quiet mode (no extra output).
 
 =back
 
+=head1 SEE ALSO
+
+oarnodesetting(1), oar_resources_init(1), oar_resources_add(1)
+
 =head1 COPYRIGHTS
 
- Copyright 2003-2013 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2015 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
