@@ -24,15 +24,12 @@ $Data::Dumper::Deepcopy = 1;
 sub connect();
 sub connect_ro();
 sub disconnect($);
-sub lock_table($$);
-sub unlock_table($);
 sub connect_ro_one();
 sub connect_one();
 sub timeout_db($$);
 sub get_last_insert_id($$);
 sub connect_db($$$$$$);
 sub connect_ro_one_log($);
-sub get_database_type();
 
 # JOBS MANAGEMENT
 sub get_job_challenge($$);
