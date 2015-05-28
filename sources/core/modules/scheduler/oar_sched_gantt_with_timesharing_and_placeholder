@@ -108,8 +108,8 @@ my ($order,%already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
 foreach my $i (@{$order}){
     my $container_id = 0;
     my $inner_id = 0;
-    my $set_placeholder_name = "";
-    my $use_placeholder_name = "";
+    my $placeholder_name = "";
+    my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $types = OAR::IO::get_job_types_hash($base,$i);
@@ -144,12 +144,12 @@ foreach my $i (@{$order}){
             $Gantt->{$container_id}->{""}->{""}->{""} = 
                 OAR::Schedulers::GanttHoleStorage::new_with_1_hole($max_resources, $minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $resource_list_vec, $All_resource_list_vec);
         } else {
-            ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
+            ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) = 
                 OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6], $types, $inner_id, "[$scheduler_name] [$i]");
         }
 
         #Fill all other gantts
-        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $resource_list_vec, $inner_id ,$set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[$scheduler_name] [$i]"); 
+        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $already_scheduled_jobs{$i}->[0], $job_duration + $security_time_overhead, $resource_list_vec, $inner_id ,$placeholder_name, $allowed_name, $timesharing_user, $timesharing_name, "[$scheduler_name] [$i]"); 
 
     }
 }
@@ -213,8 +213,8 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
 
     my $container_id = 0;
     my $inner_id = 0;
-    my $set_placeholder_name = "";
-    my $use_placeholder_name = "";
+    my $placeholder_name = "";
+    my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $types = OAR::IO::get_job_types_hash($base,$i);
@@ -287,7 +287,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
         oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,) and is a container\n");
     } else {
-        ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) =
+        ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) =
             OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $j->{job_user}, $j->{job_name}, $types, $inner_id, "[$scheduler_name] [$i]");
     }
 
@@ -319,13 +319,13 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
         my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;
         $gantt_timeout = $Minimum_timeout_per_job if ($gantt_timeout <= ($timeout / 8));
-        oar_debug("[$scheduler_name] [$i] find_first_hole in gantt ($inner_id,$use_placeholder_name,$timesharing_user,$timesharing_name) with a timeout of $gantt_timeout\n");
+        oar_debug("[$scheduler_name] [$i] find_first_hole in gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) with a timeout of $gantt_timeout\n");
         my @hole;
         if ($Max_nb_processes <= 1){
-            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$use_placeholder_name}->${$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
+            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$allowed_name}->${$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
         }else{
             oar_debug("[$scheduler_name] [$i] using Gantt PARALLEL algorithm\n");
-            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
+            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
         }
         my @resources;
         foreach my $t (@{$hole[1]}){
@@ -374,7 +374,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
 
         #Fill all other gantts
-        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec, $inner_id, $set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[$scheduler_name] [$i]"); 
+        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $moldable_results[$index_to_choose]->{start_date}, $moldable_results[$index_to_choose]->{duration}, $vec, $inner_id, $placeholder_name, $allowed_name, $timesharing_user, $timesharing_name, "[$scheduler_name] [$i]"); 
 
         #update database
         push(@{$moldable_results[$index_to_choose]->{resources}},@Resources_to_always_add);
