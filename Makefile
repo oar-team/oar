@@ -127,7 +127,7 @@ api-uninstall: common-uninstall common-libs-uninstall
 
 
 P_ACTIONS = build install clean
-P_TARGETS = $(patsubst %,packages-%,$(P_ACTIONS))
+P_TARGETS = $(addprefix packages-%,$(P_ACTIONS))
 
 packages-build:    P_ACTION = build
 packages-install:  P_ACTION = install
