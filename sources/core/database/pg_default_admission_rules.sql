@@ -210,7 +210,7 @@ foreach my $t ( @{$type_list} ) {
         }
     }
     unless ( $match ) {
-        die( "# ADMISSION RULE> Error: unknown job type: $t\n");
+        die( "# ADMISSION RULE> Error: unknown job type: $t\\n");
     }
 }
 ');
