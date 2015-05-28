@@ -439,7 +439,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         oar_debug("[$scheduler_name] [$i] find_first_hole in gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) with a timeout of $gantt_timeout\n");
         my @hole;
         if ($Max_nb_processes <= 1){
-            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$allowed_name}->${$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
+            @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout);
         }else{
             oar_debug("[$scheduler_name] [$i] using Gantt PARALLEL algorithm\n");
             @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole_parallel($Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name}, $scheduler_init_date, $duration, \@tree_list,$gantt_timeout,$Max_nb_processes);
