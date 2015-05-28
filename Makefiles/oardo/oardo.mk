@@ -38,7 +38,7 @@ clean:
 	-rm -rf $$(dirname $(CMD_BUILDTARGET))
 
 build: $(CMD_BUILDTARGET)
-	# Nothing to do
+# Nothing to do
 
 $(CMD_BUILDTARGET).c:
 	mkdir -p $$(dirname $(CMD_BUILDTARGET))
