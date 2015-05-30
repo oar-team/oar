@@ -1200,15 +1200,17 @@ sub get_possible_wanted_resources($$$$$$$){
     
     #Get only wanted resources
     my $resource_string;
+    my $resource_tree_cache_key;
     foreach my $r (@wanted_resources){
         $resource_string .= " $r->{resource},";
+        $resource_tree_cache_key .= " $r->{resource}=$r->{value},";
     }
     chop($resource_string);
 
     # Search if this was already seen
-    if (defined($TREE_CACHE_HASH->{$resource_string}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector})){
+    if (defined($TREE_CACHE_HASH->{$resource_tree_cache_key}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector})){
         #oar_debug("[IOlib] Use tree cache to get ressource structure.\n");
-        return(OAR::Schedulers::ResourceTree::clone($TREE_CACHE_HASH->{$resource_string}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector}));
+        return(OAR::Schedulers::ResourceTree::clone($TREE_CACHE_HASH->{$resource_tree_cache_key}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector}));
     }
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resources
@@ -1254,7 +1256,7 @@ sub get_possible_wanted_resources($$$$$$$){
     
     $sth->finish();
 
-    $TREE_CACHE_HASH->{$resource_string}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector} = $result;
+    $TREE_CACHE_HASH->{$resource_tree_cache_key}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector} = $result;
     return(OAR::Schedulers::ResourceTree::clone($result));
 }
 
