@@ -1,6 +1,24 @@
 OAR CHANGELOG
 =============
 
+version 2.5.5:
+--------------
+
+  - [drawgantt-svg] bug fix: state below jobs
+  - [iolib] fix deadlock with TRUNCATE in postgresql
+  - [scheduler] memory leak fix
+  - [almighty] add SCHEDULER_MIN_TIME_BETWEEN_2_CALLS:
+        the scheduler is launched only if the last call is at least 5s 
+        (by default) old.
+        It avoids to continuously execute the scheduler part and let
+        some time for other OAR modules.
+  - [api][drawgantt-svg][monika] fix apache config (prepare for apache 2.4)
+  - [oarstat] fix accounting print bug
+  - [scheduler] tree cache:
+        enhance scheduler speed by reducing the number of SQL queries.
+  - [scheduler] backport the expire/postpone/deadline job types from master
+  - [scheduler] rename job types: placeholder/allowed
+
 version 2.5.4:
 --------------
   
