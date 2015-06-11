@@ -44,7 +44,7 @@ trap trap_error ERR
 ### Tool setup ### 
 ##################
 
-CHROOT_NAME="chroot:centos6-amd64"
+CHROOT_NAME="chroot:centos7-amd64"
 if ! schroot -l | grep -q -e "^$CHROOT_NAME$"; then
   die "CentOS 6 chroot not found."
 fi
