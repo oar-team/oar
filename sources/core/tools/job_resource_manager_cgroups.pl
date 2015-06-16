@@ -34,7 +34,7 @@
 #                 clean the cpuset structure
 
 # TAKTUK_HOSTNAME environment variable must be defined and must be a key
-# of the transfered hash table ($Data variable).
+# of the transfered hash table ($Job_data variable).
 use strict;
 use warnings;
 use Data::Dumper;
@@ -76,18 +76,28 @@ my $Fstrim_cmd = "/sbin/fstrim";
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
 
-my $Data;
+my $Job_data;
 
 # Directory where the cgroup mount points are linked to. Useful to have each
 # cgroups in the same place with the same hierarchy.
 my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 
 # Retrieve parameters from STDIN in the "Data" structure which looks like:
-# $Data = {
+# $Job_data = {
 #               job_id => id of the corresponding job,
-#               name => "cpuset name",
+#               array_id => job array id
+#               array_index => job index in the array
+#               job_name => job name
+#               project => job project name
+#               cpuset_name => "cpuset name",
 #               cpuset_path => "relative path in the cpuset FS",
 #               nodes => hostname => [array with the content of the database cpuset field]
+#               resources => [ {property_name => value} ]
+#               property_nodes => NODE_FILE_DB_FIELD
+#               property_distinct_resources => NODE_FILE_DB_FIELD_DISTINCT_VALUES
+#               stdout_file => stdout file name
+#               stderr_file => stderr file name
+#               launching_directory => launching directory
 #               ssh_keys => {
 #                               public => {
 #                                           file_name => "~oar/.ssh/authorized_keys"
@@ -100,33 +110,22 @@ my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 #                           }
 #               oar_tmp_directory => "path to the temp directory"
 #               user => "user name"
-#               job_user => "job user"
 #               types => hashtable with job types as keys
-#               resources => [ {property_name => value} ]
-#               node_file_db_fields => NODE_FILE_DB_FIELD
-#               node_file_db_fields_distinct_values => NODE_FILE_DB_FIELD_DISTINCT_VALUES
-#               array_id => job array id
-#               array_index => job index in the array
-#               stdout_file => stdout file name
-#               stderr_file => stderr file name
-#               launching_directory => launching directory
-#               job_name => job name
 #               walltime_seconds => job walltime in seconds
 #               walltime => job walltime
-#               project => job project name
 #               log_level => debug level number
 #           }
 my $slurp = do { local $/; <STDIN> };
-$Data = eval($slurp);
+$Job_data = eval($slurp);
 
-if (!defined($Data->{log_level})) {
+if (!defined($Job_data->{log_level})) {
     exit_myself(2,"Bad hashtable transfered");
 }
-print_log(4,Dumper($Data));
+print_log(4,Dumper($Job_data));
 
-my $Lock_file = "$Data->{oar_tmp_directory}/job_resource_manager.lock_file";
-my $Job_cpuset_dir = (defined($Data->{cpuset_path}))?"$Data->{cpuset_path}/$Data->{name}":"";
-my $Job_data_dir = (defined($Data->{cpuset_path}))?"$Data->{oar_tmp_directory}/$Data->{name}":"$Data->{oar_tmp_directory}/$Data->{job_id}";
+my $Lock_file = "$Job_data->{oar_tmp_directory}/job_resource_manager.lock_file";
+my $Job_cpuset_dir = (defined($Job_data->{cpuset_path}))?"$Job_data->{cpuset_path}/$Job_data->{cpuset_name}":"";
+my $Job_data_dir = (defined($Job_data->{cpuset_path}))?"$Job_data->{oar_tmp_directory}/$Job_data->{cpuset_name}":"$Job_data->{oar_tmp_directory}/$Job_data->{job_id}";
 my $Job_file_env = "env";
 my $Job_file_resources = "resources";
 my $Job_file_nodes = "nodes";
@@ -134,16 +133,16 @@ my $Job_x_dir_prefix = "";
 my $Job_file_data = "data";
 
 my $bashcmd;
-print_log(2,"$Script_name $ARGV[0] (log level=$Data->{log_level})");
+print_log(2,"$Script_name $ARGV[0] (log level=$Job_data->{log_level})");
 if ($ARGV[0] eq "init") {
     # Initialize cpuset for this node
     # First, create the tmp oar directory
-    if (!(((-d $Data->{oar_tmp_directory}) and (-O $Data->{oar_tmp_directory})) or (mkdir($Data->{oar_tmp_directory})))) {
-        exit_myself(13,"Directory $Data->{oar_tmp_directory} does not exist and cannot be created");
+    if (!(((-d $Job_data->{oar_tmp_directory}) and (-O $Job_data->{oar_tmp_directory})) or (mkdir($Job_data->{oar_tmp_directory})))) {
+        exit_myself(13,"Directory $Job_data->{oar_tmp_directory} does not exist and cannot be created");
     }
 
     # Global cgroup/cpuset setup
-    if (defined($Data->{cpuset_path})) {
+    if (defined($Job_data->{cpuset_path})) {
         print_log(4,"Locking $Lock_file.global");
         open(LOCKFILE,"> $Lock_file.global") or exit_myself(16,"Failed to open global lock file: $!");
         flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
@@ -188,17 +187,17 @@ if ($ARGV[0] eq "init") {
         $bashcmd =
             'shopt -s nullglob; '.
             'for d in '.$Cgroup_directory_collection_links.'/*; do '.
-               'oardodo mkdir -p $d'.$Data->{cpuset_path}.'; '.
-               'oardodo chown -R oar $d'.$Data->{cpuset_path}.'; '.
-               '/bin/echo 0 > $d'.$Data->{cpuset_path}.'/notify_on_release; '.
+               'oardodo mkdir -p $d'.$Job_data->{cpuset_path}.'; '.
+               'oardodo chown -R oar $d'.$Job_data->{cpuset_path}.'; '.
+               '/bin/echo 0 > $d'.$Job_data->{cpuset_path}.'/notify_on_release; '.
             'done; '.
-            '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset'.$Data->{cpuset_path}.'/cpuset.cpu_exclusive; '.
-            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.mems > '.$Cgroup_directory_collection_links.'/cpuset'.$Data->{cpuset_path}.'/cpuset.mems; '.
-            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.cpus > '.$Cgroup_directory_collection_links.'/cpuset'.$Data->{cpuset_path}.'/cpuset.cpus; '.
-            '/bin/echo 1000 > '.$Cgroup_directory_collection_links.'/blkio'.$Data->{cpuset_path}.'/blkio.weight; ';
+            '/bin/echo 0 > '.$Cgroup_directory_collection_links.'/cpuset'.$Job_data->{cpuset_path}.'/cpuset.cpu_exclusive; '.
+            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.mems > '.$Cgroup_directory_collection_links.'/cpuset'.$Job_data->{cpuset_path}.'/cpuset.mems; '.
+            'cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.cpus > '.$Cgroup_directory_collection_links.'/cpuset'.$Job_data->{cpuset_path}.'/cpuset.cpus; '.
+            '/bin/echo 1000 > '.$Cgroup_directory_collection_links.'/blkio'.$Job_data->{cpuset_path}.'/blkio.weight; ';
         print_log(4, "$bashcmd");
         if (system("bash -e -c '$bashcmd'")) {
-            exit_myself(4,'Failed to create cgroup '.$Data->{cpuset_path});
+            exit_myself(4,'Failed to create cgroup '.$Job_data->{cpuset_path});
         } else {
             print_log(4, "OK");
         }
@@ -207,13 +206,13 @@ if ($ARGV[0] eq "init") {
         print_log(4,"Unlocked $Lock_file.global");
     }
     # Job cgroup/cpuset setup
-    if (defined($Data->{cpuset_path})) {
-        if ($Data->{name} =~ /,j=X$/) {
+    if (defined($Job_data->{cpuset_path})) {
+        if ($Job_data->{cpuset_name} =~ /,j=X$/) {
             # need a look in case of extensible job
-            print_log(4,"Locking extensible job using $Lock_file.$Data->{name}");
-            open(LOCKFILE,"> $Lock_file.$Data->{name}") or exit_myself(16,"Failed to open extensible job lock file: $!");
+            print_log(4,"Locking extensible job using $Lock_file.$Job_data->{cpuset_name}");
+            open(LOCKFILE,"> $Lock_file.$Job_data->{cpuset_name}") or exit_myself(16,"Failed to open extensible job lock file: $!");
             flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
-            print_log(4,"Locked extensible job using $Lock_file.$Data->{name}");
+            print_log(4,"Locked extensible job using $Lock_file.$Job_data->{cpuset_name}");
 
             # retrieve data from existing extensible jobs 
             my $data_x;
@@ -224,28 +223,28 @@ if ($ARGV[0] eq "init") {
             }
 
             # add data form the current job to the extensible job hash
-            $data_x->{$Data->{job_id}} = $Data;
+            $data_x->{$Job_data->{job_id}} = $Job_data;
             # save data from the current job data to filesystem
-            my $job_x_dir = "$Job_data_dir/$Job_x_dir_prefix$Data->{job_id}";
+            my $job_x_dir = "$Job_data_dir/$Job_x_dir_prefix$Job_data->{job_id}";
             my $job_x_data = "$job_x_dir/$Job_file_data";
             mkdir($job_x_dir) or exit_myself(99,"Failed to create directory: $job_x_dir\n");
             open(FILE, "> $job_x_data") or exit_myself(19,"Failed to create the data file $job_x_data");
-            print(FILE Dumper($Data)) or exit_myself(19,"Failed to write to the data file $job_x_data");
+            print(FILE Dumper($Job_data)) or exit_myself(19,"Failed to write to the data file $job_x_data");
             close(FILE);
 
-            create_job_files($job_x_dir,$Data);
+            create_job_files($job_x_dir,$Job_data);
             create_job_files($Job_data_dir,values(%$data_x));
 
             my @job_cpulist = get_data_cpulist(values(%$data_x));
-            print_log(4,"Extensible job cpulist: ".join(",",@job_cpulist)." (current: ".join(",",get_data_cpulist($Data)).")");
+            print_log(4,"Extensible job cpulist: ".join(",",@job_cpulist)." (current: ".join(",",get_data_cpulist($Job_data)).")");
             configure_job_cpuset(\@job_cpulist);
             flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");
             close(LOCKFILE);
-            print_log(4,"Unlocked extensible job using $Lock_file.$Data->{name}");
+            print_log(4,"Unlocked extensible job using $Lock_file.$Job_data->{cpuset_name}");
         } else {
             # Normal job, no need for a lock here
             mkdir("$Job_data_dir") or exit_myself(99,"Failed to create directory: $Job_data_dir\n");
-            my @job_cpulist = get_data_cpulist($Data);
+            my @job_cpulist = get_data_cpulist($Job_data);
             print_log(4,"Job cpulist: ".join(",",@job_cpulist));
             configure_job_cpuset(\@job_cpulist);
         }
@@ -256,37 +255,37 @@ if ($ARGV[0] eq "init") {
 
     # Create the job files (nodes file, resources file, environment variables)
     # The case of extensible jobs is handled above in the locked block
-    if (not (defined($Data->{cpuset_path}) and ($Data->{name} =~ /,j=X$/))) {
-        create_job_files($Job_data_dir,$Data);
+    if (not (defined($Job_data->{cpuset_path}) and ($Job_data->{cpuset_name} =~ /,j=X$/))) {
+        create_job_files($Job_data_dir,$Job_data);
     }
 
     # Copy ssh key files
-    if ($Data->{ssh_keys}->{private}->{key} ne "") {
+    if ($Job_data->{ssh_keys}->{private}->{key} ne "") {
         # private key
-        if (open(PRIV, ">".$Data->{ssh_keys}->{private}->{file_name})) {
-            chmod(0600,$Data->{ssh_keys}->{private}->{file_name});
-            if (!print(PRIV $Data->{ssh_keys}->{private}->{key})) {
-                unlink($Data->{ssh_keys}->{private}->{file_name});
-                exit_myself(8,"Error writing $Data->{ssh_keys}->{private}->{file_name}");
+        if (open(PRIV, ">".$Job_data->{ssh_keys}->{private}->{file_name})) {
+            chmod(0600,$Job_data->{ssh_keys}->{private}->{file_name});
+            if (!print(PRIV $Job_data->{ssh_keys}->{private}->{key})) {
+                unlink($Job_data->{ssh_keys}->{private}->{file_name});
+                exit_myself(8,"Error writing $Job_data->{ssh_keys}->{private}->{file_name}");
             }
             close(PRIV);
         }else{
-            exit_myself(7,"Error opening $Data->{ssh_keys}->{private}->{file_name}");
+            exit_myself(7,"Error opening $Job_data->{ssh_keys}->{private}->{file_name}");
         }
 
         # public key
-        if (open(PUB,"+<",$Data->{ssh_keys}->{public}->{file_name})) {
-            print_log(4,"Locking pub key $Data->{ssh_keys}->{public}->{file_name}");
+        if (open(PUB,"+<",$Job_data->{ssh_keys}->{public}->{file_name})) {
+            print_log(4,"Locking pub key $Job_data->{ssh_keys}->{public}->{file_name}");
             flock(PUB,LOCK_EX) or exit_myself(17,"flock failed: $!");
-            print_log(4,"Locked pub key $Data->{ssh_keys}->{public}->{file_name}");
+            print_log(4,"Locked pub key $Job_data->{ssh_keys}->{public}->{file_name}");
             seek(PUB,0,0) or exit_myself(18,"seek failed: $!");
-            my $out = "\n".$Data->{ssh_keys}->{public}->{key}."\n";
+            my $out = "\n".$Job_data->{ssh_keys}->{public}->{key}."\n";
             while (<PUB>) {
                 if ($_ =~ /environment=\"OAR_KEY=1\"/) {
                     # We are reading a OAR key
                     $_ =~ /(ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
                     my $oar_key = $2;
-                    $Data->{ssh_keys}->{public}->{key} =~ /(ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
+                    $Job_data->{ssh_keys}->{public}->{key} =~ /(ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
                     my $curr_key = $2;
                     if ($curr_key eq $oar_key) {
                         exit_myself(13,"Error: the user has specified the same ssh key than used by the user oar");
@@ -302,57 +301,57 @@ if ($ARGV[0] eq "init") {
                 }
             }
             if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))) {
-                exit_myself(9,"Error writing $Data->{ssh_keys}->{public}->{file_name}");
+                exit_myself(9,"Error writing $Job_data->{ssh_keys}->{public}->{file_name}");
             }
             flock(PUB,LOCK_UN) or exit_myself(17,"flock failed: $!");
             close(PUB);
-            print_log(4,"Unlocked pub key $Data->{ssh_keys}->{public}->{file_name}");
+            print_log(4,"Unlocked pub key $Job_data->{ssh_keys}->{public}->{file_name}");
         }else{
-            unlink($Data->{ssh_keys}->{private}->{file_name});
-            exit_myself(10,"Error opening $Data->{ssh_keys}->{public}->{file_name}");
+            unlink($Job_data->{ssh_keys}->{private}->{file_name});
+            exit_myself(10,"Error opening $Job_data->{ssh_keys}->{public}->{file_name}");
         }
     }
 }elsif ($ARGV[0] eq "clean") {
     # delete ssh key files
-    if ($Data->{ssh_keys}->{private}->{key} ne "") {
+    if ($Job_data->{ssh_keys}->{private}->{key} ne "") {
         # private key
-        unlink($Data->{ssh_keys}->{private}->{file_name});
+        unlink($Job_data->{ssh_keys}->{private}->{file_name});
 
         # public key
-        if (open(PUB,"+<", $Data->{ssh_keys}->{public}->{file_name})) {
-            print_log(4,"Locking pub key $Data->{ssh_keys}->{public}->{file_name}");
+        if (open(PUB,"+<", $Job_data->{ssh_keys}->{public}->{file_name})) {
+            print_log(4,"Locking pub key $Job_data->{ssh_keys}->{public}->{file_name}");
             flock(PUB,LOCK_EX) or exit_myself(17,"flock failed: $!");
-            print_log(4,"Locked pub key $Data->{ssh_keys}->{public}->{file_name}");
+            print_log(4,"Locked pub key $Job_data->{ssh_keys}->{public}->{file_name}");
             seek(PUB,0,0) or exit_myself(18,"seek failed: $!");
             #Change file on the fly
             my $out = "";
             while (<PUB>) {
-                if (($_ ne "\n") and ($_ ne $Data->{ssh_keys}->{public}->{key})) {
+                if (($_ ne "\n") and ($_ ne $Job_data->{ssh_keys}->{public}->{key})) {
                     $out .= $_;
                 }
             }
             if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))) {
-                exit_myself(12,"Error changing $Data->{ssh_keys}->{public}->{file_name}");
+                exit_myself(12,"Error changing $Job_data->{ssh_keys}->{public}->{file_name}");
             }
             flock(PUB,LOCK_UN) or exit_myself(17,"flock failed: $!");
             close(PUB);
-            print_log(4,"Unlocked pub key $Data->{ssh_keys}->{public}->{file_name}");
+            print_log(4,"Unlocked pub key $Job_data->{ssh_keys}->{public}->{file_name}");
         }else{
-            exit_myself(11,"Error opening $Data->{ssh_keys}->{public}->{file_name}");
+            exit_myself(11,"Error opening $Job_data->{ssh_keys}->{public}->{file_name}");
         }
     }
 
     # Clean cpuset on this node
-    if (defined($Data->{cpuset_path})) {
+    if (defined($Job_data->{cpuset_path})) {
         (-e $Job_data_dir) or exit_myself(99,"Error: Job directory does not exist: $Job_data_dir");
-        if ($Data->{name} =~ /,j=X$/) {
-            print_log(4,"Locking extensible job using $Lock_file.$Data->{name}");
-            open(LOCKFILE,"> $Lock_file.$Data->{name}") or exit_myself(16,"Failed to open extensible job lock file: $!");
+        if ($Job_data->{cpuset_name} =~ /,j=X$/) {
+            print_log(4,"Locking extensible job using $Lock_file.$Job_data->{cpuset_name}");
+            open(LOCKFILE,"> $Lock_file.$Job_data->{cpuset_name}") or exit_myself(16,"Failed to open extensible job lock file: $!");
             flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
-            print_log(4,"Locked extensible job using $Lock_file.$Data->{name}");
+            print_log(4,"Locked extensible job using $Lock_file.$Job_data->{cpuset_name}");
 
             # remove current job's data file
-            my $job_x_dir = "$Job_data_dir/$Job_x_dir_prefix$Data->{job_id}";
+            my $job_x_dir = "$Job_data_dir/$Job_x_dir_prefix$Job_data->{job_id}";
             my $job_x_data = "$job_x_dir/$Job_file_data";
             (-e $job_x_dir) or exit_myself(99,"Error: Job directory does not exist: $job_x_dir");
             (-e $job_x_data) or exit_myself(99,"Error: Job data file does not exist: $job_x_data");
@@ -378,33 +377,33 @@ if ($ARGV[0] eq "init") {
             }
             flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");
             close(LOCKFILE);
-            print_log(4,"Unlocked extensible job using $Lock_file.$Data->{name}");
+            print_log(4,"Unlocked extensible job using $Lock_file.$Job_data->{cpuset_name}");
         } else {
             unconfigure_job_cpuset();
         }
         # Create the job files (nodes file, resources file, environment variables)
         # The case of extensible jobs is handled above in the locked block
-        if (not (defined($Data->{cpuset_path}) and ($Data->{name} =~ /,j=X$/))) {
+        if (not (defined($Job_data->{cpuset_path}) and ($Job_data->{cpuset_name} =~ /,j=X$/))) {
             remove_job_files($Job_data_dir);
         }
 
         # Locking around the cleanup of the cpuset for that user, to prevent a creation to occure at the same time
         # which would allow race condition for the user-based clean-up mechanism
-        print_log(4,"Locking job user using $Lock_file.$Data->{user}");
-        open(LOCKFILE,"> $Lock_file.$Data->{user}") or exit_myself(16,"Failed to open user lock file: $!");
+        print_log(4,"Locking job user using $Lock_file.$Job_data->{user}");
+        open(LOCKFILE,"> $Lock_file.$Job_data->{user}") or exit_myself(16,"Failed to open user lock file: $!");
         flock(LOCKFILE,LOCK_EX) or die "flock failed: $!\n";
-        print_log(4,"Locked job user using $Lock_file.$Data->{user}");
+        print_log(4,"Locked job user using $Lock_file.$Job_data->{user}");
         # user-based cleanup: do cleanup only if that is the last job of the user on that host.
         my @cpusets = ();
-        if (opendir(DIR, $Cgroup_directory_collection_links.'/cpuset'.$Data->{cpuset_path}.'/')) {
-            @cpusets = grep { /^oar.u=$Data->{user},/ } readdir(DIR);
+        if (opendir(DIR, $Cgroup_directory_collection_links.'/cpuset'.$Job_data->{cpuset_path}.'/')) {
+            @cpusets = grep { /^oar.u=$Job_data->{user},/ } readdir(DIR);
             closedir DIR;
         } else {
-          exit_myself(18,'Can\'t opendir: '.$Cgroup_directory_collection_links.'/cpuset'.$Data->{cpuset_path});
+          exit_myself(18,'Can\'t opendir: '.$Cgroup_directory_collection_links.'/cpuset'.$Job_data->{cpuset_path});
         }
         if ($#cpusets < 0) {
             # No other jobs on this node at this time
-            my $useruid=getpwnam($Data->{user});
+            my $useruid=getpwnam($Job_data->{user});
             my $ipcrm_args="";
             if (open(IPCMSG,"< /proc/sysvipc/msg")) {
                 <IPCMSG>;
@@ -444,20 +443,20 @@ if ($ARGV[0] eq "init") {
             }
             if ($ipcrm_args) {
                 print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args");
-                system("OARDO_BECOME_USER=$Data->{user} oardodo ipcrm $ipcrm_args"); 
+                system("OARDO_BECOME_USER=$Job_data->{user} oardodo ipcrm $ipcrm_args"); 
             }
             print_log (3,"Purging @Dir_to_clean");
             system('for d in '."@Dir_to_clean".'; do
-                        oardodo find $d -user '.$Data->{user}.' -delete
+                        oardodo find $d -user '.$Job_data->{user}.' -delete
                         [ -x '.$Fstrim_cmd.' ] && oardodo '.$Fstrim_cmd.' $d > /dev/null 2>&1
                     done
                    ');
         } else {
-            print_log(3,"Not purging SysV IPC and /tmp as $Data->{user} still has a job running on this host");
+            print_log(3,"Not purging SysV IPC and /tmp as $Job_data->{user} still has a job running on this host");
         }
         flock(LOCKFILE,LOCK_UN) or die "flock failed: $!\n";
         close(LOCKFILE);
-        print_log(4,"Unlocked job user using $Lock_file.$Data->{user}");
+        print_log(4,"Unlocked job user using $Lock_file.$Job_data->{user}");
     }
 }else{
     exit_myself(3,"Bad command line argument $ARGV[0]");
@@ -470,7 +469,7 @@ sub exit_myself($$) {
     my $exit_code = shift;
     my $str = shift;
 
-    warn("[job_resource_manager_cgroups][$Data->{job_id}][ERROR] ".$str."\n");
+    warn("[job_resource_manager_cgroups][$Job_data->{job_id}][ERROR] ".$str."\n");
     exit($exit_code);
 }
 
@@ -479,8 +478,8 @@ sub print_log($$) {
     my $l = shift;
     my $str = shift;
 
-    if ($l <= $Data->{log_level}) {
-        warn("[$Data->{job_id}] $str\n");
+    if ($l <= $Job_data->{log_level}) {
+        warn("[$Job_data->{job_id}] $str\n");
     }
 }
 
@@ -552,9 +551,9 @@ sub get_job_nodes(@) {
     my $resource_node_hash = {};
     my $distinct_property;
     foreach my $data (@_) {
-        if (not defined($distinct_property) or (defined($data->{node_file_db_fields_distinct_values}) and ($distinct_property ne $data->{node_file_db_fields_distinct_values}))) {
+        if (not defined($distinct_property) or (defined($data->{property_distinct_resources}) and ($distinct_property ne $data->{property_distinct_resources}))) {
             foreach my $r (@{$data->{resources}}) {
-                $resource_node_hash->{$r->{$data->{node_file_db_fields_distinct_values}}} = $r->{$data->{node_file_db_fields}};
+                $resource_node_hash->{$r->{$data->{property_distinct_resources}}} = $r->{$data->{property_nodes}};
             }
         } else {
             print_log(2,"Warning: extensible job nodes could not be merged correctly");  
@@ -569,10 +568,10 @@ sub get_job_resources(@) {
     my $resources_lines_hash = {};
     my $distinct_property;
     foreach my $data (@_) {
-        if (not defined($distinct_property) or (defined($data->{node_file_db_fields_distinct_values}) and ($distinct_property eq $data->{node_file_db_fields_distinct_values}))) {
-            $distinct_property = $data->{node_file_db_fields_distinct_values};
+        if (not defined($distinct_property) or (defined($data->{property_distinct_resources}) and ($distinct_property eq $data->{property_distinct_resources}))) {
+            $distinct_property = $data->{property_distinct_resources};
             foreach my $r (@{$data->{resources}}) {
-                $resources_lines_hash->{$r->{$data->{node_file_db_fields_distinct_values}}} = join(",",map { "$_ = '$r->{$_}'" } keys(%$r))."\n";
+                $resources_lines_hash->{$r->{$data->{property_distinct_resources}}} = join(",",map { "$_ = '$r->{$_}'" } keys(%$r))."\n";
             }
         } else {
             print_log(2,"Warning: extensible job resources could not be merged correctly");  
