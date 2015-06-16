@@ -4021,9 +4021,9 @@ sub get_jobs_for_user_query {
         "
         SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job,jobs.reservation,jobs.project,jobs.properties,jobs.exit_code,jobs.command,jobs.initial_request,jobs.launching_directory,jobs.message,jobs.job_type,jobs.array_id,jobs.stderr_file,jobs.stdout_file,jobs.start_time,moldable_job_descriptions.moldable_walltime,jobs.stop_time
         FROM jobs LEFT JOIN moldable_job_descriptions ON jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id
-        WHERE
-             jobs.job_id IN (
-         						 SELECT DISTINCT jobs.job_id
+        INNER JOIN
+              (
+         						 SELECT DISTINCT jobs.job_id AS job_id
          						 FROM jobs, assigned_resources, moldable_job_descriptions
          						 WHERE
                  					$first_query_date_start
@@ -4034,7 +4034,7 @@ sub get_jobs_for_user_query {
 
          						UNION
 
-         						SELECT DISTINCT jobs.job_id
+         						SELECT DISTINCT jobs.job_id AS job_id
          						FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu
          						WHERE
          						   gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
@@ -4046,14 +4046,14 @@ sub get_jobs_for_user_query {
          						
          						UNION
          						
-         						SELECT DISTINCT jobs.job_id
+         						SELECT DISTINCT jobs.job_id AS job_id
          						FROM jobs
          						WHERE 
          						   jobs.start_time = \'0\'
          						   $third_query_date_start
          						   $third_query_date_end
          						   $state $user $array_id $id_filter
-         						)
+         						) unionsql ON unionsql.job_id = jobs.job_id
          ORDER BY jobs.job_id $limit $offset";
 
     my $sth = $dbh->prepare($req);
@@ -4140,10 +4140,8 @@ sub count_jobs_for_user_query {
 
     my $req =
         "
-        SELECT COUNT(jobs.job_id)
-        FROM jobs
-        WHERE
-             jobs.job_id IN (
+        SELECT COUNT(*)
+        FROM (
          						 SELECT DISTINCT jobs.job_id
          						 FROM jobs, assigned_resources, moldable_job_descriptions
          						 WHERE
@@ -4174,7 +4172,7 @@ sub count_jobs_for_user_query {
          						   $third_query_date_start
          						   $third_query_date_end
          						   $state $user $array_id $id_filter
-         						)
+         						) AS unionsql
              ";
 
     my $sth = $dbh->prepare($req);
