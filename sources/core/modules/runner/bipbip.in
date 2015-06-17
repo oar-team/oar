@@ -5,7 +5,7 @@ use warnings;
 
 use OAR::IO;
 use Sys::Hostname;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use OAR::Conf qw(init_conf dump_conf get_conf get_conf_with_default_param is_conf);
 use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
 use OAR::PingChecker;
 use OAR::Tools;
@@ -47,7 +47,7 @@ my $Deploy_hostname = get_conf_with_default_param("DEPLOY_HOSTNAME", $Server_hos
 my $Cosystem_hostname = get_conf_with_default_param("COSYSTEM_HOSTNAME", $Server_host);
 my $Oarexec_log_level = get_conf_with_default_param("OAREXEC_DEBUG_MODE", 0);
 
-my $Oarexec_detach = get_conf_with_default_param("DETACH_JOB_FROM_SERVER");
+my $Oarexec_detach = get_conf_with_default_param("DETACH_JOB_FROM_SERVER", 0);
 
 my $Server_prologue = get_conf("SERVER_PROLOGUE_EXEC_FILE");
 my $Server_epilogue = get_conf("SERVER_EPILOGUE_EXEC_FILE");
@@ -63,12 +63,14 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
 my $base;
 $base = OAR::IO::connect();
 
+my $job = OAR::IO::get_job($base,$Job_id);
+
 my $Job_resource_manager = get_conf_with_default_param("JOB_RESOURCE_MANAGER_FILE", OAR::Tools::get_default_cpuset_file());
 ($Job_resource_manager =~ /^\//) or $Job_resource_manager = "$ENV{OARDIR}/$Job_resource_manager";
 
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
 my $Cpuset_path = get_conf("CPUSET_PATH");
-my $Cpuset_name = OAR::IO::get_job_cpuset_name($base, $Job_id) 
+my $Cpuset_name = OAR::IO::get_job_cpuset_name($base, $Job_id);
 my $Cpuset_full_path;
 if (defined($Cpuset_path) and defined($Cpuset_field) and defined($Cpuset_name)){
     my $Cpuset_full_path = "$Cpuset_path/$Cpuset_name";
@@ -78,10 +80,8 @@ if (defined($Cpuset_field)){
      $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job});
 }
 
-
 my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($base,$Job_id);
 my @hosts = OAR::IO::get_job_current_hostnames($base,$Job_id);
-my $job = OAR::IO::get_job($base,$Job_id);
 my @resources;
 my $moldable;
 
@@ -260,7 +260,7 @@ my $Job_data = {
     almighty_port       => $Server_port,
     checkpoint_signal   => $job->{checkpoint_signal},
     debug_mode          => $Oarexec_log_level,
-    log_level => OAR::Modules::Judas::get_log_level()
+    log_level => OAR::Modules::Judas::get_log_level(),
     prologue_epilogue_timeout => $pro_epi_timeout,
     prologue            => $prologue_exec_file,
     epilogue            => $epilogue_exec_file,
@@ -277,10 +277,10 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     # CPUSET PART #
     ###############
 
-    $ssh_public_key = OAR::Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_full_path,$job->{job_user},$job->{job_user});
+    $ssh_public_key = OAR::Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_full_path,$job->{job_user});
     if (defined($cpuset_nodes)){
         my $taktuk_cmd = get_conf("TAKTUK_CMD");
-        my ($tag,@bad_tmp) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$Job_resource_manager,"init",$Openssh_cmd,$taktuk_cmd,$base);
+        my ($tag,@bad_tmp) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$Job_data,$Job_resource_manager,"init",$Openssh_cmd,$taktuk_cmd,$base);
         if ($tag == 0){
             my $str = "[bipbip $Job_id] [CPUSET] Bad cpuset file : $Job_resource_manager\n";
             OAR::Modules::Judas::oar_error($str);
@@ -316,8 +316,8 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                     foreach my $b (@bad){
                         delete($cpuset_nodes->{$b});
                     }
-                    $cpuset_data_hash->{nodes}=$cpuset_nodes;
-                    my ($tag,@bad_tmp) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$Job_resource_manager,"clean",$Openssh_cmd,$taktuk_cmd,$base);
+                    $Job_data->{nodes}=$cpuset_nodes;
+                    my ($tag,@bad_tmp) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$Job_data,$Job_resource_manager,"clean",$Openssh_cmd,$taktuk_cmd,$base);
                     push(@bad, @bad_tmp);
                 }
             }
