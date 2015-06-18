@@ -196,7 +196,7 @@ my $host = hostname();
 
 print("[oarexec] [$Job_id] user: $Job_data->{user}; launchingDirectory: $Job_data->{launching_directory}\n");
 
-OAR::Tools::set_default_oarexec_directory($Job_data->{tmp_directory});
+OAR::Tools::set_default_oarexec_directory($Job_data->{oar_tmp_directory});
 $Tmp_file_prefix = OAR::Tools::get_default_oarexec_directory();
 # Test if OAR directory exists and is owned by oar or if we can create it
 if (!(((-d $Tmp_file_prefix) and (-O $Tmp_file_prefix)) or (mkdir($Tmp_file_prefix)))){
@@ -204,7 +204,7 @@ if (!(((-d $Tmp_file_prefix) and (-O $Tmp_file_prefix)) or (mkdir($Tmp_file_pref
     exit(8);
 }
 chdir($Tmp_file_prefix);
-if (defined($job->{cpuset_path}) {
+if (defined($Job_data->{cpuset_path})) {
     print("[oarexec] [$Job_id] not creating node and resources file because it should have been done by the job resource manager\n");
 } else {
     #create node set file
@@ -296,7 +296,7 @@ if (!defined($shell)){
 
 my @cmd;
 my $stdin_script_to_send;
-if ( $Job_data->{mode} eq "PASSIVE" ){
+if ( $Job_data->{job_type} eq "PASSIVE" ){
     print("[oarexec] [$Job_id] Begin a passive command\n");
     my $str;
     ($str, $stdin_script_to_send) = OAR::Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job_data->{array_id},$Job_data->{array_index},$Job_data->{user},$shell,$Job_data->{launching_directory},$Job_data->{stdout_file},$Job_data->{stderr_file},$Res_file,$Job_data->{name},$Job_data->{project},$Job_data->{walltime},$Job_data->{walltime_seconds},$Job_data->{job_env},$Job_data->{command});
@@ -420,7 +420,7 @@ sigprocmask(SIG_UNBLOCK, $Blockset);
 
 my $pid = $$;
 my $rin_script = '';
-if ($Job_data->{mode} eq "PASSIVE"){
+if ($Job_data->{job_type} eq "PASSIVE"){
     # For parsing script outputs
     pipe(pipe_script_read,pipe_script_write);
     autoflush pipe_script_write 1;
@@ -521,7 +521,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
         print("[oarexec] [$Job_id] pipe kill signal: $res_read,$line_read\n");
         if ($line_read eq "KILL"){
             print("[oarexec] [$Job_id] Kill children\n");
-            if ($Job_data->{mode} eq "INTERACTIVE"){
+            if ($Job_data->{job_type} eq "INTERACTIVE"){
                 $stop_loop = 1;
             }else{
                 kill_children($pid);
@@ -532,7 +532,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             $Kill_myself = 1;
         }elsif ($line_read eq "STOP"){
             print("[oarexec] [$Job_id] Receive STOP notification\n");
-            if ($Job_data->{mode} eq "INTERACTIVE"){
+            if ($Job_data->{job_type} eq "INTERACTIVE"){
                 $Stop_signal = 1;
             }else{
                 print("[oarexec] [$Job_id] Receive USR1 signal so someone wants to finish this job but it is not an INTERACTIVE one\n");
