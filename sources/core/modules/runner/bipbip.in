@@ -73,7 +73,7 @@ my $Cpuset_path = get_conf("CPUSET_PATH");
 my $Cpuset_name = OAR::IO::get_job_cpuset_name($base, $Job_id);
 my $Cpuset_full_path;
 if (defined($Cpuset_path) and defined($Cpuset_field) and defined($Cpuset_name)){
-    my $Cpuset_full_path = "$Cpuset_path/$Cpuset_name";
+    $Cpuset_full_path = "$Cpuset_path/$Cpuset_name";
 }
 my $cpuset_nodes;
 if (defined($Cpuset_field)){
