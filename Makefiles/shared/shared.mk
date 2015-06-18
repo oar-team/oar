@@ -48,6 +48,7 @@ SHARED_ACTIONS=perllib oardata oarbin doc man1 bin sbin examples setup_scripts i
 
 clean_shared: clean_templates clean_man1 clean_setup_scripts
 build_shared: build_templates build_man1 build_setup_scripts
+	rm -f setup/templates/header.sh
 
 install_shared: $(patsubst %, install_%,$(SHARED_ACTIONS)) install_setup_scripts
 setup_shared: run_setup_scripts
