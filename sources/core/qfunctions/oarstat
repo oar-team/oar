@@ -19,8 +19,6 @@ umask(oct("022"));
 
 # Read config
 init_conf($ENV{OARCONFFILE});
-my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
-
 
 #Try to load XML module
 my $XML_enabled = 1;

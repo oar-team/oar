@@ -108,7 +108,7 @@ foreach my $j (@job_ids){
     if (defined($Suspend_running)){
         my $types = OAR::IO::get_job_types_hash($base,$j);
         if (!defined($Cpuset_field)){
-            warn("CPUSET tag is not configured in the oar.conf.\n");
+            warn("The cpuset feature is not activated in the oar.conf.\n");
             $err_job = 2;
         }elsif (defined($types->{cosystem})){
             warn("This job is of the cosystem type. We cannot suspend this kind of jobs.\n");

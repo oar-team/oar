@@ -242,7 +242,7 @@ foreach my $i (@events_to_check){
                 # SUSPEND PART #
                 ################
                 if (defined($Cpuset_field)){
-                    my $cpuset_name = OAR::IO::get_job_cpuset_name($base, $i->{job_id}) if (defined($Cpuset_field));
+                    my $cpuset_name = OAR::IO::get_job_cpuset_name($base, $i->{job_id});
                     my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job});
                     my $suspend_data_hash = {
                         name => $cpuset_name,
