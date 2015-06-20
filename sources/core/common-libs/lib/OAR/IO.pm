@@ -8000,77 +8000,76 @@ sub job_finishing_sequence($$$$$$){
         }
     }
     
-   
     my $types = OAR::IO::get_job_types_hash($dbh,$job_id);
-    if ((!defined($types->{deploy})) and (!defined($types->{cosystem})) and (!defined($types->{noop}))){
+    if (not defined($types->{deploy}) and not defined($types->{cosystem}) and not defined($types->{noop})){
         ###############
         # CPUSET PART #
         ###############
         # Clean all CPUSETs
         my $cpuset_path = get_conf("CPUSET_PATH");
-        # if the cpuset feature is activated
+        # the cpuset feature is activated
         if (defined($cpuset_path) and $cpuset_path ne ""){
-            my $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $job_id);
-            my $cpuset_field = get_conf_with_default_param("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD","cpuset");
-            my $openssh_cmd = get_conf("OPENSSH_CMD");
-            $openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
-            if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
-                OAR::Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
-            }
-            my $job_resource_manager = get_conf("JOB_RESOURCE_MANAGER_FILE");
-            $job_resource_manager = OAR::Tools::get_default_job_resource_manager() if (!defined($job_resource_manager));
-            $job_resource_manager = "$ENV{OARDIR}/$job_resource_manager" if ($job_resource_manager !~ /^\//);
             my $cpuset_full_path = $cpuset_path.'/'.$cpuset_name;
+        }
+        my $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $job_id);
+        my $cpuset_field = get_conf_with_default_param("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD","cpuset");
+        my $openssh_cmd = get_conf("OPENSSH_CMD");
+        $openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
+        if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+            OAR::Tools::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
+        }
+        my $job_resource_manager = get_conf("JOB_RESOURCE_MANAGER_FILE");
+        $job_resource_manager = OAR::Tools::get_default_job_resource_manager() if (!defined($job_resource_manager));
+        $job_resource_manager = "$ENV{OARDIR}/$job_resource_manager" if ($job_resource_manager !~ /^\//);
             
-            my $job = get_job($dbh, $job_id);
-            my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
-            if (defined($cpuset_nodes) and (keys(%{$cpuset_nodes}) > 0)){
-                OAR::Modules::Judas::oar_debug("[job finishing sequence] [$job_id] Clean cpuset on all nodes\n");
-                my $taktuk_cmd = get_conf("TAKTUK_CMD");
-                my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($dbh,$job_id);
-                $ssh_public_key = OAR::Tools::format_ssh_pub_key($ssh_public_key,$cpuset_full_path,$job->{job_user});
+        my $job = get_job($dbh, $job_id);
+        my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
+        if (defined($cpuset_nodes) and (keys(%{$cpuset_nodes}) > 0)){
+            OAR::Modules::Judas::oar_debug("[job finishing sequence] [$job_id] Clean cpuset on all nodes\n");
+            my $taktuk_cmd = get_conf("TAKTUK_CMD");
+            my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($dbh,$job_id);
+            $ssh_public_key = OAR::Tools::format_ssh_pub_key($ssh_public_key,$cpuset_full_path,$job->{job_user});
 
-                my $job_data = {
-                    job_id => $job_id,
-                    array_id            => $job->{array_id},
-                    array_index         => $job->{array_index},
-                    job_name            => $job->{job_name},
-                    project             => $job->{project},
-                    cpuset_name => $cpuset_name,
-                    cpuset_path => $cpuset_path,
-                    nodes => $cpuset_nodes,
-                    resources => undef,
-                    property_nodes => undef,
-                    property_distinct_resources => undef,
-                    stdout_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stdout_file},$job_id),
-                    stderr_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stderr_file},$job_id),
-                    launching_directory => $job->{launching_directory},
-                    ssh_keys => {
-                                    public => {
-                                                file_name => OAR::Tools::get_default_oar_ssh_authorized_keys_file(),
-                                                key => $ssh_public_key
-                                              },
-                                    private => {
-                                                file_name => OAR::Tools::get_private_ssh_key_file_name($cpuset_name),
-                                                key => $ssh_private_key
-                                               }
-                                },
-                    oar_tmp_directory => OAR::Tools::get_default_oarexec_directory(),
-                    user => $job->{job_user},
-                    types => $types,
-                    walltime_seconds    => undef,
-                    walltime            => undef,
-                    log_level => OAR::Modules::Judas::get_log_level()
-                };
-                my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$job_data,$job_resource_manager,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
-                if ($tag == 0){
-                    my $str = "[job finishing sequence] [$job_id] could not find the job resource manager file: $job_resource_manager\n";
-                    oar_error($str);
-                    push(@{$events}, {type => "CPUSET_MANAGER_FILE", string => $str});
-                }elsif ($#bad >= 0){
-                    oar_error("[job_finishing_sequence] [$job_id] Cpuset error, register event: CPUSET_CLEAN_ERROR on nodes @bad\n");
-                    push(@{$events}, {type => "CPUSET_CLEAN_ERROR", string => "[job_finishing_sequence] [$job_id] OAR suspects nodes: @bad", hosts => \@bad});
-                }
+            my $job_data = {
+                job_id => $job_id,
+                array_id            => $job->{array_id},
+                array_index         => $job->{array_index},
+                job_name            => $job->{job_name},
+                project             => $job->{project},
+                cpuset_name => $cpuset_name,
+                cpuset_path => $cpuset_path,
+                nodes => $cpuset_nodes,
+                resources => undef,
+                property_nodes => undef,
+                property_distinct_resources => undef,
+                stdout_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stdout_file},$job_id),
+                stderr_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stderr_file},$job_id),
+                launching_directory => $job->{launching_directory},
+                ssh_keys => {
+                                public => {
+                                            file_name => OAR::Tools::get_default_oar_ssh_authorized_keys_file(),
+                                            key => $ssh_public_key
+                                          },
+                                private => {
+                                            file_name => OAR::Tools::get_private_ssh_key_file_name($cpuset_name),
+                                            key => $ssh_private_key
+                                           }
+                            },
+                oar_tmp_directory => OAR::Tools::get_default_oarexec_directory(),
+                user => $job->{job_user},
+                types => $types,
+                walltime_seconds    => undef,
+                walltime            => undef,
+                log_level => OAR::Modules::Judas::get_log_level()
+            };
+            my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$job_data,$job_resource_manager,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
+            if ($tag == 0){
+                my $str = "[job finishing sequence] [$job_id] could not find the job resource manager file: $job_resource_manager\n";
+                oar_error($str);
+                push(@{$events}, {type => "CPUSET_MANAGER_FILE", string => $str});
+            }elsif ($#bad >= 0){
+                oar_error("[job_finishing_sequence] [$job_id] Cpuset error, register event: CPUSET_CLEAN_ERROR on nodes @bad\n");
+                push(@{$events}, {type => "CPUSET_CLEAN_ERROR", string => "[job_finishing_sequence] [$job_id] OAR suspects nodes: @bad", hosts => \@bad});
             }
         }
         ####################
