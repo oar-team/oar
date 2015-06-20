@@ -5,14 +5,9 @@ use warnings;
 use Data::Dumper;
 use OAR::Version;
 use OAR::IO;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 
 my $base;
 my $current_date = -1;
-
-# Read config
-init_conf($ENV{OARCONFFILE});
-my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
 
 sub open_db_connection(){
 	$base  = OAR::IO::connect_ro_one();
@@ -345,7 +340,7 @@ sub get_job_data($$){
     my @job_types = OAR::IO::get_job_types($dbh,$job_info->{job_id});
     my $cpuset_name;
     
-    $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
+    $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $job_info->{job_id});
 
     my $resources_string = "";
     my $reserved_resources;

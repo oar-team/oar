@@ -6055,7 +6055,7 @@ sub get_absent_suspected_resources_for_a_timeout($$){
 # get cpuset values for each nodes of a MJob
 sub get_cpuset_values_for_a_moldable_job($$$){
     my $dbh = shift;
-    my $cpuset_property = shift;
+    my $cpuset_field = shift;
     my $moldable_job_id = shift;
 
     my $sql_where_string = "\'0\'";
@@ -6064,7 +6064,7 @@ sub get_cpuset_values_for_a_moldable_job($$$){
         $sql_where_string = "resources.type = \'$resources_to_always_add_type\'";
     }
     
-    my $sth = $dbh->prepare("   SELECT resources.network_address, resources.$cpuset_property
+    my $sth = $dbh->prepare("   SELECT resources.network_address, resources.$cpuset_field
                                 FROM resources, assigned_resources
                                 WHERE
                                     assigned_resources.moldable_job_id = $moldable_job_id AND
@@ -6072,7 +6072,7 @@ sub get_cpuset_values_for_a_moldable_job($$$){
                                     resources.network_address != \'\' AND
                                     (resources.type = \'default\' OR
                                      $sql_where_string)
-                                GROUP BY resources.network_address, resources.$cpuset_property
+                                GROUP BY resources.network_address, resources.$cpuset_field
                             ");
     $sth->execute();
 
@@ -8006,10 +8006,12 @@ sub job_finishing_sequence($$$$$$){
         ###############
         # CPUSET PART #
         ###############
-        # Clean all CPUSETs if needed
-        my $cpuset_property = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
-        if (defined($cpuset_property)){
+        # Clean all CPUSETs
+        my $cpuset_path = get_conf("CPUSET_PATH");
+        # if the cpuset feature is activated
+        if (defined($cpuset_path) and $cpuset_path ne ""){
             my $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $job_id);
+            my $cpuset_field = get_conf_with_default_param("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD","cpuset");
             my $openssh_cmd = get_conf("OPENSSH_CMD");
             $openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
             if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
@@ -8018,14 +8020,10 @@ sub job_finishing_sequence($$$$$$){
             my $job_resource_manager = get_conf("JOB_RESOURCE_MANAGER_FILE");
             $job_resource_manager = OAR::Tools::get_default_job_resource_manager() if (!defined($job_resource_manager));
             $job_resource_manager = "$ENV{OARDIR}/$job_resource_manager" if ($job_resource_manager !~ /^\//);
-            my $cpuset_path = get_conf("CPUSET_PATH");
-            my $cpuset_full_path;
-            if (defined($cpuset_path) and defined($cpuset_property)){
-                $cpuset_full_path = $cpuset_path.'/'.$cpuset_name;
-            }
+            my $cpuset_full_path = $cpuset_path.'/'.$cpuset_name;
             
             my $job = get_job($dbh, $job_id);
-            my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_property,$job->{assigned_moldable_job});
+            my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
             if (defined($cpuset_nodes) and (keys(%{$cpuset_nodes}) > 0)){
                 OAR::Modules::Judas::oar_debug("[job finishing sequence] [$job_id] Clean cpuset on all nodes\n");
                 my $taktuk_cmd = get_conf("TAKTUK_CMD");
@@ -8066,7 +8064,7 @@ sub job_finishing_sequence($$$$$$){
                 };
                 my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$job_data,$job_resource_manager,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
                 if ($tag == 0){
-                    my $str = "[JOB FINISHING SEQUENCE] [$job_id] Bad job resource manager file: $job_resource_manager\n";
+                    my $str = "[job finishing sequence] [$job_id] could not find the job resource manager file: $job_resource_manager\n";
                     oar_error($str);
                     push(@{$events}, {type => "CPUSET_MANAGER_FILE", string => $str});
                 }elsif ($#bad >= 0){

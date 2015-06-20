@@ -55,7 +55,7 @@ init_conf($ENV{OARCONFFILE});
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
 
-my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+my $Cpuset_path = get_conf("CPUSET_PATH");
 
 if ((@ARGV < 1) and (!defined($Sql_property))){
     usage();
@@ -107,7 +107,7 @@ foreach my $j (@job_ids){
     my $err_job = 0;
     if (defined($Suspend_running)){
         my $types = OAR::IO::get_job_types_hash($base,$j);
-        if (!defined($Cpuset_field)){
+        if (not defined($Cpuset_path) or $Cpuset_path eq ""){
             warn("The cpuset feature is not activated in the oar.conf.\n");
             $err_job = 2;
         }elsif (defined($types->{cosystem})){

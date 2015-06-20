@@ -141,8 +141,8 @@ if ($ARGV[0] eq "init") {
         exit_myself(13,"Directory $Job_data->{oar_tmp_directory} does not exist and cannot be created");
     }
 
-    # Global cgroup/cpuset setup
     if (defined($Job_data->{cpuset_path})) {
+        # Global cgroup/cpuset setup
         print_log(4,"Locking $Lock_file.global");
         open(LOCKFILE,"> $Lock_file.global") or exit_myself(16,"Failed to open global lock file: $!");
         flock(LOCKFILE,LOCK_EX) or exit_myself(17,"flock failed: $!");
@@ -204,9 +204,8 @@ if ($ARGV[0] eq "init") {
         flock(LOCKFILE,LOCK_UN) or exit_myself(17,"flock failed: $!");
         close(LOCKFILE);
         print_log(4,"Unlocked $Lock_file.global");
-    }
-    # Job cgroup/cpuset setup
-    if (defined($Job_data->{cpuset_path})) {
+
+        # Job cgroup/cpuset setup
         if ($Job_data->{cpuset_name} =~ /,j=X$/) {
             # need a look in case of extensible job
             print_log(4,"Locking extensible job using $Lock_file.$Job_data->{cpuset_name}");

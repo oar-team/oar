@@ -7,7 +7,7 @@ use OAR::IO;
 use Data::Dumper;
 use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
 use IO::Socket::INET;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use OAR::Conf qw(init_conf dump_conf get_conf get_conf_with_default_param is_conf);
 use strict;
 
 # Log category
@@ -16,7 +16,8 @@ set_current_log_category('main');
 init_conf($ENV{OARCONFFILE});
 my $Remote_host = get_conf("SERVER_HOSTNAME");
 my $Remote_port = get_conf("SERVER_PORT");
-my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+my $Cpuset_field = get_conf_with_default_param("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD","cpuset");
+my $Cpuset_path = get_conf("CPUSET_PATH");
 my $Healing_exec_file = get_conf("SUSPECTED_HEALING_EXEC_FILE");
 my @resources_to_heal;
 
@@ -151,8 +152,7 @@ foreach my $i (@events_to_check){
             }else{
                 # If we exterminate a job and the cpuset feature is configured
                 # then the CPUSET clean will tell us which nodes are dead
-                my $cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
-                if (defined($cpuset_field) && ($i->{type} eq "EXTERMINATE_JOB")){
+                if (defined($Cpuset_path) and $Cpuset_path ne "" and $i->{type} eq "EXTERMINATE_JOB"){
                     @hosts = ();
                 }
             }
@@ -241,7 +241,8 @@ foreach my $i (@events_to_check){
                 ################
                 # SUSPEND PART #
                 ################
-                if (defined($Cpuset_field)){
+                # only if the cpuset feature is activated
+                if (defined($Cpuset_path)){
                     my $cpuset_name = OAR::IO::get_job_cpuset_name($base, $i->{job_id});
                     my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job});
                     my $suspend_data_hash = {

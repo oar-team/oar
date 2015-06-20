@@ -68,16 +68,14 @@ my $job = OAR::IO::get_job($base,$Job_id);
 my $Job_resource_manager = get_conf_with_default_param("JOB_RESOURCE_MANAGER_FILE", OAR::Tools::get_default_cpuset_file());
 ($Job_resource_manager =~ /^\//) or $Job_resource_manager = "$ENV{OARDIR}/$Job_resource_manager";
 
-my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+my $Cpuset_field = get_conf_with_default_param("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD","cpuset");
 my $Cpuset_path = get_conf("CPUSET_PATH");
 my $Cpuset_name = OAR::IO::get_job_cpuset_name($base, $Job_id);
 my $Cpuset_full_path;
-if (defined($Cpuset_path) and defined($Cpuset_field) and defined($Cpuset_name)){
-    $Cpuset_full_path = "$Cpuset_path/$Cpuset_name";
-}
 my $cpuset_nodes;
-if (defined($Cpuset_field)){
-     $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job});
+if (defined($Cpuset_path) and $Cpuset_path ne "") {
+    $Cpuset_full_path = "$Cpuset_path/$Cpuset_name";
+    $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$Cpuset_field,$job->{assigned_moldable_job});
 }
 
 my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($base,$Job_id);
@@ -230,7 +228,7 @@ my $Job_data = {
     array_index         => $job->{array_index},
     job_name            => defined($job->{job_name})?$job->{job_name}:"",
     project             => $job->{project},
-    cpuset_name         => defined($Cpuset_name)?$Cpuset_name:"", # renamed
+    cpuset_name         => $Cpuset_name,
     cpuset_path         => $Cpuset_path,
     nodes               => $cpuset_nodes,
     resources           => \@resources,
@@ -282,7 +280,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         my $taktuk_cmd = get_conf("TAKTUK_CMD");
         my ($tag,@bad_tmp) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$Job_data,$Job_resource_manager,"init",$Openssh_cmd,$taktuk_cmd,$base);
         if ($tag == 0){
-            my $str = "[bipbip $Job_id] [CPUSET] Bad cpuset file : $Job_resource_manager\n";
+            my $str = "[bipbip $Job_id] [CPUSET] could not find the job resource manager file: $Job_resource_manager\n";
             OAR::Modules::Judas::oar_error($str);
             OAR::IO::add_new_event($base, "CPUSET_MANAGER_FILE", $Job_id, $str);
         }else{

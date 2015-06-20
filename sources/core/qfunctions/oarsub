@@ -12,7 +12,7 @@ use Sys::Hostname;
 use Getopt::Long;
 use File::Basename;
 use File::Temp qw/ tempfile /;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use OAR::Conf qw(init_conf dump_conf get_conf get_conf_with_default_param is_conf);
 use OAR::Sub;
 
 my $Old_umask = sprintf("%lo",umask());
@@ -147,7 +147,7 @@ sub connect_job($$$){
             $host_to_connect_via_ssh = $Deploy_hostname;
         }
         #cpuset part
-        if ((defined($Cpuset_field) and defined($Cpuset_path) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
+        if (defined($Cpuset_path) and $Cpuset_path ne "" and not defined($types->{cosystem}) and not defined($types->{deploy}) and $#hosts >= 0)){
             $ENV{OAR_CPUSET} = $Cpuset_path.'/'.OAR::Sub::get_job_cpuset_name($job_id);
         }else{
             $ENV{OAR_CPUSET} = "";
@@ -452,7 +452,7 @@ if (!defined($Cosystem_hostname)){
     $Cosystem_hostname = $remote_host;
 }
 
-$Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+$Cpuset_field = get_conf_with_default_param("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD","cpuset");
 $Cpuset_path = get_conf("CPUSET_PATH");
 
 if (is_conf("OAR_RUNTIME_DIRECTORY")){

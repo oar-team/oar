@@ -87,7 +87,8 @@ my $base_ro = OAR::IO::connect_ro();
 
 my $SCHEDULER_RESOURCE_ORDER = get_conf("SCHEDULER_RESOURCE_ORDER");
 
-my $JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+my $CPUSET_PATH = get_conf("CPUSET_PATH");
+my $CPUSET_FIELD = get_conf_with_default_param("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD","cpuset");
 my $SERVER_HOSTNAME = get_conf("SERVER_HOSTNAME");
 my $SERVER_PORT = get_conf("SERVER_PORT");
 
@@ -1365,9 +1366,9 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
                 }
             }
 
-            if ((defined($JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD)) and ($skip == 0)){
+            if (defined($CPUSET_PATH) and $CPUSET_PATH ne "" and $skip == 0){
                 my $cpuset_name = OAR::IO::get_job_cpuset_name($base, $j->{job_id});
-                my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD,$j->{assigned_moldable_job});
+                my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($base,$CPUSET_FIELD,$j->{assigned_moldable_job});
                 my $suspend_data_hash = {
                     name => $cpuset_name,
                     job_id => $j->{job_id},

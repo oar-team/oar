@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 use Data::Dumper;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use OAR::Conf qw(init_conf dump_conf get_conf get_conf_with_default_param is_conf);
 use Getopt::Long;
 use OAR::Version;
 use OAR::Tools;
@@ -24,7 +24,7 @@ $Monitor_file = "$ENV{OARDIR}/$Monitor_file" if ($Monitor_file !~ /^\//);
 
 my $Taktuk_cmd = get_conf("TAKTUK_CMD");
 if (!defined($Taktuk_cmd)){
-    warn("ERROR: TAKTUK_CMD must be defined in $ENV{OARCONFFILE}.\n");
+    warn("Error: TAKTUK_CMD must be defined in $ENV{OARCONFFILE}.\n");
     exit(1);
 }
 
@@ -32,8 +32,8 @@ my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
 my $Cpuset_path = get_conf("CPUSET_PATH");
-if (!defined($Cpuset_path) or (! is_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD"))){
-    warn("The CPUSET feature must be configured to use this command\n");
+if (not defined($Cpuset_path) or $Cpuset_path eq ""){
+    warn("Error: the cpuset feature must be configured to use this command.\n");
     exit(6);
 }
 
