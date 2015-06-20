@@ -84,7 +84,7 @@ sub quit_oarexec($){
             my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
             my $string = sprintf("%02d:%02d:%02d", $hour,$min,$sec);
             if (!defined(OAR::Tools::notify_tcp_socket($Job_data->{almighty_hostname},$Job_data->{almighty_port},"OAREXEC_$Job_data->{job_id}"."_$exit_value"."_$Exit_script_code"."_$Job_data->{challenge}"))){
-                if ((defined($Job_data->{cpuset_full_path})) and ($nb_retry < $max_retry)){
+                if ($nb_retry < $max_retry){
                     print("[oarexec] [$Job_id] [$string] I notified Almighty with my exit value $exit_value and I will retry in $max_wait_time seconds if I am not killed by the cpuset_manager before\n");
                     $wait_time = $max_wait_time;
                 }else{
@@ -187,7 +187,7 @@ if( $@ ){
     print("[oarexec] [$Job_id] Timeout while receiving the job data\n");
     exit(30);
 }
-if (!defined($Job_data->{job_id})){
+if (not defined($Job_data->{job_id}) or $Job_data->{job_id} != $job_id){
     print("[oarexec] [$Job_id] Systax error in the received job data\n");
     exit(31);
 }
@@ -204,9 +204,10 @@ if (!(((-d $Tmp_file_prefix) and (-O $Tmp_file_prefix)) or (mkdir($Tmp_file_pref
     exit(8);
 }
 chdir($Tmp_file_prefix);
-if (defined($Job_data->{cpuset_path})) {
-    print("[oarexec] [$Job_id] not creating node and resources file because it should have been done by the job resource manager\n");
+if (defined($Job_data->{cpuset_path}) and $Job->data->{cpuset_path} ne "") {
+    print("[oarexec] [$Job_id] not creating node and resources files (handled by the job resource manager)\n");
 } else {
+    print("[oarexec] [$Job_id] creating node and resources files (job resource manager does not run for this job)\n");
     #create node set file
     $Node_file = "$Tmp_file_prefix/$Job_id";
     if (! open(FILE,">$Node_file")){
@@ -309,7 +310,7 @@ if ( $Job_data->{job_type} eq "PASSIVE" ){
 
 #resolve terminal type problems
 my $terminal = $ENV{TERM};
-if (($terminal ne "") and ($terminal ne "unknown")){
+if (defined($terminal) and ($terminal ne "") and ($terminal ne "unknown")){
     $ENV{TERM} = $terminal;
 }else{
     $ENV{TERM} = "xterm";
