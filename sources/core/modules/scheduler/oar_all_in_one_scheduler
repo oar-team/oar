@@ -79,6 +79,15 @@ my ($quotas, $err) = OAR::Schedulers::Quotas::read_conf_file("$QUOTA_FILE");
 if (defined($err)){
     oar_error("[$SCHEDULER_NAME] $err; QUOTA DISABLED\n");
 }
+
+##################
+# Suspend/resume #
+##################
+my $JUST_BEFORE_RESUME_EXEC_FILE = get_conf("JUST_BEFORE_RESUME_EXEC_FILE");
+my $SUSPEND_RESUME_SCRIPT_TIMEOUT = get_conf("SUSPEND_RESUME_SCRIPT_TIMEOUT");
+my $TAKTUK_CMD = get_conf("TAKTUK_CMD");
+my $SUSPEND_RESUME_FILE = get_conf("SUSPEND_RESUME_FILE");
+
 ###############################################################################
 
 my $exit_code = 0;
@@ -1341,23 +1350,21 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
             ###############
             # RESUME PART #
             ###############
-            my $script = get_conf("JUST_BEFORE_RESUME_EXEC_FILE");
-            my $timeout = get_conf("SUSPEND_RESUME_SCRIPT_TIMEOUT");
-            $timeout = OAR::Tools::get_default_suspend_resume_script_timeout() if (!defined($timeout));
+            $SUSPEND_RESUME_SCRIPT_TIMEOUT = OAR::Tools::get_default_suspend_resume_script_timeout() if (!defined($SUSPEND_RESUME_SCRIPT_TIMEOUT));
             my $skip = 0;
-            if (defined($script)){
+            if (defined($JUST_BEFORE_RESUME_EXEC_FILE)){
                 # Launch admin script
-                my $script_error = 0;
+                my $JUST_BEFORE_RESUME_EXEC_FILE_error = 0;
                 eval {
                     $SIG{ALRM} = sub { die "alarm\n" };
-                    alarm($timeout);
-                    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Running post suspend script: `$script $j->{job_id}'\n");
-                    $script_error = system("$script script $j->{job_id}");
-                    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] `$script $j->{job_id}' terminated\n");
+                    alarm($SUSPEND_RESUME_SCRIPT_TIMEOUT);
+                    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Running post suspend script: `$JUST_BEFORE_RESUME_EXEC_FILE $j->{job_id}'\n");
+                    $JUST_BEFORE_RESUME_EXEC_FILE_error = system("$JUST_BEFORE_RESUME_EXEC_FILE script $j->{job_id}");
+                    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] `$JUST_BEFORE_RESUME_EXEC_FILE $j->{job_id}' terminated\n");
                     alarm(0);
                 };
-                if( $@ || ($script_error != 0)){
-                    my $str = "[$SCHEDULER_NAME] [$j->{job_id}] Suspend script error: $@; return code = $script_error\n";
+                if( $@ || ($JUST_BEFORE_RESUME_EXEC_FILE_error != 0)){
+                    my $str = "[$SCHEDULER_NAME] [$j->{job_id}] Suspend script error: $@; return code = $JUST_BEFORE_RESUME_EXEC_FILE_error\n";
                     oar_error($str);
                     OAR::IO::add_new_event($base,"RESUME_SCRIPT_ERROR",$j->{job_id},$str);
                     OAR::IO::frag_job($base,$j->{job_id});
@@ -1375,13 +1382,11 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
                     oarexec_pid_file => OAR::Tools::get_oar_pid_file_name($j->{job_id}),
                 };
                 if (defined($cpuset_nodes)){
-                    my $TAKTUK_CMD = get_conf("TAKTUK_CMD");
-                    my $suspend_resume_file = get_conf("SUSPEND_RESUME_FILE");
-                    $suspend_resume_file = OAR::Tools::get_default_suspend_resume_file() if (!defined($suspend_resume_file));
-                    $suspend_resume_file = "$ENV{OARDIR}/$suspend_resume_file" if ($suspend_resume_file !~ /^\//);
-                    my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_resume_file,"resume",$OPENSSH_CMD,$TAKTUK_CMD,$base);
+                    $SUSPEND_RESUME_FILE = OAR::Tools::get_default_suspend_resume_file() if (!defined($SUSPEND_RESUME_FILE));
+                    $SUSPEND_RESUME_FILE = "$ENV{OARDIR}/$SUSPEND_RESUME_FILE" if ($SUSPEND_RESUME_FILE !~ /^\//);
+                    my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$SUSPEND_RESUME_FILE,"resume",$OPENSSH_CMD,$TAKTUK_CMD,$base);
                     if ($tag == 0){
-                        my $str = "[$SCHEDULER_NAME] [SUSPEND_RESUME] [$j->{job_id}] Bad suspend/resume file: $suspend_resume_file\n";
+                        my $str = "[$SCHEDULER_NAME] [SUSPEND_RESUME] [$j->{job_id}] Bad suspend/resume file: $SUSPEND_RESUME_FILE\n";
                         oar_error($str);
                         OAR::IO::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $j->{job_id}, $str);
                     }else{
