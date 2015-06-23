@@ -436,190 +436,93 @@ sub launch_command($){
 }
 
 
-# Create the perl script used to execute right command for the user
-# The resulting script can be launched with : perl -e 'script'
-sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$$$@){
-    my ($node_file,
-        $job_id,
-        $array_id,
-        $array_index,
-        $user,
-        $shell,
-        $launching_directory,
-        $stdout_file,
-        $stderr_file,
-        $resource_file,
-        $job_name,
-        $job_project,
-        $job_walltime,
-        $job_walltime_sec,
-        $job_env,
-        @cmd) = @_;
+# Create the script used to execute the job command as the job user
+sub get_oarexec_user_script($$$$$$$){
+    my $job_data = shift;
+    my $job_file_nodes = shift;
+    my $job_file_resources = shift;
+    my $job_file_env = shift;
+    my $shell = shift;
+    my $use_job_resource_manager = shift;
+    my $is_interactive_session = shift;
 
-#    if ((defined($job_env)) and ($job_env !~ /^\s*$/)){
-#        $cmd[0] = "export $job_env;".$cmd[0];
-#    }
-    # suitable Data::Dumper configuration for serialization
-    $Data::Dumper::Purity = 1;
-    $Data::Dumper::Terse = 1;
-    $Data::Dumper::Indent = 0;
-    $Data::Dumper::Deepcopy = 1;
-
-    my $cmd_serial = Dumper(\@cmd);
-
-    my $script = '
-$ENV{TERM} = "unknown";
-$ENV{BASH_ENV} = "~oar/.batch_job_bashrc";
-
-$ENV{OAR_STDOUT} = \''.$stdout_file.'\';
-$ENV{OAR_STDERR} = \''.$stderr_file.'\';
-$ENV{OAR_FILE_NODES} = \''.$node_file.'\';
-$ENV{OAR_JOBID} = '.$job_id.';
-$ENV{OAR_ARRAYID} = '.$array_id.';
-$ENV{OAR_ARRAYINDEX} = '.$array_index.';
-$ENV{OAR_USER} = \''.$user.'\';
-$ENV{OAR_WORKDIR} = \''.$launching_directory.'\';
-$ENV{OAR_RESOURCE_PROPERTIES_FILE} = \''.$resource_file.'\';
-$ENV{OAR_JOB_NAME} = \''.$job_name.'\';
-$ENV{OAR_PROJECT_NAME} = \''.$job_project.'\';
-$ENV{OAR_JOB_WALLTIME} = \''.$job_walltime.'\';
-$ENV{OAR_JOB_WALLTIME_SECONDS} = '.$job_walltime_sec.';
-
-$ENV{OAR_NODEFILE} = $ENV{OAR_FILE_NODES};
-$ENV{OAR_O_WORKDIR} = $ENV{OAR_WORKDIR};
-$ENV{OAR_NODE_FILE} = $ENV{OAR_FILE_NODES};
-$ENV{OAR_RESOURCE_FILE} = $ENV{OAR_FILE_NODES};
-$ENV{OAR_WORKING_DIRECTORY} = $ENV{OAR_WORKDIR};
-$ENV{OAR_JOB_ID} = $ENV{OAR_JOBID};
-$ENV{OAR_ARRAY_ID} = $ENV{OAR_ARRAYID};
-$ENV{OAR_ARRAY_INDEX} = $ENV{OAR_ARRAYINDEX};
-
-$ENV{SUDO_COMMAND}="OAR";
-delete($ENV{SSH_CLIENT});
-delete($ENV{SSH2_CLIENT});
-
-$ENV{SHLVL}=0;
-
-# Test if we can go into the launching directory
-if (!chdir($ENV{OAR_WORKING_DIRECTORY})){
-    exit(1);
-}
-
-my $shell_executed = "'.$shell.'";
-
-#Store old FD
-open(OLDSTDOUT, ">& STDOUT");
-open(OLDSTDERR, ">& STDERR");
-
-#Test if we can write into stdout and stderr files
-if ((!open(STDOUT, ">>$ENV{OAR_STDOUT}")) or (!open(STDERR, ">>$ENV{OAR_STDERR}"))){
-    exit(2);
-}
-
-# Get user command by the STDIN (for SECURITY)
-my $tmp = "";
-while (<STDIN>){
-    $tmp .= $_;
-}
-
-my $cmd_exec = eval($tmp);
-my $pid = fork;
-if($pid == 0){
-    # To be sure that user do not try to do something nasty
-    close(OLDSTDERR);
-    close(OLDSTDOUT);
-    exec({$shell_executed} $shell_executed,"-c",@{$cmd_exec});
-    # if exec do not find the command
-    warn("[OAR] Cannot find @{$cmd_exec}\n");
-    exit(-1);
-}
-select(OLDSTDOUT);
-$| = 1;
-print(OLDSTDOUT "USER_CMD_PID $pid\n");
-waitpid($pid,0);
-
-print(OLDSTDOUT "EXIT_CODE $?");
-close(STDOUT);
-close(STDERR);
-
-exit(0);
-';
-
-    return($script,$cmd_serial);
-}
-
-
-# Create the shell script used to execute right command for the user
-# The resulting script can be launched with : bash -c 'script'
-sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$$){
-    my ($node_file,
-        $job_id,
-        $array_id,
-        $array_index,
-        $user,
-        $shell,
-        $launching_directory,
-        $resource_file,
-        $job_name,
-        $job_project,
-        $job_walltime,
-        $job_walltime_sec,
-        $job_env) = @_;
-
-    my $exp_env = "";
-    if ($job_env !~ /^\s*$/){
-        #$job_env =~ s/\"/\\"/g;
-        $exp_env .= "export $job_env ;";
-    }
-
-    $launching_directory =~ s/\$/\\\$/s;
-    my $script = '
-if [ "a$TERM" == "a" ] || [ "x$TERM" == "xunknown" ];
-then
-    export TERM=xterm;
+    my $script = "set -x;set -e;\n";
+    if (defined($use_job_resource_manager)) {
+        $script .= <<EOF;
+if ! [ -r "$job_file_env" ]; then
+    exit 1;
 fi;
-
-'.$exp_env.'
-
-export OAR_FILE_NODES="'.$node_file.'";
-export OAR_JOBID='.$job_id.';
-export OAR_ARRAYID='.$array_id.';
-export OAR_ARRAYINDEX='.$array_index.';
-export OAR_USER="'.$user.'";
-export OAR_WORKDIR="'.$launching_directory.'";
-export OAR_RESOURCE_PROPERTIES_FILE="'.$resource_file.'";
-
-export OAR_NODEFILE=$OAR_FILE_NODES;
-export OAR_O_WORKDIR=$OAR_WORKDIR;
-export OAR_NODE_FILE=$OAR_FILE_NODES;
-export OAR_RESOURCE_FILE=$OAR_FILE_NODES;
-export OAR_WORKING_DIRECTORY=$OAR_WORKDIR;
-export OAR_JOB_ID=$OAR_JOBID;
-export OAR_ARRAY_ID=$OAR_ARRAYID;
-export OAR_ARRAY_INDEX=$OAR_ARRAYINDEX;
-export OAR_JOB_NAME="'.$job_name.'";
-export OAR_PROJECT_NAME="'.$job_project.'";
-export OAR_JOB_WALLTIME="'.$job_walltime.'";
-export OAR_JOB_WALLTIME_SECONDS='.$job_walltime_sec.';
-
-export SHELL="'.$shell.'";
-
-export SUDO_COMMAND=OAR;
-SHLVL=1;
-
-if ( cd "$OAR_WORKING_DIRECTORY" &> /dev/null );
-then
-    cd "$OAR_WORKING_DIRECTORY";
-else
+source "$job_file_env";
+EOF
+    } else {
+        $script .= <<EOF;
+export OAR_JOBID="$job_data->{job_id}";
+export OAR_JOB_ID="$job_data->{job_id}";
+export OAR_ARRAYID="$job_data->{array_id}";
+export OAR_ARRAY_ID="$job_data->{array_id}";
+export OAR_ARRAYINDEX="$job_data->{array_index}";
+export OAR_ARRAY_INDEX="$job_data->{array_index}";
+export OAR_USER="$job_data->{user}";
+export OAR_JOB_NAME="$job_data->{job_name}";
+export OAR_WORKDIR="$job_data->{launching_directory}";
+export OAR_O_WORKDIR="$job_data->{launching_directory}";
+export OAR_PROJECT_NAME="$job_data->{project}";
+export OAR_STDOUT="$job_data->{stdout_file}";
+export OAR_STDERR="$job_data->{stderr_file}";
+export OAR_JOB_WALLTIME="$job_data->{walltime}";
+export OAR_JOB_WALLTIME_SECONDS="$job_data->{walltime_seconds}";
+export OAR_NODEFILE="$job_file_nodes";
+export OAR_NODE_FILE="$job_file_nodes";
+export OAR_FILE_NODES="$job_file_nodes";
+export OAR_RESOURCE_PROPERTIES_FILE="$job_file_resources";
+export OAR_RESOURCE_FILE="$job_file_resources";
+EOF
+    }
+    $script .= <<EOF;
+if ! [ -n "\$OAR_NODEFILE" -a -r "\$OAR_NODEFILE" -a -n "\$OAR_RESOURCE_FILE" -a -r "\$OAR_RESOURCE_FILE" ]; then
     exit 2;
 fi;
+if ! [ -n "\$OAR_WORKING_DIRECTORY" ] || ! cd \$OAR_WORKING_DIRECTORY; then
+    exit 3;
+fi;
+if ! [ -n "\$OAR_STDOUT" -a -n "\$OAR_STDERR" ]; then
+    exit 4;
+fi;
 
-(exec -a -${SHELL##*/} $SHELL);
-
-exit 0
-';
-
-    return($script);
+export SHELL="$shell";
+EOF
+    if ($is_interactive_session) {
+        $script .= <<EOF;
+if [ -n "\$TERM" -o "\$TERM" == "unknown" ]; then
+    TERM="xterm";
+fi;
+SHLVL=1;
+( exec -a -\${SHELL##*/} \$SHELL );
+exit 0;
+EOF
+    } else {
+        $script .= <<EOF;
+TERM="unknown";
+unset SSH_CLIENT;
+unset SSH2_CLIENT;
+SHLVL=0;
+BASH_ENV="~oar/.batch_job_bashrc";
+declare -a CMD;
+read -a CMD;
+(
+    set -e;
+    exec 1>\$OAR_STDOUT;
+    exec 2>\$OAR_STDERR;
+    exec -a -\${SHELL##*/} \$SHELL -c "\${CMD[*]}";
+) &;
+echo -n "USER_CMD_PID ";
+jobs -p;
+wait %1;
+echo "EXIT_CODE \$?";
+exit 0;
+EOF
+    }
+    return $script;
 }
 
 sub get_bipbip_oarexec_rendez_vous(){

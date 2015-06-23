@@ -229,22 +229,16 @@ sub set_ssh_timeout($){
 	OAR::Tools::set_ssh_timeout($timeout);
 }
 
-sub get_oarexecuser_script_for_oarsub($){
-	my $params = shift;
-	my $node_file = $params->{node_file};
-    my $job_id = $params->{job_id};
-    my $array_id = $params->{array_id};
-    my $array_index = $params->{array_index};
-    my $user = $params->{user};
-    my $shell = $params->{shell};
-    my $launching_directory = $params->{launching_directory};
-    my $resource_file = $params->{resource_file};
-    my $job_name = $params->{job_name};
-    my $job_project = $params->{job_project};
-    my $job_walltime = $params->{job_walltime};
-    my $job_walltime_sec = $params->{job_walltime_sec};
-    my $job_env = $params->{job_env};
-	return OAR::Tools::get_oarexecuser_script_for_oarsub($node_file, $job_id, $array_id, $array_index, $user, $shell, $launching_directory, $resource_file, $job_name, $job_project, $job_walltime, $job_walltime_sec, $job_env);
+sub get_oarexec_user_script($$$$$$$){
+    my $job_data = shift;
+    my $job_file_nodes = shift;
+    my $job_file_resources = shift;
+    my $job_file_env = shift;
+    my $shell = shift;
+    my $use_job_resource_manager = shift;
+    my $is_interactive_session = shift;
+
+	return OAR::Tools::get_oarexec_user_script($job_data,$job_file_nodes, $job_file_resources, $job_file_env, $shell, $use_job_resource_manager, $is_interactive_session);
 }
 
 sub signal_oarexec($){
@@ -256,6 +250,12 @@ sub signal_oarexec($){
     my $base = undef;
     my $ssh_cmd = $params->{ssh_cmd};
 	return OAR::Tools::signal_oarexec($host, $job_id, $signal, $wait, $base, $ssh_cmd, '');
+}
+
+sub replace_jobid_tag_in_string($$) {
+    my $str = shift;
+    my $job_id = shift;
+    return OAR::Tools::replace_jobid_tag_in_string($str,$job_id);
 }
 
 sub duration_to_sql($){
