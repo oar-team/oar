@@ -122,7 +122,7 @@ sub call_server_prologue {
                     my ($children,$cmd_name) = OAR::Tools::get_one_process_children($pid);
                     kill(9,@{$children});
                 }
-                my $str = "[bipbip $Job_id] Server prologue timeouted (cmd : $cmd)";
+                my $str = "[bipbip] [$Job_id] Server prologue timeouted (cmd : $cmd)";
                 oar_error("$str\n");
                 OAR::IO::add_new_event($base,"SERVER_PROLOGUE_TIMEOUT",$Job_id,"$str");
                 OAR::IO::disconnect($base);
@@ -134,7 +134,7 @@ sub call_server_prologue {
                 exit(2);
             }
         }elsif ($exit_value != 0){
-            my $str = "[bipbip $Job_id] Server prologue exit code $exit_value (!=0) (cmd : $cmd)";
+            my $str = "[bipbip] [$Job_id] Server prologue exit code $exit_value (!=0) (cmd : $cmd)";
             oar_error("$str\n");
             OAR::IO::add_new_event($base,"SERVER_PROLOGUE_EXIT_CODE_ERROR",$Job_id,"$str");
             OAR::IO::disconnect($base);
@@ -156,24 +156,24 @@ if ((defined($Oarexec_reattach_exit_value)) and
      ($job->{state} eq "Resuming")
     )
    ){
-    oar_debug("[bipbip $Job_id] OAREXEC end: $Oarexec_reattach_exit_value $Oarexec_reattach_script_exit_value\n");
+    oar_debug("[bipbip] [$Job_id] OAREXEC end: $Oarexec_reattach_exit_value $Oarexec_reattach_script_exit_value\n");
     if ($Oarexec_reattach_exit_value =~ m/\d+/m){
         if ($Oarexec_challenge eq $job_challenge){
             OAR::IO::check_end_of_job($base, $Job_id, $Oarexec_reattach_script_exit_value, $Oarexec_reattach_exit_value, \@hosts, $Server_host, $Server_port,$job->{job_user},$job->{launching_directory},$Server_epilogue);
             OAR::IO::disconnect($base);
             exit(0);
         }else{
-            oar_error("[bipbip $Job_id] Bad challenge from oarexec, perhaps a pirate attack??? ($Oarexec_challenge).\n");
+            oar_error("[bipbip] [$Job_id] Bad challenge from oarexec, perhaps a pirate attack??? ($Oarexec_challenge).\n");
             OAR::IO::add_new_event($base, "BIPBIP_CHALLENGE", $Job_id, "Bad challenge from oarexec, perhaps a pirate attack??? ($Oarexec_challenge)");
             OAR::IO::disconnect($base);
             exit(2);
         }
     }else{
-        oar_error("[bipbip $Job_id] Bad argument for bipbip : $Oarexec_reattach_exit_value\n");
+        oar_error("[bipbip] [$Job_id] Bad argument for bipbip : $Oarexec_reattach_exit_value\n");
         OAR::IO::disconnect($base);
         exit(2);
     }
-    oar_debug("[bipbip $Job_id] should this case happen??\n");
+    oar_debug("[bipbip] [$Job_id] should this case happen??\n");
 }else{
     @resources = OAR::IO::get_current_assigned_job_resources($base,$job->{assigned_moldable_job});
     $moldable = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
@@ -183,7 +183,7 @@ if ((defined($Oarexec_reattach_exit_value)) and
         OAR::IO::set_job_state($base,$Job_id,"Launching");
         $job->{state} = "Launching";
     }else{
-        oar_warn("[bipbip $Job_id] Job already treated or deleted in the meantime\n");
+        oar_warn("[bipbip] [$Job_id] Job already treated or deleted in the meantime\n");
         OAR::IO::disconnect($base);
         exit(1);
     }
@@ -194,13 +194,13 @@ my $types = OAR::IO::get_job_types_hash($base,$Job_id);
 if (defined($types->{noop})){
     OAR::IO::set_job_state($base,$Job_id,"Running");
     OAR::IO::disconnect($base);
-    oar_debug("[bipbip $Job_id] User: $job->{job_user}; Set NOOP job to Running\n");
+    oar_debug("[bipbip] [$Job_id] User: $job->{job_user}; Set NOOP job to Running\n");
     call_server_prologue();
     exit(0);
 }
 
 # HERE we must launch oarexec on the first node
-oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
+oar_debug("[bipbip] [$Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
 
 if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
     my ($addr,$port) = split(/:/,$job->{info_type});
@@ -279,7 +279,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         my $taktuk_cmd = get_conf("TAKTUK_CMD");
         my ($tag,@bad_tmp) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$Job_data,$Job_resource_manager,"init",$Openssh_cmd,$taktuk_cmd,$base);
         if ($tag == 0){
-            my $str = "[bipbip $Job_id] [CPUSET] could not find the job resource manager file: $Job_resource_manager\n";
+            my $str = "[bipbip] [$Job_id] [CPUSET] could not find the job resource manager file: $Job_resource_manager\n";
             OAR::Modules::Judas::oar_error($str);
             OAR::IO::add_new_event($base, "CPUSET_MANAGER_FILE", $Job_id, $str);
         }else{
@@ -326,14 +326,14 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     #if (($#bad < 0) and (!defined($cpuset_nodes))){
     if ($#bad < 0){
         # CHECK nodes
-        oar_debug("[bipbip $Job_id] Check nodes : @hosts\n");
+        oar_debug("[bipbip] [$Job_id] Check nodes : @hosts\n");
         $event_type = "PING_CHECKER_NODE_SUSPECTED";
         @bad = OAR::PingChecker::test_hosts(@hosts);
     }
     if ($#bad >= 0){
         OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
         OAR::IO::set_job_message($base,$Job_id,"One or several nodes are not responding correctly");
-        oar_error("[bipbip $Job_id] /!\\ Some nodes are inaccessible ($event_type):\n@bad\n");
+        oar_error("[bipbip] [$Job_id] /!\\ Some nodes are inaccessible ($event_type):\n@bad\n");
         my $exit_bipbip = 1;
         if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
             my ($addr,$port) = split(/:/,$job->{info_type});
@@ -368,7 +368,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
             exit(2);
         }
     }else{
-        oar_debug("[bipbip $Job_id] No (enough) bad node\n");
+        oar_debug("[bipbip] [$Job_id] No (enough) bad node\n");
     }
     # end CHECK
 }
@@ -386,7 +386,7 @@ if ((defined($types->{cosystem})) or ($#hosts < 0)){
     $host_to_connect_via_ssh = $Deploy_hostname;
 }
 
-oar_debug("[bipbip $Job_id] run oarexec on node $host_to_connect_via_ssh\n");
+oar_debug("[bipbip] [$Job_id] run oarexec on node $host_to_connect_via_ssh\n");
 
 my $error = 50;
 my $exit_script_value = 'N';
@@ -421,7 +421,7 @@ eval {
     close(WRITE);
 
     while(<READ>){
-        oar_debug("[bipbip $Job_id] $_");
+        oar_debug("[bipbip] [$Job_id] $_");
         if (($init_done == 0) and ($_ eq OAR::Tools::get_bipbip_oarexec_rendez_vous())){
             $init_done = 1;
             if ($Oarexec_detach == 0){
@@ -430,10 +430,10 @@ eval {
             OAR::IO::set_job_state($base,$Job_id,"Running");
             # Notify interactive oarsub
             if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
-                oar_debug("[bipbip $Job_id] Interactive request ;Answer to the client Qsub -I\n");
+                oar_debug("[bipbip] [$Job_id] Interactive request ;Answer to the client Qsub -I\n");
                 my ($addr,$port) = split(/:/,$job->{info_type});
                 if (defined(OAR::Tools::notify_tcp_socket($addr,$port,"GOOD JOB"))){
-                    oar_error("[bipbip $Job_id] Frag job $Job_id because oarsub cannot be notified by the server on host: $addr:$port. Check your network and firewall configuration\n");
+                    oar_error("[bipbip] [$Job_id] Frag job $Job_id because oarsub cannot be notified by the server on host: $addr:$port. Check your network and firewall configuration\n");
                     OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
                     OAR::IO::frag_job($base,$Job_id);
                     OAR::IO::unlock_table($base);
@@ -455,7 +455,7 @@ eval {
     alarm(0);
 };
 if (($Oarexec_detach == 1) and ($error == 0)){
-    oar_debug("[bipbip $Job_id] Exit from bipbip normally\n");
+    oar_debug("[bipbip] [$Job_id] Exit from bipbip normally\n");
 }else{
     if ($init_done == 0){
         if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
