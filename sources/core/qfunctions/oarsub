@@ -53,6 +53,7 @@ my $Deploy_hostname;
 my $Cosystem_hostname;
 my $Cpuset_field;
 my $Cpuset_path;
+my $Cpuset_name;
 my $Host = hostname ;
 
 my $Server;
@@ -147,8 +148,9 @@ sub connect_job($$$){
             $host_to_connect_via_ssh = $Deploy_hostname;
         }
         #cpuset part
-        if (defined($Cpuset_path) and $Cpuset_path ne "" and not defined($types->{cosystem}) and not defined($types->{deploy}) and $#hosts >= 0)){
-            $ENV{OAR_CPUSET} = $Cpuset_path.'/'.OAR::Sub::get_job_cpuset_name($job_id);
+        $Cpuset_name = OAR::Sub::get_job_cpuset_name($job_id);
+        if (defined($Cpuset_path) and $Cpuset_path ne "" and not defined($types->{cosystem}) and not defined($types->{deploy}) and $#hosts >= 0){
+            $ENV{OAR_CPUSET} = "$Cpuset_path/$Cpuset_name";
         }else{
             $ENV{OAR_CPUSET} = "";
         }
@@ -168,25 +170,26 @@ sub connect_job($$$){
             system({"bash"} "bash","-c",'[ -x "'.$xauth_path.'" ] && OARDO_BECOME_USER='.$lusr.' oardodo bash --noprofile --norc -c "'.$xauth_path.' extract - ${DISPLAY/#localhost:/:}" | XAUTHORITY='.$new_xauthority.' '.$xauth_path.' -q merge - 2>/dev/null');
             $ENV{XAUTHORITY} = $new_xauthority;
         }
-        my $node_file = OAR::Sub::get_default_oarexec_directory()."/$job_id";
-        my $res_file = OAR::Sub::get_default_oarexec_directory()."/$job_id"."_resources";
+        my $node_file = OAR::Sub::get_default_oarexec_directory()."/$Cpuset_name/nodes";
+        my $res_file = OAR::Sub::get_default_oarexec_directory()."/$Cpuset_name/resources";
+        my $env_file = OAR::Sub::get_default_oarexec_directory()."/$Cpuset_name/env";
         my $oarsub_pids = OAR::Sub::get_oarsub_connections_file_name($job_id);
-		my %params = (
-					  "node_file" => $node_file,
-					  "job_id" => $job_id,
-					  "array_id" => $job->{array_id},
-					  "array_index" => $job->{array_index},
-					  "user" => $lusr,
-					  "shell" => $shell,
-					  "launching_directory" => $job->{launching_directory},
-					  "resource_file" => $res_file,
-					  "job_name" => $job->{job_name},
-					  "job_project" => $job->{project},
-					  "job_walltime" => OAR::Sub::duration_to_sql($moldable->{moldable_walltime}),
-					  "job_walltime_sec" => $moldable->{moldable_walltime},
-					  "job_env" => $job->{job_env}
-					  );
-        my $str = OAR::Sub::get_oarexecuser_script_for_oarsub(\%params);
+		my $job_data = {
+            "job_id" => $job_id,
+            "array_id" => $job->{array_id},
+            "array_index" => $job->{array_index},
+            "user" => $lusr,
+            "job_name" => $job->{job_name},
+            "launching_directory" => $job->{launching_directory},
+            "project" => $job->{project},
+            "stdout_file" => OAR::Sub::replace_jobid_tag_in_string($job->{stdout_file},$Job_id),
+            "stderr_file" => OAR::Sub::replace_jobid_tag_in_string($job->{stderr_file},$Job_id),
+            "walltime" => OAR::Sub::duration_to_sql($moldable->{moldable_walltime}),
+            "walltime_seconds" => $moldable->{moldable_walltime},
+            };
+        my $str = OAR::Sub::get_oarexec_user_script($job_data, $node_file, $res_file, $env_file, $shell, (defined($Cpuset_path) and $Cpuset_path ne "" and not defined($types->{cosystem}) and not defined($types->{deploy}) and $#hosts >= 0), 1);
+        warn("oarexec user script is:\n$str");
+
         my ($cmd_name,@cmd_opts) = split(" ",$openssh_cmd);
         my @cmd;
         my $i = 0;
@@ -206,7 +209,7 @@ sub connect_job($$$){
         $i++;
         $cmd[$i] = "-t";$i++;
         $cmd[$i] = $host_to_connect_via_ssh;$i++;
-        $str =~ s/\n//g;      
+        $str =~ s/\s*\n\s*/ /g;
         if (defined($types->{extensible})) {
             if ($ENV{DISPLAY} ne ""){
                 $cmd[$i] = "bash -c '($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$lusr oardodo $xauth_path merge -) && [ \"$lusr\" != \"$job_user\" ] && OARDO_BECOME_USER=$lusr oardodo bash --noprofile --norc -c \"chmod 660 \\\$HOME/.Xauthority\" ;TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
