@@ -12,7 +12,7 @@ package OAR::IO;
 require Exporter;
 
 use DBI;
-use OAR::Conf qw(init_conf get_conf is_conf reset_conf);
+use OAR::Conf qw(init_conf get_conf get_conf_with_default_param is_conf reset_conf);
 use Data::Dumper;
 use Time::Local;
 use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
@@ -8008,11 +8008,12 @@ sub job_finishing_sequence($$$$$$){
         # Clean all CPUSETs
         my $cpuset_path = get_conf("CPUSET_PATH");
         # the cpuset feature is activated
-        if (defined($cpuset_path) and $cpuset_path ne ""){
-            my $cpuset_full_path = $cpuset_path.'/'.$cpuset_name;
-        }
         my $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $job_id);
         my $cpuset_field = get_conf_with_default_param("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD","cpuset");
+        my $cpuset_full_path;
+        if (defined($cpuset_path) and $cpuset_path ne ""){
+            $cpuset_full_path = $cpuset_path.'/'.$cpuset_name;
+        }
         my $openssh_cmd = get_conf("OPENSSH_CMD");
         $openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($openssh_cmd));
         if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
