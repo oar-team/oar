@@ -188,7 +188,6 @@ sub connect_job($$$){
             "walltime_seconds" => $moldable->{moldable_walltime},
             };
         my $str = OAR::Sub::get_oarexec_user_script($job_data, $node_file, $res_file, $env_file, $shell, (defined($Cpuset_path) and $Cpuset_path ne "" and not defined($types->{cosystem}) and not defined($types->{deploy}) and $#hosts >= 0), 1);
-        warn("oarexec user script is:\n$str");
 
         my ($cmd_name,@cmd_opts) = split(" ",$openssh_cmd);
         my @cmd;
