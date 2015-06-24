@@ -570,7 +570,7 @@ sub get_job_resources(@) {
         if (not defined($distinct_property) or (defined($data->{property_distinct_resources}) and ($distinct_property eq $data->{property_distinct_resources}))) {
             $distinct_property = $data->{property_distinct_resources};
             foreach my $r (@{$data->{resources}}) {
-                $resources_lines_hash->{$r->{$data->{property_distinct_resources}}} = join(",",map { "$_ = '$r->{$_}'" } keys(%$r))."\n";
+                $resources_lines_hash->{$r->{$data->{property_distinct_resources}}} = join(",",map { "$_ = '$r->{$_}'" } keys(%$r));
             }
         } else {
             print_log(2,"Warning: extensible job resources could not be merged correctly");  
