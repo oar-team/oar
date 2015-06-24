@@ -446,8 +446,8 @@ sub get_oarexec_user_script($$$$$$$){
     my $use_job_resource_manager = shift;
     my $is_interactive_session = shift;
 
-    my $script = "set -x;set -e;\n";
-    if (defined($use_job_resource_manager)) {
+    my $script = "set -e;\n";
+    if ($use_job_resource_manager) {
         $script .= <<EOF;
 if ! [ -r "$job_file_env" ]; then
     exit 1;
@@ -511,12 +511,11 @@ declare -a CMD;
 read -a CMD;
 (
     set -e;
-    exec 1>\$OAR_STDOUT;
-    exec 2>\$OAR_STDERR;
+    exec 1> \$OAR_STDOUT;
+    exec 2> \$OAR_STDERR;
     exec -a -\${SHELL##*/} \$SHELL -c "\${CMD[*]}";
-) &;
-echo -n "USER_CMD_PID ";
-jobs -p;
+) &
+echo "USER_CMD_PID=\$!";
 wait %1;
 echo "EXIT_CODE \$?";
 exit 0;
