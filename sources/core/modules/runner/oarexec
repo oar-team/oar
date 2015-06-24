@@ -113,7 +113,13 @@ sub quit_oarexec($){
 #delete temporary file
 sub clean_all(){
     #system("rm -f $OAR_FILE_NODES $oarPidFile");
-    unlink($Nodes_file,$Resources_file,$Pid_file,OAR::Tools::get_oar_user_signal_file_name($Job_id));
+    if (defined($Job_data->{cpuset_path}) and $Job_data->{cpuset_path} ne "") {
+        print("[oarexec] [$Job_id] Not removing nodes and resources files (handled by the job resource manager)\n");
+    } else {
+        print("[oarexec] [$Job_id] removing nodes and resources files (job resource manager does not run for this job)\n");
+        unlink($Nodes_file,$Resources_file);
+    }
+    unlink($Pid_file,OAR::Tools::get_oar_user_signal_file_name($Job_id));
     # Kill oarsub connections
     my $file = OAR::Tools::get_oarsub_connections_file_name($Job_id);
     if (open(OARSUBS,$file)){
@@ -208,9 +214,9 @@ $Nodes_file = "$Tmp_file_prefix/$Job_data->{cpuset_name}/nodes";
 $Resources_file = "$Tmp_file_prefix/$Job_data->{cpuset_name}/resources";
 chdir($Tmp_file_prefix);
 if (defined($Job_data->{cpuset_path}) and $Job_data->{cpuset_path} ne "") {
-    print("[oarexec] [$Job_id] Not creating node and resources files (handled by the job resource manager)\n");
+    print("[oarexec] [$Job_id] Not creating nodes and resources files (handled by the job resource manager)\n");
 } else {
-    print("[oarexec] [$Job_id] Creating node and resources files (job resource manager does not run for this job)\n");
+    print("[oarexec] [$Job_id] Creating nodes and resources files (job resource manager does not run for this job)\n");
     #create node set file
     if (! mkdir "$Tmp_file_prefix/$Job_data->{cpuset_name}") {
         print("[oarexec] [$Job_id] Cannot create the job data directory $Tmp_file_prefix/$Job_data->{cpuset_name}\n");
@@ -423,6 +429,7 @@ sigprocmask(SIG_UNBLOCK, $Blockset);
 my $pid = $$;
 my $rin_script = '';
 if ($Job_data->{job_type} eq "PASSIVE"){
+    print("[oarexec] [$Job_id] Launcher script: @cmd\n");
     # For parsing script outputs
     pipe(pipe_script_read,pipe_script_write);
     autoflush pipe_script_write 1;
@@ -444,7 +451,6 @@ if ($Job_data->{job_type} eq "PASSIVE"){
         $SIG{PIPE} = 'DEFAULT';
         $SIG{HUP} = 'DEFAULT';
 
-        print("[oarexec] [$Job_id] Launcher script: @cmd\n");
         close(pipe_script_read);
         close(STDOUT);
         # Redirect script output into the pipe
@@ -466,6 +472,8 @@ if ($Job_data->{job_type} eq "PASSIVE"){
     # Send user command to the stdin of the oarexec script. Command will be executed by the final user (safe-gard for security)
     print(pipe_stdin_write $Job_data->{command}."\n");
     open(pipe_stdin_write,"<& /dev/null");
+} else {
+    print("[oarexec] [$Job_id] Launcher script: interactive command (oarsub -I)\n");
 }
 
 print("[oarexec] [$Job_id] Launcher script PID is $pid\n");
@@ -486,7 +494,7 @@ my $stop_loop = 0;
 my $user_cmd_pid = -1;
 # wait end of the child process or KILL notification
 while (($line_read ne $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
-    print("[oarexec] [$Job_id] Waiting for the end of the child process or a kill notification\n");
+    print("[oarexec] [$Job_id] Waiting for the end of the launcher script process or a kill notification\n");
     select($rin_tmp = $rin, undef, undef, undef);
     
     if (vec($rin_tmp, fileno(pipe_script_read), 1)){
@@ -498,10 +506,10 @@ while (($line_read ne $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
             close(pipe_stdin_write);
         }else{
             print("[oarexec] [$Job_id] Launcher script wrote: $res_read,$line_read\n");
-            if ($line_read =~ /^EXIT_CODE\s(\d+)$/){
+            if ($line_read =~ /^EXIT_CODE: (\d+)$/){
                 $Exit_script_code = $1;
                 print("OAREXEC_SCRIPT_EXIT_VALUE $Exit_script_code\n");
-            }elsif ($line_read =~ /^USER_CMD_PID=(\d+)$/){
+            }elsif ($line_read =~ /^USER_CMD_PID: (\d+)$/){
                 $user_cmd_pid = $1;
                 print("[oarexec] [$Job_id] User command PID is $user_cmd_pid\n");
             }

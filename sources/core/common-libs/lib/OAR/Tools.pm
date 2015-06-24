@@ -509,15 +509,16 @@ SHLVL=0;
 BASH_ENV="~oar/.batch_job_bashrc";
 declare -a CMD;
 read -a CMD;
+echo "USER_CMD: \${CMD[*]}";
 (
     set -e;
     exec 1> \$OAR_STDOUT;
     exec 2> \$OAR_STDERR;
     exec -a -\${SHELL##*/} \$SHELL -c "\${CMD[*]}";
 ) &
-echo "USER_CMD_PID=\$!";
+echo "USER_CMD_PID: \$!";
 wait %1;
-echo "EXIT_CODE \$?";
+echo "EXIT_CODE: \$?";
 exit 0;
 EOF
     }
