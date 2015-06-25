@@ -94,7 +94,7 @@ my $schedulertimeout = 60;
 my $scheduler_min_time_between_2_calls = get_conf_with_default_param("SCHEDULER_MIN_TIME_BETWEEN_2_CALLS", 1);
 my $scheduler_wanted = 0; # 1 if the scheduler must be run next time update
 
-# Max waiting time before check for jobs whose time allowed has elapsed
+# Max waiting time before looking for jobs whose walltime is exhausted
 my $villainstimeout = 10;
 
 # Max waiting time before check node states

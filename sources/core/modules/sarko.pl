@@ -25,7 +25,7 @@ if (is_conf("JOBDEL_WALLTIME")){
 
 if ($Leon_walltime <= $Leon_soft_walltime){
     $Leon_walltime = $Leon_soft_walltime + 1;
-    oar_warn("[sarko] (JOBDEL_WALLTIME <= JOBDEL_SOFTWALLTIME) so I must set JOBDEL_WALLTIME to $Leon_walltime\n");
+    oar_warn("[sarko] walltime < softwalltime, setting walltime to $Leon_walltime\n");
 }
 
 my $Server_hostname = get_conf("SERVER_HOSTNAME");
@@ -51,16 +51,14 @@ if (is_conf("OAR_RUNTIME_DIRECTORY")){
     OAR::Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
 }
 
-oar_debug("[sarko] JOBDEL_SOFTWALLTIME = $Leon_soft_walltime; JOBDEL_WALLTIME = $Leon_walltime\n");
+oar_debug("[sarko] softwalltime = $Leon_soft_walltime; walltime = $Leon_walltime\n");
 
 # get script args
 my $base = OAR::IO::connect();
 if (!defined($base)){
-    oar_error("[sarko] Can not connect to the database\n");
+    oar_error("[sarko] Cannot connect to the database\n");
     exit(1);
 }
-
-oar_debug("[sarko] Hello, identity control !!!\n");
 
 my $guilty_found=0;
 my $current = OAR::IO::get_date($base);
@@ -72,20 +70,20 @@ foreach my $j (OAR::IO::get_timered_job($base)){
     my $job_ref = OAR::IO::get_job($base,$j->{job_id});
     if (($job_ref->{state} eq "Terminated") || ($job_ref->{state} eq "Error") || ($job_ref->{state} eq "Finishing")){
         OAR::IO::job_fragged($base,$j->{job_id});
-        oar_debug("[sarko] I set to FRAGGED the job $j->{job_id}\n");
+        oar_debug("[sarko] [$j->{job_id}] set job to FRAGGED\n");
     }else{
         my $frag_date = OAR::IO::get_frag_date($base,$j->{job_id});
-        oar_debug("[sarko] frag date : $frag_date , $frag_date\n");
+        oar_debug("[sarko] [$j->{job_id}] frag date: $frag_date\n");
         if (($current > $frag_date+$Leon_soft_walltime) && ($current <= $frag_date+$Leon_walltime)){
-            oar_debug("[sarko] Leon will RE-FRAG bipbip of job $j->{job_id}\n");
+            oar_debug("[sarko] [$j->{job_id}] Leon will FRAG bipbip again\n");
             OAR::IO::job_refrag($base,$j->{job_id});
             $guilty_found=1;
         }elsif ($current > $frag_date+$Leon_walltime){
-            oar_debug("[sarko] Leon will EXTERMINATE bipbip of job $j->{job_id}\n");
+            oar_debug("[sarko] [$j->{job_id}] Leon will EXTERMINATE bipbip\n");
             OAR::IO::job_leon_exterminate($base,$j->{job_id});
             $guilty_found=1;
         }else{
-            oar_debug("[sarko] The leon timer is not yet expired for the job $j->{job_id}; I do nothing\n");
+            oar_debug("[sarko] [$j->{job_id}] Leon timer is not expired yet, nothing done\n");
         }
     }
 }
@@ -106,9 +104,9 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")){
         $max += OAR::IO::get_job_suspended_sum_duration($base,$job->{job_id},$current);
     }
 
-    oar_debug("[sarko] Job [$job->{job_id}] from $start with $max; current time=$current\n");
+    oar_debug("[sarko] [$job->{job_id}] starttime: $start walltime: $max current: $current\n");
     if ($current > $start+$max){
-        oar_debug("--> (Elapsed)\n");
+        oar_debug("[sarko] [$job->{job_id}] time is exhausted\n");
         $guilty_found=1;
         OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
         OAR::IO::frag_job($base, $job->{job_id});
@@ -116,7 +114,7 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")){
         OAR::IO::add_new_event($base,"WALLTIME",$job->{job_id},"[sarko] Job [$job->{job_id}] from $start with $max; current time=$current (Elapsed)");
     }elsif (($job->{checkpoint} > 0) && ($current >= ($start+$max-$job->{checkpoint}))){
         # OAR must notify the job to checkpoint itself
-        oar_debug("[sarko] Send checkpoint signal to the job $job->{job_id}\n");
+        oar_debug("[sarko] [$j->{job_id}] sending checkpoint signal to job\n");
         # Retrieve node names used by the job
         my @hosts = OAR::IO::get_job_current_hostnames($base,$job->{job_id});
         my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
@@ -138,21 +136,21 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")){
         };
         if ($@){
             if ($@ eq "alarm\n"){
-                $str_comment = "[sarko] Cannot contact $hosts[0], operation timouted (".OAR::Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $job->{job_id} on $host_to_connect";
+                $str_comment = "[sarko] [$j->{job_id}] cannot reach $hosts[0], operation timouted (".OAR::Tools::get_ssh_timeout()."s). Cannot send checkpoint signal to the job on $host_to_connect";
                 oar_warn("$str_comment\n");
                 OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$str_comment);
             }else{
-                $str_comment = "[sarko] An unknown error occured during the sending of the checkpoint signal to the job $job->{job_id} on the host $host_to_connect";
+                $str_comment = "[sarko] [$j->{job_id}] unknown error while sending the checkpoint signal to the job on host $host_to_connect";
                 oar_warn("$str_comment\n");
                 OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$str_comment);
             }
         }else{
             if ($exit_codes[0] == 0){
-                $str_comment = "[sarko] The job $job->{job_id} was notified to checkpoint itself on the node $host_to_connect";
+                $str_comment = "[sarko] [$j->{job_id}] job has been signaled to checkpoint on the node $host_to_connect";
                 oar_debug("$str_comment\n");
                 OAR::IO::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$job->{job_id},$str_comment);
             }else{
-                $str_comment = "[sarko] The kill command return a bad exit code (@exit_codes) for the job $job->{job_id} on the node $host_to_connect";
+                $str_comment = "[sarko] [$j->{job_id}] kill command returned a bad exit code: @exit_codes (host $host_to_connect)";
                 oar_warn("$str_comment\n");
                 OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$str_comment);
             }
