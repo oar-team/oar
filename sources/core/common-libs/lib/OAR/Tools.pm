@@ -453,6 +453,10 @@ if ! [ -r "$job_file_env" ]; then
     exit 1;
 fi;
 source "$job_file_env";
+if [ "\$OAR_STDOUT\" == "X" -o "\$OAR_STDERR\" == "X" ]; then
+    export OAR_STDOUT="$job_data->{stdout_file}";
+    export OAR_STDERR="$job_data->{stderr_file}";
+fi;
 EOF
     } else {
         $script .= <<EOF;
@@ -482,6 +486,7 @@ EOF
 if ! [ -n "\$OAR_NODEFILE" -a -r "\$OAR_NODEFILE" -a -n "\$OAR_RESOURCE_FILE" -a -r "\$OAR_RESOURCE_FILE" ]; then
     exit 2;
 fi;
+
 if ! [ -n "\$OAR_WORKING_DIRECTORY" ] || ! cd \$OAR_WORKING_DIRECTORY; then
     exit 3;
 fi;

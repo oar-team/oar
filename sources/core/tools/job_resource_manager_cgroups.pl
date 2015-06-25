@@ -671,6 +671,11 @@ sub get_job_env_x($@) {
     $bashcmd .= "export OAR_RESOURCE_PROPERTIES_FILE='$dir/$Job_file_resources'\n";
     $bashcmd .= "export OAR_RESOURCE_FILE='$dir/$Job_file_resources'\n";
     $bashcmd .= "export OAR_JOB_ENV_FILE='$dir/$Job_file_env'\n";
+    $bashcmd .= "export OAR_WORKDIR=\"\$HOME\"\n";
+    $bashcmd .= "export OAR_O_WORKDIR=\"\$HOME\"\n";
+    $bashcmd .= "export OAR_WORKING_DIRECTORY=\"\$HOME\"\n";
+    $bashcmd .= "export OAR_STDOUT='X'\n";
+    $bashcmd .= "export OAR_STDERR='X'\n";
     $bashcmd .= 'if [ "$USER" != "oar" ]; then'."\n";
     $bashcmd .= '  if [ ${SHELL##*/} == "bash" ]; then'."\n";
     foreach my $var (keys(%$env)) {
