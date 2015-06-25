@@ -232,7 +232,7 @@ sub connect_job($$$){
         if ($exit_value == 2){
             warn("# Error: cannot enter working directory: $job->{launching_directory}\n");
         }elsif($exit_value != 0){
-            warn("# Error: an unexpected error: $?\n");
+            warn("# Error: user shell exited with code $?\n");
         }
         if ($stop_oarexec > 0){
 			my %params = (
