@@ -446,7 +446,7 @@ sub get_oarexec_user_script($$$$$$$){
     my $use_job_resource_manager = shift;
     my $is_interactive_session = shift;
 
-    my $script = "set -e;\n";
+    my $script = "set -x;set -e;\n";
     if ($use_job_resource_manager) {
         $script .= <<EOF;
 if ! [ -r "$job_file_env" ]; then
