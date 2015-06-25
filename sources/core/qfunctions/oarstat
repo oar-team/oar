@@ -372,7 +372,8 @@ sub print_job_data($){
                 }
                 print("    message = $job_info->{message}\n");
                 if (!defined($data->{$job_info->{job_id}}->{scheduledStart})){
-                    $data->{$job_info->{job_id}}->{scheduledStart} = "no prediction";
+                    # Either the job is not scheduled yet, or it is terminated
+                    $data->{$job_info->{job_id}}->{scheduledStart} = "n/a";
                 }else{
                     $data->{$job_info->{job_id}}->{scheduledStart} = OAR::Stat::local_to_sql($data->{$job_info->{job_id}}->{scheduledStart});
                 }
