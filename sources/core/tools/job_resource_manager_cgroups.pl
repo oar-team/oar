@@ -353,9 +353,8 @@ if ($ARGV[0] eq "init") {
 
             # retrieve data from remaining extensible jobs if any
             my $data_x = get_extensible_jobs_data();
-
             if (keys(%$data_x) > 0) {
-                print_log(3,"Not killing any process since there are running extensible jobs:".join(", ",keys(%$data_x)));
+                print_log(3,"Not killing any process since extensible jobs are running: ".join(", ",keys(%$data_x)));
                 # update job files
                 create_job_files($Job_data_dir, values(%$data_x));
 
