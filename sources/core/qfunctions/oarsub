@@ -182,8 +182,8 @@ sub connect_job($$$){
             "job_name" => $job->{job_name},
             "launching_directory" => $job->{launching_directory},
             "project" => $job->{project},
-            "stdout_file" => OAR::Sub::replace_jobid_tag_in_string($job->{stdout_file},$Job_id),
-            "stderr_file" => OAR::Sub::replace_jobid_tag_in_string($job->{stderr_file},$Job_id),
+            "stdout_file" => OAR::Sub::replace_jobid_tag_in_string($job->{stdout_file},$job_id),
+            "stderr_file" => OAR::Sub::replace_jobid_tag_in_string($job->{stderr_file},$job_id),
             "walltime" => OAR::Sub::duration_to_sql($moldable->{moldable_walltime}),
             "walltime_seconds" => $moldable->{moldable_walltime},
             };
