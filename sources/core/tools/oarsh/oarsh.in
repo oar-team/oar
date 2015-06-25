@@ -4,6 +4,7 @@
 
 OLDUMASK=$(umask)
 umask 0022
+shopt -s nullglob
 
 ###############################################################################
 # Default variable definitions.
@@ -55,7 +56,7 @@ fi
 if [ "$OARSH_BYPASS_WHOLE_SECURITY" != "0" ]; then
     export OAR_CPUSET="undef"
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER" "$@"
-    echo "oarsh: Failed to connect using cpuset environement"
+    echo "oarsh: Failed to connect using cpuset environement" 1>&2
     exit 5
 fi
 
@@ -79,7 +80,7 @@ then
 
     umask $OLDUMASK
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "$@"
-    echo "oarsh: Failed to connect using the job key: $OAR_JOB_KEY_FILE"
+    echo "oarsh: Failed to connect using the job key: $OAR_JOB_KEY_FILE" 1>&2
     exit 3
 fi
 
@@ -94,18 +95,23 @@ if [ "$CPUSET_PATH" != "" ]; then
             OAR_CPUSET=$(< /proc/self/cpuset)
         fi
         if [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH/" ]; then
-            JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
-            if [ -r $JOB_KEY_FILE ]; then
+            # look for job keys for regular jobs and extensible jobs
+            for k in $OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}/jobkey $OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}/*/jobkey; do
+                if [ -r $k ]; then
+                    JOB_KEYS="$JOB_KEYS -i $k"
+                fi
+            done
+            if [ -n "$JOB_KEYS" ]; then
                 umask $OLDUMASK
-                exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $JOB_KEY_FILE "$@"
-                echo "oarsh: Failed to connect using the cpuset job key: $JOB_KEY_FILE"
+                exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS $JOB_KEYS "$@"
+                echo "oarsh: Failed to connect using a cpuset job key: ${JOB_KEYS//-i /}" 1>&2
                 exit 4
             fi
             export OAR_CPUSET
             export OAR_JOB_USER=$OARDO_USER
             umask $OLDUMASK
             exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER" "$@"
-            echo "oarsh: Failed to connect using cpuset environement"
+            echo "oarsh: Failed to connect using cpuset environement" 1>&2
             exit 5
         fi
     fi
@@ -147,7 +153,7 @@ if [ -n "$OAR_JOB_ID" ]; then
 
     umask $OLDUMASK
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER" "$@"
-    echo "oarsh: Failed to connect using cpuset environement"
+    echo "oarsh: Failed to connect using cpuset environement" 1>&2
     exit 5
 fi
 

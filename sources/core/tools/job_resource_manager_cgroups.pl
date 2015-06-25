@@ -99,14 +99,8 @@ my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 #               stderr_file => stderr file name
 #               launching_directory => launching directory
 #               ssh_keys => {
-#                               public => {
-#                                           file_name => "~oar/.ssh/authorized_keys"
-#                                           key => "public key content"
-#                                         }
-#                               private => {
-#                                           file_name => "directory where to store the private key"
-#                                           key => "private key content"
-#                                          }
+#                               public => "public key blob"
+#                               private => "private key blob"
 #                           }
 #               oar_tmp_directory => "path to the temp directory"
 #               user => "user name"
@@ -125,12 +119,14 @@ print_log(4,Dumper($Job_data));
 
 my $Lock_file = "$Job_data->{oar_tmp_directory}/job_resource_manager.lock_file";
 my $Job_cpuset_dir = (defined($Job_data->{cpuset_path}))?"$Job_data->{cpuset_path}/$Job_data->{cpuset_name}":"";
-my $Job_data_dir = (defined($Job_data->{cpuset_path}))?"$Job_data->{oar_tmp_directory}/$Job_data->{cpuset_name}":"$Job_data->{oar_tmp_directory}/$Job_data->{job_id}";
+my $Job_data_dir = "$Job_data->{oar_tmp_directory}/$Job_data->{cpuset_name}";
 my $Job_file_env = "env";
 my $Job_file_resources = "resources";
 my $Job_file_nodes = "nodes";
 my $Job_x_dir_prefix = "";
 my $Job_file_data = "data";
+my $Job_key_dir = "$Job_data_dir".(($Job_data->{cpuset_name} =~ /,j=X$/)?"/$Job_x_dir_prefix$Job_data->{job_id}":"");
+my $Ssh_authorized_keys = ".ssh/authorized_keys";
 
 my $bashcmd;
 print_log(2,"$Script_name $ARGV[0] (log level=$Job_data->{log_level})");
@@ -259,40 +255,38 @@ if ($ARGV[0] eq "init") {
     }
 
     # Copy ssh key files
-    if ($Job_data->{ssh_keys}->{private}->{key} ne "") {
+    if ($Job_data->{ssh_keys}->{private} ne "") {
         # private key
-        if (open(PRIV, ">".$Job_data->{ssh_keys}->{private}->{file_name})) {
-            chmod(0600,$Job_data->{ssh_keys}->{private}->{file_name});
-            if (!print(PRIV $Job_data->{ssh_keys}->{private}->{key})) {
-                unlink($Job_data->{ssh_keys}->{private}->{file_name});
-                exit_myself(8,"Error writing $Job_data->{ssh_keys}->{private}->{file_name}");
+        if (open(PRIV,">","$Job_key_dir/key")) {
+            chmod(0600,"$Job_key_dir/key");
+            if (!print(PRIV $Job_data->{ssh_keys}->{private})) {
+                unlink("$Job_key_dir/key");
+                exit_myself(8,"Error writing $Job_key_dir/key");
             }
             close(PRIV);
         }else{
-            exit_myself(7,"Error opening $Job_data->{ssh_keys}->{private}->{file_name}");
+            exit_myself(7,"Error opening $Job_key_dir/key");
         }
 
         # public key
-        if (open(PUB,"+<",$Job_data->{ssh_keys}->{public}->{file_name})) {
-            print_log(4,"Locking pub key $Job_data->{ssh_keys}->{public}->{file_name}");
+        if (open(PUB,"+<",$Ssh_authorized_keys)) {
+            print_log(4,"Locking $Ssh_authorized_keys");
             flock(PUB,LOCK_EX) or exit_myself(17,"flock failed: $!");
-            print_log(4,"Locked pub key $Job_data->{ssh_keys}->{public}->{file_name}");
+            print_log(4,"Locked authorized_key $Ssh_authorized_keys");
             seek(PUB,0,0) or exit_myself(18,"seek failed: $!");
-            my $out = "\n".$Job_data->{ssh_keys}->{public}->{key}."\n";
+            my $out = "\n".$Job_data->{ssh_keys}->{public}."\n";
             while (<PUB>) {
                 if ($_ =~ /environment=\"OAR_KEY=1\"/) {
                     # We are reading a OAR key
-                    $_ =~ /(ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
-                    my $oar_key = $2;
-                    $Job_data->{ssh_keys}->{public}->{key} =~ /(ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
-                    my $curr_key = $2;
+                    my ($oar_key) = $_ =~ /(?:ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
+                    my ($curr_key) = $Job_data->{ssh_keys}->{public} =~ /(?:ssh-dss|ssh-rsa)\s+([^\s^\n]+)/;
                     if ($curr_key eq $oar_key) {
-                        exit_myself(13,"Error: the user has specified the same ssh key than used by the user oar");
+                        exit_myself(13,"Error: user's ssh key cannot be the same as oar's");
                     }
                     $out .= $_;
                 }elsif ($_ =~ /environment=\"OAR_CPUSET=([\w\/]+)\"/) {
                     # Remove from authorized keys outdated keys (typically after a reboot)
-                    if (-d "/dev/cpuset/$1") {
+                    if (-d "$Job_data->{oar_tmp_directory}/$1") {
                         $out .= $_;
                     }
                 }else{
@@ -300,43 +294,43 @@ if ($ARGV[0] eq "init") {
                 }
             }
             if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))) {
-                exit_myself(9,"Error writing $Job_data->{ssh_keys}->{public}->{file_name}");
+                exit_myself(9,"Error writing $Ssh_authorized_keys");
             }
             flock(PUB,LOCK_UN) or exit_myself(17,"flock failed: $!");
             close(PUB);
-            print_log(4,"Unlocked pub key $Job_data->{ssh_keys}->{public}->{file_name}");
+            print_log(4,"Unlocked pub key $Ssh_authorized_keys");
         }else{
-            unlink($Job_data->{ssh_keys}->{private}->{file_name});
-            exit_myself(10,"Error opening $Job_data->{ssh_keys}->{public}->{file_name}");
+            unlink($Ssh_authorized_keys);
+            exit_myself(10,"Error opening $Ssh_authorized_keys");
         }
     }
 }elsif ($ARGV[0] eq "clean") {
     # delete ssh key files
-    if ($Job_data->{ssh_keys}->{private}->{key} ne "") {
+    if ($Job_data->{ssh_keys}->{private} ne "") {
         # private key
-        unlink($Job_data->{ssh_keys}->{private}->{file_name});
+        unlink("$Job_key_dir/key");
 
         # public key
-        if (open(PUB,"+<", $Job_data->{ssh_keys}->{public}->{file_name})) {
-            print_log(4,"Locking pub key $Job_data->{ssh_keys}->{public}->{file_name}");
+        if (open(PUB,"+<", $Ssh_authorized_keys)) {
+            print_log(4,"Locking $Ssh_authorized_keys");
             flock(PUB,LOCK_EX) or exit_myself(17,"flock failed: $!");
-            print_log(4,"Locked pub key $Job_data->{ssh_keys}->{public}->{file_name}");
+            print_log(4,"Locked $Ssh_authorized_keys");
             seek(PUB,0,0) or exit_myself(18,"seek failed: $!");
             #Change file on the fly
             my $out = "";
             while (<PUB>) {
-                if (($_ ne "\n") and ($_ ne $Job_data->{ssh_keys}->{public}->{key})) {
+                if (($_ ne "\n") and ($_ ne $Job_data->{ssh_keys}->{public})) {
                     $out .= $_;
                 }
             }
             if (!(seek(PUB,0,0) and print(PUB $out) and truncate(PUB,tell(PUB)))) {
-                exit_myself(12,"Error changing $Job_data->{ssh_keys}->{public}->{file_name}");
+                exit_myself(12,"Error changing $Ssh_authorized_keys");
             }
             flock(PUB,LOCK_UN) or exit_myself(17,"flock failed: $!");
             close(PUB);
-            print_log(4,"Unlocked pub key $Job_data->{ssh_keys}->{public}->{file_name}");
+            print_log(4,"Unlocked $Ssh_authorized_keys");
         }else{
-            exit_myself(11,"Error opening $Job_data->{ssh_keys}->{public}->{file_name}");
+            exit_myself(11,"Error opening $Ssh_authorized_keys");
         }
     }
 
@@ -667,61 +661,59 @@ sub get_job_env_x($@) {
         $bashcmd .= "unset $var\n";
     }
     $bashcmd .= <<EOS;
-if [ "\$USER" != "oar" ]; then
-  if [ \${SHELL##*/} == "bash" ] && [ -z "\$OAR_X_ENV_VAR" -o "\$OAR_X_ENV_VAR" == "yes" ]; then
-    if [ -z "\$OAR_X_ENV_VAR" ]; then
-        cat <<EOF
+if [ \${SHELL##*/} == "bash" ] && [ -z "\$OAR_X_ENV_VAR" -o "\$OAR_X_ENV_VAR" == "yes" ]; then
+  if [ -z "\$OAR_X_ENV_VAR" ]; then
+    cat <<EOF
 # Warning:
 # OAR environment variables are set but won't be exported to child processes, 
 # because data of extensible jobs are stored in bash arrays which cannot be exported. 
 # Set "OAR_X_ENV_VAR=no" to get the basic variables only, but exported.
 # Set "OAR_X_ENV_VAR=yes" to prevent the display of this message.
 EOF
-    fi
+  fi
 EOS
     # Warning: with bash arrays, a == a[0], but bash array cannot be exported
     foreach my $var (keys(%$env)) {
         while (my ($key,$value) = each(%{$env->{$var}})){
-            $bashcmd .= "    $var"."[$key]='$value'\n";
+            $bashcmd .= "  $var"."[$key]='$value'\n";
         }
     }
     $bashcmd .= <<EOS;
-    OAR_JOBID='X'
-    OAR_JOB_ID='X'
-    OAR_ARRAYID='X'
-    OAR_ARRAY_ID='X'
-    OAR_ARRAYINDEX='X'
-    OAR_ARRAY_INDEX='X'
-    OAR_NODEFILE='$dir/$Job_file_nodes'
-    OAR_NODE_FILE='$dir/$Job_file_nodes'
-    OAR_FILE_NODES='$dir/$Job_file_nodes'
-    OAR_RESOURCE_PROPERTIES_FILE='$dir/$Job_file_resources'
-    OAR_RESOURCE_FILE='$dir/$Job_file_resources'
-    OAR_JOB_ENV_FILE='$dir/$Job_file_env'
-    OAR_WORKDIR=\"\$HOME\"
-    OAR_O_WORKDIR=\"\$HOME\"
-    OAR_WORKING_DIRECTORY=\"\$HOME\"
-    OAR_STDOUT='X'
-    OAR_STDERR='X'
-  else
-    export OAR_JOBID='X'
-    export OAR_JOB_ID='X'
-    export OAR_ARRAYID='X'
-    export OAR_ARRAY_ID='X'
-    export OAR_ARRAYINDEX='X'
-    export OAR_ARRAY_INDEX='X'
-    export OAR_NODEFILE='$dir/$Job_file_nodes'
-    export OAR_NODE_FILE='$dir/$Job_file_nodes'
-    export OAR_FILE_NODES='$dir/$Job_file_nodes'
-    export OAR_RESOURCE_PROPERTIES_FILE='$dir/$Job_file_resources'
-    export OAR_RESOURCE_FILE='$dir/$Job_file_resources'
-    export OAR_JOB_ENV_FILE='$dir/$Job_file_env'
-    export OAR_WORKDIR=\"\$HOME\"
-    export OAR_O_WORKDIR=\"\$HOME\"
-    export OAR_WORKING_DIRECTORY=\"\$HOME\"
-    export OAR_STDOUT='X'
-    export OAR_STDERR='X'
-  fi
+  OAR_JOBID='X'
+  OAR_JOB_ID='X'
+  OAR_ARRAYID='X'
+  OAR_ARRAY_ID='X'
+  OAR_ARRAYINDEX='X'
+  OAR_ARRAY_INDEX='X'
+  OAR_NODEFILE='$dir/$Job_file_nodes'
+  OAR_NODE_FILE='$dir/$Job_file_nodes'
+  OAR_FILE_NODES='$dir/$Job_file_nodes'
+  OAR_RESOURCE_PROPERTIES_FILE='$dir/$Job_file_resources'
+  OAR_RESOURCE_FILE='$dir/$Job_file_resources'
+  OAR_JOB_ENV_FILE='$dir/$Job_file_env'
+  OAR_WORKDIR=\"\$HOME\"
+  OAR_O_WORKDIR=\"\$HOME\"
+  OAR_WORKING_DIRECTORY=\"\$HOME\"
+  OAR_STDOUT='X'
+  OAR_STDERR='X'
+else
+  export OAR_JOBID='X'
+  export OAR_JOB_ID='X'
+  export OAR_ARRAYID='X'
+  export OAR_ARRAY_ID='X'
+  export OAR_ARRAYINDEX='X'
+  export OAR_ARRAY_INDEX='X'
+  export OAR_NODEFILE='$dir/$Job_file_nodes'
+  export OAR_NODE_FILE='$dir/$Job_file_nodes'
+  export OAR_FILE_NODES='$dir/$Job_file_nodes'
+  export OAR_RESOURCE_PROPERTIES_FILE='$dir/$Job_file_resources'
+  export OAR_RESOURCE_FILE='$dir/$Job_file_resources'
+  export OAR_JOB_ENV_FILE='$dir/$Job_file_env'
+  export OAR_WORKDIR=\"\$HOME\"
+  export OAR_O_WORKDIR=\"\$HOME\"
+  export OAR_WORKING_DIRECTORY=\"\$HOME\"
+  export OAR_STDOUT='X'
+  export OAR_STDERR='X'
 fi
 EOS
     return $bashcmd;

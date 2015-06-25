@@ -8047,14 +8047,8 @@ sub job_finishing_sequence($$$$$$){
                 stderr_file         => OAR::Tools::replace_jobid_tag_in_string($job->{stderr_file},$job_id),
                 launching_directory => $job->{launching_directory},
                 ssh_keys => {
-                                public => {
-                                            file_name => OAR::Tools::get_default_oar_ssh_authorized_keys_file(),
-                                            key => $ssh_public_key
-                                          },
-                                private => {
-                                            file_name => OAR::Tools::get_private_ssh_key_file_name($cpuset_name),
-                                            key => $ssh_private_key
-                                           }
+                                public => $ssh_public_key,
+                                private => $ssh_private_key,
                             },
                 oar_tmp_directory => OAR::Tools::get_default_oarexec_directory(),
                 user => $job->{job_user},

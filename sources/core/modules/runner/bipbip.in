@@ -238,14 +238,8 @@ my $Job_data = {
     launching_directory => $job->{launching_directory},
     challenge           => $job_challenge,
     ssh_keys            => {
-        public => {
-            file_name => OAR::Tools::get_default_oar_ssh_authorized_keys_file(),
-            key => $ssh_public_key
-        },
-        private => {
-            file_name => OAR::Tools::get_private_ssh_key_file_name($Cpuset_name),
-            key => $ssh_private_key
-        },
+        public => $ssh_public_key,
+        private => $ssh_private_key,
     },
     oar_tmp_directory => OAR::Tools::get_default_oarexec_directory(),
     user => $job->{job_user},
@@ -274,7 +268,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     # CPUSET PART #
     ###############
 
-    $ssh_public_key = OAR::Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_full_path,$job->{job_user});
+    $Job_data->{ssh_keys}->{public} = OAR::Tools::format_ssh_pub_key($ssh_public_key,$Cpuset_full_path,$job->{job_user});
     if (defined($cpuset_nodes) and (keys(%{$cpuset_nodes}) > 0)){
         my $taktuk_cmd = get_conf("TAKTUK_CMD");
         my ($tag,@bad_tmp) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$Job_data,$Job_resource_manager,"init",$Openssh_cmd,$taktuk_cmd,$base);
