@@ -533,7 +533,7 @@ sub get_extensible_jobs_data() {
     my $data_x = {};
     opendir(DIR, $Job_data_dir) or exit_myself(18,"Failed to open directory $Job_data_dir: $!");
     foreach my $x (readdir(DIR)) {
-        if (my $job_id = $x =~ /^$Job_x_dir_prefix(\d+)$/) {; 
+        if (my ($job_id) = $x =~ /^$Job_x_dir_prefix(\d+)$/) {; 
             my $data_file = "$Job_data_dir/$x/$Job_file_data";
             open(FILE,"< $data_file") or exit_myself(99,"Failed to open file $data_file: $!");
             $slurp = do { local $/; <FILE> };
