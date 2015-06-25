@@ -620,7 +620,6 @@ sub uniq(@) {
 }
 
 # retrieve the env file from one or more data structures (extensible jobs)
-# NB: with bash arrays, a == a[0], but bash array cannot be exported...
 sub get_job_env_x($@) {
     my $dir=shift();
     my $env = {};
@@ -649,42 +648,82 @@ sub get_job_env_x($@) {
         $env->{OAR_RESOURCE_FILE}->{$job_id} = "$dir/$Job_x_dir_prefix$job_id/$Job_file_resources";
         $env->{OAR_JOB_ENV_FILE}->{$job_id} = "$dir/$Job_x_dir_prefix$job_id/$Job_file_env";
     }
-    my $bashcmd; 
-    $bashcmd .= "export OAR_JOBID='X'\n";
-    $bashcmd .= "export OAR_JOB_ID='X'\n";
-    $bashcmd .= "export OAR_X_JOB_ID=\"(".join(" ",map {"'$_'" } values(%{$env->{OAR_JOB_ID}})).")\"\n";
+    my $bashcmd = "export OAR_X_JOB_ID=\"(".join(" ",map {"'$_'" } values(%{$env->{OAR_JOB_ID}})).")\"\n";
     my @users = uniq(values(%{$env->{OAR_USER}}));
     if (@users > 1) {
-        print_log(2,"Warning: extensible jobs unexpectedly belong different users: ".join(", ",@users));
-    } else {
-        $bashcmd .= "export OAR_USER='".$users[0]."'\n";
+        exit_myself(99,"Extensible jobs cannot belong to different users: ".join(", ",@users));
     }
+    $bashcmd .= "export OAR_USER='".$users[0]."'\n";
+    delete($env->{OAR_USER});
+
     my @names = uniq(values(%{$env->{OAR_JOB_NAME}}));
     if (@names > 1) {
-        print_log(2,"Warning: extensible jobs unexpected have different names: ".join(", ",@names));
-    } else {
-      $bashcmd .= "export OAR_JOB_NAME='".$names[0]."'\n";
+        exit_myself(99,"Extensible jobs cannot have different names: ".join(", ",@names));
     }
-    $bashcmd .= "export OAR_NODEFILE='$dir/$Job_file_nodes'\n";
-    $bashcmd .= "export OAR_NODE_FILE='$dir/$Job_file_nodes'\n";
-    $bashcmd .= "export OAR_FILES_NODES='$dir/$Job_file_nodes'\n";
-    $bashcmd .= "export OAR_RESOURCE_PROPERTIES_FILE='$dir/$Job_file_resources'\n";
-    $bashcmd .= "export OAR_RESOURCE_FILE='$dir/$Job_file_resources'\n";
-    $bashcmd .= "export OAR_JOB_ENV_FILE='$dir/$Job_file_env'\n";
-    $bashcmd .= "export OAR_WORKDIR=\"\$HOME\"\n";
-    $bashcmd .= "export OAR_O_WORKDIR=\"\$HOME\"\n";
-    $bashcmd .= "export OAR_WORKING_DIRECTORY=\"\$HOME\"\n";
-    $bashcmd .= "export OAR_STDOUT='X'\n";
-    $bashcmd .= "export OAR_STDERR='X'\n";
-    $bashcmd .= 'if [ "$USER" != "oar" ]; then'."\n";
-    $bashcmd .= '  if [ ${SHELL##*/} == "bash" ]; then'."\n";
+    $bashcmd .= "export OAR_JOB_NAME='".$names[0]."'\n";
+    delete($env->{OAR_JOB_NAME});
+
+    foreach my $var (keys(%$env)) {
+        $bashcmd .= "unset $var\n";
+    }
+    $bashcmd .= <<EOS;
+if [ "\$USER" != "oar" ]; then
+  if [ \${SHELL##*/} == "bash" ] && [ -z "\$OAR_X_ENV_VAR" -o "\$OAR_X_ENV_VAR" == "yes" ]; then
+    if [ -z "\$OAR_X_ENV_VAR" ]; then
+        cat <<EOF
+# Warning:
+# OAR environment variables are set but won't be exported to child processes, 
+# because data of extensible jobs are stored in bash arrays which cannot be exported. 
+# Set "OAR_X_ENV_VAR=no" to get the basic variables only, but exported.
+# Set "OAR_X_ENV_VAR=yes" to prevent the display of this message.
+EOF
+    fi
+EOS
+    # Warning: with bash arrays, a == a[0], but bash array cannot be exported
     foreach my $var (keys(%$env)) {
         while (my ($key,$value) = each(%{$env->{$var}})){
             $bashcmd .= "    $var"."[$key]='$value'\n";
         }
     }
-    $bashcmd .= "  fi\n";
-    $bashcmd .= "fi\n";
+    $bashcmd .= <<EOS;
+    OAR_JOBID='X'
+    OAR_JOB_ID='X'
+    OAR_ARRAYID='X'
+    OAR_ARRAY_ID='X'
+    OAR_ARRAYINDEX='X'
+    OAR_ARRAY_INDEX='X'
+    OAR_NODEFILE='$dir/$Job_file_nodes'
+    OAR_NODE_FILE='$dir/$Job_file_nodes'
+    OAR_FILE_NODES='$dir/$Job_file_nodes'
+    OAR_RESOURCE_PROPERTIES_FILE='$dir/$Job_file_resources'
+    OAR_RESOURCE_FILE='$dir/$Job_file_resources'
+    OAR_JOB_ENV_FILE='$dir/$Job_file_env'
+    OAR_WORKDIR=\"\$HOME\"
+    OAR_O_WORKDIR=\"\$HOME\"
+    OAR_WORKING_DIRECTORY=\"\$HOME\"
+    OAR_STDOUT='X'
+    OAR_STDERR='X'
+  else
+    export OAR_JOBID='X'
+    export OAR_JOB_ID='X'
+    export OAR_ARRAYID='X'
+    export OAR_ARRAY_ID='X'
+    export OAR_ARRAYINDEX='X'
+    export OAR_ARRAY_INDEX='X'
+    export OAR_NODEFILE='$dir/$Job_file_nodes'
+    export OAR_NODE_FILE='$dir/$Job_file_nodes'
+    export OAR_FILE_NODES='$dir/$Job_file_nodes'
+    export OAR_RESOURCE_PROPERTIES_FILE='$dir/$Job_file_resources'
+    export OAR_RESOURCE_FILE='$dir/$Job_file_resources'
+    export OAR_JOB_ENV_FILE='$dir/$Job_file_env'
+    export OAR_WORKDIR=\"\$HOME\"
+    export OAR_O_WORKDIR=\"\$HOME\"
+    export OAR_WORKING_DIRECTORY=\"\$HOME\"
+    export OAR_STDOUT='X'
+    export OAR_STDERR='X'
+  fi
+fi
+EOS
     return $bashcmd;
 }
 

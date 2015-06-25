@@ -452,10 +452,20 @@ sub get_oarexec_user_script($$$$$$$){
 if ! [ -r "$job_file_env" ]; then
     exit 1;
 fi;
+OAR_X_ENV_VAR="no";
 source "$job_file_env";
-if [ "\$OAR_STDOUT\" == "X" -o "\$OAR_STDERR\" == "X" ]; then
+if [ "\$OAR_JOBID\" == "X" ]; then
+    export OAR_JOBID="$job_data->{job_id}";
+    export OAR_JOB_ID="$job_data->{job_id}";
     export OAR_STDOUT="$job_data->{stdout_file}";
     export OAR_STDERR="$job_data->{stderr_file}";
+    export OAR_ARRAYID="$job_data->{array_id}";
+    export OAR_ARRAY_ID="$job_data->{array_id}";
+    export OAR_ARRAYINDEX="$job_data->{array_index}";
+    export OAR_ARRAY_INDEX="$job_data->{array_index}";
+    export OAR_WORKDIR="$job_data->{launching_directory}";
+    export OAR_O_WORKDIR="$job_data->{launching_directory}";
+    export OAR_WORKING_DIRECTORY="$job_data->{launching_directory}";
 fi;
 EOF
     } else {
@@ -470,6 +480,7 @@ export OAR_USER="$job_data->{user}";
 export OAR_JOB_NAME="$job_data->{job_name}";
 export OAR_WORKDIR="$job_data->{launching_directory}";
 export OAR_O_WORKDIR="$job_data->{launching_directory}";
+export OAR_WORKING_DIRECTORY="$job_data->{launching_directory}";
 export OAR_PROJECT_NAME="$job_data->{project}";
 export OAR_STDOUT="$job_data->{stdout_file}";
 export OAR_STDERR="$job_data->{stderr_file}";
@@ -487,7 +498,7 @@ if ! [ -n "\$OAR_NODEFILE" -a -r "\$OAR_NODEFILE" -a -n "\$OAR_RESOURCE_FILE" -a
     exit 2;
 fi;
 
-if ! [ -n "\$OAR_WORKING_DIRECTORY" ] || ! cd \$OAR_WORKING_DIRECTORY; then
+if ! [ -n "\$OAR_WORKDIR" ] || ! cd \$OAR_WORKDIR; then
     exit 3;
 fi;
 if ! [ -n "\$OAR_STDOUT" -a -n "\$OAR_STDERR" ]; then
