@@ -41,6 +41,13 @@ oarsub -l cpu=2,walltime=20:00:00 -l cpu=4,walltime=10:00:00 -l cpu=8,walltime=5
 
 OAR will schedule one of these three resource definitions (depending of the current load of the cluster).
 
+You can also request different groups of ressources, for example:
+
+oarsub -l "{mem > 64}/host=1+{mem < 60}/host=3",walltime=1:00:00 -I
+
+This will give 1 host with the property "mem" > 64 and 3 hosts with the property "mem" < 60.
+The syntax inside {...} is the same used for "-p" option.
+
 =item B<--array> <NUMBER>
 
 Submit an array job containing "NUMBER" subjobs. All the subjobs share the same array_id but each subjob is independent and has its own job_id. All the subjobs have the same characteristics (script, requirements) and can be identified by an environment variable $OAR_ARRAY_INDEX.
@@ -282,11 +289,17 @@ Submit a parametric array job (file params.txt):
 =item Parameter File example (params.txt): 
 
 =item # my param file
+
 =item #single param
-=item 100
+
+=item p100
+
 =item #a subjob without parameters
+
 =item ""
+
 =item #a subjob with a string containing spaces as parameter
+
 =item "arg1a arg1b arg1c" "arg2a arg2b"
 
 =back 
