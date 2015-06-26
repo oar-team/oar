@@ -87,7 +87,7 @@ $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
   'deploy' => 'url(#deployPattern)', 
   'container' => 'url(#containerPattern)', 
   'timesharing=(\*|user),(\*|name)' => 'url(#timesharingPattern)', 
-  'set_placeholder=\w+' => 'url(#placeholderPattern)',
+  'placeholder=\w+' => 'url(#placeholderPattern)',
   );
 $CONF['job_click_url'] = ''; // set a URL to open when a job is double-clicked, %%JOBID%% is to be replaced by the jobid in the URL
 $CONF['resource_click_url'] = ''; // set a URL to open when a resource is double-clicked, %%TYPE%% is to be replaced by the resource type and %%ID%% by the resource id in the URL
