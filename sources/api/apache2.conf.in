@@ -107,8 +107,8 @@ ScriptAlias /oarapi-public %%WWW_ROOTDIR%%/cgi-bin/oarapi/oarapi.cgi
         <IfModule rewrite_module>
            RewriteEngine On
            RewriteCond %{REMOTE_IDENT} (.*)
-           RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
-           RequestHeader add X_REMOTE_IDENT %{MY_REMOTE_IDENT}e
+           RewriteRule .* - [E=X_REMOTE_IDENT:%1]
+           RequestHeader add X_REMOTE_IDENT %{X_REMOTE_IDENT}e
         </IfModule>
      </IfModule>
   </IfModule>
@@ -148,11 +148,11 @@ ScriptAlias /oarapi-public %%WWW_ROOTDIR%%/cgi-bin/oarapi/oarapi.cgi
 #    ## This example only allows users kameleon and oar to be authenticated to the API
 #    # RewriteEngine On
 #    # RewriteCond %{HTTP:X_REMOTE_IDENT}  (.*)
-#    # RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
+#    # RewriteRule .* - [E=X_REMOTE_IDENT:%1]
 #    # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=kameleon
 #    # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=oar
-#    # RewriteRule .* - [E=MY_REMOTE_IDENT:]
-#    # RequestHeader set X_REMOTE_IDENT %{MY_REMOTE_IDENT}e
+#    # RewriteRule .* - [E=X_REMOTE_IDENT:]
+#    # RequestHeader set X_REMOTE_IDENT %{X_REMOTE_IDENT}e
 #  </IfModule>
 #</Location>
 
