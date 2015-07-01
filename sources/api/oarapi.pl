@@ -172,13 +172,21 @@ if ( defined( $ENV{AUTHENTICATE_UID} ) && $ENV{AUTHENTICATE_UID} ne "" ) {
   $authenticated_user = $ENV{AUTHENTICATE_UID};
 }
 else {
+  # Get ident id from headers or from environement if not in the headers
+  my $remote_ident="";
+  if (defined($q->http('X_REMOTE_IDENT'))) { 
+    $remote_ident=$q->http('X_REMOTE_IDENT'); 
+  }else { 
+    if (defined($ENV{X_REMOTE_IDENT})) { 
+      $remote_ident=$ENV{X_REMOTE_IDENT}; 
+    } 
+  }
   if ( $TRUST_IDENT
-    && defined( $q->http('X_REMOTE_IDENT') )
-    && $q->http('X_REMOTE_IDENT') ne ""
-    && $q->http('X_REMOTE_IDENT') ne "unknown" 
-    && $q->http('X_REMOTE_IDENT') ne "(null)" )
+    && $remote_ident ne ""
+    && $remote_ident ne "unknown" 
+    && $remote_ident ne "(null)" )
   {
-    $authenticated_user = $q->http('X_REMOTE_IDENT');
+    $authenticated_user = $remote_ident;
   }
 }
 
