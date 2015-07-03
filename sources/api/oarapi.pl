@@ -176,10 +176,8 @@ else {
   my $remote_ident="";
   if (defined($q->http('X_REMOTE_IDENT'))) { 
     $remote_ident=$q->http('X_REMOTE_IDENT'); 
-  }else { 
-    if (defined($ENV{X_REMOTE_IDENT})) { 
-      $remote_ident=$ENV{X_REMOTE_IDENT}; 
-    } 
+  }elsif (defined($ENV{X_REMOTE_IDENT})) { 
+    $remote_ident=$ENV{X_REMOTE_IDENT}; 
   }
   if ( $TRUST_IDENT
     && $remote_ident ne ""
@@ -190,12 +188,16 @@ else {
   }
 }
 
+`echo $authenticated_user > /tmp/apiauth`;
+
 ##############################################################################
 # URI prefix header variable
 ##############################################################################
 
 if (defined( $q->http('HTTP_X_API_PATH_PREFIX') ) ) {
   $OAR::API::HTTP_X_API_PATH_PREFIX=$q->http('HTTP_X_API_PATH_PREFIX');
+}elsif (defined($ENV{X_API_PATH_PREFIX})) {
+  $OAR::API::HTTP_X_API_PATH_PREFIX=$ENV{X_API_PATH_PREFIX};
 }else{
   $OAR::API::HTTP_X_API_PATH_PREFIX="";
 }

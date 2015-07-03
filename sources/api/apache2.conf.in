@@ -51,6 +51,13 @@ ScriptAlias /oarapi-public %%WWW_ROOTDIR%%/cgi-bin/oarapi/oarapi.cgi
   </ifModule>
 </Directory>
 
+# Set the X_API_PATH_PREFIX variable to value of the header of the same name
+<IfModule rewrite_module>
+   RewriteEngine On
+   RewriteCond %{HTTP:X_API_PATH_PREFIX}  (.*)
+   RewriteRule .* - [E=X_API_PATH_PREFIX:%1]
+</IfModule>
+
 # By URI options
 # This is where you should pay attention to security!
 # The OAR API trusts the X_REMOTE_IDENT header variable to be the login name
@@ -99,11 +106,7 @@ ScriptAlias /oarapi-public %%WWW_ROOTDIR%%/cgi-bin/oarapi/oarapi.cgi
   <IfModule ident_module>
      IdentityCheck On
      <IfModule headers_module>
-        # Set the X_REMOTE_IDENT http header value to REMOTE_IDENT env value
-        RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}e
-        # or For https:
-        #RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}s
-        # Or if it doesn't work, do this with mod_rewrite (depends on apache version):
+        # Set the X_REMOTE_IDENT http header and variable to REMOTE_IDENT env value
         <IfModule rewrite_module>
            RewriteEngine On
            RewriteCond %{REMOTE_IDENT} (.*)
