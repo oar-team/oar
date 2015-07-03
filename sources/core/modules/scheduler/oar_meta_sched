@@ -403,16 +403,21 @@ sub treate_waiting_reservation_jobs($){
         my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
         my $moldable = $job_descriptions->[0];
     
-        my $start = $job->{start_time};
-        my $max = $moldable->[1];
         # Test if the job is in the past
-        if ($current_time_sec > $start+$max ){
+        if ($current_time_sec > $job->{start_time}+$moldable->[1] ){
             oar_warn("[MetaSched] [$job->{job_id}] set job state to Error: reservation expired and couldn't be started\n");
             OAR::IO::set_job_state($base, $job->{job_id}, "Error");
             OAR::IO::set_job_message($base,$job->{job_id},"Reservation expired and couldn't be started.");
             $return = 1;
         }
-        my @resa_alive_resources = OAR::IO::get_gantt_Alive_resources_for_job($base,$moldable->[2]);
+        my @resa_alive_resources;
+        my $jobtypes = OAR::IO::get_job_types_hash($base,$job->{job_id});
+        if (defined($jobtypes->{"standbystart"}) and (defined($jobtypes->{noop}) or defined($jobtypes->{deploy}) or defined($jobtypes->{cosystem}))) {
+          oar_debug("[MetaSched] [$job->{job_id}] reservation is allowed to start with some resources in standby");
+          @resa_alive_resources = OAR::IO::get_gantt_Alive_or_Standby_resources_for_job($base,$moldable->[2], $job->{start_time} + $moldable->[1] + $Security_time_overhead);
+        } else {
+          @resa_alive_resources = OAR::IO::get_gantt_Alive_resources_for_job($base,$moldable->[2]);
+        }
         # test if the job is going to be launched and there is no Alive node
         if (($#resa_alive_resources < 0) && ($job->{start_time} <= $current_time_sec)){
             oar_warn("[MetaSched] [$job->{job_id}] reservation is waiting because no resource is present\n");
@@ -924,7 +929,7 @@ if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD")
     }
 
     if ($#node_halt >= 0){
-        oar_debug("[MetaSched] Powerinf off some nodes (energy saving): @node_halt\n");
+        oar_debug("[MetaSched] Powering off some nodes (energy saving): @node_halt\n");
         # Using the built-in energy saving module to shut down nodes
         if (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes") {
             if (OAR::Modules::Hulot::halt_nodes(\@node_halt) ) {
@@ -948,7 +953,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
     my @nodes = OAR::IO::get_gantt_hostname_to_wake_up($base, $current_time_sec, $wakeup_time);
 
     if ($#nodes >= 0){
-        oar_debug("[MetaSched] Awaking some nodes: @nodes\n");
+        oar_debug("[MetaSched] Waking-up some nodes: @nodes\n");
         # Using the built-in energy saving module to wake up nodes
         if (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes") {
             if (OAR::Modules::Hulot::wake_up_nodes(\@nodes) ) {
@@ -963,6 +968,8 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
                 oar_error("[MetaSched] Error: command $cmd timeouted (${timeout_cmd}s) while trying to wake-up some nodes\n");
             }
         }
+    } else {
+        oar_debug("[MetaSched] No node to wake-up\n");
     }
 }
 

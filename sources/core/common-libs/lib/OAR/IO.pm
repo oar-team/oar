@@ -6627,18 +6627,44 @@ WHERE
     AND gp.start_time <= $date
     AND j.state = \'Waiting\'
     AND r.resource_id = gr.resource_id
-    AND r.state = \'Alive\'
-    AND NOT EXISTS ( 
-        SELECT 1
-        FROM resources rr, gantt_jobs_resources gg
-        WHERE
-            gg.moldable_job_id = gr.moldable_job_id
-            AND rr.resource_id = gg.resource_id
-            AND (
-                rr.state IN (\'Dead\',\'Suspected\',\'Absent\')
-                OR rr.next_state IN (\'Dead\',\'Suspected\',\'Absent\')
+    AND CASE WHEN EXISTS (
+                       SELECT 1
+                       FROM job_types t
+                       WHERE 
+                           m.moldable_job_id = t.job_id
+                           AND t.type = \'standbystart\'
+        )
+        THEN (
+            (r.state = \'Alive\' OR ( r.state = \'Absent\' AND (gp.start_time + m.moldable_walltime) <= r.available_upto))
+            AND NOT EXISTS ( 
+                SELECT 1
+                FROM resources rr, gantt_jobs_resources gg
+                WHERE
+                    gg.moldable_job_id = gr.moldable_job_id
+                    AND rr.resource_id = gg.resource_id
+                    AND (
+                        rr.state IN (\'Dead\',\'Suspected\')
+                        OR rr.next_state IN (\'Dead\',\'Suspected\')
+                        OR (rr.state = \'Absent\' AND (gp.start_time + m.moldable_walltime) > rr.available_upto)
+                        OR ( rr.next_state = \'Absent\' AND (gp.start_time + m.moldable_walltime) > rr.available_upto)
+                    )
             )
-    )
+        )
+        ELSE (
+            r.state = \'Alive\'
+            AND NOT EXISTS ( 
+                SELECT 1
+                FROM resources rr, gantt_jobs_resources gg
+                WHERE
+                    gg.moldable_job_id = gr.moldable_job_id
+                    AND rr.resource_id = gg.resource_id
+                    AND (
+                        rr.state IN (\'Dead\',\'Suspected\',\'Absent\')
+                        OR rr.next_state IN (\'Dead\',\'Suspected\',\'Absent\')
+                    )
+            )
+        )
+        END
 EOS
     my $sth = $dbh->prepare($req);
     $sth->execute();
@@ -6673,6 +6699,13 @@ sub get_gantt_hostname_to_wake_up($$$){
                    AND resources.network_address != \'\'
                    AND resources.type = \'default\'
                    AND (g2.start_time + m.moldable_walltime) <= resources.available_upto
+                   AND NOT EXISTS (
+                       SELECT 1
+                       FROM job_types t
+                       WHERE 
+                           m.moldable_job_id = t.job_id
+                           AND t.type = \'standbystart\'
+                       )
                GROUP BY resources.network_address
               ";
     
@@ -6751,6 +6784,35 @@ sub get_gantt_Alive_resources_for_job($$){
                                 g.moldable_job_id = $moldable_job_id 
                                 AND r.resource_id = g.resource_id
                                 AND r.state = \'Alive\'
+                            ");
+    $sth->execute();
+    my @res ;
+    while (my @ref = $sth->fetchrow_array()) {
+        push( @res, $ref[0]); 
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+
+#Get Alive or Standby resources for a job
+#args : base, moldable job id
+sub get_gantt_Alive_or_Standby_resources_for_job($$$){
+    my $dbh = shift;
+    my $moldable_job_id = shift;
+    my $max_date = shift;
+    
+    $max_date = $max_date + $Cm_security_duration;
+    my $sth = $dbh->prepare("SELECT g.resource_id
+                             FROM gantt_jobs_resources g, resources r
+                             WHERE
+                                g.moldable_job_id = $moldable_job_id 
+                                AND r.resource_id = g.resource_id
+                                AND ( r.state = \'Alive\' 
+                                    OR ( r.state = \'Absent\'
+                                        AND r.available_upto > $max_date )
+                                    )
                             ");
     $sth->execute();
     my @res ;

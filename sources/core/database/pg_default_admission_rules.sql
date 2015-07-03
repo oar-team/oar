@@ -200,6 +200,7 @@ my @types = (
     qr/^inner=\\w+$/,                          qr/^timesharing=(?:(?:\\*|user),(?:\\*|name)|(?:\\*|name),(?:\\*|user))$/,
     qr/^token\\:\\w+\\=\\d+$/,                 qr/^noop$/,
     qr/^(?:postpone|deadline|expire)=\\d\\d\\d\\d-\\d\\d-\\d\\d(?:\\s+\\d\\d:\\d\\d(?::\\d\\d)?)?$/,
+    qr/^standbystart$/,
 );
 foreach my $t ( @{$type_list} ) {
     my $match = 0;
