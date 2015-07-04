@@ -113,6 +113,8 @@ $CONF['static_patterns'] = <<<EOT
 </pattern> 
 EOT;
 
+// Standby job display options for the part shown in the future
+$CONF['standby_truncate_state_to_now'] = 1; // default: 1
 // Besteffort job display options for the part shown in the future
 $CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
 $CONF['besteffort_pattern'] = <<<EOT
@@ -872,7 +874,9 @@ if ($gantt_now < $gantt_stop_date) {
           if ($gantt_now < $gantt_start_date) {
             unset($resource_id->states[$i]);
           } elseif ($state->real_stop == 0) {
-            $state->set_stop($gantt_now);
+            if ($CONF['standby_truncate_state_to_now']) {
+              $state->set_stop($gantt_now);
+            }
             $state->value = 'Standby';
           }
         }

@@ -343,10 +343,10 @@ $output .= <<<EOT
 ref date:<input id="datetime" type="datetime"/><button type="button" onclick="set_now()">now</button>
 timespan:<select id="timespan"/>
 EOT;
-    foreach ($CONF['nav_timespans'] as $key => $value) {
-      $output .= "<option " . (($value == $CONF['nav_default_timespan'])?"selected ":"") . "value=\"$value\">$key</option>\n";
-    }
-    $output .= <<<EOT
+foreach ($CONF['nav_timespans'] as $key => $value) {
+  $output .= "<option " . (($value == $CONF['nav_default_timespan'])?"selected ":"") . "value=\"$value\">$key</option>\n";
+}
+$output .= <<<EOT
 </select>
 
 <button type="button" onclick="set_time()">ok</button><button type="button" onclick="hide_timepicker()">cancel</button>
@@ -355,7 +355,7 @@ EOT;
 permalink:<a id="permalink" href=".">URL</a>
 
 EOT;
-    if (count($CONF['nav_resource_bases']) > 1 or count($CONF['nav_filters']) > 1 or count($CONF['nav_timezones']) > 1 or count($CONF['nav_scales'])) {
+if (count($CONF['nav_resource_bases']) > 1 or count($CONF['nav_filters']) > 1 or count($CONF['nav_timezones']) > 1 or count($CONF['nav_scales'])) {
   if (count($CONF['nav_resource_bases']) > 1) {
     $output .= <<<EOT
 base resource:<select id="baseResourceSelect">
