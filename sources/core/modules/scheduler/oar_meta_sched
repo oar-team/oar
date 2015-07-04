@@ -412,7 +412,9 @@ sub treate_waiting_reservation_jobs($){
         }
         my @resa_alive_resources;
         my $jobtypes = OAR::IO::get_job_types_hash($base,$job->{job_id});
-        if (defined($jobtypes->{"standbystart"}) and (defined($jobtypes->{noop}) or defined($jobtypes->{deploy}) or defined($jobtypes->{cosystem}))) {
+        if ((defined($jobtypes->{deploy}) and $jobtypes->{deploy} eq "standby")
+            or (defined($jobtypes->{cosystem}) and $jobtypes->{cosystem} eq "standby")
+            or (defined($jobtypes->{noop}) and $jobtypes->{noop} eq "standby")) {
           oar_debug("[MetaSched] [$job->{job_id}] reservation is allowed to start with some resources in standby");
           @resa_alive_resources = OAR::IO::get_gantt_Alive_or_Standby_resources_for_job($base,$moldable->[2], $job->{start_time} + $moldable->[1] + $Security_time_overhead);
         } else {

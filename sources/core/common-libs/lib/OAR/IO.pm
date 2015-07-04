@@ -6632,7 +6632,7 @@ WHERE
                        FROM job_types t
                        WHERE 
                            m.moldable_job_id = t.job_id
-                           AND t.type = \'standbystart\'
+                           AND t.type in (\'deploy=standby\', \'cosystem=standby\', \'noop=standby\')
         )
         THEN (
             (r.state = \'Alive\' OR ( r.state = \'Absent\' AND (gp.start_time + m.moldable_walltime) <= r.available_upto))
@@ -6704,7 +6704,7 @@ sub get_gantt_hostname_to_wake_up($$$){
                        FROM job_types t
                        WHERE 
                            m.moldable_job_id = t.job_id
-                           AND t.type = \'standbystart\'
+                           AND t.type in (\'deploy=standby\', \'cosystem=standby\', \'noop=standby\')
                        )
                GROUP BY resources.network_address
               ";
