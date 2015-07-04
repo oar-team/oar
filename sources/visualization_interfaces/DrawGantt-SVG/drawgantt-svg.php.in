@@ -43,10 +43,10 @@ $CONF['state_colors'] = array( // colors for the states of the resources in the 
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)', 'Drain' => 'url(#drainPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
   'besteffort' => 'url(#besteffortPattern)', 
-  'deploy' => 'url(#deployPattern)', 
-  'container' => 'url(#containerPattern)', 
+  'deploy(=\w)?' => 'url(#deployPattern)', 
+  'container(=\w+)?' => 'url(#containerPattern)', 
   'timesharing=(\*|user),(\*|name)' => 'url(#timesharingPattern)', 
-  'set_placeholder=\w+' => 'url(#placeholderPattern)',
+  'placeholder=\w+' => 'url(#placeholderPattern)',
   );
 $CONF['job_click_url'] = ''; // set a URL to open when a job is double-clicked, %%JOBID%% is to be replaced by the jobid in the URL
 $CONF['resource_click_url'] = ''; // set a URL to open when a resource is double-clicked, %%TYPE%% is to be replaced by the resource type and %%ID%% by the resource id in the URL

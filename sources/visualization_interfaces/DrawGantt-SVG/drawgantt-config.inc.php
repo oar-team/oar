@@ -84,8 +84,8 @@ $CONF['state_colors'] = array( // colors for the states of the resources in the 
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)', 'Drain' => 'url(#drainPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
   'besteffort' => 'url(#besteffortPattern)', 
-  'deploy' => 'url(#deployPattern)', 
-  'container' => 'url(#containerPattern)', 
+  'deploy(=\w)?' => 'url(#deployPattern)', 
+  'container(=\w+)?' => 'url(#containerPattern)', 
   'timesharing=(\*|user),(\*|name)' => 'url(#timesharingPattern)', 
   'placeholder=\w+' => 'url(#placeholderPattern)',
   );
