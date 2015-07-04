@@ -6616,76 +6616,36 @@ sub get_gantt_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $req = "SELECT DISTINCT(j.job_id)
-               FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-               WHERE
-                   m.moldable_index = \'CURRENT\'
-                   AND g1.moldable_job_id = g2.moldable_job_id
-                   AND m.moldable_id = g1.moldable_job_id
-                   AND j.job_id = m.moldable_job_id
-                   AND g2.start_time <= $date
-                   AND j.state = \'Waiting\'
-                   AND resources.resource_id = g1.resource_id
-                   AND (resources.state IN (\'Dead\',\'Suspected\',\'Absent\')
-                        OR resources.next_state IN (\'Dead\',\'Suspected\',\'Absent\'))
-              ";
-    if ($Db_type eq "Pg"){
-        $req = "SELECT DISTINCT(j.job_id)
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-                WHERE
-                   g1.moldable_job_id = g2.moldable_job_id
-                   AND m.moldable_id = g1.moldable_job_id
-                   AND j.job_id = m.moldable_job_id
-                   AND g2.start_time <= $date
-                   AND j.state = \'Waiting\'
-                   AND resources.resource_id = g1.resource_id
-                   AND (resources.state IN (\'Dead\',\'Suspected\',\'Absent\')
-                        OR resources.next_state IN (\'Dead\',\'Suspected\',\'Absent\'))
-              ";
-    }
-
+    my $req = <<EOS;
+SELECT gp.moldable_job_id, gr.resource_id, j.job_id
+FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
+WHERE
+    m.moldable_index = \'CURRENT\'
+    AND gr.moldable_job_id = gp.moldable_job_id
+    AND m.moldable_id = gr.moldable_job_id
+    AND j.job_id = m.moldable_job_id
+    AND gp.start_time <= $date
+    AND j.state = \'Waiting\'
+    AND r.resource_id = gr.resource_id
+    AND r.state = \'Alive\'
+    AND NOT EXISTS ( 
+        SELECT 1
+        FROM resources rr, gantt_jobs_resources gg
+        WHERE
+            gg.moldable_job_id = gr.moldable_job_id
+            AND rr.resource_id = gg.resource_id
+            AND (
+                rr.state IN (\'Dead\',\'Suspected\',\'Absent\')
+                OR rr.next_state IN (\'Dead\',\'Suspected\',\'Absent\')
+            )
+    )
+EOS
     my $sth = $dbh->prepare($req);
-    $sth->execute();
-    my %jobs_not_to_launch;
-    while (my @ref = $sth->fetchrow_array()) {
-        $jobs_not_to_launch{$ref[0]} = 1;
-    }
-    $sth->finish();
-
-    $req = "    SELECT g2.moldable_job_id, g1.resource_id, j.job_id
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-                WHERE
-                    m.moldable_index = \'CURRENT\'
-                    AND g1.moldable_job_id = g2.moldable_job_id
-                    AND m.moldable_id = g1.moldable_job_id
-                    AND j.job_id = m.moldable_job_id
-                    AND g2.start_time <= $date
-                    AND j.state = \'Waiting\'
-                    AND resources.resource_id = g1.resource_id
-                    AND resources.state = \'Alive\'
-           ";
-    if ($Db_type eq "Pg"){
-        $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-                WHERE
-                    g1.moldable_job_id = g2.moldable_job_id
-                    AND m.moldable_id = g1.moldable_job_id
-                    AND j.job_id = m.moldable_job_id
-                    AND g2.start_time <= $date
-                    AND j.state = \'Waiting\'
-                    AND resources.resource_id = g1.resource_id
-                    AND resources.state = \'Alive\'
-           ";
-
-    }
-    $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
     while (my @ref = $sth->fetchrow_array()) {
-        if(!defined($jobs_not_to_launch{$ref[2]})){
-            $res{$ref[2]}->[0] = $ref[0];
-            push(@{$res{$ref[2]}->[1]}, $ref[1]);
-        }
+        $res{$ref[2]}->[0] = $ref[0];
+        push(@{$res{$ref[2]}->[1]}, $ref[1]);
     }
     $sth->finish();
 
