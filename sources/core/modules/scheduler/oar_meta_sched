@@ -719,7 +719,7 @@ sub check_jobs_to_kill(){
                             # Retrieve node names used by the job
                             my @hosts = OAR::IO::get_job_current_hostnames($base,$besteffort_resource_occupation{$r}->{job_id});
                             my $types = OAR::IO::get_job_types_hash($base,$besteffort_resource_occupation{$r}->{job_id});
-                            if ($#hosts < 0 and not defined($types->{cosystem}) and not defined($types->{deploy})) {
+                            if ($#hosts >= 0 or defined($types->{cosystem}) or defined($types->{deploy})) {
                                 my $str_comment = "[MetaSched] Checkpoint timeout for job $besteffort_resource_occupation{$r}->{job_id} ($current_time_sec > ($checkpoint_first_date+$besteffort_resource_occupation{$r}->{checkpoint})";
                                 oar_debug("$str_comment\n");
                                 OAR::IO::add_new_event($base,"CHECKPOINT_TIMEOUT",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
