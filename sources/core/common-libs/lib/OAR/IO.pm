@@ -6616,12 +6616,16 @@ sub get_gantt_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
+    # postgresql is quicker without the moldable_index filter
+    my $moldable_index_current = "";
+    if ($Db_type eq "mysql") {
+        $moldable_index_current = "m.moldable_index = \'CURRENT\' AND";
+    }
     my $req = <<EOS;
 SELECT gp.moldable_job_id, gr.resource_id, j.job_id
 FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
 WHERE
-    m.moldable_index = \'CURRENT\'
-    AND gr.moldable_job_id = gp.moldable_job_id
+    $moldable_index_current gr.moldable_job_id = gp.moldable_job_id
     AND m.moldable_id = gr.moldable_job_id
     AND j.job_id = m.moldable_job_id
     AND gp.start_time <= $date
