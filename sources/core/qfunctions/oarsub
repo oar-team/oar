@@ -641,6 +641,13 @@ if (is_conf("OARSUB_FORCE_JOB_KEY")){
     }
 }
 
+# If OAR_JOB_KEY_FILE is set in the shell environment, then imply use_job_key 
+# because oarsh will use OAR_JOB_KEY_FILE as well and fail if the job is
+# setup without a job_key 
+if (defined($ENV{OAR_JOB_KEY_FILE})){
+    $use_job_key = 1;
+}
+
 OAR::Sub::open_db_connection();
 
 if (defined($Resubmit)){
@@ -789,10 +796,8 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         }elsif(defined($scan_result{stderr}) && (defined($Stderr_file))){
             warn("/!\\ Ignore script value for stderr parameter : $scan_result{stderr}; another value was given on the command line.\n");
         }
-        if (defined($scan_result{usejobkey}) && (!defined($use_job_key))){
-            $use_job_key = $scan_result{usejobkey};
-        }elsif(defined($scan_result{usejobkey}) && (defined($use_job_key))){
-            warn("/!\\ Ignore script value for use-job-key parameter : $scan_result{usejobkey}; another value was given on the command line.\n");
+        if (defined($scan_result{usejobkey})){
+            $use_job_key = 1;
         }
         if (defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline eq "")){
             $import_job_key_inline = $scan_result{importjobkeyinlinepriv};
