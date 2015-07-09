@@ -4,7 +4,7 @@ OAR CHANGELOG
 version 2.5.5:
 --------------
 
-  - [drawgantt-svg] bug fix: state below jobs
+  - [drawgantt-svg] new version with aggreation of resources and more
   - [iolib] fix deadlock with TRUNCATE in postgresql
   - [scheduler] memory leak fix
   - [almighty] add SCHEDULER_MIN_TIME_BETWEEN_2_CALLS:
