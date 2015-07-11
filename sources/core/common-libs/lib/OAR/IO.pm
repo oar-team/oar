@@ -6621,7 +6621,11 @@ sub get_gantt_jobs_to_launch($$){
     if ($Db_type eq "mysql") {
         $moldable_index_current = "m.moldable_index = \'CURRENT\' AND";
     }
-    my $req = <<EOS;
+    my $req;
+    # only use the "CASE WHEN.." query when the energy saving feature is on
+    # (although it would function for both cases)
+    if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes")) {
+        $req = <<EOS;
 SELECT gp.moldable_job_id, gr.resource_id, j.job_id
 FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
 WHERE
@@ -6670,6 +6674,31 @@ WHERE
         )
         END
 EOS
+    } else {
+        $req = <<EOS;
+SELECT gp.moldable_job_id, gr.resource_id, j.job_id
+FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
+WHERE
+    $moldable_index_current gr.moldable_job_id = gp.moldable_job_id
+    AND m.moldable_id = gr.moldable_job_id
+    AND j.job_id = m.moldable_job_id
+    AND gp.start_time <= $date
+    AND j.state = \'Waiting\'
+    AND r.resource_id = gr.resource_id
+    AND r.state = \'Alive\'
+    AND NOT EXISTS ( 
+        SELECT 1
+        FROM resources rr, gantt_jobs_resources gg
+        WHERE
+            gg.moldable_job_id = gr.moldable_job_id
+            AND rr.resource_id = gg.resource_id
+            AND (
+                rr.state IN (\'Dead\',\'Suspected\',\'Absent\')
+                OR rr.next_state IN (\'Dead\',\'Suspected\',\'Absent\')
+            )
+    )
+EOS
+    }
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
@@ -6678,7 +6707,6 @@ EOS
         push(@{$res{$ref[2]}->[1]}, $ref[1]);
     }
     $sth->finish();
-
     return(%res);
 }
 
