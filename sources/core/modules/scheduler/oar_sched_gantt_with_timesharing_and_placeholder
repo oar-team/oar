@@ -137,7 +137,7 @@ foreach my $i (@{$order}){
                 $inner_id = 0;
             }
         }
-        if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+        if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
             oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,)\n");
             $container_id = $i;
             oar_debug("[$scheduler_name] [$i] container job: create gantt ($container_id,,,)\n");
@@ -284,7 +284,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             next;
         }
     }
-    if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+    if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
         oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,) and is a container\n");
     } else {
         ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) =

@@ -92,7 +92,7 @@ sub new_with_1_hole($$$$$$){
     my $resources_vec = shift;
     my $all_resources_vec = shift;
 
-    my $gantt = OAR::Schedulers::GanttHoleStorage::new($max_resource_number, $minimum_hole_duration);
+    my $gantt = new($max_resource_number, $minimum_hole_duration);
 
     # initiate the first hole with a fake date (ensure to keep it intact with all the configuration)
     $gantt->[0]->[1]->[0]->[0] = 86400;
@@ -204,6 +204,19 @@ sub merge_clone($$) {
     return $merged_gantt;
 }
 
+# Helper function to test if a Gantt is defined, without side effect
+sub defined_gantt($$$$$) {
+    my $gantt = shift;
+    my $container = shift;
+    my $placeholder = shift;
+    my $user = shift;
+    my $name = shift;
+    return (exists($gantt->{$container}) and defined($gantt->{$container})
+        and exists($gantt->{$container}->{$placeholder}) and defined($gantt->{$container}->{$placeholder})
+        and exists($gantt->{$container}->{$placeholder}->{$user}) and defined($gantt->{$container}->{$placeholder}->{$user})
+        and exists($gantt->{$container}->{$placeholder}->{$user}->{$name}) and defined($gantt->{$container}->{$placeholder}->{$user}->{$name}));
+}
+
 # Manage the different gantts used in the schedulers handling container, timesharing and placeholder
 # See oar_sched_gantt_with_timesharing_and_placeholder
 # This allows to factorize code since this function is called in the 2 phases (running jobs, and to schedule jobs)
@@ -218,12 +231,12 @@ sub manage_gantt_for_timesharing_and_placeholder($$$$$$) {
     my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
-    if (defined($types->{placeholder})){ # A set_placeholder job cannot be use_placeholder or timesharing. 
+    if (defined($types->{placeholder})){ # A placeholder job cannot be allowed or timesharing. 
         $placeholder_name = $types->{placeholder};
-        oar_debug("$log_prefix job is ($inner_id,s:$placeholder_name,,)\n");
-        if (not defined($Gantt->{$inner_id}->{$placeholder_name}->{""}->{""})){
+        oar_debug("$log_prefix job is ($inner_id,$placeholder_name,,)\n");
+        if (not defined_gantt($Gantt,$inner_id,$placeholder_name,"","")){
             $Gantt->{$inner_id}->{$placeholder_name}->{""}->{""} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-            oar_debug("$log_prefix set_placeholder job: cloned gantt ($inner_id,$placeholder_name,,) from ($inner_id,,,)\n");
+            oar_debug("$log_prefix placeholder job: cloned gantt ($inner_id,$placeholder_name,,) from ($inner_id,,,)\n");
         }
     } else {
         if (defined($types->{allowed})){
@@ -246,36 +259,36 @@ sub manage_gantt_for_timesharing_and_placeholder($$$$$$) {
                 }
             }
         }
-        oar_debug("$log_prefix job is ($inner_id,u:$allowed_name,$timesharing_user,$timesharing_name)\n");
-        if (not defined($Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name})) {
-            if (not defined($Gantt->{$inner_id}->{$allowed_name}->{""}->{""}) and not defined($Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name})) {
+        oar_debug("$log_prefix job is ($inner_id,$allowed_name,$timesharing_user,$timesharing_name)\n");
+        if (not defined_gantt($Gantt,$inner_id,$allowed_name,$timesharing_user,$timesharing_name)) {
+            if (not defined_gantt($Gantt,$inner_id,$allowed_name,"","") and not defined_gantt($Gantt,$inner_id,"",$timesharing_user,$timesharing_name)) {
                 $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                oar_debug("$log_prefix use_placeholder/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n");
+                oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n");
                 if ($allowed_name ne "") {
                     $Gantt->{$inner_id}->{$allowed_name}->{""}->{""} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                    oar_debug("$log_prefix use_placeholder/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n");
+                    oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n");
                 }
                 if ($timesharing_user ne "" or $timesharing_name ne "") {
                     $Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_user} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                    oar_debug("$log_prefix use_placeholder/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n");
+                    oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n");
                 }
-            } elsif (not defined($Gantt->{$inner_id}->{$allowed_name}->{""}->{""})) { #G($i,,$u,$n) is defined
+            } elsif (not defined_gantt($Gantt,$inner_id,$allowed_name,"","")) { #G($i,,$u,$n) is defined
                 $Gantt->{$inner_id}->{$allowed_name}->{""}->{""} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                oar_debug("$log_prefix use_placeholder/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n");
+                oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n");
                 if ($timesharing_user ne "" and $timesharing_name ne "") {
                     $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name});
-                    oar_debug("$log_prefix use_placeholder/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,$timesharing_user,$timesharing_name)\n");
+                    oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,$timesharing_user,$timesharing_name)\n");
                 }
-            } elsif (not defined($Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name})) { # G($i,$p,,) is defined
+            } elsif (not defined_gantt($Gantt,$inner_id,"",$timesharing_user,$timesharing_name)) { # G($i,$p,,) is defined
                 $Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_user} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                oar_debug("$log_prefix use_placeholder/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n");
+                oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n");
                 if ($allowed_name ne "") {
                     $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{$allowed_name}->{""}->{""});
-                    oar_debug("$log_prefix use_placeholder/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,)\n");
+                    oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,)\n");
                 }
             } else { # Both G($i,$p,,) and G($i,,$u,$n) are defined. We need to merge them to create G($i,$p,$u,$n) 
-                $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = OAR::Schedulers::GanttHoleStorage::merge_clone($Gantt->{$inner_id}->{$allowed_name}->{""}->{""},$Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name});
-                oar_debug("$log_prefix use_placeholder/timesharing job: merged gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,) and ($inner_id,,$timesharing_user,$timesharing_name)\n");
+                $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = merge_clone($Gantt->{$inner_id}->{$allowed_name}->{""}->{""},$Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name});
+                oar_debug("$log_prefix allowed/timesharing job: merged gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,) and ($inner_id,,$timesharing_user,$timesharing_name)\n");
             }
         }
     }
@@ -302,16 +315,12 @@ sub fill_gantts($$$$$$$$$$) {
             foreach my $n (keys(%{$Gantt->{$inner_id}->{$p}->{$u}})){
                 if (not (($p ne "" and $p eq $placeholder_name) or ($u ne "" and $u eq $timesharing_user and $n ne "" and $n eq $timesharing_name))){
                     oar_debug("$log_prefix add job occupation in gantt ($inner_id,$p,$u,$n)\n");
-                    OAR::Schedulers::GanttHoleStorage::set_occupation( $Gantt->{$inner_id}->{$p}->{$u}->{$n},
-                                                        $date,
-                                                        $duration,
-                                                        $resources_vec
-                                                      );
+                    set_occupation( $Gantt->{$inner_id}->{$p}->{$u}->{$n}, $date, $duration, $resources_vec);
                 } else {
                     if ($placeholder_name ne "") {
-                        oar_debug("$log_prefix skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,s:$placeholder_name,,)\n");
+                        oar_debug("$log_prefix skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,$placeholder_name,,)\n");
                     } else {
-                        oar_debug("$log_prefix skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,u:$allowed_name,$timesharing_user,$timesharing_name)\n");
+                        oar_debug("$log_prefix skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,$allowed_name,$timesharing_user,$timesharing_name)\n");
                     }
                 }
             }

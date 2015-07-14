@@ -172,7 +172,7 @@ foreach my $i (keys(%{$reservation_already_there})){
             $inner_id = 0;
         }
     }
-    if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+    if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
         oar_debug("[MetaSched] [$i] Job is ($inner_id,,,)\n");
         $container_id = $i;
         oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
@@ -237,7 +237,7 @@ foreach my $job (@initial_jobs){
                 $inner_id = 0;
             }
         }
-        if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+        if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
             oar_debug("[MetaSched] [$i] Job is ($inner_id,,,)\n");
             $container_id = $i;
             oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
@@ -298,7 +298,7 @@ foreach my $job (@Rjobs){
             next;
         }
     }
-    if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+    if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
         oar_debug("[MetaSched] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
     } else {
         ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) =
@@ -510,7 +510,7 @@ sub check_reservation_jobs($$){
                         $inner_id = 0;
                     }
                 }
-                if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+                if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
                     oar_debug("[MetaSched] [$i] Job is ($inner_id,,,)\n");
                     $container_id = $i;
                     oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
@@ -569,7 +569,7 @@ sub check_reservation_jobs($$){
                         next;
                     }
                 }
-                if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+                if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
                     oar_debug("[MetaSched] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
                 } else {
                     ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) =

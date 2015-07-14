@@ -196,7 +196,7 @@ foreach my $i (@{$order}){
                 $inner_id = 0;
             }
         }
-        if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+        if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
             oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,)\n");
             $container_id = $i;
             oar_debug("[$scheduler_name] [$i] container job: create gantt ($container_id,,,)\n");
@@ -367,7 +367,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             next;
         }
     }
-    if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+    if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
         oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,) and is a container\n");
     } else {
         ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) =
@@ -500,9 +500,9 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
 
         # Feed message job field
         my @type_list = sort(keys(%{$types}));
-        my $message = OAR::IO::format_job_message_text($j->{job_name},$#{$moldable_results[$index_to_choose]->{resources}}+1,$moldable_results[$index_to_choose]->{walltime},$j->{job_type},$j->{reservation},$j->{queue_name},$j->{project},\@type_list,"Karma=".sprintf("%.3f",karma($j)." , container=$inner_id , use_placeholder=$allowed_name"));
+        my $message = OAR::IO::format_job_message_text($j->{job_name},$#{$moldable_results[$index_to_choose]->{resources}}+1,$moldable_results[$index_to_choose]->{walltime},$j->{job_type},$j->{reservation},$j->{queue_name},$j->{project},\@type_list,"Karma=".sprintf("%.3f",karma($j)." , container=$inner_id , allowed=$allowed_name"));
         OAR::IO::set_job_message($base,$i,$message);
-#        OAR::IO::set_job_scheduler_info($base,$i,"Karma = ".sprintf("%.3f",karma($j))." , container=$inner_id , use_placeholder=$allowed_name");
+#        OAR::IO::set_job_scheduler_info($base,$i,"Karma = ".sprintf("%.3f",karma($j))." , container=$inner_id , allowed=$allowed_name");
 
         # Update Token values
         if (defined($types->{token}) and ($moldable_results[$index_to_choose]->{start_date} <= $current_time)){
