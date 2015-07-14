@@ -236,8 +236,12 @@ sub manage_gantt_for_timesharing_and_placeholder($$$$$$) {
                 if ($s =~ m/^\s*([\w\*]+)\s*$/m){
                     if ($1 eq "user"){
                         $timesharing_user = $job_user;
-                    }elsif (($1 eq "name") and ($job_name ne "")){
-                        $timesharing_name = $job_name;
+                    }elsif ($1 eq "name") {
+                        if (defined($job_name) and $job_name ne "") {
+                            $timesharing_name = $job_name;
+                        } else {
+                            oar_debug("$log_prefix timesharing on name but no job name defined, using *\n");
+                        }
                     }
                 }
             }
