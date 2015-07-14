@@ -594,6 +594,8 @@ sub check_reservation_jobs($$){
                     $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
                     push(@tree_list, $tmp_tree);
                 }
+
+                oar_debug("[MetaSched] [$i] Find first hole with gantt($inner_id,$allowed_name,$timesharing_user,$timesharing_name)\n");
                 my @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name},$job->{start_time}, $duration + $Security_time_overhead, \@tree_list, 30);
                 if ($hole[0] == $job->{start_time}){
                     # The reservation can be scheduled
