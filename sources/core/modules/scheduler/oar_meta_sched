@@ -429,7 +429,7 @@ sub treate_waiting_reservation_jobs($){
             if ($job->{start_time} + $Reservation_waiting_timeout > $current_time_sec){
                 if ($#resa_resources > $#resa_alive_resources){
                     # we have not the same number of nodes than in the query --> wait the specified timeout
-                    oar_warn("[MetaSched] [$job->{job_id}] reservation is waiting because not all resources are available yet\n");
+                    oar_warn("[MetaSched] [$job->{job_id}] reservation is waiting because not all resources are available yet (timeout in ".($job->{start_time} + $Reservation_waiting_timeout - $current_time_sec)." seconds)\n");
                     OAR::IO::set_gantt_job_startTime($base,$moldable->[2],($current_time_sec + 1));
                 }
             }else{
