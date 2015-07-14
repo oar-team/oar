@@ -4,20 +4,29 @@ OAR CHANGELOG
 version 2.5.5:
 --------------
 
-  - [drawgantt-svg] new version with aggreation of resources and more
-  - [iolib] fix deadlock with TRUNCATE in postgresql
-  - [scheduler] memory leak fix
+  - [iolib] fix deadlock with TRUNCATE in postgresql.
   - [almighty] add SCHEDULER_MIN_TIME_BETWEEN_2_CALLS:
-        the scheduler is launched only if the last call is at least 5s 
-        (by default) old.
-        It avoids to continuously execute the scheduler part and let
-        some time for other OAR modules.
-  - [api][drawgantt-svg][monika] fix apache config (prepare for apache 2.4)
-  - [oarstat] fix accounting print bug
-  - [scheduler] tree cache:
-        enhance scheduler speed by reducing the number of SQL queries.
-  - [scheduler] backport the expire/postpone/deadline job types from master
-  - [scheduler] rename job types: placeholder/allowed
+        the scheduler is launched at max every t seconds (t=5 by default), this
+        avoids the scheduler to cause starvation with regard to the other 
+        modules.
+  - [scheduler] fix some memory leaks.
+  - [scheduler] add a cache to the resources tree computation: improve
+        the scheduler speed by reducing the number of SQL queries.
+  - [scheduler] backport the expire/postpone/deadline job types from master.
+  - [scheduler] rename the placeholder job types: placeholder/allowed.
+  - [scheduler] fix timesharing (adv reservation and *_placeholder schedulers).
+  - [scheduler] allows noop/cosystem/standby to start on resources in standby,
+        no wake-up is triggered (requires activating energy saving).
+  - [oarsub] use jobkey (-k) is the OAR_JOB_KEY_FILE env variable  is set.
+  - [oarstat] fix accounting display.
+  - [oar_resources_init] fix HyperThreading bug + improve CLI.
+  - [oar_resources_add] make HyperThreading optional + fix long options.
+  - [admission rules] rewrite the job type check rule.
+  - [oar-node] fix pid in init script.
+  - [api] some optimizations + rework authentication configuration (apache).
+  - [api][drawgantt-svg][monika] fix apache config (apache 2.4).
+  - [drawgantt-svg] new version with aggreation of resources and more.
+  - [monika] add thread to the hidden properties.
 
 version 2.5.4:
 --------------
