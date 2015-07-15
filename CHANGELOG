@@ -27,6 +27,9 @@ version 2.5.5:
   - [api][drawgantt-svg][monika] fix apache config (apache 2.4).
   - [drawgantt-svg] new version with aggreation of resources and more.
   - [monika] add thread to the hidden properties.
+  - [api] fastcgi config now using suexec (have to enable it inside the fastcgi
+        module configuration: FastCgiWrapper /usr/lib/apache2/suexec
+  - [api] now using apache environment variables when headers are not available 
 
 version 2.5.4:
 --------------
