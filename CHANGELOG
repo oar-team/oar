@@ -30,6 +30,8 @@ version 2.5.5:
   - [api] fastcgi config now using suexec (have to enable it inside the fastcgi
         module configuration: FastCgiWrapper /usr/lib/apache2/suexec
   - [api] now using apache environment variables when headers are not available 
+  - [api] optimization of /jobs query response time (especially efficient for
+        mysql based installations)
 
 version 2.5.4:
 --------------
