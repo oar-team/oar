@@ -43,7 +43,7 @@ all:
 
 setup: setup_shared
 
-SHARED_ACTIONS=perllib oardata oarbin doc man1 bin sbin examples setup_scripts init logrotate default cron cgi www
+SHARED_ACTIONS=perllib oardata oarbin doc man1 bin sbin examples setup_scripts init logrotate default cron www
 
 
 clean_shared: clean_templates clean_man1 clean_setup_scripts
@@ -76,7 +76,6 @@ TEMPLATE_SOURCE_FILES=$(filter %.in, $(PROCESS_TEMPLATE_FILES) \
 				     $(BINDIR_FILES) \
 				     $(SBINDIR_FILES) \
 				     $(SHAREDIR_FILES) \
-				     $(CGIDIR_FILES) \
 				     $(WWWDIR_FILES) \
 				     $(MODULE_SETUP_SOURCE_FILES) \
 				     setup/templates/header.sh.in \
@@ -289,14 +288,6 @@ install_logrotate:
 uninstall_logrotate:
 	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/logrotate.d" SOURCE_FILES="$(LOGROTATEDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
-#
-# CGIDIR_FILES
-#
-install_cgi:
-	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(CGIDIR)" SOURCE_FILES="$(CGIDIR_FILES)" TARGET_FILE_RIGHTS=0755
-
-uninstall_cgi:
-	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(CGIDIR)" SOURCE_FILES="$(CGIDIR_FILES)" TARGET_FILE_RIGHTS=0755
 
 #
 # WWWDIR_FILES
