@@ -4,9 +4,9 @@
 
 $LOAD_PATH << '.'
 
-USER=ENV['USER']
 require 'oarrestapi_lib'
 require 'shared_examples'
+require 'rspec/matchers'
 
 $jobid=""
 $rjobid=""

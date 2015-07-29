@@ -2,7 +2,6 @@ $LOAD_PATH << '.'
 
 require 'oarrestapi_lib'
 
-USER=ENV['USER']
 $jobid = ""
 
 describe OarApi do
