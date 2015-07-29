@@ -22,6 +22,7 @@ version 2.5.5:
   - [oar_resources_init] fix HyperThreading bug + improve CLI.
   - [oar_resources_add] make HyperThreading optional + fix long options.
   - [admission rules] rewrite the job type check rule.
+  - [admission rules] fix oaradmissionrules bug with MySQL when modifying a rule
   - [oar-node] fix pid in init script.
   - [api] some optimizations + rework authentication configuration (apache).
   - [api][drawgantt-svg][monika] fix apache config (apache 2.4).

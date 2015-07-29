@@ -4790,7 +4790,7 @@ sub update_admission_rule($$$$$) {
     $sth->execute();
     if($sth->fetchrow_array() > 0) {
       $dbh->do("  UPDATE admission_rules
-                SET (priority, enabled, rule) = ($priority, ".($enabled?"'YES'":"'NO'").", $rule)
+                SET priority= $priority, enabled = ".($enabled?"'YES'":"'NO'").", rule = $rule
                 WHERE id=$id
                ");
       return($id);
