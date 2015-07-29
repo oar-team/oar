@@ -2031,7 +2031,7 @@ SWITCH: for ($q) {
 
     my $db = OAR::IO::connect() or die "cannot connect to the data base\n";
 
-    $base->begin_work();
+    $db->begin_work();
     my $result = OAR::IO::get_last_event_from_type($db, "NEW_VIRTUAL_HOSTNAME");
     if ($result) {
       $result = $result->{'description'};
@@ -2045,7 +2045,7 @@ SWITCH: for ($q) {
       $result = {'hostname' => 'vnode1'};
     }
 
-    $base->commit();
+    $db->commit();
     # TODO: reject if DESKTOP_COMPUTING_ALLOW_CREATE_NODE="0"
     print $q->header( -status => 200, -type => "application/json" );
     print OAR::API::export($result,'json');
