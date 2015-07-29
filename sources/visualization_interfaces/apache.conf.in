@@ -1,4 +1,4 @@
-ScriptAlias /monika %%CGIDIR%%/monika.cgi
+ScriptAlias /monika %%CGIDIR%%/monika/monika.cgi
 Alias /monika.css %%WWWDIR%%/monika.css
 Alias /drawgantt-svg %%WWWDIR%%/drawgantt-svg
 Alias /drawgantt %%WWWDIR%%/drawgantt-svg

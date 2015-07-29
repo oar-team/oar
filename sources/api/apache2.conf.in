@@ -6,14 +6,14 @@
 # may cause your system to be vulnerable. 
 # You should also check that you have a <Location> directive for each
 # of these aliases  (security issue, see later!)
-ScriptAlias /oarapi %%WWW_ROOTDIR%%/cgi-bin/oarapi/oarapi.cgi
-ScriptAlias /oarapi-public %%WWW_ROOTDIR%%/cgi-bin/oarapi/oarapi.cgi
-#ScriptAlias /oarapi-debug %%WWW_ROOTDIR%%/cgi-bin/oarapi-debug.cgi
-#ScriptAlias /oarapi-cigri %%WWW_ROOTDIR%%/cgi-bin/oarapi.cgi
+ScriptAlias /oarapi %%CGIDIR%%/oarapi/oarapi.cgi
+ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
+#ScriptAlias /oarapi-debug %%CGIDIR%%/oarapi-debug.cgi
+#ScriptAlias /oarapi-cigri %%CGIDIR%%/oarapi.cgi
 
 # FastCGI server
 <IfModule mod_fastcgi.c>
-  FastCgiServer %%WWW_ROOTDIR%%/cgi-bin/oarapi/oarapi.cgi -processes 3 -user oar -group oar
+  FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi -processes 3 -user oar -group oar
 </IfModule>
 
 # Suexec configuration
@@ -22,7 +22,7 @@ ScriptAlias /oarapi-public %%WWW_ROOTDIR%%/cgi-bin/oarapi/oarapi.cgi
 </IfModule>
 
 # Default options for the oar api
-<Directory %%WWW_ROOTDIR%%/cgi-bin/oarapi>
+<Directory %%CGIDIR%%/oarapi>
   Options +ExecCGI -MultiViews +FollowSymLinks
 
   SetEnv OARCONFFILE %%ETCDIR%%/oar/oar.conf
