@@ -52,25 +52,15 @@ sub get_properties_values($$) {
     my $excluded = shift;
     my @result;
     my $sth;
-    if ($Db_type eq "Pg"){
-      #$sth = $dbh->prepare("SELECT a.attname
-      #                         FROM pg_class AS c, pg_attribute AS a 
-      #                         WHERE relname = 'resources' AND c.oid = a.attrelid AND a.attnum > 0;");
-      $sth = $dbh->prepare("SELECT column_name FROM information_schema.columns WHERE table_name = \'resources\'");
-    }
-    else{
-      $sth = $dbh->prepare("DESC resources"); 
-    }
+    #$sth = $dbh->prepare("SELECT a.attname
+    #                         FROM pg_class AS c, pg_attribute AS a 
+    #                         WHERE relname = 'resources' AND c.oid = a.attrelid AND a.attnum > 0;");
+    $sth = $dbh->prepare("SELECT column_name FROM information_schema.columns WHERE table_name = \'resources\'");
     
     $sth->execute();
     while (my $ref = $sth->fetchrow_hashref()){
       my $current_value;
-      if ($Db_type eq "Pg" || $Db_type eq "psql"){
-        $current_value = $ref->{'column_name'};
-      }
-      else{
-      	$current_value = $ref->{'Field'};
-      }
+      $current_value = $ref->{'column_name'};
       unless (defined($excluded->{$current_value})){
         push(@result, $current_value);
       }
