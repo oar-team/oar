@@ -60,7 +60,7 @@ api_setup() {
         fi 
     fi
     
-    set_rights ${WWW_ROOTDIR}/cgi-bin/oarapi                  0755 ${OAROWNER} ${OAROWNERGROUP}
-    set_rights ${WWW_ROOTDIR}/cgi-bin/oarapi/oarapi.cgi       0755 ${OAROWNER} ${OAROWNERGROUP}
-    set_rights ${WWW_ROOTDIR}/cgi-bin/oarapi/oarapi-debug.cgi 0755 ${OAROWNER} ${OAROWNERGROUP}
+    set_rights ${CGIDIR}/oarapi                  0755 ${OAROWNER} ${OAROWNERGROUP}
+    set_rights ${CGIDIR}/oarapi/oarapi.cgi       0755 ${OAROWNER} ${OAROWNERGROUP}
+    set_rights ${CGIDIR}/oarapi/oarapi-debug.cgi 0755 ${OAROWNER} ${OAROWNERGROUP}
 }

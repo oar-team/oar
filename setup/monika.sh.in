@@ -5,4 +5,6 @@ monika_setup() {
         ${OARCONFDIR}/monika.conf \
         0600 \
         ${WWWUSER}
+    set_rights ${CGIDIR}/monika                  0755 ${OAROWNER} ${OAROWNERGROUP}
+    set_rights ${CGIDIR}/monika/monika.cgi       0755 ${OAROWNER} ${OAROWNERGROUP}
 }
