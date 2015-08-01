@@ -86,7 +86,7 @@ TEMPLATE_BUILDED_FILES=$(patsubst %.in,%,$(TEMPLATE_SOURCE_FILES))
 
 build_templates: $(TEMPLATE_BUILDED_FILES)
 
-$(TEMPLATE_BUILDED_FILES) : $(patsubst %, %.in,$*)
+$(TEMPLATE_BUILDED_FILES) : %: %.in
 	perl -pe "s#%%PREFIX%%#$(PREFIX)#g;;\
 	    s#%%BINDIR%%#$(BINDIR)#g;;\
 	    s#%%CGIDIR%%#$(CGIDIR)#g;;\

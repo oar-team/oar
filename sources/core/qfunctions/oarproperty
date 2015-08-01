@@ -167,7 +167,7 @@ EOS
 # MySQL
 sub check_property_name($) {
     my $propertyname = shift;
-    if (not $propertyname =~ /^[a-z0-9_]+$/) {
+    if (not $propertyname =~ /^\w+$/) {
         die("Error: '$propertyname' is not a valid property name");
     }
     if (OAR::Tools::check_resource_property($propertyname) == 1){

@@ -1,8 +1,20 @@
-ScriptAlias /monika %%CGIDIR%%/monika.cgi
+ScriptAlias /monika %%CGIDIR%%/monika/monika.cgi
 Alias /monika.css %%WWWDIR%%/monika.css
 Alias /drawgantt-svg %%WWWDIR%%/drawgantt-svg
 Alias /drawgantt %%WWWDIR%%/drawgantt-svg
 <Directory %%WWWDIR%%>
-        Options Indexes FollowSymlinks
-        #Require all granted # <- seems to be needed for apache >= 2.3
+  Options Indexes FollowSymlinks
+  <ifModule version.c>
+    <IfVersion >= 2.3>
+      Require all granted
+    </IfVersion> 
+    <IfVersion < 2.3>
+      Order Allow,Deny
+      Allow from all
+    </IfVersion>   
+  </ifModule>
+  <ifModule !version.c>
+    Order Allow,Deny
+    Allow from all
+  </ifModule>
 </Directory>

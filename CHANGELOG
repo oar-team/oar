@@ -1,6 +1,40 @@
 OAR CHANGELOG
 =============
 
+version 2.5.5:
+--------------
+
+  - [iolib] fix deadlock with TRUNCATE in postgresql.
+  - [almighty] add SCHEDULER_MIN_TIME_BETWEEN_2_CALLS:
+        the scheduler is launched at max every t seconds (t=5 by default), this
+        avoids the scheduler to cause starvation with regard to the other 
+        modules.
+  - [scheduler] fix some memory leaks.
+  - [scheduler] add a cache to the resources tree computation: improve
+        the scheduler speed by reducing the number of SQL queries.
+  - [scheduler] backport the expire/postpone/deadline job types from master.
+  - [scheduler] rename the placeholder job types: placeholder/allowed.
+  - [scheduler] fix timesharing (adv reservation and *_placeholder schedulers).
+  - [scheduler] allows noop/cosystem/standby to start on resources in standby,
+        no wake-up is triggered (requires activating energy saving).
+  - [oarsub] use jobkey (-k) is the OAR_JOB_KEY_FILE env variable  is set.
+  - [oarstat] fix accounting display.
+  - [oar_resources_init] fix HyperThreading bug + improve CLI.
+  - [oar_resources_add] make HyperThreading optional + fix long options.
+  - [admission rules] rewrite the job type check rule.
+  - [admission rules] fix oaradmissionrules bug with MySQL when modifying a rule
+  - [oar-node] fix pid in init script.
+  - [api] some optimizations + rework authentication configuration (apache).
+  - [api][drawgantt-svg][monika] fix apache config (apache 2.4).
+  - [drawgantt-svg] new version with aggreation of resources and more.
+  - [monika] add thread to the hidden properties.
+  - [api] fastcgi config now using suexec (have to enable it inside the fastcgi
+        module configuration: FastCgiWrapper /usr/lib/apache2/suexec
+  - [api] now using apache environment variables when headers are not available 
+  - [api] optimization of /jobs query response time (especially efficient for
+        mysql based installations)
+  - [api] [security] Html output did not break on errors
+
 version 2.5.4:
 --------------
   

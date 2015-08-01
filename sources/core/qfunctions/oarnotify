@@ -36,6 +36,13 @@ GetOptions ("version|V" => \$Version,
             "add-queue=s" => \@Add_queue,
             "remove-queue=s" => \@Remove_queue,
             "list-queues|l" => \$List_queues,
+            "enable_queue=s" => \@Enable_queue,
+            "disable_queue=s" => \@Disable_queue,
+            "Enable_all_queues" => \$Enable_all,
+            "Disable_all_queues" => \$Disable_all,
+            "add_queue=s" => \@Add_queue,
+            "remove_queue=s" => \@Remove_queue,
+            "list_queues" => \$List_queues,
             "help|h" => \$sos
            ) or exit(1);
 # Display command help

@@ -1,18 +1,14 @@
-                    OAR resource manager
-                    --------------------
-
 OAR is a resource manager (or batch scheduler if you prefer this wording) for
 small to large clusters.
 
 It is suitable for production use and may also be used as a tool to do research
 experiments.
 
-See INSTALL file to be shown with a detailed installation procedure.
-
 Feel free to check the manpages and the OAR web site (http://oar.imag.fr/) for
 further information.
 
-Some features of OAR :
+Some features of OAR
+--------------------
 
 - Batch and Interactive jobs
 - Admission rules
@@ -30,10 +26,3 @@ Some features of OAR :
 - Backfiling
 - First-Fit Scheduler with matching resource (very soon)
 - Advance Reservation
-
-Have a good time.
-
-License
--------
-See LICENSE file.
-

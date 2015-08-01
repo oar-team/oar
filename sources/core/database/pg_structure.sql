@@ -4,7 +4,7 @@ CREATE TABLE schema (
   version VARCHAR( 255 ) NOT NULL,
   name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.5.4','');
+INSERT INTO schema VALUES ('2.5.5','');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
@@ -13,7 +13,7 @@ CREATE TABLE accounting (
   accounting_project varchar(255) NOT NULL default '',
   queue_name varchar(100) NOT NULL default '',
   consumption_type varchar(5) check (consumption_type in ('ASKED','USED')) NOT NULL default 'ASKED',
-  consumption integer NOT NULL default '0',
+  consumption bigint NOT NULL default '0',
   PRIMARY KEY  (window_start,window_stop,accounting_user,accounting_project,queue_name,consumption_type)
 );
 CREATE INDEX accounting_user ON accounting (accounting_user);
