@@ -1,13 +1,15 @@
-oar (2.5.4-3) UNRELEASED; urgency=medium
+oar (2.5.5~rc1-1) unstable; urgency=medium
 
   [ Pierre Neyron ]
+  * New upstream release
   * Fix oar-common, oar-web-status and oar-restful-api unowned files after
     purge (Closes: #674657)
   * Fix oar-web-status and oar-restful-api webapps setup for apache 2.4
   * Set libyaml-perl as a dependance for oar-restful-api and remove
     libxml-simple-perl from the recommends
+  * Add python-sphinx to the build dependencies
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 23 Feb 2015 22:51:12 +0100
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sat, 01 Aug 2015 21:48:45 +0200
 
 oar (2.5.4-2) unstable; urgency=medium
 
