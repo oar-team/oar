@@ -4,6 +4,7 @@ require 'json'
 require 'pp'
 require 'uri'
 
+USER=ENV['USER']
 APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/" unless ENV['APIURI']
 APIURI=ENV['APIURI'] if ENV['APIURI']
 api_uri = URI(APIURI)

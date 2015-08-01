@@ -90,6 +90,9 @@ my $max_successive_read = 100;
 # Max waiting time before new scheduling attempt (in the case of
 # no notification)
 my $schedulertimeout = 60;
+# Min waiting time before 2 scheduling attempts
+my $scheduler_min_time_between_2_calls = get_conf_with_default_param("SCHEDULER_MIN_TIME_BETWEEN_2_CALLS", 5);
+my $scheduler_wanted = 0; # 1 if the scheduler must be run next time update
 
 # Max waiting time before check for jobs whose time allowed has elapsed
 my $villainstimeout = 10;
@@ -466,9 +469,9 @@ sub init(){
       start_hulot();
    }
 
-    $lastscheduler= time;
-    $lastvillains= time;
-    $lastchecknodes= time;
+    $lastscheduler= 0;
+    $lastvillains= 0;
+    $lastchecknodes= 0;
     @internal_command_file = ();
     oar_debug("[Almighty] Init done\n");
 }
@@ -551,28 +554,24 @@ sub scheduler(){
 
 sub time_update(){
     my $current = time;
-    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($current);
 
-    $year+=1900;
-    $mon+=1;
-    oar_debug("[Almighty] Timeouts check : $year-$mon-$mday $hour:$min:$sec\n");
+    oar_debug("[Almighty] Timeouts check : $current\n");
     # check timeout for scheduler
-    if ($current>=($lastscheduler+$schedulertimeout)){
+    if (($current>=($lastscheduler+$schedulertimeout))
+        or (($scheduler_wanted >= 1) and ($current>=($lastscheduler+$scheduler_min_time_between_2_calls)))
+       ){
         oar_debug("[Almighty] Scheduling timeout\n");
-        #$lastscheduler = $lastscheduler+$schedulertimeout;
-        $lastscheduler = $current + $schedulertimeout;
+        #$lastscheduler = $current + $schedulertimeout;
         add_command("Scheduling");
     }
     if ($current>=($lastvillains+$villainstimeout)){
         oar_debug("[Almighty] Villains check timeout\n");
-        #$lastvillains = $lastvillains+$villainstimeout;
-        $lastvillains = $current + $villainstimeout;
+        #$lastvillains = $current + $villainstimeout;
         add_command("Villains");
     }
     if (($current>=($lastchecknodes+$checknodestimeout)) and ($checknodestimeout > 0)){
         oar_debug("[Almighty] Node check timeout\n");
-        #$lastchecknodes = $lastchecknodes+$checknodestimeout;
-        $lastchecknodes = $current + $checknodestimeout;
+        #$lastchecknodes = $current + $checknodestimeout;
         add_command("Finaud");
     }
 }
@@ -668,38 +667,46 @@ while (1){
 
     # SCHEDULER
     elsif($state eq "Scheduler"){
-        # First, check pending events
-        my $check_result=nodeChangeState();
-        if ($check_result == 2){
-            $state="Leon";
-            add_command("Term");
-        }elsif ($check_result == 1){
-            $state="Scheduler";
-        }elsif ($check_result == 0){
-            #Launch the scheduler 
-               # We check Hulot just before starting the scheduler
-               # because if the pipe is not read, it may freeze oar
-               if (defined($energy_pid) && !check_hulot()) {
-                 oar_warn("[Almighty] Energy saving module (hulot) died. Restarting it.\n");
-                 sleep 5;
-                 ipc_clean();
-                 start_hulot();
-               }
-            my $scheduler_result=scheduler();
-            $lastscheduler = time();
-            if ($scheduler_result == 0){
-                $state="Time update";
-            }elsif ($scheduler_result == 1){
-                $state="Scheduler";
-            }elsif ($scheduler_result == 2){
+        my $current_time = time();
+        if ($current_time >= ($lastscheduler+$scheduler_min_time_between_2_calls)){
+            $scheduler_wanted = 0;
+            # First, check pending events
+            my $check_result=nodeChangeState();
+            if ($check_result == 2){
                 $state="Leon";
+                add_command("Term");
+            }elsif ($check_result == 1){
+                $state="Scheduler";
+            }elsif ($check_result == 0){
+                #Launch the scheduler 
+                   # We check Hulot just before starting the scheduler
+                   # because if the pipe is not read, it may freeze oar
+                   if (defined($energy_pid) && !check_hulot()) {
+                     oar_warn("[Almighty] Energy saving module (hulot) died. Restarting it.\n");
+                     sleep 5;
+                     ipc_clean();
+                     start_hulot();
+                   }
+                my $scheduler_result=scheduler();
+                $lastscheduler = time();
+                if ($scheduler_result == 0){
+                    $state="Time update";
+                }elsif ($scheduler_result == 1){
+                    $state="Scheduler";
+                }elsif ($scheduler_result == 2){
+                    $state="Leon";
+                }else{
+                    oar_error("[Almighty] Scheduler returned an unknown value : $scheduler_result\n");
+                    $finishTag = 1;
+                }
             }else{
-                oar_error("[Almighty] Scheduler returned an unknown value : $scheduler_result\n");
+                oar_error("[Almighty] $nodeChangeState_command returned an unknown value\n");
                 $finishTag = 1;
             }
         }else{
-            oar_error("[Almighty] $nodeChangeState_command returned an unknown value\n");
-            $finishTag = 1;
+            $scheduler_wanted = 1;
+            $state="Time update";
+            oar_debug("[Almighty] Scheduler call too early, waiting... ($current_time >= ($lastscheduler + $scheduler_min_time_between_2_calls)\n");
         }
     }
 

@@ -328,9 +328,7 @@ if (defined($last_property_value)) {
         if (defined($state)){
             my @resources_to_check;
             foreach my $r (@resource){
-                #$base->do("LOCK TABLE resources WRITE");
                 if (OAR::IO::set_resource_nextState($base,$r,$state) > 0){
-                #$base->do("UNLOCK TABLES");
                     print("$r --> $state\n");
                     push(@resources_to_check, $r);
                 }else{
@@ -376,9 +374,7 @@ if (defined($last_property_value)) {
         if (defined($state)){
             my @nodes_to_check;
             foreach my $h (@hostnames){
-                #$base->do("LOCK TABLE resources WRITE");
                 if (OAR::IO::set_node_nextState($base,$h,$state) > 0){
-                #$base->do("UNLOCK TABLES");
                     print("$h --> $state\n");
                     push(@nodes_to_check, $h);
                 }else{
@@ -410,6 +406,7 @@ if (defined ($drain)){
 
 # Update properties
 if ($#properties >= 0){
+    OAR::IO::lock_table($base, ["resources","resource_logs"]);
     if (($#resource >= 0) or (defined($Sql_property))){
         foreach my $r (@resource){
             if (!defined(OAR::IO::get_resource_info($base,$r))){
@@ -429,6 +426,7 @@ if ($#properties >= 0){
             }
         }
     }
+    OAR::IO::unlock_table($base);
     push(@notify_server_tag_list, "Term");
 }
 

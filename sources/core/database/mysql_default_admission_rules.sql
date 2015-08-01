@@ -86,7 +86,7 @@ if (grep(/^deploy$/, @{$type_list})){
 }
 ');
 
-# Restrict allowed properties for deploy jobs to force requesting entire nodes
+# Prevent deploy type jobs on non-entire nodes
 INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (9, 'YES', '# Restrict allowed properties for deploy jobs to force requesting entire nodes
 my @bad_resources = ("cpu","core","thread","resource_id",);
 if (grep(/^deploy$/, @{$type_list})){
@@ -95,7 +95,7 @@ if (grep(/^deploy$/, @{$type_list})){
             my $i = 0;
             while (($i <= $#{$r->{resources}})){
                 if (grep(/^$r->{resources}->[$i]->{resource}$/i, @bad_resources)){
-                    die("[ADMISSION RULE] the \'$r->{resources}->[$i]->{resource}\' resource property cannot be used with jobs of type deploy\\n");
+                    die("[ADMISSION RULE] \'$r->{resources}->[$i]->{resource}\' resource is not allowed with a deploy job\\n");
                 }
                 $i++;
             }
@@ -136,7 +136,7 @@ if ($reservationField eq "toSchedule") {
         close(FILE);
     }
     if ($unlimited > 0) {
-        print("[ADMISSION RULE] Unlimited advance reservation privilege granted\\n");
+        print("[ADMISSION RULE] $user is granted the privilege to do unlimited reservations\\n");
     } else {
         my $max_nb_resa = 2;
         my $nb_resa = $dbh->do("    SELECT job_id
@@ -192,14 +192,24 @@ foreach my $mold (@{$ref_resource_list}){
 
 # Check if types given by the user are right
 INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (15, 'YES', '# Check if job types are valid
-my @types = ("container","inner","deploy","desktop_computing","besteffort","cosystem","noop","idempotent","timesharing","token\\:xxx=yy");
-foreach my $t (@{$type_list}){
-    my $i = 0;
-    while (($types[$i] ne $t) and ($i <= $#types)){
-        $i++;
+my @types = (
+    qr/^container(?:=\\w+)?$/,                 qr/^deploy(?:=standby)?$/,
+    qr/^desktop_computing$/,                   qr/^besteffort$/,
+    qr/^cosystem(?:=standby)?$/,                qr/^idempotent$/,
+    qr/^placeholder=\\w+$/,                    qr/^allowed=\\w+$/,
+    qr/^inner=\\w+$/,                          qr/^timesharing=(?:(?:\\*|user),(?:\\*|name)|(?:\\*|name),(?:\\*|user))$/,
+    qr/^token\\:\\w+\\=\\d+$/,                 qr/^noop(?:=standby)?$/,
+    qr/^(?:postpone|deadline|expire)=\\d\\d\\d\\d-\\d\\d-\\d\\d(?:\\s+\\d\\d:\\d\\d(?::\\d\\d)?)?$/,
+);
+foreach my $t ( @{$type_list} ) {
+    my $match = 0;
+    foreach my $r (@types) {
+        if ($t =~ $r) {
+            $match = 1;
+        }
     }
-    if (($i > $#types) and ($t !~ /^(timesharing|inner|token\\:\\w+\\=\\d+)/)){
-        die("[ADMISSION RULE] The job type $t is not handled by OAR; Right values are : @types\\n");
+    unless ( $match ) {
+        die( "[ADMISSION RULE] Error: unknown job type: $t\\n");
     }
 }
 ');

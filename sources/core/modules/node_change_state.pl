@@ -335,38 +335,40 @@ my %resources_to_change = OAR::IO::get_resources_change_state($base);
 
 # A Term command must be added in the Almighty
 oar_debug("[NodeChangeState] number of resources to change state = ".keys(%resources_to_change)."\n");
+my %debug_info;
 if (keys(%resources_to_change) > 0){
     $Exit_code = 1;
-}
 
-my %debug_info;
-foreach my $i (keys(%resources_to_change)){
-    my $resource_info = OAR::IO::get_resource_info($base,$i);
-    if ($resource_info->{state} ne $resources_to_change{$i}){
-        OAR::IO::set_resource_state($base,$i,$resources_to_change{$i},$resource_info->{next_finaud_decision});
-        OAR::IO::set_resource_nextState($base,$i,'UnChanged');
+    OAR::IO::get_lock($base,"nodechangestate",3600); # only for MySQL
+    foreach my $i (keys(%resources_to_change)){
+        my $resource_info = OAR::IO::get_resource_info($base,$i);
+        if ($resource_info->{state} ne $resources_to_change{$i}){
+            OAR::IO::set_resource_state($base,$i,$resources_to_change{$i},$resource_info->{next_finaud_decision});
+            OAR::IO::set_resource_nextState($base,$i,'UnChanged');
 
-        $debug_info{$resource_info->{network_address}}->{$i} = $resources_to_change{$i};
+            $debug_info{$resource_info->{network_address}}->{$i} = $resources_to_change{$i};
 
-        if ($resources_to_change{$i} eq 'Suspected') {
-          push(@resources_to_heal,$i." ".$resource_info->{network_address});
-        }
-        
-        if (($resources_to_change{$i} eq 'Dead') || ($resources_to_change{$i} eq 'Absent')){
-            oar_debug("[NodeChangeState] Check jobs to delete on $i ($resource_info->{network_address}):\n");
-            my @jobs = OAR::IO::get_resource_job_to_frag($base,$i);
-            foreach my $j (@jobs){
-                oar_debug("[NodeChangeState]\tThe job $j is fragging.\n");
-                OAR::IO::frag_job($base,$j);
-                # A Leon must be run
-                $Exit_code = 2;
+            if ($resources_to_change{$i} eq 'Suspected') {
+              push(@resources_to_heal,$i." ".$resource_info->{network_address});
             }
-            oar_debug("[NodeChangeState] Check done\n");
+        
+            if (($resources_to_change{$i} eq 'Dead') || ($resources_to_change{$i} eq 'Absent')){
+                oar_debug("[NodeChangeState] Check jobs to delete on $i ($resource_info->{network_address}):\n");
+                my @jobs = OAR::IO::get_resource_job_to_frag($base,$i);
+                foreach my $j (@jobs){
+                    oar_debug("[NodeChangeState]\tThe job $j is fragging.\n");
+                    OAR::IO::frag_job($base,$j);
+                    # A Leon must be run
+                    $Exit_code = 2;
+                }
+                oar_debug("[NodeChangeState] Check done\n");
+            }
+        }else{
+            oar_debug("[NodeChangeState] ($resource_info->{network_address}) $i is already in the $resources_to_change{$i} state\n");
+            OAR::IO::set_resource_nextState($base,$i,'UnChanged');
         }
-    }else{
-        oar_debug("[NodeChangeState] ($resource_info->{network_address}) $i is already in the $resources_to_change{$i} state\n");
-        OAR::IO::set_resource_nextState($base,$i,'UnChanged');
     }
+    OAR::IO::release_lock($base,"nodechangestate"); # only for MySQL
 }
 
 my $str;

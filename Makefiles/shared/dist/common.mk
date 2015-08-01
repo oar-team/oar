@@ -16,7 +16,6 @@ export SBINDIR?=$(PREFIX)/sbin
 export DOCDIR?=$(PREFIX)/share/doc/oar-$(strip $(MODULE))
 export EXAMPLEDIR?=$(DOCDIR)/examples
 export WWWDIR?=$(PREFIX)/share/oar-web-status
-export CGIDIR?=$(PREFIX)/lib/cgi-bin
 export PERLLIBDIR?=$(PREFIX)/lib/site_perl
 export VARLIBDIR?=/var/lib
 export ETCDIR?=/etc
@@ -40,7 +39,8 @@ export OARDO_DEFAULTGROUP?=$(OAROWNERGROUP)
 
 export WWWUSER?=www-data
 export APACHECONFDIR?=$(ETCDIR)/apache2
-export WWW_ROOTDIR?=
+export WWW_ROOTDIR?=/var/www
+export CGIDIR?=$(WWW_ROOTDIR)/cgi-bin
 export XAUTHCMDPATH?=/usr/bin/xauth
 export OARSHCMD?=oarsh_oardo
 

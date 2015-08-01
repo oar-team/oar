@@ -13,26 +13,50 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 
 # FastCGI server
 <IfModule mod_fastcgi.c>
-  FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi -processes 3
+  FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi -processes 3 -user oar -group oar
+</IfModule>
+
+# Suexec configuration
+<IfModule mod_suexec.c>
+         SuexecUserGroup oar oar
 </IfModule>
 
 # Default options for the oar api
 <Directory %%CGIDIR%%/oarapi>
   Options +ExecCGI -MultiViews +FollowSymLinks
 
+  SetEnv OARCONFFILE %%ETCDIR%%/oar/oar.conf
+
   # FastCGI handler
   <IfModule mod_fastcgi.c>
      AddHandler fcgid-script .cgi
   </IfModule>
 
-   # Control hosts that can access to the API
-   Order deny,allow
-   #Require all granted # <- seems to be the "Deny from all" syntax for apache > 2.3
-                        # but gives a 500 error with apache 2.2
-   Deny from all
-   Allow from             localhost
-   Allow from             localhost.localdomain
+  <ifModule version.c>
+    <IfVersion >= 2.3>
+      Require local
+    </IfVersion> 
+    <IfVersion < 2.3>
+      Order Deny,Allow
+      Deny from all
+      Allow from             localhost
+      Allow from             localhost.localdomain
+    </IfVersion>   
+  </ifModule>
+  <ifModule !version.c>
+    Order Deny,Allow
+    Deny from all
+    Allow from             localhost
+    Allow from             localhost.localdomain
+  </ifModule>
 </Directory>
+
+# Set the X_API_PATH_PREFIX variable to value of the header of the same name
+<IfModule rewrite_module>
+   RewriteEngine On
+   RewriteCond %{HTTP:X_API_PATH_PREFIX}  (.*)
+   RewriteRule .* - [E=X_API_PATH_PREFIX:%1]
+</IfModule>
 
 # By URI options
 # This is where you should pay attention to security!
@@ -82,16 +106,12 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
   <IfModule ident_module>
      IdentityCheck On
      <IfModule headers_module>
-        # Set the X_REMOTE_IDENT http header value to REMOTE_IDENT env value
-        RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}e
-        # or For https:
-        #RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}s
-        # Or if it doesn't work, do this with mod_rewrite (depends on apache version):
+        # Set the X_REMOTE_IDENT http header and variable to REMOTE_IDENT env value
         <IfModule rewrite_module>
            RewriteEngine On
            RewriteCond %{REMOTE_IDENT} (.*)
-           RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
-           RequestHeader add X_REMOTE_IDENT %{MY_REMOTE_IDENT}e
+           RewriteRule .* - [E=X_REMOTE_IDENT:%1]
+           RequestHeader add X_REMOTE_IDENT %{X_REMOTE_IDENT}e
         </IfModule>
      </IfModule>
   </IfModule>
@@ -131,11 +151,11 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 #    ## This example only allows users kameleon and oar to be authenticated to the API
 #    # RewriteEngine On
 #    # RewriteCond %{HTTP:X_REMOTE_IDENT}  (.*)
-#    # RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
+#    # RewriteRule .* - [E=X_REMOTE_IDENT:%1]
 #    # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=kameleon
 #    # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=oar
-#    # RewriteRule .* - [E=MY_REMOTE_IDENT:]
-#    # RequestHeader set X_REMOTE_IDENT %{MY_REMOTE_IDENT}e
+#    # RewriteRule .* - [E=X_REMOTE_IDENT:]
+#    # RequestHeader set X_REMOTE_IDENT %{X_REMOTE_IDENT}e
 #  </IfModule>
 #</Location>
 
