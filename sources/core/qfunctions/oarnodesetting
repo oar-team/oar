@@ -308,7 +308,7 @@ if (defined($last_property_value)) {
     if (defined($value)){
         print $value."\n";
     } else {
-        warn("# Warning: Cannot retrieve the last value for $last_property_value. Either no resource or no such property exist (yet).\n");
+        warn("# Warning: Cannot retrieve the last value for $last_property_value. Either no resource or no such property exists (yet).\n");
     }
     $exit_code = 0;
     exit($exit_code);
