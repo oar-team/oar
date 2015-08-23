@@ -153,7 +153,7 @@ if [ -n "$AUTO_OFFSET" ]; then
   HOST0=${HOST0:-$(($(oarnodesetting --last-property-value host | perl -pe 's/^[^\d]*(\d+).*/$1/') + 1))}
   CPU0=${CPU0:-$(($(oarnodesetting --last-property-value cpu) + 1))}
   CORE0=${CORE0:-$(($(oarnodesetting --last-property-value core) + 1))}
-  if [ -n "$NO_THREADS" ]; then
+  if [ -n "$USE_THREADS" ]; then
     THREAD0=${THREAD0:-$(($(oarnodesetting --last-property-value thread) + 1))}
   fi
 else
