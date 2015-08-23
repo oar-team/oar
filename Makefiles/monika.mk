@@ -19,6 +19,7 @@ build: build_shared
 	# Nothing to do
 
 install: install_shared
+	install -d $(DESTDIR)$(CGIDIR)
 	install -d $(DESTDIR)$(CGIDIR)/monika
 	install -m 0644  $(SRCDIR)/monika.cgi $(DESTDIR)$(CGIDIR)/monika/monika.cgi
 
@@ -27,5 +28,7 @@ uninstall: uninstall_shared
 	    $(DESTDIR)$(CGIDIR)/monika/monika.cgi
 	-rmdir \
 	    $(DESTDIR)$(CGIDIR)/monika
+	-rmdir \
+	    $(DESTDIR)$(CGIDIR)
 
 .PHONY: install setup uninstall build clean

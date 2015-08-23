@@ -5,7 +5,9 @@ drawgantt_setup() {
         ${SHAREDIR}/drawgantt.conf \
         ${OARCONFDIR}/drawgantt.conf \
         0600 \
-        ${WWWUSER}
+        ${OAROWNER}
+    set_rights ${CGIDIR}/drawgantt               0755 ${OAROWNER} ${OAROWNERGROUP}
+    set_rights ${CGIDIR}/drangantt/drawgantt.cgi 0755 ${OAROWNER} ${OAROWNERGROUP}
 
     if [ ! -d "${OARHOMEDIR}/drawgantt-files" ]; then
        mkdir -p ${OARHOMEDIR}/drawgantt-files
