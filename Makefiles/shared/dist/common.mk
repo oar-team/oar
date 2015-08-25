@@ -39,8 +39,8 @@ export OARDO_DEFAULTGROUP?=$(OAROWNERGROUP)
 
 export WWWUSER?=www-data
 export APACHECONFDIR?=$(ETCDIR)/apache2
-export WWW_ROOTDIR?=/var/www
-export CGIDIR?=$(WWW_ROOTDIR)/oar
+export WWWROOTDIR?=/var/www
+export CGIDIR?=$(WWWROOTDIR)/cgi-bin
 export XAUTHCMDPATH?=/usr/bin/xauth
 export OARSHCMD?=oarsh_oardo
 

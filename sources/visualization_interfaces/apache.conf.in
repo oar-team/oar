@@ -1,32 +1,14 @@
-ScriptAlias /monika %%CGIDIR%%/monika/monika.cgi
+ScriptAlias /monika %%CGIDIR%%/monika.cgi
 Alias /monika.css %%WWWDIR%%/monika.css
 Alias /drawgantt-svg %%WWWDIR%%/drawgantt-svg
 Alias /drawgantt %%WWWDIR%%/drawgantt-svg
-
-# Suexec configuration
-<IfModule mod_suexec.c>
-  SuexecUserGroup oar oar
-</IfModule>
-
-# Default options for the oar api
-<Directory %%CGIDIR%%/monika>
-  Options +ExecCGI -MultiViews +FollowSymLinks
-  Require all granted
-</Directory>
-
 <Directory %%WWWDIR%%>
   Options Indexes FollowSymlinks
-  <ifModule version.c>
-    <IfVersion >= 2.3>
-      Require all granted
-    </IfVersion> 
-    <IfVersion < 2.3>
-      Order Allow,Deny
-      Allow from all
-    </IfVersion>   
-  </ifModule>
-  <ifModule !version.c>
+  <IfVersion >= 2.3>
+    Require all granted
+  </IfVersion> 
+  <IfVersion < 2.3>
     Order Allow,Deny
     Allow from all
-  </ifModule>
+  </IfVersion>   
 </Directory>
