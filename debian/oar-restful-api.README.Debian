@@ -1,0 +1,35 @@
+OAR restfull API requires Apache2 fastcgi and suexec modules to be enabled and configured.
+
+WARNING: with the shipped Apache configuration, you cannot get both the OAR API and some other CGI web apps (e.g. monika) working on a same server.
+This is due to the fact that suexec activation is global to a virtual host, breaking any CGI that is not meant to be used with it.
+
+Several options are possible to overcome that:
+- Install the oar-restful-api package on a dedicated host (e.g. not on the same host as the oar-web-status package).
+- Adapt the shipped Apache configuration to setup the OAR API in a dedicated virtual host.
+- Adapt other CGI scripts to suexec (scripts and their parent directory must be owned and will have to be run by the oar user)
+
+In any case, so more configuration is needed to setup oar-restful-api with fastcgi and suexec on Debian:
+
+1/ Configure the apache2-suexec-custom package
+
+Change the first line of the /etc/apache2/suexec/www-data file to "/usr/lib/cgi-bin".
+
+2/ Enable fastcgi and suexec Apache modules
+
+# a2enmod fastcgi
+# a2enmod suexec
+
+3/ Configure fastcgi to use the suexec wrapper
+
+In the /etc/apache2/mods-enabled/fastcgi.conf file, uncomment the line: "FastCgiWrapper /usr/lib/apache2/suexec"
+
+4/ Grant access to the API from more hosts
+
+By default, the OAR API can only be accessed from localhost. Look at the /etc/oar/apache/oar-restful-api.conf configuration file to allow connections from other hosts.
+
+5/ Enable the oar-restful-api configuration and restart Apache
+
+# a2enconf oar-restful-api
+# service apache2 restart
+
+You should be all set !

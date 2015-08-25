@@ -110,7 +110,7 @@ Description: OAR batch scheduler PostgreSQL user backend package
 
 Package: oar-web-status
 Architecture: all
-Depends: ${misc:Depends}, ${shlibs:Depends}, apache2 | httpd-cgi, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl, libjs-jquery, php5, php5-mysql | php5-pgsql
+Depends: ${misc:Depends}, ${shlibs:Depends}, apache2 | httpd-cgi, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl, php5, php5-mysql | php5-pgsql
 Suggests: oar-doc
 Description: OAR batch scheduler visualization tool package
  OAR is a versatile resource and task manager (also called a batch scheduler)
@@ -131,7 +131,7 @@ Description: OAR batch scheduler documentation package
 
 Package: oar-restful-api
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, apache2 | httpd-cgi, perl-modules, libjson-perl, libyaml-perl, libwww-perl, libcgi-fast-perl, oar-user (>> 2.5.0)
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, perl-modules, libjson-perl, libyaml-perl, libwww-perl, libcgi-fast-perl, oar-user (>> 2.5.0), apache2, libapache2-mod-fastcgi, apache2-suexec-custom
 Suggests: oar-doc, oar-server
 Replaces: oar-api (<< 2.5.0+dev515.519ec70-63)
 Breaks: oar-api (<< 2.5.0+dev515.519ec70-63)
