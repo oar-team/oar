@@ -1,5 +1,5 @@
-%define version 2.5.4
-%define release 3.el6
+%define version 2.5.5+rc2
+%define release 1.el6
 
 %define oaruser  oar
 
@@ -16,11 +16,9 @@ Url:      http://oar.imag.fr
 # %define _unpackaged_files_terminate_build 0
 
 Source:         oar-%version.tar.gz
-Patch1:         001-fix_oar-node_pid_file
-Patch2:         002-replace-truncate-requests-by-delete
-Patch3:         003-fix-advance-reservation-vs-moldable-jobs
+Patch1:         001-use-sphinx-default-theme
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
-BuildRequires:  perl sed make tar python-docutils
+BuildRequires:  perl sed make tar python-sphinx
 %description
 OAR is a resource manager (or batch scheduler) for large computing clusters.
 
@@ -73,14 +71,14 @@ This package installs the OAR batch scheduler status web pages: jobs and resourc
 Summary:        OAR batch scheduler doc package
 Group:          System Environment/Base
 Requires:       man, httpd
-BuildRequires:  python-docutils, httpd
+BuildRequires:  python-sphinx
 %description doc
 This package installs some documentation for OAR batch scheduler
 
 %package restful-api
 Summary:        OAR RESTful user API
 Group:          System Environment/Base
-Requires:       oar-common = %version-%release, oar-user = %version-%release, httpd, perl(CGI), perl(FCGI)
+Requires:       oar-common = %version-%release, oar-user = %version-%release, httpd-suexec, mod_fcgid, perl-FCGI, perl-YAML
 Provides:       perl(OAR::API), oar-api
 Obsoletes:      oar-api
 %description    restful-api
@@ -143,8 +141,6 @@ This package installs the PostgreSQL dependencies for OAR web-status package
 %prep
 %setup -q
 %patch1 -p1
-%patch2 -p1
-%patch3 -p1
 
 # Modify Makefile for chown commands to be non-fatal as the permissions
 # are set by the packaging
@@ -395,8 +391,9 @@ rm -rf tmp
 %config %{_sysconfdir}/oar/api_html_postform_resources.pl
 %config %{_sysconfdir}/oar/api_html_postform_rule.pl
 %config %{_sysconfdir}/oar/stress_factor.sh
-%attr(6755, root, oar) /var/www/cgi-bin/oarapi/oarapi-debug.cgi
-%attr(6755, root, oar) /var/www/cgi-bin/oarapi/oarapi.cgi
+%attr(0755, oar, oar) /var/www/cgi-bin/oarapi
+%attr(0755, oar, oar) /var/www/cgi-bin/oarapi/oarapi-debug.cgi
+%attr(0755, oar, oar) /var/www/cgi-bin/oarapi/oarapi.cgi
 %attr(0755, root, root) %{_libdir}/oar/oarapi.pl
 %attr(0755, root, root) %{_libdir}/oar/setup/api.sh
 
@@ -495,8 +492,12 @@ fi
 . %{_libdir}/oar/setup/user.sh
 user_setup
 
-
 %changelog
+* Wed Aug 26 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.5+rc2-1.el6
+- New upstream release, remove patches (applied upstream)
+- OAR RESTful API: fix dependancy to httpd-suexec, perl-YAML and perl-FCGI, fix ownership and permission for CGI
+- Doc: add patch to fix OAR doc build (use python-sphinx default theme)  
+
 * Sat Jan 24 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-2.el6
 - Fix errors with the TRUNCATE SQL request which is incompatible with MySQL
   and causes deadlocks with PostgreSQL (update previous patch)
