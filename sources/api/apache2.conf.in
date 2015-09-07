@@ -1,9 +1,12 @@
 # Apache2 configuration for the OAR API
 
-# WARNING: the OAR API requires Apache fastcgi and suexec modules.  Since the
-# suexec mechanism is global to a virtual host, enabling it for the OAR API
-# might break other CGI programs (e.g. monika). Therefore, it is recommended to
-# setup the OAR API in a dedicated (virtual) host.
+# WARNING: the OAR API requires Apache fastcgi and a way for the httpd user to
+# become oar. This can be achieved using Apache suexec. But since the suexec
+# mechanism is global to a virtual host, enabling it for the OAR API might
+# break other CGI programs (e.g. monika). As a result, it could be necessary to
+# setup several virtual hosts. Furthermore the suexec user cannot have a system
+# UID, which is the case of the oar user by default. One may need to change
+# that uid (e.g. on Centos).
 
 # Aliases to the API.
 ScriptAlias /oarapi %%CGIDIR%%/oarapi/oarapi.cgi
