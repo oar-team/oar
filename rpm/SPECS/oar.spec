@@ -1,4 +1,4 @@
-%define version 2.5.5+rc2
+%define version 2.5.5
 %define release 1.el6
 
 %define oaruser  oar
@@ -480,6 +480,9 @@ fi
 . %{_libdir}/oar/setup/api.sh
 api_setup
 service httpd reload || true
+cat <<EOF
+Warning: Setting up OAR API with suexec requires to change the uid of the oar user, to be > 500 (non-system user).
+EOF
 
 %postun restful-api
 if [ "$1" = "0" ] ; then # last uninstall
@@ -493,10 +496,11 @@ fi
 user_setup
 
 %changelog
-* Wed Aug 26 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.5+rc2-1.el6
+* Mon Sep 07 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.5+rc2-1.el6
 - New upstream release, remove patches (applied upstream)
 - OAR RESTful API: fix dependancy to httpd-suexec, perl-YAML and perl-FCGI, fix ownership and permission for CGI
-- Doc: add patch to fix OAR doc build (use python-sphinx default theme)  
+- Add message: Setting up the API requires to change the uid of the oar user, to be > 500 (non-system user)
+- Doc: add a patch to fix OAR doc build (use python-sphinx default theme)  
 
 * Sat Jan 24 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-2.el6
 - Fix errors with the TRUNCATE SQL request which is incompatible with MySQL
