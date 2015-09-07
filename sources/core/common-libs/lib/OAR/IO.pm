@@ -5069,16 +5069,20 @@ sub get_resource_info($$) {
 sub get_resource_last_value_of_property($$) {
     my $dbh = shift;
     my $property = shift;
+    my $res;
 
-    my $sth = $dbh->prepare("   SELECT $property
-                                FROM resources
-                                ORDER BY $property DESC
-                                LIMIT 1
-                            ");
-    $sth->execute();
+    my %properties = list_resource_properties_fields($dbh);
+    if (grep(/^$property$/,keys(%properties))) {
+        my $sth = $dbh->prepare("   SELECT $property
+                                    FROM resources
+                                    ORDER BY $property DESC
+                                    LIMIT 1
+                                ");
+        $sth->execute();
 
-    my ($res) = $sth->fetchrow_array();
-    $sth->finish();
+        ($res) = $sth->fetchrow_array();
+        $sth->finish();
+    }
     return $res;
 }
 
