@@ -307,11 +307,10 @@ if (defined($last_property_value)) {
     OAR::IO::disconnect($db);
     if (defined($value)){
         print $value."\n";
-        $exit_code = 0;
     } else {
-        warn("/!\\ Cannot retrive the last value for $last_property_value.\n");
-        $exit_code = 14;
+        warn("# Warning: Cannot retrieve the last value for $last_property_value. Either no resource or no such property exists (yet).\n");
     }
+    $exit_code = 0;
     exit($exit_code);
 }elsif (defined($new_resource)){
     # Create a new resources

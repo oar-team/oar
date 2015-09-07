@@ -20,7 +20,8 @@ version 2.5.5:
   - [oarsub] use jobkey (-k) is the OAR_JOB_KEY_FILE env variable  is set.
   - [oarstat] fix accounting display.
   - [oar_resources_init] fix HyperThreading bug + improve CLI.
-  - [oar_resources_add] make HyperThreading optional + fix long options.
+  - [oar_resources_add] make HyperThreading optional + fix long options + make
+        nicer warning outputs for auto-offset. 
   - [admission rules] rewrite the job type check rule.
   - [admission rules] fix oaradmissionrules bug with MySQL when modifying a rule
   - [oar-node] fix pid in init script.

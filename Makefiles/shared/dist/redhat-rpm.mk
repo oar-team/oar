@@ -3,7 +3,6 @@ export TARGET_DIST?=redhat
 
 export PREFIX?=/usr
 
-export CGIDIR?=/var/www/cgi-bin
 export PERLLIBDIR?=$(PREFIX)/share/perl5
 export INITDIR?=$(ETCDIR)/rc.d/init.d
 export DEFAULTDIR?=$(ETCDIR)/sysconfig
