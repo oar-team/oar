@@ -4,7 +4,7 @@ Priority: extra
 Maintainer: Pierre Neyron <pierre.neyron@free.fr>
 Uploaders: Philippe Le Brouster <plb@nebkha.net>,
   Vincent Danjean <vdanjean@debian.org>
-Build-Depends: debhelper (>= 9~), po-debconf, python-docutils, perl, python-sphinx | python3-sphinx
+Build-Depends: debhelper (>= 9~), po-debconf, perl, python-sphinx | python3-sphinx
 Standards-Version: 3.9.6
 Vcs-Git: git://scm.gforge.inria.fr/oar/oar.git/ -b debian.org
 Homepage: http://oar.imag.fr/
@@ -121,7 +121,7 @@ Description: OAR batch scheduler visualization tool package
 
 Package: oar-doc
 Section: doc
-Depends: ${misc:Depends}
+Depends: ${misc:Depends}, libjs-jquery, libjs-underscore
 Architecture: all
 Description: OAR batch scheduler documentation package
  OAR is a versatile resource and task manager (also called a batch scheduler)

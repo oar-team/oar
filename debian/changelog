@@ -8,6 +8,8 @@ oar (2.5.5-1) unstable; urgency=medium
   * Set libyaml-perl as a dependance for oar-restful-api and remove
     libxml-simple-perl from the recommends
   * Add python-sphinx to the build dependencies
+  * Replace embedded jquery.js and underscore.js in oar-doc with a symlink to
+    the copy provided by the libjs-* packages
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 07 Sep 2015 23:17:12 +0200
 

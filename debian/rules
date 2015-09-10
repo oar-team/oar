@@ -51,6 +51,9 @@ override_dh_auto_install:
 	#rm $(CURDIR)/$(INSTALLDIR)/oar-web-status/usr/share/oar/oar-web-status/poar/external/jquery.js
 	#ln -s /usr/share/javascript/jquery/jquery.js  $(CURDIR)/$(INSTALLDIR)/oar-web-status/usr/share/oar-web-status/poar/external/jquery.js
 		
+	## oar-doc
+	rm -r $(CURDIR)/$(INSTALLDIR)/oar-doc/usr/share/doc/oar-doc/doctrees
+		
 	dh_install -i
 
 override_dh_clean:
