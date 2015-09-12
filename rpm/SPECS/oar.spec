@@ -17,7 +17,6 @@ Url:      http://oar.imag.fr
 
 Source:         oar-%version.tar.gz
 Patch1:         001-fix-spelling-error-in-manpage
-Patch2:         002-use-sphinx-default-theme
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar python-sphinx
 %description
@@ -142,7 +141,6 @@ This package installs the PostgreSQL dependencies for OAR web-status package
 %prep
 %setup -q
 %patch1 -p1
-%patch2 -p1
 
 # Modify Makefile for chown commands to be non-fatal as the permissions
 # are set by the packaging
@@ -502,7 +500,6 @@ user_setup
 - New upstream release, remove patches (applied upstream)
 - OAR RESTful API: fix dependancy to httpd-suexec, perl-YAML and perl-FCGI, fix ownership and permission for CGI
 - Add message: Setting up the API requires to change the uid of the oar user, to be > 500 (non-system user)
-- Doc: add a patch to fix OAR doc build (use python-sphinx default theme)
 - Fix spelling errors in oarsub manual page
 
 * Sat Jan 24 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-3.el6
