@@ -1,0 +1,38 @@
+#!/bin/bash
+
+SRPM=$1
+if ! [ -n "$SRPM" -a -r "$SRPM" ] && [[ $SRPM =~ ^.*\/oar-[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+-[[:digit:]]+\.el[67]\.src\.rpm$ ]]; then 
+  cat <<EOF 1>&2
+This script takes a OAR SRPM as argument.
+EOF
+fi
+
+TMP1=${SRPM%.src.rpm}
+DIR=${TMP1%/*}/..
+TMP2=${TMP1#*/oar-}
+EL=${TMP2##*.}
+VERSION=${TMP2%.*}
+RELEASEBRANCH=testing
+REMOTE=ftpmaster@oar-ftp.imag.fr.lig
+
+echo version: $VERSION
+echo el: $EL
+
+if [ "$EL" == "el6" ]; then
+  DISTRO=centos6
+elif [ "$EL" == "el7" ]; then
+  DISTRO=centos7
+else
+  echo "Unknown distribution $DISTRIB" 1>&2
+  exit 1
+fi
+
+echo distro: $DISTRO
+
+scp $SRPM $DIR/RPMS/*-$VERSION.$EL.*.rpm $REMOTE:oar-ftp.imag.fr/oar/rpm/$DISTRO/$RELEASEBRANCH
+
+ssh $REMOTE "cd oar-ftp.imag.fr/oar/rpm/$DISTRO/$RELEASEBRANCH/ && rpmsign --addsign --key-id D90D0568 *-$VERSION.*.rpm --verbose < /dev/null && createrepo --update --verbose ."
+
+#git tag -s $DISTRO/$VERSION -m $DISTRO/$VERSION
+#git push --tags
+
