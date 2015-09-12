@@ -16,7 +16,8 @@ Url:      http://oar.imag.fr
 # %define _unpackaged_files_terminate_build 0
 
 Source:         oar-%version.tar.gz
-Patch1:         001-use-sphinx-default-theme
+Patch1:         001-fix-spelling-error-in-manpage
+Patch2:         002-use-sphinx-default-theme
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar python-sphinx
 %description
@@ -141,6 +142,7 @@ This package installs the PostgreSQL dependencies for OAR web-status package
 %prep
 %setup -q
 %patch1 -p1
+%patch2 -p1
 
 # Modify Makefile for chown commands to be non-fatal as the permissions
 # are set by the packaging
@@ -496,11 +498,12 @@ fi
 user_setup
 
 %changelog
-* Mon Sep 07 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.5+rc2-1.el6
+* Fri Sep 11 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.5-1.el6
 - New upstream release, remove patches (applied upstream)
 - OAR RESTful API: fix dependancy to httpd-suexec, perl-YAML and perl-FCGI, fix ownership and permission for CGI
 - Add message: Setting up the API requires to change the uid of the oar user, to be > 500 (non-system user)
-- Doc: add a patch to fix OAR doc build (use python-sphinx default theme)  
+- Doc: add a patch to fix OAR doc build (use python-sphinx default theme)
+- Fix spelling errors in oarsub manual page
 
 * Sat Jan 24 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.4-2.el6
 - Fix errors with the TRUNCATE SQL request which is incompatible with MySQL
