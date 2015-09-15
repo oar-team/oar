@@ -6,9 +6,9 @@ This is due to the fact that suexec activation is global to a virtual host, brea
 Several options are possible to overcome that:
 - Install the oar-restful-api package on a dedicated host (e.g. not on the same host as the oar-web-status package).
 - Adapt the shipped Apache configuration to setup the OAR API in a dedicated virtual host.
-- Adapt other CGI scripts to suexec (scripts and their parent directory must be owned and will have to be run by the oar user)
+- Adapt other CGI scripts to suexec (scripts and their parent directories must be owned and will have to be run by the oar user)
 
-In any case, so more configuration is needed to setup oar-restful-api with fastcgi and suexec on Debian:
+In any case, some more configuration is needed to setup oar-restful-api with fastcgi and suexec on Debian:
 
 1/ Configure the apache2-suexec-custom package
 
@@ -30,6 +30,6 @@ By default, the OAR API can only be accessed from localhost. Look at the /etc/oa
 5/ Enable the oar-restful-api configuration and restart Apache
 
 # a2enconf oar-restful-api
-# service apache2 restart
+# systemctl restart apache2
 
 You should be all set !

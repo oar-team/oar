@@ -1,5 +1,5 @@
 Source: oar
-Section: science
+Section: utils
 Priority: extra
 Maintainer: Pierre Neyron <pierre.neyron@free.fr>
 Uploaders: Philippe Le Brouster <plb@nebkha.net>,
@@ -109,6 +109,7 @@ Description: OAR batch scheduler PostgreSQL user backend package
  the OAR batch scheduler.
 
 Package: oar-web-status
+Section: web
 Architecture: all
 Depends: ${misc:Depends}, ${shlibs:Depends}, apache2 | httpd-cgi, perl, libdbi-perl, libdbd-mysql-perl | libdbd-pg-perl, libtie-ixhash-perl, libappconfig-perl, libsort-naturally-perl, php5, php5-mysql | php5-pgsql
 Suggests: oar-doc
@@ -132,19 +133,10 @@ Description: OAR batch scheduler documentation package
 Package: oar-restful-api
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, perl-modules, libjson-perl, libyaml-perl, libwww-perl, libcgi-fast-perl, oar-user (>> 2.5.0), apache2, libapache2-mod-fastcgi, apache2-suexec-custom
+Section: contrib/net
 Suggests: oar-doc, oar-server
-Replaces: oar-api (<< 2.5.0+dev515.519ec70-63)
-Breaks: oar-api (<< 2.5.0+dev515.519ec70-63)
 Description: OAR web services
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
  This package installs a RESTful API for oar users. 
- It works as a cgi into Apache.
-
-Package: oar-api
-Depends: oar-restful-api, ${misc:Depends}
-Architecture: all
-Description: transitional dummy package
- This is a transitional dummy package. It can safely be removed.
-

@@ -1,3 +1,13 @@
+oar (2.5.5-2) unstable; urgency=medium
+
+  * Rework the sections of the packages (mainly set to utils instead of science)
+  * Set the archive area/section of the oar-restful-api package to contrib/net,
+    since it depends on non-free packages (Closes: #798820)
+  * Remove the oar-api transitional dummy package
+  * Fix typos in oar-restful-api README.Debian file
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 15 Sep 2015 23:30:07 +0200
+
 oar (2.5.5-1) unstable; urgency=medium
 
   [ Pierre Neyron ]
