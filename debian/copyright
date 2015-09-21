@@ -2,6 +2,10 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: oar
 Upstream-Contact: oar-users@lists.gforge.inria.fr
 Source: http://oar-ftp.imag.fr/oar/sources/
+Comment: javascript files without their source not used in the packaging
+Files-Excluded:
+ sources/visualization_interfaces/DrawGantt/js/overlib.js
+ sources/visualization_interfaces/Monika/overlib.js
 
 Files: *
 Copyright:  2009-2012 LIG http://lig.imag.fr
