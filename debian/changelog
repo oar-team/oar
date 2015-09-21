@@ -1,3 +1,10 @@
+oar (2.5.5+dfsg.1-1) unstable; urgency=medium
+
+  * remove source-less javascript files from tar.gz
+  * add a README.source to warn about an uscan bug
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 21 Sep 2015 16:45:32 +0200
+
 oar (2.5.5-2) unstable; urgency=medium
 
   * Rework the sections of the packages (mainly set to utils instead of science)
