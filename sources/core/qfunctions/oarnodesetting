@@ -325,6 +325,7 @@ if (defined($last_property_value)) {
 }else{
     if (($#resource >= 0) or (defined($Sql_property))){
         if (defined($state)){
+            OAR::IO::lock_table($base, ["resources"]);
             my @resources_to_check;
             foreach my $r (@resource){
                 if (OAR::IO::set_resource_nextState($base,$r,$state) > 0){
@@ -335,6 +336,7 @@ if (defined($last_property_value)) {
                     $exit_code = 3;
                 }
             }
+            OAR::IO::unlock_table($base);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
             if (($state eq 'Dead') || ($state eq 'Absent')){
                 if (!$nowaitMode){
