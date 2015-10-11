@@ -67,9 +67,9 @@ sub set_hostname_properties($$$){
 }
 
 
-sub set_resource_properties($$$){
+sub set_resources_properties($$$){
     my $base = shift;
-    my $resource = shift;
+    my $resources = shift; # ref to an array
     my $arrayProp = shift;
 
     foreach my $p (@{$arrayProp}){
@@ -80,13 +80,11 @@ sub set_resource_properties($$$){
                 next;
             }
             print("Update property $1 with value $2 ...");
-            my $ret = OAR::IO::set_resource_property($base,$resource,$1,$2);
-            if ($ret == 0){
-                print("DONE\n");
-            }elsif($ret == 2){
-                print("SAME (the property is already equal to the value)\n");
+            my $ret = OAR::IO::set_resources_property($base,$resources,$1,$2);
+            if ($ret > 0){
+                print("DONE ($ret resource(s) updated)\n");
             }else{
-                print("ERROR (wrong property or wrong value)\n");
+                print("WARNING (0 resources updated: wrong property or wrong resource id or already the same value)\n");
                 $exit_code = 9;
             }
         }else{
@@ -142,7 +140,7 @@ sub set_maintenance_on($$$$$){
 	    my $last_available_upto = $res_info->{'available_upto'};
 	    push @prop_to_set, "available_upto=0";
 	    push @prop_to_set, "last_available_upto=$last_available_upto" if $last_available_upto != 0;
-	    set_resource_properties($base, $res, \@prop_to_set);
+	    set_resources_properties($base, [$res], \@prop_to_set);
 	    OAR::IO::set_resource_nextState($base,$res,"Absent");
 	    OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
 	    if (!$nowaitMode){
@@ -172,7 +170,7 @@ sub set_maintenance_off($$$$$){
 	    my @prop_to_set;
 	    my $available_upto = $res_info->{'last_available_upto'};
 	    push @prop_to_set, "available_upto=$available_upto" if $available_upto != 0;;
-	    set_resource_properties($base, $res, \@prop_to_set);
+	    set_resources_properties($base, [$res], \@prop_to_set);
 	    OAR::IO::set_resource_nextState($base,$res,"Alive");
 	    OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
 	}
@@ -271,6 +269,7 @@ if (defined($Sql_property)){
     if ($#resource < 0){
         warn("/!\\ Your SQL clause returns nothing and there is no resource specified.\n");
         $exit_code = 12;
+        exit($exit_code);
     }
 }
 
@@ -323,22 +322,19 @@ if (defined($last_property_value)) {
     push(@notify_server_tag_list, "ChState");
     push(@notify_server_tag_list, "Term");
 }else{
-    if (($#resource >= 0) or (defined($Sql_property))){
+    if ($#resource >= 0){
         if (defined($state)){
-            my @resources_to_check;
-            foreach my $r (@resource){
-                if (OAR::IO::set_resource_nextState($base,$r,$state) > 0){
-                    print("$r --> $state\n");
-                    push(@resources_to_check, $r);
-                }else{
-                    warn("/!\\ The resource $r does not exist in OAR database.\n");
-                    $exit_code = 3;
-                }
+            my $tmpnbupdates = OAR::IO::set_resources_nextState($base,\@resource,$state);
+            if ($tmpnbupdates <= $#resource){
+                warn("/!\\  ".$#resource + 1 - $tmpnbupdates." resource(s) cannot be updated.\n");
+                $exit_code = 3;
+            }else{
+                print("(".join(",",@resource).") --> $state\n");
             }
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
             if (($state eq 'Dead') || ($state eq 'Absent')){
                 if (!$nowaitMode){
-                    foreach my $r (@resources_to_check){
+                    foreach my $r (@resource){
                         print("Check jobs to delete on resource $r :\n");
                         my @jobs = OAR::IO::get_resource_job_to_frag($base,$r);
                         wait_end_of_running_jobs($base,\@jobs);
@@ -396,9 +392,9 @@ if (defined($last_property_value)) {
 }
 
 if (defined ($drain)){
-    if ($drain = "on") {
+    if ($drain eq "on") {
         push @properties, "drain=YES"; 
-    }elsif ($drain = "off") {
+    }elsif ($drain eq "off") {
         push @properties, "drain=NO"; 
     }
 }
@@ -406,15 +402,10 @@ if (defined ($drain)){
 # Update properties
 if ($#properties >= 0){
     OAR::IO::lock_table($base, ["resources","resource_logs"]);
-    if (($#resource >= 0) or (defined($Sql_property))){
-        foreach my $r (@resource){
-            if (!defined(OAR::IO::get_resource_info($base,$r))){
-                warn("/!\\ The resource $r does not exist in OAR database.\n");
-                $exit_code = 1;
-            }else{
-                set_resource_properties($base,$r,\@properties);
-            }
-        }
+    # Avoid deadlock with Pg: MUST be also used in the right places (node_change_state, sarko, bipbip, ...)
+    $base->do("LOCK TABLE resources, resource_logs IN EXCLUSIVE MODE") if (OAR::IO::get_database_type() eq "Pg");
+    if ($#resource >= 0){
+        set_resources_properties($base,\@resource,\@properties);
     }else{
         foreach my $h (@hostnames){
             if (OAR::IO::is_node_exists($base,$h) == 0){

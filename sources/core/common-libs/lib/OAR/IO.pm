@@ -5410,6 +5410,21 @@ sub set_resource_nextState($$$) {
     return($result);
 }
 
+# set_resources_nextState
+# sets the nextState field of a set of resources identified by their resource_id
+# parameters : base, ref to an arry of resource id, nextState
+# return value : number of updates
+sub set_resources_nextState($$$) {
+    my $dbh = shift;
+    my $resources = shift;
+    my $next_state = shift;
+
+    my $result = $dbh->do(" UPDATE resources
+                            SET next_state = \'$next_state\', next_finaud_decision = \'NO\'
+                            WHERE resource_id IN (".join(",", @{$resources}).")
+                          ");
+    return($result);
+}
 
 # set_resource_state
 # sets the state field of a resource
@@ -5622,6 +5637,56 @@ sub set_resource_property($$$$){
     }
 }
 
+# set resources property
+# change property in resource table
+# parameters : base, resource array ref, property name, value
+# return : 
+sub set_resources_property($$$$){
+    my $dbh = shift;
+    my $resources = shift;
+    my $property = shift;
+    my $value = shift;
+
+#    lock_table($dbh, ["resources","resource_logs"]);
+    my $sth = $dbh->prepare("   SELECT resource_id
+                                FROM resources
+                                WHERE
+                                    resource_id IN (".join(",", @{$resources}).")
+                                    AND $property != \'$value\'
+                            ");
+    $sth->execute();
+    my @ids = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@ids, $ref->{resource_id});
+    }
+    my $nbRowsAffected = $#ids + 1;
+    if ($nbRowsAffected > 0){
+        $nbRowsAffected = $dbh->do("UPDATE resources
+                                    SET $property = \'$value\'
+                                    WHERE
+                                        resource_id IN (".join(",", @ids).")
+                                   ");
+        if ($nbRowsAffected > 0){
+            #Update LOG table
+            my $date = get_date($dbh);
+            $dbh->do("  UPDATE resource_logs
+                        SET date_stop = \'$date\'
+                        WHERE
+                            date_stop = 0
+                            AND attribute = \'$property\'
+                            AND resource_id IN (".join(",", @ids).")
+                     ");
+            my $query = "INSERT INTO resource_logs (resource_id,attribute,value,date_start) VALUES ";
+            foreach my $i (@ids){
+                $query .= " ($i, \'$property\', \'$value\', \'$date\'),";
+            }
+            chop($query);
+            $dbh->do($query);
+        }
+    }
+#   unlock_table($dbh;
+    return($nbRowsAffected);
+}
 
 # add_event_maintenance_on
 # add an event in the table resource_logs indicating that this 
