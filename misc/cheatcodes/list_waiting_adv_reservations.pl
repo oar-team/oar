@@ -1,8 +1,7 @@
 #!/usr/bin/perl -w
-# This hack allows one to transmute a batch to an advance reservation
-# Additional types must be allowed (admission rules): evening, night, week-end
-# This hack is thought to be run before each pass of the metascheduler (in a
-# wrapper around it) so that there is not conflict with the scheduling.
+# List current and future advance reservations with resources displayed by state
+# The same information can be retrieved by running:
+# $ oarstat -f --sql "reservation = 'Scheduled' and (state='Waiting' or state='Running')" -D
 use strict;
 use warnings;
 
@@ -21,15 +20,16 @@ my $dbh = DBI->connect("DBI:$db_type:database=$db_name;host=$db_host;port=$db_po
 my $h = {};
 my $req = <<EOS;
 SELECT 
-  j.job_id, p.start_time, j.message, j.job_user, r.resource_id, m.moldable_walltime, j.submission_time, EXTRACT(EPOCH FROM current_timestamp) as now
+  j.job_id, gp.start_time, j.message, j.job_user, r.resource_id, r.state, m.moldable_walltime, j.submission_time, EXTRACT(EPOCH FROM current_timestamp) as now
 FROM
-  jobs j, moldable_job_descriptions m, gantt_jobs_predictions p, gantt_jobs_resources r
+  jobs j, moldable_job_descriptions m, gantt_jobs_predictions gp, gantt_jobs_resources gr, resources r
 WHERE
   j.job_id = m.moldable_job_id AND
-  p.moldable_job_id = m.moldable_id AND
-  r.moldable_job_id = m.moldable_id AND
+  gp.moldable_job_id = m.moldable_id AND
+  gr.moldable_job_id = m.moldable_id AND
   j.reservation = 'Scheduled' AND
-  p.start_time > EXTRACT(EPOCH FROM current_timestamp)
+  r.resource_id = gr.resource_id AND
+  gp.start_time > EXTRACT(EPOCH FROM current_timestamp)
 EOS
 my $sth = $dbh->prepare($req);
 
@@ -42,7 +42,7 @@ while (my $ref = $sth->fetchrow_hashref()) {
     $h->{$ref->{job_id}}->{start_time} = localtime($ref->{start_time});
     $h->{$ref->{job_id}}->{walltime} = $ref->{moldable_walltime};
     $h->{$ref->{job_id}}->{message} = $ref->{message};
-    $h->{$ref->{job_id}}->{resources} .= "$ref->{resource_id} ";
+    $h->{$ref->{job_id}}->{resources}->{$ref->{state}} .= "$ref->{resource_id} ";
 }
 $dbh->disconnect() or die;
 print "## Advance reservation list on ".localtime($now)."\n";
