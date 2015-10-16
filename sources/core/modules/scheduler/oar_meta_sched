@@ -318,7 +318,7 @@ foreach my $job (@Rjobs){
      }
      # CM part
      else{
-         $available_resources_vector &= $free_resources_vec & $tmp_veca;
+         $available_resources_vector &= $free_resources_vec | $tmp_veca;
      }
 
     my ($dead_resources_vec, @dead_resources) = OAR::IO::get_resource_ids_in_state($base,"Dead");
@@ -337,8 +337,7 @@ foreach my $job (@Rjobs){
         }
         my $tmp_tree;
         $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, "".$Order_part);
-        $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
-        $tmp_tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tmp_tree);
+        $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($tmp_tree, undef);
         push(@tree_list, $tmp_tree);
         my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
         foreach my $l (@leafs){
