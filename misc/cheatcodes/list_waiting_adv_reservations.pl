@@ -21,7 +21,7 @@ my $dbh = DBI->connect("DBI:$db_type:database=$db_name;host=$db_host;port=$db_po
 my $h = {};
 my $req = <<EOS;
 SELECT 
-  j.job_id, p.start_time, j.message, j.job_user, r.resource_id, m.moldable_walltime
+  j.job_id, p.start_time, j.message, j.job_user, r.resource_id, m.moldable_walltime, j.submission_time, EXTRACT(EPOCH FROM current_timestamp) as now
 FROM
   jobs j, moldable_job_descriptions m, gantt_jobs_predictions p, gantt_jobs_resources r
 WHERE
@@ -34,15 +34,18 @@ EOS
 my $sth = $dbh->prepare($req);
 
 $sth->execute();
+my $now;
 while (my $ref = $sth->fetchrow_hashref()) {
+    $now = $ref->{now};
     $h->{$ref->{job_id}}->{user} = $ref->{job_user};
-    $h->{$ref->{job_id}}->{start} = localtime($ref->{start_time});
+    $h->{$ref->{job_id}}->{submission_time} = localtime($ref->{submission_time});
+    $h->{$ref->{job_id}}->{start_time} = localtime($ref->{start_time});
     $h->{$ref->{job_id}}->{walltime} = $ref->{moldable_walltime};
     $h->{$ref->{job_id}}->{message} = $ref->{message};
     $h->{$ref->{job_id}}->{resources} .= "$ref->{resource_id} ";
 }
 $dbh->disconnect() or die;
-print "## Advance reservation list on ".localtime()."\n";
+print "## Advance reservation list on ".localtime($now)."\n";
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Terse = 1;
 foreach my $k (sort keys (%$h)) {
