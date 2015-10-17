@@ -1,6 +1,4 @@
-OAR is a versatile resource and task manager (also called a batch scheduler)
-for HPC clusters, and other computing infrastructures (like distributed computing
-experimental testbeds where versatility is a key). 
+OAR is a versatile resource and task manager (also called a batch scheduler) for HPC clusters, and other computing infrastructures (like distributed computing experimental testbeds where versatility is a key). 
 
 OAR is suitable for production use.
 
