@@ -141,6 +141,7 @@ fi
 
 if [ "$HOSTFILE" == "-" ]; then
     exec 4<&0
+    exec 0<&-
     echo "# Reading nodes from STDIN..."
 else
     exec 4<$HOSTFILE

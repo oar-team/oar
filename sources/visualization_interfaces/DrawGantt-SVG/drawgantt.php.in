@@ -174,7 +174,7 @@ $output = <<<EOT
     }
     if (isNaN(qstart)) { 
       var date = new Date();
-      start = Math.floor(date.getTime() / 1000) - qtimespan / 2;
+      start = Math.floor(date.getTime() / 1000 - qtimespan / 2);
     } else {
       start = qstart;
       if (! isNaN(qstop)) {
@@ -192,7 +192,7 @@ $output = <<<EOT
   function shift_to_now() {
     var timespan = Math.floor(stop - start);
     var date = new Date();
-    start = Math.floor(date.getTime() / 1000) - timespan / 2;
+    start = Math.floor(date.getTime() / 1000 - timespan / 2);
     stop = start + timespan;
     reload_content();
   }
@@ -209,13 +209,13 @@ $output = <<<EOT
     reload_content();
   }
   function zoomin() {
-    var t = start + (stop - start) / 4;
-    stop = stop - (stop - start) / 4;
+    var t = Math.floor(start + (stop - start) / 4);
+    stop = Math.floor(stop - (stop - start) / 4);
     start = t;
     reload_content();
   }
   function zoomout() {
-    var t = (stop - start)/2;
+    var t = Math.floor((stop - start)/2);
     stop += t;
     start -= t;
     reload_content();
@@ -234,8 +234,8 @@ $output = <<<EOT
   function set_time() {
     var time = Math.floor(Date.parse(document.getElementById("datetime").value) / 1000);
     var span = document.getElementById("timespan").value;
-    start = time - +span / 2;
-    stop = time + +span / 2;
+    start = Math.floor(time - +span / 2);
+    stop = Math.floor(time + +span / 2);
     reload_content();
     hide_timepicker();
   }
