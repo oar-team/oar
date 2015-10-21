@@ -132,9 +132,9 @@ Description: OAR batch scheduler documentation package
 
 Package: oar-restful-api
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, perl-modules, libjson-perl, libyaml-perl, libwww-perl, libcgi-fast-perl, oar-user (>> 2.5.0), apache2, libapache2-mod-fastcgi, apache2-suexec-custom
-Section: contrib/net
-Suggests: oar-doc, oar-server
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${perl:Depends}, perl-modules, libjson-perl, libyaml-perl, libwww-perl, libcgi-fast-perl, oar-user (>> 2.5.0), apache2 | httpd-cgi
+Section: net
+Suggests: oar-doc, oar-server, apache2, libapache2-mod-fastcgi, apache2-suexec-custom
 Description: OAR web services
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
