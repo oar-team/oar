@@ -123,8 +123,7 @@ sub get_resources_change_state($);
 sub set_resource_nextState($$$);
 sub set_node_nextState($$$);
 sub set_node_expiryDate($$$);
-sub set_node_property($$$$);
-sub set_resource_property($$$$);
+sub set_resources_property($$$$);
 sub get_resource_dead_range_date($$$);
 sub get_expired_resources($);
 sub is_node_desktop_computing($$);
@@ -5541,118 +5540,30 @@ sub set_node_expiryDate($$$) {
 }
 
 
-# set a node property
-# change resource_properties table value for resources with the specified network_address
-# parameters : base, hostname, property name, value
-# return : 0 if all is good, otherwise 1 if the property does not exist or the value is incorrect
-sub set_node_property($$$$){
-    my $dbh = shift;
-    my $hostname = shift;
-    my $property = shift;
-    my $value = shift;
-
-    # Test if we must change the property
-    my $nbRowsAffected;
-    eval{
-        $nbRowsAffected = $dbh->do("UPDATE resources
-                                    SET $property = \'$value\'
-                                    WHERE 
-                                        resources.network_address = \'$hostname\'
-                                   ");
-    };
-    if ($nbRowsAffected < 1){
-        return(1);
-    }else{
-        #Update LOG table
-        my $date = get_date($dbh);
-        if ($Db_type eq "Pg"){
-            $dbh->do("  UPDATE resource_logs
-                        SET date_stop = \'$date\'
-                        FROM resources
-                        WHERE
-                            resource_logs.date_stop = 0
-                            AND resources.network_address = \'$hostname\'
-                            AND resource_logs.attribute = \'$property\'
-                            AND resources.resource_id = resource_logs.resource_id
-                     ");
-        }else{
-            $dbh->do("  UPDATE resources, resource_logs
-                        SET resource_logs.date_stop = \'$date\'
-                        WHERE
-                            resource_logs.date_stop = 0
-                            AND resources.network_address = \'$hostname\'
-                            AND resource_logs.attribute = \'$property\'
-                            AND resources.resource_id = resource_logs.resource_id
-                     ");
-        }
-
-        $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start)
-                        SELECT resources.resource_id, \'$property\', \'$value\', \'$date\'
-                        FROM resources
-                        WHERE
-                            resources.network_address = \'$hostname\'
-                  ");
-        return(0);
-    }
-}
-
-
-# set a resource property
-# change resource_properties table value for resource specified
-# parameters : base, resource, property name, value
-# return : 0 if all is good, otherwise 1 if the property does not exist or the value is incorrect
-sub set_resource_property($$$$){
-    my $dbh = shift;
-    my $resource = shift;
-    my $property = shift;
-    my $value = shift;
-
-    # Test if we must change the property
-    my $nbRowsAffected;
-    eval{
-        $nbRowsAffected = $dbh->do("UPDATE resources
-                                    SET $property = \'$value\'
-                                    WHERE 
-                                        resource_id = \'$resource\'
-                                   ");
-    };
-    if ($nbRowsAffected < 1){
-        warn "query UPDATE resources SET $property = $value WHERE resource_ID = $resource";
-        warn "rows affected $nbRowsAffected";
-        return(1);
-    }else{
-        #Update LOG table
-        my $date = get_date($dbh);
-        $dbh->do("  UPDATE resource_logs
-                    SET date_stop = \'$date\'
-                    WHERE
-                        date_stop = 0
-                        AND resource_id = \'$resource\'
-                        AND attribute = \'$property\'
-                 ");
-        $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start)
-                    VALUES ($resource, \'$property\', \'$value\', \'$date\')
-                 ");
-        return(0);
-    }
-}
-
 # set resources property
-# change property in resource table
-# parameters : base, resource array ref, property name, value
-# return : 
+# change a property value in the resource table
+# parameters : base, a hash ref defining the nodes or resources to change, property name, value
+# return : # of change rows.
 sub set_resources_property($$$$){
     my $dbh = shift;
-    my $resources = shift;
+    my $resources = shift; # e.g. {nodes => [...]}} or {resources => [...]}
     my $property = shift;
     my $value = shift;
+    my $where;
 
 #    lock_table($dbh, ["resources","resource_logs"]);
+    if (exists($resources->{nodes})){
+        $where = "network_address IN (".join(",", map {"'$_'"} @{$resources->{nodes}}).")";
+    }elsif (exists($resources->{resources})){
+        $where = "resource_id IN (".join(",", @{$resources->{resources}}).")"
+    } else {
+        return -1;
+    }
     my $sth = $dbh->prepare("   SELECT resource_id
                                 FROM resources
                                 WHERE
-                                    resource_id IN (".join(",", @{$resources}).")
-                                    AND $property != \'$value\'
+                                    $where
+                                    AND ( $property != \'$value\' OR $property IS NULL )
                             ");
     $sth->execute();
     my @ids = ();
