@@ -15,7 +15,7 @@
 ## CSS path for the HTML diplay
 ## - default is "/monika.css"
 ##############################################################################
-css_path = %%WWW_ROOTDIR%%/monika.css
+css_path = %%WWWROOTDIR%%/monika.css
 
 ##############################################################################
 ## clustername: set the name of the cluster

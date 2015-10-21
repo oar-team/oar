@@ -134,7 +134,10 @@ if ($current_time_sec < $previous_ref_time_sec){
 $current_time_sec++;
 $current_time_sql = OAR::IO::local_to_sql($current_time_sec);
 
+my ($Alive_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
 my ($Absent_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
+my ($Suspected_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
+my ($Dead_resource_id_vec, @Dead_resource_ids) = OAR::IO::get_resource_ids_in_state($base,"Dead");
 
 oar_debug("[MetaSched] Retrieve information for already scheduler reservations from database before flush (keep assign resources)\n");
 my $reservation_already_there = OAR::IO::get_waiting_reservations_already_scheduled($base);
@@ -212,7 +215,7 @@ foreach my $job (@initial_jobs){
     }else{
         $date = $job->{start_time};
     }
-    oar_debug("[MetaSched] [$i] Add job in database\n");
+    oar_debug("[MetaSched] [$i] add job in database\n");
     OAR::IO::add_gantt_scheduled_jobs($base,$job->{assigned_moldable_job},$date,\@resource_list);
 
     my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
@@ -260,7 +263,8 @@ foreach my $job (@initial_jobs){
 OAR::IO::unlock_table($base);
 oar_debug("[MetaSched] End processing of current jobs\n");
 
-oar_debug("[MetaSched] Begin processing of waiting reservations (accepted reservations which do not have assigned resources yet)\n");
+# handle accepted advance reservations which do not have assigned resources, mostly because the prediction tables were completely flushed from outside of OAR
+oar_debug("[MetaSched] Begin processing of the accepted reservations without assigned resources\n");
 my @Rjobs = OAR::IO::get_waiting_reservation_jobs($base);
 foreach my $job (@Rjobs){
     next if (defined($reservation_already_there->{$job->{job_id}}));
@@ -273,19 +277,15 @@ foreach my $job (@Rjobs){
     my $timesharing_name = "";
     my $i = $job->{job_id};
 
+    my $types = OAR::IO::get_job_types_hash($base,$i);
 
     my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
     # For reservation we take the first moldable job
     my $moldable = $job_descriptions->[0];
 
-    # Get the list of resources where the reservation will be able to be launched
-    my ($available_resources_vector, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
-    #my ($tmp_veca, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
-    my $tmp_veca = $Absent_resource_id_vec;
-    my ($tmp_vecs, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
-    $available_resources_vector |= $tmp_veca | $tmp_vecs;
-
-    my $types = OAR::IO::get_job_types_hash($base,$i);
+    # Get the list of resources where the reservation will be able to be launched = resources in state Alive, Absent or Suspected
+    # It is assumed here that Absent and Suspected resources could become Alive by the time of the start of the advance reservation job
+    my $available_resources_vector = $Alive_resource_id_vec | $Absent_resource_id_vec | $Suspected_resource_id_vec;
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         $inner_id = $1;
         if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
@@ -311,18 +311,6 @@ foreach my $job (@Rjobs){
                                                                    );
     $available_resources_vector &= $free_resources_vec;
     
-     # CM part
-     if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-        $available_resources_vector |= $free_resources_vec & OAR::IO::get_resources_that_can_be_waked_up($base,$job->{start_time} + $moldable->[1] + $Security_time_overhead);
-        $available_resources_vector &= ~ ($All_resource_list_vec & OAR::IO::get_resources_that_will_be_out($base,$job->{start_time} + $moldable->[1] + $Security_time_overhead));
-     }
-     # CM part
-     else{
-         $available_resources_vector &= $free_resources_vec & $tmp_veca;
-     }
-
-    my ($dead_resources_vec, @dead_resources) = OAR::IO::get_resource_ids_in_state($base,"Dead");
-    
     my $job_properties = "\'1\'";
     if ((defined($job->{properties})) and ($job->{properties} ne "")){
         $job_properties = $job->{properties};
@@ -336,9 +324,8 @@ foreach my $job (@Rjobs){
             $tmp_properties = $m->{property};
         }
         my $tmp_tree;
-        $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, "".$Order_part);
-        $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
-        $tmp_tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tmp_tree);
+        $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,$resource_id_used_list_vector,\@Dead_resource_ids,"$job_properties AND $tmp_properties", $m->{resources}, "".$Order_part);
+        $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($tmp_tree, undef);
         push(@tree_list, $tmp_tree);
         my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
         foreach my $l (@leafs){
@@ -372,15 +359,22 @@ foreach my $job (@Rjobs){
 
         # Update database
         push(@resources, @Resources_to_always_add);
-        oar_debug("[MetaSched] [$i] Add job in database\n");
+        oar_debug("[MetaSched] [$i] add job in database\n");
+        oar_warn("[MetaSched] [$i] resources for reservation were lost, got them back\n");
         OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
-        #OAR::IO::set_job_message($base,$job->{job_id},"");
+        OAR::IO::add_new_event($base,"GET_RESOURCES_BACK_FOR_RESERVATION",$job->{job_id},"Resources for reservation were lost, got them back");
+        OAR::IO::set_job_message($base,$job->{job_id},"Renewed resources for reservation");
     }else{
-        oar_warn("[MetaSched] [$i] Cannot find resources for reservation. Did some resources become Dead or get removed from database ?\n");
-        OAR::IO::set_job_message($base,$job->{job_id},"Not able to find resources for this reservation");
+        oar_warn("[MetaSched] [$i] Resources for reservation are lost, could not get them back\n");
+        my $message = "No resource for reservation";
+        if ($job->{message} ne $message) {
+            # Sounds like it's the first time we notice that the reservation lost its resources, adding event
+            OAR::IO::add_new_event($base,"UNABLE_TO_GET_RESOURCE_BACK_FOR_RESERVATION",$job->{job_id},"Resources for reservation are lost, could not get them back");
+        }
+        OAR::IO::set_job_message($base,$job->{job_id},$message);
     }
 }
-oar_debug("[MetaSched] End processing of waiting reservations\n");
+oar_debug("[MetaSched] End processing of the accepted reservations without assigned resources\n");
 
 
 ###########################################################################################################
@@ -551,12 +545,9 @@ sub check_reservation_jobs($$){
                     #OAR::IO::set_running_date_arbitrary($base,$job->{job_id},$current_time_sql);
                 }
                 
-                # Get the list of resources where the reservation will be able to be launched
-                my ($available_resources_vector, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
-                #my ($tmp_veca, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
-                my $tmp_veca = $Absent_resource_id_vec;
-                my ($tmp_vecs, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
-                $available_resources_vector |= $tmp_veca | $tmp_vecs;
+                # Get the list of resources where the reservation will be able to be launched = resources in state Alive, Absent or Suspected
+                # It is assumed here that Absent and Suspected resources could become Alive by the time of the start of the advance reservation job
+                my $available_resources_vector = $Alive_resource_id_vec | $Absent_resource_id_vec | $Suspected_resource_id_vec;
                 if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
                     $inner_id = $1;
                     if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
@@ -576,8 +567,6 @@ sub check_reservation_jobs($$){
                         OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $job->{job_user}, $job->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
                 }
 
-                my ($dead_resources_vec, @dead_resources) = OAR::IO::get_resource_ids_in_state($base,"Dead");
-                
                 my $job_properties = "\'1\'";
                 if ((defined($job->{properties})) and ($job->{properties} ne "")){
                     $job_properties = $job->{properties};
@@ -590,7 +579,7 @@ sub check_reservation_jobs($$){
                     if ((defined($m->{property})) and ($m->{property} ne "")){
                         $tmp_properties = $m->{property};
                     }
-                    my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+                    my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@Dead_resource_ids,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
                     $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
                     push(@tree_list, $tmp_tree);
                 }
@@ -624,7 +613,7 @@ sub check_reservation_jobs($$){
 
                     # Update database
                     push(@resources, @Resources_to_always_add);
-                    oar_debug("[MetaSched] [$i] Add job in database\n");
+                    oar_debug("[MetaSched] [$i] add job in database\n");
                     OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
                     OAR::IO::set_job_state($base, $job->{job_id}, "toAckReservation");
                 }else{           
