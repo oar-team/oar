@@ -64,7 +64,6 @@ oar_debug("[sarko] Hello, identity control !!!\n");
 
 my $guilty_found=0;
 my $current = OAR::IO::get_date($base);
-oar_debug("[sarko] Current time : $current\n");
 
 # Look at leon timers
 # Decide if OAR must retry to delete the job or just change values in the database
