@@ -1486,7 +1486,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     }
       
     my @array_job_commands;
-    if ($#{$array_params_ref}>0) {
+    if ($#{$array_params_ref}>=0) {
         foreach my $params (@{$array_params_ref}){
             push(@array_job_commands, $command." ".$params);
         }
