@@ -1,4 +1,11 @@
 #!/bin/bash
+# Script to extract files from OAR deb packages, for later use by push.sh
+# Usage: ./extract.sh <debdir> <version> <targetdir>
+#   debdir: directory storing debian packages to extract files from
+#   version: OAR version of the packages to handle
+#   targetdir: directory to store the extracted files
+
+### Handle commandline
 DEBDIR=$1
 if ! [ -n "$DEBDIR" -a -d "$DEBDIR" ]; then
   echo "Need a directory where to find the deb packages" 1>&2
@@ -10,6 +17,8 @@ if ! [ -n "$VERSION" ]; then
   exit 1
 fi
 TARGETDIR=$VERSION
+
+### Main
 for f in $DEBDIR/*$VERSION*.deb; do
   p=${f##*/}
   n=${p%%_*}

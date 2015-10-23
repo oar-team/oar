@@ -1,4 +1,12 @@
 #!/bin/bash
+# Script to push files file from OAR deb packages without using apt.
+# Handle checksum and backups
+# Usage: sudo ./push.sh [-n] <srcdir> <targetdir> [package [package [...]
+#   srcdir: location for the files that were extracted from packages, using ./extract.sh
+#   targetdir: ususally "/"
+#   package: none for all installed packaged, or list of names of oar packages
+
+### Handle commandline
 if [ "$1" == "-n" ]; then
   DRYRUN=1
   shift;
@@ -32,6 +40,10 @@ for p in $INSTALLED_PACKAGES; do
     echo "Directory for package $p not found, skipped"
   fi
 done
+CHECKSUMFILE=${SRCDIR%/}.$(date +%F_%T).md5sum
+BACKUPDIR=backup/$(date +%F_%T)
+
+### Main
 error=0
 for p in $PACKAGES; do 
   echo "Testing $p..."
@@ -55,14 +67,11 @@ if [ $error -gt 0 ]; then
   echo "Failed" 1>&2
   exit 1
 fi
-CHECKSUMFILE=before.${SRCDIR%/}.$(date +%F_%T).md5sum
-BACKUPDIR=backup/$(date +%F_%T)
-
 for p in $PACKAGES; do 
   echo "Pushing $p..."
   for f in $(cd $SRCDIR/$p && find -type f); do
     ff=${f#./}
-    md5sum $TARGETDIR$ff >> $CHECKSUMFILE
+    md5sum $TARGETDIR$ff >> before.$CHECKSUMFILE
     if [ -n "$DRYRUN" ]; then
       echo "[DRYRUN] Push $TARGETDIR$ff"
     else
@@ -71,6 +80,7 @@ for p in $PACKAGES; do
       cp -a $TARGETDIR$ff $BACKUPDIR/${ff%/*}
       install -o root -g root $SRCDIR/$p/$ff $TARGETDIR$ff
     fi
+    md5sum $TARGETDIR$ff >> after.$CHECKSUMFILE
   done
 done
 echo Done
