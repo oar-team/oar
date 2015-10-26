@@ -1981,7 +1981,7 @@ sub sign_in($$$$$) {
     }
     elsif ($allow_create_node) {
         my $resource = OAR::IO::add_resource($base, $hostname, "Alive");
-        OAR::IO::set_resource_property($base,$resource,"desktop_computing","YES");
+        OAR::IO::set_resources_property($base,{resources => [$resource}],"desktop_computing","YES");
         OAR::IO::set_resource_nextState($base,$resource,"Alive");
         OAR::IO::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
         $do_notify=1;        
