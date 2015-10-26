@@ -1,4 +1,11 @@
-oar (2.5.6~rc1-1) UNRELEASED; urgency=medium
+oar (2.5.6~rc2-1) unstable; urgency=medium
+
+  * New RC upstream release
+  * Rework Debian README file for oar-api (api setup)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 26 Oct 2015 16:38:35 +0100
+
+oar (2.5.6~rc1-1) unstable; urgency=medium
 
   * New RC upstream release
   * Source-less javascript were removed upstream, no need for dfsg now
