@@ -1,5 +1,5 @@
-Installing the OAR batch system
-===============================
+Installation
+============
 
 Overview
 --------
@@ -50,7 +50,7 @@ ______________________________
         yum --enablerepo=OAR install oar-node
 
 *For the Debian like systems*::
-  
+
         # Add the OAR repository (choose the right one. See
         # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
         echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
@@ -71,16 +71,16 @@ _____________________________
           yum install gcc make tar python-docutils
 
           # Common dependencies
-          yum install Perl Perl-base openssh 
-          
+          yum install Perl Perl-base openssh
+
 *For Debian like system*::
 
           # Build dependencies
           apt-get install gcc make tar python-docutils
-          
+
           # Common dependencies
-          apt-get install perl perl-base openssh-client openssh-server 
-          
+          apt-get install perl perl-base openssh-client openssh-server
+
 **Instructions**
 
 Get the sources::
@@ -101,7 +101,7 @@ build/install/setup::
 
 Configuration
 _____________
- 
+
 oar node ssh access
 ~~~~~~~~~~~~~~~~~~~
 
@@ -134,7 +134,7 @@ ______________________________
         # Add the epel repository (choose the right version depending on your
         # operating system)
         rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-        
+
         # Add the oar repository
         [oar]
         name=OAR
@@ -143,15 +143,15 @@ ______________________________
         gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
         enabled=0
         EOF
-        
+
         # Install OAR server for the PostgreSQL backend
         yum --enablerepo=OAR install oar-server oar-server-pgsql
-        
+
         # or Install OAR server for the MySQL backend
         yum --enablerepo=OAR install oar-server oar-server-mysql
 
 *For the Debian like systems*::
-  
+
         # Add the OAR repository (choose the right one. See
         # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
         echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
@@ -160,7 +160,7 @@ ______________________________
 
         # Install OAR server for the PostgreSQL backend
         apt-get install oar-server oar-server-pgsql
-        
+
         # or Install OAR server for the MySQL backend
         apt-get install oar-server oar-server-mysql
 
@@ -174,16 +174,16 @@ _____________________________
         # Add the epel repository (choose the right version depending on your
         # operating system)
         rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-        
+
         # Build dependencies
         yum install gcc make tar python-docutils
-        
+
         # Common dependencies
         yum install Perl Perl-base openssh Perl-DBI perl-Sort-Versions
-        
+
         # MySQL dependencies
         yum install mysql-server mysql perl-DBD-MySQL
-        
+
         # PostgreSQL dependencies
         yum install postgresql-server postgresql perl-DBD-Pg
 
@@ -191,13 +191,13 @@ _____________________________
 
           # Build dependencies
           apt-get install gcc make tar python-docutils
-          
+
           # Common dependencies
           apt-get install perl perl-base openssh-client openssh-server libdbi-perl libsort-versions-perl
-          
+
           # MySQL dependencies
           apt-get install mysql-server mysql-client libdbd-mysql-perl
-          
+
           # PostgreSQL dependencies
           apt-get install postgresql postgresql-client libdbd-pg-perl
 
@@ -234,10 +234,10 @@ Create the database and the database users::
 
         # General case
         oar-database --create --db-admin-user <ADMIN_USER> --db-admin-pass <ADMIN_PASS>
-        
+
         # OR, for PostgreSQL, in case the database is installed locally
-        oar-database --create --db-is-local 
-        
+        oar-database --create --db-is-local
+
 
 Init.d scripts
 ~~~~~~~~~~~~~~
@@ -246,7 +246,7 @@ If you have installed OAR from sources, you need to become root user and
 install manually the init.d/default/sysconfig scripts present in the folders::
 
     $PREFIX/share/doc/oar-server/examples/scripts/{init.d,default,sysconfig}
-    
+
 Then use the script ``/etc/init.d/oar-server`` to start the OAR server daemon.
 
 Adding resources to the system
@@ -291,7 +291,7 @@ Security issues
 
 For security reasons it is hardly **recommended** to configure a read only
 account for the OAR database (like the above example).  Thus you will be able
-to add this data in DB_BASE_LOGIN_RO and DB_BASE_PASSWD_RO in *oar.conf*. 
+to add this data in DB_BASE_LOGIN_RO and DB_BASE_PASSWD_RO in *oar.conf*.
 
 PostgreSQL : autovacuum
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -317,15 +317,15 @@ Using Taktuk
 ~~~~~~~~~~~~
 
 If you want to use taktuk to manage remote administration commands, you have to
-install it. You can find information about taktuk from its website: 
+install it. You can find information about taktuk from its website:
 http://taktuk.gforge.inria.fr.
 
 **Note**: Taktuk is a scalable remote command execution without the need to
 install special stuffs on nodes. So it is very useful to administer a large
 amount of machines.
 
-Then, you have to edit your oar configuration file and fill in the different 
-related parameters: 
+Then, you have to edit your oar configuration file and fill in the different
+related parameters:
 
   - TAKTUK_CMD (the path to the taktuk command)
   - PINGCHECKER_TAKTUK_ARG_COMMAND (the command used to check resources states)
@@ -355,11 +355,11 @@ To activate this feature, you have to:
       Thes 2 commands are executed by the oar user.
     - configure the "available_upto" property of all your nodes:
 
-      - available_upto=0           : to disable the wake-up and halt      
-      - available_upto=1           : to disable the wake-up (but not the halt) 
-      - available_upto=2147483647  : to disable the halt (but not the wake-up) 
-      - available_upto=2147483646  : to enable wake-up/halt forever            
-      - available_upto=<timestamp> : to enable the halt, and the wake-up until 
+      - available_upto=0           : to disable the wake-up and halt
+      - available_upto=1           : to disable the wake-up (but not the halt)
+      - available_upto=2147483647  : to disable the halt (but not the wake-up)
+      - available_upto=2147483646  : to enable wake-up/halt forever
+      - available_upto=<timestamp> : to enable the halt, and the wake-up until
         the date given by <timestamp>
 
       Ex: to enable the feature on every nodes forever:
@@ -397,7 +397,7 @@ following page give more informations on how configuring it:
 Other issues
 ~~~~~~~~~~~~
 You can take a look at the "Customization tips" on the OAR Wiki:
-    
+
     http://wiki-oar.imag.fr/index.php/Customization_tips
 
 Frontend nodes
@@ -413,7 +413,7 @@ ______________________________
         # Add the epel repository (choose the right version depending on your
         # operating system)
         rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-        
+
         cat <<EOF > /etc/yum.repos.d/oar.repo
         [oar]
         name=OAR
@@ -434,12 +434,12 @@ ______________________________
 
         # Install OAR user for the PostgreSQL backend
         yum --enablerepo=OAR install oar-user oar-user-pgsql
-        
+
         # or Install OAR user for the MySQL backend
         yum --enablerepo=OAR install oar-user oar-user-mysql
 
 *For the Debian like systems*::
-  
+
         # Add the OAR repository (choose the right one. See
         # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
         echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
@@ -448,7 +448,7 @@ ______________________________
 
         # Install OAR server for the PostgreSQL backend
         apt-get install oar-user oar-user-pgsql
-        
+
         # or Install OAR server for the MySQL backend
         apt-get install oar-user oar-user-mysql
 
@@ -464,10 +464,10 @@ _____________________________
 
           # Common dependencies
           yum install Perl Perl-base openssh Perl-DBI
-          
+
           # MySQL dependencies
           yum install mysql perl-DBD-MySQL
-          
+
           # PostgreSQL dependencies
           yum install postgresql perl-DBD-Pg
 
@@ -476,13 +476,13 @@ _____________________________
 
           # Build dependencies
           apt-get install gcc make tar python-docutils
-          
+
           # Common dependencies
           apt-get install perl perl-base openssh-client openssh-server libdbi-perl
-          
+
           # MySQL dependencies
           apt-get install mysql-client libdbd-mysql-perl
-          
+
           # PostgreSQL dependencies
           apt-get install postgresql-client libdbd-pg-perl
 
@@ -528,8 +528,8 @@ must configure the ssh server on the frontends nodes with ::
 With this configuration, users can launch X11 applications after a 'oarsub -I'
 on the given node or "oarsh -X node12".
 
-OAR RESTful API Installation
-----------------------------
+API Installation
+----------------
 
 Description
 ___________
@@ -560,16 +560,16 @@ ______________________________
         yum --enablerepo=OAR install oar-restful-api
 
 *For the Debian like systems*::
-  
+
         # Add the OAR repository (choose the right one. See
         # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
         echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
         wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
         apt-get update
-        
+
         # Install apache FastCGI module (optional but highly recommended)
-        apt-get install libapache2-mod-fastcgi 
-        
+        apt-get install libapache2-mod-fastcgi
+
         # Install OAR Restful api
         apt-get install oar-restful-api
 
@@ -588,10 +588,10 @@ _____________________________
 
           # FastCGI dependency (optional but highly recommended)
           FIXME:
-          
+
           # MySQL dependencies
           yum install perl-DBD-MySQL
-          
+
           # PostgreSQL dependencies
           yum install perl-DBD-Pg
 
@@ -600,16 +600,16 @@ _____________________________
 
           # Build dependencies
           apt-get install gcc make tar python-docutils
-          
+
           # Common dependencies
-          apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl apache2 libcgi-fast-perl 
-          
+          apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl apache2 libcgi-fast-perl
+
           # FastCGI dependency (optional but highly recommended)
           apt-get install libapache2-mod-fastcgi
 
           # MySQL dependencies
           apt-get install libdbd-mysql-perl
-          
+
           # PostgreSQL dependencies
           apt-get install libdbd-pg-perl
 
@@ -701,7 +701,7 @@ ______________________________
         yum --enablerepo=OAR install oar-web-status
 
 *For the Debian like systems*::
-  
+
         # Add the OAR repository (choose the right one. See
         # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
         echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
@@ -722,10 +722,10 @@ _____________________________
 
           # Common dependencies
           yum install perl perl-base perl-DBI ruby-GD ruby-DBI perl-Tie-IxHash perl-Sort-Naturally perl-AppConfig php
-          
+
           # MySQL dependencies
           yum install mysql perl-DBD-MySQL ruby-mysql php-mysql
-          
+
           # PostgreSQL dependencies
           yum install postgresql perl-DBD-Pg ruby-pg php-pgsql
 
@@ -734,13 +734,13 @@ _____________________________
 
           # Build dependencies
           apt-get install gcc make tar python-docutils
-          
+
           # Common dependencies
-          apt-get install perl perl-base ruby libgd-ruby1.8 libdbi-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libapache2-mod-php5 
-          
+          apt-get install perl perl-base ruby libgd-ruby1.8 libdbi-perl libtie-ixhash-perl libappconfig-perl libsort-naturally-perl libapache2-mod-php5
+
           # MySQL dependencies
           apt-get install libdbd-mysql-perl libdbd-mysql-ruby php5-mysql
-          
+
           # PostgreSQL dependencies
           apt-get install libdbd-pg-perl libdbd-pg-ruby php5-pgsql
 
@@ -767,24 +767,12 @@ _____________
 **Monika configuration**
 
  - Edit ``/etc/oar/monika.conf`` to fit your configuration.
- 
-**Drawgantt configuration**
 
- - Edit ``/etc/oar/drawgantt.conf`` to fit your configuration.
+**Drawgantt-SVG configuration**
 
-**Drawgantt-SVG configuration** (another drawgantt implementation)
-
- - Edit ``/etc/oar/drawgantt-config.inc.php`` to fit your configuration.
+ - Edit ``/etc/oar/drawgantt.php`` to fit your configuration.
 
 **httpd configuration**
 
  - You need to edit ``/etc/oar/apache.conf`` to fit your needs and verify that you
    http server configured.
-
-
-Further informations
---------------------
-
-For further information, please check the documentation section on the OAR
-website http://oar.imag.fr/.
-

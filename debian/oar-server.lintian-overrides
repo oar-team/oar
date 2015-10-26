@@ -1,3 +1,5 @@
 # The C file are only C wrapper (there are no character arrays used on the 
 # stack of any routines)
 oar-server binary: hardening-no-stackprotector
+# oar-admin does not exist anymore, hence the breaks-without-version
+breaks-without-version oar-admin

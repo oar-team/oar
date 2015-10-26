@@ -134,7 +134,10 @@ if ($current_time_sec < $previous_ref_time_sec){
 $current_time_sec++;
 $current_time_sql = OAR::IO::local_to_sql($current_time_sec);
 
+my ($Alive_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
 my ($Absent_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
+my ($Suspected_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
+my ($Dead_resource_id_vec, @Dead_resource_ids) = OAR::IO::get_resource_ids_in_state($base,"Dead");
 
 oar_debug("[MetaSched] Retrieve information for already scheduler reservations from database before flush (keep assign resources)\n");
 my $reservation_already_there = OAR::IO::get_waiting_reservations_already_scheduled($base);
@@ -153,12 +156,13 @@ oar_debug("[MetaSched] Begin processing of already scheduled reservations (accep
 foreach my $i (keys(%{$reservation_already_there})){
     my $container_id = 0;
     my $inner_id = 0;
-    my $set_placeholder_name = "";
-    my $use_placeholder_name = "";
+    my $placeholder_name = "";
+    my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $vec = '';
     my $types = OAR::IO::get_job_types_hash($base,$i);
+    my $job_there = OAR::IO::get_job($base,$i);
     foreach my $r (@{$reservation_already_there->{$i}->{resources}}){
         vec($vec, $r, 1) = 1;
     }
@@ -171,19 +175,19 @@ foreach my $i (keys(%{$reservation_already_there})){
             $inner_id = 0;
         }
     }
-    if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+    if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
         oar_debug("[MetaSched] [$i] Job is ($inner_id,,,)\n");
         $container_id = $i;
         oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
         $Gantt->{$container_id}->{""}->{""}->{""} = 
             OAR::Schedulers::GanttHoleStorage::new_with_1_hole($Max_resources, $Minimum_hole_time, $reservation_already_there->{$i}->{start_time}, $reservation_already_there->{$i}->{walltime} + $Security_time_overhead , $vec, $All_resource_list_vec);
     } else {
-        ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
-            OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $reservation_already_there->{$i}->{job_user}, $reservation_already_there->{$i}->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
+        ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) = 
+            OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $job_there->{job_user}, $job_there->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
     }
 
     #Fill all other gantts
-    OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $reservation_already_there->{$i}->{start_time}, $reservation_already_there->{$i}->{walltime} + $Security_time_overhead, $vec, $inner_id ,$set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
+    OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $reservation_already_there->{$i}->{start_time}, $reservation_already_there->{$i}->{walltime} + $Security_time_overhead, $vec, $inner_id ,$placeholder_name, $allowed_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
 }
 oar_debug("[MetaSched] End processing of already scheduled reservations\n");
 
@@ -192,8 +196,8 @@ my @initial_jobs = OAR::IO::get_jobs_in_multiple_states($base, ["Running","toLau
 foreach my $job (@initial_jobs){
     my $container_id = 0;
     my $inner_id = 0;
-    my $set_placeholder_name = "";
-    my $use_placeholder_name = "";
+    my $placeholder_name = "";
+    my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $i = $job->{job_id};
@@ -211,7 +215,7 @@ foreach my $job (@initial_jobs){
     }else{
         $date = $job->{start_time};
     }
-    oar_debug("[MetaSched] [$i] Add job in database\n");
+    oar_debug("[MetaSched] [$i] add job in database\n");
     OAR::IO::add_gantt_scheduled_jobs($base,$job->{assigned_moldable_job},$date,\@resource_list);
 
     my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
@@ -236,19 +240,19 @@ foreach my $job (@initial_jobs){
                 $inner_id = 0;
             }
         }
-        if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+        if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
             oar_debug("[MetaSched] [$i] Job is ($inner_id,,,)\n");
             $container_id = $i;
             oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
             $Gantt->{$container_id}->{""}->{""}->{""} = 
                 OAR::Schedulers::GanttHoleStorage::new_with_1_hole($Max_resources, $Minimum_hole_time, $date, $job_duration + $Security_time_overhead, $resource_list_vec, $All_resource_list_vec);
         } else {
-            ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
+            ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) = 
             OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $job->{job_user}, $job->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
         }
 
         #Fill all other gantts
-        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $date, $job_duration + $Security_time_overhead, $resource_list_vec, $inner_id ,$set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
+        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $date, $job_duration + $Security_time_overhead, $resource_list_vec, $inner_id ,$placeholder_name, $allowed_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
     }else{
         #Stock information about besteffort jobs
         foreach my $r (@resource_list){
@@ -259,31 +263,29 @@ foreach my $job (@initial_jobs){
 OAR::IO::unlock_table($base);
 oar_debug("[MetaSched] End processing of current jobs\n");
 
-oar_debug("[MetaSched] Begin processing of waiting reservations (accepted reservations which do not have assigned resources yet)\n");
+# handle accepted advance reservations which do not have assigned resources, mostly because the prediction tables were completely flushed from outside of OAR
+oar_debug("[MetaSched] Begin processing of the accepted reservations without assigned resources\n");
 my @Rjobs = OAR::IO::get_waiting_reservation_jobs($base);
 foreach my $job (@Rjobs){
+    next if (defined($reservation_already_there->{$job->{job_id}}));
+
     my $container_id = 0;
     my $inner_id = 0;
-    my $set_placeholder_name = "";
-    my $use_placeholder_name = "";
+    my $placeholder_name = "";
+    my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $i = $job->{job_id};
 
+    my $types = OAR::IO::get_job_types_hash($base,$i);
 
     my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
     # For reservation we take the first moldable job
     my $moldable = $job_descriptions->[0];
-    next if (defined($reservation_already_there->{$moldable->[2]}));
 
-    # Get the list of resources where the reservation will be able to be launched
-    my ($available_resources_vector, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
-    #my ($tmp_veca, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
-    my $tmp_veca = $Absent_resource_id_vec;
-    my ($tmp_vecs, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
-    $available_resources_vector |= $tmp_veca | $tmp_vecs;
-
-    my $types = OAR::IO::get_job_types_hash($base,$i);
+    # Get the list of resources where the reservation will be able to be launched = resources in state Alive, Absent or Suspected
+    # It is assumed here that Absent and Suspected resources could become Alive by the time of the start of the advance reservation job
+    my $available_resources_vector = $Alive_resource_id_vec | $Absent_resource_id_vec | $Suspected_resource_id_vec;
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         $inner_id = $1;
         if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
@@ -296,30 +298,18 @@ foreach my $job (@Rjobs){
             next;
         }
     }
-    if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+    if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
         oar_debug("[MetaSched] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
     } else {
-        ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) =
+        ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) =
             OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $job->{job_user}, $job->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
     }
 
-    my $free_resources_vec = OAR::Schedulers::GanttHoleStorage::get_free_resources($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name}, 
+    my $free_resources_vec = OAR::Schedulers::GanttHoleStorage::get_free_resources($Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name}, 
                                                                         $job->{start_time},
                                                                         $moldable->[1] + $Security_time_overhead,
                                                                    );
     $available_resources_vector &= $free_resources_vec;
-    
-     # CM part
-     if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD")){
-        $available_resources_vector |= $free_resources_vec & OAR::IO::get_resources_that_can_be_waked_up($base,$job->{start_time} + $moldable->[1] + $Security_time_overhead);
-        $available_resources_vector &= ~ ($All_resource_list_vec & OAR::IO::get_resources_that_will_be_out($base,$job->{start_time} + $moldable->[1] + $Security_time_overhead));
-     }
-     # CM part
-     else{
-         $available_resources_vector &= $free_resources_vec & $tmp_veca;
-     }
-
-    my ($dead_resources_vec, @dead_resources) = OAR::IO::get_resource_ids_in_state($base,"Dead");
     
     my $job_properties = "\'1\'";
     if ((defined($job->{properties})) and ($job->{properties} ne "")){
@@ -334,8 +324,8 @@ foreach my $job (@Rjobs){
             $tmp_properties = $m->{property};
         }
         my $tmp_tree;
-        $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,$resource_id_used_list_vector,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, "".$Order_part);
-        $tmp_tree = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tmp_tree);
+        $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,$resource_id_used_list_vector,\@Dead_resource_ids,"$job_properties AND $tmp_properties", $m->{resources}, "".$Order_part);
+        $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($tmp_tree, undef);
         push(@tree_list, $tmp_tree);
         my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
         foreach my $l (@leafs){
@@ -365,19 +355,26 @@ foreach my $job (@Rjobs){
         }
 
         #Fill all other gantts
-        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $job->{start_time}, $moldable->[1] + $Security_time_overhead, $vec, $inner_id, $set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
+        OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $job->{start_time}, $moldable->[1] + $Security_time_overhead, $vec, $inner_id, $placeholder_name, $allowed_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
 
         # Update database
         push(@resources, @Resources_to_always_add);
-        oar_debug("[MetaSched] [$i] Add job in database\n");
+        oar_debug("[MetaSched] [$i] add job in database\n");
+        oar_warn("[MetaSched] [$i] resources for reservation were lost, got them back\n");
         OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
-        #OAR::IO::set_job_message($base,$job->{job_id},"");
+        OAR::IO::add_new_event($base,"GET_RESOURCES_BACK_FOR_RESERVATION",$job->{job_id},"Resources for reservation were lost, got them back");
+        OAR::IO::set_job_message($base,$job->{job_id},"Renewed resources for reservation");
     }else{
-        oar_warn("[MetaSched] [$i] Cannot find resources for reservation. Did some resources become Dead or get removed from database ?\n");
-        OAR::IO::set_job_message($base,$job->{job_id},"Not able to find resources for this reservation");
+        oar_warn("[MetaSched] [$i] Resources for reservation are lost, could not get them back\n");
+        my $message = "No resource for reservation";
+        if ($job->{message} ne $message) {
+            # Sounds like it's the first time we notice that the reservation lost its resources, adding event
+            OAR::IO::add_new_event($base,"UNABLE_TO_GET_RESOURCE_BACK_FOR_RESERVATION",$job->{job_id},"Resources for reservation are lost, could not get them back");
+        }
+        OAR::IO::set_job_message($base,$job->{job_id},$message);
     }
 }
-oar_debug("[MetaSched] End processing of waiting reservations\n");
+oar_debug("[MetaSched] End processing of the accepted reservations without assigned resources\n");
 
 
 ###########################################################################################################
@@ -400,16 +397,23 @@ sub treate_waiting_reservation_jobs($){
         my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
         my $moldable = $job_descriptions->[0];
     
-        my $start = $job->{start_time};
-        my $max = $moldable->[1];
         # Test if the job is in the past
-        if ($current_time_sec > $start+$max ){
+        if ($current_time_sec > $job->{start_time}+$moldable->[1] ){
             oar_warn("[MetaSched] [$job->{job_id}] set job state to Error: reservation expired and couldn't be started\n");
             OAR::IO::set_job_state($base, $job->{job_id}, "Error");
             OAR::IO::set_job_message($base,$job->{job_id},"Reservation expired and couldn't be started.");
             $return = 1;
         }
-        my @resa_alive_resources = OAR::IO::get_gantt_Alive_resources_for_job($base,$moldable->[2]);
+        my @resa_alive_resources;
+        my $jobtypes = OAR::IO::get_job_types_hash($base,$job->{job_id});
+        if ((defined($jobtypes->{deploy}) and $jobtypes->{deploy} eq "standby")
+            or (defined($jobtypes->{cosystem}) and $jobtypes->{cosystem} eq "standby")
+            or (defined($jobtypes->{noop}) and $jobtypes->{noop} eq "standby")) {
+          oar_debug("[MetaSched] [$job->{job_id}] reservation is allowed to start with some resources in standby");
+          @resa_alive_resources = OAR::IO::get_gantt_Alive_or_Standby_resources_for_job($base,$moldable->[2], $job->{start_time} + $moldable->[1] + $Security_time_overhead);
+        } else {
+          @resa_alive_resources = OAR::IO::get_gantt_Alive_resources_for_job($base,$moldable->[2]);
+        }
         # test if the job is going to be launched and there is no Alive node
         if (($#resa_alive_resources < 0) && ($job->{start_time} <= $current_time_sec)){
             oar_warn("[MetaSched] [$job->{job_id}] reservation is waiting because no resource is present\n");
@@ -419,7 +423,7 @@ sub treate_waiting_reservation_jobs($){
             if ($job->{start_time} + $Reservation_waiting_timeout > $current_time_sec){
                 if ($#resa_resources > $#resa_alive_resources){
                     # we have not the same number of nodes than in the query --> wait the specified timeout
-                    oar_warn("[MetaSched] [$job->{job_id}] reservation is waiting because not all resources are available yet\n");
+                    oar_warn("[MetaSched] [$job->{job_id}] reservation is waiting because not all resources are available yet (timeout in ".($job->{start_time} + $Reservation_waiting_timeout - $current_time_sec)." seconds)\n");
                     OAR::IO::set_gantt_job_startTime($base,$moldable->[2],($current_time_sec + 1));
                 }
             }else{
@@ -472,8 +476,8 @@ sub check_reservation_jobs($$){
         foreach my $i (keys(%already_scheduled_jobs)){
             my $container_id = 0;
             my $inner_id = 0;
-            my $set_placeholder_name = "";
-            my $use_placeholder_name = "";
+            my $placeholder_name = "";
+            my $allowed_name = "";
             my $timesharing_user = "";
             my $timesharing_name = "";
             my $types = OAR::IO::get_job_types_hash($base,$i);
@@ -500,27 +504,27 @@ sub check_reservation_jobs($$){
                         $inner_id = 0;
                     }
                 }
-                if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+                if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
                     oar_debug("[MetaSched] [$i] Job is ($inner_id,,,)\n");
                     $container_id = $i;
                     oar_debug("[MetaSched] [$i] container job: create gantt ($container_id,,,)\n");
                     $Gantt->{$container_id}->{""}->{""}->{""} = 
                         OAR::Schedulers::GanttHoleStorage::new_with_1_hole($Max_resources, $Minimum_hole_time, $already_scheduled_jobs{$i}->[0], $job_duration + $Security_time_overhead, $resource_list_vec, $All_resource_list_vec);
                 } else {
-                    ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) = 
+                    ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) = 
                         OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $already_scheduled_jobs{$i}->[5], $already_scheduled_jobs{$i}->[6], $types, $inner_id, "[MetaSched] [$i]");
                 }
 
                 #Fill all other gantts
-                OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $already_scheduled_jobs{$i}->[0], $job_duration + $Security_time_overhead, $resource_list_vec, $inner_id ,$set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
+                OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $already_scheduled_jobs{$i}->[0], $job_duration + $Security_time_overhead, $resource_list_vec, $inner_id ,$placeholder_name, $allowed_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
             }
         }
         oar_debug("[MetaSched] Try and schedule new reservations of queue $queue_name\n");
         foreach my $job (@jobs_to_sched){
             my $container_id = 0;
             my $inner_id = 0;
-            my $set_placeholder_name = "";
-            my $use_placeholder_name = "";
+            my $placeholder_name = "";
+            my $allowed_name = "";
             my $timesharing_user = "";
             my $timesharing_name = "";
             my $i = $job->{job_id};
@@ -541,12 +545,9 @@ sub check_reservation_jobs($$){
                     #OAR::IO::set_running_date_arbitrary($base,$job->{job_id},$current_time_sql);
                 }
                 
-                # Get the list of resources where the reservation will be able to be launched
-                my ($available_resources_vector, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
-                #my ($tmp_veca, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
-                my $tmp_veca = $Absent_resource_id_vec;
-                my ($tmp_vecs, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
-                $available_resources_vector |= $tmp_veca | $tmp_vecs;
+                # Get the list of resources where the reservation will be able to be launched = resources in state Alive, Absent or Suspected
+                # It is assumed here that Absent and Suspected resources could become Alive by the time of the start of the advance reservation job
+                my $available_resources_vector = $Alive_resource_id_vec | $Absent_resource_id_vec | $Suspected_resource_id_vec;
                 if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
                     $inner_id = $1;
                     if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
@@ -559,15 +560,13 @@ sub check_reservation_jobs($$){
                         next;
                     }
                 }
-                if (defined($types->{container})){ # A container job cannot be set_placeholder or use_placeholder or timesharing. 
+                if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
                     oar_debug("[MetaSched] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
                 } else {
-                    ($set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name) =
+                    ($placeholder_name, $allowed_name, $timesharing_user, $timesharing_name) =
                         OAR::Schedulers::GanttHoleStorage::manage_gantt_for_timesharing_and_placeholder($Gantt, $job->{job_user}, $job->{job_name}, $types, $inner_id, "[MetaSched] [$i]");
                 }
 
-                my ($dead_resources_vec, @dead_resources) = OAR::IO::get_resource_ids_in_state($base,"Dead");
-                
                 my $job_properties = "\'1\'";
                 if ((defined($job->{properties})) and ($job->{properties} ne "")){
                     $job_properties = $job->{properties};
@@ -580,10 +579,13 @@ sub check_reservation_jobs($$){
                     if ((defined($m->{property})) and ($m->{property} ne "")){
                         $tmp_properties = $m->{property};
                     }
-                    my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+                    my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@Dead_resource_ids,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+                    $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
                     push(@tree_list, $tmp_tree);
                 }
-                my @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$use_placeholder_name}->{$timesharing_user}->{$timesharing_name},$job->{start_time}, $duration + $Security_time_overhead, \@tree_list, 30);
+
+                oar_debug("[MetaSched] [$i] Find first hole with gantt($inner_id,$allowed_name,$timesharing_user,$timesharing_name)\n");
+                my @hole = OAR::Schedulers::GanttHoleStorage::find_first_hole($Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name},$job->{start_time}, $duration + $Security_time_overhead, \@tree_list, 30);
                 if ($hole[0] == $job->{start_time}){
                     # The reservation can be scheduled
                     my @resources;
@@ -607,11 +609,11 @@ sub check_reservation_jobs($$){
                     }
         
                     #Fill all other gantts
-                    OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $job->{start_time}, $duration + $Security_time_overhead, $vec, $inner_id, $set_placeholder_name, $use_placeholder_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
+                    OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $job->{start_time}, $duration + $Security_time_overhead, $vec, $inner_id, $placeholder_name, $allowed_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
 
                     # Update database
                     push(@resources, @Resources_to_always_add);
-                    oar_debug("[MetaSched] [$i] Add job in database\n");
+                    oar_debug("[MetaSched] [$i] add job in database\n");
                     OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
                     OAR::IO::set_job_state($base, $job->{job_id}, "toAckReservation");
                 }else{           
@@ -658,52 +660,61 @@ sub check_jobs_to_kill(){
                             }
                         }
                         if ((!defined($checkpoint_first_date)) or ($current_time_sec <= ($checkpoint_first_date+$besteffort_resource_occupation{$r}->{checkpoint}))){
-                            oar_debug("[MetaSched] Send checkpoint signal to the job $besteffort_resource_occupation{$r}->{job_id}\n");
                             # Retrieve node names used by the job
                             my @hosts = OAR::IO::get_job_current_hostnames($base,$besteffort_resource_occupation{$r}->{job_id});
                             my $types = OAR::IO::get_job_types_hash($base,$besteffort_resource_occupation{$r}->{job_id});
-                            my $host_to_connect = $hosts[0];
-                            if ((defined($types->{cosystem})) or ($#hosts < 0)){
-                                $host_to_connect = $Cosystem_hostname;
-                            }elsif (defined($types->{deploy})){
-                                $host_to_connect = $Deploy_hostname;
-                            }
-                            OAR::IO::add_new_event($base,"CHECKPOINT",$besteffort_resource_occupation{$r}->{job_id},"User oar (metasched) requested a checkpoint on the job $besteffort_resource_occupation{$r}->{job_id} on $host_to_connect");
-                            $skip_kill = 1;
-                            my $str_comment;
-                            my @exit_codes;
-                            # Timeout the ssh command
-                            eval {
-                                $SIG{ALRM} = sub { die "alarm\n" };
-                                alarm(OAR::Tools::get_ssh_timeout());
-                                @exit_codes = OAR::Tools::signal_oarexec($host_to_connect,$besteffort_resource_occupation{$r}->{job_id},"SIGUSR2",1,$base, $Openssh_cmd, '');
-                                alarm(0);
-                            };
-                            if ($@){
-                                if ($@ eq "alarm\n"){
-                                    $str_comment = "[MetaSched] Cannot contact $host_to_connect, operation timouted (".OAR::Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $besteffort_resource_occupation{$r}->{job_id}";
-                                    oar_warn("$str_comment\n");
-                                    OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
-                                }else{
-                                    $str_comment = "[MetaSched] An unknown error occured during the sending of the checkpoint signal to the job $besteffort_resource_occupation{$r}->{job_id} on the host $host_to_connect";
-                                    oar_warn("$str_comment\n");
-                                    OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
+                            if ($#hosts < 0 and not defined($types->{cosystem}) and not defined($types->{deploy})) {
+                                oar_debug("[MetaSched] Not sending checkpoint signal to the job $besteffort_resource_occupation{$r}->{job_id} (job with no host)\n");
+                            } else {
+                                my $host_to_connect = $hosts[0];
+                                if (defined($types->{cosystem})) {
+                                    $host_to_connect = $Cosystem_hostname;
+                                }elsif (defined($types->{deploy})){
+                                    $host_to_connect = $Deploy_hostname;
                                 }
-                            }else{
-                                if ($exit_codes[0] == 0){
-                                    $str_comment = "[MetaSched] The job $besteffort_resource_occupation{$r}->{job_id} was notified to checkpoint itself on the node $host_to_connect";
-                                    oar_debug("$str_comment\n");
-                                    OAR::IO::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
+                                oar_debug("[MetaSched] Sending checkpoint signal to the job $besteffort_resource_occupation{$r}->{job_id} on host $host_to_connect\n");
+                                OAR::IO::add_new_event($base,"CHECKPOINT",$besteffort_resource_occupation{$r}->{job_id},"User oar (metasched) requested a checkpoint on the job $besteffort_resource_occupation{$r}->{job_id} on $host_to_connect");
+                                $skip_kill = 1;
+                                my $str_comment;
+                                my @exit_codes;
+                                # Timeout the ssh command
+                                eval {
+                                    $SIG{ALRM} = sub { die "alarm\n" };
+                                    alarm(OAR::Tools::get_ssh_timeout());
+                                    @exit_codes = OAR::Tools::signal_oarexec($host_to_connect,$besteffort_resource_occupation{$r}->{job_id},"SIGUSR2",1,$base, $Openssh_cmd, '');
+                                    alarm(0);
+                                };
+                                if ($@){
+                                    if ($@ eq "alarm\n"){
+                                        $str_comment = "[MetaSched] Cannot contact $host_to_connect, operation timouted (".OAR::Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $besteffort_resource_occupation{$r}->{job_id}";
+                                        oar_warn("$str_comment\n");
+                                        OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
+                                    }else{
+                                        $str_comment = "[MetaSched] An unknown error occured during the sending of the checkpoint signal to the job $besteffort_resource_occupation{$r}->{job_id} on the host $host_to_connect";
+                                        oar_warn("$str_comment\n");
+                                        OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
+                                    }
                                 }else{
-                                    $str_comment = "[MetaSched] The kill command return a bad exit code (@exit_codes) for the job $besteffort_resource_occupation{$r}->{job_id} on the node $host_to_connect";
-                                    oar_warn("$str_comment\n");
-                                    OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
+                                    if ($exit_codes[0] == 0){
+                                        $str_comment = "[MetaSched] The job $besteffort_resource_occupation{$r}->{job_id} was notified to checkpoint itself on the node $host_to_connect";
+                                        oar_debug("$str_comment\n");
+                                        OAR::IO::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
+                                    }else{
+                                        $str_comment = "[MetaSched] The kill command return a bad exit code (@exit_codes) for the job $besteffort_resource_occupation{$r}->{job_id} on the node $host_to_connect";
+                                        oar_warn("$str_comment\n");
+                                        OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
+                                    }
                                 }
                             }
                         }else{
-                            my $str_comment = "[MetaSched] Checkpoint timeout for job $besteffort_resource_occupation{$r}->{job_id} ($current_time_sec > ($checkpoint_first_date+$besteffort_resource_occupation{$r}->{checkpoint})";
-                            oar_debug("$str_comment\n");
-                            OAR::IO::add_new_event($base,"CHECKPOINT_TIMEOUT",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
+                            # Retrieve node names used by the job
+                            my @hosts = OAR::IO::get_job_current_hostnames($base,$besteffort_resource_occupation{$r}->{job_id});
+                            my $types = OAR::IO::get_job_types_hash($base,$besteffort_resource_occupation{$r}->{job_id});
+                            if ($#hosts >= 0 or defined($types->{cosystem}) or defined($types->{deploy})) {
+                                my $str_comment = "[MetaSched] Checkpoint timeout for job $besteffort_resource_occupation{$r}->{job_id} ($current_time_sec > ($checkpoint_first_date+$besteffort_resource_occupation{$r}->{checkpoint})";
+                                oar_debug("$str_comment\n");
+                                OAR::IO::add_new_event($base,"CHECKPOINT_TIMEOUT",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
+                            }
                         }
                     }
                     if ($skip_kill == 0){
@@ -911,7 +922,7 @@ if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD")
     }
 
     if ($#node_halt >= 0){
-        oar_debug("[MetaSched] Powerinf off some nodes (energy saving): @node_halt\n");
+        oar_debug("[MetaSched] Powering off some nodes (energy saving): @node_halt\n");
         # Using the built-in energy saving module to shut down nodes
         if (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes") {
             if (OAR::Modules::Hulot::halt_nodes(\@node_halt) ) {
@@ -935,7 +946,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
     my @nodes = OAR::IO::get_gantt_hostname_to_wake_up($base, $current_time_sec, $wakeup_time);
 
     if ($#nodes >= 0){
-        oar_debug("[MetaSched] Awaking some nodes: @nodes\n");
+        oar_debug("[MetaSched] Waking-up some nodes: @nodes\n");
         # Using the built-in energy saving module to wake up nodes
         if (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") eq "yes") {
             if (OAR::Modules::Hulot::wake_up_nodes(\@nodes) ) {
@@ -950,6 +961,8 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
                 oar_error("[MetaSched] Error: command $cmd timeouted (${timeout_cmd}s) while trying to wake-up some nodes\n");
             }
         }
+    } else {
+        oar_debug("[MetaSched] No node to wake-up\n");
     }
 }
 

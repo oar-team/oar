@@ -86,7 +86,7 @@ TEMPLATE_BUILDED_FILES=$(patsubst %.in,%,$(TEMPLATE_SOURCE_FILES))
 
 build_templates: $(TEMPLATE_BUILDED_FILES)
 
-$(TEMPLATE_BUILDED_FILES) : $(patsubst %, %.in,$*)
+$(TEMPLATE_BUILDED_FILES) : %: %.in
 	perl -pe "s#%%PREFIX%%#$(PREFIX)#g;;\
 	    s#%%BINDIR%%#$(BINDIR)#g;;\
 	    s#%%CGIDIR%%#$(CGIDIR)#g;;\
@@ -112,7 +112,7 @@ $(TEMPLATE_BUILDED_FILES) : $(patsubst %, %.in,$*)
 	    s#%%OAROWNERGROUP%%#$(OAROWNERGROUP)#g;;\
 	    s#%%WWWUSER%%#$(WWWUSER)#g;;\
 	    s#%%APACHECONFDIR%%#$(APACHECONFDIR)#g;;\
-	    s#%%WWW_ROOTDIR%%#$(WWW_ROOTDIR)#g;;\
+	    s#%%WWWROOTDIR%%#$(WWWROOTDIR)#g;;\
 	    s#%%WWWDIR%%#$(WWWDIR)#g;;\
 	    s#%%XAUTHCMDPATH%%#$(XAUTHCMDPATH)#g;;\
 	    s#%%OARSHCMD%%#$(OARSHCMD)#g;;\

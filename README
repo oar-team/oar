@@ -1,39 +1,7 @@
-                    OAR resource manager
-                    --------------------
+OAR is a versatile resource and task manager (also called a batch scheduler) for HPC clusters, and other computing infrastructures (like distributed computing experimental testbeds where versatility is a key). 
 
-OAR is a resource manager (or batch scheduler if you prefer this wording) for
-small to large clusters.
+OAR is suitable for production use.
 
-It is suitable for production use and may also be used as a tool to do research
-experiments.
+OAR is also a support for scientific researches in the field of distributed computing.
 
-See INSTALL file to be shown with a detailed installation procedure.
-
-Feel free to check the manpages and the OAR web site (http://oar.imag.fr/) for
-further information.
-
-Some features of OAR :
-
-- Batch and Interactive jobs
-- Admission rules
-- Walltime
-- Matching of resources (job/node properties)
-- Hold and resume jobs
-- Multi-schedulers support (simple fifo and fifo with matching)
-- Multi-queues with priority
-- Best-effort queues (for exploiting idle resources)
-- Check compute nodes before launching
-- Epilogue/Prologue scripts
-- No Daemon on compute nodes
-- Dynamic insertion/deletion of compute node
-- Logging
-- Backfiling
-- First-Fit Scheduler with matching resource (very soon)
-- Advance Reservation
-
-Have a good time.
-
-License
--------
-See LICENSE file.
-
+See the OAR web site (http://oar.imag.fr/) for further information.

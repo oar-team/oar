@@ -264,15 +264,46 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     $job_index ++;
     oar_debug("[$scheduler_name] [$j->{job_id}] start scheduling\n");
     
+    my $gantt_to_use = $Container_gantt_hash{0};
+    my $container_num = 0;
+    my $types = OAR::IO::get_job_types_hash($base,$j->{job_id});
+
     my $scheduler_init_date = $current_time;
+
+    if (defined($types->{postpone})) {
+        my $postpone_time_sec = OAR::IO::sql_to_local($types->{postpone});
+        if ($scheduler_init_date < $postpone_time_sec) {
+            $scheduler_init_date = $postpone_time_sec;
+            oar_debug("[$scheduler_name] [$j->{job_id}] job is postponed to $types->{postpone}\n");
+        }
+    }
+
+    if (defined($types->{expire})) {
+        my $expire_time_sec = OAR::IO::sql_to_local($types->{expire});
+        if ($scheduler_init_date > $expire_time_sec) {
+            oar_debug("[$scheduler_name] [$j->{job_id}] job will never run (expire=$types->{expire}), setting it to error\n");
+            OAR::IO::set_job_message($base, $j->{job_id}, "job canceled because expired");
+            OAR::IO::set_job_state($base, $j->{job_id}, "toError");
+            next;
+        }
+    }
+
+    my $deadline_time_sec;
+    if (defined($types->{deadline})) {
+        $deadline_time_sec = OAR::IO::sql_to_local($types->{deadline});
+        if ($scheduler_init_date > $deadline_time_sec) {
+            oar_debug("[$scheduler_name] [$j->{job_id}] job will never run (deadline=$types->{deadline}), setting it to error\n");
+            OAR::IO::set_job_message($base, $j->{job_id}, "job canceled because of its deadline");
+            OAR::IO::set_job_state($base, $j->{job_id}, "toError");
+            next;
+        }
+    }
+
     # Search for dependencies
     my $skip_job = 0;
-
-    # Check the job dependencies 
     foreach my $d (OAR::IO::get_current_job_dependencies($base,$j->{job_id})){
-        next if ($skip_job == 1);
         my $dep_job = OAR::IO::get_job($base,$d);
-        if (($dep_job->{state} ne "Terminated")){
+        if (($dep_job->{state} ne "Terminated") and ($dep_job->{state} ne "Error")){
             my @date_tmp = OAR::IO::get_gantt_job_start_time($base,$d);
             if (defined($date_tmp[0])){
                 my $mold_dep = OAR::IO::get_current_moldable_job($base,$date_tmp[1]);
@@ -283,25 +314,14 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             }else{
                 my $message = "Cannot determine scheduling time due to dependency with the job $d";
                 OAR::IO::set_job_message($base,$j->{job_id},$message);
-                OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
                 oar_debug("[$scheduler_name] [$j->{job_id}] $message\n");
                 $skip_job = 1;
-                next;
+                last;
             }
-        }elsif (($dep_job->{job_type} eq "PASSIVE") and ($dep_job->{exit_code} != 0)){
-            my $message = "Cannot determine scheduling time due to dependency with the job $d (exit code != 0)";
-            OAR::IO::set_job_message($base,$j->{job_id},$message);
-            OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
-            oar_debug("[$scheduler_name] [$j->{job_id}] $message\n");
-            $skip_job = 1;
-            next;
         }
     }
     next if ($skip_job == 1);
 
-    my $gantt_to_use = $Container_gantt_hash{0};
-    my $container_num = 0;
-    my $types = OAR::IO::get_job_types_hash($base,$j->{job_id});
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         if (defined($Container_gantt_hash{$1})){
             $gantt_to_use = $Container_gantt_hash{$1};
@@ -349,6 +369,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 $tmp_properties = $m->{property};
             }
             my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
+            $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
             push(@tree_list, $tmp_tree);
             #my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
             #foreach my $l (@leafs){
@@ -401,6 +422,10 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         }
     }
     if ($index_to_choose >= 0){
+        if (defined($deadline_time_sec) and $best_stop_time > $deadline_time_sec) {
+            oar_debug("[$scheduler_name] [$j->{job_id}] not scheduling job because its deadline is not met: $best_stop_time > $deadline_time_sec\n");
+            next;
+        }
         # We can schedule the job
 #        print("[GANTT] 15 ".gettimeofday."\n");
         my $vec = '';

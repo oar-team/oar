@@ -479,7 +479,7 @@ eval {
                 oar_debug("[bipbip $Job_id] Interactive request ;Answer to the client Qsub -I\n");
                 my ($addr,$port) = split(/:/,$job->{info_type});
                 if (defined(OAR::Tools::notify_tcp_socket($addr,$port,"GOOD JOB"))){
-                    oar_warn("[bipbip $Job_id] Frag job $Job_id because I cannot notify oarsub\n");
+                    oar_error("[bipbip $Job_id] Frag job $Job_id because oarsub cannot be notified by the server on host: $addr:$port. Check your network and firewall configuration\n");
                     OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
                     OAR::IO::frag_job($base,$Job_id);
                     OAR::IO::unlock_table($base);

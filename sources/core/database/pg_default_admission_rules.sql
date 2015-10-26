@@ -32,7 +32,7 @@ if ($queue_name eq "admin") {
 
 -- Prevent the use of system properties
 INSERT INTO admission_rules (priority, enabled, rule) VALUES (5, 'YES', E'# Prevent users from using internal resource properties for oarsub requests 
-my @bad_resources = ("type","state","next_state","finaud_decision","next_finaud_decision","state_num","suspended_jobs","besteffort","deploy","expiry_date","desktop_computing","last_job_date","available_upto","scheduler_priority");
+my @bad_resources = ("type","state","next_state","finaud_decision","next_finaud_decision","state_num","suspended_jobs","scheduler_priority","cpuset","besteffort","deploy","expiry_date","desktop_computing","last_job_date","available_upto","last_available_upto");
 foreach my $mold (@{$ref_resource_list}){
     foreach my $r (@{$mold->[0]}){
         my $i = 0;
@@ -86,16 +86,16 @@ if (grep(/^deploy$/, @{$type_list})){
 }
 ');
 
--- Prevent deploy and allow_classic_ssh type jobs on none entire nodes
+-- Prevent deploy type jobs on non-entire nodes
 INSERT INTO admission_rules (priority, enabled, rule) VALUES (9, 'YES', E'# Restrict allowed properties for deploy jobs to force requesting entire nodes
-my @bad_resources = ("core","cpu","resource_id",);
-if (grep(/^(deploy|allow_classic_ssh)$/, @{$type_list})){
+my @bad_resources = ("cpu","core", "thread","resource_id",);
+if (grep(/^deploy$/, @{$type_list})){
     foreach my $mold (@{$ref_resource_list}){
         foreach my $r (@{$mold->[0]}){
             my $i = 0;
             while (($i <= $#{$r->{resources}})){
                 if (grep(/^$r->{resources}->[$i]->{resource}$/i, @bad_resources)){
-                    die("[ADMISSION RULE] \'$r->{resources}->[$i]->{resource}\' resource is not allowed with a deploy or allow_classic_ssh type job\\n");
+                    die("[ADMISSION RULE] \'$r->{resources}->[$i]->{resource}\' resource is not allowed with a deploy job\\n");
                 }
                 $i++;
             }
@@ -148,7 +148,7 @@ if ($reservationField eq "toSchedule") {
                                         (state = ''Waiting'' OR state = ''Hold'')
                                ");
         if ($nb_resa >= $max_nb_resa){
-            die("[ADMISSION RULE] Error : you cannot have more than $max_nb_resa waiting reservations.\\n");
+            die("[ADMISSION RULE] Error: you cannot have more than $max_nb_resa waiting advance reservations.\\n");
         }
     }
 }
@@ -192,14 +192,24 @@ foreach my $mold (@{$ref_resource_list}){
 
 -- Check if types given by the user are right
 INSERT INTO admission_rules (priority, enabled, rule) VALUES (15, 'YES', E'# Check if job types are valid
-my @types = ("container","inner","deploy","desktop_computing","besteffort","cosystem","noop","idempotent","timesharing","allow_classic_ssh","token\\:xxx=yy");
-foreach my $t (@{$type_list}){
-    my $i = 0;
-    while (($types[$i] ne $t) and ($i <= $#types)){
-        $i++;
+my @types = (
+    qr/^container(?:=\\w+)?$/,                 qr/^deploy(?:=standby)?$/,
+    qr/^desktop_computing$/,                   qr/^besteffort$/,
+    qr/^cosystem(?:=standby)?$/,                qr/^idempotent$/,
+    qr/^placeholder=\\w+$/,                    qr/^allowed=\\w+$/,
+    qr/^inner=\\w+$/,                          qr/^timesharing=(?:(?:\\*|user),(?:\\*|name)|(?:\\*|name),(?:\\*|user))$/,
+    qr/^token\\:\\w+\\=\\d+$/,                 qr/^noop(?:=standby)?$/,
+    qr/^(?:postpone|deadline|expire)=\\d\\d\\d\\d-\\d\\d-\\d\\d(?:\\s+\\d\\d:\\d\\d(?::\\d\\d)?)?$/,
+);
+foreach my $t ( @{$type_list} ) {
+    my $match = 0;
+    foreach my $r (@types) {
+        if ($t =~ $r) {
+            $match = 1;
+        }
     }
-    if (($i > $#types) and ($t !~ /^(timesharing|inner|token\\:\\w+\\=\\d+)/)){
-        die("[ADMISSION RULE] The job type $t is not handled by OAR; Right values are : @types\\n");
+    unless ( $match ) {
+        die( "[ADMISSION RULE] Error: unknown job type: $t\\n");
     }
 }
 ');

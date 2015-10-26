@@ -15,7 +15,7 @@
 ## CSS path for the HTML diplay
 ## - default is "/monika.css"
 ##############################################################################
-css_path = %%WWW_ROOTDIR%%/monika.css
+css_path = %%WWWROOTDIR%%/monika.css
 
 ##############################################################################
 ## clustername: set the name of the cluster
@@ -187,14 +187,18 @@ color_pool = "#999999"
 
 
 hidden_property = network_address
+hidden_property = host
+hidden_property = cpu
+hidden_property = core
+hidden_property = thread
+hidden_property = cpuset
+hidden_property = ip
+hidden_property = hostname
 #hidden_property = besteffort
 hidden_property = expiry_date
 hidden_property = desktop_computing
-hidden_property = cpu
-hidden_property = cpuset
 hidden_property = available_upto
 hidden_property = last_available_upto
-hidden_property = core
 hidden_property = finaud_decision
 hidden_property = last_job_date
 hidden_property = resource_id
@@ -206,8 +210,6 @@ hidden_property = suspended_jobs
 hidden_property = next_state
 hidden_property = next_finaud_decision
 hidden_property = deploy
-hidden_property = host
-hidden_property = ip
-hidden_property = hostname
 hidden_property = scheduler_priority
 #hidden_property = switch
+
