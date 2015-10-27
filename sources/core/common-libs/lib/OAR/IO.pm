@@ -5590,8 +5590,8 @@ sub set_resources_property($$$$){
                                  AND attribute = \'$property\'
                                  AND resource_id IN (".join(",", @ids).")
                             ");
-            if (not defined($res) or ($res != $nbRowsAffected)){
-                warn("Error: failed to update resource_logs\n");
+            if (not defined($res) or ($res < 0)){
+                warn("Error: failed to update resource_logs $res \n");
             }
             my $query = "INSERT INTO resource_logs (resource_id,attribute,value,date_start) VALUES ";
             foreach my $i (@ids){
