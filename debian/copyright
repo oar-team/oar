@@ -1,16 +1,11 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: oar
-Upstream-Contact: oar-contact@lists.gforge.inria.fr
+Upstream-Contact: oar-users@lists.gforge.inria.fr
 Source: http://oar-ftp.imag.fr/oar/sources/
 
 Files: *
 Copyright:  2009-2012 LIG http://lig.imag.fr
 License: GPL-2+
-
-Files: sources/visualization_interfaces/DrawGantt/js/overlib.js
-  sources/visualization_interfaces/Monika/overlib.js
-Copyright: Erik Bosrup 1998-2002. All rights reserved.
-License: Artistic
 
 Files: sources/extra/orpheus/modules/lua-signal/lsignal.c
 Copyright: 2010  Patrick J. Donnelly (batrick@batbytes.com) 
@@ -57,32 +52,3 @@ License: MIT/X11
  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-License: Artistic
- overLIB 3.51  --  This notice must remain untouched at all times.
- Copyright Erik Bosrup 1998-2002. All rights reserved.
- .
- By Erik Bosrup (erik@bosrup.com).  Last modified 2002-11-01.
- Portions by Dan Steinman (dansteinman.com). Additions by other people are
- listed on the overLIB homepage.
- .
- Get the latest version at http://www.bosrup.com/web/overlib/
- .
- This script is published under an open source license. Please read the license
- agreement online at: http://www.bosrup.com/web/overlib/license.html
- If you have questions regarding the license please contact erik@bosrup.com.
- .
- This script library was originally created for personal use. By request it has
- later been made public. This is free software. Do not sell this as your own
- work, or remove this copyright notice. For full details on copying or changing
- this script please read the license agreement at the link above.
- .
- Please give credit on sites that use overLIB and submit changes of the script
- so other people can use them as well. This script is free to use, don't abuse.
- .
- The license at the link above states the Artistic license for this
- software.
- .
- On Debian systems, the complete text of the Artistic License can be found in
- `/usr/share/common-licenses/Artistic'.
-

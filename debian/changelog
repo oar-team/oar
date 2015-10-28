@@ -1,10 +1,41 @@
-oar (2.5.5~rc1-1~bpo8+1) jessie-backports; urgency=medium
+oar (2.5.6~rc3-1~bpo8+1) jessie-backports; urgency=medium
 
   * Rebuild for jessie-backports.
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 04 Aug 2015 21:12:39 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 28 Oct 2015 16:53:17 +0100
 
-oar (2.5.5~rc1-1) unstable; urgency=medium
+oar (2.5.6~rc3-1) unstable; urgency=medium
+
+  * New upstream release
+  * Rework Debian README file for oar-api (api setup)
+  * Source-less javascript were removed upstream, no need for dfsg now
+  * Change dependences of oar-restful-api, can be in main again
+  * Remove patch applied upstream
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 28 Oct 2015 16:19:57 +0100
+
+oar (2.5.5+dfsg.1-1) unstable; urgency=medium
+
+  * remove source-less javascript files from tar.gz
+  * add a README.source to warn about an uscan bug
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 21 Sep 2015 16:45:32 +0200
+
+oar (2.5.5-2) unstable; urgency=medium
+
+  * Rework the sections of the packages (mainly set to utils instead of science)
+  * Set the archive area/section of the oar-restful-api package to contrib/net,
+    since it depends on non-free packages (Closes: #798820)
+  * Remove the oar-api transitional dummy package
+  * Fix typos in oar-restful-api README.Debian file
+  * Remove the overlib.js files from sources, because overLIB is not actually
+    used and has copyright issues (broken URL in the copyright notice)
+  * Fix upstream contact and remove overLIB artistic license in the copyright
+    file
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 18 Sep 2015 15:18:47 +0200
+
+oar (2.5.5-1) unstable; urgency=medium
 
   [ Pierre Neyron ]
   * New upstream release
@@ -14,8 +45,12 @@ oar (2.5.5~rc1-1) unstable; urgency=medium
   * Set libyaml-perl as a dependance for oar-restful-api and remove
     libxml-simple-perl from the recommends
   * Add python-sphinx to the build dependencies
+  * Replace embedded jquery.js and underscore.js in oar-doc with a symlink to
+    the copy provided by the libjs-* packages
+  * Fix minor spelling issues in oarsub man page
+  * Fix lintian issues or add overrides
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Sat, 01 Aug 2015 21:48:45 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 07 Sep 2015 23:17:12 +0200
 
 oar (2.5.4-2) unstable; urgency=medium
 

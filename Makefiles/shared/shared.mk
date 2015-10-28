@@ -112,7 +112,7 @@ $(TEMPLATE_BUILDED_FILES) : %: %.in
 	    s#%%OAROWNERGROUP%%#$(OAROWNERGROUP)#g;;\
 	    s#%%WWWUSER%%#$(WWWUSER)#g;;\
 	    s#%%APACHECONFDIR%%#$(APACHECONFDIR)#g;;\
-	    s#%%WWW_ROOTDIR%%#$(WWW_ROOTDIR)#g;;\
+	    s#%%WWWROOTDIR%%#$(WWWROOTDIR)#g;;\
 	    s#%%WWWDIR%%#$(WWWDIR)#g;;\
 	    s#%%XAUTHCMDPATH%%#$(XAUTHCMDPATH)#g;;\
 	    s#%%OARSHCMD%%#$(OARSHCMD)#g;;\

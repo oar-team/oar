@@ -1,0 +1,10 @@
+Document: oar-documentation
+Title: OAR documentation
+Author: OAR Team
+Abstract: Documentation for the OAR batch scheduler
+Section: System/Administration
+
+Format: HTML
+Index: /usr/share/doc/oar-doc/html/index.html
+Files: /usr/share/doc/oar-doc/html/index.html
+

@@ -57,7 +57,11 @@ if (not defined($base)) {
 }
 
 my $lockName = "ACCOUNTING";
-OAR::IO::get_lock($base,$lockName,3600);
+OAR::IO::get_lock($base,$lockName,3600); # Only for mysql
+if (OAR::IO::get_database_type() eq "Pg"){
+    OAR::IO::lock_table($base, ["accounting"]); # begin transaction
+    $base->do("LOCK TABLE accounting IN EXCLUSIVE MODE");
+}
 if (defined($Reinitialize)){
     print("Deleting all records from the acounting table...\n");
     OAR::IO::delete_all_from_accounting($base);
@@ -68,6 +72,7 @@ if (defined($Reinitialize)){
 }else{
     OAR::IO::check_accounting_update($base,$windowSize);
 }
+OAR::IO::unlock_table($base) if (OAR::IO::get_database_type() eq "Pg");
 OAR::IO::release_lock($base,$lockName);
 
 OAR::IO::disconnect($base);
