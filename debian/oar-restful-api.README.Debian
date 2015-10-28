@@ -1,16 +1,13 @@
 OAR restfull API requires a mean of running fastcgi scripts, as the OAR user.
-Apache2 fastcgi and suexec modules can be used. See below some instructions to do so.
+Apache2 fastcgi and suexec modules can be used, but implies some constraints on the apache configuration, suggesting to setup a dedicated virtual host on port 6668.
+See the oar-restful-api apache configuration file for more details.
 
-
-WARNING: with the shipped Apache configuration, you cannot get both the OAR API and some other CGI web apps (e.g. monika) working on a same server.
-This is due to the fact that suexec activation is global to a virtual host, breaking any CGI that is not meant to be used with it.
-
-Several options are possible to overcome that:
+If you are not pleased with that virtual host setup, you can consider the following other options:
 - Install the oar-restful-api package on a dedicated host (e.g. not on the same host as the oar-web-status package).
-- Adapt the shipped Apache configuration to setup the OAR API in a dedicated virtual host.
-- Adapt other CGI scripts to suexec (scripts and their parent directories must be owned and will have to be run by the oar user)
+- Adapt the shipped Apache configuration to setup the OAR API in a hostname based virtual host.
+- Adapt other CGI scripts to suexec (scripts and their parent directories must be owned and must be run by the oar user)
 
-In any case, some more configuration is needed to setup oar-restful-api with fastcgi and suexec on Debian:
+In any case, some more configuration is needed to get oar-restful-api with fastcgi and suexec working on Debian:
 
 0/ Install the required packages
 Package libapache2-mod-fastcgi can be installed from non-free. As of writing this, it is only available for the i386 and amd64 architectures.
@@ -18,16 +15,16 @@ Package apache2-suexec-custom must be installed in order to be able to change th
 
 1/ Configure the apache2-suexec-custom package
 
-Change the first line of the /etc/apache2/suexec/www-data file to "/usr/lib/cgi-bin".
+Change the first line of the /etc/apache2/suexec/www-data file to "/usr/lib/cgi-bin/oarapi".
 
-2/ Enable fastcgi and suexec Apache modules
+2/ Configure Apache fastcgi module to use the suexec wrapper
+
+In the /etc/apache2/mods-available/fastcgi.conf file, uncomment the line: "FastCgiWrapper /usr/lib/apache2/suexec"
+
+3/ Enable fastcgi and suexec Apache modules
 
 # a2enmod fastcgi
 # a2enmod suexec
-
-3/ Configure fastcgi to use the suexec wrapper
-
-In the /etc/apache2/mods-enabled/fastcgi.conf file, uncomment the line: "FastCgiWrapper /usr/lib/apache2/suexec"
 
 4/ Grant access to the API from more hosts
 
