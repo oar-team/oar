@@ -5543,7 +5543,7 @@ sub set_node_expiryDate($$$) {
 # set resources property
 # change a property value in the resource table
 # parameters : base, a hash ref defining the nodes or resources to change, property name, value
-# return : # of change rows.
+# return : # of changed rows
 sub set_resources_property($$$$){
     my $dbh = shift;
     my $resources = shift; # e.g. {nodes => [...]}} or {resources => [...]}
@@ -5556,14 +5556,14 @@ sub set_resources_property($$$$){
         $where = "network_address IN (".join(",", map {"'$_'"} @{$resources->{nodes}}).")";
     }elsif (exists($resources->{resources})){
         $where = "resource_id IN (".join(",", @{$resources->{resources}}).")"
-    } else {
+    }else{
         return -1;
     }
-    my $sth = $dbh->prepare("   SELECT resource_id
-                                FROM resources
-                                WHERE
-                                    $where
-                                    AND ( $property != \'$value\' OR $property IS NULL )
+    my $sth = $dbh->prepare("SELECT resource_id
+                             FROM resources
+                             WHERE
+                                 $where
+                                 AND ( $property != \'$value\' OR $property IS NULL )
                             ");
     $sth->execute();
     my @ids = ();
@@ -5577,22 +5577,33 @@ sub set_resources_property($$$$){
                                     WHERE
                                         resource_id IN (".join(",", @ids).")
                                    ");
-        if ($nbRowsAffected > 0){
+        # in case of error, $nbRowsAffected can be equal to undef or -1 
+        # and if no row was actually updated, equal to 0
+        if (defined($nbRowsAffected) and ($nbRowsAffected > 0)){
             #Update LOG table
             my $date = get_date($dbh);
-            $dbh->do("  UPDATE resource_logs
-                        SET date_stop = \'$date\'
-                        WHERE
-                            date_stop = 0
-                            AND attribute = \'$property\'
-                            AND resource_id IN (".join(",", @ids).")
-                     ");
+            my $res;
+            $res = $dbh->do("UPDATE resource_logs
+                             SET date_stop = \'$date\'
+                             WHERE
+                                 date_stop = 0
+                                 AND attribute = \'$property\'
+                                 AND resource_id IN (".join(",", @ids).")
+                            ");
+            if (not defined($res) or ($res < 0)){
+                warn("Error: failed to update resource_logs $res \n");
+            }
             my $query = "INSERT INTO resource_logs (resource_id,attribute,value,date_start) VALUES ";
             foreach my $i (@ids){
                 $query .= " ($i, \'$property\', \'$value\', \'$date\'),";
             }
             chop($query);
-            $dbh->do($query);
+            $res = $dbh->do($query);
+            if (not defined($res) or ($res != $nbRowsAffected)){
+                warn("Error: failed to add resource_logs\n");
+            }
+        }else{
+            warn("Error: failed to update resources\n");
         }
     }
 #   unlock_table($dbh;

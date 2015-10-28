@@ -1,24 +1,12 @@
-oar (2.5.6~rc2-1~bpo70+1) wheezy-backports; urgency=medium
+oar (2.5.6~rc3-1) unstable; urgency=medium
 
-  * Rebuild for wheezy-backports.
-
- -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 26 Oct 2015 17:13:25 +0100
-
-oar (2.5.6~rc2-1) unstable; urgency=medium
-
-  * New RC upstream release
+  * New upstream release
   * Rework Debian README file for oar-api (api setup)
-
- -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 26 Oct 2015 16:38:35 +0100
-
-oar (2.5.6~rc1-1) unstable; urgency=medium
-
-  * New RC upstream release
   * Source-less javascript were removed upstream, no need for dfsg now
   * Change dependences of oar-restful-api, can be in main again
-  * Remove patch (typo) that was applied upstream
+  * Remove patch applied upstream
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 22 Oct 2015 01:32:40 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 28 Oct 2015 16:19:57 +0100
 
 oar (2.5.5+dfsg.1-1) unstable; urgency=medium
 
