@@ -406,17 +406,18 @@ sub treate_waiting_reservation_jobs($){
         }
         my @resa_alive_resources;
         my $jobtypes = OAR::IO::get_job_types_hash($base,$job->{job_id});
-        if ((defined($jobtypes->{deploy}) and $jobtypes->{deploy} eq "standby")
+        my $standbystart = ((defined($jobtypes->{deploy}) and $jobtypes->{deploy} eq "standby")
             or (defined($jobtypes->{cosystem}) and $jobtypes->{cosystem} eq "standby")
-            or (defined($jobtypes->{noop}) and $jobtypes->{noop} eq "standby")) {
-          oar_debug("[MetaSched] [$job->{job_id}] reservation is allowed to start with some resources in standby");
-          @resa_alive_resources = OAR::IO::get_gantt_Alive_or_Standby_resources_for_job($base,$moldable->[2], $job->{start_time} + $moldable->[1] + $Security_time_overhead);
+            or (defined($jobtypes->{noop}) and $jobtypes->{noop} eq "standby"));
+        if ($standbystart){
+            oar_debug("[MetaSched] [$job->{job_id}] reservation is allowed to start with some resources in standby\n");
+            @resa_alive_resources = OAR::IO::get_gantt_Alive_or_Standby_resources_for_job($base,$moldable->[2], $job->{start_time} + $moldable->[1] + $Security_time_overhead);
         } else {
-          @resa_alive_resources = OAR::IO::get_gantt_Alive_resources_for_job($base,$moldable->[2]);
+            @resa_alive_resources = OAR::IO::get_gantt_Alive_resources_for_job($base,$moldable->[2]);
         }
         # test if the job is going to be launched and there is no Alive node
         if (($#resa_alive_resources < 0) && ($job->{start_time} <= $current_time_sec)){
-            oar_warn("[MetaSched] [$job->{job_id}] reservation is waiting because no resource is present\n");
+            oar_warn("[MetaSched] [$job->{job_id}] reservation is waiting because no resource is available\n");
             OAR::IO::set_gantt_job_startTime($base,$moldable->[2],$current_time_sec + 1);
         }elsif($job->{start_time} <= $current_time_sec){
             my @resa_resources = OAR::IO::get_gantt_resources_for_job($base,$moldable->[2]);
@@ -430,7 +431,8 @@ sub treate_waiting_reservation_jobs($){
                 #Check if resources are in Alive state otherwise remove them, the job is going to be launched
                 foreach my $r (@resa_resources){
                     my $resource_info = OAR::IO::get_resource_info($base,$r);
-                    if ($resource_info->{state} ne "Alive"){
+                    if (not ($resource_info->{state} eq "Alive" or ($standbystart and $resource_info->{state} eq "Absent" and
+                        ($job->{start_time} + $moldable->[1] + $Security_time_overhead) < $resource_info->{available_upto}))){
                         oar_warn("[MetaSched] [$job->{job_id}] drop resource $r of the reservation, because resource is $resource_info->{state})\n");
                         OAR::IO::remove_gantt_resource_job($base, $moldable->[2], $r);
                     }

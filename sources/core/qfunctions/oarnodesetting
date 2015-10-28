@@ -60,7 +60,7 @@ sub set_resources_properties($$$){
             print("Set property $1 to $2...");
             my $ret = OAR::IO::set_resources_property($base,$resources,$1,$2);
             print(" $ret resource(s) updated.\n");
-            if ($ret == 0){
+            if (not defined($ret) or ($ret < 0)){
                 $exit_code = 9;
             }
         }else{
