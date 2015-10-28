@@ -3,10 +3,15 @@
 # WARNING: the OAR API requires Apache fastcgi and a way for the httpd user to
 # become oar. This can be achieved using Apache suexec. But since the suexec
 # mechanism is global to a virtual host, enabling it for the OAR API might
-# break other CGI programs (e.g. monika). As a result, it could be necessary to
-# setup several virtual hosts. Furthermore the suexec user cannot have a system
-# UID, which is the case of the oar user by default. One may need to change
-# that uid (e.g. on Centos).
+# break other CGI programs (e.g. monika). As a result, a solution is to setup
+# several virtual hosts. The configuration proposed below sets a port based 
+# virtual host listening on 6668.
+# Furthermore the suexec user cannot have a system UID, which is the case of 
+# the oar user by default. One may need to change that uid (e.g. on Centos).
+
+#Virtual host to isolate the oar-restful-api (suexec) setup
+Listen 6668
+<VirtualHost *:6668>
 
 # Aliases to the API.
 ScriptAlias /oarapi %%CGIDIR%%/oarapi/oarapi.cgi
@@ -154,3 +159,4 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 #  </IfModule>
 #</Location>
 
+</virtualhost>
