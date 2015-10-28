@@ -1,40 +1,59 @@
 OAR CHANGELOG
 =============
 
+version 2.5.6:
+--------------
+
+  - [oar.conf] add the SCHEDULER_MIN_TIME_BETWEEN_2_CALLS option
+  - [metascheduler] fix a bug with advance reservations when predicted resources
+         must be recomputed
+  - [metascheduler] fix a bug with advance reservations with standby start job
+         types (noop/cosystem/deploy=standby)
+  - [oarsub] fix several bugs with the array job submission
+  - [oarnodesetting] optimize grouped operations on resources and add a lock
+         around property changes
+  - [oar_resources_init] fix node read from standard input
+  - [oarstat] prettier print of job events
+  - [logs] several cosmetic fixes 
+  - [api] proposed apache configuration now uses a virtual host on port 6668
+  - [drawgantt-svg] fix the possibly very long delay when zooming
+  - [monika] fix harmless bug in configuration 
+  - [visualization] remove overlib.js (license issue), this breaks the legacy
+         drawgantt (which is not supported anymore)
+
 version 2.5.5:
 --------------
 
-  - [iolib] fix deadlock with TRUNCATE in postgresql.
+  - [iolib] fix deadlock with TRUNCATE in postgresql
   - [almighty] add SCHEDULER_MIN_TIME_BETWEEN_2_CALLS:
         the scheduler is launched at max every t seconds (t=5 by default), this
         avoids the scheduler to cause starvation with regard to the other 
-        modules.
+        modules
   - [scheduler] fix some memory leaks.
   - [scheduler] add a cache to the resources tree computation: improve
         the scheduler speed by reducing the number of SQL queries.
-  - [scheduler] backport the expire/postpone/deadline job types from master.
+  - [scheduler] backport the expire/postpone/deadline job types.
   - [scheduler] rename the placeholder job types: placeholder/allowed.
   - [scheduler] fix timesharing (adv reservation and *_placeholder schedulers).
-  - [scheduler] allows noop/cosystem/standby to start on resources in standby,
-        no wake-up is triggered (requires activating energy saving).
-  - [oarsub] use jobkey (-k) is the OAR_JOB_KEY_FILE env variable  is set.
-  - [oarstat] fix accounting display.
-  - [oar_resources_init] fix HyperThreading bug + improve CLI.
+  - [scheduler] allows noop/cosystem/deploy jobs to start on resources in
+        standby, no wake-up is triggered (requires activating energy saving).
+  - [oarsub] use jobkey (-k) if the OAR_JOB_KEY_FILE env variable is set.
+  - [oarstat] fix accounting display
+  - [oar_resources_init] fix HyperThreading bug + improve CLI
   - [oar_resources_add] make HyperThreading optional + fix long options + make
-        nicer warning outputs for auto-offset. 
-  - [admission rules] rewrite the job type check rule.
+        nicer warning outputs for auto-offset
+  - [admission rules] rewrite the job type check rule
   - [admission rules] fix oaradmissionrules bug with MySQL when modifying a rule
   - [oar-node] fix pid in init script.
   - [api] some optimizations + rework authentication configuration (apache).
   - [api][drawgantt-svg][monika] fix apache config (apache 2.4).
   - [drawgantt-svg] new version with aggreation of resources and more.
   - [monika] add thread to the hidden properties.
-  - [api] fastcgi config now using suexec (have to enable it inside the fastcgi
-        module configuration: FastCgiWrapper /usr/lib/apache2/suexec
+  - [api] fastcgi config now using suexec
   - [api] now using apache environment variables when headers are not available 
   - [api] optimization of /jobs query response time (especially efficient for
         mysql based installations)
-  - [api] [security] Html output did not break on errors
+  - [api] security fix: HTML outputs which did not break on errors 
 
 version 2.5.4:
 --------------
@@ -223,15 +242,15 @@ version 2.5.1:
   - New (experimental!) scheduler written in Ocaml
   - Cpusets are activated by default
   - Bugfix #11065: oar_resource_init fix (add a space)
-  - Bug 10999: memory leak into Hulot when used with postgresql. The leak has been
-    minimized, but it is still there (DBD::Pg bug)
+  - Bug 10999: memory leak into Hulot when used with postgresql. The leak has
+    been minimized, but it is still there (DBD::Pg bug)
   - Almighty cleans ipcs used by oar on exit 
   - Bugfix #10641 and #10999 : Hulot is automatically and periodically restarted
   - Feature request #10565: add the possibility to check the aliveness of the
     nodes of a job at the end of this one (pingchecker) 
-  - REST API heavily updated: new data structures with paginated results, desktop
-    computing functions, rspec tests, oaradmin resources management, admission
-    rules edition, relative/absolutes uris fixed
+  - REST API heavily updated: new data structures with paginated results,
+    desktop computing functions, rspec tests, oaradmin resources management,
+    admission rules edition, relative/absolutes uris fixed
   - New ruby desktop computing agent using REST API (experimental)
   - Experimental testsuite
   - Poar: web portal using the REST API (experimental)
@@ -270,11 +289,11 @@ version 2.5.1:
     Hence the system will remain up and running and the user job will finished.
     Drawback: this file can be changed manually by the user so if someone knows
     a method to do the same thing but only managed by root, we take???
-  - Bugfix API: quotes where badly escaped into job submission (Ugo.Meda@insa-rennes.fr)
+  - Bugfix API: quotes where badly escaped into job submission
   - Add the possibility to automatically resubmit idempotent job which ends
     with an exit code of 99: oarsub -t idempotent "sleep 5; exit 99"
-  - Bugfix API: Some informations where missing into jobs/details, especially the 
-    scheduled resources.
+  - Bugfix API: Some informations where missing into jobs/details, especially
+    the scheduled resources.
   - API: added support of "param_file" value for array job submissions. This value
     is a string representing the content of a parameters file. Sample submission::
 
