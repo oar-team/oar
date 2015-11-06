@@ -70,9 +70,11 @@ version 2.5.4:
   - [api] Rewritten/commented apache config file.
   - [kamelot] BUGFIX: fix hierarchies manipulation (remove toplevel resource).
   - [accounting] Fixed a memory leak and a rare case of bad consumption count.
-  - [almighty] Rewrote the handling of finished oarexec:
-        launch bipbip processes with MAX_CONCURRENT_JOB_TERMINATIONS 
-        to not overload the server.
+  - [oar.conf] Replace the MAX_CONCURRENT_JOB_TERMINATIONS option by 
+        MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING 
+  - [almighty] Rewrote the handling of starting and finishing jobs: limit
+        bipbip processes to MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING
+        to avoid overloading the server.
   - [oarexec] Introduced BASH_ENV=~oar/.batch_job_bashrc for batch jobs
         Batch jobs with bash shell have some difficulties to source the
         right bash scripts when launching.
