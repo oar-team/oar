@@ -330,7 +330,8 @@ $output .= "<button type=\"button\" onclick=\"show_timepicker()\">set</button>";
 $output .= "\n";
 $output .= "<button type=\"button\" onclick=\"reload_content()\">reload</button>";
 $output .= "<button type=\"button\" onclick=\"reset()\">reset</button>";
-$output .= "<button type=\"button\" onclick=\"show_misc()\">misc</button>";
+$output .= "\n";
+$output .= "<button type=\"button\" onclick=\"show_misc()\">options</button>";
 $output .= "\n";
 foreach ($CONF['nav_custom_buttons'] as $key => $value) {
   $output .= "<button type=\"button\" onclick=\"openURL('$value')\">$key</button>";
