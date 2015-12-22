@@ -2,6 +2,7 @@
 #
 
 # You can set these variables from the command line.
+DOC_TARGET    = docmaster@oar.imag.fr
 SPHINXOPTS    =
 DOC_VERSION   = 2.5
 SPHINXBUILD   = sphinx-build
@@ -181,7 +182,7 @@ pseudoxml:
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
 
 publish: html
-	rsync -avh $(BUILDDIR)/html/ oar-docmaster.website:~/oar-doc/$(DOC_VERSION)
+	rsync -avh $(BUILDDIR)/html/ $(DOC_TARGET):~/oar-doc/$(DOC_VERSION)
 
 publishpdf: latexpdf
 	rsync -avh $(BUILDDIR)/latex/*.pdf oar-docmaster.website:~/oar-doc/$(DOC_VERSION)
