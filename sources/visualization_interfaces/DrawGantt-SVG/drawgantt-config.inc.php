@@ -155,7 +155,7 @@ $CONF['static_patterns'] = <<<EOT
 </pattern> 
 EOT;
 
-// Standby job display options for the part shown in the future
+// Standby state display options for the part shown in the future
 $CONF['standby_truncate_state_to_now'] = 1; // default: 1
 // Besteffort job display options for the part shown in the future
 $CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
