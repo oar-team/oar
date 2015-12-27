@@ -144,15 +144,15 @@ echo "$OARPROPERTY_CMD -a mem || true" >> $SCRIPT_FILE
 
 # Init CPU id
 CPU=$($OARNODESETTING_CMD --last-property-value cpu 2> /dev/null)
-[ -n "$CPU" ] && ((CPU++)) || CPU=0 
+[ -n "$CPU" ] || CPU=0 
 # Init CORE id
 CORE=$($OARNODESETTING_CMD --last-property-value core 2> /dev/null)
-[ -n "$CORE" ] && ((CORE++)) || CORE=0
+[ -n "$CORE" ] || CORE=0
 # Init THREAD id
 if [ -n "$WITH_HT" -a -n "$WITH_THREAD_PROPERTY" ]; then
     THREAD=$($OARNODESETTING_CMD --last-property-value thread 2> /dev/null)
 fi
-[ -n "$THREAD" ] && ((THREAD++)) || THREAD=0
+[ -n "$THREAD" ] || THREAD=0
 
 while read -u 4 host; do
     echo -n "#   Checking $host ... "
