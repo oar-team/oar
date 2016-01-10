@@ -70,6 +70,8 @@ if (is_readable(CONFIG_FILE)) {
 $resource_base = array_key_exists('resource_base',$_GET)?$_GET['resource_base']:$CONF['nav_default_resource_base'];
 $filter = array_key_exists('filter',$_GET)?$_GET['filter']:key($CONF['nav_filters']);
 $timezone = array_key_exists('timezone',$_GET)?$_GET['timezone']:reset($CONF['nav_timezones']);
+$relative_start = array_key_exists('relative_start',$_GET)?$_GET['relative_start']:"";
+$relative_stop = array_key_exists('relative_stop',$_GET)?$_GET['relative_stop']:"";
 $start = array_key_exists('start',$_GET)?$_GET['start']:"";
 $stop = array_key_exists('stop',$_GET)?$_GET['stop']:"";
 $timespan = array_key_exists('timespan',$_GET)?$_GET['timespan']:$CONF['nav_default_timespan'];
@@ -173,14 +175,22 @@ $output = <<<EOT
     miscDiv.style.left = window.scrollX + "px";
   }
   function reset() {
+    var date = new Date();
     var qstart = parseInt("$start");
+    var qrelative_start = parseInt("$relative_start");
     var qstop = parseInt("$stop");
+    var qrelative_stop = parseInt("$relative_stop");
     var qtimespan = parseInt("$timespan");
     if (isNaN(qtimespan)) {
         qtimespan = {$CONF['nav_default_timespan']};
     }
+    if (isNaN(qstart) && ! isNaN(qrelative_start)) { 
+      qstart = Math.floor(date.getTime() / 1000 - Math.abs(qrelative_start));
+    }
+    if (isNaN(qstop) && ! isNaN(qrelative_stop)) {
+      qstop = Math.floor(date.getTime() / 1000 + Math.abs(qrelative_stop));
+    }
     if (isNaN(qstart)) { 
-      var date = new Date();
       start = Math.floor(date.getTime() / 1000 - qtimespan / 2);
     } else {
       start = qstart;
