@@ -20,6 +20,13 @@ $CONF['nav_scales'] = array(
   'huge' => 40,
 );
 
+$CONF['nav_timeshifts'] = array( // proposed time-shifting buttons
+  '1h' => 3600,
+  '6h' => 6*3600,
+  '1d' => 24*3600,
+  '1w' => 7*24*3600,
+);
+
 $CONF['nav_default_timespan'] = 6*3600; // proposed timespan in the "set" bar
 $CONF['nav_timespans'] = array(
   '1 hour' => 3600,
@@ -312,19 +319,19 @@ $output = <<<EOT
 <body onload="init()">
 <div id="panel" align="center">
 EOT;
-$output .= "<button type=\"button\" onclick=\"shift(-604800)\">&lt;1w</button>";
-$output .= "<button type=\"button\" onclick=\"shift(-86400)\">&lt;1d</button>";
-$output .= "<button type=\"button\" onclick=\"shift(-21600)\">&lt;6h</button>";
-$output .= "<button type=\"button\" onclick=\"shift(-3600)\">&lt;1h</button>";
+$output_before = "";
+$output_after = "";
+foreach ($CONF['nav_timeshifts'] as $key => $value) {
+  $output_before = "<button type=\"button\" onclick=\"shift(-($value))\">&lt;$key</button>" . $output_before;
+  $output_after .= "<button type=\"button\" onclick=\"shift(+($value))\">&gt;$key</button>";
+}
+$output .= $output_before;
 $output .= "<button type=\"button\" onclick=\"prev()\">&lt;&lt;</button>";
 $output .= "<button type=\"button\" onclick=\"zoomout()\">-</button>";
 $output .= "<button type=\"button\" onclick=\"zoom()\">zoom</button>";
 $output .= "<button type=\"button\" onclick=\"zoomin()\">+</button>";
 $output .= "<button type=\"button\" onclick=\"next()\">&gt;&gt;</button>";
-$output .= "<button type=\"button\" onclick=\"shift(3600)\">&gt;1h</button>";
-$output .= "<button type=\"button\" onclick=\"shift(21600)\">&gt;6h</button>";
-$output .= "<button type=\"button\" onclick=\"shift(86400)\">&gt;1d</button>";
-$output .= "<button type=\"button\" onclick=\"shift(604800)\">&gt;1w</button>";
+$output .= $output_after;
 $output .= "<button type=\"button\" onclick=\"shift_to_now()\">now</button>";
 $output .= "<button type=\"button\" onclick=\"show_timepicker()\">set</button>";
 $output .= "\n";
