@@ -38,6 +38,9 @@ $CONF['nav_timespans'] = array(
   '1 week' => 7*24*3600,
 );
 
+$CONF['nav_forecast_before_now'] = 3600;       // forecast display, past part to show
+$CONF['nav_forecast_after_now'] = 5*7*24*3600; // future part to show (0 to disable the forecast button)
+
 $CONF['nav_filters'] = array( // proposed filters in the "misc" bar
   'all clusters' => "",
   'cluster1 only' => 'cluster=\'cluster1\'',
@@ -213,6 +216,12 @@ $output = <<<EOT
     stop = start + timespan;
     reload_content();
   }
+  function show_forecast() {
+    var date = new Date();
+    start = Math.floor(date.getTime() / 1000 - {$CONF['nav_forecast_before_now']});
+    stop = Math.floor(date.getTime() / 1000 + {$CONF['nav_forecast_after_now']});
+    reload_content();
+  }
   function next() {
     var t = stop + (stop - start);
     start = stop;
@@ -343,6 +352,9 @@ $output .= "<button type=\"button\" onclick=\"zoomin()\">+</button>";
 $output .= "<button type=\"button\" onclick=\"next()\">&gt;&gt;</button>";
 $output .= $output_after;
 $output .= "<button type=\"button\" onclick=\"shift_to_now()\">now</button>";
+if ($CONF['nav_forecast_after_now'] != 0) {
+  $output .= "<button type=\"button\" onclick=\"show_forecast()\">forecast</button>";
+}
 $output .= "<button type=\"button\" onclick=\"show_timepicker()\">set</button>";
 $output .= "\n";
 $output .= "<button type=\"button\" onclick=\"reload_content()\">reload</button>";

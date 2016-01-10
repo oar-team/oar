@@ -38,6 +38,9 @@ $CONF['nav_timespans'] = array(
   '1 week' => 7*24*3600,
 );
 
+$CONF['forecast_before_now'] = 3600;       // forecast display, past part to show
+$CONF['forecast_after_now'] = 5*7*24*3600; // future part to show (0 to disable the forecast button)
+
 $CONF['nav_filters'] = array( // proposed filters in the "misc" bar
   'all clusters' => "",
   'cluster1 only' => 'cluster=\'cluster1\'',
