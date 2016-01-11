@@ -41,7 +41,7 @@ $CONF['nav_timespans'] = array(
 $CONF['nav_forecast'] = array( // forecast display
   '1 day' => 24*3600,
   '3 days' => 3*24*3600,
-  '1 weeks' => 7*24*3600,
+  '1 week' => 7*24*3600,
   '2 weeks' => 2*7*24*3600,
   '3 weeks' => 3*7*24*3600,
 );
