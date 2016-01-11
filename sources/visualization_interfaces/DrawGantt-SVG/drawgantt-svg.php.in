@@ -1073,7 +1073,7 @@ var parent_content;
 function init(evt) {
 EOT;
 if ($aborted) {
-  $output_headers .= 'alert("Aborted, too many jobs. Mind narrowing your lookup... zoom/+");';
+  $output_headers .= 'alert("Aborted, too many jobs to display, time window is too large. Please mind narrowing your lookup...");';
 }
 $output_headers .= <<<EOT
   svgDocument = evt.target.ownerDocument;
