@@ -38,8 +38,15 @@ $CONF['nav_timespans'] = array(
   '1 week' => 7*24*3600,
 );
 
-$CONF['nav_forecast_before_now'] = 3600;       // forecast display, past part to show
-$CONF['nav_forecast_after_now'] = 5*7*24*3600; // future part to show (0 to disable the forecast button)
+$CONF['nav_forecast'] = array( // forecast display
+  '1 day' => 5*7*24*3600,
+  '3 day' => 5*7*24*3600,
+  '1 weeks' => 5*7*24*3600,
+  '2 weeks' => 5*7*24*3600,
+  '3 weeks' => 5*7*24*3600,
+  '5 weeks' => 5*7*24*3600,
+);
+$CONF['nav_forecast_past_part'] = 0.1; // past part to show (percentage if < 1, otherwise: number of seconds)
 
 $CONF['nav_filters'] = array( // proposed filters in the "misc" bar
   'all clusters' => "",
@@ -117,6 +124,16 @@ $output = <<<EOT
     border-radius: 20px;
   }
   #timepicker {
+    position: absolute;
+    background-color: lightgrey;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    z-index: 2;
+    opacity: 1;
+    visibility: hidden;
+  }
+  #forecast {
     position: absolute;
     background-color: lightgrey;
     top: 0px;
@@ -216,11 +233,18 @@ $output = <<<EOT
     stop = start + timespan;
     reload_content();
   }
-  function show_forecast() {
+  function display_forecast(timespan) {
     var date = new Date();
-    start = Math.floor(date.getTime() / 1000 - {$CONF['nav_forecast_before_now']});
-    stop = Math.floor(date.getTime() / 1000 + {$CONF['nav_forecast_after_now']});
+    var past = Math.abs({$CONF['nav_forecast_past_part']});
+    if (past > 1) {
+      start = Math.floor(date.getTime() / 1000 - past);
+      stop = Math.floor(date.getTime() / 1000 + timespan - past);
+    } else {
+      start = Math.floor(date.getTime() / 1000 - timespan * past);
+      stop = Math.floor(date.getTime() / 1000 + timespan * (1 - past));
+    }
     reload_content();
+    hide_forecast();
   }
   function next() {
     var t = stop + (stop - start);
@@ -325,6 +349,12 @@ $output = <<<EOT
   function hide_timepicker() {
 	  document.getElementById("timepicker").style.visibility="hidden";
   }
+  function show_forecast() {
+	  document.getElementById("forecast").style.visibility="visible";
+  }
+  function hide_forecast() {
+	  document.getElementById("forecast").style.visibility="hidden";
+  }
   function show_misc() {
     var href = window.location.href
     document.getElementById("permalink").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
@@ -352,7 +382,7 @@ $output .= "<button type=\"button\" onclick=\"zoomin()\">+</button>";
 $output .= "<button type=\"button\" onclick=\"next()\">&gt;&gt;</button>";
 $output .= $output_after;
 $output .= "<button type=\"button\" onclick=\"shift_to_now()\">now</button>";
-if ($CONF['nav_forecast_after_now'] != 0) {
+if (count($CONF['nav_forecast']) > 0) {
   $output .= "<button type=\"button\" onclick=\"show_forecast()\">forecast</button>";
 }
 $output .= "<button type=\"button\" onclick=\"show_timepicker()\">set time</button>";
@@ -380,6 +410,16 @@ $output .= <<<EOT
 </select>
 
 <button type="button" onclick="set_time()">ok</button><button type="button" onclick="hide_timepicker()">cancel</button>
+</div>
+<div id="forecast" align="center">
+show forecast for: 
+EOT;
+foreach ($CONF['nav_forecast'] as $key => $value) {
+  $output .= "<button type=\"button\" onclick=\"display_forecast($value)\">$key</button>";
+}
+$output .= "\n";
+$output .= <<<EOT
+<button type="button" onclick="hide_forecast()">cancel</button>
 </div>
 <div id="misc" align="center">
 permalink:<a id="permalink" href=".">URL</a>
