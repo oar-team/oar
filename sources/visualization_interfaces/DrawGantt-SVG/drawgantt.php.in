@@ -204,10 +204,10 @@ $output = <<<EOT
         qtimespan = {$CONF['nav_default_timespan']};
     }
     if (isNaN(qstart) && ! isNaN(qrelative_start)) { 
-      qstart = Math.floor(date.getTime() / 1000 - Math.abs(qrelative_start));
+      qstart = Math.floor(date.getTime() / 1000 + qrelative_start);
     }
     if (isNaN(qstop) && ! isNaN(qrelative_stop)) {
-      qstop = Math.floor(date.getTime() / 1000 + Math.abs(qrelative_stop));
+      qstop = Math.floor(date.getTime() / 1000 + qrelative_stop);
     }
     if (isNaN(qstart)) { 
       start = Math.floor(date.getTime() / 1000 - qtimespan / 2);
