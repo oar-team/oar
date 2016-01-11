@@ -40,11 +40,10 @@ $CONF['nav_timespans'] = array(
 
 $CONF['nav_forecast'] = array( // forecast display
   '1 day' => 24*3600,
-  '3 day' => 3*24*3600,
+  '3 days' => 3*24*3600,
   '1 weeks' => 7*24*3600,
   '2 weeks' => 2*7*24*3600,
   '3 weeks' => 3*7*24*3600,
-  '5 weeks' => 5*7*24*3600,
 );
 $CONF['nav_forecast_past_part'] = 0.1; // past part to show (percentage if < 1, otherwise: number of seconds)
 
