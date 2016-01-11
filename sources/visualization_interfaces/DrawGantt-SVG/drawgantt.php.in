@@ -355,7 +355,7 @@ $output .= "<button type=\"button\" onclick=\"shift_to_now()\">now</button>";
 if ($CONF['nav_forecast_after_now'] != 0) {
   $output .= "<button type=\"button\" onclick=\"show_forecast()\">forecast</button>";
 }
-$output .= "<button type=\"button\" onclick=\"show_timepicker()\">set</button>";
+$output .= "<button type=\"button\" onclick=\"show_timepicker()\">set time</button>";
 $output .= "\n";
 $output .= "<button type=\"button\" onclick=\"reload_content()\">reload</button>";
 $output .= "<button type=\"button\" onclick=\"reset()\">reset</button>";
