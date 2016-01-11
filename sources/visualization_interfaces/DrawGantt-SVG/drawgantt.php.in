@@ -186,10 +186,13 @@ $output = <<<EOT
     var panelDiv=document.getElementById("panel");
     var miscDiv=document.getElementById("misc");
     var timepickerDiv=document.getElementById("timepicker");
+    var forecastDiv=document.getElementById("forecast");
     panelDiv.style.top = window.scrollY + "px";
     panelDiv.style.left = window.scrollX + "px";
     timepickerDiv.style.top = window.scrollY + "px";
     timepickerDiv.style.left = window.scrollX + "px";
+    forecastDiv.style.top = window.scrollY + "px";
+    forecastDiv.style.left = window.scrollX + "px";
     miscDiv.style.top = window.scrollY + "px";
     miscDiv.style.left = window.scrollX + "px";
   }
