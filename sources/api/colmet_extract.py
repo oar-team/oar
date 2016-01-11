@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # OAR API helper to extract colmet data of a given job
 # from hdf5 timestamped files
 # Output: json
