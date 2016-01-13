@@ -272,7 +272,7 @@ rm -rf tmp
 %config(noreplace) %attr(0600, oar, root) %{_sysconfdir}/oar/oar.conf
 %config(noreplace) %attr(0755, root, root) %{_sysconfdir}/oar/oarnodesetting_ssh
 %config(noreplace) %attr(0755, root, root) %{_sysconfdir}/oar/update_cpuset_id.sh
-%config %attr(0755,root,root) %{_sysconfdir}/logrotate.d/oar
+%config %attr(0644,root,root) %{_sysconfdir}/logrotate.d/oar
 %attr(0755, root, root) %{_bindir}/oarsh
 %attr(0755, root, root) %{_bindir}/oarprint
 %attr(0755, root, root) %{_bindir}/oarcp
@@ -496,6 +496,7 @@ user_setup
 %changelog
 * Wed Jan 13 2016 Pierre Neyron <pierre.neyron@imag.fr> 2.5.6+rc4-1.el7
 - New upstream release, remove patches (applied upstream)
+- Fix OAR logrotate permission
 
 * Fri Sep 11 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.5-1.el7
 - New upstream release, remove patches (applied upstream)
