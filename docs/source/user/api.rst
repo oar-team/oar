@@ -2299,6 +2299,31 @@ DELETE /media/<file_path>
 
    curl -i -X DELETE -H'Content-Type: application/octet-stream' http://kameleon:kameleon@localhost/oarapi-priv/media/~/testdir
 
+GET /colmet/job/<id>
+--------------------
+:description:
+  Extract colmet data for a given job. Colmet should be installed and the colmet-collector should dump data into hdf5 files located in the API_COLMET_HDF5_PATH_PREFIX specified into the oar.conf file. The served data is provided as a gzip compressed file containing a JSON hash with a key for each metric. The "hostname" and "timestamp" metrics are always appended, even if not specified.
+
+:parameters:
+  - **from**: Optional timestamp to restrict the beginning of the time interval of data to get. If not specified, the start time of the job is used instead.
+  - **to**: Optional timestamp to restrict the end of the time interval of data to get. If not specified, the end of the job is used instead, or now if the job is still running.
+  - **metrics**: Coma separated list of metrics to get from colmet data files. The default is "ac_etime,cpu_run_real_total,coremem,read_bytes,write_bytes".
+
+:formats:
+  application/x-gzip
+
+:authentication:
+  user
+
+:output:
+  Gzip compressed JSON data 
+
+:usage example:
+  ::
+
+   curl -H'Content-Type: application/x-gzip' "http://localhost/oarapi/colmet/job/5767965?from=1427780621&to=1427899621" > 5767965.json.gz
+
+
 Some equivalences with oar command line
 =======================================
 

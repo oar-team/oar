@@ -20,6 +20,13 @@ $CONF['nav_scales'] = array(
   'huge' => 40,
 );
 
+$CONF['nav_timeshifts'] = array( // proposed time-shifting buttons
+  '1h' => 3600,
+  '6h' => 6*3600,
+  '1d' => 24*3600,
+  '1w' => 7*24*3600,
+);
+
 $CONF['nav_default_timespan'] = 6*3600; // proposed timespan in the "set" bar
 $CONF['nav_timespans'] = array(
   '1 hour' => 3600,
@@ -30,6 +37,15 @@ $CONF['nav_timespans'] = array(
   '3 day' => 3*24*3600,
   '1 week' => 7*24*3600,
 );
+
+$CONF['nav_forecast'] = array( // forecast display
+  '1 day' => 24*3600,
+  '3 days' => 3*24*3600,
+  '1 week' => 7*24*3600,
+  '2 weeks' => 2*7*24*3600,
+  '3 weeks' => 3*7*24*3600,
+);
+$CONF['nav_forecast_past_part'] = 0.1; // past part to show (percentage if < 1, otherwise: number of seconds)
 
 $CONF['nav_filters'] = array( // proposed filters in the "misc" bar
   'all clusters' => "",
@@ -63,6 +79,8 @@ if (is_readable(CONFIG_FILE)) {
 $resource_base = array_key_exists('resource_base',$_GET)?$_GET['resource_base']:$CONF['nav_default_resource_base'];
 $filter = array_key_exists('filter',$_GET)?$_GET['filter']:key($CONF['nav_filters']);
 $timezone = array_key_exists('timezone',$_GET)?$_GET['timezone']:reset($CONF['nav_timezones']);
+$relative_start = array_key_exists('relative_start',$_GET)?$_GET['relative_start']:"";
+$relative_stop = array_key_exists('relative_stop',$_GET)?$_GET['relative_stop']:"";
 $start = array_key_exists('start',$_GET)?$_GET['start']:"";
 $stop = array_key_exists('stop',$_GET)?$_GET['stop']:"";
 $timespan = array_key_exists('timespan',$_GET)?$_GET['timespan']:$CONF['nav_default_timespan'];
@@ -105,6 +123,16 @@ $output = <<<EOT
     border-radius: 20px;
   }
   #timepicker {
+    position: absolute;
+    background-color: lightgrey;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    z-index: 2;
+    opacity: 1;
+    visibility: hidden;
+  }
+  #forecast {
     position: absolute;
     background-color: lightgrey;
     top: 0px;
@@ -158,22 +186,33 @@ $output = <<<EOT
     var panelDiv=document.getElementById("panel");
     var miscDiv=document.getElementById("misc");
     var timepickerDiv=document.getElementById("timepicker");
+    var forecastDiv=document.getElementById("forecast");
     panelDiv.style.top = window.scrollY + "px";
     panelDiv.style.left = window.scrollX + "px";
     timepickerDiv.style.top = window.scrollY + "px";
     timepickerDiv.style.left = window.scrollX + "px";
+    forecastDiv.style.top = window.scrollY + "px";
+    forecastDiv.style.left = window.scrollX + "px";
     miscDiv.style.top = window.scrollY + "px";
     miscDiv.style.left = window.scrollX + "px";
   }
   function reset() {
+    var date = new Date();
     var qstart = parseInt("$start");
+    var qrelative_start = parseInt("$relative_start");
     var qstop = parseInt("$stop");
+    var qrelative_stop = parseInt("$relative_stop");
     var qtimespan = parseInt("$timespan");
     if (isNaN(qtimespan)) {
         qtimespan = {$CONF['nav_default_timespan']};
     }
+    if (isNaN(qstart) && ! isNaN(qrelative_start)) { 
+      qstart = Math.floor(date.getTime() / 1000 + qrelative_start);
+    }
+    if (isNaN(qstop) && ! isNaN(qrelative_stop)) {
+      qstop = Math.floor(date.getTime() / 1000 + qrelative_stop);
+    }
     if (isNaN(qstart)) { 
-      var date = new Date();
       start = Math.floor(date.getTime() / 1000 - qtimespan / 2);
     } else {
       start = qstart;
@@ -195,6 +234,19 @@ $output = <<<EOT
     start = Math.floor(date.getTime() / 1000 - timespan / 2);
     stop = start + timespan;
     reload_content();
+  }
+  function display_forecast(timespan) {
+    var date = new Date();
+    var past = Math.abs({$CONF['nav_forecast_past_part']});
+    if (past > 1) {
+      start = Math.floor(date.getTime() / 1000 - past);
+      stop = Math.floor(date.getTime() / 1000 + timespan - past);
+    } else {
+      start = Math.floor(date.getTime() / 1000 - timespan * past);
+      stop = Math.floor(date.getTime() / 1000 + timespan * (1 - past));
+    }
+    reload_content();
+    hide_forecast();
   }
   function next() {
     var t = stop + (stop - start);
@@ -299,6 +351,12 @@ $output = <<<EOT
   function hide_timepicker() {
 	  document.getElementById("timepicker").style.visibility="hidden";
   }
+  function show_forecast() {
+	  document.getElementById("forecast").style.visibility="visible";
+  }
+  function hide_forecast() {
+	  document.getElementById("forecast").style.visibility="hidden";
+  }
   function show_misc() {
     var href = window.location.href
     document.getElementById("permalink").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
@@ -312,25 +370,29 @@ $output = <<<EOT
 <body onload="init()">
 <div id="panel" align="center">
 EOT;
-$output .= "<button type=\"button\" onclick=\"shift(-604800)\">&lt;1w</button>";
-$output .= "<button type=\"button\" onclick=\"shift(-86400)\">&lt;1d</button>";
-$output .= "<button type=\"button\" onclick=\"shift(-21600)\">&lt;6h</button>";
-$output .= "<button type=\"button\" onclick=\"shift(-3600)\">&lt;1h</button>";
+$output_before = "";
+$output_after = "";
+foreach ($CONF['nav_timeshifts'] as $key => $value) {
+  $output_before = "<button type=\"button\" onclick=\"shift(-($value))\">&lt;$key</button>" . $output_before;
+  $output_after .= "<button type=\"button\" onclick=\"shift(+($value))\">&gt;$key</button>";
+}
+$output .= $output_before;
 $output .= "<button type=\"button\" onclick=\"prev()\">&lt;&lt;</button>";
 $output .= "<button type=\"button\" onclick=\"zoomout()\">-</button>";
 $output .= "<button type=\"button\" onclick=\"zoom()\">zoom</button>";
 $output .= "<button type=\"button\" onclick=\"zoomin()\">+</button>";
 $output .= "<button type=\"button\" onclick=\"next()\">&gt;&gt;</button>";
-$output .= "<button type=\"button\" onclick=\"shift(3600)\">&gt;1h</button>";
-$output .= "<button type=\"button\" onclick=\"shift(21600)\">&gt;6h</button>";
-$output .= "<button type=\"button\" onclick=\"shift(86400)\">&gt;1d</button>";
-$output .= "<button type=\"button\" onclick=\"shift(604800)\">&gt;1w</button>";
+$output .= $output_after;
 $output .= "<button type=\"button\" onclick=\"shift_to_now()\">now</button>";
-$output .= "<button type=\"button\" onclick=\"show_timepicker()\">set</button>";
+$output .= "<button type=\"button\" onclick=\"show_timepicker()\">set time</button>";
+if (count($CONF['nav_forecast']) > 0) {
+  $output .= "<button type=\"button\" onclick=\"show_forecast()\">forecast</button>";
+}
 $output .= "\n";
 $output .= "<button type=\"button\" onclick=\"reload_content()\">reload</button>";
 $output .= "<button type=\"button\" onclick=\"reset()\">reset</button>";
-$output .= "<button type=\"button\" onclick=\"show_misc()\">misc</button>";
+$output .= "\n";
+$output .= "<button type=\"button\" onclick=\"show_misc()\">options</button>";
 $output .= "\n";
 foreach ($CONF['nav_custom_buttons'] as $key => $value) {
   $output .= "<button type=\"button\" onclick=\"openURL('$value')\">$key</button>";
@@ -350,6 +412,16 @@ $output .= <<<EOT
 </select>
 
 <button type="button" onclick="set_time()">ok</button><button type="button" onclick="hide_timepicker()">cancel</button>
+</div>
+<div id="forecast" align="center">
+show forecast for: 
+EOT;
+foreach ($CONF['nav_forecast'] as $key => $value) {
+  $output .= "<button type=\"button\" onclick=\"display_forecast($value)\">$key</button>";
+}
+$output .= "\n";
+$output .= <<<EOT
+<button type="button" onclick="hide_forecast()">cancel</button>
 </div>
 <div id="misc" align="center">
 permalink:<a id="permalink" href=".">URL</a>

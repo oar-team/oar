@@ -20,6 +20,13 @@ $CONF['nav_scales'] = array(
   'huge' => 40,
 );
 
+$CONF['nav_timeshifts'] = array( // proposed time-shifting buttons
+  '1h' => 3600,
+  '6h' => 6*3600,
+  '1d' => 24*3600,
+  '1w' => 7*24*3600,
+);
+
 $CONF['nav_default_timespan'] = 6*3600; // proposed timespan in the "set" bar
 $CONF['nav_timespans'] = array(
   '1 hour' => 3600,
@@ -30,6 +37,15 @@ $CONF['nav_timespans'] = array(
   '3 day' => 3*24*3600,
   '1 week' => 7*24*3600,
 );
+
+$CONF['nav_forecast'] = array( // forecast display
+  '1 day' => 24*3600,
+  '3 days' => 3*24*3600,
+  '1 week' => 7*24*3600,
+  '2 weeks' => 2*7*24*3600,
+  '3 weeks' => 3*7*24*3600,
+);
+$CONF['nav_forecast_past_part'] = 0.1; // past part to show (percentage if < 1, otherwise: number of seconds)
 
 $CONF['nav_filters'] = array( // proposed filters in the "misc" bar
   'all clusters' => "",
@@ -155,7 +171,7 @@ $CONF['static_patterns'] = <<<EOT
 </pattern> 
 EOT;
 
-// Standby job display options for the part shown in the future
+// Standby state display options for the part shown in the future
 $CONF['standby_truncate_state_to_now'] = 1; // default: 1
 // Besteffort job display options for the part shown in the future
 $CONF['besteffort_truncate_job_to_now'] = 1; // default: 1

@@ -6,9 +6,9 @@ include Makefiles/shared/shared.mk
 clean: clean_shared 
 	$(MAKE) -C docs clean
 
-build: build_shared build-html-doc
+build: build_shared
 
-install: build install_shared
+install: build  build-html-doc install_shared
 	install -d $(DESTDIR)$(DOCDIR)/html
 	install -d $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue
 	install -d $(DESTDIR)$(DOCDIR)/scripts
