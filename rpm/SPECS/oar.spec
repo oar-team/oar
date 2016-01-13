@@ -1,4 +1,4 @@
-%define version 2.5.5
+%define version 2.5.6+rc4
 %define release 1.el7
 
 %define oaruser  oar
@@ -16,7 +16,6 @@ Url:      http://oar.imag.fr
 # %define _unpackaged_files_terminate_build 0
 
 Source:         oar-%version.tar.gz
-Patch1:         001-fix-spelling-error-in-manpage
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar python-sphinx
 %description
@@ -140,7 +139,6 @@ This package installs the PostgreSQL dependencies for OAR web-status package
 
 %prep
 %setup -q
-%patch1 -p1
 
 # Modify Makefile for chown commands to be non-fatal as the permissions
 # are set by the packaging
@@ -496,6 +494,9 @@ fi
 user_setup
 
 %changelog
+* Wed Jan 13 2016 Pierre Neyron <pierre.neyron@imag.fr> 2.5.6+rc4-1.el7
+- New upstream release, remove patches (applied upstream)
+
 * Fri Sep 11 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.5-1.el7
 - New upstream release, remove patches (applied upstream)
 - OAR RESTful API: fix dependancy to httpd-suexec, perl-YAML and perl-FCGI, fix ownership and permission for CGI
