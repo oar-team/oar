@@ -51,11 +51,8 @@ ______________________________
 
 *For the Debian like systems*::
 
-        # Add the OAR repository (choose the right one. See
-        # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
-        wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
-        apt-get update
+        # OAR is shipped as part of Debian official distributions (newer versions can be available in backports)
+        # For more info see: http://oar.imag.fr/dokuwiki/doku.php?id=download#debian
 
         # Install OAR node
         apt-get install oar-node

@@ -15,27 +15,27 @@ sub open_db_connection(){
         else {return 0; }
 }
 sub close_db_connection(){
-	OAR::IO::disconnect($base) if (defined($base));
+    OAR::IO::disconnect($base) if (defined($base));
     $base = undef;
 }
 
 sub encode_result($$){
-	my $result = shift or die("[OAR::Nodes] encode_result: no result to encode");
-	my $encoding = shift or die("[OAR::Nodes] encode_result: no format to encode to");
+    my $result = shift or die("[OAR::Nodes] encode_result: no result to encode");
+    my $encoding = shift or die("[OAR::Nodes] encode_result: no format to encode to");
     if($encoding eq "XML"){
-		eval "use XML::Dumper qw(pl2xml);1" or die ("XML module not available");
-		my $dump = new XML::Dumper;
-		$dump->dtd;
-		my $return = $dump->pl2xml($result) or die("XML conversion failed");
-		return $return;
-	}elsif($encoding eq "YAML"){
-		eval "use YAML;1" or die ("YAML module not available");
-		my $return = YAML::Dump($result) or die("YAML conversion failed");
-		return $return;
-	}elsif($encoding eq "JSON"){
-		eval "use JSON;1"  or die ("JSON module not available");
-		my $return = JSON->new->pretty(1)->encode($result) or die("JSON conversion failed");
-		return $return;
+        eval "use XML::Dumper qw(pl2xml);1" or die ("No Perl XML module is available");
+        my $dump = new XML::Dumper;
+        $dump->dtd;
+        my $return = $dump->pl2xml($result) or die("XML conversion failed");
+        return $return;
+    }elsif($encoding eq "YAML"){
+        eval "use YAML::Syck;1" or eval "use YAML;1" or die ("No Perl YAML module is available");
+        my $return = Dump($result) or die("YAML conversion failed");
+        return $return;
+    }elsif($encoding eq "JSON"){
+        eval "use JSON;1"  or die ("No Perl JSON module is available");
+        my $return = JSON->new->pretty(1)->encode($result) or die("JSON conversion failed");
+        return $return;
     }
 }
 
@@ -44,13 +44,13 @@ sub get_oar_version(){
 }
 
 sub format_date($){
-	my $date = shift;
+    my $date = shift;
     return OAR::IO::local_to_sql($date);
 }
 
 sub get_all_hosts(){
     my @nodes = OAR::IO::list_nodes($base);
-	return \@nodes;
+    return \@nodes;
 }
 
 sub heartbeat($){
@@ -174,7 +174,7 @@ sub get_jobs_running_on_node($){
             push(@jobs,$job);
           }
         }
-	return \@jobs;
+    return \@jobs;
 }
 
 sub get_jobs_on_node($$){
@@ -188,7 +188,7 @@ sub get_jobs_on_node($$){
             push(@jobs,$job);
           }
         }
-	return \@jobs;
+    return \@jobs;
 }
 
 sub add_running_jobs_to_resource_properties($){
