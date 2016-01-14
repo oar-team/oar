@@ -12,16 +12,17 @@
 // Configuration
 ////////////////////////////////////////////////////////////////////////////////
 
-// Navigation bar configuration
-$CONF['nav_default_scale'] = 10; // vertical scale of the grid
-$CONF['nav_scales'] = array(
-  'small' => 10,
-  'big' => 20,
-  'huge' => 40,
-);
+// Default settings for the default view 
+$CONF['default_start'] = ""; // default start and stop times (ctime values) ; unless you want to always show a
+$CONF['default_stop'] = "";  // same time frame, keep those values to "" 
+$CONF['default_relative_start'] = ""; // default relative start and stop times ([+-]<seconds>), mind setting it
+$CONF['default_relative_stop'] = "";  // accordingly to the nav_forecast values below, eg -24*3600*0.1 and 24*3600*0.9
+$CONF['default_timespan'] = 6*3600; // default timespan, should be one of the nav_timespans below
+$CONF['default_resource_base'] = 'cpuset'; // default base resource, should be one of the nav_resource_bases below
+$CONF['default_scale'] = 10; // default vertical scale of the grid, should be one of the nav_scales bellow
 
-$CONF['nav_default_timespan'] = 6*3600; // proposed timespan in the "set" bar
-$CONF['nav_timespans'] = array(
+// Navigation bar configuration
+$CONF['nav_timespans'] = array( // proposed timespan in the "set" bar
   '1 hour' => 3600,
   '3 hours' => 3*3600,
   '6 hours' => 6*3600,
@@ -31,6 +32,28 @@ $CONF['nav_timespans'] = array(
   '1 week' => 7*24*3600,
 );
 
+$CONF['nav_forecast'] = array( // forecast display
+  '1 day' => 24*3600,
+  '3 days' => 3*24*3600,
+  '1 week' => 7*24*3600,
+  '2 weeks' => 2*7*24*3600,
+  '3 weeks' => 3*7*24*3600,
+);
+$CONF['nav_forecast_past_part'] = 0.1; // past part to show (percentage if < 1, otherwise: number of seconds)
+
+$CONF['nav_scales'] = array( // proposed scales for resources
+  'small' => 10,
+  'big' => 20,
+  'huge' => 40,
+);
+
+$CONF['nav_timeshifts'] = array( // proposed time-shifting buttons
+  '1h' => 3600,
+  '6h' => 6*3600,
+  '1d' => 24*3600,
+  '1w' => 7*24*3600,
+);
+
 $CONF['nav_filters'] = array( // proposed filters in the "misc" bar
   'all clusters' => "",
   'cluster1 only' => 'cluster=\'cluster1\'',
@@ -38,8 +61,7 @@ $CONF['nav_filters'] = array( // proposed filters in the "misc" bar
   'cluster3 only' => 'cluster=\'cluster3\'',
 );
 
-$CONF['nav_default_resource_base'] = 'cpuset';
-$CONF['nav_resource_bases'] = array(
+$CONF['nav_resource_bases'] = array( // proposed base resources
   'network_address',
   'cpuset',
 );
@@ -49,8 +71,8 @@ $CONF['nav_timezones'] = array( // proposed timezones in the "misc" bar (the fir
   'Europe/Paris',
 );
 
-$CONF['nav_custom_buttons'] = array( // custom buttons
-  'my label' => 'http://my.url'      // click opens the url in a new window
+$CONF['nav_custom_buttons'] = array( // custom buttons, click opens the url in a new window
+  'my label' => 'http://my.url'      // remove all lines to disable (empty array)
 );
 
 // Database access configuration
@@ -154,6 +176,8 @@ $CONF['static_patterns'] = <<<EOT
 </pattern> 
 EOT;
 
+// Standby state display options for the part shown in the future
+$CONF['standby_truncate_state_to_now'] = 1; // default: 1
 // Besteffort job display options for the part shown in the future
 $CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
 $CONF['besteffort_pattern'] = <<<EOT

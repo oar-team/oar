@@ -113,6 +113,8 @@ $CONF['static_patterns'] = <<<EOT
 </pattern> 
 EOT;
 
+// Standby state display options for the part shown in the future
+$CONF['standby_truncate_state_to_now'] = 1; // default: 1
 // Besteffort job display options for the part shown in the future
 $CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
 $CONF['besteffort_pattern'] = <<<EOT
@@ -165,10 +167,10 @@ if (is_readable(CONFIG_FILE)) {
 // Script parameters (GET)
 ////////////////////////////////////////////////////////////////////////////////
 date_default_timezone_set(array_key_exists('timezone',$_GET)?$_GET['timezone']:$CONF['timezone']);
-$gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
-$gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
-$gantt_relative_start_date = array_key_exists('relative_start',$_GET)?$_GET['relative_start']:-86400;
-$gantt_relative_stop_date = array_key_exists('relative_stop',$_GET)?$_GET['relative_stop']:86400;
+$gantt_start_date = array_key_exists('start',$_GET)?round($_GET['start']):0;
+$gantt_stop_date = array_key_exists('stop',$_GET)?round($_GET['stop']):0;
+$gantt_relative_start_date = array_key_exists('relative_start',$_GET)?round($_GET['relative_start']):-86400;
+$gantt_relative_stop_date = array_key_exists('relative_stop',$_GET)?round($_GET['relative_stop']):86400;
 $resource_filter = array_key_exists('filter', $_GET)?$_GET['filter']:"";
 $resource_base = array_key_exists('resource_base', $_GET)?$_GET['resource_base']:$CONF['resource_base'];
 if (! in_array($resource_base, $CONF['resource_hierarchy'])) {
@@ -736,35 +738,35 @@ class Resource {
   }
   function cmp($r) {
     global $CONF;
-    debug(3, "cmp: " . $this->id." ??? ".$r->id . " (" . $this->type . ")");
+    debug(4, "cmp: " . $this->id." ??? ".$r->id . " (" . $this->type . ")");
     if (array_key_exists($this->type, $CONF['label_cmp_regex'])) {
       $r1 = preg_match($CONF['label_cmp_regex'][$this->type],$this->id, $v1);
       $r2 = preg_match($CONF['label_cmp_regex'][$this->type],$r->id, $v2);
       if (!$r1 or !$r2) { 
-        debug(4, "cmp: regex match failed");
+        debug(5, "cmp: regex match failed");
         $v1 = array($this->id); 
         $v2 = array($r->id);
       } else {
-        debug(4, "cmp: regex matches");
+        debug(5, "cmp: regex matches");
         array_shift($v1);
         array_shift($v2);
       }
     } else {
-      debug(4, "cmp: no regex to match");
+      debug(5, "cmp: no regex to match");
       $v1 = array($this->id);
       $v2 = array($r->id);
     }
-    debug(3, "cmp: " . join(",",$v1) . " ? " . join(",",$v2));
+    debug(4, "cmp: " . join(",",$v1) . " ? " . join(",",$v2));
     while (($e1 = array_shift($v1)) != NULL) {
       $e2 = array_shift($v2);
       if ($e1 < $e2) {
-        debug(3, "cmp: $e1 < $e2");
+        debug(4, "cmp: $e1 < $e2");
         return 1;
       } elseif ($e2 < $e1) {
-        debug(3, "cmp: $e1 > $e2");
+        debug(4, "cmp: $e1 > $e2");
         return -1;
       }
-      debug(3, "cmp: $e1 = $e2");
+      debug(4, "cmp: $e1 = $e2");
     }
     return 0;
   }
@@ -872,7 +874,9 @@ if ($gantt_now < $gantt_stop_date) {
           if ($gantt_now < $gantt_start_date) {
             unset($resource_id->states[$i]);
           } elseif ($state->real_stop == 0) {
-            $state->set_stop($gantt_now);
+            if ($CONF['standby_truncate_state_to_now']) {
+              $state->set_stop($gantt_now);
+            }
             $state->value = 'Standby';
           }
         }
@@ -1069,7 +1073,7 @@ var parent_content;
 function init(evt) {
 EOT;
 if ($aborted) {
-  $output_headers .= 'alert("Aborted, too many jobs. Mind narrowing your lookup... zoom/+");';
+  $output_headers .= 'alert("Aborted, too many jobs to display, time window is too large. Please mind narrowing your lookup...");';
 }
 $output_headers .= <<<EOT
   svgDocument = evt.target.ownerDocument;
@@ -1097,7 +1101,7 @@ function px2date(y) {
   if (y > {$gantt_left_align} +  {$gantt_width}) {
     return {$gantt_stop_date};
   }
-  return (y - {$gantt_left_align}) * ({$gantt_stop_date} - {$gantt_start_date}) / {$gantt_width} + {$gantt_start_date}
+  return Math.round((y - {$gantt_left_align}) * ({$gantt_stop_date} - {$gantt_start_date}) / {$gantt_width} + {$gantt_start_date});
 }
 
 function zoomDraw() {

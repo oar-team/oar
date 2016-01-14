@@ -4,17 +4,11 @@ Alias /drawgantt-svg %%WWWDIR%%/drawgantt-svg
 Alias /drawgantt %%WWWDIR%%/drawgantt-svg
 <Directory %%WWWDIR%%>
   Options Indexes FollowSymlinks
-  <ifModule version.c>
-    <IfVersion >= 2.3>
-      Require all granted
-    </IfVersion> 
-    <IfVersion < 2.3>
-      Order Allow,Deny
-      Allow from all
-    </IfVersion>   
-  </ifModule>
-  <ifModule !version.c>
+  <IfVersion >= 2.3>
+    Require all granted
+  </IfVersion> 
+  <IfVersion < 2.3>
     Order Allow,Deny
     Allow from all
-  </ifModule>
+  </IfVersion>   
 </Directory>

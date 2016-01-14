@@ -29,9 +29,11 @@ unless (eval "use XML::Dumper qw(pl2xml);1"){
 }
 
 #Try to load YAML module
-my $YAML_enabled = 1;
-unless (eval "use YAML;1"){
-    $YAML_enabled = 0;
+my $YAML_enabled = 0;
+if (eval "use YAML::Syck;1"){
+    $YAML_enabled = 1;
+} elsif (eval "use YAML;1"){
+    $YAML_enabled = 1;
 }
 
 #Try to load JSON module
@@ -106,27 +108,27 @@ if ($version){
 }
 
 if (defined($XML_mode) and $XML_enabled != 1){
-    warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+    warn("No Perl XML module is available on the system. If required, ask your admin to install one.\n");
     exit(1)
 }
 if (defined($YAML_mode) and $YAML_enabled != 1){
-    warn("Yaml module not available on the system. Ask your administrator to install it if needed.\n");
+    warn("No Perl Yaml module is available on the system. If required, ask your admin to install one.\n");
     exit(1);
 }
 if (defined($JSON_mode) and $JSON_enabled != 1){
-    warn("Json module not available on the system. Ask your administrator to install it if needed.\n");
+    warn("No Perl JSON module is available on the system. If required, ask your admin to install one.\n");
     exit(1);
 }
 
 $user = $ENV{OARDO_USER} if (defined($user) and ($user eq ''));
 
 if (defined($array_id) && $array_id !=0 && (scalar @job_ids > 0)){
-    warn("/!\\ ERROR : Conflicting Job IDs and Array IDs (--array and -j cannot be used together)\n");
+    warn("/!\\ ERROR: Conflicting Job IDs and Array IDs (--array and -j cannot be used together)\n");
     exit(1);
 }
 
 if (defined($compact) && (defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode) || defined($full_view))) {
-    warn("/!\\ ERROR : compact view cannot be used with exports or full view\n");
+    warn("/!\\ ERROR: compact view cannot be used with exports or full view\n");
     exit(1);
 }
 
@@ -199,7 +201,7 @@ sub print_events {
     if (defined( $events )) {
       foreach my $event_hashref (@$events) {
           printf(
-            "%s| %s| %s: %s\n",
+            "%s> [%s] %s: %s\n",
             OAR::Stat::local_to_sql( $event_hashref->{'date'} ),
             $event_hashref->{'job_id'},
             $event_hashref->{'type'},
@@ -224,7 +226,7 @@ sub print_gantt {
         $dump->dtd;
         print($dump->pl2xml($hist));
     }elsif (defined($YAML_mode)) {
-        print(YAML::Dump($hist));
+        print(Dump($hist));
 	}elsif (defined($JSON_mode)){
 		print(JSON->new->pretty(1)->encode($hist));
 	}else{
@@ -278,7 +280,7 @@ sub print_job_data($){
         $dump->dtd;
         print($dump->pl2xml($data));
     }elsif(defined($YAML_mode)){
-        print(YAML::Dump($data));
+        print(Dump($data));
     }elsif(defined($JSON_mode)){
         print(JSON->new->pretty(1)->encode($data));
     }else{
@@ -380,12 +382,11 @@ sub print_job_data($){
                 }
                 print("    scheduledStart = $data->{$job_info->{job_id}}->{scheduledStart}\n");
                 print("    resubmit_job_id = $job_info->{resubmit_job_id}\n");
-                print("    events = ");
+                print("    events = \n");
                 foreach my $e (@{$data->{$job_info->{job_id}}->{events}}){
-                    print("[".OAR::Stat::local_to_sql($e->{date})."] $e->{type}:$e->{description}");
-                    print(" , ");
+                    print(OAR::Stat::local_to_sql($e->{date})."> $e->{type}:$e->{description}\n");
                 }
-                print("\n\n");
+                print("\n");
 			}else{
 				if(defined($array_id)){
                     if ($text_format eq "2"){

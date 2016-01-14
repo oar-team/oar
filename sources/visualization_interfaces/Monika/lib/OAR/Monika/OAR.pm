@@ -473,7 +473,7 @@ sub htmlPropertyChooser {
 				    });
     $output .= $cgi->submit("Action","Display nodes for these properties");
     $output .= $cgi->end_div();
-    $output .= $cgi->endform();
+    $output .= $cgi->end_form();
   }
   return $output;
 }

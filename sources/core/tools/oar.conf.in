@@ -256,6 +256,13 @@ SCHEDULER_PRIORITY_HIERARCHY_ORDER="network_address/resource_id"
 #SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default licence VLAN"
 SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 
+# This value is a minimun delay in seconds between to scheduler run.
+# In other words: the scheduler will only be launched if its last call is at
+# least 5s old.  This lets other OAR modules have more time to run.
+# Warning: this delay will impact the validation of the advance reservations.
+# Default value is 5s.
+#SCHEDULER_MIN_TIME_BETWEEN_2_CALLS=5
+
 # For a debug purpose, scheduler decisions can be logged into the database
 # Uncomment the next line in order to activate the logging mechanism
 #SCHEDULER_LOG_DECISIONS="yes"

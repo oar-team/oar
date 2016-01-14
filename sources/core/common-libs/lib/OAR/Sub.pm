@@ -31,22 +31,22 @@ sub commit_transaction(){
 }
 
 sub encode_result($$){
-	my $result = shift or die("[OAR::Nodes] encode_result: no result to encode");
-	my $encoding = shift or die("[OAR::Nodes] encode_result: no format to encode to");
+    my $result = shift or die("[OAR::Nodes] encode_result: no result to encode");
+    my $encoding = shift or die("[OAR::Nodes] encode_result: no format to encode to");
     if($encoding eq "XML"){
-		eval "use XML::Dumper qw(pl2xml);1" or die ("XML module not available");
-		my $dump = new XML::Dumper;
-		$dump->dtd;
-		my $return = $dump->pl2xml($result) or die("XML conversion failed");
-		return $return;
-	}elsif($encoding eq "YAML"){
-		eval "use YAML;1" or die ("YAML module not available");
-		my $return = YAML::Dump($result) or die("YAML conversion failed");
-		return $return;
-	}elsif($encoding eq "JSON"){
-		eval "use JSON;1"  or die ("JSON module not available");
-		my $return = JSON->new->pretty(1)->encode($result) or die("JSON conversion failed");
-		return $return;
+        eval "use XML::Dumper qw(pl2xml);1" or die ("XML module not available");
+        my $dump = new XML::Dumper;
+        $dump->dtd;
+        my $return = $dump->pl2xml($result) or die("XML conversion failed");
+        return $return;
+    }elsif($encoding eq "YAML"){
+        eval "use YAML::Syck;1" or eval "use YAML;1" or die ("No Perl YAML module is available");
+        my $return = Dump($result) or die("YAML conversion failed");
+        return $return;
+    }elsif($encoding eq "JSON"){
+        eval "use JSON;1"  or die ("No Perl JSON module is available");
+        my $return = JSON->new->pretty(1)->encode($result) or die("JSON conversion failed");
+        return $return;
     }
 }
 
@@ -84,7 +84,7 @@ sub init_tcp_server(){
 #Read user script and extract OAR submition options
 sub scan_script($$){
     my $file = shift;
-	my $Initial_request_string = shift;
+    my $Initial_request_string = shift;
     my %result;
     my $error = 0;
     ($file) = split(" ",$file);
@@ -160,7 +160,7 @@ sub scan_script($$){
         warn("# Error: $error error(s) encountered while parsing the file $file.\n");
         close_db_connection(); exit(12);
     }
-	$result{initial_request} = $Initial_request_string;
+    $result{initial_request} = $Initial_request_string;
     return(\%result);
 }
 

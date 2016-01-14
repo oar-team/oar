@@ -14,7 +14,9 @@ Hosts are read one per line from B<hostfile> (must be readable by user oar) or S
 
 Every host in B<hostfile> must have the "oar-node" service started (the command connects to the hosts via SSH on the port 6667).
 
-This command works with (creates) the following OAR resource hierarchy: 
+The command either generates a script which could be executed afterward, or directly executes the OAR commands (oarnodesetting and oarproperty).
+
+The following OAR resource hierarchy is assumed: 
 
 =over
 
@@ -86,9 +88,10 @@ Print the command usage.
 
 =head1 SEE ALSO
 
-oarnodesetting(1), oarproperty(1), oar_resources_add(1), bash(1)
+oarnodesetting(1), oarproperty(1), oar_resources_add(1), oarremoveresource(1), bash(1)
 
 =head1 COPYRIGHTS
 
  Copyright 2003-2015 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+=cut
