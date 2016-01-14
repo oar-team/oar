@@ -51,15 +51,16 @@ sub gantt2str($){
     my $gantt = shift;
     my $str = "";
     my @bits = split(//, unpack("b*", $gantt->[0]->[2]));
-    print("@bits\n");
+    $str .= "@bits\n";
     foreach my $g (@{$gantt}){
         $str .= "BEGIN: $g->[0](".strftime("%F %T",localtime($g->[0])).")\n";
         foreach my $h (@{$g->[1]}){
             @bits = split(//, unpack("b*", $h->[1]));
-            $str .= "    $h->[0](".strftime("%F %T",localtime($h->[0])).") : @bits\n";
+            $str .= "  $h->[0](".strftime("%F %T",localtime($h->[0]))."): @bits\n";
         }
         $str .= "\n";
     }
+    return($str);
 }
 
 sub strips2str($){
@@ -82,7 +83,7 @@ sub new($$){
 
     my $empty_vec = '';
     vec($empty_vec, $max_resource_number, 1) = 0;
-    
+
     my $result =[                               # Gantt structure: a Gantt is defined as the list of the biggest holes
                     [                           # (rectange shapes) where a job could be placed (holes obviously can overlap)
                         0,                      # Each item of this subarray is a set of holes beginning a same time: t_start
@@ -417,14 +418,14 @@ sub manage_gantt_for_container($$$$$$$$$$) {
 # Helper function to test if a Gantt is defined, without side effect
 sub defined_gantt($$$$$) {
     my $gantt = shift;
-    my $container = shift;
+    my $gantt_name = shift;
     my $placeholder = shift;
     my $user = shift;
     my $name = shift;
-    return (exists($gantt->{$container}) and defined($gantt->{$container})
-        and exists($gantt->{$container}->{$placeholder}) and defined($gantt->{$container}->{$placeholder})
-        and exists($gantt->{$container}->{$placeholder}->{$user}) and defined($gantt->{$container}->{$placeholder}->{$user})
-        and exists($gantt->{$container}->{$placeholder}->{$user}->{$name}) and defined($gantt->{$container}->{$placeholder}->{$user}->{$name}));
+    return (exists($gantt->{$gantt_name}) and defined($gantt->{$gantt_name})
+        and exists($gantt->{$gantt_name}->{$placeholder}) and defined($gantt->{$gantt_name}->{$placeholder})
+        and exists($gantt->{$gantt_name}->{$placeholder}->{$user}) and defined($gantt->{$gantt_name}->{$placeholder}->{$user})
+        and exists($gantt->{$gantt_name}->{$placeholder}->{$user}->{$name}) and defined($gantt->{$gantt_name}->{$placeholder}->{$user}->{$name}));
 }
 
 # Manage the different gantts used in the schedulers handling container, timesharing and placeholder
