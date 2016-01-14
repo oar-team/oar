@@ -56,10 +56,8 @@ if (not defined($base)) {
     exit 1;
 }
 
-if (OAR::IO::get_database_type() eq "Pg"){
-    OAR::IO::lock_table($base, ["accounting"]); # begin transaction
-    $base->do("LOCK TABLE accounting IN EXCLUSIVE MODE");
-}
+OAR::IO::lock_table($base, ["accounting"]); # begin transaction
+$base->do("LOCK TABLE accounting IN EXCLUSIVE MODE");
 if (defined($Reinitialize)){
     print("Deleting all records from the acounting table...\n");
     OAR::IO::delete_all_from_accounting($base);
