@@ -5,8 +5,7 @@ SRCDIR= sources/api
 
 OAR_PERLLIB = $(SRCDIR)/lib
 
-OARDIR_BINFILES = $(SRCDIR)/oarapi.pl \
-                    $(SRCDIR)/colmet_extract.py
+OARDIR_BINFILES = $(SRCDIR)/oarapi.pl
 
 SHAREDIR_FILES = $(SRCDIR)/apache2.conf.in \
 		   $(SRCDIR)/api_html_header.pl \
