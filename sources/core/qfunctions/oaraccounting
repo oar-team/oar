@@ -56,8 +56,8 @@ if (not defined($base)) {
     exit 1;
 }
 
-OAR::IO::lock_table($base, ["accounting"]); # begin transaction
-$base->do("LOCK TABLE accounting IN EXCLUSIVE MODE");
+$base->begin_work();
+$base->do("LOCK TABLE accounting IN SHARE UPDATE EXCLUSIVE MODE NOWAIT") or die("ERROR: another 'oaraccounting' instance is running");
 if (defined($Reinitialize)){
     print("Deleting all records from the acounting table...\n");
     OAR::IO::delete_all_from_accounting($base);
@@ -68,7 +68,7 @@ if (defined($Reinitialize)){
 }else{
     OAR::IO::check_accounting_update($base,$windowSize);
 }
-OAR::IO::unlock_table($base) if (OAR::IO::get_database_type() eq "Pg");
+$base->commit();
 
 OAR::IO::disconnect($base);
 
