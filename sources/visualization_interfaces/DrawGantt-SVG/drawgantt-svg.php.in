@@ -808,7 +808,7 @@ $resource_ids = array();
 // Retrieve OAR data from database
 ///////////////////////////////////////////////////////////////////////////////
 
-$query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources WHERE type=\'default\'' . ($resource_filter?' AND ('.stripslashes($resource_filter).')':'');
+$query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE ('.stripslashes($resource_filter).')':'');
 debug(2,"retrieve resources from DB");
 $db->query($query);
 
