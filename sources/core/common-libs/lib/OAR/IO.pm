@@ -74,8 +74,9 @@ sub job_leon_exterminate($$);
 sub get_waiting_reservation_jobs($);
 sub get_waiting_reservation_jobs_specific_queue($$);
 sub get_waiting_toSchedule_reservation_jobs_specific_queue($$);
-sub get_jobs_range_dates($$$);
-sub get_jobs_gantt_scheduled($$$);
+sub parse_jobs_from_range($);
+sub get_jobs_past_and_current_from_range($$$);
+sub get_jobs_future_from_range($$$);
 sub get_jobs_for_user_query;
 sub count_jobs_for_user_query;
 sub get_desktop_computing_host_jobs($$);
@@ -124,7 +125,7 @@ sub set_resource_nextState($$$);
 sub set_node_nextState($$$);
 sub set_node_expiryDate($$$);
 sub set_resources_property($$$$);
-sub get_resource_dead_range_date($$$);
+sub get_resources_absent_suspected_dead_from_range($$$);
 sub get_expired_resources($);
 sub is_node_desktop_computing($$);
 sub get_resources_data_structure_current_job($$);
@@ -4139,111 +4140,153 @@ sub add_resource_job_pairs_from_file($$$) {
   inserts_from_file($dbh,'assigned_resources',$values);
 }
 
+# parse jobs retrieved by the 2 functions:
+# - get_jobs_past_and_current_from_range
+# - get_jobs_future_from_range
+# args : db query result handle
+sub parse_jobs_from_range($) {
+    my $sth = shift;
+    my $jobs = {};
+    while (my @ref = $sth->fetchrow_array()) {
+        if (! exists($jobs->{$ref[0]})) {
+            $jobs->{$ref[0]} = {
+                'job_id' => $ref[0],
+                'job_name' => $ref[1],
+                'project' => $ref[2],
+                'job_type' => $ref[3],
+                'state' => $ref[4],
+                'user' => $ref[5],
+                'command' => $ref[6],
+                'queue_name' => $ref[7],
+                'walltime' => $ref[8],
+                'properties' => $ref[9],
+                'launching_directory' => $ref[10],
+                'submission_time' => $ref[11],
+                'start_time' => $ref[12],
+                'stop_time' => $ref[13],
+                'resource_id' => [],
+                'network_address' => [],
+            }
+        }
+        push(@{$jobs->{$ref[0]}->{'resource_id'}}, $ref[14]);
+        if (defined($ref[15])){
+            push(@{$jobs->{$ref[0]}->{'network_address'}}, $ref[15]);
+        }
+        if (defined($ref[16])){
+            push(@{$jobs->{$ref[0]}->{'types'}}, $ref[16]);
+        }
+    }
+    return $jobs;
+}
 
-
-# get all jobs in a range of date
+# get past and current jobs in a range of dates
 # args : base, start range, end range
-sub get_jobs_range_dates($$$){
+sub get_jobs_past_and_current_from_range($$$){
     my $dbh = shift;
     my $date_start = shift;
     my $date_end = shift;
+    my $query_filter = shift;
 
-    my $req = 
-        "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,(jobs.start_time + moldable_job_descriptions.moldable_walltime)
-         FROM jobs, assigned_resources, moldable_job_descriptions, resources
-         WHERE
-             (   
-                 jobs.stop_time >= $date_start OR
-                 (   
-                     jobs.stop_time = \'0\' AND
-                     (jobs.state = \'Running\' OR
-                      jobs.state = \'Suspended\' OR
-                      jobs.state = \'Resuming\')
-                 )
-             ) AND
-             jobs.start_time < $date_end AND
-             jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-             moldable_job_descriptions.moldable_job_id = jobs.job_id AND
-             resources.resource_id = assigned_resources.resource_id
-         ORDER BY jobs.job_id";
- 
+    my $req =  <<EOT;
+SELECT
+    jobs.job_id,
+    jobs.job_name,
+    jobs.project,
+    jobs.job_type,
+    jobs.state,
+    jobs.job_user,
+    jobs.command,
+    jobs.queue_name,
+    moldable_job_descriptions.moldable_walltime,
+    jobs.properties,
+    jobs.launching_directory,
+    jobs.submission_time,
+    jobs.start_time,
+    jobs.stop_time,
+    assigned_resources.resource_id,
+    resources.network_address,
+    job_types.type
+FROM
+    (jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)),
+    assigned_resources,
+    moldable_job_descriptions,
+    resources
+WHERE
+    (   
+        jobs.stop_time >= $date_start OR
+        (   
+            jobs.stop_time = \'0\' AND
+            (jobs.state = \'Running\' OR
+             jobs.state = \'Suspended\' OR
+             jobs.state = \'Resuming\')
+        )
+    ) AND
+    jobs.start_time < $date_end AND
+    jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+    moldable_job_descriptions.moldable_job_id = jobs.job_id AND
+    resources.resource_id = assigned_resources.resource_id
+ORDER BY
+    jobs.job_id
+EOT
     my $sth = $dbh->prepare($req);
     $sth->execute();
-
-    my %results;
-    while (my @ref = $sth->fetchrow_array()) {
-        if (!defined($results{$ref[0]})){
-            $results{$ref[0]} = {
-                                  'job_type' => $ref[1],
-                                  'state' => $ref[2],
-                                  'user' => $ref[3],
-                                  'command' => $ref[4],
-                                  'queue_name' => $ref[5],
-                                  'walltime' => $ref[6],
-                                  'properties' => $ref[7],
-                                  'launching_directory' => $ref[8],
-                                  'submission_time' => $ref[9],
-                                  'start_time' => $ref[10],
-                                  'stop_time' => $ref[11],
-                                  'resources' => [ $ref[12] ],
-                                  'limit_stop_time' => $ref[14]
-                                 }
-        }else{
-            push(@{$results{$ref[0]}->{resources}}, $ref[12]);
-        }
-    }
+    my $jobs = parse_jobs_from_range($sth);
     $sth->finish();
 
-    return %results;
+    return $jobs
 }
 
 
-# get all jobs in a range of date in the gantt
+# get future (scheduled) jobs in a range of dates
 # args : base, start range, end range
-sub get_jobs_gantt_scheduled($$$) {
+sub get_jobs_future_from_range($$$){
     my $dbh = shift;
     my $date_start = shift;
     my $date_end = shift;
+    my $query_filter = shift;
 
-    my $req =
-        "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
-         FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
-         WHERE
-             gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
-             gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
-             jobs.job_id = moldable_job_descriptions.moldable_job_id AND
-             gantt_jobs_predictions_visu.start_time < $date_end AND
-             resources.resource_id = gantt_jobs_resources_visu.resource_id AND
-             gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start
-         ORDER BY jobs.job_id";
-
+    my $req = <<EOT;
+SELECT
+    jobs.job_id,
+    jobs.job_name,
+    jobs.project,
+    jobs.job_type,
+    jobs.state,
+    jobs.job_user,
+    jobs.command,
+    jobs.queue_name,
+    moldable_job_descriptions.moldable_walltime,
+    jobs.properties,
+    jobs.launching_directory,
+    jobs.submission_time,
+    gantt_jobs_predictions_visu.start_time,
+    (gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),
+    gantt_jobs_resources_visu.resource_id,
+    resources.network_address,
+    job_types.type
+FROM
+    (jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)),
+    moldable_job_descriptions,
+    gantt_jobs_resources_visu,
+    gantt_jobs_predictions_visu,
+    resources
+WHERE
+    gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+    gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+    jobs.job_id = moldable_job_descriptions.moldable_job_id AND
+    gantt_jobs_predictions_visu.start_time < $date_end AND
+    resources.resource_id = gantt_jobs_resources_visu.resource_id AND
+    gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start AND
+    jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' )
+ORDER BY
+    jobs.job_id
+EOT
     my $sth = $dbh->prepare($req);
     $sth->execute();
-
-    my %results;
-    while (my @ref = $sth->fetchrow_array()) {
-        if (!defined($results{$ref[0]})){
-            $results{$ref[0]} = {
-                                  'job_type' => $ref[1],
-                                  'state' => $ref[2],
-                                  'user' => $ref[3],
-                                  'command' => $ref[4],
-                                  'queue_name' => $ref[5],
-                                  'walltime' => $ref[6],
-                                  'properties' => $ref[7],
-                                  'launching_directory' => $ref[8],
-                                  'submission_time' => $ref[9],
-                                  'start_time' => $ref[10],
-                                  'stop_time' => $ref[11],
-                                  'resources' => [ $ref[12] ],
-                                 }
-        }else{
-            push(@{$results{$ref[0]}->{resources}}, $ref[12]);
-        }
-    }
+    my $jobs = parse_jobs_from_range($sth);
     $sth->finish();
 
-    return %results;
+    return $jobs
 }
 
 
@@ -5819,7 +5862,7 @@ sub update_current_scheduler_priority($$$$$){
 
 #get the range when nodes are dead between two dates
 # arg : base, start date, end date
-sub get_resource_dead_range_date($$$){
+sub get_resources_absent_suspected_dead_from_range($$$){
     my $dbh = shift;
     my $date_start = shift;
     my $date_end = shift;
