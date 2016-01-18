@@ -373,7 +373,7 @@ class Job {
     }
   }
   function add_network_address($network_address) {
-    if (! in_array($network_address, $this->network_addresses)) {
+    if ($network_address != '' and ! in_array($network_address, $this->network_addresses)) {
       array_push($this->network_addresses, $network_address);
     }
   }
