@@ -11,17 +11,19 @@ version 2.5.6:
          types (noop/cosystem/deploy=standby)
   - [oarsub] fix several bugs with the array job submission
   - [oarstat] allow using Perl's YAML::Syck for a quicker YAML output
+  - [oarstat] improve performance and information for the --gantt option
+  - [oarstat] prettier print of job events
   - [oarnodesetting] optimize grouped operations on resources and add a lock
          around property changes
-  - [oaradmissionrules] fix a bug: changing a rule priority does not enable it
+  - [oaradmissionrules] fix bug: changing a rule priority does not enable it
   - [oar_resources_init] fix node read from standard input
-  - [oarstat] prettier print of job events
   - [logs] several cosmetic fixes 
   - [api] add colmet extraction function
   - [api] proposed apache configuration now uses a virtual host on port 6668
   - [drawgantt-svg] fix the possibly very long delay when zooming
   - [drawgantt-svg] add forecast buttons + relative start/stop url arguments
   - [drawgantt-svg] rework configuration for the default display
+  - [drawgantt-svg] allow displaying resources of type != default
   - [monika] fix bugs with recent Perl/Perl CGI versions
   - [monika] fix harmless bug in configuration 
   - [visualization] remove overlib.js (license issue), this breaks the legacy
