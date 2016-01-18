@@ -888,9 +888,6 @@ if ($gantt_now < $gantt_stop_date) {
 // Array to store jobs
 $jobs = array();
 
-// query filter based on the resource filter
-$query_filter = $resource_filter?' AND '.stripslashes($resource_filter):'';
-
 // common function used both for past and current jobs and predicted jobs
 function parse_jobs_from_db($query) {
   global $CONF, $db, $jobs, $resource_ids, $aborted;
@@ -969,7 +966,6 @@ WHERE
   jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
   moldable_job_descriptions.moldable_job_id = jobs.job_id AND
   resources.resource_id = assigned_resources.resource_id
-  {$query_filter}
 ORDER BY 
   jobs.job_id
 EOT;
@@ -1006,7 +1002,6 @@ WHERE
   resources.resource_id = gantt_jobs_resources_visu.resource_id AND
   gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= {$gantt_start_date} AND
   jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' )
-  {$query_filter}
 ORDER BY 
   jobs.job_id
 EOT;
