@@ -55,10 +55,10 @@ $CONF['nav_timeshifts'] = array( // proposed time-shifting buttons
 );
 
 $CONF['nav_filters'] = array( // proposed filters in the "misc" bar
-  'all clusters' => "",
-  'cluster1 only' => 'cluster=\'cluster1\'',
-  'cluster2 only' => 'cluster=\'cluster2\'',
-  'cluster3 only' => 'cluster=\'cluster3\'',
+  'all clusters' => 'resources.type = \'default\'',
+  'cluster1 only' => 'resources.cluster=\'cluster1\'',
+  'cluster2 only' => 'resources.cluster=\'cluster2\'',
+  'cluster3 only' => 'resources.cluster=\'cluster3\'',
 );
 
 $CONF['nav_resource_bases'] = array( // proposed base resources
