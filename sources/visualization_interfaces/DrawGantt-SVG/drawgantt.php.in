@@ -103,8 +103,15 @@ $output = <<<EOT
   body {
     background-color: white;
   }
-  #panel {
+  #svgObj {
     position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 0;
+    margin: 0px;
+  }
+  #panel {
+    position: fixed;
     background-color: lightgrey;
     top: 0px;
     left: 0px;
@@ -112,13 +119,6 @@ $output = <<<EOT
     z-index: 1;
     opacity: 1;
     visibility: hidden;
-  }
-  #svgObj {
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    z-index: 0;
-    margin: 0px;
   }
   #waiter {
     background-color: lightgreen;
@@ -129,7 +129,7 @@ $output = <<<EOT
     border-radius: 20px;
   }
   #timepicker {
-    position: absolute;
+    position: fixed;
     background-color: lightgrey;
     top: 0px;
     left: 0px;
@@ -139,7 +139,7 @@ $output = <<<EOT
     visibility: hidden;
   }
   #forecast {
-    position: absolute;
+    position: fixed;
     background-color: lightgrey;
     top: 0px;
     left: 0px;
@@ -149,7 +149,7 @@ $output = <<<EOT
     visibility: hidden;
   }
   #misc {
-    position: absolute;
+    position: fixed;
     background-color: lightgrey;
     top: 0px;
     left: 0px;
@@ -158,10 +158,16 @@ $output = <<<EOT
     opacity: 1;
     visibility: hidden;
   }
+  #permalink {
+    position: fixed;
+    right: 0px;
+    bottom: 0px;
+    z-index: 1;
+  }
   #permalink:link {
     background-color: lightyellow;
     text-decoration: none;
-    font-size: 75%;
+    font-size: 60%;
     vertical-align: middle;
     border-style: solid;
     border-width: 1px;
@@ -172,7 +178,6 @@ $output = <<<EOT
   }
 </style>
 <script type="text/javascript">
-  window.addEventListener("scroll", show_panel, false);
   window.addEventListener("resize", reload_content, false);
   var start = 0;
   var stop = 0;
@@ -187,20 +192,6 @@ $output = <<<EOT
   var scrolledY=0;
   function sleep(millis, callback) {
     setTimeout(function() { callback(); } , millis);
-  }
-  function show_panel() {
-    var panelDiv=document.getElementById("panel");
-    var miscDiv=document.getElementById("misc");
-    var timepickerDiv=document.getElementById("timepicker");
-    var forecastDiv=document.getElementById("forecast");
-    panelDiv.style.top = window.scrollY + "px";
-    panelDiv.style.left = window.scrollX + "px";
-    timepickerDiv.style.top = window.scrollY + "px";
-    timepickerDiv.style.left = window.scrollX + "px";
-    forecastDiv.style.top = window.scrollY + "px";
-    forecastDiv.style.left = window.scrollX + "px";
-    miscDiv.style.top = window.scrollY + "px";
-    miscDiv.style.left = window.scrollX + "px";
   }
   function reset() {
     var date = new Date();
@@ -305,11 +296,12 @@ $output = <<<EOT
   function reload_content() {
     scrolledX = window.scrollX;
     scrolledY = window.scrollY;
-    show_panel();
     var svgObj=document.getElementById("svgObj");
     var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
     document.getElementById("panel").style.visibility="hidden";
     document.getElementById("waiter").style.visibility="visible";
+    var href = window.location.href
+    document.getElementById("permalink").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
     svgObj.data = newURL;
     svgObj.innerHTML = newURL;
   }
@@ -344,7 +336,6 @@ $output = <<<EOT
     document.getElementById("panel").style.visibility="visible";
   }
   function init() {
-    show_panel();
     set_misc(false);
     sleep(100, reset);
   }
@@ -364,8 +355,6 @@ $output = <<<EOT
 	  document.getElementById("forecast").style.visibility="hidden";
   }
   function show_misc() {
-    var href = window.location.href
-    document.getElementById("permalink").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
 	  document.getElementById("misc").style.visibility="visible";
   }
   function hide_misc() {
@@ -404,8 +393,10 @@ foreach ($CONF['nav_custom_buttons'] as $key => $value) {
   $output .= "<button type=\"button\" onclick=\"openURL('$value')\">$key</button>";
 }
 $output .= <<<EOT
+
 </div>
 <object id="svgObj" type="image/svg+xml" data="" onload="restore_scrolling()"></object>
+<a id="permalink" href=".">PERMALINK</a>
 <div id="waiter">PROCESSING DATA, PLEASE WAIT...</div>
 <div id="timepicker" align="center">
 ref date:<input id="datetime" type="datetime"/><button type="button" onclick="set_now()">now</button>
@@ -430,8 +421,6 @@ $output .= <<<EOT
 <button type="button" onclick="hide_forecast()">cancel</button>
 </div>
 <div id="misc" align="center">
-permalink:<a id="permalink" href=".">URL</a>
-
 EOT;
 if (count($CONF['nav_resource_bases']) > 1 or count($CONF['nav_filters']) > 1 or count($CONF['nav_timezones']) > 1 or count($CONF['nav_scales'])) {
   if (count($CONF['nav_resource_bases']) > 1) {
@@ -443,6 +432,7 @@ EOT;
     }
     $output .= <<<EOT
 </select>
+
 EOT;
   }
   if (count($CONF['nav_filters']) > 1) {
@@ -454,6 +444,7 @@ EOT;
     }
     $output .= <<<EOT
 </select>
+
 EOT;
   }
   if (count($CONF['nav_scales']) > 1) {
@@ -465,6 +456,7 @@ EOT;
     }
     $output .= <<<EOT
 </select>
+
 EOT;
   }
   if (count($CONF['nav_timezones']) > 1) {
@@ -476,6 +468,7 @@ EOT;
     }
     $output .= <<<EOT
 </select>
+
 EOT;
   }
   $output .= "\n<button type=\"button\" onclick=\"set_misc(true)\">ok</button>";
