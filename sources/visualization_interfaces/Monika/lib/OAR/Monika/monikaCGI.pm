@@ -206,7 +206,7 @@ sub nodeReservationTable {
 #							value => "$name",
 #							onclick => "self.location.href = '".$self->self_url(-query=>0)."?node=".$name."'"
 #							});
-#	$output .= $self->endform();
+#	$output .= $self->end_form();
 #	$output .= $self->end_td({-align => "center",});
 
     $output .= $self->start_td({-align => "center",

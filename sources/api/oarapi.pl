@@ -2477,6 +2477,11 @@ SWITCH: for ($q) {
     my $COLMET_HDF5_PATH_PREFIX="/var/lib/colmet/hdf5/data";
     if (is_conf("API_COLMET_HDF5_PATH_PREFIX")){ $COLMET_HDF5_PATH_PREFIX = get_conf("API_COLMET_HDF5_PATH_PREFIX"); }
 
+    if (not -X $COLMET_EXTRACT_PATH) {
+       OAR::API::ERROR( 400, "Missing extractor script",
+        "You have to install the colmet extraction script ($COLMET_EXTRACT_PATH), python and the h5py module.\nPlease, check https://github.com/oar-team/colmet/oar/api." );
+    }
+
     my $stop_time=@$job[0]->{'stop_time'};
     if ($stop_time==0) { 
         my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,

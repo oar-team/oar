@@ -211,7 +211,7 @@ foreach my $i (@events_to_check){
         if (($job->{reservation} eq "None") and ($job->{job_type} eq "PASSIVE") and (OAR::IO::is_job_already_resubmitted($base, $i->{job_id}) == 0)){
             my $new_job_id = OAR::IO::resubmit_job($base,$i->{job_id});
             my $msg = "[NodeChangeState] Resubmiting job $i->{job_id} => $new_job_id) (due to event $i->{type} & job is neither a reservation nor an interactive job)\n";
-            oar_warm($msg);
+            oar_warn($msg);
             OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},$msg);
         }
     }
