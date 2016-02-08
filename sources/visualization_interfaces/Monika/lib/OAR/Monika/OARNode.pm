@@ -119,7 +119,7 @@ sub ressourceJobs {
 sub isRessourceWorking{
   my $self = shift;
   my $ressource= shift;
-  if (defined(@{$self->{Ressources}->{$ressource}->{jobs}})){
+  if (@{$self->{Ressources}->{$ressource}->{jobs}}){
     return 1;
   }else{
     return 0;
