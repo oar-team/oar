@@ -163,18 +163,31 @@ $output = <<<EOT
     right: 0px;
     bottom: 0px;
     z-index: 1;
+    text-align: right;
   }
-  #permalink:link {
+  #permalinkA:link {
     background-color: lightyellow;
     text-decoration: none;
-    font-size: 60%;
-    vertical-align: middle;
+    font-size: 55%;
     border-style: solid;
     border-width: 1px;
     color: black;
   }
-  #permalink:visited {
+  #permalinkA:visited {
     color: black;
+  }
+  #permalinkSpan{
+    position: relative;
+    background-color: white;
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 8px;
+    padding: 5px;
+    display: none;
+    font-size: 75%;
+  }
+  #permalink:hover #permalinkSpan{
+    display: block;
   }
 </style>
 <script type="text/javascript">
@@ -301,7 +314,7 @@ $output = <<<EOT
     document.getElementById("panel").style.visibility="hidden";
     document.getElementById("waiter").style.visibility="visible";
     var href = window.location.href
-    document.getElementById("permalink").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
+    document.getElementById("permalinkA").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
     svgObj.data = newURL;
     svgObj.innerHTML = newURL;
   }
@@ -396,7 +409,7 @@ $output .= <<<EOT
 
 </div>
 <object id="svgObj" type="image/svg+xml" data="" onload="restore_scrolling()"></object>
-<a id="permalink" href=".">PERMALINK</a>
+<div id="permalink"><span id="permalinkSpan">Use the contextual menu (e.g. right click) to copy permalink</span><a id="permalinkA" href=".">PERMALINK</a></div>
 <div id="waiter">PROCESSING DATA, PLEASE WAIT...</div>
 <div id="timepicker" align="center">
 ref date:<input id="datetime" type="datetime"/><button type="button" onclick="set_now()">now</button>
