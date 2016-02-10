@@ -1174,8 +1174,8 @@ function rootClick(evt) {
   zoomDraw();
 }
 function drawTimeRuler(evt) {
-  if ("{$display}" != "mobile_ruler_only") {
-    if (timeruler && {$page_height} > parent_content.innerHeight) {
+  if ("{$display}" != "mobile_ruler_only" && timeruler != null) {
+    if ({$page_height} > parent_content.innerHeight) {
       y = parent_content.scrollY + parent_content.innerHeight - 45;
       timeruler.setAttribute("transform","translate(0," + y + ")");
       timeruler.setAttribute("display", "inline");
@@ -1206,20 +1206,12 @@ function mouseOver(evt, message, highlight) {
     for(var i = 0; i < elems.length; i++) {
       elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace(",{$CONF['job_color_saturation_lightness']})",",{$CONF['job_color_saturation_lightness_highlight']})"));
       elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("besteffort","besteffortHL"));
-//      elems[i].setAttribute("style", elems[i].getAttribute("style").replace("opacity: 0.5","opacity: 1"));
       elems[i].setAttribute("stroke-width", 1.5);
     }
   }
   array = message.split("|");
   if (parent_infobox != null) {
-    while (parent_infobox.hasChildNodes()) { 
-      parent_infobox.removeChild(parent_infobox.lastChild);
-    }
-    parent_infobox.style.visibility = "visible";
-    for (i in array) {
-      parent_infobox.appendChild(parent_content.document.createTextNode(array[i]));
-      parent_infobox.appendChild(parent_content.document.createElement('br'));
-    }
+    parent_content.infoboxDisplay(array);
   } else if (infobox != null && infoboxtext != null && infoboxrect != null) {
     while (infoboxtext.hasChildNodes()) { 
       infoboxtext.removeChild(infoboxtext.lastChild);
@@ -1239,7 +1231,7 @@ function mouseOver(evt, message, highlight) {
 }
 function mouseOut(evt, highlight) {
   if (parent_infobox != null) {
-    parent_infobox.style.visibility = "hidden";
+    parent_content.infoboxHide(evt);
   } else if (infobox != null && infoboxtext != null && infoboxrect != null) {
     infobox.setAttribute("display", "none");
   }
@@ -1248,7 +1240,6 @@ function mouseOut(evt, highlight) {
     for(var i = 0; i < elems.length; i++) {
       elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace(",{$CONF['job_color_saturation_lightness_highlight']})",",{$CONF['job_color_saturation_lightness']})"));
       elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("besteffortHL","besteffort"));
-//      elems[i].setAttribute("style", elems[i].getAttribute("style").replace("opacity: 1","opacity: 0.5"));
       elems[i].setAttribute("stroke-width", 1);
     }
   }
@@ -1257,7 +1248,10 @@ function mouseMove(evt) {
   var width, height;
   var x,y;
   if (parent_infobox != null) {
-   parent_content.mouseMove(evt);
+    // get the position of the mouse in the parent window
+    x = svgDocument.object_ref.getBoundingClientRect().x + evt.clientX;
+    y = svgDocument.object_ref.getBoundingClientRect().y + evt.clientY;
+    parent_content.infoboxMove(x,y,"svg");
   } else if (infobox != null && infoboxtext != null && infoboxrect != null) {
     width=parseInt(infoboxrect.getAttribute("width")); 
     height=parseInt(infoboxrect.getAttribute("height")); 
