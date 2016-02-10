@@ -11,6 +11,10 @@ margin: 0px;
 left: 0px;
 z-index: 0;
 }
+#topspacer {
+height: 35px;
+width: 100%;
+}
 #spacer {
 height: 35px;
 width: 100%;
@@ -21,16 +25,48 @@ bottom: 5px;
 left: 0px;
 z-index: 1;
 }
+#infobox {
+position: absolute;
+top: 0px;
+left: 0px;
+width: auto;
+height: auto;
+z-index: 2;
+background: white;
+border: 1px solid;
+border-radius: 8px;
+font-size: 60%;
+}
+#debug {
+position: fixed;
+background: white;
+top: 0px;
+right: 0px;
+z-index: 3;
+font-size: 70%;
+}
 </style>
+<script>
+function mouseMove(event) {
+  var x = Math.round(event.screenX - window.mozInnerScreenX + window.scrollX + 10);
+  var y = Math.round(event.screenY - window.mozInnerScreenY + window.scrollY + 10);
+  var infobox = document.getElementById("infobox");
+  var debug = document.getElementById("debug");
+  infobox.style.left = x + "px";
+  infobox.style.top = y + "px";
+  debug.innerHTML = "position: " + x + "," + y;
+}
+</script>
   </head>
 <body>
-<object class="gantt" type="image/svg+xml" data="drawgantt-svg.php?filter=cluster='paravance'&resource_base=host&display=no_rulers"></object>
-<object class="gantt" type="image/svg+xml" data="drawgantt-svg.php?filter=cluster='parasilo'&resource_base=host&display=no_rulers"></object>
-<object class="gantt" type="image/svg+xml" data="drawgantt-svg.php?filter=cluster='parapide'&resource_base=host&display=no_rulers"></object>
-<object class="gantt" type="image/svg+xml" data="drawgantt-svg.php?filter=cluster='parapluie'&resource_base=host&display=no_rulers"></object>
-<object class="gantt" type="image/svg+xml" data="https://intranet.grid5000.fr/oar/Nancy/drawgantt-svg/test/drawgantt-svg.php?filter=cluster='graphite'&resource_base=host&display=no_rulers"></object>
-<object class="gantt" type="image/svg+xml" data="https://intranet.grid5000.fr/oar/Grenoble/drawgantt-svg/test/drawgantt-svg.php?filter=cluster='adonis'&resource_base=host&display=no_rulers"></object>
-<object class="gantt" type="image/svg+xml" data="https://intranet.grid5000.fr/oar/Lyon/drawgantt-svg/test/drawgantt-svg.php?filter=cluster='hercule'&resource_base=host&display=no_rulers"></object>
+<div id="infobox"></div>
+<div id="debug"></div>
+<div id="topspacer"></div>
+<object id="gantt1" class="gantt" type="image/svg+xml" data="https://intranet.grid5000.fr/oar/Rennes/drawgantt-svg/test/drawgantt-svg.php?filter=cluster='parasilo'&resource_base=host&display=no_rulers"></object>
+<object id="gantt2" class="gantt" type="image/svg+xml" data="https://intranet.grid5000.fr/oar/Rennes/drawgantt-svg/test/drawgantt-svg.php?filter=cluster='paravance'&resource_base=host&display=no_rulers"></object>
+<object id="gantt3" class="gantt" type="image/svg+xml" data="https://intranet.grid5000.fr/oar/Nancy/drawgantt-svg/test/drawgantt-svg.php?filter=cluster='graphite'&resource_base=host&display=no_rulers"></object>
+<object id="gantt4" class="gantt" type="image/svg+xml" data="https://intranet.grid5000.fr/oar/Grenoble/drawgantt-svg/test/drawgantt-svg.php?filter=cluster='adonis'&resource_base=host&display=no_rulers"></object>
+<object id="gantt5" class="gantt" type="image/svg+xml" data="https://intranet.grid5000.fr/oar/Lyon/drawgantt-svg/test/drawgantt-svg.php?filter=cluster='hercule'&resource_base=host&display=no_rulers"></object>
 <object id="ruler" type="image/svg+xml" data="drawgantt-svg.php?resource_base=host&display=mobile_ruler_only"/></object>
 <div id="spacer"></div>
 </body>

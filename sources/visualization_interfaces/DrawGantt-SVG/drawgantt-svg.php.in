@@ -1092,6 +1092,7 @@ var infobox, infoboxtext, infoboxrect;
 var timeruler;
 var zoom, zoom_draw, zoom_x1, zoom_x2, zoom_y1, zoom_y2, zoom_width;
 var parent_content;
+var parent_infobox;
 function init(evt) {
 EOT;
 if ($aborted) {
@@ -1113,6 +1114,7 @@ $output_headers .= <<<EOT
 // workaround to make the script work on both firefox and chrome
   parent_content = (parent.content)?(parent.content):(parent);
   parent_content.addEventListener("scroll",drawTimeRuler, false);
+  parent_infobox = parent_content.document.getElementById("infobox");
   drawTimeRuler();
 }
 
@@ -1208,24 +1210,39 @@ function mouseOver(evt, message, highlight) {
       elems[i].setAttribute("stroke-width", 1.5);
     }
   }
-  while (infoboxtext.hasChildNodes()) { 
-    infoboxtext.removeChild(infoboxtext.lastChild);
-  }
   array = message.split("|");
+  if (parent_infobox != null) {
+    while (parent_infobox.hasChildNodes()) { 
+      parent_infobox.removeChild(parent_infobox.lastChild);
+    }
+    parent_infobox.style.visibility = "visible";
+    for (i in array) {
+      parent_infobox.appendChild(parent_content.document.createTextNode(array[i]));
+      parent_infobox.appendChild(parent_content.document.createElement('br'));
+    }
+  } else if (infobox != null && infoboxtext != null && infoboxrect != null) {
+    while (infoboxtext.hasChildNodes()) { 
+      infoboxtext.removeChild(infoboxtext.lastChild);
+    }
     infobox.setAttribute("display", "inline");
-  for (i in array) {
-    tspan = svgDocument.createElementNS("http://www.w3.org/2000/svg","tspan");
-    tspan.setAttribute("x",10);
-    tspan.setAttribute("dy",10);
-    tspan.appendChild(svgDocument.createTextNode(array[i]));  
-    infoboxtext.appendChild(tspan);
-    length = Math.max(length, tspan.getComputedTextLength());
+    for (i in array) {
+      tspan = svgDocument.createElementNS("http://www.w3.org/2000/svg","tspan");
+      tspan.setAttribute("x",10);
+      tspan.setAttribute("dy",10);
+      tspan.appendChild(svgDocument.createTextNode(array[i]));  
+      infoboxtext.appendChild(tspan);
+      length = Math.max(length, tspan.getComputedTextLength());
+    }
+    infoboxrect.setAttribute("width", length + 20);
+    infoboxrect.setAttribute("height", array.length * {$CONF['text_scale']} + 20);
   }
-  infoboxrect.setAttribute("width", length + 20);
-  infoboxrect.setAttribute("height", array.length * {$CONF['text_scale']} + 20);
 }
 function mouseOut(evt, highlight) {
-  infobox.setAttribute("display", "none");
+  if (parent_infobox != null) {
+    parent_infobox.style.visibility = "hidden";
+  } else if (infobox != null && infoboxtext != null && infoboxrect != null) {
+    infobox.setAttribute("display", "none");
+  }
   if (highlight != '') {
     var elems = document.getElementsByClassName(highlight);
     for(var i = 0; i < elems.length; i++) {
@@ -1237,20 +1254,25 @@ function mouseOut(evt, highlight) {
   }
 }
 function mouseMove(evt) {
-  var width=parseInt(infoboxrect.getAttribute("width")); 
-  var height=parseInt(infoboxrect.getAttribute("height")); 
+  var width, height;
   var x,y;
-  if ((evt.pageX + 10 + width) < {$page_width}) {
-    x = (evt.pageX + 10);
-  } else {
-    x = ({$page_width} - width);
+  if (parent_infobox != null) {
+   parent_content.mouseMove(evt);
+  } else if (infobox != null && infoboxtext != null && infoboxrect != null) {
+    width=parseInt(infoboxrect.getAttribute("width")); 
+    height=parseInt(infoboxrect.getAttribute("height")); 
+    if ((evt.pageX + 10 + width) < {$page_width}) {
+      x = (evt.pageX + 10);
+    } else {
+      x = ({$page_width} - width);
+    }
+    if ((evt.pageY + 20 + height) < Math.min({$page_height}, parent_content.scrollY + parent_content.innerHeight)) {
+      y = (evt.pageY + 20);
+    } else {
+      y = (evt.pageY - height - 5 );
+    }
+    infobox.setAttribute("transform", "translate(" + x + "," + y + ")");
   }
-  if ((evt.pageY + 20 + height) < Math.min({$page_height}, parent_content.scrollY + parent_content.innerHeight)) {
-    y = (evt.pageY + 20);
-  } else {
-    y = (evt.pageY - height - 5 );
-  }
-  infobox.setAttribute("transform", "translate(" + x + "," + y + ")");
 }
 ]]></script>
 EOT;
@@ -1300,7 +1322,7 @@ if ($display != 'mobile_ruler_only') {
 if ($display != 'no_mobile_ruler' and $display != "no_rulers") {
   // print mobile time ruler
   $output .= '<g id="timeruler" display="inline">';
-  $output .= '<rect x="'.($gantt_left_align - 30).'" y="1" width="'.($gantt_width + 60).'" height="29" stroke="#000000" stroke-width="1" fill="#FFFFFF" style="opacity: 0.5"/>';
+  $output .= '<rect x="'.($gantt_left_align - 30).'" y="1" width="'.($gantt_width + 60).'" height="29" stroke="#000000" stroke-width="1" fill="#FFFFFF" style="opacity: 0.7"/>';
   $d = $gantt_start_date - $gantt_start_date % $ruler_step;
   while(($d += $ruler_step) < $gantt_stop_date) {
     $output .= '<text font-size="10" x="'.date2px($d).'" y="25" text-anchor="middle" >'.date("Y-m-d",$d).'</text>';
