@@ -164,7 +164,7 @@ if (! preg_match('/^\.\w+$/', $config_file_suffix)) {
 }
 
 // Overwrite configuration with values from config_file
-define('CONFIG_DIR', '.');
+define('CONFIG_DIR', '%%OARCONFDIR%%');
 define('CONFIG_FILE', CONFIG_DIR . '/drawgantt-config.inc.php' . $config_file_suffix);
 if (is_readable(CONFIG_FILE)) {
   require CONFIG_FILE;
@@ -818,6 +818,51 @@ $resource_ids = array();
 // Retrieve OAR data from database
 ///////////////////////////////////////////////////////////////////////////////
 
+$aborted = false;
+
+// common function used both for past and current jobs and predicted jobs
+function parse_jobs_from_db($query) {
+  global $CONF, $db, $jobs, $resource_ids, $aborted;
+  $t0 = microtime(true); 
+  $l = 0;
+  $j = 0;
+  if ($aborted) {
+    debug (1, "already aborted");
+    return;
+  }
+  debug(2,"start parsing jobs from " . $db->num_rows . " rows of data");
+  $db->query($query);
+  if ($db->num_rows > $CONF['db_max_job_rows']) {
+    debug (1, "too many data ( > " . $CONF['db_max_job_rows'] . " rows), aborting");
+    $aborted = true;
+    return;
+  }
+  while ($line = $db->fetch_array()) {
+    if (! array_key_exists($line['job_id'], $jobs)) {
+      debug(3, "got new job: ".$line['job_id']);
+      $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['project'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
+      $j++;
+    } else {
+      debug(4, "got an additional line for job: ".$line['job_id']);
+    }
+    if (array_key_exists($line['resource_id'], $resource_ids)) {
+      $jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
+    } else {
+      // create new resource_id so than the job gets the right resource_id count, even if that resource_id is not displayed in the grid... (filter)
+      debug(2, "create a phantom resource: " . $line['resource_id'] . " ,for job:" . $line['job_id']);
+      $jobs[$line['job_id']]->add_resource_id(new ResourceId($line['resource_id'], -1));
+    }
+    $jobs[$line['job_id']]->add_network_address($line['network_address']);
+    $jobs[$line['job_id']]->add_type($line['type']);
+    $l++;
+    if (($l % 1000) == 0) {
+      debug(2, "$l rows parsed, got $j jobs, in " . (microtime(true) - $t0) . "s");
+    }
+  }
+  $db->free();
+  debug(2,"parsing done, got $j jobs, in "  . (microtime(true) - $t0) . "s");
+}
+
 if ($display != "mobile_ruler_only") {
   $query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE ('.stripslashes($resource_filter).')':'');
   debug(2,"retrieve resources from DB");
@@ -899,48 +944,6 @@ EOT;
   // Array to store jobs
   $jobs = array();
   
-  // common function used both for past and current jobs and predicted jobs
-  function parse_jobs_from_db($query) {
-    global $CONF, $db, $jobs, $resource_ids, $aborted;
-    $t0 = microtime(true); 
-    $l = 0;
-    $j = 0;
-    if ($aborted) {
-      debug (1, "already aborted");
-      return;
-    }
-    debug(2,"start parsing jobs from " . $db->num_rows . " rows of data");
-    $db->query($query);
-    if ($db->num_rows > $CONF['db_max_job_rows']) {
-      debug (1, "too many data ( > " . $CONF['db_max_job_rows'] . " rows), aborting");
-      $aborted = true;
-      return;
-    }
-    while ($line = $db->fetch_array()) {
-      if (! array_key_exists($line['job_id'], $jobs)) {
-        debug(3, "got new job: ".$line['job_id']);
-        $jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['project'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
-        $j++;
-      } else {
-        debug(4, "got an additional line for job: ".$line['job_id']);
-      }
-      if (array_key_exists($line['resource_id'], $resource_ids)) {
-        $jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
-      } else {
-        // create new resource_id so than the job gets the right resource_id count, even if that resource_id is not displayed in the grid... (filter)
-        debug(2, "create a phantom resource: " . $line['resource_id'] . " ,for job:" . $line['job_id']);
-        $jobs[$line['job_id']]->add_resource_id(new ResourceId($line['resource_id'], -1));
-      }
-      $jobs[$line['job_id']]->add_network_address($line['network_address']);
-      $jobs[$line['job_id']]->add_type($line['type']);
-      $l++;
-      if (($l % 1000) == 0) {
-        debug(2, "$l rows parsed, got $j jobs, in " . (microtime(true) - $t0) . "s");
-      }
-    }
-    $db->free();
-    debug(2,"parsing done, got $j jobs, in "  . (microtime(true) - $t0) . "s");
-  }
   // Retrieve past and current jobs 
   $aborted = false;
   $query = <<<EOT
@@ -1028,7 +1031,6 @@ $db->close();
 ///////////////////////////////////////////////////////////////////////////////
 
 $output = "";
-$aborted = false;
 $gantt_height = 0;
 if ($display != "no_rulers") {
   $gantt_top = $CONF['gantt_top'];
@@ -1096,7 +1098,7 @@ var parent_infobox;
 function init(evt) {
 EOT;
 if ($aborted) {
-  $output_headers .= 'alert("'.$CONF['site'].': aborted, too many jobs to display, time window is too large. Please mind narrowing your lookup...");';
+  $output_headers .= 'alert("['.$CONF['site'].'] Aborted, too many jobs to display, time window is too large. Please mind narrowing your lookup...");';
 }
 $output_headers .= <<<EOT
   svgDocument = evt.target.ownerDocument;
