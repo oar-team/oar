@@ -156,11 +156,20 @@ $CONF['debug'] = 0; // Set to > 0 to enable debug prints in the web server error
 // End of the embedded configuration settings
 ////////////////////////////////////////////////////////////////////////////////
 
-// Overwrite configuration with values from drawgantt-config.inc.php
-define('CONFIG_DIR', '%%OARCONFDIR%%');
-define('CONFIG_FILE', CONFIG_DIR . '/drawgantt-config.inc.php');
+// Look for a config file suffix in URL
+$config_file_suffix = array_key_exists('config',$_GET)?'.'.$_GET['config']:'';
+if (! preg_match('/^\.\w+$/', $config_file_suffix)) {
+  debug(1, "invalid config file suffix: $config_file_suffix, falling back to the default config");
+  $config_file_suffix = '';
+}
+
+// Overwrite configuration with values from config_file
+define('CONFIG_DIR', '.');
+define('CONFIG_FILE', CONFIG_DIR . '/drawgantt-config.inc.php' . $config_file_suffix);
 if (is_readable(CONFIG_FILE)) {
-    require CONFIG_FILE;
+  require CONFIG_FILE;
+} else {
+  debug(1, "config_file not readable: $config_file");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1086,7 +1095,7 @@ var parent_content;
 function init(evt) {
 EOT;
 if ($aborted) {
-  $output_headers .= 'alert("Aborted, too many jobs to display, time window is too large. Please mind narrowing your lookup...");';
+  $output_headers .= 'alert("'.$CONF['site'].': aborted, too many jobs to display, time window is too large. Please mind narrowing your lookup...");';
 }
 $output_headers .= <<<EOT
   svgDocument = evt.target.ownerDocument;
@@ -1312,7 +1321,6 @@ EOT;
 $script_exec_time = microtime(true) - $script_start_time;
 if ($display != 'mobile_ruler_only' and $display != 'no_rulers') {
   $output .= '<text id="stats" font-size="10" x="'.($gantt_left_align + $gantt_width /2).'" y="'.($page_height - 5).'" text-anchor="middle" fill="#888888">OAR drawgantt-svg for '.$CONF['site'].' - ref date: '.date("Y-m-d H:i:s",($gantt_start_date + $gantt_stop_date) / 2).' timespan: '.(($timespan >= 3600*24)?(floor($timespan/3600/24)."d"):"").gmdate("H\hi\ms\s",$timespan).' - generated in '.sprintf("%.3f",$script_exec_time).'s</text>'; 
-  
 }
 // end SVG doc
 $output .=  <<<EOT
