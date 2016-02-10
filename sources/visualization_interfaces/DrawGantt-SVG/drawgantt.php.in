@@ -164,6 +164,7 @@ $output = <<<EOT
     bottom: 0px;
     z-index: 1;
     text-align: right;
+    visibility: hidden;
   }
   #permalinkA:link {
     background-color: lightyellow;
@@ -312,6 +313,7 @@ $output = <<<EOT
     var svgObj=document.getElementById("svgObj");
     var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
     document.getElementById("panel").style.visibility="hidden";
+    document.getElementById("permalink").style.visibility="hidden";
     document.getElementById("waiter").style.visibility="visible";
     var href = window.location.href
     document.getElementById("permalinkA").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
@@ -347,6 +349,7 @@ $output = <<<EOT
     window.scrollTo(scrolledX,scrolledY);
     document.getElementById("waiter").style.visibility="hidden";
     document.getElementById("panel").style.visibility="visible";
+    document.getElementById("permalink").style.visibility="visible";
   }
   function init() {
     set_misc(false);
