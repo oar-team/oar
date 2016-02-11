@@ -1146,7 +1146,7 @@ function zoomDraw() {
   }
 }
 function rootMouseDown(evt) {
-  if (typeof(parent_content.setZoomWindow) == 'function' && evt.pageX > {$gantt_left_align} && evt.pageX < ({$gantt_left_align} + {$gantt_width}) && evt.pageY > {$gantt_top} && evt.pageY < ({$gantt_top} + {$gantt_height})) {
+  if (parent_content != null && typeof(parent_content.setZoomWindow) == 'function' && evt.pageX > {$gantt_left_align} && evt.pageX < ({$gantt_left_align} + {$gantt_width}) && evt.pageY > {$gantt_top} && evt.pageY < ({$gantt_top} + {$gantt_height})) {
     zoom_x1 = evt.pageX;
     zoom_x2 = zoom_x1;
     zoom_width = 0;
@@ -1155,7 +1155,7 @@ function rootMouseDown(evt) {
 }
 function rootMouseUp(evt) {
   zoom_draw = false;
-  if (zoom_width > 5 && typeof(parent_content.setZoomWindow) == 'function') {
+  if (zoom_width > 5 && parent_content != null && typeof(parent_content.setZoomWindow) == 'function') {
     parent_content.setZoomWindow({$gantt_now}, px2date(Math.min(zoom_x1,zoom_x2)), px2date(Math.max(zoom_x1,zoom_x2)));
   }
   zoom_x1 = 0;
@@ -1180,7 +1180,7 @@ function rootClick(evt) {
 }
 function drawTimeRuler(evt) {
   if ("{$display}" != "mobile_ruler_only" && timeruler != null) {
-    if ({$page_height} > parent_content.innerHeight) {
+    if (parent_content != null && {$page_height} > parent_content.innerHeight) {
       y = parent_content.scrollY + parent_content.innerHeight - 45;
       timeruler.setAttribute("transform","translate(0," + y + ")");
       timeruler.setAttribute("display", "inline");
@@ -1216,7 +1216,7 @@ function highlight(object, hl_element_class, bool) {
       }
     }
   }
-  if (object == null && typeof(parent_content.highlightOthers) == 'function') {
+  if (object == null && parent_content != null && typeof(parent_content.highlightOthers) == 'function') {
       parent_content.highlightOthers(svgDocument.object_ref, hl_element_class, bool);
   }
 }
@@ -1274,7 +1274,7 @@ function mouseMove(evt) {
     } else {
       x = ({$page_width} - width);
     }
-    if ((evt.pageY + 20 + height) < Math.min({$page_height}, parent_content.scrollY + parent_content.innerHeight)) {
+    if (parent_content != null && (evt.pageY + 20 + height) < Math.min({$page_height}, parent_content.scrollY + parent_content.innerHeight)) {
       y = (evt.pageY + 20);
     } else {
       y = (evt.pageY - height - 5 );
