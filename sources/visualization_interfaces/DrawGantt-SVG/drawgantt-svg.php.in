@@ -156,6 +156,32 @@ $CONF['debug'] = 0; // Set to > 0 to enable debug prints in the web server error
 // End of the embedded configuration settings
 ////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// This php script take the following parameter as argument in URL (GET):
+// - display: all | no_ruler | no_mobile_ruler | ruler_only, as option the the rulers display
+// - config: <suffix>, to add a suffix to config file (drawgantt-config.inc.php.[suffix]) and allow multiple configuration for a same installation
+// - timezome: UTC | ..., as the timezone to use
+// - start: <ctime>, start date for the gantt
+// - stop: <ctime>, stop date for the gantt
+// - relative_start: <int>, start date relative to now for the gantt
+// - relative_stop: <int>, stop date relative to now for the gantt
+// - filter: <SQL>, SQL where clause for the OAR resource selection
+// - resource_base: <resource>, base resource to use in hierarchy
+// - width: <int>: gantt width in pixel
+// - scale: <int>: scale for the gantt in pixel
+// 
+// The generated SVG page can be used as a widget in a parent html document. API for that widget is the following:
+// - use an <object type = "image/svg+xml"> HTML element and set both the data and innerHTML attributes to the drawgantt-svg.php URL.
+// - the caller page can provide the following for interaction with the SVG document:
+//   - inboxbox element and infoboxDisplay(array of lines), infoboxHide(), infoboxMove(x,y) callback function to use an infobox in the parent document
+//   - setZoomWindow(now, zoom1, zoom2) callback function to use the mouse selection zone (zoom)
+//   - highlightOthers(object_ref, element class, boolean) callback function to propagate highlight to other gantts in the parent document
+// - also, the parent document must set a reference to the object element that contains the SVG document:
+//   - the parent script: ganttObjectElement.contentDocument.object_ref = ganttObjectElement
+//
+////////////////////////////////////////////////////////////////////////////////
+
 // Look for a config file suffix in URL
 $config_file_suffix = array_key_exists('config',$_GET)?'.'.$_GET['config']:'';
 if (! preg_match('/^\.\w+$/', $config_file_suffix)) {
