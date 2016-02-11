@@ -1142,8 +1142,7 @@ function zoomDraw() {
   }
 }
 function rootMouseDown(evt) {
-  if ((evt.pageX > {$gantt_left_align}) && (evt.pageX < ({$gantt_left_align} + {$gantt_width})) &&
-    (evt.pageY > {$gantt_top}) && (evt.pageY < ({$gantt_top} + {$gantt_height}))) {
+  if (typeof(parent_content.setZoomWindow) == 'function' && evt.pageX > {$gantt_left_align} && evt.pageX < ({$gantt_left_align} + {$gantt_width}) && evt.pageY > {$gantt_top} && evt.pageY < ({$gantt_top} + {$gantt_height})) {
     zoom_x1 = evt.pageX;
     zoom_x2 = zoom_x1;
     zoom_width = 0;
@@ -1152,8 +1151,8 @@ function rootMouseDown(evt) {
 }
 function rootMouseUp(evt) {
   zoom_draw = false;
-  if ( zoom_width > 5) {
-    parent_content.set_zoom_window({$gantt_now}, px2date(Math.min(zoom_x1,zoom_x2)), px2date(Math.max(zoom_x1,zoom_x2)));
+  if (zoom_width > 5 && typeof(parent_content.setZoomWindow) == 'function') {
+    parent_content.setZoomWindow({$gantt_now}, px2date(Math.min(zoom_x1,zoom_x2)), px2date(Math.max(zoom_x1,zoom_x2)));
   }
   zoom_x1 = 0;
   zoom_x2 = 0;

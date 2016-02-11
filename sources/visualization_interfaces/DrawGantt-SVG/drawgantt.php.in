@@ -283,7 +283,7 @@ $output = <<<EOT
     start -= t;
     reload_content();
   }
-  function set_zoom_window(znow, zstart, zstop) {
+  function setZoomWindow(znow, zstart, zstop) {
     zoom_start = zstart;
     zoom_stop = zstop;
   }
