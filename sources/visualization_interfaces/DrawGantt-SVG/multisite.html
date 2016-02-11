@@ -55,6 +55,8 @@ font-size: 70%;
 <script>
 var infobox;
 var debug;
+var gantts = [];
+var url = ["https://intranet.grid5000.fr/oar/", "/drawgantt-svg/test/drawgantt-svg.php?width=" + (window.innerWidth - 50)];
 // push the reference of the SVG object to the SVG doc
 // object reference is used to get the SVG doc coordinates in the HTML document (see getBoundingClientRect) in the SVG js
 // (the other option using svg.screenY - html.mozInnerScreenY is not portable)
@@ -96,36 +98,57 @@ function infoboxMove(x,y,str) {
   }
   debug.innerHTML = "position: " + x + "," + y + "(" + str + ")";
 }
-function addGantt(id,url) {
+function highlightOthers(obj, hl_element_class, bool) {
+  for (var k in gantts) {
+    if (gantts[k].contentWindow != null) {
+      gantts[k].contentWindow.highlight(obj, hl_element_class, bool);
+    }
+  }
+}
+function createGanttObject(id,className, url) {
   var obj = document.createElement('object');
   obj.id = id;
-  obj.classList.add("gantt");
+  obj.classList.add(className);
   obj.type = "image/svg+xml"
   obj.data = url;
   obj.innerHTML = url;
   obj.addEventListener("load", function() { set_object_ref(id); }, false);
-  document.getElementById("gantts").appendChild(obj);
+  return obj;
 }
-function addRuler(id,url) {
-  var obj = document.createElement('object');
-  obj.id = id;
-  obj.classList.add("ruler");
-  obj.type = "image/svg+xml"
-  obj.data = url;
-  obj.innerHTML = url;
-  document.getElementById("gantts").appendChild(obj);
+function createGanttObjectHosts(site, cluster) {
+  var obj = createGanttObject(site + "+" + cluster, "gantt", url[0] + site + url[1] + "&display=no_ruler&resource_base=host&filter=cluster='" + cluster + "'");
+  gantts[site + "+" + cluster] = obj;
+  return obj;
+}
+function createGanttObjectVlans(site) {
+  var obj = createGanttObject(site + "+vlans", "gantt", url[0] + site + url[1] + "&display=no_ruler&resource_base=host&config=vlan&filter=type like 'kavlan%'");
+  gantts[site + "+vlans"] = obj;
+  return obj;
+}
+function createGanttObjectSubnets(site) {
+  var obj = createGanttObject(site + "+subnets", "gantt", url[0] + site + url[1] + "&display=no_ruler&resource_base=host&config=subnet&filter=type like 'subnet'");
+  gantts[site + "+subnets"] = obj;
+  return obj;
+}
+function createGanttObjectRuler(site, id) {
+  var obj = createGanttObject(id, "ruler", url[0] + site + url[1] + "&display=mobile_ruler_only&resource_base=host");
+  return obj;
 }
 function init() {
-  var url_base = "https://intranet.grid5000.fr/oar/";
-  var url_ruler = "/drawgantt-svg/test/drawgantt-svg.php?width=" + (window.innerWidth - 50) + "&resource_base=host&display=mobile_ruler_only";
-  var url_gantt = "/drawgantt-svg/test/drawgantt-svg.php?width=" + (window.innerWidth - 50) + "&resource_base=host&display=no_rulers&filter=cluster=";
-  addRuler("ruler_top", url_base + "Rennes" + url_ruler);
-  addGantt("gantt1", url_base + "Rennes" + url_gantt + "'parasilo'");
-  addGantt("gantt2", url_base + "Rennes" + url_gantt + "'paravance'");
-  addGantt("gantt3", url_base + "Nancy" + url_gantt + "'graphite'");
-  addGantt("gantt4", url_base + "Grenoble" + url_gantt + "'adonis'");
-  addGantt("gantt5", url_base + "Lyon" + url_gantt + "'hercule'");
-  addRuler("ruler_bottom", url_base + "Rennes" + url_ruler);
+  var obj;
+  var div = document.getElementById("gantts");
+
+  div.appendChild(createGanttObjectRuler("Rennes","ruler_top"));
+
+  div.appendChild(createGanttObjectHosts("Nancy", "graphite"));
+  div.appendChild(createGanttObjectHosts("Lyon", "hercule"));
+  div.appendChild(createGanttObjectHosts("Grenoble", "edel"));
+  div.appendChild(createGanttObjectHosts("Rennes", "parasilo"));
+  div.appendChild(createGanttObjectHosts("Rennes", "paravance"));
+  div.appendChild(createGanttObjectVlans("Rennes"));
+  div.appendChild(createGanttObjectSubnets("Rennes"));
+  
+  div.appendChild(createGanttObjectRuler("Rennes","ruler_bottom"));
 }
 </script>
   </head>

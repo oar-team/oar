@@ -1096,6 +1096,7 @@ var zoom, zoom_draw, zoom_x1, zoom_x2, zoom_y1, zoom_y2, zoom_width;
 var parent_content;
 var parent_infobox;
 function init(evt) {
+
 EOT;
 if ($aborted) {
   $output_headers .= 'alert("['.$CONF['site'].'] Aborted, too many jobs to display, time window is too large. Please mind narrowing your lookup...");';
@@ -1117,6 +1118,9 @@ $output_headers .= <<<EOT
   parent_content = (parent.content)?(parent.content):(parent);
   parent_content.addEventListener("scroll",drawTimeRuler, false);
   parent_infobox = parent_content.document.getElementById("infobox");
+  if (parent_infobox == null || typeof(parent_content.infoboxDisplay) != 'function' || typeof(parent_content.infoboxHide) != 'function' || typeof(parent_content.infoboxMove) != 'function') {
+    parent_infobox = null;
+  }
   drawTimeRuler();
 }
 
@@ -1197,18 +1201,32 @@ function jobclick(evt, jobid) {
     window.open(url.replace('%%JOBID%%', jobid));
   }
 }
-function mouseOver(evt, message, highlight) {
+function highlight(object, hl_element_class, bool) {
+  if (object == null || object != svgDocument.object_ref) {
+    var elems = document.getElementsByClassName(hl_element_class);
+    for(var i = 0; i < elems.length; i++) {
+      if (bool) {
+        elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace(",{$CONF['job_color_saturation_lightness']})",",{$CONF['job_color_saturation_lightness_highlight']})"));
+        elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("besteffort","besteffortHL"));
+        elems[i].setAttribute("stroke-width", 1.5);
+      } else {
+        elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace(",{$CONF['job_color_saturation_lightness_highlight']})",",{$CONF['job_color_saturation_lightness']})"));
+        elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("besteffortHL","besteffort"));
+        elems[i].setAttribute("stroke-width", 1);
+      }
+    }
+  }
+  if (object == null && typeof(parent_content.highlightOthers) == 'function') {
+      parent_content.highlightOthers(svgDocument.object_ref, hl_element_class, bool);
+  }
+}
+function mouseOver(evt, message, hl_element_class) {
   var length = 0;
   var array;
   var i = 0;
   var tspan;
-  if (highlight != '') {
-    var elems = document.getElementsByClassName(highlight);
-    for(var i = 0; i < elems.length; i++) {
-      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace(",{$CONF['job_color_saturation_lightness']})",",{$CONF['job_color_saturation_lightness_highlight']})"));
-      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("besteffort","besteffortHL"));
-      elems[i].setAttribute("stroke-width", 1.5);
-    }
+  if (hl_element_class != '') {
+    highlight(null, hl_element_class, true);
   }
   array = message.split("|");
   if (parent_infobox != null) {
@@ -1230,19 +1248,14 @@ function mouseOver(evt, message, highlight) {
     infoboxrect.setAttribute("height", array.length * {$CONF['text_scale']} + 20);
   }
 }
-function mouseOut(evt, highlight) {
+function mouseOut(evt, hl_element_class) {
   if (parent_infobox != null) {
     parent_content.infoboxHide(evt);
   } else if (infobox != null && infoboxtext != null && infoboxrect != null) {
     infobox.setAttribute("display", "none");
   }
-  if (highlight != '') {
-    var elems = document.getElementsByClassName(highlight);
-    for(var i = 0; i < elems.length; i++) {
-      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace(",{$CONF['job_color_saturation_lightness_highlight']})",",{$CONF['job_color_saturation_lightness']})"));
-      elems[i].setAttribute("fill", elems[i].getAttribute("fill").replace("besteffortHL","besteffort"));
-      elems[i].setAttribute("stroke-width", 1);
-    }
+  if (hl_element_class != '') {
+    highlight(null, hl_element_class, false);
   }
 }
 function mouseMove(evt) {
