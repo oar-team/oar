@@ -1251,8 +1251,8 @@ function mouseMove(evt) {
   var x,y;
   if (parent_infobox != null) {
     // get the position of the mouse in the parent window
-    x = svgDocument.object_ref.getBoundingClientRect().x + evt.clientX;
-    y = svgDocument.object_ref.getBoundingClientRect().y + evt.clientY;
+    x = svgDocument.object_ref.getBoundingClientRect().left + evt.clientX;
+    y = svgDocument.object_ref.getBoundingClientRect().top + evt.clientY;
     parent_content.infoboxMove(x,y,"svg");
   } else if (infobox != null && infoboxtext != null && infoboxrect != null) {
     width=parseInt(infoboxrect.getAttribute("width")); 
