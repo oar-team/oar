@@ -60,7 +60,7 @@ var url = ["https://intranet.grid5000.fr/oar/", "/drawgantt-svg/test/drawgantt-s
 // push the reference of the SVG object to the SVG doc
 // object reference is used to get the SVG doc coordinates in the HTML document (see getBoundingClientRect) in the SVG js
 // (the other option using svg.screenY - html.mozInnerScreenY is not portable)
-function set_object_ref(id) {
+function setObjectRef(id) {
   var obj = document.getElementById(id);
   var svg = obj.contentDocument;
   svg.object_ref = obj;
@@ -112,7 +112,7 @@ function createGanttObject(id,className, url) {
   obj.type = "image/svg+xml"
   obj.data = url;
   obj.innerHTML = url;
-  obj.addEventListener("load", function() { set_object_ref(id); }, false);
+  obj.addEventListener("load", function() { setObjectRef(id); }, false);
   return obj;
 }
 function createGanttObjectHosts(site, cluster) {
