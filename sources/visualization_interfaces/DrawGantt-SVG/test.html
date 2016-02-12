@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Drawgantt</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <script>
+function set_object_id(id) {
+  var obj = document.getElementById(id);
+  var svg = obj.contentDocument;
+  svg.object_id = id;
+  svg.obj = obj;
+}
+function mouseMove(event) {
+  show_position("html",event.clientX,event.clientY);
+}
+function show_position(str,x,y) {
+  document.getElementById("position").innerHTML = "position: " + x + "," + y + "(" + str + ")";
+}
+    </script>
+  </head>
+<body onmousemove="mouseMove(event)">
+<object onload="set_object_id('svg1')" id="svg1" type="image/svg+xml" data="https://intranet.grid5000.fr/oar/Rennes/drawgantt-svg/test/test.svg"/></object>
+<object onload="set_object_id('svg2')" id="svg2" type="image/svg+xml" data="https://intranet.grid5000.fr/oar/Rennes/drawgantt-svg/test/test.svg"/></object>
+<p id="position"></p>
+</body>
+</html>

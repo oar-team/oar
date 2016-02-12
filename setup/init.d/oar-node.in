@@ -23,6 +23,7 @@ NAME=oar-node
 DESC="OAR node"
 OAR_SSHD_CONF="%%OARCONFDIR%%/sshd_config"
 PIDFILE="%%RUNDIR%%/${NAME}_sshd.pid"
+SSHD_PRIVILEGE_SEPARATION_DIR="%%RUNDIR%%/sshd"
 SSHD_OPTS="-f $OAR_SSHD_CONF -o PidFile=$PIDFILE"
 SELINUXENABLED_CMD=$(which selinuxenabled 2>/dev/null)
 NOLSB=
@@ -80,6 +81,9 @@ do_start() {
         exit 2
     fi
     if [ -f "$OAR_SSHD_CONF" ] ; then
+        if [ -n "$SSHD_PRIVILEGE_SEPARATION_DIR" ]; then
+            ( umask 0022 && mkdir -p $SSHD_PRIVILEGE_SEPARATION_DIR )
+        fi
         if start_daemon -p $PIDFILE -n "-20" /usr/sbin/sshd $SSHD_OPTS; then
             # redhat world
             [ -d /var/lock/subsys/ ] && touch /var/lock/subsys/$NAME
