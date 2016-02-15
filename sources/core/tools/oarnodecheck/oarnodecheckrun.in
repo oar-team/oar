@@ -1,12 +1,12 @@
 #!/bin/bash
-# $Id$
 
-OARUSER=%%OAROWNER%%
-eval CHECKLOGDIR=~$OARUSER/checklogs
+CHECKLOGDIR=%%OARHOMEDIR%%/checklogs
 CHECKSCRIPTDIR=%%OARCONFDIR%%/check.d
 CPUSET_DIR=/dev/cpuset/oar
-LOCKFILE=$CHECKSCRIPTDIR/$(basename $0).lock
-STAMPFILE=$CHECKSCRIPTDIR/oarnodecheckrun.lastrun
+LOCKFILE=%%OARHOMEDIR%%/$(basename $0).lock
+STAMPFILE=%%OARHOMEDIR%%/oarnodecheckrun.lastrun
+
+mkdir -p $OARRUNDIR
 
 if ! [ -r $CHECKLOGDIR ]; then
   echo 1>&2 "Error: Checklogs directory does not exist ($CHECKLOGDIR) !"
