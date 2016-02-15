@@ -26,15 +26,15 @@ version 2.5.6:
   - [drawgantt-svg] add forecast buttons + relative start/stop url arguments
   - [drawgantt-svg] rework configuration for the default display
   - [drawgantt-svg] allow displaying resources of type != default
-  - [drawgantt-svg] improve support of use as a component in a custom HTML page 
+  - [drawgantt-svg] improve support for use as a widget in custom HTML pages
         (multisite, etc) 
   - [monika] fix bugs with recent Perl/Perl CGI versions
   - [monika] fix harmless bug in configuration 
   - [visualization] remove overlib.js (license issue), this breaks the legacy
          drawgantt (which is not supported anymore)
   - [misc] remove some old development codes from sources
-  - [misc] fix unconsistant copyrights and licenses
-  - [doc] update the installation doc
+  - [misc] fix inconsistent copyrights and licenses
+  - [doc] update the installation documentation
 
 version 2.5.5:
 --------------
