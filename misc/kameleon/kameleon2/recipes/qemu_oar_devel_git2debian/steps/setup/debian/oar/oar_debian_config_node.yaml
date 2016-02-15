@@ -1,5 +1,0 @@
-- configure_initd:
-  - exec_in: cp $$oar_prefix_install/share/oar/oar-node/init.d/oar-node /etc/init.d/
-  - exec_in: cp $$oar_prefix_install/share/oar/oar-node/default/oar-node /etc/default/
-  - exec_in: update-rc.d oar-node defaults
-

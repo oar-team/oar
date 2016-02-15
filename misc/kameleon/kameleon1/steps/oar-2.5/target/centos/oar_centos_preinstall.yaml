@@ -1,8 +1,0 @@
-oar_centos_preinstall:
- - fix_sudo:
-   - exec_chroot: groupadd sudo || true
-
- - fix_sshkeys:
-   - exec_chroot: service sshd start || true
-   - exec_chroot: service sshd stop || true
-
