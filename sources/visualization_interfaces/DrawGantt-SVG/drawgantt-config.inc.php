@@ -3,7 +3,7 @@
  * OAR Drawgantt-SVG
  * @author Pierre Neyron <pierre.neyron@imag.fr>
  * @copyright Laboratoire d'Informatique de Grenoble / Inria
- * @license GNU General Public License (GPL) version 3
+ * @license GNU General Public License (GPL) version 2 or above
  */
 
 // OAR Drawgantt SVG configuration file

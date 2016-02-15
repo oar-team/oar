@@ -6,8 +6,6 @@
 #               rsh in parrallel. There is a window which limits the number of
 #               processus at the same time; usefull in a cluster
 # Author      : nicolas.capit@imag.fr
-# Copyright   : 2005 - Laboratoire Informatique et Distribution (ID-IMAG)
-# License     : GNU GPL version 2
 #
 
 use Getopt::Long;
