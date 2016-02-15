@@ -1,4 +1,0 @@
-- configure_nothing:
-  - exec_in: echo "There is nothing to do to configure the node"
-
-

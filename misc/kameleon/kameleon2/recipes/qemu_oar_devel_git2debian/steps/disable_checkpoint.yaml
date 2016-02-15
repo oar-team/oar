@@ -1,3 +1,0 @@
-- disable_checkpoint:
-  - on_checkpoint: redo
-  - exec_local: rm -f $$kameleon_cwd/checkpoint_enabled

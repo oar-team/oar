@@ -1,6 +1,0 @@
-oar_centos_config_node:
- - configure_initd:
-   - exec_chroot: cp $$oar_prefix_install/share/doc/oar-node/examples/init.d/oar-node /etc/rc.d/init.d/
-   - exec_chroot: cp $$oar_prefix_install/share/doc/oar-node/examples/default/oar-node /etc/sysconfig/
-   - exec_chroot: chkconfig --add oar-node
-   - exec_chroot: chkconfig oar-node on

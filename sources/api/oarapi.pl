@@ -11,7 +11,7 @@
 # to be interpreted by vim or just type the :set command given
 # by this modeline.
 #
-#    Copyright (C) 2009-2012  <Bruno Bzeznik> Bruno.Bzeznik@imag.fr
+#    Copyright (C) 2009-2016 Laboratoire d'Informatique de Grenoble <http://www.liglab.fr>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by

@@ -1,8 +1,0 @@
-- configure_apache2:
-  - exec_in: a2enmod ident
-  - exec_in: a2enmod headers
-  - exec_in: a2enmod rewrite
-
-- configure_basic_auth_api-priv:
-  - exec_in: ln -s /etc/oar/apache2/oar-restful-api-priv.conf /etc/apache2/conf.d/oar-restful-api-priv.conf
-
