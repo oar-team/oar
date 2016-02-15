@@ -6,8 +6,6 @@ CPUSET_DIR=/dev/cpuset/oar
 LOCKFILE=%%OARHOMEDIR%%/$(basename $0).lock
 STAMPFILE=%%OARHOMEDIR%%/oarnodecheckrun.lastrun
 
-mkdir -p $OARRUNDIR
-
 if ! [ -r $CHECKLOGDIR ]; then
   echo 1>&2 "Error: Checklogs directory does not exist ($CHECKLOGDIR) !"
   exit 1

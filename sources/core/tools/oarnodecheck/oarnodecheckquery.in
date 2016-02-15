@@ -10,7 +10,7 @@ DELAY=3600 # seconds
 shopt -s nullglob
 
 # Run oarnodecheck if not run before or if last run is older then DELAY
-if ! [ -f $STAMPFILE ] || [ $(($(date +"%s") - $(stat --printf="%Y" $STAMPFILE`))) -ge $DELAY  ]; then
+if ! [ -f $STAMPFILE ] || [ $(($(date +"%s") - $(stat --printf="%Y" $STAMPFILE))) -ge $DELAY  ]; then
   SUDO=""
   # Run as root
   [ "$UID" -eq 0 ] || SUDO="$OARDODO"
