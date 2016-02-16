@@ -1,5 +1,6 @@
 oar (2.5.6-1) unstable; urgency=medium
 
+  [ Pierre Neyron ]
   * New upstream release
   * Rework Debian README file for oar-api (api setup)
   * Source-less javascript were removed upstream, no need for dfsg now
@@ -7,6 +8,9 @@ oar (2.5.6-1) unstable; urgency=medium
   * Remove patch applied upstream
   * Add recommends to libyaml-syck-perl (provide faster YAML functions)
   * Fix copyright, accordingly to upstream changes
+
+  [ Vincent Danjean ]
+  * Apply suggestion from 'cme fix/edit dpkg'
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 16 Feb 2016 14:20:58 +0100
 
