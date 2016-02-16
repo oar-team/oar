@@ -4,24 +4,24 @@ Installation
 Overview
 --------
 
-There are currently 3 methods to install OAR::
+There are currently 3 methods to install OAR:
 
- - from the Debian packages
- - from the RPM packages
- - from sources
+  - from the Debian packages
+  - from the RPM packages
+  - from sources
 
 
 Before going further, please have in mind OAR's architecture. A common OAR
-installation is composed of::
+installation is composed of:
 
-    - a **server** which will hold all of OAR "smartness". That host will run
-      the OAR server daemon;
-    - one or more **frontends**, which users will have to login to, in order
-      to reserve computing nodes (oarsub, oarstat, oarnodes, ...);
-    - **computing nodes** (or basically *nodes*), where the jobs will execute;
-    - optionally a **visualisation server** which will host the
-      visualisation webapps (monika, drawgantt, ...);
-    - optionally an **API server**, which will host OAR restful API service.
+  - a **server** which will hold all of OAR "smartness". That host will run
+    the OAR server daemon;
+  - one or more **frontends**, which users will have to login to, in order
+    to reserve computing nodes (oarsub, oarstat, oarnodes, ...);
+  - **computing nodes** (or basically *nodes*), where the jobs will execute;
+  - optionally a **visualisation server** which will host the
+    visualisation webapps (monika, drawgantt, ...);
+  - optionally an **API server**, which will host OAR restful API service.
 
 Many OAR data are stored and archived in a database: you have the choice to use
 either PostgreSQL or MySQL. We recommend using **PostgreSQL**.
@@ -291,9 +291,9 @@ In case you've installed a PostgreSQL database remotely, if your PostgreSQL
 installation doesn't authorize the local connections by default, you need to
 enable the connections to this database for the oar users. Assuming the OAR
 server has the address <OAR_SERVER>, you can add the following lines in the
-``pg_hba.conf`` file:
+``pg_hba.conf`` file::
 
-    # in /etc/postgresql/8.1/main/pg_hba.conf or /var/lib/pgsql/data/pg_hba.conf
+        # in /etc/postgresql/8.1/main/pg_hba.conf or /var/lib/pgsql/data/pg_hba.conf
         host    oar         oar_ro            <OAR_SERVER>/32    md5
         host    oar         oar               <OAR_SERVER>/32    md5
 
@@ -307,9 +307,9 @@ http://taktuk.gforge.inria.fr.
 Then, you have to edit your oar configuration file and fill in the related
 parameters:
 
-  - TAKTUK_CMD (the path to the taktuk command)
-  - PINGCHECKER_TAKTUK_ARG_COMMAND (the command used to check resources states)
-  - SCHEDULER_NODE_MANAGER_SLEEP_CMD (command used for halting nodes)
+  - ``TAKTUK_CMD`` (the path to the taktuk command)
+  - ``PINGCHECKER_TAKTUK_ARG_COMMAND`` (the command used to check resources states)
+  - ``SCHEDULER_NODE_MANAGER_SLEEP_CMD`` (command used for halting nodes)
 
 CPUSET feature
 ~~~~~~~~~~~~~~
@@ -330,16 +330,16 @@ To activate this feature, you have to:
     - provide 2 commands or scripts which will be executed on the oar server
       to shutdown (or set into standby) some nodes and to wake-up some nodes
       (configure the path of those commands into the
-      ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD and
-      ENERGY_SAVING_NODE_MANAGER_SHUT_DOWN_CMD variables into oar.conf)
+      ``ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD`` and
+      ``ENERGY_SAVING_NODE_MANAGER_SHUT_DOWN_CMD`` variables in oar.conf)
       Thes 2 commands are executed by the oar user.
-    - configure the "available_upto" property of all your nodes:
+    - configure the ``available_upto`` property of all your nodes:
 
-      - available_upto=0           : to disable the wake-up and halt
-      - available_upto=1           : to disable the wake-up (but not the halt)
-      - available_upto=2147483647  : to disable the halt (but not the wake-up)
-      - available_upto=2147483646  : to enable wake-up/halt forever
-      - available_upto=<timestamp> : to enable the halt, and the wake-up until
+      - ``available_upto=0``           : to disable the wake-up and halt
+      - ``available_upto=1``           : to disable the wake-up (but not the halt)
+      - ``available_upto=2147483647``  : to disable the halt (but not the wake-up)
+      - ``available_upto=2147483646``  : to enable wake-up/halt forever
+      - ``available_upto=<timestamp>`` : to enable the halt, and the wake-up until
         the date given by <timestamp>
 
       Ex: to enable the feature on every nodes forever:
@@ -347,14 +347,14 @@ To activate this feature, you have to:
 
             oarnodesetting --sql true -p available_upto=2147483646
 
-    - activate the energy saving module by setting ENERGY_SAVING_INTERNAL="yes"
-      and configuring the ENERGY_* variables into oar.conf
-    - configure the metascheduler time values into SCHEDULER_NODE_MANAGER_IDLE_TIME,
-      SCHEDULER_NODE_MANAGER_SLEEP_TIME and SCHEDULER_NODE_MANAGER_WAKEUP_TIME
+    - activate the energy saving module by setting ``ENERGY_SAVING_INTERNAL="yes"``
+      and configuring the ``ENERGY_*`` variables into oar.conf
+    - configure the metascheduler time values into ``SCHEDULER_NODE_MANAGER_IDLE_TIME``,
+      ``SCHEDULER_NODE_MANAGER_SLEEP_TIME`` and ``SCHEDULER_NODE_MANAGER_WAKEUP_TIME``
       variables of the oar.conf file.
     - restart the oar server (you should see an "Almighty" process more).
 
-You need to restart OAR each time you change an ENERGY_* variable.
+You need to restart OAR each time you change an ``ENERGY_*`` variable.
 More informations are available inside the oar.conf file itself. For more
 details about the mechanism, take a look at the "Hulot" module documentation.
 
@@ -618,8 +618,8 @@ ___________
 
 OAR provides two webapp tools for visualizing the resources utilization::
 
- - monika which displays the current state of resources as well as all running and waiting jobs
- - drawgantt-svg which displays gantt chart of nodes and jobs for the past and future.
+  - monika which displays the current state of resources as well as all running and waiting jobs
+  - drawgantt-svg which displays gantt chart of nodes and jobs for the past and future.
 
 Installation from the packages
 ______________________________

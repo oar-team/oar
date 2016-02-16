@@ -1,24 +1,17 @@
-Unless stated differently in a file itself, all files in this directory and all
-subdirectories are: 
- - Copyright 2003-2016 Laboratoire d'Informatique de Grenoble
-(http://www.liglab.fr)
+COPYRIGHT AND LICENSE
+=====================
+
+Unless stated differently in a file itself, all files in OAR source tree are:
+ - Copyright 2003-2016 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr)
  - Licensed under the GNU General Public License Version 2 or above (GPL-2+)
 
 
 License: GPL-2+
- This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+ This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
- This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
- You should have received a copy of the GNU General Public License along with
-this package; if not, write to the Free Software Foundation, Inc., 51 Franklin
-St, Fifth Floor, Boston, MA  02110-1301 USA
+ You should have received a copy of the GNU General Public License along with this package; if not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
 
-The full text of the GNU General Public License version 2 can be found at:
- http://www.gnu.org/licenses/gpl-2.0.html
+The full text of the GNU General Public License version 2 can be found at: http://www.gnu.org/licenses/gpl-2.0.html
