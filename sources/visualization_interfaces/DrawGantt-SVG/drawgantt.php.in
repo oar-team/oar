@@ -2,8 +2,7 @@
 /**
  * OAR Drawgantt-SVG
  * @author Pierre Neyron <pierre.neyron@imag.fr>
- * @copyright Laboratoire d'Informatique de Grenoble / Inria
- * @license GNU General Public License (GPL) version 3
+ *
  */
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,7 +82,7 @@ if (is_readable(CONFIG_FILE)) {
 }
 
 $resource_base = array_key_exists('resource_base',$_GET)?$_GET['resource_base']:$CONF['default_resource_base'];
-$filter = array_key_exists('filter',$_GET)?$_GET['filter']:key($CONF['nav_filters']);
+$filter = array_key_exists('filter',$_GET)?$_GET['filter']:reset($CONF['nav_filters']);
 $timezone = array_key_exists('timezone',$_GET)?$_GET['timezone']:reset($CONF['nav_timezones']);
 $relative_start = array_key_exists('relative_start',$_GET)?$_GET['relative_start']:$CONF['default_relative_start'];
 $relative_stop = array_key_exists('relative_stop',$_GET)?$_GET['relative_stop']:$CONF['default_relative_stop'];
@@ -164,6 +163,7 @@ $output = <<<EOT
     bottom: 0px;
     z-index: 1;
     text-align: right;
+    visibility: hidden;
   }
   #permalinkA:link {
     background-color: lightyellow;
@@ -255,8 +255,8 @@ $output = <<<EOT
       start = Math.floor(date.getTime() / 1000 - timespan * past);
       stop = Math.floor(date.getTime() / 1000 + timespan * (1 - past));
     }
-    reload_content();
     hide_forecast();
+    reload_content();
   }
   function next() {
     var t = stop + (stop - start);
@@ -282,7 +282,7 @@ $output = <<<EOT
     start -= t;
     reload_content();
   }
-  function set_zoom_window(znow, zstart, zstop) {
+  function setZoomWindow(znow, zstart, zstop) {
     zoom_start = zstart;
     zoom_stop = zstop;
   }
@@ -298,8 +298,8 @@ $output = <<<EOT
     var span = document.getElementById("timespan").value;
     start = Math.floor(time - +span / 2);
     stop = Math.floor(time + +span / 2);
-    reload_content();
     hide_timepicker();
+    reload_content();
   }
   function set_now() {
     var date = new Date();
@@ -312,6 +312,7 @@ $output = <<<EOT
     var svgObj=document.getElementById("svgObj");
     var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
     document.getElementById("panel").style.visibility="hidden";
+    document.getElementById("permalink").style.visibility="hidden";
     document.getElementById("waiter").style.visibility="visible";
     var href = window.location.href
     document.getElementById("permalinkA").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
@@ -347,6 +348,7 @@ $output = <<<EOT
     window.scrollTo(scrolledX,scrolledY);
     document.getElementById("waiter").style.visibility="hidden";
     document.getElementById("panel").style.visibility="visible";
+    document.getElementById("permalink").style.visibility="visible";
   }
   function init() {
     set_misc(false);
@@ -356,22 +358,28 @@ $output = <<<EOT
     var date = new Date();
     date.setTime((start + (stop - start)/2)*1000);
     document.getElementById("datetime").value = date.toISOString();
-	  document.getElementById("timepicker").style.visibility="visible";
+    document.getElementById("timepicker").style.visibility="visible";
+    document.getElementById("panel").style.visibility="hidden";
   }
   function hide_timepicker() {
-	  document.getElementById("timepicker").style.visibility="hidden";
+    document.getElementById("panel").style.visibility="visible";
+    document.getElementById("timepicker").style.visibility="hidden";
   }
   function show_forecast() {
-	  document.getElementById("forecast").style.visibility="visible";
+    document.getElementById("forecast").style.visibility="visible";
+    document.getElementById("panel").style.visibility="hidden";
   }
   function hide_forecast() {
-	  document.getElementById("forecast").style.visibility="hidden";
+    document.getElementById("panel").style.visibility="visible";
+    document.getElementById("forecast").style.visibility="hidden";
   }
   function show_misc() {
-	  document.getElementById("misc").style.visibility="visible";
+    document.getElementById("misc").style.visibility="visible";
+    document.getElementById("panel").style.visibility="hidden";
   }
   function hide_misc() {
-	  document.getElementById("misc").style.visibility="hidden";
+    document.getElementById("panel").style.visibility="visible";
+    document.getElementById("misc").style.visibility="hidden";
   }
 </script>
 </head>

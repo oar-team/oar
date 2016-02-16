@@ -2,8 +2,9 @@
 #
 # Wrapper for using aptly for OAR debian packages handling
 #
-# Copyright: Pierre Neyron 2015, pierre.neyron@free.fr
-# Licence: GPL v3
+# Author: Pierre Neyron <pierre.neyron@imag.fr>
+# Copyright: Laboratoire d'Informatique de Grenoble
+# Licence: GNU General Public License Version 2 or above
 #
 # To use the handle-incoming action, add the following to the crontab:
 #

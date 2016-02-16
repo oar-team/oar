@@ -1,0 +1,24 @@
+<?xml version="1.0" standalone="no"?>
+<svg width="200px" height="200px" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" xml:space="preserve" zoomAndPan="magnify" onload="init(evt)" color-rendering="optimizeSpeed" image-rendering="optimizeSpeed" text-rendering="optimizeSpeed" shape-rendering="optimizeSpeed" onmousemove="mouseMove(evt)" >
+<script type="text/ecmascript"><![CDATA[
+var svgDocument;
+var parent_content;
+
+function init(evt) {
+  svgDocument = evt.target.ownerDocument;
+  parent_content = (parent.content)?(parent.content):(parent);
+}
+function mouseMove(evt) {
+  var obj = svgDocument.obj;
+  var id = svgDocument.object_id;
+  var x = obj.getBoundingClientRect().left + evt.clientX;
+  var y = obj.getBoundingClientRect().top + evt.clientY;
+  parent_content.show_position("svg",x,y);
+}
+]]></script>
+<rect id="rect1" x="10" y="10" width="180" height="180" stroke="#0000FF" stroke-width="1" fill="#CCCCCC"/>
+<rect id="rect2" x="50" y="50" width="100" height="100" stroke="#0000FF" stroke-width="1" fill="#8888FF"/>
+</svg>
+
+
+

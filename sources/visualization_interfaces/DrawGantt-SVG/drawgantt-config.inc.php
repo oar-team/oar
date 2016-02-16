@@ -2,8 +2,7 @@
 /**
  * OAR Drawgantt-SVG
  * @author Pierre Neyron <pierre.neyron@imag.fr>
- * @copyright Laboratoire d'Informatique de Grenoble / Inria
- * @license GNU General Public License (GPL) version 3
+ *
  */
 
 // OAR Drawgantt SVG configuration file
@@ -128,7 +127,7 @@ $CONF['label_right_align'] = 105; // default: 105
 $CONF['hierarchy_left_align'] = 110; // default: 110
 $CONF['gantt_left_align'] = 160; // default: 160
 $CONF['gantt_min_width'] = 900; // default: 900
-$CONF['gantt_min_height'] = 400; // default: 400
+$CONF['gantt_min_height'] = 100; // default: 100
 $CONF['gantt_min_job_width_for_label'] = 40; // default: 40
 $CONF['min_state_duration'] = 2; // default: 2
 

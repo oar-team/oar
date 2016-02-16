@@ -14,7 +14,7 @@ This documentation is organized into a few different sections below:
 * :ref:`ref-admin-docs`
 * :ref:`ref-dev-docs`
 * :ref:`Changelog <changelogfile-anchor>`.
-* :ref:`License <licensefile-anchor>`.
+* :ref:`Copyright and license <licensefile-anchor>`.
 
 .. _ref-user-docs:
 
@@ -56,6 +56,5 @@ Admin Documentation
 Developer Documentation
 =======================
 
-.. note::
-    This documentation is currently being written...
+    See the wiki section of OAR website: http://oar.imag.fr/wiki:start
 
