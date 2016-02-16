@@ -11,6 +11,7 @@ oar (2.5.6-1) unstable; urgency=medium
 
   [ Vincent Danjean ]
   * Apply suggestion from 'cme fix/edit dpkg'
+  * Remove Philippe as Uploader (not working on this project anymore)
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 16 Feb 2016 14:20:58 +0100
 
