@@ -1,4 +1,4 @@
-oar (2.5.6~rc5-1) unstable; urgency=medium
+oar (2.5.6-1) unstable; urgency=medium
 
   * New upstream release
   * Rework Debian README file for oar-api (api setup)
@@ -6,8 +6,9 @@ oar (2.5.6~rc5-1) unstable; urgency=medium
   * Change dependences of oar-restful-api, can be in main again
   * Remove patch applied upstream
   * Add recommends to libyaml-syck-perl (provide faster YAML functions)
+  * Fix copyright, accordingly to upstream changes
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 08 Feb 2016 22:59:31 +0100
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 16 Feb 2016 14:20:58 +0100
 
 oar (2.5.5+dfsg.1-1) unstable; urgency=medium
 
