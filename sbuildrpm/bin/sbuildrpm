@@ -44,7 +44,7 @@ trap trap_error ERR
 ### Tool setup ### 
 ##################
 
-$EL=$(grep -e '^%define release [[:digit:]]\+\.el[[:digit:]]\+$' rpm/SPECS/oar.spec | sed -e 's/^.*\([[:digit:]]\+\)$/\1/')
+EL=$(grep -e '^%define release [[:digit:]]\+\.el[[:digit:]]\+$' rpm/SPECS/oar.spec | sed -e 's/^.*\([[:digit:]]\+\)$/\1/')
 CHROOT_NAME="chroot:centos$EL-amd64"
 
 if ! schroot -l | grep -q -e "^$CHROOT_NAME$"; then
