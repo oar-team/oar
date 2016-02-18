@@ -44,9 +44,11 @@ trap trap_error ERR
 ### Tool setup ### 
 ##################
 
-CHROOT_NAME="chroot:centos7-amd64"
+$EL=$(grep -e '^%define release [[:digit:]]\+\.el[[:digit:]]\+$' rpm/SPECS/oar.spec | sed -e 's/^.*\([[:digit:]]\+\)$/\1/')
+CHROOT_NAME="chroot:centos$EL-amd64"
+
 if ! schroot -l | grep -q -e "^$CHROOT_NAME$"; then
-  die "CentOS 6 chroot not found."
+  die "CentOS $EL chroot not found."
 fi
 
 if ! id | grep -q "(sbuild)"; then 
