@@ -1,4 +1,4 @@
-%define version 2.5.6+rc4
+%define version 2.5.6
 %define release 1.el7
 
 %define oaruser  oar
@@ -7,7 +7,7 @@ Name:     oar
 Version:  %{version}
 Release:  %{release}
 Summary:  A versatile HPC cluster task and resource manager (batch scheduler)
-License:  GPLv2
+License:  GPLv2+
 Group:    System Environment/Base
 Url:      http://oar.imag.fr
 
@@ -494,9 +494,12 @@ fi
 user_setup
 
 %changelog
-* Wed Jan 13 2016 Pierre Neyron <pierre.neyron@imag.fr> 2.5.6+rc4-1.el7
-- New upstream release, remove patches (applied upstream)
+* Thu Feb 18 2016 Pierre Neyron <pierre.neyron@imag.fr> 2.5.6-1.el7
+- New upstream release
 - Fix OAR logrotate permission
+- Remove one patch which was applied upstream
+- Remove patch for sphinx: not needed for Centos7
+- Fix license: GPLv2+
 
 * Fri Sep 11 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.5-1.el7
 - New upstream release, remove patches (applied upstream)
@@ -577,4 +580,3 @@ user_setup
 
 * Sun Mar 23 2008 Bruno Bzeznik <Bruno.Bzeznik@imag.fr> 2.3.0-1
 - First RPM packaging for 2.3 branch. Inspired from 1.6 RPM packaging and 2.3 Debian packaging.
-
