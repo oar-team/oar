@@ -1,5 +1,5 @@
 %define version 2.5.6
-%define release 1.el7
+%define release 1.el6
 
 %define oaruser  oar
 
@@ -16,6 +16,7 @@ Url:      http://oar.imag.fr
 # %define _unpackaged_files_terminate_build 0
 
 Source:         oar-%version.tar.gz
+Patch1:         001-use-sphinx-default-theme
 BuildRoot:      %{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:  perl sed make tar python-sphinx
 %description
@@ -139,6 +140,7 @@ This package installs the PostgreSQL dependencies for OAR web-status package
 
 %prep
 %setup -q
+%patch1 -p1
 
 # Modify Makefile for chown commands to be non-fatal as the permissions
 # are set by the packaging
@@ -272,7 +274,7 @@ rm -rf tmp
 %config(noreplace) %attr(0600, oar, root) %{_sysconfdir}/oar/oar.conf
 %config(noreplace) %attr(0755, root, root) %{_sysconfdir}/oar/oarnodesetting_ssh
 %config(noreplace) %attr(0755, root, root) %{_sysconfdir}/oar/update_cpuset_id.sh
-%config %attr(0644,root,root) %{_sysconfdir}/logrotate.d/oar
+%config %attr(0755,root,root) %{_sysconfdir}/logrotate.d/oar
 %attr(0755, root, root) %{_bindir}/oarsh
 %attr(0755, root, root) %{_bindir}/oarprint
 %attr(0755, root, root) %{_bindir}/oarcp
@@ -494,11 +496,10 @@ fi
 user_setup
 
 %changelog
-* Thu Feb 18 2016 Pierre Neyron <pierre.neyron@imag.fr> 2.5.6-1.el7
+* Thu Feb 18 2016 Pierre Neyron <pierre.neyron@imag.fr> 2.5.6-1.el6
 - New upstream release
 - Fix OAR logrotate permission
 - Remove one patch which was applied upstream
-- Remove patch for sphinx: not needed for Centos7
 - Fix license: GPLv2+
 
 * Fri Sep 11 2015 Pierre Neyron <pierre.neyron@imag.fr> 2.5.5-1.el7
