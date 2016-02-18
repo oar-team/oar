@@ -1,3 +1,10 @@
+oar (2.5.6-2) unstable; urgency=medium
+
+  * correctly rebuild amd64 packages (due to a error, uploaded binary
+    packages for 2.5.6-1 was a work in progress)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Thu, 18 Feb 2016 09:45:32 +0100
+
 oar (2.5.6-1) unstable; urgency=medium
 
   [ Pierre Neyron ]
