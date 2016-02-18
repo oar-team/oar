@@ -12,27 +12,39 @@ DIR=${TMP1%/*}/..
 TMP2=${TMP1#*/oar-}
 EL=${TMP2##*.}
 VERSION=${TMP2%.*}
-RELEASEBRANCH=testing
+RELEASEBRANCH=${2:-testing}
 REMOTE=ftpmaster@oar-ftp.imag.fr.lig
 
-echo version: $VERSION
-echo el: $EL
+if [ "$RELEASEBRANCH" != "testing" -a "$RELEASEBRANCH" != "stable" ]; then
+  echo "Unknown release branch: $RELEASEBRANCH" 1>&2
+  exit 1
+fi
+
+cat <<EOF
+Release branch: $RELEASEBRANCH
+Version: $VERSION
+EL: $EL
+EOF
 
 if [ "$EL" == "el6" ]; then
   DISTRO=centos6
 elif [ "$EL" == "el7" ]; then
   DISTRO=centos7
 else
-  echo "Unknown distribution $DISTRIB" 1>&2
+  echo "Unknown distribution: $DISTRIB" 1>&2
   exit 1
 fi
 
-echo distro: $DISTRO
+echo Distro: $DISTRO
+
+read -p "Press a key to continue, or Ctrl-C to abort"
 
 scp $SRPM $DIR/RPMS/*-$VERSION.$EL.*.rpm $REMOTE:oar-ftp.imag.fr/oar/rpm/$DISTRO/$RELEASEBRANCH
 
 ssh $REMOTE "cd oar-ftp.imag.fr/oar/rpm/$DISTRO/$RELEASEBRANCH/ && rpmsign --addsign --key-id D90D0568 *-$VERSION.*.rpm --verbose < /dev/null && createrepo --update --verbose ."
 
-#git tag -s $DISTRO/$VERSION -m $DISTRO/$VERSION
-#git push --tags
-
+cat <<EOF
+Please tag the release and push to remote:
+$ git tag -s $DISTRO/$VERSION.$EL -m $DISTRO/$VERSION.$EL
+$ git push && git push --tags
+EOF
