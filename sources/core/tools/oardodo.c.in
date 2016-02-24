@@ -1,19 +1,21 @@
 /*
- *  This executable must:
+ *
+ *  This code provides a very basic replacement for sudo, as required by OAR
+ *  execution mechanisms.
+ *  Once compiled the resulting binary executable must be:
  *      chown root:oar xxxxxxxx
  *      chmod 750 xxxxxxxx
  *      chmod +s xxxxxxxx
  *
- *  Cases for the use of this wrapper:
- *  
- *      - The user OARUSER executes this wrapper and OARDO_BECOME_USER is empty
+ *  Use cases:
+ *      - User OARUSER executes this wrapper and OARDO_BECOME_USER is empty
  *          --> if ARGV is empty
  *                  then run the root shell with a dash in front of the process
  *                  name (login shell)
  *              else
  *                  ARGV is executed with root privileges
  *
- *      - The user OARUSER executes this wrapper and OARDO_BECOME_USER is set
+ *      - User OARUSER executes this wrapper and OARDO_BECOME_USER is set
  *          --> if ARGV is empty
  *                  then run the OARDO_BECOME_USER shell with a dash in front of
  *                  the process name (login shell)
@@ -23,6 +25,7 @@
  *                      privileges and the user shell
  *                  else
  *                      ARGV is executed with OARDO_BECOME_USER privileges
+ *
  */ 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -62,53 +65,53 @@ int main(int ac, char **av){
     // Get user information: effective user
     passwd_initial_user_pointer = getpwuid(getuid());
     if (passwd_initial_user_pointer == NULL){
-        error("Cannot get current user information", 52);
+        error("Cannot get information for current user", 52);
     }
 
     // Set right environment variables
     if (setenv("OARDO_USER", passwd_initial_user_pointer->pw_name, 1)){
-        error("Cannot change environment variable OARDO_USER", 52);
+        error("Cannot change the OARDO_USER environment variable", 52);
     }
     char str_tmp[256];
     sprintf(str_tmp, "%i", passwd_initial_user_pointer->pw_uid);
     if (setenv("OARDO_UID", str_tmp, 1)){
-        error("Cannot change environment variable OARDO_UID", 52);
+        error("Cannot change the OARDO_UID environment variable", 52);
     }
     if (setenv("OARDIR", OARDIR, 1)){
-        error("Cannot change environment variable OARDIR", 52);
+        error("Cannot change the OARDIR environment variable", 52);
     }
     if (setenv("PERL5LIB", OARDIR, 1)){
-        error("Cannot change environment variable PERL5LIB", 52);
+        error("Cannot change the PERL5LIB environment variable", 52);
     }
     if (setenv("OARUSER", OARUSER, 1)){
-        error("Cannot change environment variable OARUSER", 52);
+        error("Cannot change the OARUSER environment variable", 52);
     }
     if (setenv("OARXAUTHLOCATION", OARXAUTHLOCATION, 1)){
-        error("Cannot change environment variable OARXAUTHLOCATION", 52);
+        error("Cannot change the OARXAUTHLOCATION environment variable", 52);
     }
     if (setenv("OARCONFFILE", OARCONFFILE, 1)){
-        error("Cannot change environment variable OARCONFFILE", 52);
+        error("Cannot change the OARCONFFILE environment variable", 52);
     }
 
     // Clean some environment variables
     if (unsetenv("IFS")){
-        error("Cannot unset environment variable IFS", 52);
+        error("Cannot unset the IFS environment variable", 52);
     }
     if (unsetenv("CDPATH")){
-        error("Cannot unset environment variable CDPATH", 52);
+        error("Cannot unset the CDPATH environment variable", 52);
     }
     if (unsetenv("MAIL")){
-        error("Cannot unset environment variable MAIL", 52);
+        error("Cannot unset the MAIL environment variable", 52);
     }
     if (unsetenv("LD_LIBRARY_PATH")){
-        error("Cannot unset environment variable LD_LIBRARY_PATH", 52);
+        error("Cannot unset the LD_LIBRARY_PATH environment variable", 52);
     }
     
     // Check if we become root or a specific user
     if ((getenv("OARDO_BECOME_USER") != NULL) && (strlen(getenv("OARDO_BECOME_USER")) > 0)){
         user_to_become = getenv("OARDO_BECOME_USER");
         if (unsetenv("OARDO_BECOME_USER")){
-            error("Cannot unset environment variable OARDO_BECOME_USER", 52);
+            error("Cannot unset the OARDO_BECOME_USER environment variable", 52);
         }
     }else{
         user_to_become = DEFAULTUSERTOBECOME;
@@ -131,7 +134,7 @@ int main(int ac, char **av){
     // Change process owner
     passwd_user_to_become_pointer = getpwnam(user_to_become);
     if (passwd_user_to_become_pointer == NULL){
-        error("Cannot get user to become information", 52);
+        error("Cannot get information regarding the target user", 52);
     }
     // Get the whole list of groups
     gid_t secondary_groups[MAX_NB_SECONDARY_GROUPS];
@@ -151,22 +154,22 @@ int main(int ac, char **av){
 
     // Set new owner env variables
     if (setenv("USER", passwd_user_to_become_pointer->pw_name, 1)){
-        error("Cannot change environment variable USER", 52);
+        error("Cannot change the USER environment variable", 52);
     }
     if (setenv("LOGNAME", passwd_user_to_become_pointer->pw_name, 1)){
-        error("Cannot change environment variable LOGNAME", 52);
+        error("Cannot change the LOGNAME environment variable", 52);
     }
     if (setenv("SHELL", passwd_user_to_become_pointer->pw_shell, 1)){
-        error("Cannot change environment variable SHELL", 52);
+        error("Cannot change the SHELL environment variable", 52);
     }
     if (setenv("HOME", passwd_user_to_become_pointer->pw_dir, 1)){
-        error("Cannot change environment variable HOME", 52);
+        error("Cannot change the HOME environment variable", 52);
     }
 
     if (ac <= 1){
         // Login shell
         if (chdir(passwd_user_to_become_pointer->pw_dir)){
-            error("Cannot go to the home directory of the user to become", 52);
+            error("Cannot change directory to the home of the target user", 52);
         }
         // First argument of the shell is - so it is a login shell
         execl(passwd_user_to_become_pointer->pw_shell, "-oardodo", NULL);
@@ -174,16 +177,16 @@ int main(int ac, char **av){
     }else{
         if ((getenv("OARDO_USE_USER_SHELL") != NULL) && (strlen(getenv("OARDO_USE_USER_SHELL")) > 0)){
             if (unsetenv("OARDO_USE_USER_SHELL")){
-                error("Cannot unset environment variable OARDO_USE_USER_SHELL", 52);
+                error("Cannot unset the OARDO_USE_USER_SHELL environment variable", 52);
             }
             if (chdir(passwd_user_to_become_pointer->pw_dir)){
-                error("Cannot go to the home directory of the user to become", 52);
+                error("Cannot change directory to the home of the target user", 52);
             }
             // Execute the command with  the user's shell like '/bin/sh -c'
             av[0] = passwd_user_to_become_pointer->pw_shell;
             
             execv(passwd_user_to_become_pointer->pw_shell, av);
-            error("Cannot run the command with the shell of the user", 51);
+            error("Cannot run command using the shell of the target user", 51);
         }else{
             // Ececute the rest of the command line without passing by the
             // shell of the user
@@ -191,7 +194,7 @@ int main(int ac, char **av){
             ac--;
             // execvp will search through the current PATH
             execvp(av[0], av);
-            error("Cannot run the command", 52);
+            error("Cannot run command", 52);
         }
     }
     return 0;

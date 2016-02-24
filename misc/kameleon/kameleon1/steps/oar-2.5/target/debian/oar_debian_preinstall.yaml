@@ -1,7 +1,0 @@
-oar_debian_preinstall:
- - debian_fix_mime_support:
-   - exec_chroot: apt-get -f install -y --force-yes mime-support || true
-   - exec_appliance: rm -rf $$chroot/var/lib/dpkg/info/mime-support.* || true
-   - exec_chroot: apt-get -f install -y --force-yes mime-support
-
-

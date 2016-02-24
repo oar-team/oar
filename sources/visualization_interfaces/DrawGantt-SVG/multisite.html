@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Drawgantt Multisite NG</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<style>
+body {
+margin: 0px;
+}
+.gantt {
+left: 0px;
+z-index: 0;
+}
+.spacer {
+width: 100%;
+}
+#spacer_top {
+height: 40px;
+}
+#spacer_bottom {
+height: 35px;
+}
+.ruler {
+position: fixed;
+left: 0px;
+z-index: 1;
+}
+#ruler_top {
+top: 5px;
+}
+#ruler_bottom {
+bottom: 5px;
+}
+#infobox {
+position: absolute;
+top: 0px;
+left: 0px;
+width: auto;
+height: auto;
+z-index: 2;
+background: white;
+border: 1px solid;
+border-radius: 8px;
+font-size: 60%;
+}
+#debug {
+position: fixed;
+background: white;
+top: 0px;
+right: 0px;
+z-index: 3;
+font-size: 70%;
+}
+</style>
+<script>
+var infobox;
+var debug;
+var gantts = [];
+var url = ["https://intranet.grid5000.fr/oar/", "/drawgantt-svg/test/drawgantt-svg.php?width=" + (window.innerWidth - 50)];
+// push the reference of the SVG object to the SVG doc
+// object reference is used to get the SVG doc coordinates in the HTML document (see getBoundingClientRect) in the SVG js
+// (the other option using svg.screenY - html.mozInnerScreenY is not portable)
+function setObjectRef(id) {
+  var obj = document.getElementById(id);
+  var svg = obj.contentDocument;
+  svg.object_ref = obj;
+}
+function mouseMove(event) {
+  infoboxMove(event.clientX,event.clientY,"html");
+}
+function infoboxDisplay(array) {
+  if (infobox == null) {
+    infobox = document.getElementById("infobox");
+  }
+  for (i in array) {
+    infobox.appendChild(document.createTextNode(array[i]));
+    infobox.appendChild(document.createElement('br'));
+  }
+  infobox.style.visibility = "visible"; 
+}
+function infoboxHide() {
+  if (infobox == null) {
+    infobox = document.getElementById("infobox");
+  }
+  while (infobox.hasChildNodes()) {
+    infobox.removeChild(infobox.lastChild);
+  }
+ infobox.style.visibility = "hidden"; 
+}
+function infoboxMove(x,y,str) {
+  if (infobox == null) {
+    infobox = document.getElementById("infobox");
+  }
+  infobox.style.left = Math.min((x + 15 + window.scrollX), (window.scrollX + window.innerWidth - infobox.clientWidth)) + "px";
+  infobox.style.top = Math.min((y + 15 + window.scrollY), (window.scrollY + window.innerHeight - infobox.clientHeight)) + "px";
+  if (debug == null) {
+    var debug = document.getElementById("debug");
+  }
+  debug.innerHTML = "position: " + x + "," + y + "(" + str + ")";
+}
+function highlightOthers(obj, hl_element_class, bool) {
+  for (var k in gantts) {
+    if (gantts[k].contentWindow != null) {
+      gantts[k].contentWindow.highlight(obj, hl_element_class, bool);
+    }
+  }
+}
+function createGanttObject(id,className, url) {
+  var obj = document.createElement('object');
+  obj.id = id;
+  obj.classList.add(className);
+  obj.type = "image/svg+xml"
+  obj.data = url;
+  obj.innerHTML = url;
+  obj.addEventListener("load", function() { setObjectRef(id); }, false);
+  return obj;
+}
+function createGanttObjectHosts(site, cluster) {
+  var obj = createGanttObject(site + "+" + cluster, "gantt", url[0] + site + url[1] + "&display=no_ruler&resource_base=host&filter=cluster='" + cluster + "'");
+  gantts[site + "+" + cluster] = obj;
+  return obj;
+}
+function createGanttObjectVlans(site) {
+  var obj = createGanttObject(site + "+vlans", "gantt", url[0] + site + url[1] + "&display=no_ruler&resource_base=host&config=vlan&filter=type like 'kavlan%'");
+  gantts[site + "+vlans"] = obj;
+  return obj;
+}
+function createGanttObjectSubnets(site) {
+  var obj = createGanttObject(site + "+subnets", "gantt", url[0] + site + url[1] + "&display=no_ruler&resource_base=host&config=subnet&filter=type like 'subnet'");
+  gantts[site + "+subnets"] = obj;
+  return obj;
+}
+function createGanttObjectRuler(site, id) {
+  var obj = createGanttObject(id, "ruler", url[0] + site + url[1] + "&display=mobile_ruler_only&resource_base=host");
+  return obj;
+}
+function init() {
+  var obj;
+  var div = document.getElementById("gantts");
+
+  div.appendChild(createGanttObjectRuler("Rennes","ruler_top"));
+
+  div.appendChild(createGanttObjectHosts("Nancy", "graphite"));
+  div.appendChild(createGanttObjectHosts("Lyon", "hercule"));
+  div.appendChild(createGanttObjectHosts("Grenoble", "edel"));
+  div.appendChild(createGanttObjectHosts("Rennes", "parasilo"));
+  div.appendChild(createGanttObjectHosts("Rennes", "paravance"));
+  div.appendChild(createGanttObjectVlans("Rennes"));
+  div.appendChild(createGanttObjectSubnets("Rennes"));
+  
+  div.appendChild(createGanttObjectRuler("Rennes","ruler_bottom"));
+}
+</script>
+  </head>
+<body onmousemove="mouseMove(event)" onload="init()">
+<div id="infobox"></div>
+<div id="debug"></div>
+<div id="spacer_top" class="spacer"></div>
+<div id="gantts"> </div>
+<div id="spacer_bottom" class="spacer"></div>
+</body>
+</html>

@@ -5,6 +5,7 @@ usage() {
         cat <<EOF
 Usage:
     ${0##*/} [options] <hostfile>
+
 Generate a script for the creation of the OAR resources of a list of hosts, by
 connecting to each host and gathering system information.
 Hosts are read one per line from hostfile (must be readable by user oar) or
@@ -100,6 +101,20 @@ if [ -z "$HOSTFILE" -o \( "$HOSTFILE" != "-" -a ! -r "$HOSTFILE" \) ]; then
 fi
 . "$OARCONFFILE" || exit 20
 
+if [ "$HOSTFILE" == "-" ]; then
+    if [ -z "$NON_INTERACTIVE" ]; then
+        echo -e "Error: reading nodes from STDIN requires the script to run non-interactive (-y option).\n" 1>&2
+        usage 1>&2
+        exit 1
+    fi
+    echo "# Reading nodes from STDIN..."
+    exec 4<&0
+    exec 0<&-
+else
+    echo "# Reading nodes from ${HOSTFILE}..."
+    exec 4<$HOSTFILE
+fi
+
 if [ -z "$NON_INTERACTIVE" ]; then
     read -s -n 1 -p "# Is the OAR SSH key configured on all hosts? (press y to confirm)"
     echo
@@ -129,24 +144,15 @@ echo "$OARPROPERTY_CMD -a mem || true" >> $SCRIPT_FILE
 
 # Init CPU id
 CPU=$($OARNODESETTING_CMD --last-property-value cpu 2> /dev/null)
-[ -n "$CPU" ] && ((CPU++)) || CPU=0 
+[ -n "$CPU" ] || CPU=0 
 # Init CORE id
 CORE=$($OARNODESETTING_CMD --last-property-value core 2> /dev/null)
-[ -n "$CORE" ] && ((CORE++)) || CORE=0
+[ -n "$CORE" ] || CORE=0
 # Init THREAD id
 if [ -n "$WITH_HT" -a -n "$WITH_THREAD_PROPERTY" ]; then
     THREAD=$($OARNODESETTING_CMD --last-property-value thread 2> /dev/null)
 fi
-[ -n "$THREAD" ] && ((THREAD++)) || THREAD=0
-
-if [ "$HOSTFILE" == "-" ]; then
-    exec 4<&0
-    exec 0<&-
-    echo "# Reading nodes from STDIN..."
-else
-    exec 4<$HOSTFILE
-    echo "# Reading nodes from ${HOSTFILE}..."
-fi
+[ -n "$THREAD" ] || THREAD=0
 
 while read -u 4 host; do
     echo -n "#   Checking $host ... "

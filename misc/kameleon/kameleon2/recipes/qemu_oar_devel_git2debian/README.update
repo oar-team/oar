@@ -1,3 +1,0 @@
-To update from kameleon templates, you can do an import into this directory:
-
-  kameleon import qemu/debian7-amd64
