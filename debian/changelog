@@ -1,3 +1,9 @@
+oar (2.5.6-2~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 24 Feb 2016 16:47:45 +0100
+
 oar (2.5.6-2) unstable; urgency=medium
 
   * correctly rebuild amd64 packages (due to a error, uploaded binary
