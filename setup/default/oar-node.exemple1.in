@@ -1,44 +1,49 @@
-# Fix maximum number of open files to 8192 for all jobs
-#
-# ulimit -n 8192
+# Yet another initialization script for oar-node
+
+# Fix the maximum number of open files to 8192 for all jobs
+ulimit -n 8192
+
+# Change the default umask
+umask 0702
+umask 0002
 
 
+# Set nodes to the Alive state using the oarnodesetting_ssh script server side
+# That script is to be linked to a ssh key of the oar user (see comments in the
+# script for details)
+OARSERVER="oar-server"
+MODSLEEP=8
+MINSLEEP=2
+MAXRETRY=30
 
-# If you want to change the default umask
-#
-# umask 0702
-# umask 0002
+start_oar_node() {
+    test -n "$OARSERVER" || exit 0
+    echo " * Set the OAR ressources to Alive"
+    local retry=0
+    local sleep=0
+    until ssh -T -oStrictHostKeyChecking=no -oPasswordAuthentication=no -i %%OARHOMEDIR%%/.ssh/oarnodesetting_ssh.key oar@$OARSERVER
+    do
+        if [ $((retry+=sleep)) -gt $MAXRETRY ]; then
+            echo "Failed."
+        return 1
+        fi
+        # Use some randomization in order to avoid having to many machines
+        # retrying at a same time
+        local random=$RANDOM
+        # Workaround for the case where dash is the default shell: dash does
+        # not provide $RANDOM
+        if [ "x$random" = "x" ]; then
+            random=$(bash -c 'echo $RANDOM')
+        fi 
+        sleep=$(($random % $MODSLEEP + $MINSLEEP))
+        echo "Retrying in $sleep seconds..."
+        sleep $sleep
+    done
+    return 0
+} 
 
-
-# Another example of initialization method:
-# This method uses a specific ssh key binded on the server to a specific
-# script(see comments in the "oarnodesetting_ssh" script in OAR installation
-# directory)
-#
-# OARSERVER="oar-server"
-# MODSLEEP=8
-# MINSLEEP=2
-# MAXRETRY=30
-#
-# start_oar_node() {
-#     test -n "$OARSERVER" || exit 0
-#     echo " * Set the ressources of this node to Alive"
-#     local retry=0
-#     local sleep=0
-#     until ssh -T -oStrictHostKeyChecking=no -oPasswordAuthentication=no -i %%OARHOMEDIR%%/.ssh/oarnodesetting_ssh.key oar@$OARSERVER
-#     do
-#         if [ $((retry+=sleep)) -gt $MAXRETRY ]; then
-#             echo "Failed."
-#         return 1
-#         fi
-#         ((sleep = $RANDOM % $MODSLEEP + $MINSLEEP))
-#         echo "Retrying in $sleep seconds..."
-#         sleep $sleep
-#     done
-#     return 0
-# } 
-#
-# stop_oar_node() {
-#     :
-# }
+# Do nothing special for the stop command
+stop_oar_node() {
+    :
+}
 

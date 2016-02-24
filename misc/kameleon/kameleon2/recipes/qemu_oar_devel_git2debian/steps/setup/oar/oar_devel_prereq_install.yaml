@@ -1,5 +1,0 @@
-# OAR devel prereq install
-- packages: "sshfs git ruby-dev libapache2-mod-passenger rubygems"
-- req_packages:
-  - exec_in: apt-get -y --force-yes install $$packages
-

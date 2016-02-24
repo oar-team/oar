@@ -9,17 +9,32 @@ version 2.5.6:
          must be recomputed
   - [metascheduler] fix a bug with advance reservations with standby start job
          types (noop/cosystem/deploy=standby)
+  - [oar-node init] create /var/run/sshd if needed
   - [oarsub] fix several bugs with the array job submission
+  - [oarstat] allow using Perl's YAML::Syck for a quicker YAML output
+  - [oarstat] improve performance and information for the --gantt option
+  - [oarstat] prettier print of job events
   - [oarnodesetting] optimize grouped operations on resources and add a lock
          around property changes
+  - [oaradmissionrules] fix bug: changing a rule priority does not enable it
   - [oar_resources_init] fix node read from standard input
-  - [oarstat] prettier print of job events
+  - [oarnodecheck] use /var/lib/oar instead of /etc/oar for working files
   - [logs] several cosmetic fixes 
+  - [api] add colmet extraction function
   - [api] proposed apache configuration now uses a virtual host on port 6668
   - [drawgantt-svg] fix the possibly very long delay when zooming
+  - [drawgantt-svg] add forecast buttons + relative start/stop url arguments
+  - [drawgantt-svg] rework configuration for the default display
+  - [drawgantt-svg] allow displaying resources of type != default
+  - [drawgantt-svg] improve support for use as a widget in custom HTML pages
+        (multisite, etc) 
+  - [monika] fix bugs with recent Perl/Perl CGI versions
   - [monika] fix harmless bug in configuration 
   - [visualization] remove overlib.js (license issue), this breaks the legacy
          drawgantt (which is not supported anymore)
+  - [misc] remove some old development codes from sources
+  - [misc] fix inconsistent copyrights and licenses
+  - [doc] update the installation documentation
 
 version 2.5.5:
 --------------
@@ -70,9 +85,11 @@ version 2.5.4:
   - [api] Rewritten/commented apache config file.
   - [kamelot] BUGFIX: fix hierarchies manipulation (remove toplevel resource).
   - [accounting] Fixed a memory leak and a rare case of bad consumption count.
-  - [almighty] Rewrote the handling of finished oarexec:
-        launch bipbip processes with MAX_CONCURRENT_JOB_TERMINATIONS 
-        to not overload the server.
+  - [oar.conf] Replace the MAX_CONCURRENT_JOB_TERMINATIONS option by 
+        MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING 
+  - [almighty] Rewrote the handling of starting and finishing jobs: limit
+        bipbip processes to MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING
+        to avoid overloading the server.
   - [oarexec] Introduced BASH_ENV=~oar/.batch_job_bashrc for batch jobs
         Batch jobs with bash shell have some difficulties to source the
         right bash scripts when launching.

@@ -11,7 +11,7 @@
 # to be interpreted by vim or just type the :set command given
 # by this modeline.
 #
-#    Copyright (C) 2009-2012  <Bruno Bzeznik> Bruno.Bzeznik@imag.fr
+#    Copyright (C) 2009-2016 Laboratoire d'Informatique de Grenoble <http://www.liglab.fr>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -2426,6 +2426,93 @@ SWITCH: for ($q) {
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export(\$result,$ext);
     OAR::IO::disconnect($dbh);
+    last;
+  };
+  #}}}
+
+  ###########################################
+  # Colmet
+  ############################################
+  #
+  #{{{ GET /colmet/job/<id>?[from=timestamp]&[to=timestamp]&[metrics=m1,m2...] : Extract colmet data for the given job
+  #
+  $URI = qr{^/colmet/job/(\d+)$};
+  OAR::API::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $jobid = $1;
+    my $ext=OAR::API::set_ext($q,undef);
+    
+    if ( not $ext eq "tgz" ) {
+      OAR::API::ERROR( 400, "Bad format",
+        "Colmet data is only available in compressed JSON , as application/x-gzip" );
+    }    
+
+    (my $header, my $type)=OAR::API::set_output_format($ext,"GET");
+    
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "A suitable authentication must be done before looking at jobs" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_USER} = $authenticated_user;
+
+    OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $job = OAR::Stat::get_specific_jobs([$jobid]);
+    if (@$job == 0 ) {
+      OAR::Stat::close_db_connection; 
+      OAR::API::ERROR( 404, "Job not found",
+        "Job not found" );
+      last;
+    }
+
+    OAR::Stat::close_db_connection; 
+
+    my $COLMET_EXTRACT_PATH="/usr/lib/oar/colmet_extract.py";
+    if (is_conf("API_COLMET_EXTRACT_PATH")){ $COLMET_EXTRACT_PATH = get_conf("API_COLMET_EXTRACT_PATH"); }
+    my $COLMET_HDF5_PATH_PREFIX="/var/lib/colmet/hdf5/data";
+    if (is_conf("API_COLMET_HDF5_PATH_PREFIX")){ $COLMET_HDF5_PATH_PREFIX = get_conf("API_COLMET_HDF5_PATH_PREFIX"); }
+
+    if (not -X $COLMET_EXTRACT_PATH) {
+       OAR::API::ERROR( 400, "Missing extractor script",
+        "You have to install the colmet extraction script ($COLMET_EXTRACT_PATH), python and the h5py module.\nPlease, check https://github.com/oar-team/colmet/oar/api." );
+    }
+
+    my $stop_time=@$job[0]->{'stop_time'};
+    if ($stop_time==0) { 
+        my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+        $stop_time=OAR::IO::get_date($dbh);
+        OAR::IO::disconnect($dbh);
+    }
+    if (defined($q->param('to'))) {
+      my $to = $q->param('to');
+      if ($to < $stop_time) {
+        $stop_time=$to;
+      }
+    }
+    my $start_time=@$job[0]->{'start_time'};
+    if (defined($q->param('from'))) {
+      my $from = $q->param('from');
+      if ($from > $start_time) {
+        $start_time=$from;
+      }
+    }
+    my $metrics="ac_etime,cpu_run_real_total,coremem,read_bytes,write_bytes";
+    if (defined($q->param('metrics'))) {
+      $metrics=$q->param('metrics'); 
+    }
+    my $cmd="$COLMET_EXTRACT_PATH $COLMET_HDF5_PATH_PREFIX $jobid $start_time $stop_time $metrics";
+    my $cmdRes = OAR::API::send_cmd($cmd,"Oar");    
+
+    print $header;
+    print $cmdRes;
     last;
   };
   #}}}

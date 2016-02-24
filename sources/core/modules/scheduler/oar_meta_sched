@@ -862,13 +862,13 @@ foreach my $i (@queues){
             $sched_dumped_core = $? & 128;
         }
         if ((!defined($sched_pid)) or ($sched_signal_num != 0) or ($sched_dumped_core != 0)){
-            oar_error("[MetaSched] Error: execution of $policy failed, inactivating queue $name (see `oarnotify')\n");
+            oar_error("[MetaSched] Error: execution of $policy failed (pid=".(defined($sched_pid)?"undef":$sched_pid)." signal=$sched_signal_num core_dump=$sched_dumped_core). Disabling queue $name (see `oarnotify')\n");
             OAR::IO::stop_a_queue($base,$name);
         }
         if ($sched_exit_code == 1){
             $exit_code = 0;
         }elsif($sched_exit_code != 0){
-            oar_error("[MetaSched] Error: Scheduler $policy returned a bad value: $sched_exit_code, at time $initial_time{sec}. Inactivating queue $policy (see `oarnotify')\n");
+            oar_error("[MetaSched] Error: Scheduler $policy returned a bad value: $sched_exit_code, at time $initial_time{sec}. Disabling queue $name (see `oarnotify')\n");
             OAR::IO::stop_a_queue($base,$name);
         }
         treate_waiting_reservation_jobs($name);
