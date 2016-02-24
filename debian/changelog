@@ -1,3 +1,9 @@
+oar (2.5.6-2~bpo70+1) wheezy-backports; urgency=medium
+
+  * Rebuild for wheezy-backports.
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 24 Feb 2016 16:55:09 +0100
+
 oar (2.5.6-2) unstable; urgency=medium
 
   * correctly rebuild amd64 packages (due to a error, uploaded binary
