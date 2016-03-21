@@ -15,10 +15,9 @@
 # import sys
 import os
 import re
-import datetime
 
 HERE = os.path.dirname(__file__)
-YEAR = datetime.date.today().year
+YEAR = 2016
 AUTHORS = ["Nicolas Capit", "Bruno Bzeznik", "Joseph Emeras"]
 
 # If extensions (or modules to document with autodoc) are in another directory,
