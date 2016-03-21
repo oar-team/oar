@@ -18,7 +18,7 @@ import re
 
 HERE = os.path.dirname(__file__)
 YEAR = 2016
-AUTHORS = ["Nicolas Capit", "Bruno Bzeznik", "Joseph Emeras"]
+AUTHORS = ["Bruno Bzeznik", "Nicolas Capit", "Joseph Emeras", "Salem Harrache", "Michael Mercier", "Pierre Neyron", "Olivier Richard"]
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
