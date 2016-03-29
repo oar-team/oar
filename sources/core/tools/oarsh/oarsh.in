@@ -45,14 +45,14 @@ parse_opts() {
     for ((i=0;i<${#OPENSSH_OPTSTR};i++)); do
       if [ "x${OPENSSH_OPTSTR:$((i+1)):1}" == "x:" ]; then
         if [ "$OPT" == "${OPENSSH_OPTSTR:$((i++)):1}" ]; then
-				  OARSH_OPT[$OARSH_OPTCOUNT]=$OPT
-				  OARSH_OPTARG[$((OARSH_OPTCOUNT++))]=$OPTARG
+          OARSH_OPT[$OARSH_OPTCOUNT]=$OPT
+          OARSH_OPTARG[$((OARSH_OPTCOUNT++))]=$OPTARG
           OPTFOUND=1
         fi
       else
         if [ "$OPT" == "${OPENSSH_OPTSTR:$i:1}" ]; then
-				  OARSH_OPT[OARSH_OPTCOUNT]=$OPT
-				  OARSH_OPTARG[$((OARSH_OPTCOUNT++))]=""
+          OARSH_OPT[OARSH_OPTCOUNT]=$OPT
+          OARSH_OPTARG[$((OARSH_OPTCOUNT++))]=""
           OPTFOUND=1
         fi
       fi
