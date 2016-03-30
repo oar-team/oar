@@ -146,21 +146,23 @@ Resubmit the given job as a new one.
 
 =item B<-k, --use-job-key>
 
-Activate the job-key mechanism. A job-key will be generated allowing to connect the job from outside the set of resources managed by OAR. The job-key mechanism may be activated by default in your OAR environment. In this case this option is useless.
+Activate the job-key mechanism: a job-key will be generated for the job, which can be used my the B<oarsh> command in place of the B<OAR_JOB_ID>. That job-key also allows to connect to a job from a machine which is outside the OAR cluster the job belong to (e.g. in a grid of OAR clusters), given the job-key is available on that machine.
 
-=item B<-i, --import-job-key-from-file>
+The job-key mechanism may be activated by default in the configuration of your OAR cluster. In that case, the -k option is useless. 
 
-Import the job-key to use from existing files (public and private key files) instead of generating a new one. One may also use the OAR_JOB_KEY_FILE environment variable.
-
-=item B<--import-job-key-inline>
-
-Import the job-key to use inline (text), instead of generating a new one.
+Please note that this option is mostly useful when used together with the -e option or the -i option (see below).
 
 =item B<-e, --export-job-key-to-file>
 
-Export the job key to a file.
-I<Warning>: the file will be overwritten if it already exists.
-(the %jobid% pattern is automatically replaced)
+Export the job-key to a file (the %jobid% pattern is automatically replaced in the filename). I<Warning>: the file will be overwritten, whenever it already exists. 
+
+=item B<-i, --import-job-key-from-file>
+
+Import the job-key to use (you may reuse an exported job-key from a previous job for instance) from a file, instead of generating a new one. One may also use the B<OAR_JOB_KEY_FILE> environment variable to set the job-key file.
+
+=item B<--import-job-key-inline>
+
+Import the job-key to use inline (as text in the command line), instead of generating a new one.
 
 =item B<-O> <FILE>
 
@@ -247,7 +249,7 @@ Working directory for the job. The job executable will be executed in that direc
 
 =item B<OAR_JOB_KEY_FILE>
 
-Key file to use for the submission (or I<oarsh>) if using the job key mechanism (-k or --use-job-key option). One may provide the job key to import using the -i or --import-job-key-from-file option as well.
+Key file to use for the submission (or I<oarsh>) if using the job-key mechanism (-k or --use-job-key option). One may provide the job-key to import using the -i or --import-job-key-from-file option as well.
 
 =back
 
