@@ -1,8 +1,9 @@
-oar (2.5.4-3) UNRELEASED; urgency=medium
+oar (2.5.4-2+deb8u1) jessie-security; urgency=high
 
+  [ Pierre Neyron ]
   * Add patch: fix a vulnerability in the oarsh command
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 30 Mar 2016 21:22:52 +0200
+ -- Vincent Danjean <vdanjean@debian.org>  Wed, 30 Mar 2016 23:49:41 +0200
 
 oar (2.5.4-2) unstable; urgency=medium
 
