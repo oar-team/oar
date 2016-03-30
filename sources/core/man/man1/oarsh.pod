@@ -12,11 +12,11 @@ B<oarcp> [OPTIONS] [NODENAME:]<PATHNAME> [NODENAME:]<PATHNAME>
 
 =head1 DESCRIPTION
 
-Connect a node from the submission frontal of the cluster or any node.
+Connect to a node from the job submission frontend of the cluster or any other node.
 
 =head1 OPTIONS
 
-B<oarsh> uses I<OpenSSH> client (the ssh command) underneath to perform the connection. Thus any OpenSSH option can be used. 
+The B<oarsh> mechanism uses I<OpenSSH> client (the ssh command) under the hood to perform connections to remote hosts. Thus most of I<OpenSSH> options can be used (but some are filtered out for security reasons).
 
 =head1 ENVIRONMENT
 
@@ -24,25 +24,13 @@ B<oarsh> uses I<OpenSSH> client (the ssh command) underneath to perform the conn
 
 =item B<OAR_JOB_ID>
 
-From the frontal of the cluster or any node, specify the Id of the job B<oarsh> must connect to.
+If not using the job-key mechanism, the B<OAR_JOB_ID> environment variable has to be set to give the jobid of the job to connect to on the remote node (a node can run several jobs at a same time). This is only required for connecting from outside the job (e.g. from the job submission frontend).
 
 =item B<OAR_JOB_KEY_FILE>
 
-Specify a job key oarsh must use, e.g. the one that was used for the submission of the job you want to connect to. This is mandatory when connecting to a node of a job from a host that does not belong to the nodes managed by the OAR server the job was submitted to. The -i option may be used as well.
+If using the job-key mechanism (see B<oarsub> -k -e/-i), B<oarsh> can use the job-key defined by the B<OAR_JOB_KEY_FILE> environment variable to connect to job on the remote machine. That mechanism can allow to connect to a job from a machine which is outside the OAR cluster the job belong to (e.g. in a grid of OAR clusters), given the job-key is available on that machine. NB: it is also possible to give the job-key using B<oarsh> -i option.
 
 =back
-
-=head1 CONFIGURATION
-
-In order to provide the user with the ability to use B<oarsh> to connect both the nodes of his job or other hosts that live out of the scope of his job, B<oarsh> tries to read two configuration files: first B<~/.oarsh-host-include> then B<~/.oarsh-hosts-exclude>.
-
-If exist, those files must contain one regular expression matching a hostname per line.
-
-At execution time, if B<oarsh> finds in B<~/.oarsh-host-include> a match for the hostname used in the command line, it continues with the execution of B<oarsh>, skipping B<~/.oarsh-hosts-exclude> file. If not, it tries to find a match in B<~/.oarsh-hosts-exclude> and if one is found, then executes B<ssh> with the same command line. Finally, it no match is found (or for instance, if none of those files exists), it continues with the execution of B<oarsh>.
-
-For instance, if all nodes look like I<name-XXX.domain>, one may place I<^[^\.]+-[[:digit:]]+> in B<~/.oarsh-host-include> and I<.*> in  B<~/.oarsh-hosts-exclude> and then can use B<oarsh> to connect any host.
-
-The feature finally becomes really sexy when one considers placing a symlink to B<oarsh> named B<ssh>, and then can always use the B<ssh> command to connect any host.
 
 =head1 EXAMPLES
 
@@ -56,7 +44,7 @@ The feature finally becomes really sexy when one considers placing a symlink to 
 
 > OAR_JOB_ID=4242 oarsh node-23
 
-=item Connecting to a node (node23) of our job that was submitted using a job key:
+=item Connecting to a node (node23) of our job that was submitted using a job-key:
 
 > OAR_JOB_KEY_FILE=~/my_key oarsh node-23
 
@@ -68,10 +56,11 @@ The feature finally becomes really sexy when one considers placing a symlink to 
 
 =head1 NOTES
 
-All OpenSSH features should be inherited by B<oarsh>, for instance X11 forwarding. However, one feature that B<oarsh> does break is the SSH Agent.
+B<oarsh> inherits from most of OpenSSH capabilities (e.g. X11 forwarding). However, one feature which B<oarsh> does break is the SSH Agent.
 
-None of OpenSSH user configuration files (within I<~/.ssh> directory) are used by B<oarsh>.
+The user's OpenSSH configuration files (files in the I<~/.ssh> directory) are not used by B<oarsh>.
 
+For advanced users, when using the job-key mechanism, it is also possible to use ssh directly to connect to a job on a node. Please refer to the documentation of your cluster, or ask the admisitrator of your cluster.
 
 =head1 SEE ALSO
 
