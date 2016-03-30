@@ -14,8 +14,8 @@ umask 0022
 
 OARSH_OARSTAT_CMD=
 OPENSSH_CMD=/usr/bin/ssh
-OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:I:KL:MNO:PQ:R:S:TVw:W:XYy"
-# Filtered out OpenSSH options: -a -A -i -l -o -p -E -F -I -w
+OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy"
+# Filtered out OpenSSH options: -a -A -i -l -o -p -E -F -G -I -w
 OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
 # Forced OpenSSH configuration options
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=%%OARHOMEDIR%%/.ssh/known_hosts"
