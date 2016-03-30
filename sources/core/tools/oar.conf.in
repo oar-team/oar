@@ -548,10 +548,6 @@ CPUSET_PATH="/oar"
 # machines. On other machines (compute nodes), it does not need to be set.
 OARSH_OARSTAT_CMD="%%BINDIR%%/oarstat"
 
-# The following variable sets the path to the OpenSSH command, which is used
-# by oarsh under the hood.
-OPENSSH_CMD=/usr/bin/ssh
-
 # The following variable gives the OpenSSH options which the oarsh command must
 # understand in order to parse user commands.
 # The value of OPENSSH_OPTSTR must match the option string of OpenSSH ssh
@@ -566,19 +562,21 @@ OPENSSH_CMD=/usr/bin/ssh
 #
 OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy"
 
-# The following variable sets the OpenSSH options which oarsh accepts.
+# The following variable sets the OpenSSH options which oarsh actually uses.
 # Any option which is filtered out from the OPENSSH_OPTSTR variable above is 
 # just ignored (see oarsh -v for debug)
-# WARNING: if not fitlered out, some options can allow root exploit using oarsh
+# WARNING: if not fitlered out, some options may allow root exploit using oarsh.
 # At least the following OpenSSH options are recommanded to be fitlered out: 
-#     -i -l -o -p -E -F -G -I -w
+#  -a -A -i -l -o -p -E -F -G -I -w
 # For more information, see: http://oar.imag.fr/wiki:security_tips
-OPENSSH_OPTSTR_FILTERED="1246ab:c:e:fgkm:nqstvxACD:KL:MNO:PQ:R:S:TVW:XYy"
+OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
 
-# The following variable forces options to ssh (or OPENSSH_CMD if configured).
-# If one option is not handled by your ssh version just remove it BUT be
-# careful because these options are there for security reasons
-OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
+# The following variable forces OpenSSH configuration options for the ssh call 
+# made by in oarsh, so that, for security reasons, they cannot be set by the
+# user (whenever "o:" is not filtered out in the OPENSSH_OPTSTR_FILTERED
+# variable above).
+# WARNING: for security, do not change unless you know what you are doing
+OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=%%OARHOMEDIR%%/.ssh/known_hosts"
 
 # If the following variable is set to a value which is not 0, oarsh will act
 # like a normal ssh, **without** the CPUSET isolation mechanism.
