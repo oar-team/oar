@@ -15,7 +15,7 @@ umask 0022
 OARSH_OARSTAT_CMD=
 OPENSSH_CMD=/usr/bin/ssh
 OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:I:KL:MNO:PQ:R:S:TVw:W:XYy"
-# Fitlered out OpenSSH options: -i -l -o -p -E -F -I -w
+# Filtered out OpenSSH options: -i -l -o -p -E -F -I -w
 OPENSSH_OPTSTR_FILTERED="1246ab:c:e:fgkm:nqstvxACD:KL:MNO:PQ:R:S:TVW:XYy"
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 CPUSET_PATH=
@@ -104,7 +104,6 @@ for ((j=0; j < $OARSH_OPTCOUNT; j++)); do
   unset OPTFOUND
   for ((i=0; i < ${#OPENSSH_OPTSTR_FILTERED}; i++)); do
     if [ "${OPENSSH_OPTSTR_FILTERED:$i:1}" == ":" ]; then
-      ((i++))
       continue
     fi
     if [ "${OARSH_OPT[$j]}" == "${OPENSSH_OPTSTR_FILTERED:$i:1}" ]; then
