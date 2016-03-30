@@ -220,7 +220,7 @@ Index: oar/sources/core/tools/oarsh/oarsh.in
      exit 3
  fi
  
-@@ -90,27 +192,31 @@ fi
+@@ -90,8 +192,8 @@ fi
  TMP_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OARDO_USER.jobkey"
  if [ -r $TMP_JOB_KEY_FILE ]; then
      umask $OLDUMASK
@@ -231,16 +231,7 @@ Index: oar/sources/core/tools/oarsh/oarsh.in
      exit 4
  fi
  
- if [ "$CPUSET_PATH" != "" ]; then
-     if [ -r /proc/self/cpuset ]; then
--        OAR_CPUSET=$(< /proc/self/cpuset)
--        if [ "${OAR_CPUSET%/*}" = "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" = "$CPUSET_PATH/" ]; then
-+        if [ -n "$GET_CURRENT_CPUSET_CMD" ]; then
-+            OAR_CPUSET=$(bash -c "$GET_CURRENT_CPUSET_CMD")
-+        else
-+            OAR_CPUSET=$(< /proc/self/cpuset)
-+        fi
-+        if [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH/" ]; then
+@@ -102,15 +204,15 @@ if [ "$CPUSET_PATH" != "" ]; then
              JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
              if [ -r $JOB_KEY_FILE ]; then
                  umask $OLDUMASK
@@ -260,7 +251,7 @@ Index: oar/sources/core/tools/oarsh/oarsh.in
              exit 5
          fi
      fi
-@@ -161,8 +267,8 @@ if [ -n "$OAR_JOB_ID" ]; then
+@@ -161,8 +263,8 @@ if [ -n "$OAR_JOB_ID" ]; then
      export OAR_CPUSET
  
      umask $OLDUMASK
