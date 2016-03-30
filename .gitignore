@@ -49,6 +49,7 @@ sources/core/man/man1/oarsh.1
 sources/core/man/man1/oarstat.1
 sources/core/man/man1/oarsub.1
 sources/core/tools/oar.conf
+sources/core/tools/oardo.c
 sources/core/tools/oardodo
 sources/core/tools/oardodo.c
 sources/core/tools/oarnodecheck/oarnodechecklist
