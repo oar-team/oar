@@ -28,20 +28,20 @@ Index: oar/sources/core/tools/oar.conf.in
 +# command installed on the system (mind checking it is up-to-date, as OpenSSH 
 +# development is very active), which can be found in the ssh.c file of the 
 +# OpenSSH sources. For instance, the following command extracts the option
-+# string of OpenSSH 7.2p2 :
++# string of OpenSSH 6.7p1 :
 +#
 +# $ cd path/to/openssh/sources/ 
 +# $ grep getopt -A1 ssh.c | sed 's/.*"\(.\+\)".*/\1/' | xargs | sed 's/ //g'
-+# 1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy
++# 1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:I:KL:MNO:PQ:R:S:TVw:W:XYy
 +#
-+OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy"
++OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:I:KL:MNO:PQ:R:S:TVw:W:XYy"
 +
 +# The following variable sets the OpenSSH options which oarsh actually uses.
 +# Any option which is filtered out from the OPENSSH_OPTSTR variable above is 
 +# just ignored (see oarsh -v for debug)
 +# WARNING: if not fitlered out, some options may allow root exploit using oarsh.
 +# At least the following OpenSSH options are recommanded to be fitlered out: 
-+#  -a -A -i -l -o -p -E -F -G -I -w
++#  -a -A -i -l -o -p -E -F -I -w
 +# For more information, see: http://oar.imag.fr/wiki:security_tips
 +OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
 +
