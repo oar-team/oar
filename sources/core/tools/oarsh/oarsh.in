@@ -15,7 +15,7 @@ umask 0022
 OARSH_OARSTAT_CMD=
 OPENSSH_CMD=/usr/bin/ssh
 OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:I:KL:MNO:PQ:R:S:TVw:W:XYy"
-# Fitlering out: -i -l -o -p -D -E -F -I -w
+# Fitlered out OpenSSH options: -i -l -o -p -E -F -I -w
 OPENSSH_OPTSTR_FILTERED="1246ab:c:e:fgkm:nqstvxACD:KL:MNO:PQ:R:S:TVW:XYy"
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
 CPUSET_PATH=
@@ -25,12 +25,11 @@ CPUSET_PATH=
 OARSH_BYPASS_WHOLE_SECURITY="0"
 ###############################################################################
 
-# Source OAR config file
+# Source OAR config file, allowing the administrator to overwrite variables
 . "$OARCONFFILE" || exit 2
 
 # Parse OpenSSH options
-# OPENSSH_OPTSTR is to be extracted from the ssh.c source file of OpenSSH sources
-# Caevas: we do not support -v increment here
+# OPENSSH_OPTSTR can be extracted from the ssh.c file of OpenSSH sources
 unset OARSH_DEBUG
 parse_opts() {
 	OPTIND=
@@ -113,12 +112,12 @@ for ((j=0; j < $OARSH_OPTCOUNT; j++)); do
       if [ -z "${OARSH_OPTARG[$j]}" ]; then
         OPT[$((OPTCOUNT++))]="-${OARSH_OPT[$j]}"
       else
-        OPT[$((OPTCOUNT++))]="-${OARSH_OPT[$j]}${OARSH_OPTARG[$j]}"
+        OPT[$((OPTCOUNT++))]="-${OARSH_OPT[$j]} ${OARSH_OPTARG[$j]}"
       fi
     fi
   done
   if [ -z "$OPTFOUND" -a -n "$OARSH_DEBUG" ]; then
-    echo "debug oarsh: filtered out -${OARSH_OPT[$j]}${OARSH_OPTARG[$j]}" 1>&2
+    echo "debug oarsh: filtered out -${OARSH_OPT[$j]} ${OARSH_OPTARG[$j]}" 1>&2
   fi
 done
 
