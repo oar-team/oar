@@ -373,10 +373,10 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 #  available_upto=2147483646  : to enable wake-up/halt forever            #
 #  available_upto=<timestamp> : to enable the halt, and the wake-up until #
 #                               the date given by <timestamp>             #
-# Energy saving features also consider that you have set up a mechanism   #
-# to automatically set the nodes in the Alive state when they are booted. #
-# For this, you can follow the steps described here:                      #
-# http://wiki-oar.imag.fr/index.php/Configuration_tips#Start.2Fstop_of_nodes_using_ssh_keys
+# The energy saving mechanism should be coupled with the mechanism to     #
+# automatically set the nodes in the Alive state at boot time. Information#
+# for that mechanism is provided on the following page:                   #
+# https://oar.imag.fr/wiki:customization_tips#start_stop_of_nodes_using_ssh_keys
 ###############################################################################
 #
 # Parameter for the scheduler to decide when a node is idle.
@@ -568,7 +568,6 @@ OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy
 # WARNING: if not fitlered out, some options may allow root exploit using oarsh.
 # At least the following OpenSSH options are recommanded to be fitlered out: 
 #  -a -A -i -l -o -p -E -F -G -I -w
-# For more information, see: http://oar.imag.fr/wiki:security_tips
 OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
 
 # The following variable forces OpenSSH configuration options for the ssh call 
