@@ -8,7 +8,7 @@ Index: oar/sources/core/tools/oar.conf.in
 ===================================================================
 --- oar.orig/sources/core/tools/oar.conf.in
 +++ oar/sources/core/tools/oar.conf.in
-@@ -532,20 +532,46 @@ CPUSET_PATH="/oar"
+@@ -532,20 +532,45 @@ CPUSET_PATH="/oar"
  # OARSH #
  ###############################################################################
  #
@@ -42,7 +42,6 @@ Index: oar/sources/core/tools/oar.conf.in
 +# WARNING: if not fitlered out, some options may allow root exploit using oarsh.
 +# At least the following OpenSSH options are recommanded to be fitlered out: 
 +#  -a -A -i -l -o -p -E -F -G -I -w
-+# For more information, see: http://oar.imag.fr/wiki:security_tips
 +OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
 +
 +# The following variable forces OpenSSH configuration options for the ssh call 
