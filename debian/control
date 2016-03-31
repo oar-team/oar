@@ -33,6 +33,7 @@ Architecture: any
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
+         liboar-perl (= ${binary:Version}),
          adduser,
          ucf
 Suggests: oar-server,
@@ -56,7 +57,6 @@ Depends: ${misc:Depends},
          libsort-versions-perl,
          libdbi-perl,
          oar-common (= ${binary:Version}),
-         liboar-perl (= ${binary:Version}),
          oar-server-pgsql (= ${binary:Version}) | oar-server-mysql (= ${binary:Version}),
          perl (<< 5.17) | libterm-ui-perl
 Recommends: libxml-dumper-perl,
@@ -128,7 +128,6 @@ Depends: ${misc:Depends},
          ${perl:Depends},
          libdbi-perl,
          oar-common (= ${binary:Version}),
-         liboar-perl (= ${binary:Version}),
          oar-user-pgsql (= ${binary:Version}) | oar-user-mysql (= ${binary:Version})
 Recommends: libxml-dumper-perl,
             libyaml-perl,

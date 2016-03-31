@@ -1,3 +1,10 @@
+oar (2.5.6-3) UNRELEASED; urgency=medium
+
+  * Make liboar-perl a dependency of oar-common, because the oarnodesetting
+    command of the oar-node package also needs the Perl libs
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 31 Mar 2016 14:31:27 +0200
+
 oar (2.5.6-2) unstable; urgency=medium
 
   * correctly rebuild amd64 packages (due to a error, uploaded binary
