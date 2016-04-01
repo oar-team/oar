@@ -1,4 +1,4 @@
-oar (2.5.2-3-deb7u1) wheezy-security; urgency=high
+oar (2.5.2-3+deb7u1) wheezy-security; urgency=high
 
   * Fix CVE-2016-1235
 
