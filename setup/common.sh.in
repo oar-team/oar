@@ -152,7 +152,7 @@ common_setup() {
         ${OARCONFDIR}/update_cpuset_id.sh \
         0755
 
-    set_rights ${OARDIR}/oarsh_oardo     6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
+    set_rights ${BINDIR}/oarsh           6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
     set_rights ${SBINDIR}/oarnodesetting 6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
 
     set_rights ${OARDIR}/oardodo/oardodo 6750 ${ROOTUSER} ${OAROWNERGROUP}
