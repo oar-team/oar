@@ -1,4 +1,4 @@
-%define version 2.5.6
+%define version 2.5.7
 %define release 1.el7
 
 %define oaruser  oar
@@ -273,7 +273,6 @@ rm -rf tmp
 %config(noreplace) %attr(0755, root, root) %{_sysconfdir}/oar/oarnodesetting_ssh
 %config(noreplace) %attr(0755, root, root) %{_sysconfdir}/oar/update_cpuset_id.sh
 %config %attr(0644,root,root) %{_sysconfdir}/logrotate.d/oar
-%attr(0755, root, root) %{_bindir}/oarsh
 %attr(0755, root, root) %{_bindir}/oarprint
 %attr(0755, root, root) %{_bindir}/oarcp
 %attr(0755, root, root) %{_libdir}/oar/oarsh_shell
@@ -281,7 +280,7 @@ rm -rf tmp
 %attr(0755, root, root) %{_libdir}/oar/oarsh
 %attr(0755, root, root) %{_libdir}/oar/setup/common.sh
 %attr(0755, root, root) %{_libdir}/oar/sentinelle.pl
-%attr(6755, root, oar) %{_libdir}/oar/oarsh_oardo
+%attr(6755, root, oar) %{_bindir}/oarsh
 %attr(6754, root, oar) %{_sbindir}/oarnodesetting
 %attr(6754, root, oar) %{_libdir}/oar/oardodo/oardodo
 
@@ -494,6 +493,10 @@ fi
 user_setup
 
 %changelog
+* Mon Apr 4 2016 Pierre Neyron <pierre.neyron@imag.fr> 2.5.7-1.el7
+- New upstream release which fix a vulnerability in oarsh (CVE-2016-1235)
+- Fix oarsh installation
+
 * Thu Feb 18 2016 Pierre Neyron <pierre.neyron@imag.fr> 2.5.6-1.el7
 - New upstream release
 - Fix OAR logrotate permission
