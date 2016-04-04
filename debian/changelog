@@ -1,3 +1,10 @@
+oar (2.5.7-2) unstable; urgency=high
+
+  * enabling hardening flags
+  * urgency still set to high as 2.5.7-1 is not yet in testing
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 04 Apr 2016 22:47:00 +0200
+
 oar (2.5.7-1) unstable; urgency=high
 
   * New upstream release, which encompasses a fix for a vulnerability in the
