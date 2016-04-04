@@ -1,9 +1,11 @@
-oar (2.5.6-3) UNRELEASED; urgency=medium
+oar (2.5.7-1) unstable; urgency=medium
 
+  * New upstream release, which encompasses a fix for a vulnerability in the
+    oarsh command (CVE-2016-1235; Closes: #819952)
   * Make liboar-perl a dependency of oar-common, because the oarnodesetting
     command of the oar-node package also needs the Perl libs
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 31 Mar 2016 14:31:27 +0200
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 04 Apr 2016 20:11:21 +0200
 
 oar (2.5.6-2) unstable; urgency=medium
 
