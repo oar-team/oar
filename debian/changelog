@@ -1,8 +1,10 @@
 oar (2.5.2-3+deb7u1) wheezy-security; urgency=high
 
-  * Fix CVE-2016-1235
+  [ Pierre Neyron ]
+  * Add patch: fix a vulnerability in the oarsh command
+    (CVE-2016-1235; Closes: #819952)
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 01 Apr 2016 21:26:15 +0200
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 04 Apr 2016 11:07:22 +0200
 
 oar (2.5.2-3) unstable; urgency=low
 
