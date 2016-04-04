@@ -4,6 +4,7 @@ oar (2.5.7-1) unstable; urgency=medium
     oarsh command (CVE-2016-1235; Closes: #819952)
   * Make liboar-perl a dependency of oar-common, because the oarnodesetting
     command of the oar-node package also needs the Perl libs
+  * Change php dependencies for the transition to php7.0
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 04 Apr 2016 20:11:21 +0200
 
