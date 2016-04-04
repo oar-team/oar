@@ -2,8 +2,9 @@ oar (2.5.4-2+deb8u1) jessie-security; urgency=high
 
   [ Pierre Neyron ]
   * Add patch: fix a vulnerability in the oarsh command
+    (CVE-2016-1235; Closes: #819952)
 
- -- Vincent Danjean <vdanjean@debian.org>  Wed, 30 Mar 2016 23:49:41 +0200
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 04 Apr 2016 10:49:52 +0200
 
 oar (2.5.4-2) unstable; urgency=medium
 
