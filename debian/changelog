@@ -1,4 +1,4 @@
-oar (2.5.7-1) unstable; urgency=medium
+oar (2.5.7-1) unstable; urgency=high
 
   * New upstream release, which encompasses a fix for a vulnerability in the
     oarsh command (CVE-2016-1235; Closes: #819952)
