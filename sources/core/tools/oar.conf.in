@@ -373,10 +373,10 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 #  available_upto=2147483646  : to enable wake-up/halt forever            #
 #  available_upto=<timestamp> : to enable the halt, and the wake-up until #
 #                               the date given by <timestamp>             #
-# Energy saving features also consider that you have set up a mechanism   #
-# to automatically set the nodes in the Alive state when they are booted. #
-# For this, you can follow the steps described here:                      #
-# http://wiki-oar.imag.fr/index.php/Configuration_tips#Start.2Fstop_of_nodes_using_ssh_keys
+# The energy saving mechanism should be coupled with the mechanism to     #
+# automatically set the nodes in the Alive state at boot time. Information#
+# for that mechanism is provided on the following page:                   #
+# https://oar.imag.fr/wiki:customization_tips#start_stop_of_nodes_using_ssh_keys
 ###############################################################################
 #
 # Parameter for the scheduler to decide when a node is idle.
@@ -529,6 +529,11 @@ JOB_RESOURCE_MANAGER_FILE="%%OARCONFDIR%%/job_resource_manager_cgroups.pl"
 # to set OARSUB_FORCE_JOB_KEY="yes")
 CPUSET_PATH="/oar"
 
+# Command to get a process cpuset
+# If unset, OAR (oarsh) will read /proc/self/cpuset.
+#GET_CURRENT_CPUSET_CMD="cat /proc/self/cpuset | sed -e 's@^/oardocker/node[[:digit:]]\+@@'"
+#GET_CURRENT_CPUSET_CMD="cat /proc/self/cpuset"
+
 # Name of the perl script the retrieve monitoring data from compute nodes.
 # This is used in oarmonitor command.
 #OARMONITOR_SENSOR_FILE="%%OARCONFDIR%%/oarmonitor_sensor.pl"
@@ -539,20 +544,45 @@ CPUSET_PATH="/oar"
 # OARSH #
 ###############################################################################
 #
-# This variable must be set to enable the use of oarsh from a frontale node
-# Otherwise you must not set this variable if you are not on a frontale
+# The following variable must be set to enable the use of oarsh on frontend
+# machines. On other machines (compute nodes), it does not need to be set.
 OARSH_OARSTAT_CMD="%%BINDIR%%/oarstat"
 
-# The following variable adds options to ssh (or OPENSSH_CMD if configured).
-# If one option is not handled by your ssh version just remove it BUT be
-# careful because these options are there for security reasons
-OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no"
+# The following variable gives the OpenSSH options which the oarsh command must
+# understand in order to parse user commands.
+# The value of OPENSSH_OPTSTR must match the option string of OpenSSH ssh
+# command installed on the system (mind checking it is up-to-date, as OpenSSH 
+# development is very active), which can be found in the ssh.c file of the 
+# OpenSSH sources. For instance, the following command extracts the option
+# string of OpenSSH 7.2p2 :
+#
+# $ cd path/to/openssh/sources/ 
+# $ grep getopt -A1 ssh.c | sed 's/.*"\(.\+\)".*/\1/' | xargs | sed 's/ //g'
+# 1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy
+#
+OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy"
 
-# If you set this variable to something different from 0 then oarsh will act
-# like a normal ssh **without** CPUSET restriction.
-# WARNING: this is a critical functionality (this is only useful if users want
-# to have a command to connect on every nodes without taking care of there ssh
-# configuration and act like a ssh)
+# The following variable sets the OpenSSH options which oarsh actually uses.
+# Any option which is filtered out from the OPENSSH_OPTSTR variable above is 
+# just ignored (see oarsh -v for debug)
+# WARNING: if not fitlered out, some options may allow root exploit using oarsh.
+# At least the following OpenSSH options are recommanded to be fitlered out: 
+#  -a -A -i -l -o -p -E -F -G -I -w
+OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
+
+# The following variable forces OpenSSH configuration options for the ssh call 
+# made by in oarsh, so that, for security reasons, they cannot be set by the
+# user (whenever "o:" is not filtered out in the OPENSSH_OPTSTR_FILTERED
+# variable above).
+# WARNING: for security, do not change unless you know what you are doing
+OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=%%OARHOMEDIR%%/.ssh/known_hosts"
+
+# If the following variable is set to a value which is not 0, oarsh will act
+# like a normal ssh, **without** the CPUSET isolation mechanism.
+# WARNING: this disable a critical functionality
+# This can however be useful and different from simply using ssh, as it
+# provides users with a mechanism which allows to connect to compute nodes
+# without having to care of their ssh configuration (e.g. key setup)
 #OARSH_BYPASS_WHOLE_SECURITY="0"
 
 ###############################################################################

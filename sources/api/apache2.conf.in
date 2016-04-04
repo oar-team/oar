@@ -16,8 +16,9 @@ Listen 6668
 # Aliases to the API.
 ScriptAlias /oarapi %%CGIDIR%%/oarapi/oarapi.cgi
 ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
-#ScriptAlias /oarapi-debug %%CGIDIR%%/oarapi-debug.cgi
-#ScriptAlias /oarapi-cigri %%CGIDIR%%/oarapi.cgi
+#ScriptAlias /oarapi-debug %%CGIDIR%%/oarapi/oarapi-debug.cgi
+#ScriptAlias /oarapi-priv %%CGIDIR%%/oarapi/oarapi.cgi
+#ScriptAlias /oarapi-cigri %%CGIDIR%%/oarapi/oarapi.cgi
 
 # FastCGI server
 <IfModule mod_fastcgi.c>
@@ -129,6 +130,22 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
     Satisfy any
   </IfModule> 
 </Location>
+
+# This example sets up a simple basic authentication with user/password 
+# into the /etc/oar/api-users file (use htpasswd command to create the  
+# password entries.                                                     
+#<Location /oarapi-priv>                                                 
+#    Options +ExecCGI -MultiViews +FollowSymLinks                        
+#    AuthType      basic                                                 
+#    AuthUserfile  /etc/oar/api-users                                    
+#    AuthName      "OAR API authentication"                              
+#    Require valid-user                                                  
+#    RewriteEngine On                                                    
+#    RewriteCond %{REMOTE_USER} (.*)                                     
+#    RewriteRule .* - [E=X_REMOTE_IDENT:%1]                              
+#    RequestHeader add X_REMOTE_IDENT %{X_REMOTE_IDENT}e                 
+#</Location>                                                             
+
 
 # In this last example, we set up a trusted connection with a client that 
 # has a specific SSL certificate. This client may do queries for whatever login
