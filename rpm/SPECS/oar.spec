@@ -494,7 +494,7 @@ user_setup
 
 %changelog
 * Mon Apr 4 2016 Pierre Neyron <pierre.neyron@imag.fr> 2.5.7-1.el7
-- New upstream release which fix a vulnerability in oarsh (CVE-2016-1235)
+- New upstream release which fixes a vulnerability in oarsh (CVE-2016-1235)
 - Fix oarsh installation
 
 * Thu Feb 18 2016 Pierre Neyron <pierre.neyron@imag.fr> 2.5.6-1.el7
