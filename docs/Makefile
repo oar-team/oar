@@ -185,7 +185,6 @@ publish: html
 	rsync -avh $(BUILDDIR)/html/ $(DOC_TARGET):~/oar-doc/$(DOC_VERSION)
 
 publishpdf: latexpdf
-	rsync -avh $(BUILDDIR)/latex/*.pdf oar-docmaster.website:~/oar-doc/$(DOC_VERSION)
-	rsync -avh $(BUILDDIR)/latex/*.tex oar-docmaster.website:~/oar-doc/$(DOC_VERSION)
+	rsync -avh $(BUILDDIR)/latex/*.tex $(BUILDDIR)/latex/*.pdf $(DOC_TARGET):~/oar-doc/$(DOC_VERSION)
 
 publishall: publish publishpdf
