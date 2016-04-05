@@ -3,6 +3,12 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+# Some programs are suid. Compiling them with hardening flags...
+# https://wiki.debian.org/Hardening
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
+
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
@@ -21,7 +27,7 @@ export VARLIBDIR=/var/lib
 export SETUP_TYPE=deb
 export TARGET_DIST=debian
 
-export CFLAGS = $(shell dpkg-buildflags --get CFLAGS) -Wall
+CFLAGS += -Wall
 
 %:
 	dh $@ 
