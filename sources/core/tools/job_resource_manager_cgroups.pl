@@ -45,6 +45,8 @@ sub print_log($$);
 
 # Put YES if you want to use the memory cgroup
 my $ENABLE_MEMCG = "NO";
+# Put YES if you want to use the device cgroup (nvidia devices only currently)
+my $ENABLE_DEVICECG = "NO";
 
 my $OS_cgroups_path = "/sys/fs/cgroup";  # Where the OS mounts by itself the cgroups
                                          # (systemd for example
@@ -241,6 +243,32 @@ if ($ARGV[0] eq "init"){
         $IO_ratio = 1000;
         if (system( '/bin/echo '.$IO_ratio.' | cat > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset_path_job.'/blkio.weight')){
             exit_myself(5,"Failed to set the blkio.weight to $IO_ratio");
+        }
+
+        if ($ENABLE_DEVICECG eq "YES"){
+            my @devices_deny;
+            opendir my($dh), "/dev"  or continue;
+            my @files = grep { /nvidia/ } readdir $dh;
+            foreach (@files) {
+                if ($_ =~ /nvidia(\d+)/ ) {
+                    push  @devices_deny, $1;
+                }
+            }
+            closedir $dh;
+            if ($#devices_deny > -1) {
+                # now remove from denied devices our reserved devices
+                foreach my $r (@{$Cpuset->{'resources'}}){
+                    if ($r->{'gpudevice'} ne '' ){
+                        @devices_deny = grep { $_ !=  $r->{'gpudevice'} } @devices_deny;
+                    }
+                }
+                my $devices_cgroup = $Cgroup_directory_collection_links."/devices".$Cpuset_path_job."/devices.deny";
+                foreach my $dev (@devices_deny){
+                    if (system("oardodo /bin/echo 'c 195:$dev rwm' > $devices_cgroup")) {
+                        exit_myself(5,"Failed to set the devices.deny to c 195:$dev rwm");
+                    }
+                }
+            }
         }
 
         # Assign the corresponding share of memory if memory cgroup enabled.
