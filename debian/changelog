@@ -1,6 +1,7 @@
 oar (2.5.7-2~bpo70+1) wheezy-backports; urgency=medium
 
   * Rebuild for wheezy-backports.
+  * Reset php dependencies to php5
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 05 Apr 2016 14:45:48 +0200
 
