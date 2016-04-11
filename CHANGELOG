@@ -1,6 +1,11 @@
 OAR CHANGELOG
 =============
 
+version 2.5.8:
+--------------
+
+  - [job_resource_manager] manage nvidia gpu with the cgroup devices
+
 version 2.5.7:
 --------------
 
