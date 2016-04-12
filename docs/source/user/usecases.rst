@@ -421,7 +421,7 @@ You can use the hydra launcher with the options "-launcher" and
 
 ::
 
-    mpiexec -launcher ssh -launcher-exec /usr/bin/oarsh -f hosts -n 4 ./app
+    mpiexec -launcher ssh -launcher-exec /usr/bin/oarsh -f $OAR_NODEFILE -n 4 ./app
 
 LAM/MPI
 ~~~~~~~
