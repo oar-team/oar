@@ -10,7 +10,8 @@ version 2.5.7:
 --------------
 
 This version mainly brings a security fix for the oarsh command. It is highly
-recommanded to upgrade, since all previous versions of OAR are affected.
+recommended to upgrade (server, frontend(s) and nodes), since all previous
+versions of OAR are affected. 
 
   - [oarsh] fix a security hole when passing option to OpenSSH. See oar.conf to
     adapt settings to your setup, if required (OARSH_* variables)
