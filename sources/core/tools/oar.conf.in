@@ -233,6 +233,14 @@ SCHEDULER_NB_PROCESSES=1
 # default time is 60 seconds
 SCHEDULER_JOB_SECURITY_TIME="60"
 
+# Number of seconds before the start of the reservations when the besteffort
+# jobs will be deleted (this will let some time to get back the nodes in a good
+# shape for the reservations)
+# default is 0 seconds
+# if SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION < SCHEDULER_JOB_SECURITY_TIME then
+#     SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION = SCHEDULER_JOB_SECURITY_TIME
+#SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION=0
+
 # Minimum time in seconds that can be considered like a hole where a job could
 # be scheduled in (if you have performance problems, you can try to increase
 # this)
