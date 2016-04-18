@@ -11,7 +11,7 @@
 # to be interpreted by vim or just type the :set command given
 # by this modeline.
 #
-#    Copyright (C) 2009-2012  <Bruno Bzeznik> Bruno.Bzeznik@imag.fr
+#    Copyright (C) 2009-2016 Laboratoire d'Informatique de Grenoble <http://www.liglab.fr>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -2476,6 +2476,11 @@ SWITCH: for ($q) {
     if (is_conf("API_COLMET_EXTRACT_PATH")){ $COLMET_EXTRACT_PATH = get_conf("API_COLMET_EXTRACT_PATH"); }
     my $COLMET_HDF5_PATH_PREFIX="/var/lib/colmet/hdf5/data";
     if (is_conf("API_COLMET_HDF5_PATH_PREFIX")){ $COLMET_HDF5_PATH_PREFIX = get_conf("API_COLMET_HDF5_PATH_PREFIX"); }
+
+    if (not -X $COLMET_EXTRACT_PATH) {
+       OAR::API::ERROR( 400, "Missing extractor script",
+        "You have to install the colmet extraction script ($COLMET_EXTRACT_PATH), python and the h5py module.\nPlease, check https://github.com/oar-team/colmet/oar/api." );
+    }
 
     my $stop_time=@$job[0]->{'stop_time'};
     if ($stop_time==0) { 

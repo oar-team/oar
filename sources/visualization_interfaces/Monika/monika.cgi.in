@@ -137,10 +137,7 @@ print $cgi->h6({ -align => "center",
 	       },
 	       "- ".
 	       $cgi->a({ -href => 'http://oar.imag.fr'},
-		       "Monika").
-	       " - &copy;".
-	       $cgi->a({ -href => 'http://www-id.imag.fr'},
-		       'Laboratoire d\'Informatique de Grenoble').
+		       "Monika - OAR").
 	       " -"
 	      );
 print $cgi->end_html();

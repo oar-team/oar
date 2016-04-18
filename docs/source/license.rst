@@ -3,4 +3,4 @@
 
 .. _licensefile-anchor:
 
-.. include:: ../../LICENSE
+.. include:: ../../COPYRIGHT

@@ -4,26 +4,32 @@ Installation
 Overview
 --------
 
-There are currently 3 methods to install OAR (All of them are documented in
-this page) :
+There are currently 3 methods to install OAR:
 
- - using the Debian packages
- - using the RPM packages
- - from sources
+  - from the Debian packages
+  - from the RPM packages
+  - from sources
 
 
 Before going further, please have in mind OAR's architecture. A common OAR
 installation is composed of:
 
-    - a **server node** which will hold all of OAR "smartness". This node will
-      run the OAR server daemon;
-    - **frontend nodes** on which users will have to login in order to reserve
-      computing nodes (oarsub, oarstat, oarnodes, ...);
-    - several **computing nodes** (a.k.a. nodes), where the jobs will run on.
-    - and optionally a **visualisation server** which will host the
-      visualisation web interfaces (monika, drawgantt, ...);
+  - a **server** which will hold all of OAR "smartness". That host will run
+    the OAR server daemon;
+  - one or more **frontends**, which users will have to login to, in order
+    to reserve computing nodes (oarsub, oarstat, oarnodes, ...);
+  - **computing nodes** (or basically *nodes*), where the jobs will execute;
+  - optionally a **visualisation server** which will host the
+    visualisation webapps (monika, drawgantt, ...);
+  - optionally an **API server**, which will host OAR restful API service.
 
-Everything is stored and archived in a PostgreSQL database.
+Many OAR data are stored and archived in a database: you have the choice to use
+either PostgreSQL or MySQL. We recommend using **PostgreSQL**.
+
+
+Beside this documentation, please have a look at **OAR website**:
+http://oar.imag.fr, which also provides a lot of information, espacially in the
+**Download** and **Contribs** sections.
 
 Computing nodes
 ---------------
@@ -35,15 +41,8 @@ ______________________________
 
 *For RedHat like systems*::
 
-        # Add the oar repository
-        cat <<EOF > /etc/yum.repos.d/oar.repo
-        [oar]
-        name=OAR
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
-        gpgcheck=1
-        gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
-        enabled=0
-        EOF
+        # OAR provides a Yum repository.
+        # For more information see: http://oar.imag.fr/download#rpms
 
         # Install OAR node
         yum --enablerepo=OAR install oar-node
@@ -51,7 +50,7 @@ ______________________________
 *For the Debian like systems*::
 
         # OAR is shipped as part of Debian official distributions (newer versions can be available in backports)
-        # For more info see: http://oar.imag.fr/dokuwiki/doku.php?id=download#debian
+        # For more info see: http://oar.imag.fr/download#debian
 
         # Install OAR node
         apt-get install oar-node
@@ -117,8 +116,8 @@ install manually the {init.d,default,sysconfig} scripts present in the folders::
 Then you just need to use the script ``/etc/init.d/oar-node`` to start
 the ssh daemon dedicated to oar-node.
 
-Server node
------------
+Server
+------
 
 Installation from the packages
 ______________________________
@@ -127,29 +126,16 @@ ______________________________
 
 *For RedHat like systems*::
 
-        # Add the epel repository (choose the right version depending on your
-        # operating system)
-        rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-
-        # Add the oar repository
-        [oar]
-        name=OAR
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
-        gpgcheck=1
-        gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
-        enabled=0
-        EOF
+        # OAR provides a Yum repository.
+        # For more information see: http://oar.imag.fr/download#rpms
 
         # Install OAR server for the PostgreSQL backend
         yum --enablerepo=OAR install oar-server oar-server-pgsql
 
 *For the Debian like systems*::
 
-        # Add the OAR repository (choose the right one. See
-        # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
-        wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
-        apt-get update
+        # OAR is shipped as part of Debian official distributions (newer versions can be available in backports)
+        # For more info see: http://oar.imag.fr/download#debian
 
         # Install OAR server for the PostgreSQL backend
         apt-get install oar-server oar-server-pgsql
@@ -163,7 +149,7 @@ _____________________________
 
         # Add the epel repository (choose the right version depending on your
         # operating system)
-        rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+        yum install epel-release
 
         # Build dependencies
         yum install gcc make tar python-docutils
@@ -236,36 +222,37 @@ Then use the script ``/etc/init.d/oar-server`` to start the OAR server daemon.
 Adding resources to the system
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you want to **automatically** initialize your cluster then you just need to
-launch ``oar_resources_init``. It will detect the resources from the nodes that
-you put in a file and store right OAR commands to initialize the database with
-the appropriate values for the memory and the cpuset properties. Just try...
+To **automatically** initialize resources for your cluster, you can run the
+``oar_resources_init`` command. It will detect the resources from nodes set in
+a file and give the OAR commands to initialize the database with the
+appropriate values for the memory and the cpuset properties.
 
-There is also a tool to help you managing your oar resources:
-``oar_resources_add``.
+Another tool is also available to create resources beforehand: that tool does
+not require nodes to be up and accessible by SSH.  See ``oar_resources_add``.
 
 *Otherwise:*
 
-To add resources to your system, you can use (as root) the command oarnodesetting.
-For a complete comprehension of what does this command, type man
-oarnodesetting. For now, the two options you will need will be **-a** (means
-add a resource) and **-h** (defines the resource hostname or ip adress).
+To add resources to your system, you can use (as root) the ``oarnodesetting``
+command.  For a complete understanding of what that command does, see the
+manual page. For a basic usage, the main options are **-a** (means add a
+resource) and **-h** (defines the resource hostname or ip adress).
 
-For example, to add a computing resource on the node <NODE_IP> to OAR
-installation, you can type::
+For instance, to add a computing resource for node <NODE_IP> to your setup,
+type::
 
         oarnodesetting -a -h <NODE_IP>
 
-This will add a resource with <NODE_IP> as host IP address.
+This adds a resource with <NODE_IP> as host IP address (network_address
+property).
 
 
-You can also modify resources properties with **-p** option, for example::
+You can modify resources properties with **-p** option, for instance::
 
         oarnodesetting -r 1 -p "besteffort=YES"
 
-will allow the resource #1 to accept jobs of the type besteffort (because there is
-an admission rule that enforces the besteffort jobs to go on resources with the
-property "besteffort=YES").
+This allows the resource #1 to accept jobs of type *besteffort* (an admission
+rule forces besteffort jobs to execute on resources with the property
+"besteffort=YES").
 
 Notes
 _____
@@ -275,25 +262,25 @@ Security issues
 
 For security reasons it is hardly **recommended** to configure a read only
 account for the OAR database (like the above example).  Thus you will be able
-to add this data in DB_BASE_LOGIN_RO and DB_BASE_PASSWD_RO in *oar.conf*.
+to add it in DB_BASE_LOGIN_RO and DB_BASE_PASSWD_RO in *oar.conf*.
 
-PostgreSQL : autovacuum
+PostgreSQL: autovacuum
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Be sure to activate the "autovacuum" feature in the "postgresql.conf" file (OAR
 creates and deletes a lot of records and this setting cleans the postgres
 database from unneeded records).
 
-PostgreSQL : authentication
+PostgreSQL: authentication
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In case you've installed a PostgreSQL database remotely, if your PostgreSQL
 installation doesn't authorize the local connections by default, you need to
-enable the connections to this database for the oar users. Supposing the OAR
+enable the connections to this database for the oar users. Assuming the OAR
 server has the address <OAR_SERVER>, you can add the following lines in the
-``pg_hba.conf``:
+``pg_hba.conf`` file::
 
-    # in /etc/postgresql/8.1/main/pg_hba.conf or /var/lib/pgsql/data/pg_hba.conf
+        # in /etc/postgresql/8.1/main/pg_hba.conf or /var/lib/pgsql/data/pg_hba.conf
         host    oar         oar_ro            <OAR_SERVER>/32    md5
         host    oar         oar               <OAR_SERVER>/32    md5
 
@@ -304,25 +291,21 @@ If you want to use taktuk to manage remote administration commands, you have to
 install it. You can find information about taktuk from its website:
 http://taktuk.gforge.inria.fr.
 
-**Note**: Taktuk is a scalable remote command execution without the need to
-install special stuffs on nodes. So it is very useful to administer a large
-amount of machines.
+Then, you have to edit your oar configuration file and fill in the related
+parameters:
 
-Then, you have to edit your oar configuration file and fill in the different
-related parameters:
-
-  - TAKTUK_CMD (the path to the taktuk command)
-  - PINGCHECKER_TAKTUK_ARG_COMMAND (the command used to check resources states)
-  - SCHEDULER_NODE_MANAGER_SLEEP_CMD (command used for halting nodes)
+  - ``TAKTUK_CMD`` (the path to the taktuk command)
+  - ``PINGCHECKER_TAKTUK_ARG_COMMAND`` (the command used to check resources states)
+  - ``SCHEDULER_NODE_MANAGER_SLEEP_CMD`` (command used for halting nodes)
 
 CPUSET feature
 ~~~~~~~~~~~~~~
 
-OAR uses the CPUSET features provided with the Linux kernel >= 2.6. This
-enables to restrict user processes only on reserved processors and to clean
-correctly the nodes after the end of the jobs.
+OAR uses the CPUSET features provided by the Linux kernel >= 2.6. This
+enables to restrict user processes to reserved processors only and provides
+a powerful clean-up mechanism at the end of the jobs.
 
-For more information, look at the CPUSET file.
+For more information, have a look at the CPUSET file.
 
 Energy saving
 ~~~~~~~~~~~~~
@@ -334,16 +317,16 @@ To activate this feature, you have to:
     - provide 2 commands or scripts which will be executed on the oar server
       to shutdown (or set into standby) some nodes and to wake-up some nodes
       (configure the path of those commands into the
-      ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD and
-      ENERGY_SAVING_NODE_MANAGER_SHUT_DOWN_CMD variables into oar.conf)
+      ``ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD`` and
+      ``ENERGY_SAVING_NODE_MANAGER_SHUT_DOWN_CMD`` variables in oar.conf)
       Thes 2 commands are executed by the oar user.
-    - configure the "available_upto" property of all your nodes:
+    - configure the ``available_upto`` property of all your nodes:
 
-      - available_upto=0           : to disable the wake-up and halt
-      - available_upto=1           : to disable the wake-up (but not the halt)
-      - available_upto=2147483647  : to disable the halt (but not the wake-up)
-      - available_upto=2147483646  : to enable wake-up/halt forever
-      - available_upto=<timestamp> : to enable the halt, and the wake-up until
+      - ``available_upto=0``           : to disable the wake-up and halt
+      - ``available_upto=1``           : to disable the wake-up (but not the halt)
+      - ``available_upto=2147483647``  : to disable the halt (but not the wake-up)
+      - ``available_upto=2147483646``  : to enable wake-up/halt forever
+      - ``available_upto=<timestamp>`` : to enable the halt, and the wake-up until
         the date given by <timestamp>
 
       Ex: to enable the feature on every nodes forever:
@@ -351,14 +334,14 @@ To activate this feature, you have to:
 
             oarnodesetting --sql true -p available_upto=2147483646
 
-    - activate the energy saving module by setting ENERGY_SAVING_INTERNAL="yes"
-      and configuring the ENERGY_* variables into oar.conf
-    - configure the metascheduler time values into SCHEDULER_NODE_MANAGER_IDLE_TIME,
-      SCHEDULER_NODE_MANAGER_SLEEP_TIME and SCHEDULER_NODE_MANAGER_WAKEUP_TIME
+    - activate the energy saving module by setting ``ENERGY_SAVING_INTERNAL="yes"``
+      and configuring the ``ENERGY_*`` variables into oar.conf
+    - configure the metascheduler time values into ``SCHEDULER_NODE_MANAGER_IDLE_TIME``,
+      ``SCHEDULER_NODE_MANAGER_SLEEP_TIME`` and ``SCHEDULER_NODE_MANAGER_WAKEUP_TIME``
       variables of the oar.conf file.
     - restart the oar server (you should see an "Almighty" process more).
 
-You need to restart OAR each time you change an ENERGY_* variable.
+You need to restart OAR each time you change an ``ENERGY_*`` variable.
 More informations are available inside the oar.conf file itself. For more
 details about the mechanism, take a look at the "Hulot" module documentation.
 
@@ -376,16 +359,10 @@ to update the cpuset ids in the resource database at startup for each computing
 node. You can do this by using the ``/etc/oar/update_cpuset_id.sh`` script. The
 following page give more informations on how configuring it:
 
-    http://wiki-oar.imag.fr/index.php/Configuration_tips#Start.2Fstop_of_nodes_using_ssh_keys
+    http://oar.imag.fr/wiki:old:customization_tips#start_stop_of_nodes_using_ssh_keys
 
-Other issues
-~~~~~~~~~~~~
-You can take a look at the "Customization tips" on the OAR Wiki:
-
-    http://wiki-oar.imag.fr/index.php/Customization_tips
-
-Frontend nodes
---------------
+Frontends
+---------
 
 Installation from the packages
 ______________________________
@@ -394,38 +371,16 @@ ______________________________
 
 *For RedHat like systems*::
 
-        # Add the epel repository (choose the right version depending on your
-        # operating system)
-        rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-
-        cat <<EOF > /etc/yum.repos.d/oar.repo
-        [oar]
-        name=OAR
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
-        gpgcheck=1
-        gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
-        enabled=0
-        EOF
-
-        # Add the oar repository
-        cat <<EOF > /etc/yum.repos.d/oar.repo
-        [oar]
-        name=OAR Packages for Enterprise Linux 6 - \$basearch
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/stable/
-        enabled=1
-        gpgcheck=0
-        EOF
+        # OAR provides a Yum repository.
+        # For more information see: http://oar.imag.fr/download#rpms
 
         # Install OAR user for the PostgreSQL backend
         yum --enablerepo=OAR install oar-user oar-user-pgsql
 
 *For the Debian like systems*::
 
-        # Add the OAR repository (choose the right one. See
-        # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
-        wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
-        apt-get update
+        # OAR is shipped as part of Debian official distributions (newer versions can be available in backports)
+        # For more info see: http://oar.imag.fr/download#debian
 
         # Install OAR server for the PostgreSQL backend
         apt-get install oar-user oar-user-pgsql
@@ -492,7 +447,7 @@ About X11 usage in OAR
 The easiest and scalable way to use X11 application on cluster nodes is to open
 X11 ports and set the right DISPLAY environment variable by hand.  Otherwise
 users can use X11 forwarding via ssh to access cluster frontends. You
-must configure the ssh server on the frontends nodes with ::
+must configure the ssh server on the frontends nodes with::
 
     X11Forwarding yes
     X11UseLocalhost no
@@ -500,8 +455,8 @@ must configure the ssh server on the frontends nodes with ::
 With this configuration, users can launch X11 applications after a 'oarsub -I'
 on the given node or "oarsh -X node12".
 
-API Installation
-----------------
+API server
+----------
 
 Description
 ___________
@@ -516,31 +471,20 @@ ______________________________
 
 *For RedHat like systems*::
 
-        # Add the oar repository
-        [oar]
-        name=OAR
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
-        gpgcheck=1
-        gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
-        enabled=0
-        EOF
+        # OAR provides a Yum repository.
+        # For more information see: http://oar.imag.fr/download#rpms
 
-        # Install apache FastCGI module (optional but highly recommended)
-        FIXME:
+        # Install apache FastCGI and Suexec modules (optional but highly recommended)
 
         # Install OAR Restful api
         yum --enablerepo=OAR install oar-restful-api
 
 *For the Debian like systems*::
 
-        # Add the OAR repository (choose the right one. See
-        # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
-        wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
-        apt-get update
+        # OAR is shipped as part of Debian official distributions (newer versions can be available in backports)
+        # For more info see: http://oar.imag.fr/download#debian
 
-        # Install apache FastCGI module (optional but highly recommended)
-        apt-get install libapache2-mod-fastcgi
+        # Install apache FastCGI and Suexec modules (optional but highly recommended)
 
         # Install OAR Restful api
         apt-get install oar-restful-api
@@ -558,7 +502,10 @@ _____________________________
           # Common dependencies
           yum install perl perl-base perl-DBI perl-CGI perl-JSON perl-YAML perl-libwww-perl httpd
 
-          # FastCGI dependency (optional but highly recommended)
+          # Install apache FastCGI and Suexec modules (optional but highly recommended)
+
+          # MySQL dependencies
+          yum install perl-DBD-MySQL
 
           # PostgreSQL dependencies
           yum install perl-DBD-Pg
@@ -572,8 +519,7 @@ _____________________________
           # Common dependencies
           apt-get install perl perl-base libdbi-perl libjson-perl libyaml-perl libwww-perl apache2 libcgi-fast-perl
 
-          # FastCGI dependency (optional but highly recommended)
-          apt-get install libapache2-mod-fastcgi
+          # Install apache FastCGI and Suexec modules (optional but highly recommended)
 
           # PostgreSQL dependencies
           apt-get install libdbd-pg-perl
@@ -636,16 +582,16 @@ _____________
     See the example.txt file that gives you example queries with a ruby rest
     client.
 
-Visualization node
-------------------
+Visualization server
+--------------------
 
 Description
 ___________
 
-There are two different tools. One, named Monika which displays the current
-cluster state with all active and waiting jobs. The other, named drawgantt-svg
-which displays node occupation in a lapse of time. These tools are CGI scripts
-and generate HTML pages.
+OAR provides two webapp tools for visualizing the resources utilization::
+
+  - monika which displays the current state of resources as well as all running and waiting jobs
+  - drawgantt-svg which displays gantt chart of nodes and jobs for the past and future.
 
 Installation from the packages
 ______________________________
@@ -654,25 +600,18 @@ ______________________________
 
 *For RedHat like systems*::
 
-        # Add the oar repository
-        [oar]
-        name=OAR
-        baseurl=http://oar-ftp.imag.fr/oar/2.5/rpm/centos6/stable/
-        gpgcheck=1
-        gpgkey=http://oar-ftp.imag.fr/oar/oarmaster.asc
-        enabled=0
-        EOF
+        # OAR provides a Yum repository.
+        # For more information see: http://oar.imag.fr/download#rpms
 
+        # Install OAR web status package
         yum --enablerepo=OAR install oar-web-status
 
 *For the Debian like systems*::
 
-        # Add the OAR repository (choose the right one. See
-        # http://oar.imag.fr/dokuwiki/doku.php?id=download#debian)
-        echo "deb http://oar-ftp.imag.fr/oar/2.5/debian/ wheezy main" >> /etc/apt/sources.list.d/oar.list
-        wget -q http://oar-ftp.imag.fr/oar/oarmaster.asc -O- | sudo apt-key add -
-        apt-get update
+        # OAR is shipped as part of Debian official distributions (newer versions can be available in backports)
+        # For more info see: http://oar.imag.fr/download#debian
 
+        # Install OAR web status package
         apt-get install oar-web-status
 
 Installation from the tarball
@@ -729,7 +668,7 @@ _____________
 
 **Drawgantt-SVG configuration**
 
- - Edit ``/etc/oar/drawgantt.php`` to fit your configuration.
+ - Edit ``/etc/oar/drawgantt-config.inc.php`` to fit your configuration.
 
 **httpd configuration**
 
