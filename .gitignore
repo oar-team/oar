@@ -66,6 +66,7 @@ sources/core/man/man1/oarsub.1
 sources/core/modules/runner/bipbip
 sources/core/server/sbin/oar-server
 sources/core/tools/oar.conf
+sources/core/tools/oardo.c
 sources/core/tools/oardodo
 sources/core/tools/oardodo.c
 sources/core/tools/oarnodecheck/oarnodechecklist

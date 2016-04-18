@@ -1,10 +1,26 @@
 OAR CHANGELOG
 =============
 
+
 version 2.6.0:
 --------------
   
   - Remove MySQL database support.
+
+version 2.5.7:
+--------------
+
+This version mainly brings a security fix for the oarsh command. It is highly
+recommanded to upgrade, since all previous versions of OAR are affected.
+
+  - [oarsh] fix a security hole when passing option to OpenSSH. See oar.conf to
+    adapt settings to your setup, if required (OARSH_* variables)
+  - [oarsh] dropped the mechanism to select whether to use oarsh or fall back 
+    to ssh, given a list of hostname patterns
+  - [oarsub] fix the job-key information of the manual page
+  - [oarsub] handle cases where trailing spaces were breaking oarsub script directives
+  - [api] added an example of Apache configuration for the authentication 
+  - [documentation] improve the SSH keys setup explanations for OAR installation
 
 version 2.5.6:
 --------------

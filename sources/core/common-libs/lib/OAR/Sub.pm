@@ -95,6 +95,7 @@ sub scan_script($$){
             while (<FILE>) {
                 if ( /^#OAR\s+/ ){
                     my $line = $_;
+                    $line =~ s/\s+$//;
                     if ($line =~ m/^#OAR\s+(-l|--resource)\s*(.+)\s*$/m){
                         push(@{$result{resources}}, $2);
                     }elsif ($line =~ m/^#OAR\s+(-q|--queue)\s*(.+)\s*$/m) {

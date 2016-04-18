@@ -30,9 +30,11 @@ Print OAR version number.
 
 Print help command message.
 
-oarsub(1), oardel(1) oarstat(1), oarnodes(1), oarhold(1)
-
 =back
+
+=head1 SEE ALSO
+
+oarsub(1), oardel(1) oarstat(1), oarnodes(1), oarhold(1)
 
 =head1 COPYRIGHTS
 

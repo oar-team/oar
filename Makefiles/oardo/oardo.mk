@@ -42,13 +42,8 @@ build: $(CMD_BUILDTARGET)
 
 $(CMD_BUILDTARGET).c:
 	mkdir -p $$(dirname $(CMD_BUILDTARGET))
-	perl -pe "s#define OARDIR .*#define OARDIR \"$(OARDIR)\"#;;\
-			s#define OARCONFFILE .*#define OARCONFFILE \"$(OARCONFFILE)\"#;;\
-			s#define OARXAUTHLOCATION .*#define OARXAUTHLOCATION \"$(OARXAUTHLOCATION)\"#;;\
-			s#define USERTOBECOME .*#define USERTOBECOME \"$(CMD_USERTOBECOME)\"#;;\
-			s#define PATH2SET .*#define PATH2SET \"/bin:/sbin:/usr/bin:/usr/sbin:$(BINDIR):$(SBINDIR):$(OARDIR)/oardodo\"#;;\
-			s#define CMD_WRAPPER .*#define CMD_WRAPPER \"$(CMD_WRAPPER)\"#;;\
-			" sources/core/tools/oardo.c > "$(CMD_BUILDTARGET).c"
+	sed -e 's#\(define CMD_WRAPPER \).*#\1 "$(CMD_WRAPPER)"#' \
+			sources/core/tools/oardo.c > "$(CMD_BUILDTARGET).c"
 
 $(CMD_BUILDTARGET): $(CMD_BUILDTARGET).c
 ifeq "$(CMD_TARGET)" ""

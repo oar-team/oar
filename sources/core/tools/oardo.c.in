@@ -11,11 +11,11 @@
 
 #define CMD_WRAPPER "TT/usr/local/oar/oarsub"
 
-#define OARDIR "TT/usr/local/oar"
-#define OARCONFFILE "TT/etc/oar/oar.conf"
-#define OARXAUTHLOCATION "TT/usr/bin/xauth"
-#define USERTOBECOME "TToar"
-#define PATH2SET "TT/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/usr/local/oar/oardodo"
+#define OARDIR "%%OARDIR%%"
+#define OARCONFFILE "%%OARCONFDIR%%/oar.conf"
+#define OARXAUTHLOCATION "%%XAUTHCMDPATH%%"
+#define OARUSER "%%OAROWNER%%"
+#define OARDOPATH "%%OARDOPATH%%"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -42,7 +42,7 @@ int main(int ac, char **av){
     if (passwd_user_pointer == NULL){
         error("Cannot get current user information", 2);
     }
-    passwd_oar_user_pointer = getpwnam(USERTOBECOME);
+    passwd_oar_user_pointer = getpwnam(OARUSER);
     if (passwd_oar_user_pointer == NULL){
         error("Cannot get oar user information", 2);
     }
@@ -73,7 +73,7 @@ int main(int ac, char **av){
     }
 
     // Clean some environment variables
-    if (setenv("PATH", PATH2SET, 1)){
+    if (setenv("PATH", OARDOPATH, 1)){
         error("Cannot change environment variable PATH", 2);
     }
     if (unsetenv("IFS")){

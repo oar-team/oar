@@ -119,6 +119,7 @@ $(TEMPLATE_BUILDED_FILES) : %: %.in
 	    s#%%DEFAULTDIR%%#$(DEFAULTDIR)#g;;\
 	    s#%%SETUP_TYPE%%#$(SETUP_TYPE)#g;;\
 	    s#%%TARGET_DIST%%#$(TARGET_DIST)#g;;\
+	    s#%%OARDOPATH%%#/bin:/sbin:/usr/bin:/usr/sbin:$(BINDIR):$(SBINDIR):$(OARDIR)/oardodo#;;\
 	    " "$@.in" > $@ 
 
 clean_templates:

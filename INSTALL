@@ -97,14 +97,6 @@ build/install/setup::
 Configuration
 _____________
 
-oar node ssh access
-~~~~~~~~~~~~~~~~~~~
-
-You need to ensure that the oar user can access to each nodes through ssh. To
-ensure that, you can just copy the ``/var/lib/oar/.ssh`` folder from the oar
-server to each nodes (ensure that ``/var/lib/oar/.ssh`` has the right
-permissions).
-
 Init.d scripts
 ~~~~~~~~~~~~~~
 
@@ -114,7 +106,23 @@ install manually the {init.d,default,sysconfig} scripts present in the folders::
     $PREFIX/share/doc/oar-node/examples/scripts/{init.d,default,sysconfig}
 
 Then you just need to use the script ``/etc/init.d/oar-node`` to start
-the ssh daemon dedicated to oar-node.
+the SSH daemon dedicated to oar-node.
+
+SSH setup
+~~~~~~~~~
+
+OAR uses SSH to connect from machine to machine (e.g. from server or frontend to
+nodes or from nodes to nodes), using a dedicated SSH daemon usually running on
+port 6667.
+
+Upon installtion of the OAR server on the server machine, a SSH key pair along with an authorized_keys file is created for the oar user in ``/var/lib/oar/.ssh``. You need to copy that directory from the oar server to the nodes.
+
+Please note that public key in the authorized_keys file must be prefixed with ``environment="OAR_KEY=1"``, e.g.::
+
+      environment="OAR_KEY=1" ssh-rsa AAAAB3NzaC1yc2[...]6mIcqvcwG1K7V6CHLQKHKWo/ root@server
+ 
+Also please make sure that the ``/var/lib/oar/.ssh`` directory and contained files have the right ownership (oar.oar) and permissions for SSH to function. 
+
 
 Server
 ------
@@ -434,6 +442,21 @@ Build/Install/setup::
 Configuration
 _____________
 
+SSH setup
+~~~~~~~~~
+
+OAR uses SSH to connect from machine to machine (e.g. from server or frontend to
+nodes or from nodes to nodes), using a dedicated SSH daemon usually running on
+port 6667.
+
+Upon installtion of the OAR server on the server machine, a SSH key pair along with an authorized_keys file is created for the oar user in ``/var/lib/oar/.ssh``. You need to copy that directory from the oar server to the frontend (if not the same machine).
+
+Please note that public key in the authorized_keys file must be prefixed with ``environment="OAR_KEY=1"``, e.g.::
+
+      environment="OAR_KEY=1" ssh-rsa AAAAB3NzaC1yc2[...]6mIcqvcwG1K7V6CHLQKHKWo/ root@server
+ 
+Also please make sure that the ``/var/lib/oar/.ssh`` directory and contained files have the right ownership (oar.oar) and permissions for SSH to function. 
+
 Coherent configuration files between server node and user nodes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -446,8 +469,8 @@ About X11 usage in OAR
 
 The easiest and scalable way to use X11 application on cluster nodes is to open
 X11 ports and set the right DISPLAY environment variable by hand.  Otherwise
-users can use X11 forwarding via ssh to access cluster frontends. You
-must configure the ssh server on the frontends nodes with::
+users can use X11 forwarding via SSH to access cluster frontends. You
+must configure the SSH server on the frontends nodes with::
 
     X11Forwarding yes
     X11UseLocalhost no
