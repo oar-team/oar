@@ -446,7 +446,7 @@ sub manage_gantt_hierarchy($$$$$$) {
     my $timesharing_name = "";
     if (defined($types->{inner})){
         $gantt_name = "container:$types->{inner}";
-        if (defined_gantt($gantt, $gantt_name, "", "" "", "")){ # even if the actual gantt to use is a timesharing/placeholer gantt, the "raw" gantt should exist 
+        if (defined_gantt($gantt, $gantt_name, "", "", "")){ # even if the actual gantt to use is a timesharing/placeholer gantt, the "raw" gantt should exist 
             oar_debug("$log_prefix inner job, using gantt: ($gantt_name,...)\n");
         }else{ # Existing jobs are placed in the default gantt if the container does not exist, but new jobs will actually not be scheduled, but it's handled outside this file
             oar_debug("$log_prefix inner job, using gantt: (default,...), because gantt: ($gantt_name,...) does not exist anymore.\n");
