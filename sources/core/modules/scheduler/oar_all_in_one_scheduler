@@ -116,6 +116,16 @@ my $SCHEDULER_JOB_SECURITY_TIME = get_conf_with_default_param("SCHEDULER_JOB_SEC
 # Constant duration time of a besteffort job
 my $SCHEDULER_BESTEFFORT_DURATION = get_conf_with_default_param("SCHEDULER_BESTEFFORT_DURATION)",5*60);
 
+
+$SCHEDULER_BESTEFFORT_DURATION = $SCHEDULER_JOB_SECURITY_TIME if ($SCHEDULER_BESTEFFORT_DURATION < $SCHEDULER_JOB_SECURITY_TIME);
+
+my $SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION = get_conf_with_default_param("SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION", 0);
+$SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION = $SCHEDULER_JOB_SECURITY_TIME if ($SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION < $SCHEDULER_JOB_SECURITY_TIME);
+
+$SCHEDULER_BESTEFFORT_DURATION = $SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION if ($SCHEDULER_BESTEFFORT_DURATION < $SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION);
+
+
+
 my $OPENSSH_CMD = get_conf("OPENSSH_CMD");
 $OPENSSH_CMD = OAR::Tools::get_default_openssh_cmd() if (!defined($OPENSSH_CMD));
 if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
@@ -160,7 +170,9 @@ my $current_time_sql = "0000-00-00 00:00:00";
 sub check_jobs_to_kill(){
     oar_debug("[$SCHEDULER_NAME] Begin precessing of besteffort jobs to kill\n");
     my $return = 0;
-    my %nodes_for_jobs_to_launch = OAR::IO::get_gantt_resources_for_jobs_to_launch($base,$current_time_sec);
+    # Delete besteffort jobs in advance to let enough time to get back the nodes
+    # in a good shape for the reservations
+    my %nodes_for_jobs_to_launch = OAR::IO::get_gantt_resources_for_jobs_to_launch($base,$current_time_sec + $SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION);
     my %fragged_jobs = ();
     foreach my $r (keys(%nodes_for_jobs_to_launch)){
         if (defined($BESTEFFORT_RESOURCE_OCCUPATION{$r})) {
