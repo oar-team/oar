@@ -5289,7 +5289,6 @@ sub set_resources_property($$$$){
     my $value = shift;
     my $where;
 
-#    lock_table($dbh, ["resources","resource_logs"]);
     if (exists($resources->{nodes})){
         $where = "network_address IN (".join(",", map {"'$_'"} @{$resources->{nodes}}).")";
     }elsif (exists($resources->{resources})){
@@ -5344,7 +5343,6 @@ sub set_resources_property($$$$){
             warn("Error: failed to update resources\n");
         }
     }
-#   unlock_table($dbh;
     return($nbRowsAffected);
 }
 
