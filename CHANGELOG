@@ -6,6 +6,8 @@ version 2.6.0:
   
   - [database] remove MySQL database support.
   - [job_resource_manager] manage nvidia gpu with the cgroup devices
+  - [oarnotify] move queue management to the oarqueue command
+  - [oarsub] allow job dependency with some time shift
 
 version 2.5.7:
 --------------
