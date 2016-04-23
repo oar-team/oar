@@ -448,31 +448,24 @@ foreach my $i (keys(%{$reservation_already_there})){
 oar_debug("[$SCHEDULER_NAME] End processing of already handled reservations\n");
 
 oar_debug("[$SCHEDULER_NAME] Begin processing of current jobs\n");
-my @initial_jobs = OAR::IO::get_jobs_in_multiple_states($base, ["Running","toLaunch","Launching","Finishing","Suspended","Resuming"]);
-my $tmp_index_last_initial_job = $#initial_jobs;
-my $tmp_cur_index = 0;
-foreach my $job (@initial_jobs){
+sub handle_current_job($) {
+    my $job = shift;
     my $gantt_name = "default";
     my $placeholder_name = "";
     my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
     my $i = $job->{job_id};
-    $tmp_cur_index++;
 
-    next if ($job->{assigned_moldable_job} == 0);
-    my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
-    if (defined($types->{inner}) and
-        ($tmp_cur_index <= $tmp_index_last_initial_job)
-       ){ # Treate inner jobs at the end, so init container gantts first
-        oar_debug("[$SCHEDULER_NAME] [$i] postpone inner job initialization after other jobs\n");
-        push(@initial_jobs, $job);
-        next;
-    }
+    return if ($job->{assigned_moldable_job} == 0);
 
     my $mold = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
-    # The list of resources on which the job is running
-    my ($resource_list_vec, @resource_list) = OAR::IO::get_job_current_resources($base, $job->{assigned_moldable_job},undef);
+    # if not passed in the job hash, retrieve the resource list for the job
+    if (not defined($job->{resource_list_vec}) or not defined($job->{resource_list})){
+        my @resource_list;
+        ($job->{resource_list_vec}, @resource_list) = OAR::IO::get_job_current_resources($base, $job->{assigned_moldable_job},undef);
+        $job->{resource_list} = \@resource_list; 
+    }
 
     my $date ;
     if ($job->{start_time} == 0) {
@@ -483,46 +476,70 @@ foreach my $job (@initial_jobs){
         $date = $job->{start_time};
     }
     oar_debug("[$SCHEDULER_NAME] [$i] add job in the prediction table of the database\n");
-    OAR::IO::add_gantt_scheduled_jobs($base,$job->{assigned_moldable_job},$date,\@resource_list);
+    OAR::IO::add_gantt_scheduled_jobs($base,$job->{assigned_moldable_job},$date, $job->{resource_list});
 
-    my @type_list = sort(keys(%{$types}));
-    # Ignore besteffort jobs
-    if (!(defined($types->{besteffort}) and $job->{queue_name} ne "besteffort")){
-        my $job_duration = $mold->{moldable_walltime};
-        if ($job->{state} eq "Suspended"){
-            # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
-            ($resource_list_vec, @resource_list) = OAR::IO::get_job_current_resources($base, $job->{assigned_moldable_job},\@SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE);
-        }
-        if ($job->{suspended} eq "YES"){
-            # This job was suspended so we must recalculate the walltime
-            $job_duration += OAR::IO::get_job_suspended_sum_duration($base,$job->{job_id},$current_time_sec);
-        }
+    my @type_list = sort(keys(%{$job->{types}}));
+    my $job_duration = $mold->{moldable_walltime};
+    if ($job->{state} eq "Suspended"){
+        # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
+        ($job->{resource_list_vec}) = OAR::IO::get_job_current_resources($base, $job->{assigned_moldable_job},\@SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE);
+    }
+    if ($job->{suspended} eq "YES"){
+        # This job was suspended so we must recalculate the walltime
+        $job_duration += OAR::IO::get_job_suspended_sum_duration($base,$job->{job_id},$current_time_sec);
+    }
 
-        if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
-            OAR::Schedulers::Gantt::manage_gantt_for_container($gantt, $types->{container}, $i, $date, $job_duration + $SCHEDULER_JOB_SECURITY_TIME, $resource_list_vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
+    if (defined($job->{types}->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
+        OAR::Schedulers::Gantt::manage_gantt_for_container($gantt, $job->{types}->{container}, $i, $date, $job_duration + $SCHEDULER_JOB_SECURITY_TIME, $job->{resource_list_vec}, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
 
+    } else {
+        ($gantt_name, $placeholder_name, $timesharing_name, $timesharing_user) = 
+        OAR::Schedulers::Gantt::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $job->{types}, undef, "[$SCHEDULER_NAME] [$i]");
+    }
+
+    #Fill all other gantts
+    OAR::Schedulers::Gantt::fill_gantt_hierarchy($gantt, $date, $job_duration + $SCHEDULER_JOB_SECURITY_TIME, $job->{resource_list_vec}, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+    OAR::Schedulers::Quotas::update_accounting_counters(
+        $quota_accounting_data,
+        unpack("%32b*",$job->{resource_list_vec} & $Only_default_type_resource_vec),
+        $job->{start_time},
+        $job_duration,
+        $job->{queue_name},
+        $job->{project},
+        \@type_list,
+        $job->{job_user}
+    );
+}
+my @initial_jobs = OAR::IO::get_jobs_in_multiple_states($base, ["Running","toLaunch","Launching","Finishing","Suspended","Resuming"]);
+my @inner_jobs;
+my @besteffort_jobs;
+while (@initial_jobs or @inner_jobs) {
+    my $is_initial_job = @initial_jobs; # 0 = false if @initial_jobs is empty
+    my $job = ($is_initial_job)?shift(@initial_jobs):shift(@inner_jobs);
+    my $i = $job->{job_id};
+    my @resource_list;
+    ($job->{resource_list_vec}, @resource_list) = OAR::IO::get_job_current_resources($base, $job->{assigned_moldable_job},undef);
+    $job->{resource_list} = \@resource_list;
+    $job->{types} = OAR::IO::get_job_types_hash($base,$job->{job_id});
+    oar_debug("[$SCHEDULER_NAME] [$i] job types: ".join(", ",keys(%{$job->{types}}))."\n");
+    if (defined($job->{types}->{besteffort})){
+        if (defined($job->{types}->{container})){
+            oar_warn("[$SCHEDULER_NAME] [$i] job cannot be both besteffort and container, ignored\n");
         } else {
-            ($gantt_name, $placeholder_name, $timesharing_name, $timesharing_user) = 
-            OAR::Schedulers::Gantt::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, undef, "[$SCHEDULER_NAME] [$i]");
+            oar_debug("[$SCHEDULER_NAME] [$i] besteffort job, ignored for now\n");
+            #Stock information about besteffort jobs
+            foreach my $r (@resource_list){
+                $BESTEFFORT_RESOURCE_OCCUPATION{$r} = $job;
+            }
+            # besteffort jobs will only be added to gantt when managing the besteffort queue
+            push(@besteffort_jobs, $job);
         }
-
-        #Fill all other gantts
-        OAR::Schedulers::Gantt::fill_gantt_hierarchy($gantt, $date, $job_duration + $SCHEDULER_JOB_SECURITY_TIME, $resource_list_vec, $gantt_name ,$placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
-        OAR::Schedulers::Quotas::update_accounting_counters(
-            $quota_accounting_data,
-            unpack("%32b*",$resource_list_vec & $Only_default_type_resource_vec),
-            $job->{start_time},
-            $job_duration,
-            $job->{queue_name},
-            $job->{project},
-            \@type_list,
-            $job->{job_user}
-            );
-    }else{
-        #Stock information about besteffort jobs
-        foreach my $r (@resource_list){
-            $BESTEFFORT_RESOURCE_OCCUPATION{$r} = $job;
-        }
+    } elsif (defined($job->{types}->{inner}) and $is_initial_job){ # we are not yet in the @inner_jobs array
+        # postpone handling of  inner jobs at the end, so that container gantts exists
+        oar_debug("[$SCHEDULER_NAME] [$i] postpone inner job initialization after other jobs\n");
+        push(@initial_jobs, $job);
+    } else {
+        handle_current_job($job);
     }
 }
 $base->commit();
@@ -682,9 +699,21 @@ my %initial_time = (
 my @queues = OAR::IO::get_active_queues($base);
 my $queue_name;
 my $policy;
-foreach my $queue (@queues){
+while (@queues){
+    my $queue = shift(@queues);
     $queue_name = $queue->[0];
     $policy = $queue->[1];
+    if ($queue_name eq "besteffort"){
+        if (@queues){
+            oar_warn("[$SCHEDULER_NAME] Queue $queue_name: the besteffort queue must be the last one, ignoring ".join(" ", map {$_->[0]} @queues)."\n");
+            @queues = ();
+        }
+        oar_debug("[$SCHEDULER_NAME] Queue $queue_name: begin processing of current besteffort jobs\n");
+        while (@besteffort_jobs){
+            handle_current_job(shift(@besteffort_jobs));
+        }
+        oar_debug("[$SCHEDULER_NAME] Queue $queue_name: end processing of current besteffort jobs\n");
+    }
     my $waiting_jobs = OAR::IO::is_waiting_job_specific_queue_present($base,$queue_name);
     if ($waiting_jobs == 1){
 ###############################################################################
