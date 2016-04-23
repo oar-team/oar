@@ -1495,10 +1495,10 @@ foreach my $j (OAR::IO::get_jobs_in_state($base,"toError")){
     if (($j->{job_type} eq "INTERACTIVE") or
         (($j->{job_type} eq "PASSIVE") and
          ($j->{reservation} eq "Scheduled"))){
-        oar_debug("[$SCHEDULER_NAME] [$j->job_id] notifying oarsub that job is in error; jobInfo=$j->{info_type}\n");
+        oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] notifying oarsub that job is in error; jobInfo=$j->{info_type}\n");
         if ((defined(OAR::Tools::notify_tcp_socket($addr,$port,"$j->{message}"))) or
             (defined(OAR::Tools::notify_tcp_socket($addr,$port,"BAD JOB")))){
-            oar_debug("[$SCHEDULER_NAME] [$j->job_id] cannot open connection to oarsub client\n");
+            oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] cannot open connection to oarsub client\n");
         }
     }
     oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] set job state to Error\n");
