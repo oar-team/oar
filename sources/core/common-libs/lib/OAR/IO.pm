@@ -629,6 +629,7 @@ sub get_jobs_in_multiple_states($$) {
                                 FROM jobs
                                 WHERE
                                     state IN (".$state_str.")
+                                ORDER BY job_id ASC
                             ");
     $sth->execute();
     my @res = ();

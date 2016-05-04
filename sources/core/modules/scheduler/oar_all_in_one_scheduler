@@ -547,9 +547,12 @@ while (@initial_jobs or @inner_jobs) {
     } elsif (defined($job->{types}->{inner}) and $is_initial_job){ # we are not yet in the @inner_jobs array
         # postpone handling of  inner jobs at the end, so that container gantts exists
         oar_debug("[$SCHEDULER_NAME] [$i] postpone inner job initialization after other jobs\n");
-        push(@initial_jobs, $job);
+        push(@inner_jobs, $job);
     } else {
         handle_current_job($job);
+    }
+    if ($is_initial_job and not @initial_jobs and @inner_jobs){
+        oar_debug("[$SCHEDULER_NAME] Now handling postponed inner jobs\n");
     }
 }
 $base->commit();
@@ -958,8 +961,8 @@ while (@queues){
                     }
                     if (defined($Token_values{$t})){
                         if ($Token_values{$t} < $types->{token}->{$t}){
-                            oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] no enough tokens: $t ($Token_values{$t} < $types->{token}->{$t}).\n");
-                            OAR::IO::set_job_message($base,$j->{job_id},"no enough tokens: $t ($Token_values{$t} < $types->{token}->{$t})");
+                            oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] not enough tokens: $t ($Token_values{$t} < $types->{token}->{$t}).\n");
+                            OAR::IO::set_job_message($base,$j->{job_id},"not enough tokens: $t ($Token_values{$t} < $types->{token}->{$t})");
                             #OAR::IO::set_job_scheduler_info($base,$j->{job_id},"No enough Token: $t ($Token_values{$t} < $types->{token}->{$t})");
                             $skip_job = 1;
                         }
@@ -1121,7 +1124,7 @@ while (@queues){
                     }
                 }
             }elsif ($moldable_results[0]->{comment} ne "TIMEOUT"){
-                my $message = "No enough matching resources ($moldable_results[0]->{comment})";
+                my $message = "not enough matching resources ($moldable_results[0]->{comment})";
                 OAR::IO::set_job_message($base,$j->{job_id},$message);
                 #OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
                 oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] $message\n");
