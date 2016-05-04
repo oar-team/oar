@@ -116,7 +116,7 @@ Specify an arbitrary name for the job.
 =item B<-a, --after> <OAR JOB ID>[,min[,max]]
 
 Add a dependency to a given job, with optional min and max relative start time constraints.
-Min and max are of the form [+T or [-T or ]+T or ]-T, with ] and [ refering to the start or the end time of the dependency job, and T a time in seconds.   
+Min and max are of the form [+T or [-T or ]+T or ]-T, with ] and [ referring to the start or the end time of the dependency job, and T a time in seconds.   
 
 =item B<--notify> <TXT>
 
