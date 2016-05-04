@@ -1,48 +1,63 @@
-# Example Apache2 configuration for the OAR API
+# Apache2 configuration for the OAR API
+
+# WARNING: the OAR API requires Apache fastcgi and a way for the httpd user to
+# become oar. This can be achieved using Apache suexec. But since the suexec
+# mechanism is global to a virtual host, enabling it for the OAR API might
+# break other CGI programs (e.g. monika). As a result, a solution is to setup
+# several virtual hosts. The configuration proposed below sets a port based 
+# virtual host listening on 6668.
+# Furthermore the suexec user cannot have a system UID, which is the case of 
+# the oar user by default. One may need to change that uid (e.g. on Centos).
+
+#Virtual host to isolate the oar-restful-api (suexec) setup
+Listen 6668
+<VirtualHost *:6668>
 
 # Aliases to the API.
-# Be aware that the oarapi directory should only be readable by the httpd 
-# daemon and that the cgi inside are sgid oar. Any change to this permissions
-# may cause your system to be vulnerable. 
-# You should also check that you have a <Location> directive for each
-# of these aliases  (security issue, see later!)
 ScriptAlias /oarapi %%CGIDIR%%/oarapi/oarapi.cgi
 ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
-#ScriptAlias /oarapi-debug %%CGIDIR%%/oarapi-debug.cgi
-#ScriptAlias /oarapi-cigri %%CGIDIR%%/oarapi.cgi
+#ScriptAlias /oarapi-debug %%CGIDIR%%/oarapi/oarapi-debug.cgi
+#ScriptAlias /oarapi-priv %%CGIDIR%%/oarapi/oarapi.cgi
+#ScriptAlias /oarapi-cigri %%CGIDIR%%/oarapi/oarapi.cgi
 
 # FastCGI server
 <IfModule mod_fastcgi.c>
-  FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi -processes 3
+  FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi -processes 3 -user oar -group oar
+</IfModule>
+
+# Suexec configuration
+<IfModule mod_suexec.c>
+         SuexecUserGroup oar oar
 </IfModule>
 
 # Default options for the oar api
 <Directory %%CGIDIR%%/oarapi>
   Options +ExecCGI -MultiViews +FollowSymLinks
 
+  SetEnv OARCONFFILE %%ETCDIR%%/oar/oar.conf
+
   # FastCGI handler
   <IfModule mod_fastcgi.c>
      AddHandler fcgid-script .cgi
   </IfModule>
 
-  <ifModule version.c>
-    <IfVersion >= 2.3>
-      Require local
-    </IfVersion> 
-    <IfVersion < 2.3>
-      Order Deny,Allow
-      Deny from all
-      Allow from             localhost
-      Allow from             localhost.localdomain
-    </IfVersion>   
-  </ifModule>
-  <ifModule !version.c>
+  <IfVersion >= 2.3>
+    Require local
+  </IfVersion> 
+  <IfVersion < 2.3>
     Order Deny,Allow
     Deny from all
     Allow from             localhost
     Allow from             localhost.localdomain
-  </ifModule>
+    </IfVersion>   
 </Directory>
+
+# Set the X_API_PATH_PREFIX variable to value of the header of the same name
+<IfModule rewrite_module>
+   RewriteEngine On
+   RewriteCond %{HTTP:X_API_PATH_PREFIX}  (.*)
+   RewriteRule .* - [E=X_API_PATH_PREFIX:%1]
+</IfModule>
 
 # By URI options
 # This is where you should pay attention to security!
@@ -92,16 +107,12 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
   <IfModule ident_module>
      IdentityCheck On
      <IfModule headers_module>
-        # Set the X_REMOTE_IDENT http header value to REMOTE_IDENT env value
-        RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}e
-        # or For https:
-        #RequestHeader set X_REMOTE_IDENT %{REMOTE_IDENT}s
-        # Or if it doesn't work, do this with mod_rewrite (depends on apache version):
+        # Set the X_REMOTE_IDENT http header and variable to REMOTE_IDENT env value
         <IfModule rewrite_module>
            RewriteEngine On
            RewriteCond %{REMOTE_IDENT} (.*)
-           RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
-           RequestHeader add X_REMOTE_IDENT %{MY_REMOTE_IDENT}e
+           RewriteRule .* - [E=X_REMOTE_IDENT:%1]
+           RequestHeader add X_REMOTE_IDENT %{X_REMOTE_IDENT}e
         </IfModule>
      </IfModule>
   </IfModule>
@@ -119,6 +130,22 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
     Satisfy any
   </IfModule> 
 </Location>
+
+# This example sets up a simple basic authentication with user/password 
+# into the /etc/oar/api-users file (use htpasswd command to create the  
+# password entries.                                                     
+#<Location /oarapi-priv>                                                 
+#    Options +ExecCGI -MultiViews +FollowSymLinks                        
+#    AuthType      basic                                                 
+#    AuthUserfile  /etc/oar/api-users                                    
+#    AuthName      "OAR API authentication"                              
+#    Require valid-user                                                  
+#    RewriteEngine On                                                    
+#    RewriteCond %{REMOTE_USER} (.*)                                     
+#    RewriteRule .* - [E=X_REMOTE_IDENT:%1]                              
+#    RequestHeader add X_REMOTE_IDENT %{X_REMOTE_IDENT}e                 
+#</Location>                                                             
+
 
 # In this last example, we set up a trusted connection with a client that 
 # has a specific SSL certificate. This client may do queries for whatever login
@@ -141,11 +168,12 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 #    ## This example only allows users kameleon and oar to be authenticated to the API
 #    # RewriteEngine On
 #    # RewriteCond %{HTTP:X_REMOTE_IDENT}  (.*)
-#    # RewriteRule .* - [E=MY_REMOTE_IDENT:%1]
+#    # RewriteRule .* - [E=X_REMOTE_IDENT:%1]
 #    # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=kameleon
 #    # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=oar
-#    # RewriteRule .* - [E=MY_REMOTE_IDENT:]
-#    # RequestHeader set X_REMOTE_IDENT %{MY_REMOTE_IDENT}e
+#    # RewriteRule .* - [E=X_REMOTE_IDENT:]
+#    # RequestHeader set X_REMOTE_IDENT %{X_REMOTE_IDENT}e
 #  </IfModule>
 #</Location>
 
+</virtualhost>

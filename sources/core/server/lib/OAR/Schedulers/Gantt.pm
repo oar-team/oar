@@ -1,4 +1,3 @@
-# $Id$
 package OAR::Schedulers::Gantt;
 require Exporter;
 use OAR::Schedulers::ResourceTree;
@@ -18,7 +17,7 @@ use Data::Dumper;
 
 # 2^32 is infinity in 32 bits stored time
 my $Infinity = 4294967296;
-my $local_tz = DateTime::TimeZone->new(name => 'local');
+my $local_tz;
 
 # Prototypes
 # gantt chart management
@@ -37,6 +36,7 @@ sub add_new_resources($$);
 sub set_occupation($$$$);
 sub get_free_resources($$$);
 sub find_first_hole($$$$$$$$$$$$);
+sub find_hole($$$);
 sub gantt2str($);
 sub strips2str($);
 sub get_infinity_value();
@@ -96,8 +96,8 @@ sub new($$){
                         $empty_vec,             # - base resources vector for the gantt
                         $empty_vec,             # - reference empty vec (filled with 0)
                         $minimum_hole_duration, # - minimum duration time for a hole (see oar.conf)
-                        [$Infinity,$Infinity]   # - [t_start,t_end] of the last hole which was checked in the last find_first_hole
-                    ]                           #   call, if a timeout was triggered.
+                        [$Infinity,$Infinity]   # - [t_start,t_end] of the last hole inpected in the previous find_first_hole
+                    ]                           #   calls, if a timeout was triggered.
                 ];
     
     return($result);
@@ -231,11 +231,16 @@ sub compute_constraints($$$$) {
     my $now_date = shift;
     my $default_iterations = shift;
     my $log_prefix = shift;
+    # Compute local tz as a singleton because it is said to be time consuming.
+    if (not defined($local_tz)) {
+        $local_tz = DateTime::TimeZone->new(name => 'local') or
+            oar_error($log_prefix." failed to retrieve the local timezone, please fix your system timezone\n");
+    }
     my $now = DateTime->from_epoch(epoch => $now_date, time_zone => $local_tz);
     my $constraints = {};
-    # parse constraints
+    # Parse constraints
     foreach (split(/\s*,\s*/,$constraint_str)) {
-        # format is: [days of week]/[start hour]:[start minute]/[duration hours](:[duration minutes])(/[start date YYYY-MM-DD]/[# iterations])
+        # Format is: [days of week]/[start hour]:[start minute]/[duration hours](:[duration minutes])(/[start date YYYY-MM-DD]/[# iterations])
         if (/^(\d+)\/(\d?\d):(\d\d)\/(\d+)(?::(\d\d))?(?:\/(\d\d\d\d)-(\d\d)-(\d\d)\/(\d+))?$/) {
             # Compute intervals, given the current date (e.g. what time interval is next tuesday, starting at 14:00 for 10 hours)
             my $c = { days => $1, start => { h => $2, m => $3 }, duration => { h => $4, m => defined($5)?$5:0 } };
@@ -284,7 +289,7 @@ sub compute_constraints($$$$) {
     # Merge constraints intervals in case of overlaps.
     my @starts = sort {$a <=> $b} keys(%$constraints);
     my $i = shift @starts;
-    my @result = ([0,84600]); # initialize with a fake first constraint, as required by the find_first_hole function
+    my @result = ([0,84600]); # Initialize with a fake first constraint, as required by the find_first_hole function
     my $max_constraint_duration = 0;
     while (defined $i) {
         my $j = shift @starts;
@@ -410,6 +415,19 @@ sub manage_gantt_for_container($$$$$$$$$$) {
     }
 }
 
+# Helper function to test if a Gantt is defined, without side effect
+sub defined_gantt($$$$$) {
+    my $gantt = shift;
+    my $gantt_name = shift;
+    my $placeholder = shift;
+    my $user = shift;
+    my $name = shift;
+    return (exists($gantt->{$gantt_name}) and defined($gantt->{$gantt_name})
+        and exists($gantt->{$gantt_name}->{$placeholder}) and defined($gantt->{$gantt_name}->{$placeholder})
+        and exists($gantt->{$gantt_name}->{$placeholder}->{$user}) and defined($gantt->{$gantt_name}->{$placeholder}->{$user})
+        and exists($gantt->{$gantt_name}->{$placeholder}->{$user}->{$name}) and defined($gantt->{$gantt_name}->{$placeholder}->{$user}->{$name}));
+}
+
 # Manage the different gantts used in the schedulers handling container, timesharing and placeholder
 # See oar_sched_gantt_with_timesharing_and_placeholder
 # This allows to factorize code since this function is called in the 2 phases (running jobs, and to schedule jobs)
@@ -428,10 +446,7 @@ sub manage_gantt_hierarchy($$$$$$) {
     my $timesharing_name = "";
     if (defined($types->{inner})){
         $gantt_name = "container:$types->{inner}";
-        if (defined($gantt->{$gantt_name}) and
-            defined($gantt->{$gantt_name}->{""}) and
-            defined($gantt->{$gantt_name}->{""}->{""}) and
-            defined($gantt->{$gantt_name}->{""}->{""}->{""})){ # even if the actual gantt to use is a timesharing/placeholer gantt, the "raw" gantt should exist 
+        if (defined_gantt($gantt, $gantt_name, "", "", "")){ # even if the actual gantt to use is a timesharing/placeholer gantt, the "raw" gantt should exist 
             oar_debug("$log_prefix inner job, using gantt: ($gantt_name,...)\n");
         }else{ # Existing jobs are placed in the default gantt if the container does not exist, but new jobs will actually not be scheduled, but it's handled outside this file
             oar_debug("$log_prefix inner job, using gantt: (default,...), because gantt: ($gantt_name,...) does not exist anymore.\n");
@@ -445,10 +460,7 @@ sub manage_gantt_hierarchy($$$$$$) {
     if (defined($types->{placeholder})){ # the placeholder job type is incompatible with allowed and timesharing types 
         $placeholder_name = $types->{placeholder};
         oar_debug("$log_prefix placeholder job, using gantt: ($gantt_name,...)\n");
-        if (not (defined($gantt->{$gantt_name}) and
-                 defined($gantt->{$gantt_name}->{$placeholder_name}) and
-                 defined($gantt->{$gantt_name}->{$placeholder_name}->{""}) and
-                 defined($gantt->{$gantt_name}->{$placeholder_name}->{""}->{""}))){
+        if (not defined_gantt($gantt, $gantt_name, $placeholder_name, "", "")){
             oar_debug("$log_prefix placeholder job, cloning new gantt ($gantt_name,$placeholder_name,,) from ($gantt_name,,,)\n");
             $gantt->{$gantt_name}->{$placeholder_name}->{""}->{""} = dclone($gantt->{$gantt_name}->{""}->{""}->{""});
         }
@@ -464,10 +476,10 @@ sub manage_gantt_hierarchy($$$$$$) {
                     if ($1 eq "user"){
                         $timesharing_user = $job_user;
                     }elsif ($1 eq "name") {
-                        if (defined($job_name)){
+                        if (defined($job_name) and $job_name ne "") {
                             $timesharing_name = $job_name;
                         } else {
-                            oar_debug("$log_prefix job name not set, cannot restrict timesharing on name\n");
+                            oar_debug("$log_prefix timesharing on name but no job name defined, using *\n");
                         }
                     }
                 }
@@ -476,32 +488,15 @@ sub manage_gantt_hierarchy($$$$$$) {
         oar_debug("$log_prefix scheduling job in gantt: ($gantt_name,$allowed_name,$timesharing_name,$timesharing_user)\n");
         my @gantt_name_list=($gantt_name);
         if ($gantt_name =~ /^constraints:/) {
-            if (not (defined($gantt->{$gantt_name}) and
-                     defined($gantt->{$gantt_name}->{""}) and
-                     defined($gantt->{$gantt_name}->{""}->{""}) and
-                     defined($gantt->{$gantt_name}->{""}->{""}->{""}))) {
+            if (not defined_gantt($gantt, $gantt_name, "", "", "")) {
                 oar_debug("$log_prefix cloning new gantt: ($gantt_name,,,) from applying constraints to (default,,,)\n");
                 $gantt->{$gantt_name}->{""}->{""}->{""} = clone_with_constraints($gantt->{default}->{""}->{""}->{""}, $constraints->{$types->{constraints}});
             }
-            if ((defined($gantt->{default}) and
-                 defined($gantt->{default}->{$allowed_name}) and
-                 defined($gantt->{default}->{$allowed_name}->{""}) and
-                 defined($gantt->{default}->{$allowed_name}->{""}->{""})
-                ) and not (defined($gantt->{$gantt_name}) and
-                           defined($gantt->{$gantt_name}->{$allowed_name}) and
-                           defined($gantt->{$gantt_name}->{$allowed_name}->{""}) and
-                           defined($gantt->{$gantt_name}->{$allowed_name}->{""}->{""}))) {
+            if (defined_gantt($gantt, "default", $allowed_name, "", "") and not defined_gantt($gantt, $gantt_name, $allowed_name, "", "")) {
                 oar_debug("$log_prefix cloning new gantt: ($gantt_name,$allowed_name,,) from applying constraints to (default,$allowed_name,,)\n");
                 $gantt->{$gantt_name}->{$allowed_name}->{""}->{""} = clone_with_constraints($gantt->{default}->{$allowed_name}->{""}->{""}, $constraints->{$types->{constraints}});
             }
-            if ((defined($gantt->{default}) and
-                 defined($gantt->{default}->{""}) and
-                 defined($gantt->{default}->{""}->{$timesharing_name}) and
-                 defined($gantt->{default}->{""}->{$timesharing_name}->{$timesharing_user})
-                ) and not (defined($gantt->{$gantt_name}) and
-                           defined($gantt->{$gantt_name}->{""}) and
-                           defined($gantt->{$gantt_name}->{""}->{$timesharing_name}) and
-                           defined($gantt->{$gantt_name}->{""}->{$timesharing_name}->{$timesharing_user}))){
+            if (defined_gantt($gantt, "default", "", $timesharing_name, $timesharing_user) and not defined_gantt($gantt, $gantt_name, "", $timesharing_name, $timesharing_user)){
                 oar_debug("$log_prefix cloning new gantt: ($gantt_name,,$timesharing_name,$timesharing_user) from applying constraints to (default,,$timesharing_name,$timesharing_user)\n");
                 $gantt->{$gantt_name}->{""}->{$timesharing_name}->{$timesharing_user} = clone_with_constraints($gantt->{default}->{""}->{$timesharing_name}->{$timesharing_user}, $constraints->{$types->{constraints}});
             }
@@ -510,18 +505,8 @@ sub manage_gantt_hierarchy($$$$$$) {
             @gantt_name_list=("default", $gantt_name);
         }
         foreach my $g (@gantt_name_list) {
-            if (not (defined($gantt->{$gantt_name}) and
-                     defined($gantt->{$gantt_name}->{$allowed_name}) and
-                     defined($gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}) and
-                     defined($gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}->{$timesharing_user}))) {
-                if (not (defined($gantt->{$gantt_name}) and
-                         defined($gantt->{$gantt_name}->{$allowed_name}) and
-                         defined($gantt->{$gantt_name}->{$allowed_name}->{""}) and
-                         defined($gantt->{$gantt_name}->{$allowed_name}->{""}->{""})
-                   ) and not (defined($gantt->{$gantt_name}) and
-                              defined($gantt->{$gantt_name}->{""}) and
-                              defined($gantt->{$gantt_name}->{""}->{$timesharing_name}) and
-                              defined($gantt->{$gantt_name}->{""}->{$timesharing_name}->{$timesharing_name}))) {
+            if (not defined_gantt($gantt, $gantt_name, $allowed_name, $timesharing_name, $timesharing_user)) {
+                if (not defined_gantt($gantt, $gantt_name, $allowed_name, "", "") and not defined_gantt($gantt, $gantt_name, "", $timesharing_name, $timesharing_name)) {
                     oar_debug("$log_prefix cloning new gantt: ($gantt_name,$allowed_name,$timesharing_name,$timesharing_user) from ($gantt_name,,,)\n");
                     $gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}->{$timesharing_user} = dclone($gantt->{$gantt_name}->{""}->{""}->{""});
                     if ($allowed_name ne "") {
@@ -532,20 +517,14 @@ sub manage_gantt_hierarchy($$$$$$) {
                         oar_debug("$log_prefix cloning new gantt: ($gantt_name,,$timesharing_name,$timesharing_user) from ($gantt_name,,,)\n");
                         $gantt->{$gantt_name}->{""}->{$timesharing_name}->{$timesharing_user} = dclone($gantt->{$gantt_name}->{""}->{""}->{""});
                     }
-                } elsif (not (defined($gantt->{$gantt_name}) and
-                              defined($gantt->{$gantt_name}->{$allowed_name}) and
-                              defined($gantt->{$gantt_name}->{$allowed_name}->{""}) and
-                              defined($gantt->{$gantt_name}->{$allowed_name}->{""}->{""}))) { # but G($g,,$u,$n) is defined
+                } elsif (not defined_gantt($gantt, $gantt_name, $allowed_name, "", "")) { # but G($g,,$u,$n) is defined
                     oar_debug("$log_prefix cloning new gantt: ($gantt_name,$allowed_name,,) from ($gantt_name,,,)\n");
                     $gantt->{$gantt_name}->{$allowed_name}->{""}->{""} = dclone($gantt->{$gantt_name}->{""}->{""}->{""});
                     if ($timesharing_name ne "" and $timesharing_user ne "") {
                         oar_debug("$log_prefix cloning gantt: ($gantt_name,$allowed_name,$timesharing_name,$timesharing_user) from ($gantt_name,,$timesharing_name,$timesharing_user)\n");
                         $gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}->{$timesharing_user} = dclone($gantt->{$gantt_name}->{""}->{$timesharing_name}->{$timesharing_user});
                     }
-                } elsif (not (defined($gantt->{$gantt_name}) and
-                              defined($gantt->{$gantt_name}->{""}) and
-                              defined($gantt->{$gantt_name}->{""}->{$timesharing_name}) and
-                              defined($gantt->{$gantt_name}->{""}->{$timesharing_name}->{$timesharing_user}))) { # but G($i,$p,,) is defined
+                } elsif (not defined_gantt($gantt, $gantt_name, "", $timesharing_name, $timesharing_user)) { # but G($i,$p,,) is defined
                     oar_debug("$log_prefix cloning gantt: ($gantt_name,,$timesharing_name,$timesharing_user) from ($gantt_name,,,)\n");
                     $gantt->{$gantt_name}->{""}->{$timesharing_name}->{$timesharing_user} = dclone($gantt->{$gantt_name}->{""}->{""}->{""});
                     if ($allowed_name ne "") {
@@ -657,7 +636,7 @@ sub set_occupation($$$$){
         my $slot_deleted = 0;
         # Look at all holes that are before the end of the occupation
         if (($#{$gantt->[$g]->[1]} >= 0) and ($gantt->[$g]->[1]->[$#{$gantt->[$g]->[1]}]->[0] >= $date)){
-            # Look at holes with a bigger slot >= $date
+            # Look at holes with a biggest slot >= $date
             my $h = 0;
             my $slot_date_here = 0;
             while ($h <= $#{$gantt->[$g]->[1]}){
@@ -977,3 +956,4 @@ sub find_first_hole($$$$$$$$$$$$){
     return($current_time, $comment, \@result_tree_list);
 }
 
+return 1;

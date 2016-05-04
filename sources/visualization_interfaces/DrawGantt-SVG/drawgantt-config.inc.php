@@ -2,8 +2,7 @@
 /**
  * OAR Drawgantt-SVG
  * @author Pierre Neyron <pierre.neyron@imag.fr>
- * @copyright Laboratoire d'Informatique de Grenoble / Inria
- * @license GNU General Public License (GPL) version 3
+ *
  */
 
 // OAR Drawgantt SVG configuration file
@@ -12,16 +11,17 @@
 // Configuration
 ////////////////////////////////////////////////////////////////////////////////
 
-// Navigation bar configuration
-$CONF['nav_default_scale'] = 10; // vertical scale of the grid
-$CONF['nav_scales'] = array(
-  'small' => 10,
-  'big' => 20,
-  'huge' => 40,
-);
+// Default settings for the default view 
+$CONF['default_start'] = ""; // default start and stop times (ctime values) ; unless you want to always show a
+$CONF['default_stop'] = "";  // same time frame, keep those values to "" 
+$CONF['default_relative_start'] = ""; // default relative start and stop times ([+-]<seconds>), mind setting it
+$CONF['default_relative_stop'] = "";  // accordingly to the nav_forecast values below, eg -24*3600*0.1 and 24*3600*0.9
+$CONF['default_timespan'] = 6*3600; // default timespan, should be one of the nav_timespans below
+$CONF['default_resource_base'] = 'cpuset'; // default base resource, should be one of the nav_resource_bases below
+$CONF['default_scale'] = 10; // default vertical scale of the grid, should be one of the nav_scales bellow
 
-$CONF['nav_default_timespan'] = 6*3600; // proposed timespan in the "set" bar
-$CONF['nav_timespans'] = array(
+// Navigation bar configuration
+$CONF['nav_timespans'] = array( // proposed timespan in the "set" bar
   '1 hour' => 3600,
   '3 hours' => 3*3600,
   '6 hours' => 6*3600,
@@ -31,15 +31,36 @@ $CONF['nav_timespans'] = array(
   '1 week' => 7*24*3600,
 );
 
-$CONF['nav_filters'] = array( // proposed filters in the "misc" bar
-  'all clusters' => "",
-  'cluster1 only' => 'cluster=\'cluster1\'',
-  'cluster2 only' => 'cluster=\'cluster2\'',
-  'cluster3 only' => 'cluster=\'cluster3\'',
+$CONF['nav_forecast'] = array( // forecast display
+  '1 day' => 24*3600,
+  '3 days' => 3*24*3600,
+  '1 week' => 7*24*3600,
+  '2 weeks' => 2*7*24*3600,
+  '3 weeks' => 3*7*24*3600,
+);
+$CONF['nav_forecast_past_part'] = 0.1; // past part to show (percentage if < 1, otherwise: number of seconds)
+
+$CONF['nav_scales'] = array( // proposed scales for resources
+  'small' => 10,
+  'big' => 20,
+  'huge' => 40,
 );
 
-$CONF['nav_default_resource_base'] = 'cpuset';
-$CONF['nav_resource_bases'] = array(
+$CONF['nav_timeshifts'] = array( // proposed time-shifting buttons
+  '1h' => 3600,
+  '6h' => 6*3600,
+  '1d' => 24*3600,
+  '1w' => 7*24*3600,
+);
+
+$CONF['nav_filters'] = array( // proposed filters in the "misc" bar
+  'all clusters' => 'resources.type = \'default\'',
+  'cluster1 only' => 'resources.cluster=\'cluster1\'',
+  'cluster2 only' => 'resources.cluster=\'cluster2\'',
+  'cluster3 only' => 'resources.cluster=\'cluster3\'',
+);
+
+$CONF['nav_resource_bases'] = array( // proposed base resources
   'network_address',
   'cpuset',
 );
@@ -49,14 +70,13 @@ $CONF['nav_timezones'] = array( // proposed timezones in the "misc" bar (the fir
   'Europe/Paris',
 );
 
-$CONF['nav_custom_buttons'] = array( // custom buttons
-  'my label' => 'http://my.url'      // click opens the url in a new window
+$CONF['nav_custom_buttons'] = array( // custom buttons, click opens the url in a new window
+  'my label' => 'http://my.url'      // remove all lines to disable (empty array)
 );
 
 // Database access configuration
-$CONF['db_type']="pg"; // choices: mysql for Mysql or pg for PostgreSQL
 $CONF['db_server']="127.0.0.1";
-$CONF['db_port']="5432"; // usually 3306 for Mysql or 5432 for PostgreSQL
+$CONF['db_port']="5432"; // usually 5432 for PostgreSQL
 $CONF['db_name']="oar"; // OAR read only user account 
 $CONF['db_user']="oar_ro";
 $CONF['db_passwd']="oar_ro";
@@ -85,10 +105,10 @@ $CONF['state_colors'] = array( // colors for the states of the resources in the 
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)', 'Drain' => 'url(#drainPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
   'besteffort' => 'url(#besteffortPattern)', 
-  'deploy' => 'url(#deployPattern)', 
-  'container' => 'url(#containerPattern)', 
+  'deploy(=\w)?' => 'url(#deployPattern)', 
+  'container(=\w+)?' => 'url(#containerPattern)', 
   'timesharing=(\*|user),(\*|name)' => 'url(#timesharingPattern)', 
-  'set_placeholder=\w+' => 'url(#placeholderPattern)',
+  'placeholder=\w+' => 'url(#placeholderPattern)',
   );
 $CONF['job_click_url'] = ''; // set a URL to open when a job is double-clicked, %%JOBID%% is to be replaced by the jobid in the URL
 $CONF['resource_click_url'] = ''; // set a URL to open when a resource is double-clicked, %%TYPE%% is to be replaced by the resource type and %%ID%% by the resource id in the URL
@@ -106,7 +126,7 @@ $CONF['label_right_align'] = 105; // default: 105
 $CONF['hierarchy_left_align'] = 110; // default: 110
 $CONF['gantt_left_align'] = 160; // default: 160
 $CONF['gantt_min_width'] = 900; // default: 900
-$CONF['gantt_min_height'] = 400; // default: 400
+$CONF['gantt_min_height'] = 100; // default: 100
 $CONF['gantt_min_job_width_for_label'] = 40; // default: 40
 $CONF['min_state_duration'] = 2; // default: 2
 
@@ -155,6 +175,8 @@ $CONF['static_patterns'] = <<<EOT
 </pattern> 
 EOT;
 
+// Standby state display options for the part shown in the future
+$CONF['standby_truncate_state_to_now'] = 1; // default: 1
 // Besteffort job display options for the part shown in the future
 $CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
 $CONF['besteffort_pattern'] = <<<EOT

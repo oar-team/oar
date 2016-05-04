@@ -294,12 +294,12 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                         }
                         push(@tmp_hosts, $n) if ($i > $#bad);
                     }
-                    OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
+                    $base->begin_work();
                     OAR::IO::set_job_message($base,$Job_id,"One or several nodes are not responding correctly(CPUSET_ERROR)");
                     OAR::IO::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR cpuset suspects nodes for the job $Job_id : @bad",\@bad);
                     OAR::IO::archive_some_moldable_job_nodes($base,$job->{assigned_moldable_job},\@bad);
-                    OAR::IO::unlock_table($base);
-                    OAR::Tools::notify_tcp_socket($Server_host,$Server_port,"ChState");
+                    $base->commit();
+                    OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
                     @hosts = @tmp_hosts;
                     @bad = ();
                 }else{
@@ -325,7 +325,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         @bad = OAR::PingChecker::test_hosts(@hosts);
     }
     if ($#bad >= 0){
-        OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
+        $base->begin_work();
         OAR::IO::set_job_message($base,$Job_id,"One or several nodes are not responding correctly");
         oar_error("[bipbip] [$Job_id] /!\\ Some nodes are inaccessible ($event_type):\n@bad\n");
         my $exit_bipbip = 1;
@@ -355,8 +355,8 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         }
         #OAR::IO::set_job_state($base,$Job_id,"Error");
         OAR::IO::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR suspects nodes for the job $Job_id : @bad",\@bad);
-        OAR::IO::unlock_table($base);
-        OAR::Tools::notify_tcp_socket($Server_host,$Server_port,"ChState");
+        $base->commit();
+        OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         if ($exit_bipbip == 1){
             OAR::IO::disconnect($base);
             exit(2);
@@ -428,10 +428,11 @@ eval {
                 my ($addr,$port) = split(/:/,$job->{info_type});
                 if (defined(OAR::Tools::notify_tcp_socket($addr,$port,"GOOD JOB"))){
                     oar_error("[bipbip] [$Job_id] Fragging job $Job_id because oarsub cannot be notified by the server on host: $addr:$port.\n");
-                    OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
+                    oar_error("[bipbip $Job_id] Frag job $Job_id because oarsub cannot be notified by the server on host: $addr:$port. Check your network and firewall configuration\n");
+                    $base->begin_work();
                     OAR::IO::frag_job($base,$Job_id);
-                    OAR::IO::unlock_table($base);
-                    OAR::Tools::notify_tcp_socket($Server_host,$Server_port,"Qdel");
+                    $base->commit();
+                    OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qdel");
                 }
             }
             OAR::IO::disconnect($base) if ($Oarexec_detach == 0);

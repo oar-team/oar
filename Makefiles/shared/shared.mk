@@ -112,7 +112,7 @@ $(TEMPLATE_BUILDED_FILES) : %: %.in
 	    s#%%OAROWNERGROUP%%#$(OAROWNERGROUP)#g;;\
 	    s#%%WWWUSER%%#$(WWWUSER)#g;;\
 	    s#%%APACHECONFDIR%%#$(APACHECONFDIR)#g;;\
-	    s#%%WWW_ROOTDIR%%#$(WWW_ROOTDIR)#g;;\
+	    s#%%WWWROOTDIR%%#$(WWWROOTDIR)#g;;\
 	    s#%%WWWDIR%%#$(WWWDIR)#g;;\
 	    s#%%XAUTHCMDPATH%%#$(XAUTHCMDPATH)#g;;\
 	    s#%%OARSHCMD%%#$(OARSHCMD)#g;;\
@@ -120,6 +120,7 @@ $(TEMPLATE_BUILDED_FILES) : %: %.in
 	    s#%%DEFAULTDIR%%#$(DEFAULTDIR)#g;;\
 	    s#%%SETUP_TYPE%%#$(SETUP_TYPE)#g;;\
 	    s#%%TARGET_DIST%%#$(TARGET_DIST)#g;;\
+	    s#%%OARDOPATH%%#/bin:/sbin:/usr/bin:/usr/sbin:$(BINDIR):$(SBINDIR):$(OARDIR)/oardodo#;;\
 	    " "$@.in" > $@ 
 
 clean_templates:

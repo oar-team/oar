@@ -62,7 +62,6 @@ if (!defined($base)){
 
 my $guilty_found=0;
 my $current = OAR::IO::get_date($base);
-oar_debug("[sarko] Current time : $current\n");
 
 # Look at leon timers
 # Decide if OAR must retry to delete the job or just change values in the database
@@ -108,9 +107,9 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")){
     if ($current > $start+$max){
         oar_debug("[sarko] [$job->{job_id}] time is exhausted\n");
         $guilty_found=1;
-        OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
+        $base->begin_work();
         OAR::IO::frag_job($base, $job->{job_id});
-        OAR::IO::unlock_table($base);
+        $base->commit();
         OAR::IO::add_new_event($base,"WALLTIME",$job->{job_id},"[sarko] Job [$job->{job_id}] from $start with $max; current time=$current (Elapsed)");
     }elsif (($job->{checkpoint} > 0) && ($current >= ($start+$max-$job->{checkpoint}))){
         # OAR must notify the job to checkpoint itself

@@ -1,4 +1,3 @@
-# $Id$
 package OAR::Schedulers::ResourceTree;
 
 use warnings;
@@ -16,7 +15,6 @@ sub new();
 sub destroy($);
 sub clone($);
 sub add_child($$$$);
-sub get_children_list($);
 sub is_node_a_leaf($);
 sub get_father($);
 sub get_current_resource_name($);
@@ -31,10 +29,6 @@ sub get_previous_brother($);
 sub get_next_brother($);
 sub get_initial_child($);
 sub get_last_child($);
-
-
-###############################################################################
-
 sub get_tree_leafs($);
 sub get_tree_leafs_vec($);
 sub delete_tree_nodes_with_not_enough_resources($);

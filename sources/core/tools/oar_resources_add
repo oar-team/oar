@@ -7,6 +7,7 @@ THREADS=1
 HOST_PREFIX="node-"
 YAML=""
 CREATE_PROPERTIES=1
+USE_THREADS=""
 
 usage() {
   cat <<EOF
@@ -16,6 +17,7 @@ Usage:
     Generate commands to add new resources to OAR database
 
 Options:
+    -T, --use-threads           use the thread resource property
     -H, --hosts <#>             # of hosts
     -C, --cpus <#>              # of cpu per host
     -c, --cores <#>             # of core per cpu
@@ -46,8 +48,8 @@ EOF
   exit 1
 }
 
-LONG_OPTS="hosts:,cpus:,cores:,threads:,host-prefix:,host-suffix:,host0:,cpu0:,core0:,thread0:,cpuset:,append:,write-to:,auto-offset,yaml,no-create-properties,help"
-SHORT_OPTS="H:C:c:t:P:S:A:o:aYph"
+LONG_OPTS="hosts:,cpus:,cores:,threads:,host-prefix:,host-suffix:,host0:,cpu0:,core0:,thread0:,cpuset:,append:,use-threads,write-to:,auto-offset,yaml,no-create-properties,help"
+SHORT_OPTS="H:C:c:t:P:S:A:o:TaYph"
 args=$(getopt -l $LONG_OPTS -o $SHORT_OPTS -q -- "$@")
 [ $? -gt 0 ] && die "Syntax error, $(getopt -l $LONG_OPTS -o $SHORT_OPTS -Q -- "$@" 2>&1)"
 
@@ -112,6 +114,9 @@ while [ $# -ge 1 ]; do
     WRITE_TO=$2
     shift
     ;;
+  -T|--use-threads)
+    USE_THREADS=1
+    ;;
   -a|--auto-offset)
     AUTO_OFFSET=1
     ;;
@@ -148,7 +153,9 @@ if [ -n "$AUTO_OFFSET" ]; then
   HOST0=${HOST0:-$(($(oarnodesetting --last-property-value host | perl -pe 's/^[^\d]*(\d+).*/$1/') + 1))}
   CPU0=${CPU0:-$(($(oarnodesetting --last-property-value cpu) + 1))}
   CORE0=${CORE0:-$(($(oarnodesetting --last-property-value core) + 1))}
-  THREAD0=${THREAD0:-$(($(oarnodesetting --last-property-value thread) + 1))}
+  if [ -n "$USE_THREADS" ]; then
+    THREAD0=${THREAD0:-$(($(oarnodesetting --last-property-value thread) + 1))}
+  fi
 else
   HOST0=${HOST0:-1}
   CPU0=${CPU0:-0}
@@ -161,13 +168,22 @@ thread=0
 core=0
 cpu=0
 
+if [ -z "$USE_THREADS" ]; then
+  # Force #threads=1 for the loop below to work. 
+  THREADS=1
+fi
+
 if [ -n "$CREATE_PROPERTIES" -a -z "$YAML" ]; then
   cat <<EOF
 oarproperty -c -a host || true
 oarproperty -a cpu || true
 oarproperty -a core || true
+EOF
+  if [ -n "$USE_THREADS" ]; then
+    cat <<EOF
 oarproperty -a thread || true
 EOF
+  fi
 fi
 
 if [ -n "$YAML" ]; then
@@ -181,7 +197,17 @@ while [ $host -le $HOSTS ]; do
     while [ $core -lt $((CORES * (cpu+1))) ]; do
       while [ $thread -lt $((THREADS * (core+1))) ]; do
         if [ -n "$YAML" ]; then
-          cat <<EOF
+          if [ -z "$USE_THREADS" ]; then
+            cat <<EOF
+- network_address: $hostname
+  host: $hostname
+  cpu: $((cpu+CPU0))
+  core: $((core+CORE0))
+  cpuset: $cpuset
+EOF
+            echo -ne "$APPEND"
+          else
+            cat <<EOF
 - network_address: $hostname
   host: $hostname
   cpu: $((cpu+CPU0))
@@ -189,9 +215,14 @@ while [ $host -le $HOSTS ]; do
   thread: $((thread+THREAD0))
   cpuset: $cpuset
 EOF
-          echo -ne "$APPEND"
+            echo -ne "$APPEND"
+          fi
         else
-          echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=$cpuset $APPEND"
+          if [ -z "$USE_THREADS" ]; then
+            echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p cpuset=$cpuset $APPEND"
+          else
+            echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=$cpuset $APPEND"
+          fi
         fi
         ((thread++))
         cpuset=$(((cpuset+1) % CPUSET))

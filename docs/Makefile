@@ -2,6 +2,7 @@
 #
 
 # You can set these variables from the command line.
+DOC_TARGET    = docmaster@oar.imag.fr
 SPHINXOPTS    =
 DOC_VERSION   = latest
 SPHINXBUILD   = sphinx-build
@@ -46,6 +47,9 @@ help:
 	@echo "  pseudoxml  to make pseudoxml-XML files for display purposes"
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
+	@echo "  publish    to upload online the HTML documentation"
+	@echo "  publishpdf to upload online the PDF documentation manuals"
+	@echo "  publishall to upload online the HTML and PDF documentation"
 
 clean:
 	rm -rf $(BUILDDIR)/*
@@ -54,9 +58,6 @@ html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
-
-publish_html: html
-	rsync -avh $(BUILDDIR)/html/ wiki.oar:/var/www/oar.imag.fr/docs/$(DOC_VERSION)
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
@@ -120,10 +121,6 @@ latexpdf:
 	$(MAKE) -C $(BUILDDIR)/latex all-pdf
 	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
 
-publish_pdf: latexpdf
-	rsync -avh $(BUILDDIR)/latex/*.pdf wiki.oar:/var/www/oar.imag.fr/docs/$(DOC_VERSION)
-	rsync -avh $(BUILDDIR)/latex/*.tex wiki.oar:/var/www/oar.imag.fr/docs/$(DOC_VERSION)
-
 latexpdfja:
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	@echo "Running LaTeX files through platex and dvipdfmx..."
@@ -183,3 +180,11 @@ pseudoxml:
 	$(SPHINXBUILD) -b pseudoxml $(ALLSPHINXOPTS) $(BUILDDIR)/pseudoxml
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
+
+publish: html
+	rsync -avh $(BUILDDIR)/html/ $(DOC_TARGET):~/oar-doc/$(DOC_VERSION)
+
+publishpdf: latexpdf
+	rsync -avh $(BUILDDIR)/latex/*.tex $(BUILDDIR)/latex/*.pdf $(DOC_TARGET):~/oar-doc/$(DOC_VERSION)
+
+publishall: publish publishpdf

@@ -192,7 +192,7 @@ sub get_duration($){
     if ($minutes==1) { $duration .="1 minute ";}
     elsif ($minutes) { $duration .="$minutes minutes ";};
     $seconds=$time%60;
-    if ($seconds==1) { $duration .="1 second ";}
+    if ($seconds<=1) { $duration .="$seconds second ";}
     elsif ($seconds) { $duration .="$seconds seconds ";};
     if ($duration eq "") {$duration="0 seconds ";};
     return $duration;
@@ -230,32 +230,21 @@ sub get_history($$){
     my %hash_dumper_result;
     my @nodes = OAR::IO::list_resources($base);
     $hash_dumper_result{resources} = \@nodes;
-    my %job_gantt = OAR::IO::get_jobs_gantt_scheduled($base,$date_start,$date_stop);
-    $hash_dumper_result{jobs} = \%job_gantt;
-    #print(Dumper(%hash_dumper_result));
-    #print finished or running jobs
-    my %jobs_history = OAR::IO::get_jobs_range_dates($base,$date_start,$date_stop);
-    foreach my $i (keys(%jobs_history)){
-        my $types = OAR::IO::get_job_types_hash($base,$i);
-        if (!defined($job_gantt{$i}) || (defined($types->{besteffort}))){
-            if (($jobs_history{$i}->{state} eq "Running") ||
-                ($jobs_history{$i}->{state} eq "toLaunch") ||
-                ($jobs_history{$i}->{state} eq "Suspended") ||
-                ($jobs_history{$i}->{state} eq "Resuming") ||
-                ($jobs_history{$i}->{state} eq "Launching")){
-                if (defined($types->{besteffort})){
-                    $jobs_history{$i}->{stop_time} = OAR::IO::get_gantt_visu_date($base);
-                }else{
-                    #This job must be already  printed by gantt
-                    next;
-                }
-            }
-            $hash_dumper_result{jobs}{$i} = $jobs_history{$i};
+    $hash_dumper_result{jobs} = OAR::IO::get_jobs_future_from_range($base,$date_start,$date_stop);
+    my $now_date = OAR::IO::get_gantt_visu_date($base);
+    my $jobs_past_and_current = OAR::IO::get_jobs_past_and_current_from_range($base,$date_start,$date_stop);
+    while (my ($k,$v) = each(%$jobs_past_and_current)){
+        if (exists($hash_dumper_result{jobs}->{$k})) {
+            #This job is already in the result (got it from the future...)
+            next;
         }
+        if (grep(/^besteffort$/,@{$v->{types}}) and $v->{state} =~ /^Running|toLaunch|Suspended|Resuming|Launching$/) {
+            $v->{stop_time} = $now_date;
+        }
+        $hash_dumper_result{jobs}->{$k} = $v;
     }
-
-    #print Down or Suspected resources
-    my %dead_resource_dates = OAR::IO::get_resource_dead_range_date($base,$date_start,$date_stop);
+    #Retrieve Dead and Suspected resources
+    my %dead_resource_dates = OAR::IO::get_resources_absent_suspected_dead_from_range($base,$date_start,$date_stop);
     $hash_dumper_result{dead_resources} = \%dead_resource_dates;
 
     return(\%hash_dumper_result);

@@ -24,12 +24,12 @@ my @resources_to_heal;
 my $Exit_code = 0;
 
 my $base = OAR::IO::connect();
-OAR::IO::lock_table($base,["resources","assigned_resources","jobs","job_state_logs","event_logs","event_log_hostnames","frag_jobs","moldable_job_descriptions","challenges","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","resource_logs"]);
+$base->begin_work();
 
 # Check event logs
 my @events_to_check = OAR::IO::get_to_check_events($base);
 foreach my $i (@events_to_check){
-    oar_debug("[NodeChangeState] Check event for the job $i->{job_id} with type $i->{type}\n");
+    oar_debug("[NodeChangeState] Check events for the job $i->{job_id} with type $i->{type}\n");
     my $job = OAR::IO::get_job($base,$i->{job_id});
     
     ####################################################
@@ -45,8 +45,9 @@ foreach my $i (@events_to_check){
                  and ($job->{stop_time} - $job->{start_time} > 60)
                 ){
                 my $new_job_id = OAR::IO::resubmit_job($base,$i->{job_id});
-                oar_warn("[NodeChangeState] We resubmit the job $i->{job_id} (new id = $new_job_id) because it is of the type idempotent and its exit code is 99.\n");
-                OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},"idempotent job type + exit code of 99 + duration > 60s = resubmit it (new id = $new_job_id).");
+                my $msg = "Resubmiting job $i->{job_id} => $new_job_id (type idempotent & exit code = 99 & duration > 60s)";
+                oar_warn($msg);
+                OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},$msg);
             }
         }
     }
@@ -170,8 +171,9 @@ foreach my $i (@events_to_check){
                 }
                 $Exit_code = 1;
             }
-            oar_warn("[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting them\n");
-            send_log_by_email("Suspecting nodes","[NodeChangeState] error ($i->{type}) on the nodes:\n\n@hosts\n\nSo we are suspecting them\n");
+            my $msg = "[NodeChangeState] Set nodes to suspected after error ($i->{type}): ".join(", ",@hosts);
+            oar_warn($msg);
+            send_log_by_email("Suspecting nodes",$msg);
         }
     }
     
@@ -184,8 +186,8 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "SERVER_EPILOGUE_TIMEOUT") ||
         ($i->{type} eq "SERVER_EPILOGUE_EXIT_CODE_ERROR")
        ){
-        oar_warn("[NodeChangeState] Server admin script error so we stop all scheduling queues : $i->{type}. When the error will be fixed then you can execute : oarnotify -E\n");
-        send_log_by_email("Stop all scheduling queues","[NodeChangeState] Server admin script error so we stop all scheduling queues : $i->{type}. When the error will be fixed then you can execute : oarnotify -E\n");
+        oar_warn("[NodeChangeState] Server admin script error, stopping all scheduler queues: $i->{type}\n");
+        send_log_by_email("Stop all scheduling queues","[NodeChangeState] Server admin script error, stopping all scheduler queues: $i->{type}. Fix errors and run `oarnotify -E' to re-enable them.\n");
         OAR::IO::stop_all_queues($base);
         OAR::IO::set_job_state($base,$i->{job_id},"Error");
     }
@@ -208,8 +210,9 @@ foreach my $i (@events_to_check){
        ){
         if (($job->{reservation} eq "None") and ($job->{job_type} eq "PASSIVE") and (OAR::IO::is_job_already_resubmitted($base, $i->{job_id}) == 0)){
             my $new_job_id = OAR::IO::resubmit_job($base,$i->{job_id});
-            oar_warn("[NodeChangeState] We resubmit the job $i->{job_id} (new id = $new_job_id) because the event was $i->{type} and the job is neither a reservation nor an interactive job.\n");
-            OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},"An ERROR occured and we cannot launch this job so we resubmit it (new id = $new_job_id).");
+            my $msg = "[NodeChangeState] Resubmiting job $i->{job_id} => $new_job_id) (due to event $i->{type} & job is neither a reservation nor an interactive job)\n";
+            oar_warn($msg);
+            OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},$msg);
         }
     }
 
@@ -234,7 +237,7 @@ foreach my $i (@events_to_check){
             my $jobtypes = OAR::IO::get_job_types_hash($base, $job->{job_id});
             if (defined($jobtypes->{noop})){
                 OAR::IO::suspend_job_action($base,$job->{job_id},$job->{assigned_moldable_job});
-                oar_debug("[NodeChangeStat]e [$job->{job_id}] Suspend NOOP job OK\n");
+                oar_debug("[NodeChangeStat]e [$job->{job_id}] suspend job of type noop\n");
                 OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Term");
             }else{
                 # Launch suspend command on all nodes
@@ -262,7 +265,7 @@ foreach my $i (@events_to_check){
                         $suspend_file = "$ENV{OARDIR}/$suspend_file" if ($suspend_file !~ /^\//);
                         my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_file,"suspend",$openssh_cmd,$taktuk_cmd,$base);
                         if ($tag == 0){
-                            my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] Bad suspend/resume file : $suspend_file\n";
+                            my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] bad suspend/resume file: $suspend_file\n";
                             oar_error($str);
                             OAR::IO::add_new_event($base, "SUSPEND_RESUME_MANAGER_FILE", $i->{job_id}, $str);
                         }else{
@@ -278,13 +281,12 @@ foreach my $i (@events_to_check){
                                     eval {
                                         $SIG{ALRM} = sub { die "alarm\n" };
                                         alarm($timeout);
-                                        oar_debug("[NodeChangeState] [$i->{job_id}] LAUNCH the script just after the suspend : $suspend_script $i->{job_id}\n");
+                                        oar_debug("[NodeChangeState] [$i->{job_id}] launching post suspend script: $suspend_script $i->{job_id}\n");
                                         $script_error = system("$suspend_script $i->{job_id}");
-                                        oar_debug("[NodeChangeStat]e [$i->{job_id}] END the script just after the suspend : $suspend_script $i->{job_id}\n");
                                         alarm(0);
                                     };
                                     if( $@ || ($script_error != 0)){
-                                        my $str = "[NodeChangeState] [$i->{job_id}] Suspend script error (so we are resuming it): $@; return code = $script_error\n";
+                                        my $str = "[NodeChangeState] [$i->{job_id}] suspend script error, resuming job: $@; return code = $script_error\n";
                                         oar_warn($str);
                                         send_log_by_email("Suspend script error","$str");
                                         OAR::IO::add_new_event($base,"SUSPEND_SCRIPT_ERROR",$i->{job_id},$str);
@@ -293,7 +295,7 @@ foreach my $i (@events_to_check){
                                     }
                                 }
                             }else{
-                                my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] Error on several nodes : @bad\n";
+                                my $str = "[NodeChangeState] [SUSPEND_RESUME] [$i->{job_id}] error on several nodes: @bad\n";
                                 oar_error($str);
                                 OAR::IO::add_new_event_with_host($base,"SUSPEND_ERROR",$i->{job_id},$str,\@bad);
                                 OAR::IO::frag_job($base,$i->{job_id});
@@ -335,12 +337,10 @@ foreach my $i (@events_to_check){
 my %resources_to_change = OAR::IO::get_resources_change_state($base);
 
 # A Term command must be added in the Almighty
-oar_debug("[NodeChangeState] number of resources to change state = ".keys(%resources_to_change)."\n");
 my %debug_info;
 if (keys(%resources_to_change) > 0){
     $Exit_code = 1;
 
-    OAR::IO::get_lock($base,"nodechangestate",3600); # only for MySQL
     foreach my $i (keys(%resources_to_change)){
         my $resource_info = OAR::IO::get_resource_info($base,$i);
         if ($resource_info->{state} ne $resources_to_change{$i}){
@@ -354,38 +354,32 @@ if (keys(%resources_to_change) > 0){
             }
         
             if (($resources_to_change{$i} eq 'Dead') || ($resources_to_change{$i} eq 'Absent')){
-                oar_debug("[NodeChangeState] Check jobs to delete on $i ($resource_info->{network_address}):\n");
                 my @jobs = OAR::IO::get_resource_job_to_frag($base,$i);
                 foreach my $j (@jobs){
-                    oar_debug("[NodeChangeState]\tThe job $j is fragging.\n");
+                    oar_debug("[NodeChangeState] $resource_info->{network_address}: must kill job $j.\n");
                     OAR::IO::frag_job($base,$j);
                     # A Leon must be run
                     $Exit_code = 2;
                 }
-                oar_debug("[NodeChangeState] Check done\n");
             }
         }else{
             oar_debug("[NodeChangeState] ($resource_info->{network_address}) $i is already in the $resources_to_change{$i} state\n");
             OAR::IO::set_resource_nextState($base,$i,'UnChanged');
         }
     }
-    OAR::IO::release_lock($base,"nodechangestate"); # only for MySQL
 }
 
-my $str;
+my $email;
 foreach my $h (keys(%debug_info)){
-    $str .= "\n$h";
-    foreach my $r (keys(%{$debug_info{$h}})){
-        $str .= "\n\t$r --> $debug_info{$h}->{$r}";
-    }
-    $str .= "\n";
+    my $str = "[NodeChangeState] state change requested for $h: ".join(" ", map {"$_:$debug_info{$h}->{$_}"} keys(%{$debug_info{$h}}))."\n";
+    oar_warn($str);
+    $email .= $str;
 }
-if (defined($str)){
-    oar_warn("[NodeChangeState] Resource state changes requested:\n$str\n");
-    send_log_by_email("Resource state modifications","[NodeChangeState] Resource state changes requested:\n$str\n");
+if (defined($email)){
+    send_log_by_email("Resource state modifications", $email);
 }
 
-OAR::IO::unlock_table($base);
+$base->commit();
 OAR::IO::disconnect($base);
 
 my $timeout_cmd = 10;

@@ -1,13 +1,3 @@
-# This is the iolib, which manages the layer between the modules and the
-# database. This is the only base-dependent layer.
-# When adding a new function, the following comments are required before the code of the function:
-# - the name of the function
-# - a short description of the function
-# - the list of the parameters it expect
-# - the list of the return values
-# - the list of the side effects
-
-# $Id$
 package OAR::IO;
 require Exporter;
 
@@ -34,6 +24,12 @@ $Data::Dumper::Deepcopy = 1;
 sub connect();
 sub connect_ro();
 sub disconnect($);
+sub connect_ro_one();
+sub connect_one();
+sub timeout_db($$);
+sub get_last_insert_id($$);
+sub connect_db($$$$$$);
+sub connect_ro_one_log($);
 
 # JOBS MANAGEMENT
 sub get_job_challenge($$);
@@ -74,8 +70,9 @@ sub job_leon_exterminate($$);
 sub get_waiting_reservation_jobs($);
 sub get_waiting_reservation_jobs_specific_queue($$);
 sub get_waiting_toSchedule_reservation_jobs_specific_queue($$);
-sub get_jobs_range_dates($$$);
-sub get_jobs_gantt_scheduled($$$);
+sub parse_jobs_from_range($);
+sub get_jobs_past_and_current_from_range($$$);
+sub get_jobs_future_from_range($$$);
 sub get_jobs_for_user_query;
 sub count_jobs_for_user_query;
 sub get_desktop_computing_host_jobs($$);
@@ -88,13 +85,46 @@ sub get_jobs_to_schedule($$$);
 sub get_job_types_hash($$);
 sub set_moldable_job_max_time($$$);
 sub is_timesharing_for_2_jobs($$$);
+sub get_job_duration_in_state($$$);
+sub archive_some_moldable_job_nodes($$$);
+sub set_job_scheduler_info($$$);
+sub get_next_job_date_on_node($$);
+sub job_key_management($$$$);
+sub get_job_frag_state($$);
+sub set_job_exit_code($$$);
+sub get_job_types($$);
+sub add_current_job_types($$$);
+sub suspend_job_action($$$);
+sub get_jobs_in_states_for_user($$$);
+sub get_moldable_job($$);
+sub get_jobs_in_multiple_states($$);
+sub remove_current_job_types($$$);
+sub is_job_already_resubmitted($$);
+sub get_current_job_dependencies($$);
+sub log_job($$);
+sub get_count_same_ssh_keys_current_jobs($$$$);
+sub get_job_dependencies($$);
+sub resume_job_action($$);
+sub get_job_cpuset_name($$);
+sub update_scheduler_last_job_date($$$);
+sub get_scheduled_job_description($$);
+sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$);
+sub get_job_suspended_sum_duration($$$);
+sub get_jobs_with_given_properties($$);
+sub check_end_of_job($$$$$$$$$$);
+sub get_fairsharing_jobs_to_schedule($$$);
+sub get_cpuset_values_for_a_moldable_job($$$);
+sub job_finishing_sequence($$$$$$);
+sub format_job_message_text($$$$$$$$$);
+sub get_job_network_address($$);
+sub resubmit_job($$);
+sub get_waiting_reservations_already_scheduled($);
 
 #ARRAY JOBS MANAGEMENT
 sub get_jobs_in_array($$);
 sub get_job_array_id($$);
 sub get_array_subjobs($$);
 sub get_array_job_ids($$);
-
 
 # PROCESSJOBS MANAGEMENT (Resource assignment to jobs)
 sub get_resource_job($$);
@@ -114,7 +144,7 @@ sub list_resources($);
 sub count_all_resources($);
 sub get_requested_resources($$$);
 sub get_resource_info($$);
-sub get_resource_next_value_for_property($$);
+sub get_resource_last_value_of_property($$);
 sub is_node_exists($$);
 sub get_resources_on_node($$);
 sub set_node_state($$$$);
@@ -123,19 +153,56 @@ sub get_resources_change_state($);
 sub set_resource_nextState($$$);
 sub set_node_nextState($$$);
 sub set_node_expiryDate($$$);
-sub set_node_property($$$$);
-sub set_resource_property($$$$);
-sub get_resource_dead_range_date($$$);
+sub set_resources_property($$$$);
+sub get_resources_absent_suspected_dead_from_range($$$);
 sub get_expired_resources($);
 sub is_node_desktop_computing($$);
 sub get_resources_data_structure_current_job($$);
-sub get_hosts_state($);
 sub get_alive_nodes_with_jobs($);
 sub get_resources_by_property($$);
+sub get_jobs_on_resuming_job_resources($$);
+sub get_energy_saving_resources_availability($$);
+sub list_resource_properties_fields($);
+sub get_resources_with_given_sql($$);
+sub get_all_resources_on_node($$);
+sub get_resources_that_can_be_waked_up($$);
+sub get_absent_suspected_resources_for_a_timeout($$);
+sub add_resources($$);
+sub get_current_resources_with_suspended_job($);
+sub get_current_assigned_job_resources($$);
+sub get_alive_resources($);
+sub get_resources_that_will_be_out($$);
+sub set_resource_state($$$$);
+sub get_current_assigned_resources($);
+sub get_vecs_resources($);
+sub get_resource_job_with_state($$$);
+sub get_last_resource_id($);
+sub estimate_job_nb_resources($$$);
+sub get_specific_resource_states($$);
+sub get_current_free_resources_of_node($$);
+sub get_resource_ids_in_state($$);
+sub get_nodes_with_given_sql($$);
+sub get_nodes_that_can_be_waked_up($$);
+sub update_node_nextFinaudDecision($$$);
+sub search_idle_nodes($$);
+sub get_node_info($$);
+sub get_finaud_nodes($);
+sub get_last_wake_up_date_of_node($$);
+sub set_node_nextState_if_necessary($$$);
+sub get_current_assigned_nodes($);
 
 # QUEUES MANAGEMENT
 sub get_active_queues($);
 sub get_all_queue_informations($);
+sub delete_a_queue($$);
+sub start_all_queues($);
+sub is_waiting_job_specific_queue_present($$);
+sub stop_a_queue($$);
+sub create_a_queue($$$$);
+sub start_a_queue($$);
+sub stop_all_queues($);
+sub change_a_queue($$$$);
+sub update_current_scheduler_priority($$$$$);
 
 # GANTT MANAGEMENT
 sub get_gantt_scheduled_jobs($);
@@ -151,6 +218,12 @@ sub get_gantt_resources_for_job($$);
 sub set_gantt_job_startTime($$$);
 sub update_gantt_visualization($);
 sub get_gantt_visu_scheduled_job_resources($$);
+sub remove_gantt_resource_job($$$);
+sub get_gantt_hostname_to_wake_up($$$);
+sub get_gantt_Alive_resources_for_job($$);
+sub get_gantt_job_start_time($$);
+sub get_gantt_waiting_interactive_prediction_date($);
+sub get_gantt_job_start_time_visu($$);
 
 # ADMISSION RULES MANAGEMENT
 sub add_admission_rule($$$$);
@@ -185,6 +258,9 @@ sub get_hostname_event($$);
 sub get_job_events($$);
 sub get_events_for_hostname($$$);
 sub get_last_event_from_type($$);
+sub is_an_event_exists($$$);
+sub add_event_maintenance_on($$$);
+sub add_event_maintenance_off($$$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
@@ -192,15 +268,20 @@ sub update_accounting($$$$$$$$$$);
 sub get_accounting_summary($$$$$);
 sub get_accounting_summary_byproject($$$$$$);
 sub get_last_project_karma($$$$);
-
-# LOCK FUNCTIONS:
-sub get_lock($$$);
-sub release_lock($$);
+sub add_accounting_row($$$$$$$$$);
+sub delete_accounting_windows_before($$);
+sub get_sum_accounting_for_param($$$$$);
+sub get_sum_accounting_window($$$$);
+sub delete_all_from_accounting($);
 
 # SQL HELPER FUNCTIONS
 sub sql_count($$);
 sub sql_select($$$$);
 sub inserts_from_file($$$);
+
+# MONITORING
+sub register_monitoring_values($$$$);
+sub insert_monitoring_row($$$$);
 
 # END OF PROTOTYPES
 
@@ -216,12 +297,6 @@ my %State_to_num = (
 
 # Log category
 # set_current_log_category('main');
-
-my $Db_type = "mysql";
-
-sub get_database_type(){
-    return($Db_type);
-}
 
 # Duration to add to all jobs when matching the available_upto resource property field
 my $Cm_security_duration = 600;
@@ -273,29 +348,16 @@ sub connect_db($$$$$$) {
         $printerror = 1;
     }
 
-    my $type;
-    if ($Db_type eq "Pg" || $Db_type eq "psql"){
-        $type = "Pg";
-    }elsif ($Db_type eq "mysql"){
-        $type = "mysql";
-        $dbd_opts = ";mysql_local_infile=1"; #Mysql option to allow LOAD LOCAL INFILE
+    my $connection_string;
+    if ($dbport eq "" || !($dbport>1 && $dbport<65535)){
+    	$connection_string = "DBI:Pg:database=$name;host=$host".$dbd_opts;
     }else{
-        oar_error("[IOlib] Cannot recognize DB_TYPE tag \"$Db_type\". So we are using \"mysql\" type.\n");
-        $type = "mysql";
-        $Db_type = "mysql";
-        $dbd_opts = ";mysql_local_infile=1"; #Mysql option to allow LOAD LOCAL INFILE
-    }
-		my $connection_string;
-    if($dbport eq "" || !($dbport>1 && $dbport<65535)){
-    	$connection_string = "DBI:$type:database=$name;host=$host".$dbd_opts;
-    }
-    else{
-    	$connection_string = "DBI:$type:database=$name;host=$host;port=$dbport";
+    	$connection_string = "DBI:Pg:database=$name;host=$host;port=$dbport";
     }
     my $dbh = DBI->connect($connection_string, $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => $printerror});
     
     if (!defined($dbh)){
-        oar_error("[IOlib] Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
+        oar_error("[IOlib] Cannot connect to database (host=$host, user=$user, database=$name) : $DBI::errstr\n");
     }
     return($dbh);
 }
@@ -354,7 +416,6 @@ sub connect_one() {
     my $name = get_conf("DB_BASE_NAME");
     my $user = get_conf("DB_BASE_LOGIN");
     my $pwd = get_conf("DB_BASE_PASSWD");
-    $Db_type = get_conf("DB_TYPE");
     
     my $log_level = get_conf("LOG_LEVEL");
 
@@ -405,7 +466,6 @@ sub connect_ro_one_log($) {
     $user = get_conf("DB_BASE_LOGIN") if (!defined($user));
     my $pwd = get_conf("DB_BASE_PASSWD_RO");
     $pwd = get_conf("DB_BASE_PASSWD") if (!defined($pwd));
-    $Db_type = get_conf("DB_TYPE");
     
     my $log_level;
     if (defined($log)) { $log_level = 3; }
@@ -435,22 +495,12 @@ sub get_last_insert_id($$){
     my $seq = shift;
     
     my $id;
-    my $sth;
-    if ($Db_type eq "Pg"){
-        $sth = $dbh->prepare("SELECT CURRVAL('$seq')");
-        $sth->execute();
-        my $ref = $sth->fetchrow_hashref();
-        my @tmp_array = values(%$ref);
-        $id = $tmp_array[0];
-        $sth->finish();
-    }else{
-        $sth = $dbh->prepare("SELECT LAST_INSERT_ID()");
-        $sth->execute();
-        my $ref = $sth->fetchrow_hashref();
-        my @tmp_array = values(%$ref);
-        $id = $tmp_array[0];
-        $sth->finish();
-    }
+    my $sth = $dbh->prepare("SELECT CURRVAL('$seq')");
+    $sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    my @tmp_array = values(%$ref);
+    $id = $tmp_array[0];
+    $sth->finish();
 
     return($id);
 }
@@ -1164,15 +1214,17 @@ sub get_possible_wanted_resources($$$$$$$){
     
     #Get only wanted resources
     my $resource_string;
+    my $resource_tree_cache_key;
     foreach my $r (@wanted_resources){
         $resource_string .= " $r->{resource},";
+        $resource_tree_cache_key .= " $r->{resource}=$r->{value},";
     }
     chop($resource_string);
 
     # Search if this was already seen
-    if (defined($TREE_CACHE_HASH->{$resource_string}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector})){
+    if (defined($TREE_CACHE_HASH->{$resource_tree_cache_key}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector})){
         #oar_debug("[IOlib] Use tree cache to get ressource structure.\n");
-        return(OAR::Schedulers::ResourceTree::clone($TREE_CACHE_HASH->{$resource_string}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector}));
+        return(OAR::Schedulers::ResourceTree::clone($TREE_CACHE_HASH->{$resource_tree_cache_key}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector}));
     }
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resources
@@ -1218,7 +1270,7 @@ sub get_possible_wanted_resources($$$$$$$){
     
     $sth->finish();
 
-    $TREE_CACHE_HASH->{$resource_string}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector} = $result;
+    $TREE_CACHE_HASH->{$resource_tree_cache_key}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector} = $result;
     return(OAR::Schedulers::ResourceTree::clone($result));
 }
 
@@ -1422,7 +1474,7 @@ sub job_key_management($$$$) {
 #                in normal use, the unique effect of an admission rule should
 #                be to change parameters
 
-#TODO: moldable and array job, mysql LOAD INFILE, pg COPY or test limit
+#TODO: moldable and array job, pg COPY or test limit
 
 sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$initial_request_string, $array_job_nb,$array_params_ref) = @_;
@@ -1456,18 +1508,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
       return(-13);
     }    
 
-#    # Verify job name
-#    if ($job_name !~ m/^\w*$/m){
-#        warn("ERROR : The job name must contain only alphanumeric characters plus '_'\n");
-#        return(-7);
-#    }
-
-#    # Verify the content of user command
-#    if ( "$command" !~ m/^[\w\s\/\.\-]*$/m ){
-#        warn("ERROR : The command to launch contains bad characters -- $command\n");
-#        return(-4);
-#    }
-    
     # Verify the content of env variables
     if ( "$job_env" !~ m/^[\w\=\s\/\.\-\"]*$/m ){
         warn("# Error: the specified environnement variables contains bad characters -- $job_env\n");
@@ -1500,7 +1540,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     }
       
     my @array_job_commands;
-    if ($#{$array_params_ref}>0) {
+    if ($#{$array_params_ref}>=0) {
         foreach my $params (@{$array_params_ref}){
             push(@array_job_commands, $command." ".$params);
         }
@@ -1512,8 +1552,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     my $array_index = 1;
     my @Job_id_list;
-    if (($array_job_nb>1)  and (not defined($use_job_key))) { #to test  add_micheline_simple_array_job
-      warn("# Warning: simple array job submission is used\n"); 
+    if (($array_job_nb>1)  and (not defined($use_job_key)) and ($#{$ref_resource_list} == 0)) { #to test  add_micheline_simple_array_job
+      warn("Simple array job submission is used\n"); 
       my $simple_job_id_list_ref = add_micheline_simple_array_job_non_contiguous($dbh, $dbh_ro, $jobType, $ref_resource_list, \@array_job_commands, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation);
     return($simple_job_id_list_ref);
     } else {
@@ -1629,7 +1669,7 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
         }
     }
 
-    lock_table($dbh,["challenges","jobs"]);
+    $dbh->begin_work();
     # Verify the content of the ssh keys
     if (($ssh_pub_key ne "") or ($ssh_priv_key ne "")){
         # Check if the keys are used by other jobs
@@ -1649,7 +1689,6 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
 
     #Insert job
     my $date = get_date($dbh);
-    #lock_table($dbh,["jobs"]);
     my $job_name_quoted = $dbh->quote($job_name);
     $notify = $dbh->quote($notify);
     $command = $dbh->quote($command);
@@ -1664,7 +1703,6 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
              ");
 
     my $job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
-    #unlock_table($dbh);
    
     if ($array_id <= 0){
         $dbh->do("  UPDATE jobs
@@ -1680,7 +1718,7 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     $dbh->do("INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key)
               VALUES ($job_id,\'$random_number\',$ssh_priv_key,$ssh_pub_key)
              ");
-    unlock_table($dbh);
+    $dbh->commit();
 
     if (!defined($stdout) or ($stdout eq "")){
         $stdout = "OAR";
@@ -1711,23 +1749,19 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     ");
 
     foreach my $moldable_resource (@{$ref_resource_list}){
-        #lock_table($dbh,["moldable_job_descriptions"]);
         $moldable_resource->[1] = $Default_job_walltime if (!defined($moldable_resource->[1]));
         $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
                     VALUES ($job_id,\'$moldable_resource->[1]\')
                  ");
         my $moldable_id = get_last_insert_id($dbh,"moldable_job_descriptions_moldable_id_seq");
-        #unlock_table($dbh);
 
         foreach my $r (@{$moldable_resource->[0]}){
-            #lock_table($dbh,["job_resource_groups"]);
             my $property = $r->{property};
             $property = $dbh->quote($property);
             $dbh->do("  INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property)
                         VALUES ($moldable_id,$property)
                      ");
             my $res_group_id = get_last_insert_id($dbh,"job_resource_groups_res_group_id_seq");
-            #unlock_table($dbh);
 
             my $order = 0;
             foreach my $l (@{$r->{resources}}){
@@ -1747,10 +1781,11 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     }
 
     foreach my $a (@{$anterior_ref}){
-        my ($j,$d) = $a =~ /^(\d+)(?:,(\d+))*$/;
-        $dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required,gap)
-                    VALUES ($job_id,$j,".(defined($d)?$d:0).")
-                 ");
+        if (my ($j,$min,$max) = $a =~ /^(\d+)(?:,([\[\]][-+]?\d+)?(?:,([\[\]][-+]?\d+)?)?)?$/) {
+            $dbh->do("  INSERT INTO job_dependencies (job_id,job_id_required,min_start_shift,max_start_shift)
+                        VALUES ($job_id,$j,'".(defined($min)?$min:"")."','".(defined($max)?$max:"")."')
+                     ");
+        }
     }
 
     if (!defined($job_hold)) {
@@ -1768,259 +1803,21 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
                   VALUES ($job_id,\'Hold\',$date)
                  ");
     }
-    #$dbh->do("UNLOCK TABLES");
 
     return($job_id);
 }
 
-# return value : ref. of array of created jobids
-# TODO: moldable, very large insertion,   
-# ssh_key by job is not supported (,$ssh_priv_key,$ssh_pub_key)
-# /!\ this function supposes that database engine provides contiguous id when multiple inserts query is executed (Postgres doesn't provide this)
-# 
-
-sub add_micheline_simple_array_job ($$$$$$$$$$$$$$$$$$$$$$$$$$$$){
-    my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation) = @_;
-
-    my @Job_id_list;
-
-    my $pg=0;
-    if ($Db_type eq "Pg") {$pg=1}
-
-    # Check the user validity
-    if (! $user =~ /[a-zA-Z0-9_-]+/ ) {
-      warn("# Error: invalid username: '$user'\n");
-      return(-11);
-    }
-
-    # Check the jobs are no moldable
-    if ($#{$ref_resource_list}>=1) {
-      die ("# Error: array jobs cannot be moldable\n");
-    }
-
-    # Test if properties and resources are coherent
-    my $estimated_nb_resources = 0;
-    my $estimated_walltime = 0;
-    foreach my $e (estimate_job_nb_resources($dbh_ro, $ref_resource_list, $jobproperties)){
-        #print("[TEST] $e->{nbresources} $e->{walltime} $e->{comment}\n");
-        if ($e->{nbresources} == 0){
-            warn($e->{comment}."\n");
-            return(-5);
-        }elsif ($estimated_walltime == 0){
-            $estimated_nb_resources = $e->{nbresources};
-            $estimated_walltime = $e->{walltime};
-        }
-    }
-
-    # Add admin properties to the job
-    if ($jobproperties_applied_after_validation ne ""){
-        if ($jobproperties ne ""){
-            $jobproperties = "($jobproperties) AND $jobproperties_applied_after_validation";
-        }else{
-            $jobproperties = "$jobproperties_applied_after_validation";
-        }
-    }
-
-    my $job_message = format_job_message_text($job_name,$estimated_nb_resources, $estimated_walltime, $jobType, $reservationField, $queue_name, $project, $type_list, '');
-
-    #insert in jobs table
-    #prepare parameter request
-    my $date = get_date($dbh);
-    my $job_name_quoted = $dbh->quote($job_name);
-    $notify = $dbh->quote($notify);
-    #$command = $dbh->quote($command);
-    $job_env = $dbh->quote($job_env);
-    $jobproperties = $dbh->quote($jobproperties);
-    $launching_directory = $dbh->quote($launching_directory);
-    $project = $dbh->quote($project);
-    $initial_request_string = $dbh->quote($initial_request_string);
-
-    if (!defined($stdout) or ($stdout eq "")){
-        $stdout = "OAR";
-        $stdout .= ".$job_name" if (defined($job_name));
-        $stdout .= '.%jobid%.stdout';
-    }else{
-        $stdout =~ s/%jobname%/$job_name/g;
-    }
-    if (!defined($stderr) or ($stderr eq "")){
-        $stderr = "OAR";
-        $stderr .= ".$job_name" if (defined($job_name));
-        $stderr .= '.%jobid%.stderr';
-    }else{
-        $stderr =~ s/%jobname%/$job_name/g;
-    }
-
-    $stdout = $dbh->quote($stdout);
-    $stderr = $dbh->quote($stderr);
-
-    my $query_jobs = "INSERT INTO jobs
-              (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,reservation,start_time,file_id,checkpoint,job_name,notify,checkpoint_signal,stdout_file,stderr_file,job_env,project,initial_request,array_id,array_index,message)
-              VALUES ";
-
-    my $nb_jobs = $#{$array_job_commands_ref}+1;
-    #print "nb_jobs: $nb_jobs\n";
-    foreach my $command (@{$array_job_commands_ref}){
-      $command = $dbh->quote($command);
-      $query_jobs =  $query_jobs . "(\'$jobType\',\'$infoType\',\'Hold\',\'$user\',$command,\'$date\',\'$queue_name\',$jobproperties,$launching_directory,\'$reservationField\',\'$startTimeJob\',$idFile,$checkpoint,$job_name_quoted,$notify,\'$checkpoint_signal\',$stdout,$stderr,$job_env,$project,$initial_request_string,$array_id,$array_index,\'$job_message\'),";
-      $array_index++;
-    }
-    
-    chop($query_jobs);
-    lock_table($dbh,["jobs"]);
-    $dbh->do($query_jobs);
-    my $first_array_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
-    unlock_table($dbh);
-
-    #print "$query_jobs\n";
-    #print "First_array_job_id: $first_array_job_id\n";
-
-    if ($pg) {$first_array_job_id  -= $nb_jobs-1}
-    my $job_id = $first_array_job_id;
-
-    my $random_number;
-    my $query_challenges = "INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key) VALUES ";
-
-    my $moldable_resource =  @{$ref_resource_list}[0];  
-    $moldable_resource->[1] = $Default_job_walltime if (!defined($moldable_resource->[1]));
-    my $walltime = $moldable_resource->[1];
-    my $query_moldable_job_descriptions="INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime) VALUES "; 
- 
-    for (my $i=0; $i<$nb_jobs; $i++){
-      push(@Job_id_list,$job_id);
-      $random_number = int(rand(1000000000000));
-      $query_challenges = $query_challenges . "($job_id,\'$random_number\',\'\',\'\'),"; #TODO $ssh_priv_key,$ssh_pub_key
-      $query_moldable_job_descriptions = $query_moldable_job_descriptions . "($job_id,\'$walltime\'),";
-      $job_id++;
-    }
-    lock_table($dbh,["challenges"]);
-    chop($query_challenges);
-    $dbh->do($query_challenges);
-    unlock_table($dbh);
-
-    chop($query_moldable_job_descriptions);
-    lock_table($dbh,["moldable_job_descriptions"]);
-    $dbh->do($query_moldable_job_descriptions);
-    my $first_moldable_id = get_last_insert_id($dbh,"moldable_job_descriptions_moldable_id_seq");
-    unlock_table($dbh);
-    #print "First_moldable_id: $first_moldable_id\n";
-
-    my $moldable_id = $first_moldable_id;
-    if ($pg) {$moldable_id -= $nb_jobs-1}
-    my $query_job_resource_groups  = "INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property) VALUES ";
-    for (my $i=0; $i<$nb_jobs; $i++){
-      foreach my $r (@{$moldable_resource->[0]}){
-        my $property = $r->{property};
-        $property = $dbh->quote($property);
-        $query_job_resource_groups = $query_job_resource_groups . "($moldable_id,$property),";
-      }
-      $moldable_id++;
-    }
-
-    my $nb_resource_grp = $#{$moldable_resource->[0]} + 1;
-    chop($query_job_resource_groups);
-    lock_table($dbh,["job_resource_groups"]);
-    $dbh->do($query_job_resource_groups);
-    my $first_res_group_id  = get_last_insert_id($dbh,"job_resource_groups_res_group_id_seq");
-    unlock_table($dbh);
-    #print "First_res_group_id : $first_res_group_id \n";
-
-    my $res_group_id = $first_res_group_id;
-     if ($pg) {$res_group_id -= $nb_resource_grp*$nb_jobs-1} #TODO: add *nb_moldable for moldable support 
-    my $query_job_resource_descriptions="INSERT INTO job_resource_descriptions (res_job_group_id,res_job_resource_type,res_job_value,res_job_order) VALUES ";
-    
-    for (my $i=0; $i<$nb_jobs; $i++){
-      foreach my $r (@{$moldable_resource->[0]}){
-        my $order = 0;
-        foreach my $l (@{$r->{resources}}){
-          $query_job_resource_descriptions = $query_job_resource_descriptions . "($res_group_id,\'$l->{resource}\',\'$l->{value}\',$order),";
-          $order++;
-        }
-        $res_group_id++;
-      }
-    }
-
-    chop($query_job_resource_descriptions);
-    $dbh->do($query_job_resource_descriptions);
-
-    #populate job_types table
-    if  ($#{$type_list}>-1) {
-      $job_id = $first_array_job_id;
-      my $query_job_types = "INSERT INTO job_types (job_id,type) VALUES "; 
-      for (my $i=0; $i<$nb_jobs; $i++){
-        foreach my $t (@{$type_list}){
-          my $quoted_t = $dbh->quote($t);
-          $query_job_types = $query_job_types . "($job_id,$quoted_t),";
-        }
-        $job_id++;
-      }
-    
-      chop($query_job_types);
-      $dbh->do($query_job_types);
-    }
-
-    #  
-    # anterior job setting
-    #
-    if ($#{$anterior_ref} >0) {
-      $job_id = $first_array_job_id;
-      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required,gap) VALUES ";
-      for (my $i=0; $i<$nb_jobs; $i++){
-        foreach my $a (@{$anterior_ref}){
-          my ($j,$d) = $a =~ /^(\d+)(?:,(\d+))*$/;
-          $query_job_dependencies = $query_job_dependencies . "($job_id,$j,".(defined($d)?$d:0)."),";
-        } 
-        $job_id++;
-      }
-      chop($query_job_dependencies);
-      $dbh->do($query_job_dependencies);
-    }
-
-    #
-    # Hold/Waiting management, array_id and job_state_log setting
-    # Job is inserted with hold state first
-    #
-    my $query_job_state_logs = "INSERT INTO job_state_logs (job_id,job_state,date_start) VALUES ";
-    $job_id = $first_array_job_id;
-    my $query_array_id = "UPDATE jobs SET ";
-    my $state_log = "\'Hold\'";
-
-    if  (defined($job_hold)) {
-      $query_array_id =  $query_array_id . " array_id = ". $first_array_job_id . " WHERE job_id IN (";
-    }
-    else {
-      $query_array_id =  $query_array_id . "state = \'Waiting\', array_id = " . $first_array_job_id . " WHERE job_id IN (";
-      $state_log = "\'Waiting\'";
-    }
-  
-    #update array_id field and set job to state if waiting and insert job_state_log 
-    for (my $i=0; $i<$nb_jobs; $i++){
-      $query_job_state_logs = $query_job_state_logs . "($job_id,$state_log,$date),";
-      $query_array_id = $query_array_id . "$job_id,";
-      $job_id++;
-    }
-    chop($query_job_state_logs);
-    chop($query_array_id);
-    $query_array_id = $query_array_id . ")";
-    $dbh->do($query_job_state_logs);
-    $dbh->do($query_array_id);
-
-    return (\@Job_id_list);
-}
 
 # return value : ref. of array of created jobids
 # TODO: moldable, very large insertion,   
 # ssh_key by job is not supported (,$ssh_priv_key,$ssh_pub_key)
 # This function doesn't imply that database engine must provides contiguous id when multiple inserts query is executed (Postgres doesn't provide this)
 # 
-
 sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $array_job_commands_ref, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$initial_request_string, $array_id, $user, $reservationField, $startTimeJob, $array_index, $jobproperties_applied_after_validation) = @_;
 
     my @Job_id_list = ();
     my $nb_jobs = $#{$array_job_commands_ref}+1;
-
-    my $pg=0;
-    if ($Db_type eq "Pg") {$pg=1}
 
     # Check the user validity
     if (! $user =~ /[a-zA-Z0-9_-]+/ ) {
@@ -2220,14 +2017,17 @@ sub add_micheline_simple_array_job_non_contiguous ($$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     #  
     # anterior job setting
     #
-    if ($#{$anterior_ref} >0) {
-      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required) VALUES ";
-      foreach my $job_id (@Job_id_list){
-        foreach my $a (@{$anterior_ref}){
-          $query_job_dependencies = $query_job_dependencies . "($job_id,$a),";
+    my @dependencies;
+    foreach my $a (@{$anterior_ref}){
+      if (my ($j,$min,$max) = $a =~ /^(\d+)(?:,([\[\]][-+]?\d+)?(?:,([\[\]][-+]?\d+)?)?)?$/) {
+        foreach my $job_id (@Job_id_list){
+          push(@dependencies,"($job_id,$j,'".(defined($min)?$min:"")."','".(defined($max)?$max:"")."'),");
         } 
-      }
-      chop($query_job_dependencies);
+      } 
+    }
+    if ($#dependencies >0) {
+      my $query_job_dependencies = "INSERT INTO job_dependencies (job_id,job_id_required,min_start_shift,max_start_shift) VALUES ".
+        join(",",@dependencies);
       $dbh->do($query_job_dependencies); 
     }
 
@@ -2475,49 +2275,34 @@ sub log_job($$){
     
     my $job = get_job($dbh,$job_id);
         
-    if ($Db_type eq "Pg"){
-        $dbh->do("  UPDATE moldable_job_descriptions
-                    SET
-                        moldable_index = \'LOG\'
-                    WHERE
-                        moldable_job_descriptions.moldable_index = \'CURRENT\'
-                        AND moldable_job_descriptions.moldable_job_id = $job_id
-                 ");
+    $dbh->do("  UPDATE moldable_job_descriptions
+                SET
+                    moldable_index = \'LOG\'
+                WHERE
+                    moldable_job_descriptions.moldable_index = \'CURRENT\'
+                    AND moldable_job_descriptions.moldable_job_id = $job_id
+             ");
 
-        $dbh->do("  UPDATE job_resource_descriptions
-                    SET
-                        res_job_index = \'LOG\'
-                    FROM moldable_job_descriptions, job_resource_groups
-                    WHERE
-                        moldable_job_descriptions.moldable_job_id = $job_id
-                        AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                        AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-             ");
-        
-        $dbh->do("  UPDATE job_resource_groups
-                    SET
-                        res_group_index = \'LOG\'
-                    FROM moldable_job_descriptions
-                    WHERE
-                        job_resource_groups.res_group_index = \'CURRENT\'
-                        AND moldable_job_descriptions.moldable_index = \'LOG\'
-                        AND moldable_job_descriptions.moldable_job_id = $job_id
-                        AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-             ");
-    }else{
-        $dbh->do("  UPDATE moldable_job_descriptions, job_resource_groups, job_resource_descriptions
-                    SET job_resource_groups.res_group_index = \'LOG\',
-                        job_resource_descriptions.res_job_index = \'LOG\',
-                        moldable_job_descriptions.moldable_index = \'LOG\'
-                    WHERE
-                        moldable_job_descriptions.moldable_index = \'CURRENT\'
-                        AND job_resource_groups.res_group_index = \'CURRENT\'
-                        AND job_resource_descriptions.res_job_index = \'CURRENT\'
-                        AND moldable_job_descriptions.moldable_job_id = $job_id
-                        AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                        AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-                ");
-    }
+    $dbh->do("  UPDATE job_resource_descriptions
+                SET
+                    res_job_index = \'LOG\'
+                FROM moldable_job_descriptions, job_resource_groups
+                WHERE
+                    moldable_job_descriptions.moldable_job_id = $job_id
+                    AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+                    AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+         ");
+    
+    $dbh->do("  UPDATE job_resource_groups
+                SET
+                    res_group_index = \'LOG\'
+                FROM moldable_job_descriptions
+                WHERE
+                    job_resource_groups.res_group_index = \'CURRENT\'
+                    AND moldable_job_descriptions.moldable_index = \'LOG\'
+                    AND moldable_job_descriptions.moldable_job_id = $job_id
+                    AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+         ");
 
     $dbh->do("  UPDATE job_types
                 SET types_index = \'LOG\'
@@ -2590,28 +2375,16 @@ sub archive_some_moldable_job_nodes($$$){
         $value_str .= ',';
     }
     chop($value_str);
-    if ($Db_type eq "Pg"){
-        $dbh->do("  UPDATE assigned_resources
-                    SET
-                        assigned_resource_index = \'LOG\'
-                    FROM resources
-                    WHERE
-                        assigned_resources.assigned_resource_index = \'CURRENT\'
-                        AND assigned_resources.moldable_job_id = $mjob_id
-                        AND resources.resource_id = assigned_resources.resource_id
-                        AND resources.network_address IN (".$value_str.") 
-             ");
-    }else{
-        $dbh->do("  UPDATE assigned_resources, resources
-                    SET 
-                        assigned_resources.assigned_resource_index = \'LOG\'
-                    WHERE
-                        assigned_resources.assigned_resource_index = \'CURRENT\'
-                        AND assigned_resources.moldable_job_id = $mjob_id
-                        AND resources.resource_id = assigned_resources.resource_id
-                        AND resources.network_address IN (".$value_str.")
-                ");
-    }
+    $dbh->do("  UPDATE assigned_resources
+                SET
+                    assigned_resource_index = \'LOG\'
+                FROM resources
+                WHERE
+                    assigned_resources.assigned_resource_index = \'CURRENT\'
+                    AND assigned_resources.moldable_job_id = $mjob_id
+                    AND resources.resource_id = assigned_resources.resource_id
+                    AND resources.network_address IN (".$value_str.") 
+         ");
 }
 
 
@@ -2629,7 +2402,7 @@ sub resubmit_job($$){
     return(-2) if (($job->{state} ne "Error") and ($job->{state} ne "Terminated") and ($job->{state} ne "Finishing"));
     return(-3) if (($lusr ne $job->{job_user}) and ($lusr ne "oar") and ($lusr ne "root"));
     
-    lock_table($dbh,["challenges","jobs"]);
+    $dbh->begin_work();
     # Verify the content of the ssh keys
     my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($dbh,$job_id);
     if (($ssh_public_key ne "") or ($ssh_private_key ne "")){
@@ -2650,13 +2423,11 @@ sub resubmit_job($$){
     my $date = get_date($dbh);
     my $start_time = 0;
     $start_time = $job->{start_time} if ($job->{reservation} ne "None");
-    #lock_table($dbh,["jobs"]);
     $dbh->do("INSERT INTO jobs
               (job_type,info_type,state,job_user,command,submission_time,queue_name,properties,launching_directory,file_id,checkpoint,job_name,notify,checkpoint_signal,reservation,resubmit_job_id,start_time,job_env,project,initial_request,array_id,array_index)
               VALUES (\'$job->{job_type}\',\'$job->{info_type}\',\'Hold\',\'$job->{job_user}\',$command,\'$date\',\'$job->{queue_name}\',$jobproperties,$launching_directory,$file_id,$job->{checkpoint},$job_name,\'$job->{notify}\',\'$job->{checkpoint_signal}\',\'$job->{reservation}\',$job_id,\'$start_time\',$jenv,$project,$initial_request_string,$job->{array_id},$job->{array_index})
              ");
     my $new_job_id = get_last_insert_id($dbh,"jobs_job_id_seq");
-    #unlock_table($dbh);
 
     my $random_number = int(rand(1000000000000));
     #$dbh->do("INSERT INTO challenges (job_id,challenge)
@@ -2683,7 +2454,7 @@ sub resubmit_job($$){
     $dbh->do("INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key)
               VALUES ($new_job_id,\'$random_number\',$priv_key,$pub_key)
              ");
-    unlock_table($dbh);
+    $dbh->commit();
 
     my $stdout_file = $dbh->quote($job->{stdout_file});
     my $stderr_file = $dbh->quote($job->{stderr_file});
@@ -2711,12 +2482,10 @@ sub resubmit_job($$){
 
     foreach my $m (@moldable_ids){
         my $moldable_resource = $m->[0];
-        #lock_table($dbh,["moldable_job_descriptions"]);
         $dbh->do("  INSERT INTO moldable_job_descriptions (moldable_job_id,moldable_walltime)
                     VALUES ($new_job_id,\'$m->[1]\')
                  ");
         my $moldable_id = get_last_insert_id($dbh,"moldable_job_descriptions_moldable_id_seq");
-        #unlock_table($dbh);
     
         $sth = $dbh->prepare("  SELECT res_group_id,res_group_property
                                 FROM job_resource_groups
@@ -2732,13 +2501,11 @@ sub resubmit_job($$){
 
         foreach my $res (@groups){
             my $r = $res->[0];
-            #lock_table($dbh,["job_resource_groups"]);
             my $prop = $dbh->quote($res->[1]);
             $dbh->do("  INSERT INTO job_resource_groups (res_group_moldable_id,res_group_property)
                         VALUES ($moldable_id,$prop)
                      ");
             my $res_group_id = get_last_insert_id($dbh,"job_resource_groups_res_group_id_seq");
-            #unlock_table($dbh);
 
             $sth = $dbh->prepare("  SELECT res_job_group_id,res_job_resource_type,res_job_value,res_job_order
                                     FROM job_resource_descriptions
@@ -2925,9 +2692,7 @@ sub ask_checkpoint_job($$){
     return(3) if ((defined($job)) and ($job->{job_type} eq "INTERACTIVE"));
     if((defined($job)) && (($lusr eq $job->{job_user}) or ($lusr eq "oar") or ($lusr eq "root"))) {
         if ($job->{state} eq "Running"){
-            #$dbh->do("LOCK TABLE event_log WRITE");
             add_new_event($dbh,"CHECKPOINT",$job_id,"User $lusr requested a checkpoint on the job $job_id");
-            #$dbh->do("UNLOCK TABLES");
             return(0);
         }else{
             return(2);
@@ -2953,10 +2718,8 @@ sub ask_signal_job($$$){
     return(3) if ((defined($job)) and ($job->{job_type} eq "INTERACTIVE"));
     if((defined($job)) && (($lusr eq $job->{job_user}) or ($lusr eq "oar") or ($lusr eq "root"))) {
         if ($job->{state} eq "Running"){
-            #$dbh->do("LOCK TABLE event_log WRITE");
             add_new_event($dbh,"SIGNAL_$signal",$job_id,"User $lusr requested the signal $signal on the job $job_id");
-            #$dbh->do("UNLOCK TABLES");
-	    #oar_debug("[OAR::IO] added an event of type SIGNAL_$signal for job $job_id\n");
+    	    #oar_debug("[OAR::IO] added an event of type SIGNAL_$signal for job $job_id\n");
             return(0);
         }else{
             return(2);
@@ -3480,7 +3243,7 @@ sub get_current_job_dependencies($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT job_id_required,gap
+    my $sth = $dbh->prepare("   SELECT job_id_required,min_start_shift,max_start_shift
                                 FROM job_dependencies
                                 WHERE
                                     job_dependency_index = \'CURRENT\'
@@ -3489,7 +3252,7 @@ sub get_current_job_dependencies($$){
     $sth->execute();
     my @res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, [$ref->{job_id_required},$ref->{gap}]);
+        push(@res, [$ref->{job_id_required},$ref->{min_start_shift},$ref->{max_start_shift}]);
     }
     $sth->finish();
 
@@ -3503,7 +3266,7 @@ sub get_job_dependencies($$){
     my $dbh = shift;
     my $job_id = shift;
 
-    my $sth = $dbh->prepare("   SELECT job_id_required
+    my $sth = $dbh->prepare("   SELECT job_id_required,min_start_shift,max_start_shift
                                 FROM job_dependencies
                                 WHERE
                                     job_id = $job_id
@@ -3511,7 +3274,7 @@ sub get_job_dependencies($$){
     $sth->execute();
     my @res;
     while (my $ref = $sth->fetchrow_hashref()) {
-        push(@res, $ref->{job_id_required});
+        push(@res, [$ref->{job_id_required},$ref->{min_start_shift},$ref->{max_start_shift}]);
     }
     $sth->finish();
 
@@ -3824,31 +3587,16 @@ sub get_node_job($$) {
 # side effects : /
 sub get_alive_nodes_with_jobs($) {
     my $dbh = shift;
-    my $sth;
-    if ($Db_type eq "Pg"){
-        $sth = $dbh->prepare("   SELECT resources.network_address
-                                 FROM assigned_resources, moldable_job_descriptions, jobs, resources
-                                 WHERE
-                                    assigned_resources.resource_id = resources.resource_id
-                                    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
-                                    AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
-                                    AND (resources.state = 'Alive' or resources.next_state='Alive')
-                            ");
-    }else{
-        $sth = $dbh->prepare("   SELECT resources.network_address
-                                 FROM assigned_resources, moldable_job_descriptions, jobs, resources
-                                 WHERE
-                                    assigned_resources.assigned_resource_index = \'CURRENT\'
-                                    AND moldable_job_descriptions.moldable_index = \'CURRENT\'
-                                    AND (resources.state = 'Alive' or resources.next_state='Alive')
-                                    AND assigned_resources.resource_id = resources.resource_id
-                                    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
-                                    AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
-                            ");
-    }
 
+    my $sth = $dbh->prepare("SELECT resources.network_address
+                             FROM assigned_resources, moldable_job_descriptions, jobs, resources
+                             WHERE
+                                assigned_resources.resource_id = resources.resource_id
+                                AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+                                AND moldable_job_descriptions.moldable_job_id = jobs.job_id
+                                AND jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
+                                AND (resources.state = 'Alive' or resources.next_state='Alive')
+                        ");
     $sth->execute();
     my @res = ();
     while (my @ary = $sth->fetchrow_array) {
@@ -3961,42 +3709,15 @@ sub get_resource_ids_in_state($$) {
 # return value : list of nodes
 sub get_finaud_nodes($) {
     my $dbh = shift;
-    my $sth = "";
-    if ($Db_type eq "Pg"){
-      $sth = $dbh->prepare("   SELECT DISTINCT(network_address), *
-                                  FROM resources
-                                  WHERE
-                                    (state = \'Alive\' OR
-                                    (state = \'Suspected\' AND finaud_decision = \'YES\')) AND
-                                    type = \'default\' AND
-                                    desktop_computing = \'NO\' AND
-                                    next_state = \'UnChanged\'
-                              ");
-    }
-    else{
-      my @result;
-      my $presth = $dbh->prepare("DESC resources"); 
-      $presth->execute();
-      while (my $ref = $presth->fetchrow_hashref()){
-        my $current_value = $ref->{'Field'};
-        push(@result, $current_value);
-      }
-    
-      $presth->finish();
-    
-      my $str = "SELECT DISTINCT(network_address)";
-      foreach(@result){
-        $str = $str.", ".$_;
-      }
-      $str = $str." FROM resources
-                    WHERE
-                      (state = \'Alive\' OR
-                      (state = \'Suspected\' AND finaud_decision = \'YES\')) AND
-                      type = \'default\' AND
-                      desktop_computing = \'NO\' AND
-                      next_state = \'UnChanged\'";
-      $sth = $dbh->prepare($str);
-    }
+    my  $sth = $dbh->prepare("SELECT DISTINCT(network_address), *
+                              FROM resources
+                              WHERE
+                                (state = \'Alive\' OR
+                                (state = \'Suspected\' AND finaud_decision = \'YES\')) AND
+                                type = \'default\' AND
+                                desktop_computing = \'NO\' AND
+                                next_state = \'UnChanged\'
+                             ");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -4155,111 +3876,153 @@ sub add_resource_job_pairs_from_file($$$) {
   inserts_from_file($dbh,'assigned_resources',$values);
 }
 
+# parse jobs retrieved by the 2 functions:
+# - get_jobs_past_and_current_from_range
+# - get_jobs_future_from_range
+# args : db query result handle
+sub parse_jobs_from_range($) {
+    my $sth = shift;
+    my $jobs = {};
+    while (my @ref = $sth->fetchrow_array()) {
+        if (! exists($jobs->{$ref[0]})) {
+            $jobs->{$ref[0]} = {
+                'job_id' => $ref[0],
+                'job_name' => $ref[1],
+                'project' => $ref[2],
+                'job_type' => $ref[3],
+                'state' => $ref[4],
+                'user' => $ref[5],
+                'command' => $ref[6],
+                'queue_name' => $ref[7],
+                'walltime' => $ref[8],
+                'properties' => $ref[9],
+                'launching_directory' => $ref[10],
+                'submission_time' => $ref[11],
+                'start_time' => $ref[12],
+                'stop_time' => $ref[13],
+                'resource_id' => [],
+                'network_address' => [],
+            }
+        }
+        push(@{$jobs->{$ref[0]}->{'resource_id'}}, $ref[14]);
+        if (defined($ref[15])){
+            push(@{$jobs->{$ref[0]}->{'network_address'}}, $ref[15]);
+        }
+        if (defined($ref[16])){
+            push(@{$jobs->{$ref[0]}->{'types'}}, $ref[16]);
+        }
+    }
+    return $jobs;
+}
 
-
-# get all jobs in a range of date
+# get past and current jobs in a range of dates
 # args : base, start range, end range
-sub get_jobs_range_dates($$$){
+sub get_jobs_past_and_current_from_range($$$){
     my $dbh = shift;
     my $date_start = shift;
     my $date_end = shift;
+    my $query_filter = shift;
 
-    my $req = 
-        "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,resources.network_address,(jobs.start_time + moldable_job_descriptions.moldable_walltime)
-         FROM jobs, assigned_resources, moldable_job_descriptions, resources
-         WHERE
-             (   
-                 jobs.stop_time >= $date_start OR
-                 (   
-                     jobs.stop_time = \'0\' AND
-                     (jobs.state = \'Running\' OR
-                      jobs.state = \'Suspended\' OR
-                      jobs.state = \'Resuming\')
-                 )
-             ) AND
-             jobs.start_time < $date_end AND
-             jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-             moldable_job_descriptions.moldable_job_id = jobs.job_id AND
-             resources.resource_id = assigned_resources.resource_id
-         ORDER BY jobs.job_id";
- 
+    my $req =  <<EOT;
+SELECT
+    jobs.job_id,
+    jobs.job_name,
+    jobs.project,
+    jobs.job_type,
+    jobs.state,
+    jobs.job_user,
+    jobs.command,
+    jobs.queue_name,
+    moldable_job_descriptions.moldable_walltime,
+    jobs.properties,
+    jobs.launching_directory,
+    jobs.submission_time,
+    jobs.start_time,
+    jobs.stop_time,
+    assigned_resources.resource_id,
+    resources.network_address,
+    job_types.type
+FROM
+    (jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)),
+    assigned_resources,
+    moldable_job_descriptions,
+    resources
+WHERE
+    (   
+        jobs.stop_time >= $date_start OR
+        (   
+            jobs.stop_time = \'0\' AND
+            (jobs.state = \'Running\' OR
+             jobs.state = \'Suspended\' OR
+             jobs.state = \'Resuming\')
+        )
+    ) AND
+    jobs.start_time < $date_end AND
+    jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+    moldable_job_descriptions.moldable_job_id = jobs.job_id AND
+    resources.resource_id = assigned_resources.resource_id
+ORDER BY
+    jobs.job_id
+EOT
     my $sth = $dbh->prepare($req);
     $sth->execute();
-
-    my %results;
-    while (my @ref = $sth->fetchrow_array()) {
-        if (!defined($results{$ref[0]})){
-            $results{$ref[0]} = {
-                                  'job_type' => $ref[1],
-                                  'state' => $ref[2],
-                                  'user' => $ref[3],
-                                  'command' => $ref[4],
-                                  'queue_name' => $ref[5],
-                                  'walltime' => $ref[6],
-                                  'properties' => $ref[7],
-                                  'launching_directory' => $ref[8],
-                                  'submission_time' => $ref[9],
-                                  'start_time' => $ref[10],
-                                  'stop_time' => $ref[11],
-                                  'resources' => [ $ref[12] ],
-                                  'limit_stop_time' => $ref[14]
-                                 }
-        }else{
-            push(@{$results{$ref[0]}->{resources}}, $ref[12]);
-        }
-    }
+    my $jobs = parse_jobs_from_range($sth);
     $sth->finish();
 
-    return %results;
+    return $jobs
 }
 
 
-# get all jobs in a range of date in the gantt
+# get future (scheduled) jobs in a range of dates
 # args : base, start range, end range
-sub get_jobs_gantt_scheduled($$$) {
+sub get_jobs_future_from_range($$$){
     my $dbh = shift;
     my $date_start = shift;
     my $date_end = shift;
+    my $query_filter = shift;
 
-    my $req =
-        "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id, resources.network_address
-         FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu, resources
-         WHERE
-             gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
-             gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
-             jobs.job_id = moldable_job_descriptions.moldable_job_id AND
-             gantt_jobs_predictions_visu.start_time < $date_end AND
-             resources.resource_id = gantt_jobs_resources_visu.resource_id AND
-             gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start
-         ORDER BY jobs.job_id";
-
+    my $req = <<EOT;
+SELECT
+    jobs.job_id,
+    jobs.job_name,
+    jobs.project,
+    jobs.job_type,
+    jobs.state,
+    jobs.job_user,
+    jobs.command,
+    jobs.queue_name,
+    moldable_job_descriptions.moldable_walltime,
+    jobs.properties,
+    jobs.launching_directory,
+    jobs.submission_time,
+    gantt_jobs_predictions_visu.start_time,
+    (gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),
+    gantt_jobs_resources_visu.resource_id,
+    resources.network_address,
+    job_types.type
+FROM
+    (jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)),
+    moldable_job_descriptions,
+    gantt_jobs_resources_visu,
+    gantt_jobs_predictions_visu,
+    resources
+WHERE
+    gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
+    gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id AND
+    jobs.job_id = moldable_job_descriptions.moldable_job_id AND
+    gantt_jobs_predictions_visu.start_time < $date_end AND
+    resources.resource_id = gantt_jobs_resources_visu.resource_id AND
+    gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime >= $date_start AND
+    jobs.job_id NOT IN ( SELECT job_id FROM job_types WHERE type = 'besteffort' AND types_index = 'CURRENT' )
+ORDER BY
+    jobs.job_id
+EOT
     my $sth = $dbh->prepare($req);
     $sth->execute();
-
-    my %results;
-    while (my @ref = $sth->fetchrow_array()) {
-        if (!defined($results{$ref[0]})){
-            $results{$ref[0]} = {
-                                  'job_type' => $ref[1],
-                                  'state' => $ref[2],
-                                  'user' => $ref[3],
-                                  'command' => $ref[4],
-                                  'queue_name' => $ref[5],
-                                  'walltime' => $ref[6],
-                                  'properties' => $ref[7],
-                                  'launching_directory' => $ref[8],
-                                  'submission_time' => $ref[9],
-                                  'start_time' => $ref[10],
-                                  'stop_time' => $ref[11],
-                                  'resources' => [ $ref[12] ],
-                                 }
-        }else{
-            push(@{$results{$ref[0]}->{resources}}, $ref[12]);
-        }
-    }
+    my $jobs = parse_jobs_from_range($sth);
     $sth->finish();
 
-    return %results;
+    return $jobs
 }
 
 
@@ -4314,9 +4077,9 @@ sub get_jobs_for_user_query {
         "
         SELECT jobs.job_id,jobs.job_name,jobs.state,jobs.job_user,jobs.queue_name,jobs.submission_time, jobs.assigned_moldable_job,jobs.reservation,jobs.project,jobs.properties,jobs.exit_code,jobs.command,jobs.initial_request,jobs.launching_directory,jobs.message,jobs.job_type,jobs.array_id,jobs.stderr_file,jobs.stdout_file,jobs.start_time,moldable_job_descriptions.moldable_walltime,jobs.stop_time
         FROM jobs LEFT JOIN moldable_job_descriptions ON jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id
-        WHERE
-             jobs.job_id IN (
-         						 SELECT DISTINCT jobs.job_id
+        INNER JOIN
+              (
+         						 SELECT DISTINCT jobs.job_id AS job_id
          						 FROM jobs, assigned_resources, moldable_job_descriptions
          						 WHERE
                  					$first_query_date_start
@@ -4327,7 +4090,7 @@ sub get_jobs_for_user_query {
 
          						UNION
 
-         						SELECT DISTINCT jobs.job_id
+         						SELECT DISTINCT jobs.job_id AS job_id
          						FROM jobs, moldable_job_descriptions, gantt_jobs_resources_visu, gantt_jobs_predictions_visu
          						WHERE
          						   gantt_jobs_predictions_visu.moldable_job_id = gantt_jobs_resources_visu.moldable_job_id AND
@@ -4339,14 +4102,14 @@ sub get_jobs_for_user_query {
          						
          						UNION
          						
-         						SELECT DISTINCT jobs.job_id
+         						SELECT DISTINCT jobs.job_id AS job_id
          						FROM jobs
          						WHERE 
          						   jobs.start_time = \'0\'
          						   $third_query_date_start
          						   $third_query_date_end
          						   $state $user $array_id $id_filter
-         						)
+         						) unionsql ON unionsql.job_id = jobs.job_id
          ORDER BY jobs.job_id $limit $offset";
 
     my $sth = $dbh->prepare($req);
@@ -4433,10 +4196,8 @@ sub count_jobs_for_user_query {
 
     my $req =
         "
-        SELECT COUNT(jobs.job_id)
-        FROM jobs
-        WHERE
-             jobs.job_id IN (
+        SELECT COUNT(*)
+        FROM (
          						 SELECT DISTINCT jobs.job_id
          						 FROM jobs, assigned_resources, moldable_job_descriptions
          						 WHERE
@@ -4467,7 +4228,7 @@ sub count_jobs_for_user_query {
          						   $third_query_date_start
          						   $third_query_date_end
          						   $state $user $array_id $id_filter
-         						)
+         						) AS unionsql
              ";
 
     my $sth = $dbh->prepare($req);
@@ -4482,27 +4243,14 @@ sub count_jobs_for_user_query {
 sub get_gantt_waiting_interactive_prediction_date($){
     my $dbh = shift;
 
-    my $req =
-        "SELECT jobs.job_id, jobs.info_type, gantt_jobs_predictions_visu.start_time, jobs.message
-         FROM jobs, moldable_job_descriptions, gantt_jobs_predictions_visu
-         WHERE
-             jobs.state = \'Waiting\' AND
-             jobs.job_type = \'INTERACTIVE\' AND
-             jobs.reservation = \'None\' AND
-             moldable_job_descriptions.moldable_index = \'CURRENT\' AND
-             moldable_job_descriptions.moldable_job_id = jobs.job_id AND
-             gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id
-        ";
-    if ($Db_type eq "Pg"){
-        $req = "SELECT jobs.job_id, jobs.info_type, gantt_jobs_predictions_visu.start_time, jobs.message
-                FROM jobs, moldable_job_descriptions, gantt_jobs_predictions_visu
-                WHERE
+    my $req = "SELECT jobs.job_id, jobs.info_type, gantt_jobs_predictions_visu.start_time, jobs.message
+               FROM jobs, moldable_job_descriptions, gantt_jobs_predictions_visu
+               WHERE
                     jobs.state = \'Waiting\' AND
                     jobs.job_type = \'INTERACTIVE\' AND
                     jobs.reservation = \'None\' AND
                     moldable_job_descriptions.moldable_job_id = jobs.job_id AND
                     gantt_jobs_predictions_visu.moldable_job_id = moldable_job_descriptions.moldable_id";
-    }
     
     my $sth = $dbh->prepare($req);
     $sth->execute();
@@ -4588,11 +4336,11 @@ sub set_stagein($$$$$$) {
     my $compression = shift;
     my $size = shift;
     my $idFile;
-    lock_table($dbh, ["files"]);
+    $dbh->begin_work();
     $dbh->do("INSERT INTO files (md5sum,location,method,compression,size)
               VALUES (\'$md5sum\',\'$location\',\'$method\',\'$compression\',$size)");
     $idFile = get_last_insert_id($dbh,"files_file_id_seq");
-    unlock_table($dbh);
+    $dbh->commit();
     return $idFile;
 }
 
@@ -4605,9 +4353,9 @@ sub del_stagein($$) {
     my $dbh = shift;
     my $md5sum = shift;
     
-    lock_table($dbh, ["files"]);
+    $dbh->begin_work();
     $dbh->do("DELETE FROM files WHERE md5sum = \'$md5sum\'");
-    unlock_table($dbh);
+    $dbh->commit();
 }
 
 # is_stagein_deprecated($$$);
@@ -4807,7 +4555,7 @@ sub update_admission_rule($$$$$) {
     $sth->execute();
     if($sth->fetchrow_array() > 0) {
       $dbh->do("  UPDATE admission_rules
-                SET (priority, enabled, rule) = ($priority, ".($enabled?"'YES'":"'NO'").", $rule)
+                SET priority= $priority, enabled = ".($enabled?"'YES'":"'NO'").", rule = $rule
                 WHERE id=$id
                ");
       return($id);
@@ -4827,12 +4575,10 @@ sub add_resource($$$) {
     my $name = shift;
     my $state = shift;
 
-    #lock_table($dbh,["resources"]);
     $dbh->do("  INSERT INTO resources (network_address,state,state_num)
                 VALUES (\'$name\',\'$state\',$State_to_num{$state})
              ");
     my $id = get_last_insert_id($dbh,"resources_resource_id_seq");
-    #unlock_table($dbh);
     my $date = get_date($dbh);
     $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start)
                 VALUES ($id,\'state\',\'$state\',\'$date\')
@@ -4859,8 +4605,7 @@ sub add_resources($$) {
     my $dbh = shift;
     my $resources = shift;
 
-    lock_table($dbh,["resources","resource_logs"]);
-
+    $dbh->begin_work();
     # Getting the last id as we are not using auto_increment
     my $id=get_last_resource_id($dbh);    
     my @ids;
@@ -4912,7 +4657,7 @@ sub add_resources($$) {
     }else{
       $dbh->do($log_query);
     }
-    unlock_table($dbh);
+    $dbh->commit();
     return(@ids);
 }
 
@@ -5078,7 +4823,7 @@ sub get_resource_info($$) {
 }
 
 
-# get_resource_next_value_for_property
+# get_resource_last_value_of_property
 # returns the next possible numerical value for a property
 # parameters : base, property
 # return value : int
@@ -5086,16 +4831,20 @@ sub get_resource_info($$) {
 sub get_resource_last_value_of_property($$) {
     my $dbh = shift;
     my $property = shift;
+    my $res;
 
-    my $sth = $dbh->prepare("   SELECT $property
-                                FROM resources
-                                ORDER BY $property DESC
-                                LIMIT 1
-                            ");
-    $sth->execute();
+    my %properties = list_resource_properties_fields($dbh);
+    if (grep(/^$property$/,keys(%properties))) {
+        my $sth = $dbh->prepare("   SELECT $property
+                                    FROM resources
+                                    ORDER BY $property DESC
+                                    LIMIT 1
+                                ");
+        $sth->execute();
 
-    my ($res) = $sth->fetchrow_array();
-    $sth->finish();
+        ($res) = $sth->fetchrow_array();
+        $sth->finish();
+    }
     return $res;
 }
 
@@ -5378,26 +5127,15 @@ sub set_node_state($$$$) {
     }
 
     my $date = get_date($dbh);
-    if ($Db_type eq "Pg"){
-        $dbh->do("  UPDATE resource_logs
-                    SET date_stop = \'$date\'
-                    FROM resources
-                    WHERE
-                        resource_logs.date_stop = 0
-                        AND resource_logs.attribute = \'state\'
-                        AND resources.network_address = \'$hostname\'
-                        AND resource_logs.resource_id = resources.resource_id
-                 ");
-    }else{
-        $dbh->do("  UPDATE resource_logs, resources
-                    SET resource_logs.date_stop = \'$date\'
-                    WHERE
-                        resource_logs.date_stop = 0
-                        AND resource_logs.attribute = \'state\'
-                        AND resources.network_address = \'$hostname\'
-                        AND resource_logs.resource_id = resources.resource_id
-                 ");
-    }
+    $dbh->do("  UPDATE resource_logs
+                SET date_stop = \'$date\'
+                FROM resources
+                WHERE
+                    resource_logs.date_stop = 0
+                    AND resource_logs.attribute = \'state\'
+                    AND resources.network_address = \'$hostname\'
+                    AND resource_logs.resource_id = resources.resource_id
+             ");
 
     $dbh->do("INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
                 SELECT resources.resource_id,\'state\',\'$state\',\'$date\',\'$finaud\'
@@ -5423,6 +5161,21 @@ sub set_resource_nextState($$$) {
     return($result);
 }
 
+# set_resources_nextState
+# sets the nextState field of a set of resources identified by their resource_id
+# parameters : base, ref to an arry of resource id, nextState
+# return value : number of updates
+sub set_resources_nextState($$$) {
+    my $dbh = shift;
+    my $resources = shift;
+    my $next_state = shift;
+
+    my $result = $dbh->do(" UPDATE resources
+                            SET next_state = \'$next_state\', next_finaud_decision = \'NO\'
+                            WHERE resource_id IN (".join(",", @{$resources}).")
+                          ");
+    return($result);
+}
 
 # set_resource_state
 # sets the state field of a resource
@@ -5539,102 +5292,73 @@ sub set_node_expiryDate($$$) {
 }
 
 
-# set a node property
-# change resource_properties table value for resources with the specified network_address
-# parameters : base, hostname, property name, value
-# return : 0 if all is good, otherwise 1 if the property does not exist or the value is incorrect
-sub set_node_property($$$$){
+# set resources property
+# change a property value in the resource table
+# parameters : base, a hash ref defining the nodes or resources to change, property name, value
+# return : # of changed rows
+sub set_resources_property($$$$){
     my $dbh = shift;
-    my $hostname = shift;
+    my $resources = shift; # e.g. {nodes => [...]}} or {resources => [...]}
     my $property = shift;
     my $value = shift;
+    my $where;
 
-    # Test if we must change the property
-    my $nbRowsAffected;
-    eval{
+    if (exists($resources->{nodes})){
+        $where = "network_address IN (".join(",", map {"'$_'"} @{$resources->{nodes}}).")";
+    }elsif (exists($resources->{resources})){
+        $where = "resource_id IN (".join(",", @{$resources->{resources}}).")"
+    }else{
+        return -1;
+    }
+    my $sth = $dbh->prepare("SELECT resource_id
+                             FROM resources
+                             WHERE
+                                 $where
+                                 AND ( $property != \'$value\' OR $property IS NULL )
+                            ");
+    $sth->execute();
+    my @ids = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@ids, $ref->{resource_id});
+    }
+    my $nbRowsAffected = $#ids + 1;
+    if ($nbRowsAffected > 0){
         $nbRowsAffected = $dbh->do("UPDATE resources
                                     SET $property = \'$value\'
-                                    WHERE 
-                                        resources.network_address = \'$hostname\'
+                                    WHERE
+                                        resource_id IN (".join(",", @ids).")
                                    ");
-    };
-    if ($nbRowsAffected < 1){
-        return(1);
-    }else{
-        #Update LOG table
-        my $date = get_date($dbh);
-        if ($Db_type eq "Pg"){
-            $dbh->do("  UPDATE resource_logs
-                        SET date_stop = \'$date\'
-                        FROM resources
-                        WHERE
-                            resource_logs.date_stop = 0
-                            AND resources.network_address = \'$hostname\'
-                            AND resource_logs.attribute = \'$property\'
-                            AND resources.resource_id = resource_logs.resource_id
-                     ");
+        # in case of error, $nbRowsAffected can be equal to undef or -1 
+        # and if no row was actually updated, equal to 0
+        if (defined($nbRowsAffected) and ($nbRowsAffected > 0)){
+            #Update LOG table
+            my $date = get_date($dbh);
+            my $res;
+            $res = $dbh->do("UPDATE resource_logs
+                             SET date_stop = \'$date\'
+                             WHERE
+                                 date_stop = 0
+                                 AND attribute = \'$property\'
+                                 AND resource_id IN (".join(",", @ids).")
+                            ");
+            if (not defined($res) or ($res < 0)){
+                warn("Error: failed to update resource_logs $res \n");
+            }
+            my $query = "INSERT INTO resource_logs (resource_id,attribute,value,date_start) VALUES ";
+            foreach my $i (@ids){
+                $query .= " ($i, \'$property\', \'$value\', \'$date\'),";
+            }
+            chop($query);
+            $res = $dbh->do($query);
+            if (not defined($res) or ($res != $nbRowsAffected)){
+                warn("Error: failed to add resource_logs\n");
+            }
         }else{
-            $dbh->do("  UPDATE resources, resource_logs
-                        SET resource_logs.date_stop = \'$date\'
-                        WHERE
-                            resource_logs.date_stop = 0
-                            AND resources.network_address = \'$hostname\'
-                            AND resource_logs.attribute = \'$property\'
-                            AND resources.resource_id = resource_logs.resource_id
-                     ");
+            warn("Error: failed to update resources\n");
         }
-
-        $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start)
-                        SELECT resources.resource_id, \'$property\', \'$value\', \'$date\'
-                        FROM resources
-                        WHERE
-                            resources.network_address = \'$hostname\'
-                  ");
-        return(0);
     }
+    return($nbRowsAffected);
 }
-
-
-# set a resource property
-# change resource_properties table value for resource specified
-# parameters : base, resource, property name, value
-# return : 0 if all is good, otherwise 1 if the property does not exist or the value is incorrect
-sub set_resource_property($$$$){
-    my $dbh = shift;
-    my $resource = shift;
-    my $property = shift;
-    my $value = shift;
-
-    # Test if we must change the property
-    my $nbRowsAffected;
-    eval{
-        $nbRowsAffected = $dbh->do("UPDATE resources
-                                    SET $property = \'$value\'
-                                    WHERE 
-                                        resource_id = \'$resource\'
-                                   ");
-    };
-    if ($nbRowsAffected < 1){
-        warn "query UPDATE resources SET $property = $value WHERE resource_ID = $resource";
-        warn "rows affected $nbRowsAffected";
-        return(1);
-    }else{
-        #Update LOG table
-        my $date = get_date($dbh);
-        $dbh->do("  UPDATE resource_logs
-                    SET date_stop = \'$date\'
-                    WHERE
-                        date_stop = 0
-                        AND resource_id = \'$resource\'
-                        AND attribute = \'$property\'
-                 ");
-        $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start)
-                    VALUES ($resource, \'$property\', \'$value\', \'$date\')
-                 ");
-        return(0);
-    }
-}
-
 
 # add_event_maintenance_on
 # add an event in the table resource_logs indicating that this 
@@ -5765,21 +5489,13 @@ sub get_resources_change_state($){
 sub list_resource_properties_fields($){
     my $dbh = shift;
     
-    my $req;
-    if ($Db_type eq "Pg"){
-
-				$req = "SELECT column_name AS field FROM information_schema.columns WHERE table_name = \'resources\'";
-
-    }else{
-        $req = "SHOW COLUMNS FROM resources";
-    }
-
+    my $req = "SELECT column_name,data_type FROM information_schema.columns WHERE table_name = \'resources\'";
     my $sth = $dbh->prepare($req);
     $sth->execute();
 
     my %results;
     while (my @ref = $sth->fetchrow_array()) {
-        $results{$ref[0]} = 1;
+        $results{$ref[0]} = ($ref[1] eq "character varying")?"varchar":"integer";
     }
     $sth->finish();
 
@@ -5845,7 +5561,7 @@ sub update_current_scheduler_priority($$$$$){
 
 #get the range when nodes are dead between two dates
 # arg : base, start date, end date
-sub get_resource_dead_range_date($$$){
+sub get_resources_absent_suspected_dead_from_range($$$){
     my $dbh = shift;
     my $date_start = shift;
     my $date_end = shift;
@@ -6210,9 +5926,8 @@ sub change_a_queue($$$$){
 #return a hashtable : job_id --> [start_time,walltime,queue_name,\@resources,state]
 sub get_gantt_scheduled_jobs($){
     my $dbh = shift;
-    my $sth;
-    if ($Db_type eq "Pg"){
-        $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended,j.project
+
+    my $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended,j.project
                              FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
                              WHERE
                                 g1.moldable_job_id = g2.moldable_job_id
@@ -6220,17 +5935,6 @@ sub get_gantt_scheduled_jobs($){
                                 AND j.job_id = m.moldable_job_id
                              ORDER BY j.start_time, j.job_id
                             ");
-    }else{
-        $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended,j.project
-                             FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, moldable_job_descriptions m, jobs j
-                             WHERE
-                                m.moldable_index = \'CURRENT\'
-                                AND g1.moldable_job_id = g2.moldable_job_id
-                                AND m.moldable_id = g2.moldable_job_id
-                                AND j.job_id = m.moldable_job_id
-                             ORDER BY j.start_time, j.job_id
-                            ");
-    }
     $sth->execute();
     my %res ;
     my @order;
@@ -6400,8 +6104,7 @@ sub get_gantt_job_start_time_visu($$){
 sub update_gantt_visualization($){
     my $dbh = shift;
 
-    lock_table($dbh, ["gantt_jobs_predictions_visu","gantt_jobs_resources_visu","gantt_jobs_predictions","gantt_jobs_resources"]);
-
+    $dbh->begin_work();
     $dbh->do("DELETE FROM gantt_jobs_predictions_visu");
     $dbh->do("DELETE FROM gantt_jobs_resources_visu");
 ##    $dbh->do("OPTIMIZE TABLE ganttJobsResources_visu, ganttJobsPredictions_visu");
@@ -6415,7 +6118,7 @@ sub update_gantt_visualization($){
               FROM gantt_jobs_resources
              ");
 
-    unlock_table($dbh);
+    $dbh->commit();
 }
 
 
@@ -6460,7 +6163,7 @@ sub get_gantt_visu_date($){
 sub get_waiting_reservations_already_scheduled($){
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_job_id, gantt_jobs_predictions.start_time, gantt_jobs_resources.resource_id, moldable_job_descriptions.moldable_walltime, moldable_job_descriptions.moldable_id, jobs.job_name, jobs.job_user
+    my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_job_id, gantt_jobs_predictions.start_time, gantt_jobs_resources.resource_id, moldable_job_descriptions.moldable_walltime, moldable_job_descriptions.moldable_id, jobs.job_name, jobs.job_user, jobs.queue_name, jobs.project
                                 FROM jobs, moldable_job_descriptions, gantt_jobs_predictions, gantt_jobs_resources
                                 WHERE
                                     (jobs.state = \'Waiting\'
@@ -6479,6 +6182,8 @@ sub get_waiting_reservations_already_scheduled($){
         $res->{$ref[0]}->{moldable_id} = $ref[4];
         $res->{$ref[0]}->{job_name} = $ref[5];
         $res->{$ref[0]}->{job_user} = $ref[6];
+        $res->{$ref[0]}->{queue_name} = $ref[7];
+        $res->{$ref[0]}->{project} = $ref[8];
     }
     $sth->finish();
     return($res);
@@ -6532,25 +6237,14 @@ sub update_scheduler_last_job_date($$$){
     my $date = shift;
     my $moldable_id = shift;
 
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "UPDATE resources
-                SET
-                    last_job_date = $date
-                FROM assigned_resources
-                WHERE
-                    assigned_resources.moldable_job_id = $moldable_id AND
-                    assigned_resources.resource_id = resources.resource_id
-               ";
-    }else{
-        $req = "UPDATE resources, assigned_resources
-                SET
-                    resources.last_job_date = $date
-                WHERE
-                    assigned_resources.moldable_job_id = $moldable_id AND
-                    assigned_resources.resource_id = resources.resource_id
-               ";
-    }
+    my $req = "UPDATE resources
+               SET
+                   last_job_date = $date
+               FROM assigned_resources
+               WHERE
+                   assigned_resources.moldable_job_id = $moldable_id AND
+                   assigned_resources.resource_id = resources.resource_id
+              ";
     return($dbh->do($req));
 }
 
@@ -6647,79 +6341,92 @@ sub get_gantt_jobs_to_launch($$){
     my $dbh = shift;
     my $date = shift;
 
-    my $req = "SELECT DISTINCT(j.job_id)
-               FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-               WHERE
-                   m.moldable_index = \'CURRENT\'
-                   AND g1.moldable_job_id = g2.moldable_job_id
-                   AND m.moldable_id = g1.moldable_job_id
-                   AND j.job_id = m.moldable_job_id
-                   AND g2.start_time <= $date
-                   AND j.state = \'Waiting\'
-                   AND resources.resource_id = g1.resource_id
-                   AND (resources.state IN (\'Dead\',\'Suspected\',\'Absent\')
-                        OR resources.next_state IN (\'Dead\',\'Suspected\',\'Absent\'))
-              ";
-    if ($Db_type eq "Pg"){
-        $req = "SELECT DISTINCT(j.job_id)
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
+    my $req;
+    # only use the "CASE WHEN.." query when the energy saving feature is on
+    # (although it would function for both cases)
+    if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes")) {
+        $req = <<EOS;
+SELECT gp.moldable_job_id, gr.resource_id, j.job_id
+FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
+WHERE
+    gr.moldable_job_id = gp.moldable_job_id
+    AND m.moldable_id = gr.moldable_job_id
+    AND j.job_id = m.moldable_job_id
+    AND gp.start_time <= $date
+    AND j.state = \'Waiting\'
+    AND r.resource_id = gr.resource_id
+    AND CASE WHEN EXISTS (
+                       SELECT 1
+                       FROM job_types t
+                       WHERE 
+                           m.moldable_job_id = t.job_id
+                           AND t.type in (\'deploy=standby\', \'cosystem=standby\', \'noop=standby\')
+        )
+        THEN (
+            (r.state = \'Alive\' OR ( r.state = \'Absent\' AND (gp.start_time + m.moldable_walltime) <= r.available_upto))
+            AND NOT EXISTS ( 
+                SELECT 1
+                FROM resources rr, gantt_jobs_resources gg
                 WHERE
-                   g1.moldable_job_id = g2.moldable_job_id
-                   AND m.moldable_id = g1.moldable_job_id
-                   AND j.job_id = m.moldable_job_id
-                   AND g2.start_time <= $date
-                   AND j.state = \'Waiting\'
-                   AND resources.resource_id = g1.resource_id
-                   AND (resources.state IN (\'Dead\',\'Suspected\',\'Absent\')
-                        OR resources.next_state IN (\'Dead\',\'Suspected\',\'Absent\'))
-              ";
+                    gg.moldable_job_id = gr.moldable_job_id
+                    AND rr.resource_id = gg.resource_id
+                    AND (
+                        rr.state IN (\'Dead\',\'Suspected\')
+                        OR rr.next_state IN (\'Dead\',\'Suspected\')
+                        OR (rr.state = \'Absent\' AND (gp.start_time + m.moldable_walltime) > rr.available_upto)
+                        OR ( rr.next_state = \'Absent\' AND (gp.start_time + m.moldable_walltime) > rr.available_upto)
+                    )
+            )
+        )
+        ELSE (
+            r.state = \'Alive\'
+            AND NOT EXISTS ( 
+                SELECT 1
+                FROM resources rr, gantt_jobs_resources gg
+                WHERE
+                    gg.moldable_job_id = gr.moldable_job_id
+                    AND rr.resource_id = gg.resource_id
+                    AND (
+                        rr.state IN (\'Dead\',\'Suspected\',\'Absent\')
+                        OR rr.next_state IN (\'Dead\',\'Suspected\',\'Absent\')
+                    )
+            )
+        )
+        END
+EOS
+    } else {
+        $req = <<EOS;
+SELECT gp.moldable_job_id, gr.resource_id, j.job_id
+FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
+WHERE
+    gr.moldable_job_id = gp.moldable_job_id
+    AND m.moldable_id = gr.moldable_job_id
+    AND j.job_id = m.moldable_job_id
+    AND gp.start_time <= $date
+    AND j.state = \'Waiting\'
+    AND r.resource_id = gr.resource_id
+    AND r.state = \'Alive\'
+    AND NOT EXISTS ( 
+        SELECT 1
+        FROM resources rr, gantt_jobs_resources gg
+        WHERE
+            gg.moldable_job_id = gr.moldable_job_id
+            AND rr.resource_id = gg.resource_id
+            AND (
+                rr.state IN (\'Dead\',\'Suspected\',\'Absent\')
+                OR rr.next_state IN (\'Dead\',\'Suspected\',\'Absent\')
+            )
+    )
+EOS
     }
-
     my $sth = $dbh->prepare($req);
-    $sth->execute();
-    my %jobs_not_to_launch;
-    while (my @ref = $sth->fetchrow_array()) {
-        $jobs_not_to_launch{$ref[0]} = 1;
-    }
-    $sth->finish();
-
-    $req = "    SELECT g2.moldable_job_id, g1.resource_id, j.job_id
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-                WHERE
-                    m.moldable_index = \'CURRENT\'
-                    AND g1.moldable_job_id = g2.moldable_job_id
-                    AND m.moldable_id = g1.moldable_job_id
-                    AND j.job_id = m.moldable_job_id
-                    AND g2.start_time <= $date
-                    AND j.state = \'Waiting\'
-                    AND resources.resource_id = g1.resource_id
-                    AND resources.state = \'Alive\'
-           ";
-    if ($Db_type eq "Pg"){
-        $req = "SELECT g2.moldable_job_id, g1.resource_id, j.job_id
-                FROM gantt_jobs_resources g1, gantt_jobs_predictions g2, jobs j, moldable_job_descriptions m, resources
-                WHERE
-                    g1.moldable_job_id = g2.moldable_job_id
-                    AND m.moldable_id = g1.moldable_job_id
-                    AND j.job_id = m.moldable_job_id
-                    AND g2.start_time <= $date
-                    AND j.state = \'Waiting\'
-                    AND resources.resource_id = g1.resource_id
-                    AND resources.state = \'Alive\'
-           ";
-
-    }
-    $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
     while (my @ref = $sth->fetchrow_array()) {
-        if(!defined($jobs_not_to_launch{$ref[2]})){
-            $res{$ref[2]}->[0] = $ref[0];
-            push(@{$res{$ref[2]}->[1]}, $ref[1]);
-        }
+        $res{$ref[2]}->[0] = $ref[0];
+        push(@{$res{$ref[2]}->[1]}, $ref[1]);
     }
     $sth->finish();
-
     return(%res);
 }
 
@@ -6744,6 +6451,13 @@ sub get_gantt_hostname_to_wake_up($$$){
                    AND resources.network_address != \'\'
                    AND resources.type = \'default\'
                    AND (g2.start_time + m.moldable_walltime) <= resources.available_upto
+                   AND NOT EXISTS (
+                       SELECT 1
+                       FROM job_types t
+                       WHERE 
+                           m.moldable_job_id = t.job_id
+                           AND t.type in (\'deploy=standby\', \'cosystem=standby\', \'noop=standby\')
+                       )
                GROUP BY resources.network_address
               ";
     
@@ -6822,6 +6536,35 @@ sub get_gantt_Alive_resources_for_job($$){
                                 g.moldable_job_id = $moldable_job_id 
                                 AND r.resource_id = g.resource_id
                                 AND r.state = \'Alive\'
+                            ");
+    $sth->execute();
+    my @res ;
+    while (my @ref = $sth->fetchrow_array()) {
+        push( @res, $ref[0]); 
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+
+#Get Alive or Standby resources for a job
+#args : base, moldable job id
+sub get_gantt_Alive_or_Standby_resources_for_job($$$){
+    my $dbh = shift;
+    my $moldable_job_id = shift;
+    my $max_date = shift;
+    
+    $max_date = $max_date + $Cm_security_duration;
+    my $sth = $dbh->prepare("SELECT g.resource_id
+                             FROM gantt_jobs_resources g, resources r
+                             WHERE
+                                g.moldable_job_id = $moldable_job_id 
+                                AND r.resource_id = g.resource_id
+                                AND ( r.state = \'Alive\' 
+                                    OR ( r.state = \'Absent\'
+                                        AND r.available_upto > $max_date )
+                                    )
                             ");
     $sth->execute();
     my @res ;
@@ -7051,12 +6794,7 @@ sub get_date($) {
 
     my $dbh = shift;
 
-    my $req;
-    if ($Db_type eq "Pg"){
-        $req = "select EXTRACT(EPOCH FROM current_timestamp)";
-    }else{
-        $req = "SELECT UNIX_TIMESTAMP()";
-    }
+    my $req = "select EXTRACT(EPOCH FROM current_timestamp)";
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my @ref = $sth->fetchrow_array();
@@ -7079,11 +6817,7 @@ sub register_monitoring_values($$$$){
         $create_str = "CREATE TABLE monitoring_$table (";
         for (my $i=0; $i <= $#{$fields}; $i++){
             if ($values->[$i] =~ /^\d+$/){
-                if ($Db_type eq "Pg"){
-                    $create_str .= "$fields->[$i] integer,";
-                }else{
-                    $create_str .= "$fields->[$i] INT,";
-                }
+                $create_str .= "$fields->[$i] integer,";
             }else{
                 $create_str .= "$fields->[$i] varchar(255),"
             }
@@ -7465,12 +7199,10 @@ sub add_new_event_with_host($$$$$){
     my $hostnames = shift;
     
     my $date = get_date($dbh);
-    #lock_table($dbh,["event_logs"]);
     $dbh->do("  INSERT INTO event_logs (type,job_id,date,description)
                 VALUES (\'$type\',$job_id,\'$date\',\'$description\')
              ");
     my $event_id = get_last_insert_id($dbh,"event_logs_event_id_seq");
-    #unlock_table($dbh);
 
     my %tmp;
     foreach my $n (@{$hostnames}){
@@ -7644,91 +7376,6 @@ sub is_an_event_exists($$$){
 }
 
 
-# LOCK FUNCTIONS:
-
-# get_lock
-# lock a mysql mutex variable
-# parameters : base, mutex, timeout
-# return value : 1 if the lock was obtained successfully, 0 if the attempt timed out or undef if an error occurred  
-# side effects : a second get_lock of the same mutex will be blocked until release_lock is called on the mutex
-sub get_lock($$$) {
-    my $dbh = shift;
-    my $mutex = shift;
-    my $timeout = shift;
-
-    if ($Db_type eq "Pg"){
-        #$dbh->begin_work();
-        #Cannot find the GET_LOCK function into postgres...
-        return 1;
-    }else{
-        my $sth = $dbh->prepare("SELECT GET_LOCK(\"$mutex\",$timeout)");
-        $sth->execute();
-        my ($res) = $sth->fetchrow_array();
-        $sth->finish();
-	if ($res eq "0") {
-            return 0;
-        } elsif ($res eq "1") {
-            return 1;
-        }
-    }
-    return undef;
-}
-
-# release_lock
-# unlock a mysql mutex variable
-# parameters : base, mutex
-# return value : 1 if the lock was released, 0 if the lock wasn't locked by this thread , and NULL if the named lock didn't exist
-# side effects : unlock the mutex, a blocked get_lock may be unblocked
-sub release_lock($$) {
-    my $dbh = shift;
-    my $mutex = shift;
-
-    if ($Db_type eq "Pg"){
-        #$dbh->commit();
-        return 1;
-    }else{
-        my $sth = $dbh->prepare("SELECT RELEASE_LOCK(\"$mutex\")");
-        $sth->execute();
-        my ($res) = $sth->fetchrow_array();
-        $sth->finish();
-	if ($res eq "0") {
-            return 0;
-        } elsif ($res eq "1") {
-            return 1;
-        }
-    }
-    return undef;
-}
-
-
-sub lock_table($$){
-    my $dbh = shift;
-    my $tables= shift;
-
-    if ($Db_type eq "Pg"){
-        $dbh->begin_work();
-    }else{
-        my $str = "LOCK TABLE ";
-        foreach my $t (@{$tables}){
-            $str .= "$t WRITE,";
-        }
-        chop($str);
-        $dbh->do($str);
-    }
-}
-
-
-sub unlock_table($){
-    my $dbh = shift;
-
-    if ($Db_type eq "Pg"){
-        $dbh->commit();
-    }else{
-        $dbh->do("UNLOCK TABLE");
-    }
-}
-
-
 # check_end_job($$$){
 sub check_end_of_job($$$$$$$$$$){
     my $base = shift;
@@ -7742,15 +7389,14 @@ sub check_end_of_job($$$$$$$$$$){
     my $launchingDirectory = shift;
     my $server_epilogue_script = shift;
 
-    #lock_table($base,["jobs","job_state_logs","resources","assigned_resources","resource_state_logs","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    lock_table($base,["jobs","job_state_logs","assigned_resources"]);
+    $base->begin_work();
     my $refJob = get_job($base,$job_id);
     if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching") or ($refJob->{'state'} eq "Suspended") or ($refJob->{'state'} eq "Resuming")){
         OAR::Modules::Judas::oar_debug("[bipbip $job_id] Job $job_id is ended\n");
         set_finish_date($base,$job_id);
         set_job_state($base,$job_id,"Finishing");
         set_job_exit_code($base,$job_id,$exit_script_value) if ($exit_script_value =~ /^\d+$/);
-        unlock_table($base);
+        $base->commit();
         my @events;
         if($error == 0){
             OAR::Modules::Judas::oar_debug("[bipbip $job_id] User Launch completed OK\n");
@@ -7935,7 +7581,7 @@ sub check_end_of_job($$$$$$$$$$){
         }
     }else{
         OAR::Modules::Judas::oar_debug("[bipbip $job_id] I was previously killed or Terminated but I did not know that!!\n");
-        unlock_table($base);
+        $base->commit();
     }
 
     OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"BipBip");
@@ -8095,8 +7741,8 @@ sub job_finishing_sequence($$$$$$){
 
     if (!defined($types->{noop})){
         # Just to force commit
-        lock_table($dbh,["accounting"]);
-        unlock_table($dbh);
+        $dbh->begin_work();
+        $dbh->commit();
     }
 
     OAR::Tools::notify_tcp_socket($almighty_host,$almighty_port,"ChState") if ($#{$events} >= 0);
@@ -8142,22 +7788,17 @@ sub sql_select($$$$){
 # ex values: 1,5,yop\n5,6,poy\n
 # return value : /
 sub inserts_from_file($$$) {
-  my $dbh = shift;
-  my $table = shift;
-  my $values = shift;
-  my $query = "";
-  my $filename = "/tmp/oar_insert_".$table.".req";
-  open(INSERTOUTFILE, ">$filename");
-  print INSERTOUTFILE $values;
-  close(INSERTOUTFILE);
+    my $dbh = shift;
+    my $table = shift;
+    my $values = shift;
+    my $filename = "/tmp/oar_insert_".$table.".req";
+    open(INSERTOUTFILE, ">$filename");
+    print INSERTOUTFILE $values;
+    close(INSERTOUTFILE);
  
-  if ($Db_type eq "mysql") {
-    $query = "LOAD DATA LOCAL INFILE '$filename' INTO TABLE $table";
-  } else {
-    $query = "COPY $table FROM '$filename' WITH DELIMITER AS ','";
-  }
+    my $query = "COPY $table FROM '$filename' WITH DELIMITER AS ','";
 
-  $dbh->do($query);
+    $dbh->do($query);
 }
 
 # END OF THE MODULE

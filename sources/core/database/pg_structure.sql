@@ -13,7 +13,7 @@ CREATE TABLE accounting (
   accounting_project varchar(255) NOT NULL default '',
   queue_name varchar(100) NOT NULL default '',
   consumption_type varchar(5) check (consumption_type in ('ASKED','USED')) NOT NULL default 'ASKED',
-  consumption integer NOT NULL default '0',
+  consumption bigint NOT NULL default '0',
   PRIMARY KEY  (window_start,window_stop,accounting_user,accounting_project,queue_name,consumption_type)
 );
 CREATE INDEX accounting_user ON accounting (accounting_user);
@@ -139,7 +139,8 @@ CREATE TABLE gantt_jobs_resources_log (
 CREATE TABLE job_dependencies (
   job_id integer NOT NULL default '0',
   job_id_required integer NOT NULL default '0',
-  gap integer NOT NULL default '0',
+  min_start_shift varchar(12) NOT NULL default '',
+  max_start_shift  varchar(12) NOT NULL default '',
   job_dependency_index varchar(7) check (job_dependency_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
   PRIMARY KEY  (job_id,job_id_required)
 );

@@ -1,109 +1,167 @@
 #!/bin/bash
 # Detect resources of a list of hosts and print OAR commands to create them in OAR database.
 
-while getopts "c:e:p:n:o:HTh" opt; do
-    case $opt in
-    c)
-        OARCONFFILE=$OPTARG
-        ;;
-    e)
-        OPENSSH_CMD=$OPTARG
-        ;;
-    n)
-        OARNODESETTING_CMD=$OPTARG
-        ;;
-    p)
-        OARPROPERTY_CMD=$OPTARG
-        ;;
-    o)
-        GENERATED_COMMANDS_FILE=$OPTARG
-        ;;
-    H)
-        WITH_HT=1
-        ;;
-    T)
-        WITH_HT=1
-        CREATE_THREAD_PROPERTY=1
-        ;;
-    h)
+usage() {
         cat <<EOF
 Usage:
-    $0 <hosts file> [options]
+    ${0##*/} [options] <hostfile>
+
+Generate a script for the creation of the OAR resources of a list of hosts, by
+connecting to each host and gathering system information.
+Hosts are read one per line from hostfile (must be readable by user oar) or
+STDIN (if hostfile is -).
+
 Options:
-    -o  output file for generated commands
-    -e  ssh command to connect nodes
-    -H  handle HyperThreading
-    -T  handle HyperThreading + create thread property
-    -n  path to oarnodesetting
-    -p  path to oarproperty
-    -c  path to oar.conf
-    -h  display this message
+  -H          handle HyperThreading
+  -T          use the thread property for HyperThreading (imply -H)
+  -o <file>   script filename
+  -x          execute the script at the end and remove it
+  -y          assume "yes" as answer to all prompts and run non-interactively
+  -v          print the generated script
+  -e <path>   path to the ssh command
+  -n <path>   path to the oarnodesetting command
+  -p <path>   path to the oarproperty command
+  -c <path>   path to the oar.conf file
+  -h          display this message
 
 EOF
-        exit 0
-        ;;
-    \?)
-        echo "Invalid option: -$OPTARG" >&2
-        exit 1
-      ;;
-  esac
-done
+
+}
+
+parse_opts() {
+    while getopts "c:e:p:n:o:xyHTvh" opt; do
+        case $opt in
+        c)
+            OARCONFFILE=$OPTARG
+            ;;
+        e)
+            OPENSSH_CMD=$OPTARG
+            ;;
+        n)
+            OARNODESETTING_CMD=$OPTARG
+            ;;
+        p)
+            OARPROPERTY_CMD=$OPTARG
+            ;;
+        o)
+            SCRIPT_FILE=$OPTARG
+            ;;
+        x)
+            EXECUTE=1
+            ;;
+        v)
+            PRINT=1
+            ;;
+        y)
+            NON_INTERACTIVE=1
+            ;;
+        H)
+            WITH_HT=1
+            ;;
+        T)
+            WITH_HT=1
+            WITH_THREAD_PROPERTY=1
+            ;;
+        h)
+    				usage
+            exit 0
+            ;;
+        \?)
+            echo -e "Error: invalid option: -$OPTARG\n\n" >&2
+    				usage 1>&2
+            exit 1
+          ;;
+      esac
+    done
+}
+
+OARCONFFILE="/etc/oar/oar.conf"
+OPENSSH_CMD="/usr/bin/ssh"
+OARPROPERTY_CMD="oarproperty"
+OARNODESETTING_CMD="oarnodesetting"
+
+parse_opts "$@"
 shift $((OPTIND-1))
-OARCONFFILE=${OARCONFFILE:-/etc/oar/oar.conf}
-OPENSSH_CMD=${OPENSSH_CMD:-/usr/bin/ssh}
-OARPROPERTY_CMD=${OARPROPERTY_CMD:-oarproperty}
-OARNODESETTING_CMD=${OARNODESETTING_CMD:-oarnodesetting}
-GENERATED_COMMANDS_FILE=${GENERATED_COMMANDS_FILE:-/tmp/oar_resources_init.cmd}
+HOSTFILE=$1
+shift 
+OPTIND=1
+parse_opts "$@"
 
-. "$OARCONFFILE" || exit 20
-
-# check the file with the nodes to add
-if [ -z "$1" ] || [ ! -r "$1" ]; then
-    echo "Please provide as argument a file containing the list of nodes to add to OAR"
-    echo "resources (this file must be readable by user oar)"
+if ! [ -r "$OARCONFFILE" ]; then
+    echo -e "Error: cannot read OAR configuration file $OARCONFFILE\n\n" 1>&2
+    usage 1>&2
     exit 1
 fi
 
-echo "Did you configured the OAR SSH key on all the nodes? [yes/NO] "
-read l ; [ "$l" != "yes" -a "$l" != "YES" ] && exit 2
+# check host file
+if [ -z "$HOSTFILE" -o \( "$HOSTFILE" != "-" -a ! -r "$HOSTFILE" \) ]; then
+    echo -e "Error: cannot read host file\n" 1>&2
+    usage 1>&2
+    exit 1
+fi
+. "$OARCONFFILE" || exit 20
+
+if [ "$HOSTFILE" == "-" ]; then
+    if [ -z "$NON_INTERACTIVE" ]; then
+        echo -e "Error: reading nodes from STDIN requires the script to run non-interactive (-y option).\n" 1>&2
+        usage 1>&2
+        exit 1
+    fi
+    echo "# Reading nodes from STDIN..."
+    exec 4<&0
+    exec 0<&-
+else
+    echo "# Reading nodes from ${HOSTFILE}..."
+    exec 4<$HOSTFILE
+fi
+
+if [ -z "$NON_INTERACTIVE" ]; then
+    read -s -n 1 -p "# Is the OAR SSH key configured on all hosts? (press y to confirm)"
+    echo
+    [ "$REPLY" != "y" ] && exit 2
+fi
 
 # Check output file
-if [ -e "$GENERATED_COMMANDS_FILE" ]; then
-    echo "Commands to run will be written into '$GENERATED_COMMANDS_FILE'."
-    echo "Do you want to override it? [yes/NO]"
-    read l ; [ "$l" != "yes" -a "$l" != "YES" ] && exit 3
-    rm $GENERATED_COMMANDS_FILE || exit 4
+if [ -n "$SCRIPT_FILE" ]; then
+    if [ -e "$SCRIPT_FILE" ]; then
+        if [ -z "$NON_INTERACTIVE" ]; then
+            read -s -n 1 -p "# Script file $SCRIPT_FILE already exists, overwrite it? (press y to confirm)"
+            echo
+            [ "$REPLY" != "y" ] && exit 2
+        fi
+        echo -n > $SCRIPT_FILE || exit 4
+    fi
+else 
+    SCRIPT_FILE=$(mktemp -p "" ${0##*/}.XXXXX)
 fi
 
 # Add properties
-echo "$OARPROPERTY_CMD -a cpu" > $GENERATED_COMMANDS_FILE
-echo "$OARPROPERTY_CMD -a core" >> $GENERATED_COMMANDS_FILE
-[ -n "$WITH_HT" -a -n "$CREATE_THREAD_PROPERTY" ] && echo "$OARPROPERTY_CMD -a thread" >> $GENERATED_COMMANDS_FILE
-echo "$OARPROPERTY_CMD -c -a host" >> $GENERATED_COMMANDS_FILE
-echo "$OARPROPERTY_CMD -c -a cpuset" >> $GENERATED_COMMANDS_FILE
-echo "$OARPROPERTY_CMD -a mem" >> $GENERATED_COMMANDS_FILE
+echo "$OARPROPERTY_CMD -a cpu || true" > $SCRIPT_FILE
+echo "$OARPROPERTY_CMD -a core || true" >> $SCRIPT_FILE
+[ -n "$WITH_HT" -a -n "$WITH_THREAD_PROPERTY" ] && echo "$OARPROPERTY_CMD -a thread || true" >> $SCRIPT_FILE
+echo "$OARPROPERTY_CMD -c -a host || true" >> $SCRIPT_FILE
+echo "$OARPROPERTY_CMD -a mem || true" >> $SCRIPT_FILE
 
 # Init CPU id
 CPU=$($OARNODESETTING_CMD --last-property-value cpu 2> /dev/null)
-[ -n "$CPU" ] && ((CPU++)) || CPU=0 
+[ -n "$CPU" ] || CPU=0 
 # Init CORE id
 CORE=$($OARNODESETTING_CMD --last-property-value core 2> /dev/null)
-[ -n "$CORE" ] && ((CORE++)) || CORE=0
+[ -n "$CORE" ] || CORE=0
 # Init THREAD id
-if [ -n "$WITH_HT" -a -n "$CREATE_THREAD_PROPERTY" ]; then
+if [ -n "$WITH_HT" -a -n "$WITH_THREAD_PROPERTY" ]; then
     THREAD=$($OARNODESETTING_CMD --last-property-value thread 2> /dev/null)
 fi
-[ -n "$THREAD" ] && ((THREAD++)) || THREAD=0
+[ -n "$THREAD" ] || THREAD=0
 
-echo
-for host in $(< $1); do
-    echo -n "Checking $host ... "
+while read -u 4 host; do
+    echo -n "#   Checking $host ... "
 
     # Store stderr and redirect it to /dev/null
     exec 3>&2
     exec 2> /dev/null
 
-    mem=$($OPENSSH_CMD $host cat /proc/meminfo | grep ^MemTotal | awk '{print $2}')
+    mem=$($OPENSSH_CMD $host cat /proc/meminfo | perl -ane 'print "$F[1]" if /^MemTotal/')
 
     # Get CORE info in the form:
     # cpu:core
@@ -117,37 +175,37 @@ for host in $(< $1); do
     # ...
     if [ -z "$WITH_HT" ]; then
         if [ "`$OPENSSH_CMD $host cat /proc/cpuinfo|grep 'physical id'`" != "" ]; then
-            DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") core=$3; if ($1 == "physical" && $2 =="id") print $4 ":" core}'|sort -n)
+            DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $processor = $F[1] } elsif ($F[0] eq "physical id") { $physical_id = $F[1]; $topo->{$physical_id}->{$processor} = 1 }; END{ foreach $physical_id (sort({$a <=> $b} keys(%$topo))) { foreach $processor (sort({$a<=>$b} keys(%{$topo->{$physical_id}}))) { print "$physical_id:$processor\n" } } }')
         else
-            DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") print $3 ":" $3}'|sort -n)
+            DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $topo->{$F[1]} = 1 }; END{ foreach $processor (sort ({$a <=> $b} keys(%$topo))) { print "$processor:$processor\n" } }')
         fi
     else
-        DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| awk '{if ($1 == "processor") core=$3; if ($1 == "physical" && $2 =="id") socket=$4; if ($1 == "core" && $2 =="id") print socket ":" $4 ":" core}'|sort -n)
+        DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $processor = $F[1] } elsif ($F[0] eq "physical id") { $physical_id = $F[1] } elsif ($F[0] eq "core id") { $core_id=$F[1]; $topo->{$physical_id}->{$core_id}->{$processor} = 1 }; END{ foreach $physical_id (sort({$a <=> $b} keys(%$topo))) { foreach $core_id (sort({$a <=> $b} keys (%{$topo->{$physical_id}}))) { foreach $processor (sort({$a<=>$b} keys(%{$topo->{$physical_id}->{$core_id}}))) { print "$physical_id:$core_id:$processor\n" } } } }')
     fi
 
     # Restore stderr
     exec 2>&3
 
     if [ -z "$mem" ] || [ -z "$DATA" ]; then
-        echo "*** KO ***"
-        rm $GENERATED_COMMANDS_FILE
-        echo 
-        echo "ERROR with node $host. Please check the ssh connection with oar user"
-        echo "($OPENSSH_CMD $host)..."
+        echo "KO"
+        cat 1>&2 <<EOF
+Error: cannot retrieve info from node $host. Please check that the ssh connection as oar is ok, e.g.:
+$ $OPENSSH_CMD $host cat /proc/cpuinfo
+ 
+EOF
         exit 5
     fi
 
     ((mem = $mem / 1024 / 1024 + 1))
     if [ -z "$WITH_HT" ]; then
         prev_cpu="-1"
-        for i in $DATA; do
-            cpu=$(echo $i|awk -F: '{print $1}')
-            core=$(echo $i|awk -F: '{print $2}')
-            thread=$(echo $i|awk -F: '{print $3}')
+        for l in $DATA; do
+            cpu=${l%%:*}
+            core=${l##*:}
             [ "$cpu" != "$prev_cpu" ] && ((CPU++))
             ((CORE++))
             prev_cpu=$cpu
-            echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+            echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $SCRIPT_FILE
         done
     else
         prev_cpu="-1"
@@ -155,39 +213,53 @@ for host in $(< $1); do
         tmp_cpuset=""
         cpu=""
         core=""
-        for i in $DATA; do
-            cpu=$(echo $i|awk -F: '{print $1}')
-            core=$(echo $i|awk -F: '{print $2}')
-            thread=$(echo $i|awk -F: '{print $3}')
-            if [ -z "$CREATE_THREAD_PROPERTY" ]; then
+        for l in $DATA; do
+            cpu=${l%%:*}
+            ll=${l#*:}
+            core=${ll%%:*}
+            thread=${l##*:}
+            if [ -z "$WITH_THREAD_PROPERTY" ]; then
                 if [ "$core" != "$prev_core" ]; then
                     if [ -n "$tmp_cpuset" ]; then
-                        echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+                        echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $SCRIPT_FILE
                     fi
                     tmp_cpuset="$thread"
                 else
-                    tmp_cpuset="$tmp_cpuset+$thread"
+                    tmp_cpuset="$tmp_cpuset,$thread"
                 fi
             fi
             [ "$cpu" != "$prev_cpu" ] && ((CPU++))
             [ "$core" != "$prev_core" ] && ((CORE++))
             ((THREAD++))
-            if [ -n "$CREATE_THREAD_PROPERTY" ]; then
-                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+            if [ -n "$WITH_THREAD_PROPERTY" ]; then
+                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $SCRIPT_FILE
             fi
             prev_cpu=$cpu
             prev_core=$core
         done
-        if [ -z "$CREATE_THREAD_PROPERTY" ]; then
-            echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $GENERATED_COMMANDS_FILE
+        if [ -z "$WITH_THREAD_PROPERTY" ]; then
+            echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $SCRIPT_FILE
         fi
     fi
     echo "OK"
 done
+echo -ne "# Done\n\n"
 
+if [ -n "$PRINT" ]; then
+    echo -ne "# Generated script content:\n\n"
+    cat $SCRIPT_FILE
+    echo
+fi
+if [ -n "$EXECUTE" ]; then
+    echo -ne "# Executing script...\n\n"
+    . $SCRIPT_FILE
+    echo -ne "\n# Removing script file.\n"
+    rm $SCRIPT_FILE
+else
+    cat <<EOF
+# Please please find the generated script here: $SCRIPT_FILE
+# It everything looks correct to you, source it to create the resources, by running:
+# . $SCRIPT_FILE
 
-
-echo
-echo "If the content of '$GENERATED_COMMANDS_FILE' is OK for you then you just need to execute:"
-echo "  source $GENERATED_COMMANDS_FILE"
-
+EOF
+fi

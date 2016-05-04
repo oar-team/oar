@@ -15,11 +15,10 @@
 # import sys
 import os
 import re
-import datetime
 
 HERE = os.path.dirname(__file__)
-YEAR = datetime.date.today().year
-AUTHORS = ["Nicolas Capit", "Bruno Bzeznik", "Joseph Emeras"]
+YEAR = 2016
+AUTHORS = ["Bruno Bzeznik", "Nicolas Capit", "Joseph Emeras", "Salem Harrache", "Michael Mercier", "Pierre Neyron", "Olivier Richard"]
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -283,3 +282,13 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+# Configure the new OAR theme if available
+try:
+    import oar_theme
+    html_theme = 'oar'
+    html_theme_path = oar_theme.get_html_theme_path()
+    html_sidebars = oar_theme.default_sidebars()
+except:
+    import warnings
+    warnings.warn("Missing oar theme, used default theme")

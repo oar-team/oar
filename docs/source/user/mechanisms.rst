@@ -164,6 +164,12 @@ If the required job is resubmited, its jobId is no longer the same and OAR
 updates the database and sets the job_id_required field to this new jobId for
 the dependant job.
 
+:Note: The queues configured with the quota features
+       (*oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas*) have a
+       different behaviour.
+       This scheduler always launches dependant jobs even if there required
+       jobs are in *Error* state or with an exit code != 0.
+
 User notification
 -----------------
 

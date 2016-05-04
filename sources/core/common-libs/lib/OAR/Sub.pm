@@ -22,31 +22,31 @@ sub close_db_connection(){
 	$base = undef;
 }
 
-sub lock_tables($){
-	my $tables_to_lock = shift;
-	OAR::IO::lock_table($base,$tables_to_lock);
+sub start_transaction(){
+	$base->begin_work();
 }
-sub unlock_tables(){
-	OAR::IO::unlock_table($base);
+
+sub commit_transaction(){
+	$base->commit();
 }
 
 sub encode_result($$){
-	my $result = shift or die("[OAR::Nodes] encode_result: no result to encode");
-	my $encoding = shift or die("[OAR::Nodes] encode_result: no format to encode to");
+    my $result = shift or die("[OAR::Nodes] encode_result: no result to encode");
+    my $encoding = shift or die("[OAR::Nodes] encode_result: no format to encode to");
     if($encoding eq "XML"){
-		eval "use XML::Dumper qw(pl2xml);1" or die ("XML module not available");
-		my $dump = new XML::Dumper;
-		$dump->dtd;
-		my $return = $dump->pl2xml($result) or die("XML conversion failed");
-		return $return;
-	}elsif($encoding eq "YAML"){
-		eval "use YAML;1" or die ("YAML module not available");
-		my $return = YAML::Dump($result) or die("YAML conversion failed");
-		return $return;
-	}elsif($encoding eq "JSON"){
-		eval "use JSON;1"  or die ("JSON module not available");
-		my $return = JSON->new->pretty(1)->encode($result) or die("JSON conversion failed");
-		return $return;
+        eval "use XML::Dumper qw(pl2xml);1" or die ("XML module not available");
+        my $dump = new XML::Dumper;
+        $dump->dtd;
+        my $return = $dump->pl2xml($result) or die("XML conversion failed");
+        return $return;
+    }elsif($encoding eq "YAML"){
+        eval "use YAML::Syck;1" or eval "use YAML;1" or die ("No Perl YAML module is available");
+        my $return = Dump($result) or die("YAML conversion failed");
+        return $return;
+    }elsif($encoding eq "JSON"){
+        eval "use JSON;1"  or die ("No Perl JSON module is available");
+        my $return = JSON->new->pretty(1)->encode($result) or die("JSON conversion failed");
+        return $return;
     }
 }
 
@@ -84,7 +84,7 @@ sub init_tcp_server(){
 #Read user script and extract OAR submition options
 sub scan_script($$){
     my $file = shift;
-	my $Initial_request_string = shift;
+    my $Initial_request_string = shift;
     my %result;
     my $error = 0;
     ($file) = split(" ",$file);
@@ -95,6 +95,7 @@ sub scan_script($$){
             while (<FILE>) {
                 if ( /^#OAR\s+/ ){
                     my $line = $_;
+                    $line =~ s/\s+$//;
                     if ($line =~ m/^#OAR\s+(-l|--resource)\s*(.+)\s*$/m){
                         push(@{$result{resources}}, $2);
                     }elsif ($line =~ m/^#OAR\s+(-q|--queue)\s*(.+)\s*$/m) {
@@ -115,7 +116,7 @@ sub scan_script($$){
                         $result{project} = $2;
                     }elsif ($line =~ m/^#OAR\s+(--hold)\s*$/m) {
                         $result{hold} = 1;
-                    }elsif ($line =~ m/^#OAR\s+(-a|--after)\s*(\d+(?:,\d+))*\s*$/m) {
+                    }elsif ($line =~ m/^#OAR\s+(-a|--after)\s*(\d+(?:,[\[\]][+-]?\d+){0,2})\s*$/m) {
                         push(@{$result{anterior}}, $2);
                     }elsif ($line =~ m/^#OAR\s+(--signal)\s*(\d+)\s*$/m) {
                         $result{signal} = $2;
@@ -160,7 +161,7 @@ sub scan_script($$){
         warn("# Error: $error error(s) encountered while parsing the file $file.\n");
         close_db_connection(); exit(12);
     }
-	$result{initial_request} = $Initial_request_string;
+    $result{initial_request} = $Initial_request_string;
     return(\%result);
 }
 
@@ -278,15 +279,8 @@ sub resubmit_job($){
 	return OAR::IO::resubmit_job($base, $job_id);
 }
 
-sub get_lock($$){
-	my $mutex = shift;
-	my $timeout = shift;
-	return OAR::IO::get_lock($base,$mutex,$timeout);
-}
-
-sub release_lock($){
-	my $mutex = shift;
-	return OAR::IO::release_lock($base,$mutex);
+sub lock_stagein(){
+	return $base->do("LOCK TABLE files IN ACCESS EXCLUSIVE MODE");
 }
 
 sub get_stagein_id($){
@@ -322,12 +316,12 @@ sub delete_jobs($$$){
 	my $remote_host = shift;
 	my $remote_port = shift;
 	open_db_connection();
-	lock_tables(["frag_jobs","event_logs","jobs"]);
+	$base->begin_work();
 	foreach my $Job_id (@{$job_ids}) {
 		print("# Info: deleting job $Job_id.\n");
 		my $err = frag_job($Job_id);
 	}
-	unlock_tables();
+	$base->commit();
 	close_db_connection();
 	#Signal Almigthy
 	signal_almighty($remote_host,$remote_port,"Qdel");

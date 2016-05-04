@@ -1118,10 +1118,9 @@ sub ERROR($$$) {
                 };
 
     print export($error,$extension);
-    #exit 0;
-    local $^W = 0;
-    next FCGI;
   }
+  local $^W = 0;
+  next FCGI;
 }
 
 ##############################################################################
@@ -1935,31 +1934,31 @@ sub jobStageInHead($) {
 sub terminateJob($) {
     my $jobid = shift;
     my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+    $base->begin_work();
     OAR::IO::set_job_state($base,$jobid,"Terminated");
     
     OAR::IO::set_finish_date($base,$jobid);
     OAR::IO::set_job_message($base,$jobid,"ALL is GOOD");
-    OAR::IO::unlock_table($base);
+    $base->commit();
     OAR::IO::disconnect($base);
 }
 
 sub runJob($) {
     my $jobid = shift;
     my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+    $base->begin_work();
     #OAR::IO::set_running_date($base,$jobid);
     OAR::IO::set_job_state($base,$jobid,"Running");
-    OAR::IO::unlock_table($base);
+    $base->commit();
     OAR::IO::disconnect($base);
 }
 sub errorJob($) {
     my $jobid = shift;
     my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+    $base->begin_work();
     OAR::IO::set_running_date($base,$jobid);
     OAR::IO::set_job_state($base,$jobid,"Error");
-    OAR::IO::unlock_table($base);
+    $base->commit();
     OAR::IO::disconnect($base);
 }
 
@@ -1973,16 +1972,16 @@ sub sign_in($$$$$) {
     my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
     my $is_desktop_computing = OAR::IO::is_node_desktop_computing($base,$hostname);
     if (defined $is_desktop_computing and $is_desktop_computing eq 'YES'){
-	    OAR::IO::lock_table($base,["resources"]);
+	    $base->begin_work();
 	    if (OAR::IO::set_node_nextState_if_necessary($base,$hostname,"Alive") > 0){
 		$do_notify=1;
 	    }
 	    OAR::IO::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
-	    OAR::IO::unlock_table($base);
+	    $base->commit();
     }
     elsif ($allow_create_node) {
         my $resource = OAR::IO::add_resource($base, $hostname, "Alive");
-        OAR::IO::set_resource_property($base,$resource,"desktop_computing","YES");
+        OAR::IO::set_resources_property($base,{resources => [$resource]},"desktop_computing","YES");
         OAR::IO::set_resource_nextState($base,$resource,"Alive");
         OAR::IO::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
         $do_notify=1;        

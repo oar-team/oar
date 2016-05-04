@@ -4,9 +4,9 @@
 
 $LOAD_PATH << '.'
 
-USER=ENV['USER']
 require 'oarrestapi_lib'
 require 'shared_examples'
+require 'rspec/matchers'
 
 $jobid=""
 $rjobid=""
@@ -15,6 +15,7 @@ $rjobid=""
 describe OarApi do
   before :all do
     @api = OarApi.new(APIURI)
+    @post_api = OarApi.new(POST_APIURI)
   end
 
   #############################################################
@@ -30,8 +31,8 @@ describe OarApi do
 
     it "should submit some jobs to populate the database" do
       jhash = { 'resource' => "/nodes=1/core=1" , 'script' => "id" , 'array' => '15' }
-      @api.submit_job(jhash)
-      $jobid = @api.jobstatus['id']
+      @post_api.submit_job(jhash)
+      $jobid = @post_api.jobstatus['id']
       $jobid.should be_a(Integer)
       $jobid.should > 0
       # Now, we wait for the 15th job to be terminated
@@ -62,8 +63,8 @@ describe OarApi do
                 'property' => "network_address like 'node%'", 
                 'script' => "ls;pwd;whoami;sleep 60" , 
                 'array' => '10' }
-      @api.submit_job(jhash)
-      $jobid = @api.jobstatus['id']
+      @post_api.submit_job(jhash)
+      $jobid = @post_api.jobstatus['id']
       $jobid.should be_a(Integer)
       $jobid.should > 0
       # Now, we wait for the 4th job to be running
@@ -87,8 +88,8 @@ describe OarApi do
 
     it "should have a reservation job just submitted" do
       jhash = { 'resource' => "/nodes=1/core=1" , 'script' => "ls;pwd;whoami;sleep 60" , 'reservation' => '2037-01-01 01:00:00' }
-      @api.submit_job(jhash)
-      $rjobid = @api.jobstatus['id']
+      @post_api.submit_job(jhash)
+      $rjobid = @post_api.jobstatus['id']
       $rjobid.should be_a(Integer)
       $rjobid.should > 0
     end
@@ -674,16 +675,16 @@ describe OarApi do
 
   describe "Cleaning queue" do
     it "should delete the test jobs" do
-      @api.del_array_job($jobid)
-      @api.deletestatus['status'].should == "Delete request registered"
+      @post_api.del_array_job($jobid)
+      @post_api.deletestatus['status'].should == "Delete request registered"
     end
     it "should delete the test reservation" do
-      @api.del_array_job($rjobid)
-      @api.deletestatus['status'].should == "Delete request registered"
+      @post_api.del_array_job($rjobid)
+      @post_api.deletestatus['status'].should == "Delete request registered"
     end
     it "should delete the test job" do
-      @api.del_array_job($ljobid)
-      @api.deletestatus['status'].should == "Delete request registered"
+      @post_api.del_array_job($ljobid)
+      @post_api.deletestatus['status'].should == "Delete request registered"
     end
   end
 
@@ -709,7 +710,7 @@ describe OarApi do
       end
       t.should < timeout
       begin
-        @api.value=@api.post(@api.api,"jobs/#{$jobid+1}/resubmissions/new",nil)
+        @api.value=@post_api.post(@api.api,"jobs/#{$jobid+1}/resubmissions/new",nil)
       rescue => e
         puts e.response.body
       end
@@ -721,8 +722,8 @@ describe OarApi do
       @api.get_link_href_by_rel('parent').should == "#{APIPATH}jobs/#{$jobid+1}"
     end
     it "should delete the test job (cleaning)" do
-      @api.del_job(@api.value['id'])
-      @api.deletestatus['status'].should == "Delete request registered"
+      @post_api.del_job(@api.value['id'])
+      @post_api.deletestatus['status'].should == "Delete request registered"
     end
   end
 

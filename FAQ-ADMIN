@@ -260,3 +260,38 @@ Since OAR 2.5.3, you can directly use the command:
 ::
 
     oardel --force-terminate-finishing-job 42
+
+How to activate the memory management on nodes ?
+------------------------------------------------
+
+OAR job resources manager is reponsible for setting up the nodes of a job. Among all 
+required steps for that setup, one is to configure the cgroups of the job, in particular
+the memory cgroup if it is enabled.
+
+To enable the memory cgroup on some Linux distributions (e.g. Debian), it is necessary to
+pass a parameter to the kernel command line (in the boot loader configuration).
+
+For grub on a Debian system, edit /etc/default/grub, and set::
+
+    GRUB_CMDLINE_LINUX_DEFAULT="cgroup_enable=memory"
+
+Once the node is rebooted, check that is indeed appear in ::
+
+    cat /proc/cmdline
+
+and "memory" should appear in ::
+
+    cat /proc/cgroups
+
+Then you just need to set in /etc/oar/job_resource_manager.pl (or the file set in oar.conf for the job resource manager)::
+
+    my $ENABLE_MEMCG = "YES";
+
+The the memory usage of the job is given by the the files::
+
+    /dev/oar_cgroups_links/memory/oar/USERNAME_JOBID/memory.max_usage_in_bytes
+    
+    /dev/oar_cgroups_links/memory/oar/USERNAME_JOBID/memory.limit_in_bytes
+ 
+The first file tells the maximum amount of memory used by all the processes of the job.
+So if "max_usage_in_bytes > limit_in_bytes" then swap was used.

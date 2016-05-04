@@ -30,7 +30,7 @@ print "Resource to remove : $Resource\n";
 my $exit_code = 0;
 
 my $base = OAR::IO::connect();
-OAR::IO::lock_table($base,["resources","resource_logs","assigned_resources","jobs","frag_jobs","event_logs","event_log_hostnames"]);
+$base->begin_work();
 
 my $resource_ref = OAR::IO::get_resource_info($base,$Resource);
 if (defined($resource_ref->{state}) && ($resource_ref->{state} eq "Dead")){
@@ -62,7 +62,7 @@ if (defined($resource_ref->{state}) && ($resource_ref->{state} eq "Dead")){
     $exit_code = 2;
 }
 
-OAR::IO::unlock_table($base);
+$base->commit();
 OAR::IO::disconnect($base);
 
 exit($exit_code);

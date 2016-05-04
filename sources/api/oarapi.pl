@@ -11,7 +11,7 @@
 # to be interpreted by vim or just type the :set command given
 # by this modeline.
 #
-#    Copyright (C) 2009-2012  <Bruno Bzeznik> Bruno.Bzeznik@imag.fr
+#    Copyright (C) 2009-2016 Laboratoire d'Informatique de Grenoble <http://www.liglab.fr>
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -172,13 +172,19 @@ if ( defined( $ENV{AUTHENTICATE_UID} ) && $ENV{AUTHENTICATE_UID} ne "" ) {
   $authenticated_user = $ENV{AUTHENTICATE_UID};
 }
 else {
+  # Get ident id from headers or from environement if not in the headers
+  my $remote_ident="";
+  if (defined($q->http('X_REMOTE_IDENT'))) { 
+    $remote_ident=$q->http('X_REMOTE_IDENT'); 
+  }elsif (defined($ENV{X_REMOTE_IDENT})) { 
+    $remote_ident=$ENV{X_REMOTE_IDENT}; 
+  }
   if ( $TRUST_IDENT
-    && defined( $q->http('X_REMOTE_IDENT') )
-    && $q->http('X_REMOTE_IDENT') ne ""
-    && $q->http('X_REMOTE_IDENT') ne "unknown" 
-    && $q->http('X_REMOTE_IDENT') ne "(null)" )
+    && $remote_ident ne ""
+    && $remote_ident ne "unknown" 
+    && $remote_ident ne "(null)" )
   {
-    $authenticated_user = $q->http('X_REMOTE_IDENT');
+    $authenticated_user = $remote_ident;
   }
 }
 
@@ -188,6 +194,8 @@ else {
 
 if (defined( $q->http('HTTP_X_API_PATH_PREFIX') ) ) {
   $OAR::API::HTTP_X_API_PATH_PREFIX=$q->http('HTTP_X_API_PATH_PREFIX');
+}elsif (defined($ENV{X_API_PATH_PREFIX})) {
+  $OAR::API::HTTP_X_API_PATH_PREFIX=$ENV{X_API_PATH_PREFIX};
 }else{
   $OAR::API::HTTP_X_API_PATH_PREFIX="";
 }
@@ -2023,7 +2031,7 @@ SWITCH: for ($q) {
 
     my $db = OAR::IO::connect() or die "cannot connect to the data base\n";
 
-    OAR::IO::lock_table($db,["event_logs"]);
+    $db->begin_work();
     my $result = OAR::IO::get_last_event_from_type($db, "NEW_VIRTUAL_HOSTNAME");
     if ($result) {
       $result = $result->{'description'};
@@ -2037,7 +2045,7 @@ SWITCH: for ($q) {
       $result = {'hostname' => 'vnode1'};
     }
 
-    OAR::IO::unlock_table($db);
+    $db->commit();
     # TODO: reject if DESKTOP_COMPUTING_ALLOW_CREATE_NODE="0"
     print $q->header( -status => 200, -type => "application/json" );
     print OAR::API::export($result,'json');
@@ -2468,6 +2476,11 @@ SWITCH: for ($q) {
     if (is_conf("API_COLMET_EXTRACT_PATH")){ $COLMET_EXTRACT_PATH = get_conf("API_COLMET_EXTRACT_PATH"); }
     my $COLMET_HDF5_PATH_PREFIX="/var/lib/colmet/hdf5/data";
     if (is_conf("API_COLMET_HDF5_PATH_PREFIX")){ $COLMET_HDF5_PATH_PREFIX = get_conf("API_COLMET_HDF5_PATH_PREFIX"); }
+
+    if (not -X $COLMET_EXTRACT_PATH) {
+       OAR::API::ERROR( 400, "Missing extractor script",
+        "You have to install the colmet extraction script ($COLMET_EXTRACT_PATH), python and the h5py module.\nPlease, check https://github.com/oar-team/colmet/oar/api." );
+    }
 
     my $stop_time=@$job[0]->{'stop_time'};
     if ($stop_time==0) { 

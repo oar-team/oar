@@ -1,4 +1,3 @@
-# $Id$
 package OAR::Schedulers::Quotas;
 require Exporter;
 use POSIX qw(strftime);
@@ -14,7 +13,10 @@ sub read_conf_file($);
 sub update_accounting_counters($$$$$$$$);
 sub check_quotas($$$$$$$$$$$);
 sub pretty_print($);
+sub update_accounting_slot_data($$$$$$$);
+
 ###############################################################################
+
 my $Security_time_overhead;
 
 # Creates an accounting data structure for quotas

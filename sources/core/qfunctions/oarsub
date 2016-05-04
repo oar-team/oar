@@ -297,8 +297,8 @@ Options are:
                                command (default is current directory)
      --project=<txt>           Specify a name of a project the job belongs to
  -n, --name=<txt>              Specify an arbitrary name for the job
- -a, --after=<job id>[,gap]    Add a job dependency: job will start after the
-                               end of the specified job, minus a gap if set
+ -a, --after=<job id>[,m[,M]]  Add a dependency to a given job, with optional
+                               min and max relative start time constraints 
      --notify=<txt>            Specify a notification method
                                (mail or command to execute). Ex: 
                                    --notify "mail:name\@domain.com"
@@ -534,6 +534,13 @@ if (is_conf("OARSUB_FORCE_JOB_KEY")){
     }
 }
 
+# If OAR_JOB_KEY_FILE is set in the shell environment, then imply use_job_key 
+# because oarsh will use OAR_JOB_KEY_FILE as well and fail if the job is
+# setup without a job_key 
+if (defined($ENV{OAR_JOB_KEY_FILE})){
+    $use_job_key = 1;
+}
+
 OAR::Sub::open_db_connection();
 
 if (defined($Resubmit)){
@@ -680,12 +687,10 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         if (defined($scan_result{stderr}) && (!defined($Stderr_file))){
             $Stderr_file = $scan_result{stderr};
         }elsif(defined($scan_result{stderr}) && (defined($Stderr_file))){
-            warn("# Warning: ignore script value for stderr parameter : $scan_result{stderr}; another value was given on the command line.\n");
+            warn("# Warning: ignore script value for stderr parameter: $scan_result{stderr}; another value was given on the command line.\n");
         }
-        if (defined($scan_result{usejobkey}) && (!defined($use_job_key))){
-            $use_job_key = $scan_result{usejobkey};
-        }elsif(defined($scan_result{usejobkey}) && (defined($use_job_key))){
-            warn("# Warning: ignore in script use-job-key parameter : $scan_result{usejobkey}; another value was given on the command line.\n");
+        if (defined($scan_result{usejobkey})){
+            $use_job_key = 1;
         }
         if (defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline eq "")){
             $import_job_key_inline = $scan_result{importjobkeyinlinepriv};
@@ -789,7 +794,8 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             print "# Info: md5sum = $md5sum\n";
             print "# Info: (you may use the --stagein-md5sum option with this md5sum for other job submitions with the same stage-in)\n";
         }
-		OAR::Sub::get_lock($md5sum,3600) or die "# Error: failed to lock the stage-in file\n";
+	    OAR::Sub::start_transaction();
+		OAR::Sub::lock_stagein() or die "# Error: failed to lock the stage-in file\n";
         $idFile = OAR::Sub::get_stagein_id($md5sum);
         if (defined $idFile) {
             print "# Info: this stagein is already stored on the server.\n";
@@ -810,7 +816,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             $idFile=OAR::Sub::set_stagein(\%params);
             defined $idFile or die "# Error: failed to setup stage-in\n";
         }
-        OAR::Sub::release_lock($md5sum) or die "# Error: failed to unlock the stage-in file\n";
+	    OAR::Sub::commit_transaction();
         #unlink($tempfile_to_delete) if (defined($tempfile_to_delete));
     }
 

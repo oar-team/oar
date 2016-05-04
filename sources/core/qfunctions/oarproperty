@@ -24,7 +24,7 @@ sub check_property_name($);
 
 Getopt::Long::Configure("gnu_getopt");
 
-my ($Help,  $List_properties, $Quiet, $Varchar);
+my ($Help,  $List_properties, $Show_types, $Quiet, $Varchar);
 my @Add_property;
 my @Delete_property;
 my @Rename_property;
@@ -34,13 +34,14 @@ GetOptions( "help|h"   => \$Help,
             "delete|d=s" => \@Delete_property,
             "rename|r=s" => \@Rename_property,
             "list|l"   => \$List_properties,
+            "type|t"   => \$Show_types,
             "quiet|q"  => \$Quiet,
             "varchar|c"  => \$Varchar,
             "version|V" => \$Version
           ) or exit(1);
 
 if (defined($Version)){
-    print("OAR version : ".OAR::Version::get_version()."\n");
+    print("OAR version: ".OAR::Version::get_version()."\n");
     exit(0);
 }
 
@@ -53,17 +54,26 @@ my $base = OAR::IO::connect();
 
 my $query;
 
+my %properties = OAR::IO::list_resource_properties_fields($base);
+
 if (defined($List_properties)) {
-    my %list = OAR::IO::list_resource_properties_fields($base);
-    foreach my $l (keys(%list)){
-        unless  (OAR::Tools::check_resource_property($l) == 1){
-            print("$l\n");
+    foreach my $p (keys(%properties)){
+        unless  (OAR::Tools::check_resource_property($p) == 1){
+            if (defined($Show_types)) {
+                print("$p ($properties{$p})\n");
+            } else {
+                print("$p\n");
+            }
         }
     }
 }
 
 foreach my $r (@Delete_property){
     check_property_name($r);
+    if (not exists($properties{$r})) {
+        print("Propoery $r does not exist\n");
+        next;
+    }
 
     $base->do("ALTER TABLE resources DROP COLUMN $r")
         or die("DB error: " . $base->errstr."\n");
@@ -75,9 +85,16 @@ foreach my $r (@Delete_property){
 
 foreach my $a (@Add_property){
     check_property_name($a);
-
+    if (exists($properties{$a})) {
+        if (defined($Varchar) and $properties{$a} ne "varchar") {
+            die("Error: property $a already exists but with type mismatch");
+        } else {
+            print("Property $a already exists\n");
+            next;
+        }
+    }
     my $req;
-    if ($Varchar){
+    if (defined($Varchar)){
         $req = "ALTER TABLE resources ADD COLUMN $a VARCHAR(255)";
     }else{
         $req = "ALTER TABLE resources ADD COLUMN $a INT";
@@ -91,49 +108,38 @@ foreach my $a (@Add_property){
 }
 
 foreach my $p (@Rename_property){
-    my ($old_prop,$new_prop);
-    if ($p !~ m/^\s*([a-z0-9_]+)\s*,\s*([a-z0-9_]+)\s*$/m){
-        print_usage();
-        exit(1);
-    }
-    $old_prop = $1;
-    $new_prop = $2;
-    
-    check_property_name($old_prop);
-    check_property_name($new_prop);
-    if (OAR::IO::get_database_type() eq "Pg"){
+    if (my ($old_prop,$new_prop) = $p =~ m/^\s*([a-z0-9_]+)\s*,\s*([a-z0-9_]+)\s*$/m){
+        check_property_name($old_prop);
+        check_property_name($new_prop);
+        if (not exists($properties{$old_prop})) {
+            print("Propoery $old_prop does not exist\n");
+            next;
+        }
+        if (exists($properties{$new_prop})) {
+            print("Propoery $new_prop already exists\n");
+            next;
+        }
         $base->do(" ALTER TABLE resources RENAME $old_prop TO $new_prop")
             or die("DB error: " . $base->errstr."\n");
-    }else{
-        my $sth = $base->prepare("  SHOW FIELDS
-                                    FROM resources
-                                 ");
-        $sth->execute() or die("DB error : ".$base->errstr."\n");
-        my $type;
-        my $field = "";
-        while (($field ne $old_prop) and (my @ref = $sth->fetchrow_array())){
-            $field = $ref[0];
-            $type = $ref[1];
+
+        $base->do(" UPDATE resource_logs
+                    SET attribute = \'$new_prop\'
+                    WHERE
+                        attribute = \'$old_prop\'")
+            or die("DB error: " . $base->errstr."\n");
+
+        $base->do(" UPDATE job_resource_descriptions
+                    SET res_job_resource_type = \'$new_prop\'
+                    WHERE
+                        res_job_resource_type = \'$old_prop\'")
+            or die("DB error: " . $base->errstr."\n");
+
+        if (! $Quiet) {
+            print("Renamed property $old_prop to $new_prop\n");
         }
-        $sth->finish();
-        die("Unknown field $old_prop\n") if ($field ne $old_prop);
-        $base->do(" ALTER TABLE resources CHANGE $old_prop $new_prop $type");
-    }
-
-    $base->do(" UPDATE resource_logs
-                SET attribute = \'$new_prop\'
-                WHERE
-                    attribute = \'$old_prop\'")
-        or die("DB error: " . $base->errstr."\n");
-
-    $base->do(" UPDATE job_resource_descriptions
-                SET res_job_resource_type = \'$new_prop\'
-                WHERE
-                    res_job_resource_type = \'$old_prop\'")
-        or die("DB error: " . $base->errstr."\n");
-
-    if (! $Quiet) {
-        print("Rename property $old_prop into $new_prop\n");
+    } else {
+        print_usage();
+        exit(1);
     }
 }
 
@@ -147,19 +153,24 @@ exit(0);
 #
 #Display usage
 sub print_usage() {
+    my ($cmd) = $0 =~ /([^\/]+)$/;
     print <<EOS;
-Usage: $0 [ -l | [ -a [ -V ] | -d ] ] [ -q ] [ -h ]
-Manage OAR resource properties
+Usage: 
+    $cmd <options>
+
+Manage OAR resource properties.
+
 Options:
- -l, --list                             list properties
- -a NAME, --add NAME                    add property
-    -c, --varchar                       sql new field of type VARCHAR(255)
-                                        (default is integer)
- -d NAME, --delete NAME                 delete property
- -r "OLD_NAME,NEW_NAME", --rename ...   rename property OLD_NAME into NEW_NAME
- -q, --quiet                            quiet mode (no extra output)
- -h, --help                             show this help screen
- -V, --version                          show OAR version
+    --list|-l             list the properties
+      --type|-t           show the types of the properties
+    --add|-a NAME         add a property (interger)
+      --varchar|-c        property is a character string
+    --delete|-d NAME      delete a property
+    --rename|-r OLD,NEW   rename a property from OLD to NEW name
+    --quiet|-q            quiet mode (no extra output)
+    --help|-h             show this help screen
+    --version|-V          show OAR version
+
 EOS
 }
 
@@ -167,7 +178,7 @@ EOS
 # MySQL
 sub check_property_name($) {
     my $propertyname = shift;
-    if (not $propertyname =~ /^[a-z0-9_]+$/) {
+    if (not $propertyname =~ /^\w+$/) {
         die("Error: '$propertyname' is not a valid property name");
     }
     if (OAR::Tools::check_resource_property($propertyname) == 1){

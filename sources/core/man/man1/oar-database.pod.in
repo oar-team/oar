@@ -16,7 +16,7 @@ B<oar-database> I<--check> [I<OPTIONS>]
 
 =head1 DESCRIPTION
 
-OAR uses a database for it's persitent data either using the MySQL or PostgreSQL backend (see oar.conf). oar-database is provided to manage that database.
+OAR uses a database for it's persitent data using the PostgreSQL backend (see oar.conf). oar-database is provided to manage that database.
 
 =head1 ACTIONS
 
@@ -94,10 +94,6 @@ If not specified, OAR database parameters are taken from I<OAR_CONF_FILE>. Pleas
 
 =over
 
-=item B<--db-type>=I<DB_TYPE>
-
-Database backend to use, I<mysql> or I<Pg> (for PostgreSQL).
-
 =item B<--db-user>=I<DB_USER>
 
 Set OAR username to access the database. Override the one set in OAR_CONF_FILE.
@@ -138,11 +134,11 @@ Display this help.
 
 =head1 EXAMPLES
 
-=head2 MySQL
+=head2 PostgreSQL database with an admin account
 
 First you need to specify the database parameters in %%OARCONFDIR%%/oar.conf. These parameters will be used by B<oar-database>.
 
-To create a new database (assuming that the MySQL root password is B<PASS>):
+To create a new database (assuming the admin password is B<PASS>):
 
 B<oar-database --create --db-admin-user root --db-admin-pass PASS>
 
@@ -150,7 +146,7 @@ To upgrade an existing database:
 
 B<oar-database --upgrade>
 
-=head2 PostgreSQL
+=head2 PostgreSQL without an admin account
 
 First you need to specify the database parameters in %%OARCONFDIR%%/oar.conf. These parameters will be used by B<oar-database>. If your PostgreSQL database is on the local system, you can use the B<--db-is-local> option which will use PostgreSQL unix account (needs root privileges).
 
@@ -166,7 +162,7 @@ B<oar-database --upgrade>
 
 To make some tests or to administrate several databases, you can also specify the sql parameters on the command line. For example:
 
-B<oar-database --create --db-type=Pg --db-host=HOST \
+B<oar-database --create --db-host=HOST \
                --db-user=oar --db-pass=PASS \
                --db-admin-user=ADMIN_USER --db-admin-pass=ADMIN_PASS>
 
@@ -176,11 +172,11 @@ will create the oar database and the oar user on the postgresql system hosted by
 
 =over 
 
-=item %%OARDIR%%/database/mysql_structure.sql, %%OARDIR%%/database/pg_structure.sql
+=item %%OARDIR%%/database/pg_structure.sql
 
 SQL instructions for creating the structure of the oar database.
 
-=item %%OARDIR%%/database/mysql_default_admission_rules.sql, %%OARDIR%%/database/pg_default_admission_rules.sql
+=item %%OARDIR%%/database/pg_default_admission_rules.sql
 
 SQL instructions for inserting the default admission rules in the oar database.
 
@@ -188,11 +184,11 @@ SQL instructions for inserting the default admission rules in the oar database.
 
 SQL instructions for inserting the default data in the oar database.
 
-=item %%OARDIR%%/database/mysql_reset_structure.sql, %%OARDIR%%/database/pg_reset_structure.sql
+=item %%OARDIR%%/database/pg_reset_structure.sql
 
 SQL instruction for emptying an existing oar database.
 
-=item %%OARDIR%%/database/mysql_structure_upgrade_*.sql, %%OARDIR%%/database/pg_structure_upgrade_*.sql
+=item %%OARDIR%%/database/pg_structure_upgrade_*.sql
 
 SQL instructions for upgrading an existing database.
 
@@ -202,5 +198,5 @@ SQL instructions for upgrading an existing database.
 
 =head1 COPYRIGHTS
 
- Copyright 2003-2014 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU Library General Public License. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2016 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 

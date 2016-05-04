@@ -260,7 +260,7 @@ elsif ($action eq "modify") {
         $rule = read_file($filename);
     }
     (defined($priority) or defined($enabled) or defined($edit) or defined($filename)) or die "Error: no modification was requested\n\n".usage();
-    update_rule($rule_id, defined($priority)?$priority:$r->{priority}, defined($enabled)?$enabled:$r->{enabled}, $rule);
+    update_rule($rule_id, defined($priority)?$priority:$r->{priority}, defined($enabled)?$enabled:(($r->{enabled} eq 'NO')?0:1), $rule);
     print "Admission rule modified: #$rule_id\n";
 }
 elsif ($action eq "delete") {
