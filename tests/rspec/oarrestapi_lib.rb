@@ -7,8 +7,12 @@ require 'uri'
 USER=ENV['USER']
 APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/" unless ENV['APIURI']
 APIURI=ENV['APIURI'] if ENV['APIURI']
+POST_APIURI=APIURI unless ENV['POST_APIURI']
+POST_APIURI=ENV['POST_APIURI'] if ENV['POST_APIURI']
 api_uri = URI(APIURI)
+post_api_uri = URI(POST_APIURI)
 APIPATH=api_uri.path
+POST_APIPATH=post_api_uri.path
 
 #######################################################################
 #Coded By Narayanan K - GSOC Testsuites project  - RESTful API Library

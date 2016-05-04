@@ -24,9 +24,6 @@ if (is_conf("SCHEDULER_TIMEOUT")){
     $timeout = get_conf("SCHEDULER_TIMEOUT");
 }
 
-# Constant duration time of a besteffort job
-my $besteffort_duration = 5*60;
-
 my $max_waiting_jobs_to_schedule = 1000;
 
 # $security_time_overhead is the security time (second) used to be sure there
@@ -35,6 +32,12 @@ my $security_time_overhead = 60;
 if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
     $security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
 }
+
+# Constant duration time of a besteffort job
+my $besteffort_duration = 5*60;
+$besteffort_duration = $security_time_overhead if ($besteffort_duration < $security_time_overhead);
+my $besteffort_kill_duration = get_conf_with_default_param("SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION", 0);
+$besteffort_duration = $besteffort_kill_duration if ($besteffort_duration < $besteffort_kill_duration);
 
 my $minimum_hole_time = 0;
 if (is_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME")){

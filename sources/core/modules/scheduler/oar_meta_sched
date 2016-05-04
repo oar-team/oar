@@ -483,7 +483,11 @@ foreach my $job (@Rjobs){
 sub check_jobs_to_kill(){
     oar_debug("[MetaSched] Begin precessing of besteffort jobs to kill\n");
     my $return = 0;
-    my %nodes_for_jobs_to_launch = OAR::IO::get_gantt_resources_for_jobs_to_launch($base,$current_time_sec);
+    # Delete besteffort jobs in advance to let enough time to get back the nodes
+    # in a good shape for the reservations
+    my $besteffort_kill_duration = get_conf_with_default_param("SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION", 0);
+    $besteffort_kill_duration = $Security_time_overhead if ($besteffort_kill_duration < $Security_time_overhead);
+    my %nodes_for_jobs_to_launch = OAR::IO::get_gantt_resources_for_jobs_to_launch($base,$current_time_sec + $besteffort_kill_duration);
     my %fragged_jobs = ();
     foreach my $r (keys(%nodes_for_jobs_to_launch)){
         if (defined($besteffort_resource_occupation{$r})) {

@@ -275,12 +275,12 @@ For grub on a Debian system, edit /etc/default/grub, and set::
 
     GRUB_CMDLINE_LINUX_DEFAULT="cgroup_enable=memory"
 
-Once the node is rebooted, check that is indeed appear in
-::
+Once the node is rebooted, check that is indeed appear in ::
+
     cat /proc/cmdline
 
-and "memory" should appear in
-::
+and "memory" should appear in ::
+
     cat /proc/cgroups
 
 Then you just need to set in /etc/oar/job_resource_manager.pl (or the file set in oar.conf for the job resource manager)::

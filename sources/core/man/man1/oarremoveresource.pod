@@ -4,14 +4,19 @@ oarremoveresource - Remove a resource from the database.
 
 =head1 SYNOPSIS
 
-B<oarremoveresource> resource_number
+B<oarremoveresource> <resource_id>
 
 =head1 DESCRIPTION
 
-this command removes all records in the database about "resource_number".
-This "resource_number" must be in the "Dead" state (see oarnodesetting).
+Removes all records in the database, which are related to the resource with id I<resource_id>.
 
-So you will loose this resource history and jobs executed on this one.
+Only resources in the "Dead" state can be removed. Use the I<oarnodesetting> command to change the state of a resource (warning: the I<oar-server> service must be running for the state change to take effect).
+
+Please mind the fact that all history related to the removed resource, including jobs which were executed on it, will disappear.
+
+=head1 SEE ALSO
+
+oarnodesetting(1)
 
 =head1 COPYRIGHTS
 
