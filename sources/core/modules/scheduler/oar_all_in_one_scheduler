@@ -537,9 +537,12 @@ while (@initial_jobs or @inner_jobs) {
     } elsif (defined($job->{types}->{inner}) and $is_initial_job){ # we are not yet in the @inner_jobs array
         # postpone handling of  inner jobs at the end, so that container gantts exists
         oar_debug("[$SCHEDULER_NAME] [$i] postpone inner job initialization after other jobs\n");
-        push(@initial_jobs, $job);
+        push(@inner_jobs, $job);
     } else {
         handle_current_job($job);
+    }
+    if ($is_initial_job and not @initial_jobs and @inner_jobs){
+        oar_debug("[$SCHEDULER_NAME] Now handling postponed inner jobs\n");
     }
 }
 $base->commit();
