@@ -394,7 +394,7 @@ $current_time_sql = OAR::IO::local_to_sql($current_time_sec);
 
 my ($Absent_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
 
-oar_debug("[$SCHEDULER_NAME] Retrieve information for already scheduler reservations from database before flush (keep assign resources)\n");
+oar_debug("[$SCHEDULER_NAME] Retrieve information for already scheduled reservations from database before flush (keep assigned resources)\n");
 my $reservation_already_there = OAR::IO::get_waiting_reservations_already_scheduled($base);
 OAR::IO::gantt_flush_tables($base, $reservation_already_there, $SCHEDULER_LOG_DECISIONS);
 OAR::IO::set_gantt_date($base,$current_time_sec);
@@ -546,8 +546,7 @@ $base->commit();
 oar_debug("[$SCHEDULER_NAME] End processing of current jobs\n");
 
 oar_debug("[$SCHEDULER_NAME] Begin processing of accepted reservations which do not have assigned resources yet\n");
-my @Rjobs = OAR::IO::get_waiting_reservation_jobs($base);
-foreach my $job (@Rjobs){
+foreach my $job (OAR::IO::get_waiting_reservation_jobs($base)){
     next if (defined($reservation_already_there->{$job->{job_id}}));
 
     my $gantt_name = "default";
@@ -1132,9 +1131,8 @@ while (@queues){
 
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: begin processing of reservations with missing resources\n");
 
-        my @arrayJobs = OAR::IO::get_waiting_reservation_jobs_specific_queue($base,$queue_name);
         # See if there are reserved jobs to launch
-        foreach my $job (@arrayJobs){
+        foreach my $job (OAR::IO::get_waiting_reservation_jobs_specific_queue($base,$queue_name)){
             my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
             my $moldable = $job_descriptions->[0];
         
@@ -1180,156 +1178,151 @@ while (@queues){
         }
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: end processing of reservations with missing resources\n");
 
-        my $order_part = $SCHEDULER_RESOURCE_ORDER;
-
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: begin processing of new reservations\n");
-
         # Find jobs to check
-        my @jobs_to_sched = OAR::IO::get_waiting_toSchedule_reservation_jobs_specific_queue($base,$queue_name);
-        if ($#jobs_to_sched >= 0){
-            foreach my $job (@jobs_to_sched){
-                my $gantt_name = "default";
-                my $placeholder_name = "";
-                my $allowed_name = "";
-                my $timesharing_user = "";
-                my $timesharing_name = "";
-                my $i = $job->{job_id};
-                my $types = OAR::IO::get_job_types_hash($base,$i);
-                my @type_list = sort(keys(%{$types}));
-                my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
-                # It is a reservation, we take care only of the first moldable job
-                my $moldable = $job_descriptions->[0];
-                my $duration = $moldable->[1];
+        foreach my $job (OAR::IO::get_waiting_toSchedule_reservation_jobs_specific_queue($base,$queue_name)){
+            my $gantt_name = "default";
+            my $placeholder_name = "";
+            my $allowed_name = "";
+            my $timesharing_user = "";
+            my $timesharing_name = "";
+            my $i = $job->{job_id};
+            my $types = OAR::IO::get_job_types_hash($base,$i);
+            my @type_list = sort(keys(%{$types}));
+            my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
+            # It is a reservation, we take care only of the first moldable job
+            my $moldable = $job_descriptions->[0];
+            my $duration = $moldable->[1];
 
-                #look if reservation is too old
-                if ($current_time_sec >= ($job->{start_time} + $duration)){
-                    oar_warn("[$SCHEDULER_NAME] [$i] canceling job: reservation is too old\n");
-                    OAR::IO::set_job_message($base, $job->{job_id}, "Reservation too old");
-                    OAR::IO::set_job_state($base, $job->{job_id}, "toError");
-                }else{
-                    if ($job->{start_time} < $current_time_sec){
-                        $job->{start_time} = $current_time_sec;
-                        #OAR::IO::set_running_date_arbitrary($base,$job->{job_id},$current_time_sql);
+            #look if reservation is too old
+            if ($current_time_sec >= ($job->{start_time} + $duration)){
+                oar_warn("[$SCHEDULER_NAME] [$i] canceling job: reservation is too old\n");
+                OAR::IO::set_job_message($base, $job->{job_id}, "Reservation too old");
+                OAR::IO::set_job_state($base, $job->{job_id}, "toError");
+            }else{
+                if ($job->{start_time} < $current_time_sec){
+                    $job->{start_time} = $current_time_sec;
+                    #OAR::IO::set_running_date_arbitrary($base,$job->{job_id},$current_time_sql);
+                }
+                
+                # Get the list of resources where the reservation will be able to be launched
+                my ($alive_resources_vector, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
+                #my ($tmp_veca, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
+                my $tmp_veca = $Absent_resource_id_vec;
+                my ($tmp_vecs, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
+                $alive_resources_vector |= $tmp_veca | $tmp_vecs;
+                if (defined($types->{inner})) {
+                    $gantt_name = "container:$types->{inner}";
+                    if (not defined($gantt->{$gantt_name})){
+                        oar_debug("[$SCHEDULER_NAME] [$i] inner job, want to use gantt: ($gantt_name,...) which does not exist. Skipped\n");
+                        OAR::IO::set_job_message($base,$i,"$gantt_name does not exist, skipped");
+                        OAR::IO::set_job_scheduler_info($base,$i,"$gantt_name does not exist, skipped");
+                        next;
                     }
-                    
-                    # Get the list of resources where the reservation will be able to be launched
-                    my ($alive_resources_vector, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
-                    #my ($tmp_veca, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
-                    my $tmp_veca = $Absent_resource_id_vec;
-                    my ($tmp_vecs, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
-                    $alive_resources_vector |= $tmp_veca | $tmp_vecs;
-                    if (defined($types->{inner})) {
-                        $gantt_name = "container:$types->{inner}";
-                        if (not defined($gantt->{$gantt_name})){
-                            oar_debug("[$SCHEDULER_NAME] [$i] inner job, want to use gantt: ($gantt_name,...) which does not exist. Skipped\n");
-                            OAR::IO::set_job_message($base,$i,"$gantt_name does not exist, skipped");
-                            OAR::IO::set_job_scheduler_info($base,$i,"$gantt_name does not exist, skipped");
-                            next;
-                        }
-                   } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
-                       my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $job->{start_time}, $SCHEDULER_CONSTRAINTS_ITERATIONS, "[$SCHEDULER_NAME] [$i]");
-                       $constraints->{$types->{constraints}} = $r;
-                       # Job cannot be scheduler if job duration does not fit in any constraint
-                       #if ($duration < $max_constraint_duration) {
-                       #    my $message = "job duration cannot fit in constraints. Skipped";
-                       #    oar_debug("[$SCHEDULER_NAME] [$i] $message\n");
-                       #    OAR::IO::set_job_message($base,$i,$message);
-                       #    OAR::IO::set_job_scheduler_info($base,$i,$message);
-                       #    next;
-                       #}
+               } elsif (defined($types->{constraints}) and not exists($constraints->{$types->{constraints}})) {
+                   my ($r, $max_constraint_duration) = OAR::Schedulers::Gantt::compute_constraints($types->{constraints}, $job->{start_time}, $SCHEDULER_CONSTRAINTS_ITERATIONS, "[$SCHEDULER_NAME] [$i]");
+                   $constraints->{$types->{constraints}} = $r;
+                   # Job cannot be scheduler if job duration does not fit in any constraint
+                   #if ($duration < $max_constraint_duration) {
+                   #    my $message = "job duration cannot fit in constraints. Skipped";
+                   #    oar_debug("[$SCHEDULER_NAME] [$i] $message\n");
+                   #    OAR::IO::set_job_message($base,$i,$message);
+                   #    OAR::IO::set_job_scheduler_info($base,$i,$message);
+                   #    next;
+                   #}
+                }
+                if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
+                    oar_debug("[$SCHEDULER_NAME] [$i] job is ($gantt_name,,,) and is a container\n");
+                    # nothing more to do, Gantt for container will be created once the job is scheduled, below.
+                } else {
+                    ($gantt_name, $placeholder_name, $allowed_name, $timesharing_name, $timesharing_user) =
+                        OAR::Schedulers::Gantt::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, $constraints, "[$SCHEDULER_NAME] [$i]");
+                }
+
+                my ($dead_resources_vec, @dead_resources) = OAR::IO::get_resource_ids_in_state($base,"Dead");
+                
+                my $job_properties = "\'1\'";
+                if ((defined($job->{properties})) and ($job->{properties} ne "")){
+                    $job_properties = $job->{properties};
+                }
+
+                #my $resource_id_used_list_vector = '';
+                my @tree_list;
+                foreach my $m (@{$moldable->[0]}){
+                    my $tmp_properties = "\'1\'";
+                    if ((defined($m->{property})) and ($m->{property} ne "")){
+                        $tmp_properties = $m->{property};
                     }
-                    if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
-                        oar_debug("[$SCHEDULER_NAME] [$i] job is ($gantt_name,,,) and is a container\n");
-                        # nothing more to do, Gantt for container will be created once the job is scheduled, below.
-                    } else {
-                        ($gantt_name, $placeholder_name, $allowed_name, $timesharing_name, $timesharing_user) =
-                            OAR::Schedulers::Gantt::manage_gantt_hierarchy($gantt, $job->{job_name}, $job->{job_user}, $types, $constraints, "[$SCHEDULER_NAME] [$i]");
+                    my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $SCHEDULER_RESOURCE_ORDER);
+                    $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
+                    push(@tree_list, $tmp_tree);
+                }
+                oar_debug("[$SCHEDULER_NAME] [$i] find_first_hole in gantt ($gantt_name,$allowed_name,$timesharing_name,$timesharing_user) with a timeout of $RESERVATION_VALIDATION_TIMEOUT\n");
+                my @hole = OAR::Schedulers::Gantt::find_first_hole(
+                    $gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}->{$timesharing_user},
+                    $job->{start_time},
+                    $duration + $SCHEDULER_JOB_SECURITY_TIME,
+                    \@tree_list,
+                    $RESERVATION_VALIDATION_TIMEOUT,
+                    $queue_name,
+                    $job->{project},
+                    \@type_list,
+                    $job->{job_user},
+                    $quotas,
+                    $quota_accounting_data,
+                    $Only_default_type_resource_vec
+                    );
+                # Free memory
+                foreach my $t (@tree_list){
+                    OAR::Schedulers::ResourceTree::destroy($t);
+                }
+                if ($hole[0] == $job->{start_time}){
+                    # The reservation can be scheduled
+                    oar_warn("[$SCHEDULER_NAME] [$i] advance reservation is validated\n");
+                    my @resources;
+                    my $res_vec = '';
+                    foreach my $t (@{$hole[2]}){
+                        $res_vec |= $t->[1];
+                        push(@resources, @{$t->[2]});
+                        OAR::Schedulers::ResourceTree::destroy($t->[0]);
                     }
 
-                    my ($dead_resources_vec, @dead_resources) = OAR::IO::get_resource_ids_in_state($base,"Dead");
-                    
-                    my $job_properties = "\'1\'";
-                    if ((defined($job->{properties})) and ($job->{properties} ne "")){
-                        $job_properties = $job->{properties};
+                    # Create gantt for the new container
+                    if (defined($types->{container})){
+                        OAR::Schedulers::Gantt::manage_gantt_for_container($gantt, $types->{container}, $i, $job->{start_time}, $duration + $SCHEDULER_JOB_SECURITY_TIME, $res_vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
                     }
-
-                    #my $resource_id_used_list_vector = '';
-                    my @tree_list;
-                    foreach my $m (@{$moldable->[0]}){
-                        my $tmp_properties = "\'1\'";
-                        if ((defined($m->{property})) and ($m->{property} ne "")){
-                            $tmp_properties = $m->{property};
-                        }
-                        my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $SCHEDULER_RESOURCE_ORDER);
-                        $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
-                        push(@tree_list, $tmp_tree);
-                    }
-                    oar_debug("[$SCHEDULER_NAME] [$i] find_first_hole in gantt ($gantt_name,$allowed_name,$timesharing_name,$timesharing_user) with a timeout of $RESERVATION_VALIDATION_TIMEOUT\n");
-                    my @hole = OAR::Schedulers::Gantt::find_first_hole(
-                        $gantt->{$gantt_name}->{$allowed_name}->{$timesharing_name}->{$timesharing_user},
+        
+                    #Fill all other gantts
+                    OAR::Schedulers::Gantt::fill_gantt_hierarchy($gantt, $job->{start_time}, $duration + $SCHEDULER_JOB_SECURITY_TIME, $res_vec, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
+                    OAR::Schedulers::Quotas::update_accounting_counters(
+                        $quota_accounting_data,
+                        unpack("%32b*",$res_vec & $Only_default_type_resource_vec),
                         $job->{start_time},
-                        $duration + $SCHEDULER_JOB_SECURITY_TIME,
-                        \@tree_list,
-                        $RESERVATION_VALIDATION_TIMEOUT,
-                        $queue_name,
+                        $duration,
+                        $job->{queue_name},
                         $job->{project},
                         \@type_list,
-                        $job->{job_user},
-                        $quotas,
-                        $quota_accounting_data,
-                        $Only_default_type_resource_vec
-                        );
-                    # Free memory
-                    foreach my $t (@tree_list){
-                        OAR::Schedulers::ResourceTree::destroy($t);
-                    }
-                    if ($hole[0] == $job->{start_time}){
-                        # The reservation can be scheduled
-                        oar_warn("[$SCHEDULER_NAME] [$i] advance reservation is validated\n");
-                        my @resources;
-                        my $res_vec = '';
-                        foreach my $t (@{$hole[2]}){
-                            $res_vec |= $t->[1];
-                            push(@resources, @{$t->[2]});
-                            OAR::Schedulers::ResourceTree::destroy($t->[0]);
-                        }
+                        $job->{job_user}
+                    );
 
-                        # Create gantt for the new container
-                        if (defined($types->{container})){
-                            OAR::Schedulers::Gantt::manage_gantt_for_container($gantt, $types->{container}, $i, $job->{start_time}, $duration + $SCHEDULER_JOB_SECURITY_TIME, $res_vec, $Max_resources, $All_resource_list_vec, $SCHEDULER_GANTT_HOLE_MINIMUM_TIME, "[$SCHEDULER_NAME] [$i]");
-                        }
-            
-                        #Fill all other gantts
-                        OAR::Schedulers::Gantt::fill_gantt_hierarchy($gantt, $job->{start_time}, $duration + $SCHEDULER_JOB_SECURITY_TIME, $res_vec, $gantt_name, $placeholder_name, $timesharing_name, $timesharing_user, "[$SCHEDULER_NAME] [$i]"); 
-                        OAR::Schedulers::Quotas::update_accounting_counters(
-                            $quota_accounting_data,
-                            unpack("%32b*",$res_vec & $Only_default_type_resource_vec),
-                            $job->{start_time},
-                            $duration,
-                            $job->{queue_name},
-                            $job->{project},
-                            \@type_list,
-                            $job->{job_user}
-                        );
-
-                        # Update database
-                        push(@resources, @Resources_to_always_add);
-                        oar_debug("[$SCHEDULER_NAME] [$i] add job in database\n");
-                        OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
-                        OAR::IO::set_job_state($base, $job->{job_id}, "toAckReservation");
-                    }else{           
-                        oar_warn("[$SCHEDULER_NAME] [$i] advance reservation cannot be validated, not enough resources\n");
-                        OAR::IO::set_job_state($base, $job->{job_id}, "toError");
-                        if ($hole[0] == OAR::Schedulers::Gantt::get_infinity_value()){
-                            OAR::IO::set_job_message($base, $job->{job_id}, "This reservation cannot run");
-                        }else{
-                            OAR::IO::set_job_message($base, $job->{job_id}, "This reservation could run at ".OAR::IO::local_to_sql($hole[0]));
-                        }
+                    # Update database
+                    push(@resources, @Resources_to_always_add);
+                    oar_debug("[$SCHEDULER_NAME] [$i] add job in database\n");
+                    OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
+                    OAR::IO::set_job_state($base, $job->{job_id}, "toAckReservation");
+                }else{           
+                    oar_warn("[$SCHEDULER_NAME] [$i] advance reservation cannot be validated, not enough resources\n");
+                    OAR::IO::set_job_state($base, $job->{job_id}, "toError");
+                    if ($hole[0] == OAR::Schedulers::Gantt::get_infinity_value()){
+                        OAR::IO::set_job_message($base, $job->{job_id}, "This reservation cannot run");
+                    }else{
+                        OAR::IO::set_job_message($base, $job->{job_id}, "This reservation could run at ".OAR::IO::local_to_sql($hole[0]));
                     }
                 }
-                OAR::IO::set_job_resa_state($base, $job->{job_id}, "Scheduled");
             }
+            OAR::IO::set_job_resa_state($base, $job->{job_id}, "Scheduled");
         }
+        
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: end processing of new reservations\n");
     }else{
         oar_debug("[$SCHEDULER_NAME] Queue $queue_name: no job\n");
