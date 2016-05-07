@@ -299,7 +299,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                     OAR::IO::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR cpuset suspects nodes for the job $Job_id : @bad",\@bad);
                     OAR::IO::archive_some_moldable_job_nodes($base,$job->{assigned_moldable_job},\@bad);
                     $base->commit();
-                    OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
+                    OAR::Tools::notify_tcp_socket($Server_host,$Server_port,"ChState");
                     @hosts = @tmp_hosts;
                     @bad = ();
                 }else{
@@ -356,7 +356,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         #OAR::IO::set_job_state($base,$Job_id,"Error");
         OAR::IO::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR suspects nodes for the job $Job_id : @bad",\@bad);
         $base->commit();
-        OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
+        OAR::Tools::notify_tcp_socket($Server_host,$Server_port,"ChState");
         if ($exit_bipbip == 1){
             OAR::IO::disconnect($base);
             exit(2);
@@ -432,7 +432,7 @@ eval {
                     $base->begin_work();
                     OAR::IO::frag_job($base,$Job_id);
                     $base->commit();
-                    OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Qdel");
+                    OAR::Tools::notify_tcp_socket($Server_host,$Server_port,"Qdel");
                 }
             }
             OAR::IO::disconnect($base) if ($Oarexec_detach == 0);

@@ -15,18 +15,17 @@
 #                 cores and the number of the node (this is disabled by default
 #                 due to bad behaviour seen. More tests have to be done)
 #                 There are some interesting accounting data available.
-#     - [memory]  Permit to restrict the amount of RAM that can be used by the
+#     - [memory]  Permit to restrict the amount of RAM which can be used by the
 #                 job processes (ratio of job_nb_cores / total_nb_cores).
 #                 This is useful for OOM problems (kill only tasks inside the
-#                 cgroup where OOM occurs)
-#                 DISABLED by default: there are maybe some performance issues
-#                 (need to do some benchmarks)
-#                 You can ENABLE this feature by putting 'my $ENABLE_MEMCG =
-#                 "YES";' in the following code
-#     - [devices] Allow or deny the access of devices for each job processes
-#                 (By default every devices are allowed)
-#                 You can ENABLE this feature to manage NVIDIA GPUs by putting
-#                 'my $ENABLE_DEVICESCG = "YES";' in the following code.
+#                 cgroup where OOM occurs). The functionality is disabled by 
+#                 default, because it might cause a performance drop.
+#                 To enable the functionality, set 'my $ENABLE_MEMCG = 1;'
+#                 below.
+#     - [devices] Grant or deny access to some devices for processes of the
+#                 job (by default, access to all devices is granted).
+#                 To enable the functionality, set 'my $ENABLE_DEVICESCG = 1;'
+#                 below.
 #                 Also there must be a resource property named 'gpudevice'
 #                 configured. This property must contain the GPU id which is
 #                 allowed to be used (id on the compute node).
@@ -68,10 +67,10 @@ sub unconfigure_job_cpuset();
 
 my $Script_name = "job_resource_manager_cgroup";
 
-# Put YES if you want to use the memory cgroup
-my $ENABLE_MEMCG = "NO";
-# Put YES if you want to use the device cgroup (nvidia devices only currently)
-my $ENABLE_DEVICESCG = "NO";
+# Set to 1 if you want to use the memory cgroup
+my $ENABLE_MEMCG = 1;
+# Set to 1 if you want to use the device cgroup (currently, only nvidia devices are supported)
+my $ENABLE_DEVICESCG = 1;
 
 my $OS_cgroups_path = "/sys/fs/cgroup";  # Where the OS mounts by itself the cgroups
 my $Cgroup_mount_point = "/dev/oar_cgroups";
@@ -820,7 +819,7 @@ sub configure_job_cpuset($) {
             '/bin/echo '.$mem_kb.' > '.$Cgroup_directory_collection_links.'/memory'.$Job_cpuset_dir.'/memory.limit_in_bytes; ';
     }
 
-    if ($ENABLE_DEVICESCG eq "YES"){
+    if ($ENABLE_DEVICESCG){
         my @devices_deny = ();
         opendir(my($dh), "/dev") or exit_myself(5,"Failed to open /dev to retrieve the nvidia devices");
         my @files = grep { /nvidia/ } readdir($dh);
@@ -832,7 +831,7 @@ sub configure_job_cpuset($) {
         closedir($dh);
         if (@devices_deny){
             # now remove from denied devices our reserved devices
-            foreach my $r (@{$Cpuset->{'resources'}}){
+            foreach my $r (@{$Job_data->{'resources'}}){
                 if (($r->{type} eq "default") and
                     ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
                     ($r->{'gpudevice'} ne '')
@@ -841,7 +840,7 @@ sub configure_job_cpuset($) {
                 }
             }
             print_log(3,"Deny NVIDIA GPUs: @devices_deny");
-            my $devices_cgroup = $Cgroup_directory_collection_links."/devices/".$Cpuset_path_job."/devices.deny";
+            my $devices_cgroup = $Cgroup_directory_collection_links."/devices/".$Job_cpuset_dir."/devices.deny";
             foreach my $dev (@devices_deny){
                 $bashcmd .= 'oardodo /bin/echo "c 195:'.$dev.' rwm" > $devices_cgroup';
             }
