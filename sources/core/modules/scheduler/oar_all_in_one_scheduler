@@ -84,9 +84,9 @@ if (defined($err)){
 # Suspend/resume #
 ##################
 my $JUST_BEFORE_RESUME_EXEC_FILE = get_conf("JUST_BEFORE_RESUME_EXEC_FILE");
-my $SUSPEND_RESUME_SCRIPT_TIMEOUT = get_conf("SUSPEND_RESUME_SCRIPT_TIMEOUT");
+my $SUSPEND_RESUME_SCRIPT_TIMEOUT = get_conf_with_default_param("SUSPEND_RESUME_SCRIPT_TIMEOUT", OAR::Tools::get_default_suspend_resume_script_timeout());
 my $TAKTUK_CMD = get_conf("TAKTUK_CMD");
-my $SUSPEND_RESUME_FILE = get_conf("SUSPEND_RESUME_FILE");
+my $SUSPEND_RESUME_FILE = get_conf_with_default_param("SUSPEND_RESUME_FILE", OAR::Tools::get_default_suspend_resume_file());
 
 ###############################################################################
 
@@ -1451,7 +1451,6 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
             ###############
             # RESUME PART #
             ###############
-            $SUSPEND_RESUME_SCRIPT_TIMEOUT = OAR::Tools::get_default_suspend_resume_script_timeout() if (!defined($SUSPEND_RESUME_SCRIPT_TIMEOUT));
             my $skip = 0;
             if (defined($JUST_BEFORE_RESUME_EXEC_FILE)){
                 # Launch admin script
@@ -1465,7 +1464,7 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
                     alarm(0);
                 };
                 if( $@ || ($script_error != 0)){
-                    my $str = "[$SCHEDULER_NAME] [$j->{job_id}] Suspend script error: $@; return code = $script_error\n";
+                    my $str = "[$SCHEDULER_NAME] [$j->{job_id}] suspend script error: $@; return code = $script_error\n";
                     oar_error($str);
                     OAR::IO::add_new_event($base,"RESUME_SCRIPT_ERROR",$j->{job_id},$str);
                     OAR::IO::frag_job($base,$j->{job_id});
@@ -1483,7 +1482,6 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
                     oarexec_pid_file => OAR::Tools::get_oar_pid_file_name($j->{job_id}),
                 };
                 if (defined($cpuset_nodes)){
-                    $SUSPEND_RESUME_FILE = OAR::Tools::get_default_suspend_resume_file() if (!defined($SUSPEND_RESUME_FILE));
                     $SUSPEND_RESUME_FILE = "$ENV{OARDIR}/$SUSPEND_RESUME_FILE" if ($SUSPEND_RESUME_FILE !~ /^\//);
                     my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$SUSPEND_RESUME_FILE,"resume",$OPENSSH_CMD,$TAKTUK_CMD,$base);
                     if ($tag == 0){
@@ -1516,7 +1514,7 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
 foreach my $j (OAR::IO::get_gantt_waiting_interactive_prediction_date($base)){
     my ($addr,$port) = split(/:/,$j->{info_type});
     my $new_start_prediction = OAR::IO::local_to_sql($j->{start_time});
-    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] Notifying user of the start prediction: $new_start_prediction (".$j->{message}.")\n");
+    oar_debug("[$SCHEDULER_NAME] [$j->{job_id}] notifying user of the start prediction: $new_start_prediction (".$j->{message}.")\n");
     OAR::Tools::notify_tcp_socket($addr,$port,"[$initial_time{sql}] start prediction: $new_start_prediction (".$j->{message}.")");
 }
 
