@@ -17,15 +17,18 @@ umask(oct("022"));
 
 sub usage {
     print <<EOS;
-Usage: $0 [--array][job_ids][--sql "sql syntax"][-r][-V][-h]
-Ask OAR to not schedule job_id until oarresume command will be executed.
-  -r, --running manage not only Waiting jobs but also Running one
-                (can suspend the job)
-      --array   hold array job(s) passed as parameter (all the sub-jobs)
-      --sql     hold jobs which respond to the SQL where clause on the table
-                jobs (ex: "project = 'p1'")
-  -h, --help    show this help screen
-  -V, --version print OAR version number
+
+Usage: $0 [-r] [--array] < list of job ids | --sql "query" >
+
+Put one or more jobs on hold. A waiting job which is put on hold is not scheduled for running. An already running job which is put on hold is suspended: processes are frozen (operation permitted to the administrator only). 
+
+Options
+      --array     use array job ids (suspend all sub-jobs)
+      --sql       select jobs to hold using a SQL query
+                  (e.g. --sql "project = 'p1'")
+  -r, --running   enable suspending running jobs (administrator only)
+  -V, --version   show OAR version number
+  -h, --help      show this help message
 EOS
 }
 
