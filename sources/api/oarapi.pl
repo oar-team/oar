@@ -353,6 +353,8 @@ SWITCH: for ($q) {
     if ( $authenticated_user =~ /(\w+)/ ) {
       $authenticated_user = $1;
       $ENV{OARDO_USER} = $authenticated_user;
+    }else{
+      $ENV{OARDO_USER} = '';
     }
 
     OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
