@@ -356,7 +356,7 @@ if (defined($Checkpoint)){
             warn("$strError\n");
             $exitValue = 2;
         }else{
-            print("The job(s) [ @jobRegistered ] will be deleted in a near future.\n") if (@jobRegistered);
+            print("The job(s) [ @jobRegistered ] will be deleted in the near future.\n") if (@jobRegistered);
         }
     }
 }
