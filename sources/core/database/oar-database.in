@@ -297,7 +297,40 @@ sub create_database() {
 
     if ($db_ro_user and $db_ro_pass) {
         if ($db_type eq "Pg")  {
-            pgsql_admin_exec_sql("GRANT SELECT ON schema,accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO $db_ro_user", $db_name);
+            pgsql_admin_exec_sql("GRANT SELECT ON schema,
+                                                  accounting,
+                                                  admission_rules,
+                                                  assigned_resources,
+                                                  event_log_hostnames,
+                                                  event_logs,
+                                                  files,
+                                                  frag_jobs,
+                                                  gantt_jobs_predictions,
+                                                  gantt_jobs_predictions_visu,
+                                                  gantt_jobs_resources,
+                                                  gantt_jobs_resources_visu,
+                                                  job_dependencies,
+                                                  job_resource_descriptions,
+                                                  job_resource_groups,
+                                                  job_state_logs,
+                                                  job_types,
+                                                  jobs,
+                                                  moldable_job_descriptions,
+                                                  queues,
+                                                  resource_logs,
+                                                  resources,
+                                                  extratime,
+                                                  admission_rules_id_seq,
+                                                  event_logs_event_id_seq,
+                                                  files_file_id_seq,
+                                                  job_resource_groups_res_group_id_seq,
+                                                  job_state_logs_job_state_log_id_seq,
+                                                  job_types_job_type_id_seq,
+                                                  moldable_job_descriptions_moldable_id_seq,
+                                                  resource_logs_resource_log_id_seq,
+                                                  resources_resource_id_seq,
+                                                  jobs_job_id_seq
+                                  TO $db_ro_user", $db_name);
         } elsif ($db_type eq "mysql") {
             print "Creating the database read-only user...\n";
             mysql_ro_user_privileges();
