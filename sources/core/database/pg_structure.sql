@@ -310,3 +310,10 @@ CREATE INDEX resource_next_state ON resources (next_state);
 CREATE INDEX resource_suspended_jobs ON resources (suspended_jobs);
 CREATE INDEX resource_type ON resources (type);
 CREATE INDEX resource_network_address ON resources (network_address);
+
+CREATE TABLE extratime (
+  job_id integer NOT NULL default '0',
+  time integer NOT NULL default '0',
+  PRIMARY KEY (job_id)
+);
+CREATE INDEX extratime_job_id ON extratime (job_id);

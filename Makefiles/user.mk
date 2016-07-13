@@ -5,6 +5,7 @@ OARDIR_BINFILES = $(SRCDIR)/qfunctions/oarnodes \
 		  $(SRCDIR)/qfunctions/oardel \
 		  $(SRCDIR)/qfunctions/oarstat \
 		  $(SRCDIR)/qfunctions/oarsub \
+		  $(SRCDIR)/qfunctions/oarextratime \
 		  $(SRCDIR)/qfunctions/oarhold \
 		  $(SRCDIR)/qfunctions/oarresume
 
@@ -13,6 +14,7 @@ MANDIR_FILES = $(SRCDIR)/man/man1/oardel.1 \
 	       $(SRCDIR)/man/man1/oarresume.1 \
 	       $(SRCDIR)/man/man1/oarstat.1 \
 	       $(SRCDIR)/man/man1/oarsub.1 \
+	       $(SRCDIR)/man/man1/oarextratime.1 \
 	       $(SRCDIR)/man/man1/oarhold.1 \
 	       $(SRCDIR)/man/man1/oarmonitor_graph_gen.1
 
@@ -24,6 +26,7 @@ clean: clean_shared
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarstat CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarsub CMD_TARGET=$(DESTDIR)$(BINDIR)/oarsub
+	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarextratime CMD_TARGET=$(DESTDIR)$(BINDIR)/oarextratime
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarhold CMD_TARGET=$(DESTDIR)$(BINDIR)/oarhold
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarresume CMD_TARGET=$(DESTDIR)$(BINDIR)/oarresume
 
@@ -33,6 +36,7 @@ build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarstat CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarsub CMD_TARGET=$(DESTDIR)$(BINDIR)/oarsub
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarextratime CMD_TARGET=$(DESTDIR)$(BINDIR)/oarextratime
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarhold CMD_TARGET=$(DESTDIR)$(BINDIR)/oarhold
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarresume CMD_TARGET=$(DESTDIR)$(BINDIR)/oarresume
 
@@ -45,6 +49,7 @@ install: install_shared
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarstat CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarsub CMD_TARGET=$(DESTDIR)$(BINDIR)/oarsub
+	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarextratime CMD_TARGET=$(DESTDIR)$(BINDIR)/oarextratime
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarhold CMD_TARGET=$(DESTDIR)$(BINDIR)/oarhold
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarresume CMD_TARGET=$(DESTDIR)$(BINDIR)/oarresume
 
@@ -55,6 +60,7 @@ uninstall: uninstall_shared
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarstat CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarsub CMD_TARGET=$(DESTDIR)$(BINDIR)/oarsub
+	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarextratime CMD_TARGET=$(DESTDIR)$(BINDIR)/oarextratime
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarhold CMD_TARGET=$(DESTDIR)$(BINDIR)/oarhold
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarresume CMD_TARGET=$(DESTDIR)$(BINDIR)/oarresume
 

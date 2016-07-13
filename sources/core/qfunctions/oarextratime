@@ -1,0 +1,130 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Data::Dumper;
+use DBI();
+use OAR::IO qw(lock_table unlock_table);
+use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
+use OAR::Tools;
+use Getopt::Long;
+use OAR::Version;
+
+### IO.pm ######################################
+
+sub add_extra_time_request($$) {
+    my $dbh = shift;
+    my $job_id = shift;
+    OAR::IO::lock_table($dbh, ["extratime"]);
+    $dbh->do("INSERT INTO extratime (job_id) VALUES ($job_id)");
+    OAR::IO::unlock_table($dbh);
+}
+
+sub get_extra_time_for_job($$) {
+    my $dbh = shift;
+    my $job_id = shift;
+    my $sth = $dbh->prepare("SELECT time FROM extratime WHERE job_id = $job_id");
+    $sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    my $time;
+    if (defined($ref)) {
+        $time = $ref->{time};
+    }
+    return $time;
+}
+
+################################################
+
+
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
+# Display command help
+sub usage {
+    print <<EOS;
+Usage: $0 <job_id>
+
+Options:
+  -V, --version   print OAR version
+  -h, --help      print help
+
+EOS
+}
+
+sub version {
+    print("OAR version : ".OAR::Version::get_version()."\n");
+    exit(0);
+}
+
+sub list($);
+
+# Retrieve informations from OAR configuration file
+init_conf($ENV{OARCONFFILE});
+my $REMOTE_HOST = get_conf("SERVER_HOSTNAME");
+my $REMOTE_PORT = get_conf("SERVER_PORT");
+my $EXTRATIME_DELAY = get_conf_with_default_param("EXTRATIME_DELAY", 3600);
+my $EXTRATIME_DURATION = get_conf_with_default_param("EXTRATIME_DURATION", 3600);
+
+# Parse command line
+Getopt::Long::Configure("gnu_getopt");
+
+GetOptions (
+            "help|h" => sub { usage; exit(0); },
+            "version|V" => sub { print("OAR version: ".OAR::Version::get_version()."\n"); exit(0); },
+           ) or exit(1);
+
+if ($#ARGV < 0) {
+    usage();
+    exit(1);
+}
+
+my $jobid = shift;
+my $lusr= $ENV{OARDO_USER};
+
+my $dbh = OAR::IO::connect_ro();
+my $job = OAR::IO::get_job($dbh, $jobid);
+
+if (not defined($job)) {
+    print("Could not find job $jobid.\n");
+    exit 1;
+}
+
+my $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
+
+if ($job->{job_user} ne $lusr) { 
+    print("Job $jobid does not belong to you.\n");
+    exit 1;
+}
+if ($job->{state} ne "Running") { 
+    print("Job $jobid in not running, you cannot request an extra time yet.\n");
+    exit 1;
+}
+
+my $request_date = $job->{start_time} + $moldable->{moldable_walltime} + $job->{suspended} - $EXTRATIME_DELAY;
+my $now = OAR::IO::get_date($dbh);
+if ($request_date > $now) { 
+    print("Request of extra time for job $jobid will be possible in ".($request_date - $now)."s from now (".$EXTRATIME_DELAY."s before the end of the job).\n");
+    exit 1;
+}
+my $extratime_current = get_extra_time_for_job($dbh, $jobid);
+OAR::IO::disconnect($dbh);
+
+if (defined($extratime_current)) {
+    if ($extratime_current >= $EXTRATIME_DURATION) {
+        print("Extra time already added for job $jobid, you cannot get more than ".$extratime_current."s.\n");
+        exit 1;
+    } else {
+        print("Extra time request already registerd for job $jobid. Only ".$extratime_current."s were added so far, due to conflict with other jobs.");
+        exit 1;
+    }
+}
+
+$dbh = OAR::IO::connect();
+add_extra_time_request($dbh, $jobid);
+print ("Extra time request for job $jobid is registered.\n");
+
+OAR::IO::disconnect($dbh);
+
+OAR::Tools::notify_tcp_socket($REMOTE_HOST,$REMOTE_PORT,"ChState");
+
+exit(0);
