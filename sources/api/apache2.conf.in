@@ -230,22 +230,38 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 #   RewriteEngine On
 #   RewriteCond %{HTTP:X_API_PATH_PREFIX}  (.*)
 #   RewriteRule .* - [E=X_API_PATH_PREFIX:%1]
-#   RewriteCond  %{HTTP:X_REMOTE_IDENT} (.*)
-#   RewriteRule .* - [E=X_REMOTE_IDENT:%1]
 #
 #  <Location /oarapi-cigri>
 #     Options +ExecCGI -MultiViews +FollowSymLinks
+#
+#     # Checks on the client certificate, to authenticate the client.
 #     SSLVerifyClient require
 #     SSLVerifyDepth  1
 #     SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq "CIMENT" and %{SSL_CLIENT_S_DN_CN} eq "CIGRI" )
+#
+#     RewriteEngine On
+#
+#     # Copy the X_REMOTE_IDENT header into the same environment variable
+#     RewriteCond %{HTTP:X_REMOTE_IDENT}  (.*)
+#     RewriteRule .* - [E=X_REMOTE_IDENT:%1]
+#
 #     ## Add some checks on the X_REMOTE_IDENT header
-#     ## This example only allows users kameleon and oar to be authenticated to the API
-#     # RewriteEngine On
-#     # RewriteCond %{HTTP:X_REMOTE_IDENT}  (.*)
-#     # RewriteRule .* - [E=X_REMOTE_IDENT:%1]
-#     # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=kameleon
-#     # RewriteCond %{HTTP:X_REMOTE_IDENT}  !=oar
-#     # RewriteRule .* - [E=X_REMOTE_IDENT:]
+#     ## This example allows only users kameleon and oar to be authenticated to the API
+#     #
+#     ## Empty the header, checks will be made on the variable
+#     ## Warning: the header must be removed, or the API may use it and the following filters
+#     ## will have no effect! Furthermore, the API may replace underscores by hyphens, so, be
+#     ## sure to remove all possible forms
+#     #RequestHeader unset X_REMOTE_IDENT
+#     #RequestHeader unset X-REMOTE-IDENT
+#     #RequestHeader unset X-REMOTE_IDENT
+#     #RequestHeader unset X_REMOTE-IDENT
+#     ## Now, the actual checks. The 2 following conditions have an implicit "AND".
+#     ## If they are both true, then, the X_REMOTE_IDENT variable is emptied to disable
+#     ## authentification (only public uris will be accessible)
+#     #RewriteCond %{ENV:X_REMOTE_IDENT} !=kameleon
+#     #RewriteCond %{ENV:X_REMOTE_IDENT} !=oar
+#     #RewriteRule .* - [E=X_REMOTE_IDENT:]
 #  </Location>
 #</virtualhost>
 #
