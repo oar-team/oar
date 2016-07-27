@@ -49,7 +49,8 @@ end
 def get(api,uri)
     uri=rel_uri(uri)
 #  begin
-    return JSON.parse(api[uri].get(:accept => 'application/json'))
+    return JSON.parse(api[uri].get(:accept => 'application/json',
+                                   :'x-api-path-prefix' => APIPATH))
 #  rescue => e
 #    if e.respond_to?('http_code')
 #      puts "ERROR #{e.http_code}:\n #{e.response.body}"
@@ -74,7 +75,8 @@ end
 def post(api,uri,j)
     uri=rel_uri(uri)
     j=j.to_json
-    return JSON.parse(api[uri].post( j,:content_type  => 'application/json'))
+    return JSON.parse(api[uri].post( j,:content_type  => 'application/json',
+                                       :'x-api-path-prefix' => POST_APIPATH))
 end
 
 ########################################################################
@@ -90,7 +92,8 @@ end
 def delete(api, uri)
  uri=rel_uri(uri)
  begin
-   return JSON.parse(api[uri].delete(:content_type => 'application/json'))
+   return JSON.parse(api[uri].delete(:content_type => 'application/json',
+                                     :'x-api-path-prefix' => POST_APIPATH))
  rescue => e
  if e.respond_to?('http_code')
       puts "ERROR #{e.http_code}:\n #{e.response.body}"
