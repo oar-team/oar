@@ -13,6 +13,8 @@ api_uri = URI(APIURI)
 post_api_uri = URI(POST_APIURI)
 APIPATH=api_uri.path
 POST_APIPATH=post_api_uri.path
+MODE="oar2" unless ENV['MODE']
+MODE=ENV['MODE'] if ENV['MODE']
 
 #######################################################################
 #Coded By Narayanan K - GSOC Testsuites project  - RESTful API Library
@@ -22,10 +24,17 @@ POST_APIPATH=post_api_uri.path
 
 class OarApi
 attr_accessor :jobhash, :statushash, :specificjobdetails, :oarv, :oartz, :jobarray, :deletehash, :apiuri, :value
-attr_reader :deletestatus,:jobstatus,:api,:chkpointstatus,:holdjob,:rholdjob,:signalreturn,:resumejob,:resources,:resourcedetails,:resstatus,:specificres,:noderesources
+attr_reader :deletestatus,:jobstatus,:api,:chkpointstatus,:holdjob,:rholdjob,:signalreturn,:resumejob,:resources,:resourcedetails,:resstatus,:specificres,:noderesources,:owner_key,:queue_key
 def initialize(apiuri,get_uri="")
   @api = RestClient::Resource.new apiuri
   @apiuri = URI.parse(apiuri)
+  if MODE=="oar3"
+    @owner_key="user"
+    @queue_key="queue_name"
+  else
+    @owner_key="owner"
+    @queue_key="queue"
+  end
 end
 
 # Converts the given uri, to something relative

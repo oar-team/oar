@@ -221,7 +221,7 @@ describe OarApi do
         @api.get_link_href_from_array(links,"resources").should == "#{APIPATH}jobs/#{id}/resources"
       end
       it "should return jobs owned by the #{USER} user" do
-        @api.value['items'][0]['owner'].should == "#{USER}"
+        @api.value['items'][0][@api.owner_key].should == "#{USER}"
       end
     end
 
@@ -267,7 +267,7 @@ describe OarApi do
       end
       it_should_behave_like "Job"
       it "should be owned by the #{USER} user" do
-        @api.value['owner'].should == "#{USER}"
+        @api.value[@api.owner_key].should == "#{USER}"
       end
     end
     context "(with non-existent job)" do
@@ -310,7 +310,7 @@ describe OarApi do
       end
       it_should_behave_like "Job"
       it "should be owned by the #{USER} user" do
-        @api.value['owner'].should == "#{USER}"
+        @api.value[@api.owner_key].should == "#{USER}"
       end
       it "should have resources and nodes details" do
         @api.value['resources'].should be_an(Array)
