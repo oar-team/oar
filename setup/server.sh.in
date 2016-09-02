@@ -64,6 +64,14 @@ server_setup() {
         ${SHAREDIR}/scheduler_quotas.conf \
         ${OARCONFDIR}/scheduler_quotas.conf
 
+    mkdir -p ${OARCONFDIR}/hooks
+    mkdir -p ${OARCONFDIR}/hooks/scheduler-pre.d
+    mkdir -p ${OARCONFDIR}/hooks/scheduler-post.d
+    install_conffile \
+        ${SHAREDIR}/oarextratime \
+        ${OARCONFDIR}/hooks/scheduler-pre.d/oarextratime \
+        0755
+
     setup_oar_ssh
     create_phoenix_home
 

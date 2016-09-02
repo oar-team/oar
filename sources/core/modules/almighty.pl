@@ -48,8 +48,13 @@ if (defined($ENV{OARDIR})){
     exit(1);
 }
 
-my $meta_sched_command = get_conf_with_default_param("META_SCHED_CMD", "oar_meta_sched");
-my $scheduler_command = (($meta_sched_command =~ /^\//)?"":$binpath).$meta_sched_command;
+my $scheduler_command = get_conf_with_default_param("META_SCHED_CMD", "oar_meta_sched");
+my $hooks_scheduler_pre = get_conf("HOOKS_PRE_SCHEDULER");
+my $hooks_scheduler_post = get_conf("HOOKS_POST_SCHEDULER");
+if (not $scheduler_command =~ /^\//) {
+    $scheduler_command = $binpath.$scheduler_command;
+}
+
 my $check_for_villains_command = $binpath."sarko";
 my $check_for_node_changes = $binpath."finaud";
 my $leon_command = $binpath."Leon";
@@ -170,6 +175,24 @@ sub launch_command($){
             #exit(2);
         }
         return $exit_value;
+}
+
+# launch all commands in a hook directory
+sub launch_hooks($) {
+    my $hook_dir = shift;
+    if (opendir(my $dh, $hook_dir)) { 
+        while (readdir($dh)) {
+            if (-x $_) {
+                my $return = launch_comand("$hook_dir/$_");
+                oar_debug("[Almighty] hook $_ returned $return\n");
+            } else {
+                oar_warn("[Almighty] hook file is not executable: $_\n");
+            }
+        }
+        closedir($dh);
+    } else {
+        oar_warn("[Almighty] failed to open hook dir: $hook_dir\n");
+    }
 }
 
 # listening procedure used by the appendice, a forked process dedicated
@@ -549,7 +572,14 @@ sub read_commands($){
 
 # functions associated with each state of the automaton
 sub scheduler(){
-    return launch_command $scheduler_command;
+    if (defined ($hooks_scheduler_pre)) {
+        launch_hooks($hooks_scheduler_pre);
+    }
+    my $scheduler_return = launch_command $scheduler_command;
+    if (defined ($hooks_scheduler_post)) {
+        launch_hooks($hooks_scheduler_post);
+    }
+    return $scheduler_return;
 }
 
 sub time_update(){
