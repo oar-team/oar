@@ -49,8 +49,8 @@ if (defined($ENV{OARDIR})){
 }
 
 my $scheduler_command = get_conf_with_default_param("META_SCHED_CMD", "oar_meta_sched");
-my $hooks_scheduler_pre = get_conf("HOOKS_PRE_SCHEDULER");
-my $hooks_scheduler_post = get_conf("HOOKS_POST_SCHEDULER");
+my $hooks_scheduler_pre = get_conf("HOOKS_SCHEDULER_PRE");
+my $hooks_scheduler_post = get_conf("HOOKS_SCHEDULER_POST");
 if (not $scheduler_command =~ /^\//) {
     $scheduler_command = $binpath.$scheduler_command;
 }
@@ -141,7 +141,7 @@ my $energy_pid;
 # launch the command line passed in parameter
 sub launch_command($){
         my $command = shift;
-        oar_debug("[Almighty] Launching command : [$command]\n");
+        oar_debug("[Almighty] Launching command: [$command]\n");
         #$ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
 ####### THE LINE BELOW SHOULD NOT BE COMMENTED IN NORMAL USE #####
         $SIG{CHLD} = 'DEFAULT';
@@ -165,10 +165,7 @@ sub launch_command($){
         my $exit_value  = $? >> 8;
         my $signal_num  = $? & 127;
         my $dumped_core = $? & 128;
-        oar_debug("[Almighty] $command terminated :\n");
-        oar_debug("[Almighty] Exit value : $exit_value\n");
-        oar_debug("[Almighty] Signal num : $signal_num\n");
-        oar_debug("[Almighty] Core dumped : $dumped_core\n");
+        oar_debug("[Almighty] $command terminated (exit code: $exit_value, signal: $signal_num, coredump: $dumped_core)\n");
         if ($signal_num || $dumped_core){
             oar_error("[Almighty] Something wrong occured (signal or core dumped) when trying to call [$command] command\n");
             $finishTag = 1;
@@ -180,13 +177,16 @@ sub launch_command($){
 # launch all commands in a hook directory
 sub launch_hooks($) {
     my $hook_dir = shift;
+    oar_debug("[Almighty] launch hooks of $hook_dir\n");
     if (opendir(my $dh, $hook_dir)) { 
-        while (readdir($dh)) {
-            if (-x $_) {
-                my $return = launch_comand("$hook_dir/$_");
-                oar_debug("[Almighty] hook $_ returned $return\n");
+        while (my $script = readdir($dh)) {
+            if (-d "$hook_dir/$script") {
+                next;
+            } elsif (! -x "$hook_dir/$script") {
+                oar_warn("[Almighty] hook file is not executable: $script\n");
+                next;
             } else {
-                oar_warn("[Almighty] hook file is not executable: $_\n");
+                launch_command("$hook_dir/$script");
             }
         }
         closedir($dh);
@@ -205,7 +205,7 @@ sub qget_appendice(){
         my $client=$server->accept();
         oar_debug("[Almighty] Appendice received a connection\n");
         if (!defined($client)){
-            oar_error("[Almighty] End of appendice listening : the socket disappeared\n");
+            oar_error("[Almighty] End of appendice listening: the socket disappeared\n");
             exit(16);
         }
         # non-blocking read
@@ -389,7 +389,7 @@ sub comportement_appendice(){
     close(pipe_bipbip_read);
     while (1){
         my $answer = qget_appendice();
-        oar_debug("[Almighty] Appendice has read on the socket : $answer\n");
+        oar_debug("[Almighty] Appendice has read on the socket: $answer\n");
         if (($answer =~ m/$OAREXEC_REGEXP/m) or
             ($answer =~ m/$OARRUNJOB_REGEXP/m) or
             ($answer =~ m/$LEONEXTERMINATE_REGEXP/m)){
@@ -513,7 +513,7 @@ sub qget($){
         $carac="OAR";
         while ($carac ne "\n"){
             if ((!defined(sysread(READ, $carac, 1))) || ($carac eq "")){
-                oar_error("[Almighty] Error while reading in pipe : I guess Appendice has died\n");
+                oar_error("[Almighty] Error while reading in pipe: I guess Appendice has died\n");
                 exit(8);
             }
             if ($carac ne "\n"){
@@ -525,7 +525,7 @@ sub qget($){
             oar_debug("[Almighty] Premature end of select cmd. res = $res. It is normal, Almighty is stopping\n");
             $answer = "Time";
         }else{
-            oar_error("[Almighty] Error while reading in pipe : I guess Appendice has died, the result code of select = $res\n");
+            oar_error("[Almighty] Error while reading in pipe: I guess Appendice has died, the result code of select = $res\n");
             exit(15);
         }
     }else{
@@ -564,7 +564,7 @@ sub read_commands($){
     }
     
     # The special case of the Time command
-    # semantic : the queue is empty so the Almighty should go
+    # semantic: the queue is empty so the Almighty should go
     # directly to the state of updating of its internal counters
     push @internal_command_file,"Time"
     unless scalar @internal_command_file;
@@ -585,7 +585,7 @@ sub scheduler(){
 sub time_update(){
     my $current = time;
 
-    oar_debug("[Almighty] Timeouts check : $current\n");
+    oar_debug("[Almighty] Timeouts check: $current\n");
     # check timeout for scheduler
     if (($current>=($lastscheduler+$schedulertimeout))
         or (($scheduler_wanted >= 1) and ($current>=($lastscheduler+$scheduler_min_time_between_2_calls)))
@@ -622,7 +622,7 @@ sub nodeChangeState(){
     return launch_command $nodeChangeState_command;
 }
 
-# MAIN PROGRAM : Almighty AUTOMATON
+# MAIN PROGRAM: Almighty AUTOMATON
 my $state= "Init";
 my $command;
 my $id;
@@ -668,7 +668,7 @@ while (1){
             read_commands($read_commands_timeout);
         }
 
-        oar_debug("[Almighty] Command queue : @internal_command_file\n");
+        oar_debug("[Almighty] Command queue: @internal_command_file\n");
         my $current_command = shift(@internal_command_file);
         my ($command,$arg1,$arg2,$arg3) = split(/ /,$current_command);
 
@@ -677,7 +677,8 @@ while (1){
         ($command eq "Term") ||
         ($command eq "BipBip") ||
         ($command eq "Scheduling") ||
-        ($command eq "Qresume")
+        ($command eq "Qresume") ||
+        ($command eq "Extratime")
         ){
             $state="Scheduler";
         }elsif( $command eq "Qdel"){
@@ -691,7 +692,7 @@ while (1){
         }elsif ($command eq "ChState"){
             $state="Change node state";
         }else{
-            oar_debug("[Almighty] Unknown command found in queue : $command\n");
+            oar_debug("[Almighty] Unknown command found in queue: $command\n");
         }
     }
 
@@ -726,7 +727,7 @@ while (1){
                 }elsif ($scheduler_result == 2){
                     $state="Leon";
                 }else{
-                    oar_error("[Almighty] Scheduler returned an unknown value : $scheduler_result\n");
+                    oar_error("[Almighty] Scheduler returned an unknown value: $scheduler_result\n");
                     $finishTag = 1;
                 }
             }else{
@@ -755,7 +756,7 @@ while (1){
         }elsif ($check_result == 0){
             $state="Time update";
         }else{
-            oar_error("[Almighty] $check_for_villains_command returned an unknown value : $check_result\n");
+            oar_error("[Almighty] $check_for_villains_command returned an unknown value: $check_result\n");
             $finishTag = 1;
         }
     }
