@@ -1,6 +1,6 @@
 =head1 NAME
 
-oarextratime - request some extra time for job handled by the OAR batch scheduler.
+oarextratime - request some extra time for a job handled by the OAR batch scheduler.
 
 =head1 SYNOPSIS
 
@@ -8,7 +8,9 @@ B<oarextratime> <job_id>
 
 =head1 DESCRIPTION
 
-Add a request to get some extra time for a job (increase its walltime).
+This command allows users to request some extra time for a job (increase of the walltime).
+
+Once the request is registered, it will by handled during the next pass of scheduler, and granted if it fits with other jobs.
 
 =head1 OPTIONS
 
@@ -23,6 +25,10 @@ Print OAR version number.
 Print help command message.
 
 =back
+
+=head1 WARNING
+
+oarextratime is not compatible with suspending jobs at runtime (oarhold --running).
 
 =head1 SEE ALSO
 

@@ -1,4 +1,6 @@
 #!/usr/bin/perl
+# Request some extratime for a job
+# This feature is not compatible with runtime suspend/resume of jobs
 
 use strict;
 use warnings;
@@ -41,7 +43,7 @@ umask(oct("022"));
 
 # Display command help
 sub usage {
-    print <<EOS;
+    return <<EOS;
 Usage: $0 <job_id>
 
 Options:
@@ -69,12 +71,12 @@ my $EXTRATIME_DURATION = get_conf_with_default_param("EXTRATIME_DURATION", 3600)
 Getopt::Long::Configure("gnu_getopt");
 
 GetOptions (
-            "help|h" => sub { usage; exit(0); },
+            "help|h" => sub { print(usage()); exit(0); },
             "version|V" => sub { print("OAR version: ".OAR::Version::get_version()."\n"); exit(0); },
            ) or exit(1);
 
 if ($#ARGV < 0) {
-    usage();
+    warn(usage());
     exit(1);
 }
 
@@ -85,46 +87,45 @@ my $dbh = OAR::IO::connect_ro();
 my $job = OAR::IO::get_job($dbh, $jobid);
 
 if (not defined($job)) {
-    print("Could not find job $jobid.\n");
+    warn("Could not find job $jobid.\n");
     exit 1;
 }
 
 my $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
 
 if ($job->{job_user} ne $lusr) { 
-    print("Job $jobid does not belong to you.\n");
+    warn("Job $jobid does not belong to you.\n");
     exit 1;
 }
 if ($job->{state} ne "Running") { 
-    print("Job $jobid in not running, you cannot request an extra time yet.\n");
+    warn("Job $jobid in not running, you can only request extra time for a running job.\n");
     exit 1;
 }
 
-my $request_date = $job->{start_time} + $moldable->{moldable_walltime} + $job->{suspended} - $EXTRATIME_DELAY;
+my $request_date = $job->{start_time} + $moldable->{moldable_walltime} - $EXTRATIME_DELAY;
 my $now = OAR::IO::get_date($dbh);
-if ($request_date > $now) { 
-    print("Request of extra time for job $jobid will be possible in ".($request_date - $now)."s from now (".$EXTRATIME_DELAY."s before the end of the job).\n");
-    exit 1;
-}
 my $extratime_current = get_extra_time_for_job($dbh, $jobid);
 OAR::IO::disconnect($dbh);
 
 if (defined($extratime_current)) {
     if ($extratime_current >= $EXTRATIME_DURATION) {
-        print("Extra time already added for job $jobid, you cannot get more than ".$extratime_current."s.\n");
-        exit 1;
+        print("Extra time already added for job $jobid.\nYou already got ".$extratime_current."s and cannot get more.\n");
+    } elsif ($extratime_current == 0) {
+        print("Extra time request already registerd for job $jobid.\nNo extra time could be added so far.\n");
     } else {
-        print("Extra time request already registerd for job $jobid. Only ".$extratime_current."s were added so far, due to conflict with other jobs.");
-        exit 1;
+        print("Extra time request already registerd for job $jobid.\n".$extratime_current."s were already added so far (max possible is $EXTRATIME_DURATION).\n");
     }
+    exit 1;
+} elsif ($request_date > $now) { 
+    print("You cannot request extra time for job $jobid for now. It will only be possible in the last ".$EXTRATIME_DELAY."s before the end of the job (from ".localtime($request_date)." onwards).\n");
+    exit 1;
 }
-
 $dbh = OAR::IO::connect();
 add_extra_time_request($dbh, $jobid);
-print ("Extra time request for job $jobid is registered.\n");
+print ("Your extra time request for job $jobid is registered, it will be handled shortly.\n");
 
 OAR::IO::disconnect($dbh);
 
-OAR::Tools::notify_tcp_socket($REMOTE_HOST,$REMOTE_PORT,"ChState");
+OAR::Tools::notify_tcp_socket($REMOTE_HOST,$REMOTE_PORT,"Extratime");
 
 exit(0);
