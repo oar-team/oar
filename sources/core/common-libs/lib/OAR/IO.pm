@@ -200,7 +200,7 @@ sub get_jobs_for_extratime($);
 sub get_possible_job_end_time_in_interval($$$$);
 sub update_walltime_for_job($$$$);
 sub update_extratime_request($$$);
-sub clean_extratime_requests($);
+sub clean_past_extratime_requests($);
 
 # LOCK FUNCTIONS:
 sub get_lock($$$);
@@ -7773,20 +7773,31 @@ sub get_possible_job_end_time_in_interval($$$$) {
     my $from = shift;
     my $to = shift;
     my $scheduler_job_security_time = shift;
+    my $reseravtion = shift;
+    my $first = $to;
+    $to += $scheduler_job_security_time;
     my $req = <<EOS;
 SELECT
-  gp.start_time
+  DISTINCT gp.start_time
 FROM 
-  jobs j, moldable_job_descriptions m, gantt_jobs_predictions gp 
+  jobs j, moldable_job_descriptions m, gantt_jobs_predictions gp
 WHERE
   j.job_id = m.moldable_job_id AND
   gp.moldable_job_id = m.moldable_id AND
   gp.start_time > $from AND
-  gp.start_time <= $to
+  gp.start_time <= $to AND
+  NOT EXISTS (
+    SELECT
+      t.job_id
+    FROM
+      job_types t
+    WHERE
+      t.job_id = j.job_id AND
+      t.type = 'besteffort'
+  )
 EOS
     my $sth = $dbh->prepare($req);
     $sth->execute();
-    my $first = $to;
     while (my $ref = $sth->fetchrow_hashref()) {
         if (not defined($first) or $first > ($ref->{start_time} - $scheduler_job_security_time)) {
             $first = $ref->{start_time} - $scheduler_job_security_time;
@@ -7796,15 +7807,14 @@ EOS
 }
 
 # Increase the walltime of a job and add an event
-# Args: dbh, job_id, current walltime, extra time
+# Args: dbh, job_id, new walltime, message
 sub update_walltime_for_job($$$$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $walltime = shift;
-    my $extratime = shift;
-    my $new_walltime = $walltime + $extratime;
+    my $new_walltime = shift;
+    my $message = shift;
     $dbh->do("UPDATE moldable_job_descriptions SET moldable_walltime=$new_walltime FROM jobs WHERE jobs.job_id = moldable_job_id AND jobs.job_id = $job_id");
-    $dbh->do("INSERT INTO event_logs (type,job_id,date,description,to_check) VALUES ('EXTRATIME',$job_id,EXTRACT(EPOCH FROM current_timestamp),' ${extratime}s of extra time added to the job (new walltime is $new_walltime)','NO')");
+    $dbh->do("INSERT INTO event_logs (type,job_id,date,description,to_check) VALUES ('EXTRATIME',$job_id,EXTRACT(EPOCH FROM current_timestamp),' $message','NO')");
 }
 
 # Update an extratime request after processing
@@ -7818,7 +7828,9 @@ sub update_extratime_request($$$) {
     OAR::IO::unlock_table($dbh);
 }
 
-sub clean_extratime_requests($) {
+# Remove extra time requests for old jobs which are not running any more
+# Args: dbh
+sub clean_past_extratime_requests($) {
     my $dbh = shift;
     my $req = <<EOS;
 DELETE FROM 

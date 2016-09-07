@@ -46,7 +46,6 @@ SHAREDIR_FILES = $(SRCDIR)/tools/job_resource_manager.pl \
 		   $(SRCDIR)/scripts/server_prologue \
 		   $(SRCDIR)/tools/wake_up_nodes.sh \
 		   $(SRCDIR)/tools/shut_down_nodes.sh \
-		   $(SRCDIR)/tools/oarextratime \
 		   $(SRCDIR)/modules/scheduler/scheduler_quotas.conf
 
 DEFAULTDIR_FILES = setup/default/oar-server.in

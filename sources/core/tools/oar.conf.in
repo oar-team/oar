@@ -109,10 +109,6 @@ OPENSSH_CMD="/usr/bin/ssh -p 6667"
 # Change the meta scheduler in use.
 #META_SCHED_CMD="oar_meta_sched"
 
-# Set the directory for the scheduler hooks
-#HOOKS_SCHEDULER_PRE=/etc/oar/hooks/scheduler-pre.d
-#HOOKS_SCHEDULER_POST=/etc/oar/hooks/scheduler-post.d
-
 ###############################################################################
 
 ########################################################################
@@ -384,10 +380,8 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # function (see man oarhold and the USERS_ALLOWED_HOLD_RESUME line above).#
 ###############################################################################
 #
-# Set extra time request delay. Request are only accepted after:
-#   if delay > 0: delay seconds after the job start
-#   if delay < 0: delay seconds before the predicted end of job
-#EXTRA_TIME_DELAY=3600
+# Set extra time request delay. Requests are only accepted delay seconds before the predicted end of the job
+#EXTRA_TIME_DELAY=300
 
 # Maximum duration of possible extra time (if next jobs permit), in seconds
 #EXTRA_TIME_DURATION=3600
