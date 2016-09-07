@@ -293,6 +293,30 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 # policy. Default is 1 day (86400s)
 #ACCOUNTING_WINDOW="86400"
 
+################################
+# KAMELOT Scheduler parameters #
+###############################################################################
+# Be carefull hierarchy labels must be declare below to be use in resource 
+# request. Labels' order does not matter here. Default value is
+# "resource_id,network_address,cpu,core" 
+#HIERARCHY_LABELS="resource_id,network_address,cpu,core" 
+
+# Number of jobs which will be scheduled by scheduling round for each queue where Kamelot is used 
+# ***NOT LIMITED by default***
+#MAX_JOB_PER_SCHEDULING_ROUND=1000
+
+# Mode to get resources and generate hierarchy levels, values are following:
+# default:     all is done dynamically, does not scale very beyond 5000 resourcess
+#
+# mono:        use only one hierarchy level resource_id or core (the FIRST label in HIERARCHY_LABELS)
+#              suitable to large platform and particular performance evaluation (only for expert users)
+#
+# precomputed: NOT YET IMPLEMENTED (upto now default mode will be used)
+#
+#KAMELOT_GET_RESOURCES_HIERARCHY_MODE="default"
+
+##############################################
+
 ###############################################################
 # Parameters available if you are using the                   #
 # oar_sched_gantt_with_timesharing_and_fairsharing* scheduler #
@@ -353,16 +377,19 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # OAR EXTRA TIME                                                          #
 # Allow users to request some extra time to finish a job. Extra time is   #
 # only granted if it does not conflict with the next jobs.                #
-# This functionnality does not handle the timesharing, container/inner    #
+# WARNING:                                                                #
+# - This functionnality does not handle the timesharing, container/inner  #
 # and placeholder/Allowed types of jobs.                                  #
-# WARNING: oarextratime is not compatible with the RUNTIME suspend/resume #
+# - This functionnality is not compatible with the RUNTIME suspend/resume #
 # function (see man oarhold and the USERS_ALLOWED_HOLD_RESUME line above).#
 ###############################################################################
 #
-# Extra time can only be requested EXTRATIME_DELAY before the predicted end of a job.
+# Set extra time request delay. Request are only accepted after:
+#   if delay > 0: delay seconds after the job start
+#   if delay < 0: delay seconds before the predicted end of job
 #EXTRA_TIME_DELAY=3600
 
-# Maximum duration of extra time allowed
+# Maximum duration of possible extra time (if next jobs permit), in seconds
 #EXTRA_TIME_DURATION=3600
 
 ###########################################################################

@@ -4,39 +4,11 @@
 
 use strict;
 use warnings;
-use Data::Dumper;
 use DBI();
-use OAR::IO qw(lock_table unlock_table);
+use OAR::IO;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
-use OAR::Tools;
 use Getopt::Long;
 use OAR::Version;
-
-### IO.pm ######################################
-
-sub add_extra_time_request($$) {
-    my $dbh = shift;
-    my $job_id = shift;
-    OAR::IO::lock_table($dbh, ["extratime"]);
-    $dbh->do("INSERT INTO extratime (job_id) VALUES ($job_id)");
-    OAR::IO::unlock_table($dbh);
-}
-
-sub get_extra_time_for_job($$) {
-    my $dbh = shift;
-    my $job_id = shift;
-    my $sth = $dbh->prepare("SELECT time FROM extratime WHERE job_id = $job_id");
-    $sth->execute();
-    my $ref = $sth->fetchrow_hashref();
-    my $time;
-    if (defined($ref)) {
-        $time = $ref->{time};
-    }
-    return $time;
-}
-
-################################################
-
 
 my $Old_umask = sprintf("%lo",umask());
 umask(oct("022"));
@@ -64,8 +36,8 @@ sub list($);
 init_conf($ENV{OARCONFFILE});
 my $REMOTE_HOST = get_conf("SERVER_HOSTNAME");
 my $REMOTE_PORT = get_conf("SERVER_PORT");
-my $EXTRATIME_DELAY = get_conf_with_default_param("EXTRATIME_DELAY", 3600);
-my $EXTRATIME_DURATION = get_conf_with_default_param("EXTRATIME_DURATION", 3600);
+my $EXTRATIME_DELAY = get_conf_with_default_param("EXTRATIME_DELAY", 0);
+my $EXTRATIME_DURATION = get_conf_with_default_param("EXTRATIME_DURATION", 0);
 
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
@@ -102,9 +74,15 @@ if ($job->{state} ne "Running") {
     exit 1;
 }
 
-my $request_date = $job->{start_time} + $moldable->{moldable_walltime} - $EXTRATIME_DELAY;
+my $allowed_request_date;
+if ($EXTRATIME_DELAY < 0) {
+    $allowed_request_date = $job->{start_time} + $moldable->{moldable_walltime} + $EXTRATIME_DELAY;
+} else {
+    $allowed_request_date = $job->{start_time} + $EXTRATIME_DELAY;
+}
+
 my $now = OAR::IO::get_date($dbh);
-my $extratime_current = get_extra_time_for_job($dbh, $jobid);
+my $extratime_current = OAR::IO::get_extra_time_for_job($dbh, $jobid);
 OAR::IO::disconnect($dbh);
 
 if (defined($extratime_current)) {
@@ -116,12 +94,16 @@ if (defined($extratime_current)) {
         print("Extra time request already registerd for job $jobid.\n".$extratime_current."s were already added so far (max possible is $EXTRATIME_DURATION).\n");
     }
     exit 1;
-} elsif ($request_date > $now) { 
-    print("You cannot request extra time for job $jobid for now. It will only be possible in the last ".$EXTRATIME_DELAY."s before the end of the job (from ".localtime($request_date)." onwards).\n");
+} elsif ($allowed_request_date > $now) { 
+    if ($EXTRATIME_DELAY < 0) {
+        print("You cannot request extra time for job $jobid for now. It will only be possible in the last ".-$EXTRATIME_DELAY."s before the end of the job (from ".localtime($allowed_request_date)." onwards).\n");
+    } else { 
+        print("You cannot request extra time for job $jobid for now. It will only be possible in the last ".$EXTRATIME_DELAY."s after the start of the job (from ".localtime($allowed_request_date)." onwards).\n");
+    }
     exit 1;
 }
 $dbh = OAR::IO::connect();
-add_extra_time_request($dbh, $jobid);
+OAR::IO::add_extra_time_request($dbh, $jobid);
 print ("Your extra time request for job $jobid is registered, it will be handled shortly.\n");
 
 OAR::IO::disconnect($dbh);

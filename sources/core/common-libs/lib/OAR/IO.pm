@@ -193,6 +193,15 @@ sub get_accounting_summary($$$$$);
 sub get_accounting_summary_byproject($$$$$$);
 sub get_last_project_karma($$$$);
 
+# EXTRATIME
+sub add_extra_time_request($$);
+sub get_extra_time_for_job($$);
+sub get_jobs_for_extratime($);
+sub get_possible_job_end_time_in_interval($$$$);
+sub update_walltime_for_job($$$$);
+sub update_extratime_request($$$);
+sub clean_extratime_requests($);
+
 # LOCK FUNCTIONS:
 sub get_lock($$$);
 sub release_lock($$);
@@ -7700,6 +7709,130 @@ sub is_an_event_exists($$$){
     return($r[0]);
 }
 
+# EXTRA TIME
+
+# Add an extra time request to the database:
+# add 1 line to the extratime table
+# Args: dbh, job_id of the job which the user wants extra time for
+sub add_extra_time_request($$) {
+    my $dbh = shift;
+    my $job_id = shift;
+    OAR::IO::lock_table($dbh, ["extratime"]);
+    $dbh->do("INSERT INTO extratime (job_id) VALUES ($job_id)");
+    OAR::IO::unlock_table($dbh);
+}
+
+# Get the current extra time added for a given job
+#  Args: dbh, job_id
+sub get_extra_time_for_job($$) {
+    my $dbh = shift;
+    my $job_id = shift;
+    my $sth = $dbh->prepare("SELECT time FROM extratime WHERE job_id = $job_id");
+    $sth->execute();
+    my $ref = $sth->fetchrow_hashref();
+    my $time;
+    if (defined($ref)) {
+        $time = $ref->{time};
+    }
+    return $time;
+}
+
+# Get all jobs with extra time requests to process
+# Args: dbh
+sub get_jobs_for_extratime($) {
+    my $dbh = shift;
+    my $req = <<EOS;
+SELECT
+  j.job_id, e.time, j.start_time, m.moldable_walltime, a.resource_id
+FROM
+  jobs j, moldable_job_descriptions m, assigned_resources a, extratime e
+WHERE
+  j.state = 'Running' AND
+  j.job_id = e.job_id AND
+  j.job_id = m.moldable_job_id AND
+  j.assigned_moldable_job = a.moldable_job_id
+EOS
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+    my $jobs = {};
+    while (my $ref = $sth->fetchrow_hashref()) {
+        my $job_id = $ref->{job_id};
+        $jobs->{$job_id}->{start_time} = $ref->{start_time};
+        $jobs->{$job_id}->{walltime} = $ref->{moldable_walltime};
+        $jobs->{$job_id}->{extratime} = $ref->{time};
+        push(@{$jobs->{$job_id}->{resources}}, $ref->{resource_id});
+    }
+    return $jobs;
+}
+
+
+# Compute the possible end time for a job in an interval of the gantt of the predicted jobs
+# Args: dbh, interval boundaries, scheduler job security time
+sub get_possible_job_end_time_in_interval($$$$) {
+    my $dbh = shift;
+    my $from = shift;
+    my $to = shift;
+    my $scheduler_job_security_time = shift;
+    my $req = <<EOS;
+SELECT
+  gp.start_time
+FROM 
+  jobs j, moldable_job_descriptions m, gantt_jobs_predictions gp 
+WHERE
+  j.job_id = m.moldable_job_id AND
+  gp.moldable_job_id = m.moldable_id AND
+  gp.start_time > $from AND
+  gp.start_time <= $to
+EOS
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+    my $first = $to;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        if (not defined($first) or $first > ($ref->{start_time} - $scheduler_job_security_time)) {
+            $first = $ref->{start_time} - $scheduler_job_security_time;
+        }
+    }
+    return $first;
+}
+
+# Increase the walltime of a job and add an event
+# Args: dbh, job_id, current walltime, extra time
+sub update_walltime_for_job($$$$) {
+    my $dbh = shift;
+    my $job_id = shift;
+    my $walltime = shift;
+    my $extratime = shift;
+    my $new_walltime = $walltime + $extratime;
+    $dbh->do("UPDATE moldable_job_descriptions SET moldable_walltime=$new_walltime FROM jobs WHERE jobs.job_id = moldable_job_id AND jobs.job_id = $job_id");
+    $dbh->do("INSERT INTO event_logs (type,job_id,date,description,to_check) VALUES ('EXTRATIME',$job_id,EXTRACT(EPOCH FROM current_timestamp),' ${extratime}s of extra time added to the job (new walltime is $new_walltime)','NO')");
+}
+
+# Update an extratime request after processing
+# ARgs: dbh, job_id, total extratime added to the job
+sub update_extratime_request($$$) {
+    my $dbh = shift;
+    my $job_id = shift;
+    my $extratime = shift;
+    OAR::IO::lock_table($dbh, ["extratime"]);
+    $dbh->do("UPDATE extratime SET time = $extratime WHERE job_id = $job_id");
+    OAR::IO::unlock_table($dbh);
+}
+
+sub clean_extratime_requests($) {
+    my $dbh = shift;
+    my $req = <<EOS;
+DELETE FROM 
+  extratime 
+USING
+  jobs
+WHERE
+  extratime.job_id = jobs.job_id AND
+  jobs.state != 'Running'
+EOS
+    OAR::IO::lock_table($dbh, ["extratime"]);
+    $dbh->do($req);
+    OAR::IO::unlock_table($dbh);
+}
 
 # LOCK FUNCTIONS:
 

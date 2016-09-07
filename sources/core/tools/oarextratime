@@ -1,137 +1,52 @@
 #!/usr/bin/perl -w
-# This script looks at the database to see if there is room in the gantt to extend
-# a job. If so, it then extend the walltime of the job.
+# This script looks at the database to see if there is room in the gantt to add
+# some extra time to a job. If so, it then increase the walltime of the job.
 # Warning: the WALLTIME_JOB_WALLTIME environement variables will not be updated 
 # within the job.
-# This script is to be used as a scheduler pre hook.
+# This script must be run by Almighty before the scheduler
 use strict;
 use warnings;
-use Data::Dumper;
 use DBI();
-use OAR::IO qw(lock_table unlock_table);
+use OAR::IO;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
-use OAR::Tools;
-use Getopt::Long;
-use OAR::Version;
 
 init_conf($ENV{OARCONFFILE});
 my $SCHEDULER_JOB_SECURITY_TIME = get_conf_with_default_param("SCHEDULER_JOB_SECURITY_TIME",1);
-my $EXTRA_TIME_DURATION = get_conf_with_default_param("EXTRA_TIME_DURATION", 3600);
+my $EXTRA_TIME_DURATION = get_conf_with_default_param("EXTRA_TIME_DURATION", 0);
 
-sub get_jobs_for_extratime($) {
-    my $dbh = shift;
-    my $req = <<EOS;
-SELECT
-  j.job_id, e.time, j.start_time, m.moldable_walltime, a.resource_id
-FROM
-  jobs j, moldable_job_descriptions m, assigned_resources a, extratime e
-WHERE
-  j.state = 'Running' AND
-  j.job_id = e.job_id AND
-  j.job_id = m.moldable_job_id AND
-  j.assigned_moldable_job = a.moldable_job_id
-EOS
-    my $sth = $dbh->prepare($req);
-    $sth->execute();
-    my $jobs = {};
-    while (my $ref = $sth->fetchrow_hashref()) {
-        my $jobid = $ref->{job_id};
-        $jobs->{$jobid}->{start_time} = $ref->{start_time};
-        $jobs->{$jobid}->{walltime} = $ref->{moldable_walltime};
-        $jobs->{$jobid}->{extratime} = $ref->{time};
-        push(@{$jobs->{$jobid}->{resources}}, $ref->{resource_id});
-    }
-    return $jobs;
+if ($EXTRA_TIME_DURATION == 0) {
+    exit 0;
 }
 
-sub get_possible_end_time_in_interval($$$) {
+sub process_current_extratime_requests($) {
     my $dbh = shift;
-    my $from = shift;
-    my $to = shift;
-    my $req = <<EOS;
-SELECT
-  gp.start_time
-FROM 
-  jobs j, moldable_job_descriptions m, gantt_jobs_predictions gp 
-WHERE
-  j.job_id = m.moldable_job_id AND
-  gp.moldable_job_id = m.moldable_id AND
-  gp.start_time > $from AND
-  gp.start_time <= $to
-EOS
-    my $sth = $dbh->prepare($req);
-    $sth->execute();
-    my $first = $to;
-    while (my $ref = $sth->fetchrow_hashref()) {
-        if (not defined($first) or $first > ($ref->{start_time} - $SCHEDULER_JOB_SECURITY_TIME)) {
-            $first = $ref->{start_time} - $SCHEDULER_JOB_SECURITY_TIME;
+    OAR::IO::clean_past_extratime_requests($dbh);
+    my $jobs = OAR::IO::get_jobs_for_extratime($dbh);
+    foreach my $jobid (keys(%$jobs)) {
+        my $extratime_allowed = $EXTRA_TIME_DURATION - $jobs->{$jobid}->{extratime};
+        next if ($extratime_allowed <= 0); # nothing more to do, request will be dropped after the end of the job
+        my $from = $jobs->{$jobid}->{start_time} + $jobs->{$jobid}->{walltime};
+        my $to = $from + $extratime_allowed;
+        my $extratime_ok = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $SCHEDULER_JOB_SECURITY_TIME) - $from;
+        if ($extratime_ok <= 0) {
+            oar_warn("[extratime] [$jobid] Request for ".$extratime_allowed."s: no extra time could be added for now\n");
+            next;
+        } elsif ($extratime_ok < $extratime_allowed) {
+            oar_warn("[extratime] [$jobid] Request for ".$extratime_allowed."s: only ".$extratime_ok."s added for now\n");
+        } elsif ($extratime_ok == $extratime_allowed) {
+            oar_warn("[extratime] [$jobid] Request for ".$extratime_allowed."s: done.\n");
+        } else {
+            oar_warn("[extratime] [$jobid] $extratime_allowed < $extratime_ok, this should not happen.\n");
+            next;
         }
+        OAR::IO::update_walltime_for_job($dbh, $jobid, $jobs->{$jobid}->{walltime}, $extratime_ok);
+        OAR::IO::update_extratime_request($dbh, $jobid, $jobs->{$jobid}->{extratime} + $extratime_ok);
     }
-    return $first;
-}
-
-sub update_walltime_for_job($$$$) {
-    my $dbh = shift;
-    my $jobid = shift;
-    my $walltime = shift;
-    my $extratime = shift;
-    my $new_walltime = $walltime + $extratime;
-    $dbh->do("UPDATE moldable_job_descriptions SET moldable_walltime=$new_walltime FROM jobs WHERE jobs.job_id = moldable_job_id AND jobs.job_id = $jobid");
-    $dbh->do("INSERT INTO event_logs (type,job_id,date,description,to_check) VALUES ('EXTRATIME',$jobid,EXTRACT(EPOCH FROM current_timestamp),' ${extratime}s of extra time added to the job (new walltime is $new_walltime)','NO')");
-}
-
-sub update_extratime_request($$$) {
-    my $dbh = shift;
-    my $jobid = shift;
-    my $extratime = shift;
-    OAR::IO::lock_table($dbh, ["extratime"]);
-    $dbh->do("UPDATE extratime SET time = $extratime WHERE job_id = $jobid");
-    OAR::IO::unlock_table($dbh);
-}
-
-sub clean_extratime_requests($) {
-    my $dbh = shift;
-    my $req = <<EOS;
-DELETE FROM 
-  extratime 
-USING
-  jobs
-WHERE
-  extratime.job_id = jobs.job_id AND
-  jobs.state != 'Running'
-EOS
-    OAR::IO::lock_table($dbh, ["extratime"]);
-    $dbh->do($req);
-    OAR::IO::unlock_table($dbh);
 }
 
 my $dbh = OAR::IO::connect();
-# drop extratime request from database for jobs which are not running anymore
-clean_extratime_requests($dbh);
 
-my $jobs = get_jobs_for_extratime($dbh);
-foreach my $jobid (keys(%$jobs)) {
-    my $extratime_allowed = $EXTRA_TIME_DURATION - $jobs->{$jobid}->{extratime};
-    next if ($extratime_allowed <= 0); # nothing more to do, request will be dropped after the end of the job
-    my $from = $jobs->{$jobid}->{start_time} + $jobs->{$jobid}->{walltime};
-    my $to = $from + $extratime_allowed;
-    #oar_debug("[extratime] [$jobid] Request for ".$extratime_allowed."s of extra time (from ".localtime($from)." to ".localtime($to).")\n");
-    my $extratime_ok = get_possible_end_time_in_interval($dbh, $from, $to) - $from;
-    if ($extratime_ok <= 0) {
-        oar_warn("[extratime] [$jobid] Request for ".$extratime_allowed."s: no extra time could be added for now\n");
-        next;
-    } elsif ($extratime_ok < $extratime_allowed) {
-        oar_warn("[extratime] [$jobid] Request for ".$extratime_allowed."s: only ".$extratime_ok."s added for now\n");
-    } elsif ($extratime_ok == $extratime_allowed) {
-        oar_warn("[extratime] [$jobid] Request for ".$extratime_allowed."s: done.\n");
-    } else {
-        oar_warn("[extratime] [$jobid] $extratime_allowed < $extratime_ok, this should not happen.\n");
-        next;
-    }
-    update_walltime_for_job($dbh, $jobid, $jobs->{$jobid}->{walltime}, $extratime_ok);
-    #oar_debug("[extratime] [$jobid] New walltime: ".($jobs->{$jobid}->{walltime} + $extratime_ok)." ($extratime_ok added)\n");
-    update_extratime_request($dbh, $jobid, $jobs->{$jobid}->{extratime} + $extratime_ok);
-}
+process_current_extratime_requests($dbh);
 
 $dbh->disconnect();
