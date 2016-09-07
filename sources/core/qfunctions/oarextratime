@@ -81,7 +81,10 @@ if ($job->{state} ne "Running") {
 
 
 my $now = OAR::IO::get_date($dbh);
-my $allowed_request_date = $job->{start_time} + $moldable->{moldable_walltime} - $EXTRA_TIME_DELAY;
+my $allowed_request_date = $now;
+if ($EXTRA_TIME_DELAY > 0) {
+    $allowed_request_date = $job->{start_time} + $moldable->{moldable_walltime} - $EXTRA_TIME_DELAY;
+}
 
 my $extratime_current = OAR::IO::get_extra_time_for_job($dbh, $jobid);
 

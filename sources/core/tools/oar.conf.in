@@ -386,6 +386,9 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # Maximum duration of possible extra time (if next jobs permit), in seconds
 #EXTRA_TIME_DURATION=3600
 
+# Allow extra time to postpone the next batch jobs (only advance reseration cannot be moved)
+#EXTRA_TIME_POSTPONE_BATCH="yes"
+
 ###########################################################################
 # ENERGY SAVING                                                           #
 # (Management of automatic wake-up and shut-down of the nodes when they   #

@@ -197,7 +197,7 @@ sub get_last_project_karma($$$$);
 sub add_extra_time_request($$);
 sub get_extra_time_for_job($$);
 sub get_jobs_for_extratime($);
-sub get_possible_job_end_time_in_interval($$$$);
+sub get_possible_job_end_time_in_interval($$$$$);
 sub update_walltime_for_job($$$$);
 sub update_extratime_request($$$);
 sub clean_past_extratime_requests($);
@@ -7768,14 +7768,15 @@ EOS
 
 # Compute the possible end time for a job in an interval of the gantt of the predicted jobs
 # Args: dbh, interval boundaries, scheduler job security time
-sub get_possible_job_end_time_in_interval($$$$) {
+sub get_possible_job_end_time_in_interval($$$$$) {
     my $dbh = shift;
     my $from = shift;
     my $to = shift;
     my $scheduler_job_security_time = shift;
-    my $reseravtion = shift;
+    my $postpone_batch = shift;
     my $first = $to;
     $to += $scheduler_job_security_time;
+    my $only_adv_reservations = ($postpone_batch eq 'yes')?"j.reservation != 'None' AND":"";
     my $req = <<EOS;
 SELECT
   DISTINCT gp.start_time
@@ -7783,6 +7784,7 @@ FROM
   jobs j, moldable_job_descriptions m, gantt_jobs_predictions gp
 WHERE
   j.job_id = m.moldable_job_id AND
+  $only_adv_reservations
   gp.moldable_job_id = m.moldable_id AND
   gp.start_time > $from AND
   gp.start_time <= $to AND
@@ -7800,7 +7802,7 @@ EOS
     $sth->execute();
     while (my $ref = $sth->fetchrow_hashref()) {
         if (not defined($first) or $first > ($ref->{start_time} - $scheduler_job_security_time)) {
-            $first = $ref->{start_time} - $scheduler_job_security_time;
+            $first = $ref->{start_time} - $scheduler_job_security_time - 1;
         }
     }
     return $first;
