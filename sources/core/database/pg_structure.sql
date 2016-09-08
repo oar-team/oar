@@ -4,7 +4,7 @@ CREATE TABLE schema (
   version VARCHAR( 255 ) NOT NULL,
   name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.5.5','');
+INSERT INTO schema VALUES ('2.5.8','');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
@@ -313,7 +313,9 @@ CREATE INDEX resource_network_address ON resources (network_address);
 
 CREATE TABLE extratime (
   job_id integer NOT NULL default '0',
-  time integer NOT NULL default '0',
+  pending integer NOT NULL default '0',
+  granted integer NOT NULL default '0',
+  force varchar(3) check (force in ('YES','NO')) NOT NULL default 'NO', 
   PRIMARY KEY (job_id)
 );
 CREATE INDEX extratime_job_id ON extratime (job_id);

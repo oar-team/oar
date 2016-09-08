@@ -380,14 +380,20 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # function (see man oarhold and the USERS_ALLOWED_HOLD_RESUME line above).#
 ###############################################################################
 #
-# Set extra time request delay. Requests are only accepted delay seconds before the predicted end of the job
-#EXTRA_TIME_DELAY=300
-
-# Maximum duration of possible extra time (if next jobs permit), in seconds
+# Extra time duration limit
+# -1 means that the extra time functionality is disabled
+#  0 means that the extra time functionality is allowed for oar and root only (with no limit)
+# >0 sets the maximum duration of possible extra time users can request in seconds
+# Default is -1
 #EXTRA_TIME_DURATION=3600
 
-# Allow extra time to postpone the next batch jobs (only advance reseration cannot be moved)
-#EXTRA_TIME_POSTPONE_BATCH="yes"
+# Set extra time request delay: do not accept requests from users until delay seconds before the predicted end of the job
+# Default is 0, i.e. no delay
+#EXTRA_TIME_DELAY=300
+
+# List users (* for all) for which extra time can force postponing the next batch jobs (i.e. only advance reserations cannot be moved)
+# Default if "root, oar"
+#EXTRA_TIME_FORCE_ALLOWED_USERS="*"
 
 ###########################################################################
 # ENERGY SAVING                                                           #

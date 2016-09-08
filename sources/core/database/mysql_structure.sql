@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `schema` (
 version VARCHAR( 255 ) NOT NULL,
 name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO `schema` VALUES ('2.5.5', '');
+INSERT INTO `schema` VALUES ('2.5.8', '');
 
 #DROP TABLE IF EXISTS jobs;
 CREATE TABLE IF NOT EXISTS jobs (
@@ -337,4 +337,12 @@ INDEX id (job_id),
 INDEX log (job_dependency_index),
 PRIMARY KEY (job_id,job_id_required)
 );
-
+#DROP TABLE IF EXISTS extratime;
+CREATE TABLE IF NOT EXISTS extratime (
+job_id INT UNSIGNED NOT NULL ,
+pending INT UNSIGNED NOT NULL DEFAULT 0,
+granted INT UNSIGNED NOT NULL DEFAULT 0,
+force ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
+INDEX id (job_id),
+PRIMARY KEY (job_id)
+);
