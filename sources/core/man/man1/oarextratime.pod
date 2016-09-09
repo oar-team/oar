@@ -1,38 +1,58 @@
 =head1 NAME
 
-oarextratime - request some extra time for a job handled by the OAR batch scheduler.
+oarextratime - request or query extra time for a job handled by the OAR batch scheduler.
 
 =head1 SYNOPSIS
 
-B<oarextratime> <job_id>
+B<oarextratime> [options] <job_id> [extra_time]
 
 =head1 DESCRIPTION
 
-This command allows users to request some extra time for a job (increase of the walltime).
+This command allows users to request or query extra time for a job.
 
-Once the request is registered, it will by handled during the next pass of scheduler, and granted if it fits with other jobs.
+If I<extra_time> is given, the command requests the addition of some extra time to the job or update a previous request.
+
+If I<extra_time> is not given, the command shows the current extra time status for the job.
+
+Job must be I<running>.  Extra time is to be given as an number of seconds.
+
+Once a request is registered, it will by handled during the next pass of scheduling and granted if it fits with other jobs.
 
 =head1 OPTIONS
 
 =over
 
-=item B<-V, --version>
+=item B<-f, --force>
 
-Print OAR version number.
+Allow extra time to postpone next batch jobs (but not advance reservations), if needed in order to fit in the resources allocation.
 
 =item B<-h, --help>
 
 Print help command message.
 
+=item B<-V, --version>
+
+Print OAR version.
+
 =back
 
-=head1 WARNING
+=head1 NOTES
+
+The extra time functionality allows one to increase the I<walltime> of a job, as an emergency measure when some more time is critically needed to complete a work. There is no warranty that extra time can be granted, since it depends on the resources availability (next jobs).
+
+As per configuration, extra time request may be possible some time before the predicted end of the job only.
+
+I<Please mind the walltime of the job and do not rely to much on extra time.>
+
+Extra time events for a job are listed in the I<oarstat> output.
+
+As per configuration, extra time addition may not be allowed in your installation.
 
 oarextratime is not compatible with suspending jobs at runtime (oarhold --running).
 
 =head1 SEE ALSO
 
-oarsub(1), oardel(1) oarstat(1)
+oarstat(1), oarsub(1), oardel(1)
 
 =head1 COPYRIGHTS
 
