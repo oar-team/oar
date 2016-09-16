@@ -117,15 +117,15 @@ if (defined($force) and $EXTRA_TIME_FORCE_ALLOWED_USERS ne "*" and not grep(/^$l
 }
 
 my $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
-my $now = OAR::IO::get_date($dbh);
-my $allowed_request_date = $job->{start_time} + $moldable->{moldable_walltime} - $EXTRA_TIME_REQUEST_DELAY;
-
 if ($moldable->{moldable_walltime} < $EXTRA_TIME_MINIMUM_WALLTIME) {
     warn("You cannot request extra time for a job with a walltime smaller than $EXTRA_TIME_MINIMUM_WALLTIME s.\n");
     exit 1;
 
 }
 
+my $now = OAR::IO::get_date($dbh);
+my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
+my $allowed_request_date = $job->{start_time} + $moldable->{moldable_walltime} + $suspended - $EXTRA_TIME_REQUEST_DELAY;
 if ($EXTRA_TIME_REQUEST_DELAY > 0 and $allowed_request_date > $now) {
     warn("You cannot request extra time for job $jobid for now. It will only be possible in the last ".$EXTRA_TIME_REQUEST_DELAY." s before the end of the job (from ".localtime($allowed_request_date)." onwards).\n");
     exit 1;

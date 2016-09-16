@@ -103,8 +103,10 @@ sub process_extratime_requests($) {
     OAR::IO::clean_past_extratime_requests($dbh);
     OAR::IO::lock_table($dbh,['oarextratime']);
     my $jobs = OAR::IO::get_jobs_for_extratime($dbh);
+    my $now = OAR::IO::get_date($dbh);
     foreach my $jobid (keys(%$jobs)) {
-        my $from = $jobs->{$jobid}->{start_time} + $jobs->{$jobid}->{walltime};
+        my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
+        my $from = $jobs->{$jobid}->{start_time} + $jobs->{$jobid}->{walltime} + $suspended;
         my $to = $from + $jobs->{$jobid}->{pending};
         my $possible = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $Security_time_overhead, $jobs->{$jobid}->{force}) - $from;
         if ($possible <= 0) {

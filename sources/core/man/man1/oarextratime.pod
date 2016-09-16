@@ -48,8 +48,6 @@ As per configuration, the extra time functionality may be disabled in your insta
 
 As per configuration, an extra time request may only be possible some time before the predicted end of the job.
 
-The extra time functionality is not compatible with jobs which were suspended at runtime (oarhold --running). 
-
 The extra time functionality does not support the computation of the resources shared allocation in the case of jobs of type timesharing or container/inner or placeholder/allowed.
 
 =head1 SEE ALSO
