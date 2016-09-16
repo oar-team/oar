@@ -40,14 +40,29 @@ sub version {
     exit(0);
 }
 
+sub get_setting($$$) {
+    my $setting = shift;
+    my $queue = shift;
+    my $default = shift;
+    my $rawvalue = get_conf_with_default_param($setting, $default);
+    if ($rawvalue =~ /^{.*}$/) {
+        my $hash = eval($rawvalue);
+        if (exists($hash->{$queue})) {
+            return $hash->{$queue};
+        } elsif (exists($hash->{_})) {
+            return $hash->{_};
+        } else {
+            return $default;
+        }
+    } else {
+        return $rawvalue;
+    }
+}
+
 # Retrieve informations from OAR configuration file
 init_conf($ENV{OARCONFFILE});
 my $REMOTE_HOST = get_conf("SERVER_HOSTNAME");
 my $REMOTE_PORT = get_conf("SERVER_PORT");
-my $EXTRA_TIME_DURATION = get_conf_with_default_param("EXTRA_TIME_DURATION", -1);
-my $EXTRA_TIME_REQUEST_DELAY = get_conf_with_default_param("EXTRA_TIME_REQUEST_DELAY", 0);
-my $EXTRA_TIME_MINIMUM_WALLTIME = get_conf_with_default_param("EXTRA_TIME_MINIMUM_WALLTIME", 0);
-my $EXTRA_TIME_FORCE_ALLOWED_USERS = get_conf_with_default_param("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", "root,oar");
 
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
@@ -65,20 +80,25 @@ if (not defined($jobid)) {
     exit(1);
 }
 
-my $lusr= $ENV{OARDO_USER};
-if ($EXTRA_TIME_DURATION <= 0 and not grep(/^$lusr$/,('root','oar'))) { 
-    warn("You are not allowed to add extra time to a job.\n");
-    exit 1;
-} elsif ($EXTRA_TIME_DURATION < 0) {
-    warn("The extra time functionality is disabled.\n");
-    exit 1;
-}
-
 my $dbh = OAR::IO::connect();
 
 my $job = OAR::IO::get_job($dbh, $jobid);
 if (not defined($job)) {
     warn("Could not find job $jobid.\n");
+    exit 1;
+}
+
+my $EXTRA_TIME_DURATION = get_setting("EXTRA_TIME_DURATION", $job->{queue_name}, 0);
+my $EXTRA_TIME_REQUEST_DELAY = get_setting("EXTRA_TIME_REQUEST_DELAY", $job->{queue_name}, 0);
+my $EXTRA_TIME_MINIMUM_WALLTIME = get_setting("EXTRA_TIME_MINIMUM_WALLTIME", $job->{queue_name}, 0);
+my $EXTRA_TIME_FORCE_ALLOWED_USERS = get_setting("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", $job->{queue_name}, "");
+
+my $lusr=$ENV{OARDO_USER};
+if ($EXTRA_TIME_DURATION <= 0 and not grep(/^$lusr$/,('root','oar'))) { 
+    warn("You are not allowed to add extra time.\n");
+    exit 1;
+} elsif ($EXTRA_TIME_DURATION < 0) {
+    warn("The extra time functionality is disabled.\n");
     exit 1;
 }
 
@@ -111,7 +131,7 @@ if (not defined($requested_extratime)) {
     warn("Bad extra time request.\n");
     exit 1;
 }
-if (defined($force) and $EXTRA_TIME_FORCE_ALLOWED_USERS ne "*" and not grep(/^$lusr$/,split(/[,\s]+/,$EXTRA_TIME_FORCE_ALLOWED_USERS))) {
+if (defined($force) and $EXTRA_TIME_FORCE_ALLOWED_USERS ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$EXTRA_TIME_FORCE_ALLOWED_USERS)))) {
     warn("You are not allowed to use the --delay-next-jobs or -D option.\n");
     exit 1;
 }

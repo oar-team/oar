@@ -40,13 +40,17 @@ Print OAR version.
 
 The extra time functionality allows one to increase the I<walltime> of a job, as an emergency measure when some more time is critically needed to complete a work. There is no warranty that extra time can be granted, since it depends on the resources availability (next jobs).
 
-I<Please mind the walltime of the job and do not rely to much on extra time.>
+I<Please mind the walltime of the job and do not rely too much on extra time.>
 
 Extra time events for a job are listed in the I<oarstat> output.
 
 As per configuration, the extra time functionality may be disabled in your installation.
 
 As per configuration, an extra time request may only be possible some time before the predicted end of the job.
+
+Configuration can be set per queue.
+
+I<Read your local documentation or ask your administrator(s) to know the configured settings.>
 
 The extra time functionality does not support the computation of the resources shared allocation in the case of jobs of type timesharing or container/inner or placeholder/allowed.
 

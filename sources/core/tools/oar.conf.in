@@ -381,23 +381,31 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 ###############################################################################
 #
 # Extra time duration limit
-# -1 means that the extra time functionality is disabled
+# -1 means that the extra time functionality is disabled (global setting, cannot be used per queue)
 #  0 means that the extra time functionality is allowed for oar and root only (with no limit)
 # >0 sets the maximum duration of possible extra time users can request in seconds
-# Default is -1
-#EXTRA_TIME_DURATION=3600
+#  default is 0
+#EXTRA_TIME_DURATION=0
 
 # Set extra time request delay: do not accept requests from users until delay seconds before the predicted end of the job
 # Default is 0, i.e. no delay
-#EXTRA_TIME_REQUEST_DELAY=300
+#EXTRA_TIME_REQUEST_DELAY=0
 
 # Set the minimum walltime of jobs for which extra time can be requested
 # Default is 0, i.e. minimum walltime
-#EXTRA_TIME_MINIMUM_WALLTIME=7200
+#EXTRA_TIME_MINIMUM_WALLTIME=0
 
-# List users (* for all) for which extra time can force postponing the next batch jobs (i.e. only advance reserations cannot be moved)
-# Default if "root, oar"
-#EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS="*"
+# List users (* for all) for which extra time can delay the next batch jobs (i.e. only advance reserations cannot be moved)
+# Default is "", i.e. only root and the oar user are allowed
+#EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS=""
+
+# Those 4 settings can also be provided per queue, using the Perl hash syntax with the queue names as the keys.
+# Not defined queues get the value associated to the _ key, or if not defined either, the default value.
+# e.g.:
+# - Allow extra time requests for up to 2 hours for the default queue only (0 for others):
+#EXTRA_TIME_DURATION="{default => 7200}"
+# - Allow any user to delay next jobs with requesting extra time for a job in all but the besteffort queue:
+#EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS="{_ => '*', besteffort => ''}"
 
 ###########################################################################
 # ENERGY SAVING                                                           #
