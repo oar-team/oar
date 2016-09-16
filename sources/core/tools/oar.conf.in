@@ -389,11 +389,15 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 
 # Set extra time request delay: do not accept requests from users until delay seconds before the predicted end of the job
 # Default is 0, i.e. no delay
-#EXTRA_TIME_DELAY=300
+#EXTRA_TIME_REQUEST_DELAY=300
+
+# Set the minimum walltime of jobs for which extra time can be requested
+# Default is 0, i.e. minimum walltime
+#EXTRA_TIME_MINIMUM_WALLTIME=7200
 
 # List users (* for all) for which extra time can force postponing the next batch jobs (i.e. only advance reserations cannot be moved)
 # Default if "root, oar"
-#EXTRA_TIME_FORCE_ALLOWED_USERS="*"
+#EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS="*"
 
 ###########################################################################
 # ENERGY SAVING                                                           #

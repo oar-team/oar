@@ -28,9 +28,9 @@ Job must be running.
 Extra time is to be given as an number of seconds.
 
 Options:
-  -f, --force     allow extra time to postpone the next batch jobs
-  -V, --version   print OAR version
-  -h, --help      print help
+  -D, --delay-next-jobs  allow extra time to delay the next batch jobs
+  -V, --version          print OAR version
+  -h, --help             print help
 
 EOS
 }
@@ -45,15 +45,16 @@ init_conf($ENV{OARCONFFILE});
 my $REMOTE_HOST = get_conf("SERVER_HOSTNAME");
 my $REMOTE_PORT = get_conf("SERVER_PORT");
 my $EXTRA_TIME_DURATION = get_conf_with_default_param("EXTRA_TIME_DURATION", -1);
-my $EXTRA_TIME_DELAY = get_conf_with_default_param("EXTRA_TIME_DELAY", 0);
-my $EXTRA_TIME_FORCE_ALLOWED_USERS = get_conf_with_default_param("EXTRA_TIME_FORCE_ALLOWED_USERS", "root,oar");
+my $EXTRA_TIME_REQUEST_DELAY = get_conf_with_default_param("EXTRA_TIME_REQUEST_DELAY", 0);
+my $EXTRA_TIME_MINIMUM_WALLTIME = get_conf_with_default_param("EXTRA_TIME_MINIMUM_WALLTIME", 0);
+my $EXTRA_TIME_FORCE_ALLOWED_USERS = get_conf_with_default_param("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", "root,oar");
 
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
 
 my $force = undef;
 GetOptions (
-            "force|f" => \$force,
+            "delay-next-jobs|D" => \$force,
             "help|h" => sub { print(usage()); exit(0); },
             "version|V" => sub { print("OAR version: ".OAR::Version::get_version()."\n"); exit(0); },
            ) or exit(1);
@@ -96,7 +97,7 @@ sub print_extratime($) {
     if (not defined($current_extratime)) {
         $current_extratime = { granted => 0, pending => 0, force => 'NO' };
     }
-    print("Pending requested time: ".$current_extratime->{pending}." s".(($current_extratime->{force} eq 'YES')?" (force)":"")."\n");
+    print("Pending requested time: ".$current_extratime->{pending}." s".(($current_extratime->{force} eq 'YES' and $current_extratime->{pending} > 0)?" (can delay other jobs)":"")."\n");
     print("Already granted time: ".$current_extratime->{granted}." s\n");
     print("Maximum allowed time: ".$EXTRA_TIME_DURATION." s\n");
 }
@@ -111,16 +112,22 @@ if (not defined($requested_extratime)) {
     exit 1;
 }
 if (defined($force) and $EXTRA_TIME_FORCE_ALLOWED_USERS ne "*" and not grep(/^$lusr$/,split(/[,\s]+/,$EXTRA_TIME_FORCE_ALLOWED_USERS))) {
-    warn("You are not allowed to use the --force option.\n");
+    warn("You are not allowed to use the --delay-next-jobs or -D option.\n");
     exit 1;
 }
 
 my $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
 my $now = OAR::IO::get_date($dbh);
-my $allowed_request_date = $job->{start_time} + $moldable->{moldable_walltime} - $EXTRA_TIME_DELAY;
+my $allowed_request_date = $job->{start_time} + $moldable->{moldable_walltime} - $EXTRA_TIME_REQUEST_DELAY;
 
-if ($EXTRA_TIME_DELAY > 0 and $allowed_request_date > $now) {
-    warn("You cannot request extra time for job $jobid for now. It will only be possible in the last ".$EXTRA_TIME_DELAY."s before the end of the job (from ".localtime($allowed_request_date)." onwards).\n");
+if ($moldable->{moldable_walltime} < $EXTRA_TIME_MINIMUM_WALLTIME) {
+    warn("You cannot request extra time for a job with a walltime smaller than $EXTRA_TIME_MINIMUM_WALLTIME s.\n");
+    exit 1;
+
+}
+
+if ($EXTRA_TIME_REQUEST_DELAY > 0 and $allowed_request_date > $now) {
+    warn("You cannot request extra time for job $jobid for now. It will only be possible in the last ".$EXTRA_TIME_REQUEST_DELAY." s before the end of the job (from ".localtime($allowed_request_date)." onwards).\n");
     exit 1;
 }
 

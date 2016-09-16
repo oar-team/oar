@@ -22,9 +22,9 @@ Once a request is registered, it will by handled during the next pass of schedul
 
 =over
 
-=item B<-f, --force>
+=item B<-D, --delay-next-jobs>
 
-Allow extra time to postpone next batch jobs (but not advance reservations), if needed in order to fit in the resources allocation.
+Allow extra time to delay next batch jobs (but not advance reservations), if needed in order to fit in the resources allocation.
 
 =item B<-h, --help>
 
