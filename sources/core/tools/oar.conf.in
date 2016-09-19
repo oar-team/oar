@@ -373,11 +373,9 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # OAR EXTRA TIME                                                          #
 # Allow users to request some extra time to finish a job. Extra time is   #
 # only granted if it does not conflict with the next jobs.                #
-# WARNING:                                                                #
-# - This functionnality does not handle the timesharing, container/inner  #
-# and placeholder/Allowed types of jobs.                                  #
-# - This functionnality is not compatible with the RUNTIME suspend/resume #
-# function (see man oarhold and the USERS_ALLOWED_HOLD_RESUME line above).#
+# WARNING: This functionnality does not handle the resource sharing with  #
+# jobs of type timesharing, container/inner, placeholder/allowed. Extra   #
+# time requests will not be granted, just like with regular jobs.         #
 ###############################################################################
 #
 # Extra time duration limit

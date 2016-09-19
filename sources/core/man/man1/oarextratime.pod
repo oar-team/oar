@@ -24,7 +24,7 @@ Once a request is registered, it will by handled during the next pass of schedul
 
 =item B<-D, --delay-next-jobs>
 
-Allow extra time to delay next batch jobs (but not advance reservations), if needed in order to fit in the resources allocation.
+Request extra time to possibly delay next batch jobs (but not advance reservations), if needed in order to fit in the resources allocation. Warning: this implies delaying any other batch jobs, including the ones from other users. Using this option may be prohibited.
 
 =item B<-h, --help>
 

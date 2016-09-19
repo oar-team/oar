@@ -28,7 +28,8 @@ Job must be running.
 Extra time is to be given as an number of seconds.
 
 Options:
-  -D, --delay-next-jobs  allow extra time to delay the next batch jobs
+  -D, --delay-next-jobs  allow oarextratime to succeed even if it implies
+                         delaying other jobs, including other users's jobs
   -V, --version          print OAR version
   -h, --help             print help
 
@@ -40,14 +41,13 @@ sub version {
     exit(0);
 }
 
-# Retrieve informations from OAR configuration file
 OAR::Conf::init_conf($ENV{OARCONFFILE});
+# Get server host and port for the tcp notification
 my $REMOTE_HOST = get_conf("SERVER_HOSTNAME");
 my $REMOTE_PORT = get_conf("SERVER_PORT");
 
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
-
 my $force = undef;
 GetOptions (
             "delay-next-jobs|D" => \$force,
@@ -61,19 +61,21 @@ if (not defined($jobid)) {
     exit(1);
 }
 
+# Get job info
 my $dbh = OAR::IO::connect();
-
 my $job = OAR::IO::get_job($dbh, $jobid);
 if (not defined($job)) {
     warn("Could not find job $jobid.\n");
     exit 1;
 }
 
+# Retrieve configuration, possibly per queue
 my $EXTRA_TIME_DURATION = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DURATION", $job->{queue_name}, 0);
 my $EXTRA_TIME_REQUEST_DELAY = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_REQUEST_DELAY", $job->{queue_name}, 0);
 my $EXTRA_TIME_MINIMUM_WALLTIME = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_MINIMUM_WALLTIME", $job->{queue_name}, 0);
 my $EXTRA_TIME_FORCE_ALLOWED_USERS = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", $job->{queue_name}, "");
 
+# Is extratime possible ?
 my $lusr=$ENV{OARDO_USER};
 if ($EXTRA_TIME_DURATION <= 0 and not grep(/^$lusr$/,('root','oar'))) { 
     warn("You are not allowed to add extra time.\n");
@@ -83,47 +85,49 @@ if ($EXTRA_TIME_DURATION <= 0 and not grep(/^$lusr$/,('root','oar'))) {
     exit 1;
 }
 
+# Job user must be us or root or oar
 if ($job->{job_user} ne $lusr and not grep(/^$lusr$/,('root','oar'))) { 
     warn("Job $jobid does not belong to you.\n");
     exit 1;
 }
 
+# Job must be running
 if ($job->{state} ne "Running") { 
     warn("Job $jobid is in state '".$job->{state}."': you can only use this command with a running job.\n");
     exit 1;
 }
 
-sub print_extratime($) {
-    my $current_extratime = shift;
+my $requested_extratime = shift;
+
+# Print extratime status is not extratime is given
+if (not defined($requested_extratime)) {
+    my $current_extratime = OAR::IO::get_extratime_for_job($dbh, $jobid); # no lock here
     if (not defined($current_extratime)) {
         $current_extratime = { granted => 0, pending => 0, force => 'NO' };
     }
     print("Pending requested time: ".$current_extratime->{pending}." s".(($current_extratime->{force} eq 'YES' and $current_extratime->{pending} > 0)?" (can delay other jobs)":"")."\n");
     print("Already granted time: ".$current_extratime->{granted}." s\n");
     print("Maximum allowed time: ".$EXTRA_TIME_DURATION." s\n");
-}
-
-my $requested_extratime = shift;
-if (not defined($requested_extratime)) {
-    my $current_extratime = OAR::IO::get_extratime_for_job($dbh, $jobid); # no lock here
-    print_extratime($current_extratime);
     exit 0;
 } elsif (not $requested_extratime =~ /^\d+$/) {
     warn("Bad extra time request.\n");
     exit 1;
 }
+
+# Can extra time delay next jobs ?
 if (defined($force) and $EXTRA_TIME_FORCE_ALLOWED_USERS ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$EXTRA_TIME_FORCE_ALLOWED_USERS)))) {
     warn("You are not allowed to use the --delay-next-jobs or -D option.\n");
     exit 1;
 }
 
+# Is job walltime big enough to allow extra time ?
 my $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
 if ($moldable->{moldable_walltime} < $EXTRA_TIME_MINIMUM_WALLTIME) {
     warn("You cannot request extra time for a job with a walltime smaller than $EXTRA_TIME_MINIMUM_WALLTIME s.\n");
     exit 1;
-
 }
 
+# Is job old enough for an extratime request ?
 my $now = OAR::IO::get_date($dbh);
 my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
 my $allowed_request_date = $job->{start_time} + $moldable->{moldable_walltime} + $suspended - $EXTRA_TIME_REQUEST_DELAY;
@@ -132,17 +136,18 @@ if ($EXTRA_TIME_REQUEST_DELAY > 0 and $allowed_request_date > $now) {
     exit 1;
 }
 
+# Handle a request
 OAR::IO::lock_table($dbh,['oarextratime']);
 
 my $current_extratime = OAR::IO::get_extratime_for_job($dbh, $jobid); # locked here
-if (defined($current_extratime)) {
+if (defined($current_extratime)) { # Update a request
     if ($current_extratime->{granted} + $requested_extratime > $EXTRA_TIME_DURATION and not grep(/^$lusr$/,('root','oar'))) { 
         warn("Request cannot be accepted: you cannot get more than ".$EXTRA_TIME_DURATION." s of extra time.\n");
         exit 1
     }
     OAR::IO::update_extratime_request($dbh,$jobid,(defined($force)?'YES':'NO'),$requested_extratime, undef);
     print ("Extra time request updated for job $jobid. It will be handled shortly.\n");
-} else {
+} else { # New request
     if ($requested_extratime > $EXTRA_TIME_DURATION and not grep(/^$lusr$/,('root','oar'))) {
         warn("Request cannot be accepted: you cannot get more than ".$EXTRA_TIME_DURATION." s of extra time.\n");
         exit 1
