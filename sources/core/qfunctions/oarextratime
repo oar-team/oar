@@ -43,8 +43,8 @@ sub version {
 
 OAR::Conf::init_conf($ENV{OARCONFFILE});
 # Get server host and port for the tcp notification
-my $REMOTE_HOST = get_conf("SERVER_HOSTNAME");
-my $REMOTE_PORT = get_conf("SERVER_PORT");
+my $REMOTE_HOST = OAR::Conf::get_conf("SERVER_HOSTNAME");
+my $REMOTE_PORT = OAR::Conf::get_conf("SERVER_PORT");
 
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
