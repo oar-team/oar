@@ -661,7 +661,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=OAR::API::set_ext($q,$2);
-    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
+    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, DELETE");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -934,7 +934,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=OAR::API::set_ext($q,$2);
-    (my $header, my $type)=OAR::API::set_output_format($ext);
+    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, DELETE");
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1006,13 +1006,19 @@ SWITCH: for ($q) {
     my $ext = OAR::API::set_ext($q,$2);
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
     print $q->header( -status => 200, -type => $type );
-    my $json = decode_json $q->param('POSTDATA');
-    my $state = $json->{'state'};
-    if ($state eq 'running'){
+    my $state;
+    if ($q->param('POSTDATA')) {
+      $state = OAR::API::check_state( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $state = OAR::API::check_state( $q->Vars, $q->content_type );
+    }
+    if ($state->{'state'} eq 'running'){
         OAR::API::runJob($1);
-    } elsif($state eq 'terminated'){
+    } elsif($state->{'state'} eq 'terminated'){
         OAR::API::terminateJob($1);
-    } elsif($state eq 'error'){
+    } elsif($state->{'state'} eq 'error'){
         OAR::API::errorJob($1);
     } else {
         die "unknown state"
@@ -1536,7 +1542,7 @@ SWITCH: for ($q) {
     $cmd = "$API_RESOURCES_LIST_GENERATION_CMD $auto_offset".$description->{resources}.$cmd_properties;
     # execute the command
     my $cmdRes = OAR::API::send_cmd($cmd,"Oar");
-    my $data = OAR::API::import_data($cmdRes,"yaml");
+    my $data = OAR::API::import_data_with_format($cmdRes,"yaml");
     OAR::API::struct_resource_list_fix_ints($data);
     $data = OAR::API::add_pagination($data,@$data,$q->path_info,undef,$ext,0,0,$STRUCTURE);
     print $header;
