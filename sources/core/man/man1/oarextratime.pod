@@ -42,6 +42,8 @@ The extra time functionality allows one to increase the I<walltime> of a job, as
 
 I<Please mind the walltime of the job and do not rely too much on extra time.>
 
+The shell environment variables of the job are not updated (OAR_JOB_WALLTIME, OAR_JOB_WALLTIME_SECONDS). 
+
 Extra time events for a job are listed in the I<oarstat> output.
 
 As per configuration, the extra time functionality may be disabled in your installation.

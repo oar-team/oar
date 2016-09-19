@@ -26,6 +26,8 @@ Manage extra time requests for a job.
   the job.
 Job must be running.
 Extra time is to be given as an number of seconds.
+The shell environment variables of the job are not updated (OAR_JOB_WALLTIME,
+OAR_JOB_WALLTIME_SECONDS).
 
 Options:
   -D, --delay-next-jobs  allow oarextratime to succeed even if it implies
