@@ -7717,9 +7717,9 @@ sub is_an_event_exists($$$){
 sub add_extratime_request($$$$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $force = shift;
+    my $delay_next_jobs = shift;
     my $pending = shift;
-    $dbh->do("INSERT INTO extratime (job_id,pending,force) VALUES ($job_id,$pending,'$force')");
+    $dbh->do("INSERT INTO extratime (job_id,pending,delay_next_jobs) VALUES ($job_id,$pending,'$delay_next_jobs')");
 }
 
 # Update an extratime request after processing
@@ -7727,11 +7727,11 @@ sub add_extratime_request($$$$) {
 sub update_extratime_request($$$$$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $force = shift;
+    my $delay_next_jobs = shift;
     my $pending = shift;
     my $granted = shift;
     $dbh->do("UPDATE extratime SET pending=$pending".
-        ((defined($force))?",force='$force'":"").
+        ((defined($delay_next_jobs))?",delay_next_jobs='$delay_next_jobs'":"").
         ((defined($granted))?",granted=$granted":"").
         " WHERE job_id = $job_id");
 }
@@ -7741,7 +7741,7 @@ sub update_extratime_request($$$$$) {
 sub get_extratime_for_job($$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $sth = $dbh->prepare("SELECT pending, granted, force FROM extratime WHERE job_id = $job_id");
+    my $sth = $dbh->prepare("SELECT pending, granted, delay_next_jobs FROM extratime WHERE job_id = $job_id");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     return $ref;
@@ -7753,7 +7753,7 @@ sub get_jobs_for_extratime($) {
     my $dbh = shift;
     my $req = <<EOS;
 SELECT
-  j.job_id, e.pending, e.granted, e.force, j.start_time, m.moldable_walltime, a.resource_id
+  j.job_id, e.pending, e.granted, e.delay_next_jobs, j.start_time, m.moldable_walltime, a.resource_id
 FROM
   jobs j, moldable_job_descriptions m, assigned_resources a, extratime e
 WHERE
@@ -7771,7 +7771,7 @@ EOS
         $jobs->{$job_id}->{walltime} = $ref->{moldable_walltime};
         $jobs->{$job_id}->{pending} = $ref->{pending};
         $jobs->{$job_id}->{granted} = $ref->{granted};
-        $jobs->{$job_id}->{force} = $ref->{force};
+        $jobs->{$job_id}->{delay_next_jobs} = $ref->{delay_next_jobs};
         push(@{$jobs->{$job_id}->{resources}}, $ref->{resource_id});
     }
     return $jobs;
@@ -7779,16 +7779,16 @@ EOS
 
 
 # Compute the possible end time for a job in an interval of the gantt of the predicted jobs
-# Args: dbh, interval boundaries, scheduler job security time, force postpone batch
+# Args: dbh, interval boundaries, scheduler job security time, delay_next_jobs
 sub get_possible_job_end_time_in_interval($$$$$) {
     my $dbh = shift;
     my $from = shift;
     my $to = shift;
     my $scheduler_job_security_time = shift;
-    my $force = shift;
+    my $delay_next_jobs = shift;
     my $first = $to;
     $to += $scheduler_job_security_time;
-    my $only_adv_reservations = ($force eq 'YES')?"j.reservation != 'None' AND":"";
+    my $only_adv_reservations = ($delay_next_jobs eq 'YES')?"j.reservation != 'None' AND":"";
     my $req = <<EOS;
 SELECT
   DISTINCT gp.start_time

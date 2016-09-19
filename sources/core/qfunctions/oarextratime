@@ -50,9 +50,9 @@ my $REMOTE_PORT = OAR::Conf::get_conf("SERVER_PORT");
 
 # Parse command line
 Getopt::Long::Configure("gnu_getopt");
-my $force = undef;
+my $delay_next_jobs = undef;
 GetOptions (
-            "delay-next-jobs|D" => \$force,
+            "delay-next-jobs|D" => \$delay_next_jobs,
             "help|h" => sub { print(usage()); exit(0); },
             "version|V" => sub { print("OAR version: ".OAR::Version::get_version()."\n"); exit(0); },
            ) or exit(1);
@@ -70,6 +70,7 @@ if (not defined($job)) {
     warn("Could not find job $jobid.\n");
     exit 1;
 }
+my $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
 
 # Retrieve configuration, possibly per queue
 my $EXTRA_TIME_DURATION = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DURATION", $job->{queue_name}, 0);
@@ -105,11 +106,12 @@ my $requested_extratime = shift;
 if (not defined($requested_extratime)) {
     my $current_extratime = OAR::IO::get_extratime_for_job($dbh, $jobid); # no lock here
     if (not defined($current_extratime)) {
-        $current_extratime = { granted => 0, pending => 0, force => 'NO' };
+        $current_extratime = { granted => 0, pending => 0, delay_next_jobs => 'NO' };
     }
-    print("Pending requested time: ".$current_extratime->{pending}." s".(($current_extratime->{force} eq 'YES' and $current_extratime->{pending} > 0)?" (can delay other jobs)":"")."\n");
-    print("Already granted time: ".$current_extratime->{granted}." s\n");
-    print("Maximum allowed time: ".$EXTRA_TIME_DURATION." s\n");
+    print("Current walltime: ".$moldable->{moldable_walltime}." s\n");
+    print("Pending requested extra time: ".$current_extratime->{pending}." s".(($current_extratime->{delay_next_jobs} eq 'YES' and $current_extratime->{pending} > 0)?" (can delay other jobs)":"")."\n");
+    print("Already granted extra time: ".$current_extratime->{granted}." s\n");
+    print("Maximum allowed extra time: ".$EXTRA_TIME_DURATION." s\n");
     exit 0;
 } elsif (not $requested_extratime =~ /^\d+$/) {
     warn("Bad extra time request.\n");
@@ -117,13 +119,12 @@ if (not defined($requested_extratime)) {
 }
 
 # Can extra time delay next jobs ?
-if (defined($force) and $EXTRA_TIME_FORCE_ALLOWED_USERS ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$EXTRA_TIME_FORCE_ALLOWED_USERS)))) {
+if (defined($delay_next_jobs) and $EXTRA_TIME_FORCE_ALLOWED_USERS ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$EXTRA_TIME_FORCE_ALLOWED_USERS)))) {
     warn("You are not allowed to use the --delay-next-jobs or -D option.\n");
     exit 1;
 }
 
 # Is job walltime big enough to allow extra time ?
-my $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
 if ($moldable->{moldable_walltime} < $EXTRA_TIME_MINIMUM_WALLTIME) {
     warn("You cannot request extra time for a job with a walltime smaller than $EXTRA_TIME_MINIMUM_WALLTIME s.\n");
     exit 1;
@@ -147,14 +148,14 @@ if (defined($current_extratime)) { # Update a request
         warn("Request cannot be accepted: you cannot get more than ".$EXTRA_TIME_DURATION." s of extra time.\n");
         exit 1
     }
-    OAR::IO::update_extratime_request($dbh,$jobid,(defined($force)?'YES':'NO'),$requested_extratime, undef);
+    OAR::IO::update_extratime_request($dbh,$jobid,(defined($delay_next_jobs)?'YES':'NO'),$requested_extratime, undef);
     print ("Extra time request updated for job $jobid. It will be handled shortly.\n");
 } else { # New request
     if ($requested_extratime > $EXTRA_TIME_DURATION and not grep(/^$lusr$/,('root','oar'))) {
         warn("Request cannot be accepted: you cannot get more than ".$EXTRA_TIME_DURATION." s of extra time.\n");
         exit 1
     }
-    OAR::IO::add_extratime_request($dbh,$jobid,(defined($force)?'YES':'NO'),$requested_extratime);
+    OAR::IO::add_extratime_request($dbh,$jobid,(defined($delay_next_jobs)?'YES':'NO'),$requested_extratime);
     print ("Extra time request registered for job $jobid. It will be handled shortly.\n");
 }
 
