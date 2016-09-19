@@ -6,7 +6,7 @@ use strict;
 use warnings;
 use DBI();
 use OAR::IO;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
+use OAR::Conf;
 use Getopt::Long;
 use OAR::Version;
 
@@ -40,27 +40,8 @@ sub version {
     exit(0);
 }
 
-sub get_setting($$$) {
-    my $setting = shift;
-    my $queue = shift;
-    my $default = shift;
-    my $rawvalue = get_conf_with_default_param($setting, $default);
-    if ($rawvalue =~ /^{.*}$/) {
-        my $hash = eval($rawvalue);
-        if (exists($hash->{$queue})) {
-            return $hash->{$queue};
-        } elsif (exists($hash->{_})) {
-            return $hash->{_};
-        } else {
-            return $default;
-        }
-    } else {
-        return $rawvalue;
-    }
-}
-
 # Retrieve informations from OAR configuration file
-init_conf($ENV{OARCONFFILE});
+OAR::Conf::init_conf($ENV{OARCONFFILE});
 my $REMOTE_HOST = get_conf("SERVER_HOSTNAME");
 my $REMOTE_PORT = get_conf("SERVER_PORT");
 
@@ -88,10 +69,10 @@ if (not defined($job)) {
     exit 1;
 }
 
-my $EXTRA_TIME_DURATION = get_setting("EXTRA_TIME_DURATION", $job->{queue_name}, 0);
-my $EXTRA_TIME_REQUEST_DELAY = get_setting("EXTRA_TIME_REQUEST_DELAY", $job->{queue_name}, 0);
-my $EXTRA_TIME_MINIMUM_WALLTIME = get_setting("EXTRA_TIME_MINIMUM_WALLTIME", $job->{queue_name}, 0);
-my $EXTRA_TIME_FORCE_ALLOWED_USERS = get_setting("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", $job->{queue_name}, "");
+my $EXTRA_TIME_DURATION = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DURATION", $job->{queue_name}, 0);
+my $EXTRA_TIME_REQUEST_DELAY = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_REQUEST_DELAY", $job->{queue_name}, 0);
+my $EXTRA_TIME_MINIMUM_WALLTIME = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_MINIMUM_WALLTIME", $job->{queue_name}, 0);
+my $EXTRA_TIME_FORCE_ALLOWED_USERS = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", $job->{queue_name}, "");
 
 my $lusr=$ENV{OARDO_USER};
 if ($EXTRA_TIME_DURATION <= 0 and not grep(/^$lusr$/,('root','oar'))) { 
