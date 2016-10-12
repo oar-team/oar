@@ -121,7 +121,8 @@ sub process_extratime_requests($) {
             next;
         }
         my $new_walltime =  $jobs->{$jobid}->{walltime} + $possible;
-        OAR::IO::update_extratime_request($dbh, $jobid, undef, $jobs->{$jobid}->{pending} - $possible, $jobs->{$jobid}->{granted} + $possible);
+        my $new_pending = $jobs->{$jobid}->{pending} - $possible;
+        OAR::IO::update_extratime_request($dbh, $jobid, ($new_pending == 0)?'NO':undef, $new_pending, $jobs->{$jobid}->{granted} + $possible);
         OAR::IO::update_walltime_for_job($dbh, $jobid, $new_walltime, $possible." s of extra time added to the job (new walltime = $new_walltime s)");
     }
     OAR::IO::unlock_table($dbh);
