@@ -100,7 +100,6 @@ oar_debug("[MetaSched] Starting Meta Scheduler\n");
 
 sub process_extratime_requests($) {
     my $dbh = shift;
-    OAR::IO::clean_past_extratime_requests($dbh);
     OAR::IO::lock_table($dbh,['oarextratime']);
     my $jobs = OAR::IO::get_jobs_for_extratime($dbh);
     my $now = OAR::IO::get_date($dbh);
@@ -108,22 +107,22 @@ sub process_extratime_requests($) {
         my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
         my $from = $jobs->{$jobid}->{start_time} + $jobs->{$jobid}->{walltime} + $suspended;
         my $to = $from + $jobs->{$jobid}->{pending};
-        my $possible = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $Security_time_overhead, $jobs->{$jobid}->{delay_next_jobs}) - $from;
-        if ($possible <= 0) {
+        my $fit = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $Security_time_overhead, $jobs->{$jobid}->{delay_next_jobs}) - $from;
+        if ($fit <= 0) {
             oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}." s: no extra time could be added for now\n");
             next;
-        } elsif ($possible < $jobs->{$jobid}->{pending}) {
-            oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}." s: only ".$possible." s added for now\n");
-        } elsif ($possible == $jobs->{$jobid}->{pending}) {
-            oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}."s: granted\n");
+        } elsif ($fit < $jobs->{$jobid}->{pending}) {
+            oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}." s: only ".$fit." s added for now (delaying next jobs: ".$jobs->{$jobid}->{delay_next_jobs}.")\n");
+        } elsif ($fit == $jobs->{$jobid}->{pending}) {
+            oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}."s: granted (delaying next jobs: ".$jobs->{$jobid}->{delay_next_jobs}.")\n");
         } else {
-            oar_debug("[MetaSched] [$jobid] bogus extra time: ".$jobs->{$jobid}->{pending}." < $possible, this should not happen\n");
+            oar_debug("[MetaSched] [$jobid] bogus extra time: ".$jobs->{$jobid}->{pending}." < $fit, this should not happen\n");
             next;
         }
-        my $new_walltime =  $jobs->{$jobid}->{walltime} + $possible;
-        my $new_pending = $jobs->{$jobid}->{pending} - $possible;
-        OAR::IO::update_extratime_request($dbh, $jobid, ($new_pending == 0)?'NO':undef, $new_pending, $jobs->{$jobid}->{granted} + $possible);
-        OAR::IO::update_walltime_for_job($dbh, $jobid, $new_walltime, $possible." s of extra time added to the job (new walltime = $new_walltime s)");
+        my $new_walltime =  $jobs->{$jobid}->{walltime} + $fit;
+        my $new_pending = $jobs->{$jobid}->{pending} - $fit;
+        OAR::IO::update_extratime($dbh, $jobid, $new_pending, ($new_pending == 0)?'NO':undef, $jobs->{$jobid}->{granted} + $fit, ($jobs->{$jobid}->{delay_next_jobs} eq 'YES')?($jobs->{$jobid}->{granted_with_delaying_next_jobs} + $fit):undef);
+        OAR::IO::update_walltime_for_job($dbh, $jobid, $new_walltime, $fit."s of extra time added to the job (new walltime = ${new_walltime}s)".(($jobs->{$jobid}->{delay_next_jobs} eq 'YES')?" (with delaying next jobs)":""));
     }
     OAR::IO::unlock_table($dbh);
 }

@@ -474,7 +474,7 @@ SWITCH: for ($q) {
     my $jobid = $1;
     my $details = $2;
     my $ext=OAR::API::set_ext($q,$3);
-    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, DELETE");
+    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, PUT, DELETE");
     
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -496,22 +496,22 @@ SWITCH: for ($q) {
         "Job not found" );
       last;
     }
-    my $j=OAR::Stat::get_job_data(@$job[0],1);
+    my $data=OAR::Stat::get_job_data(@$job[0],1);
     if (defined($details) and $details eq "/details") {
         my $job_resources = OAR::Stat::get_job_resources(@$job[0]);
         my $resources = OAR::API::struct_job_resources($job_resources,$STRUCTURE);
         my $nodes= OAR::API::struct_job_nodes($job_resources,$STRUCTURE);
         OAR::API::add_resources_uris($resources,$ext,'');
-        $j->{'resources'}=$resources;
+        $data->{'resources'}=$resources;
         OAR::API::add_nodes_uris($nodes,$ext,'');
-        $j->{'nodes'}=$nodes;
+        $data->{'nodes'}=$nodes;
     }
-
-    my $result = OAR::API::struct_job($j,$STRUCTURE);
+    $data->{extratime} = OAR::Stat::get_job_extratime($jobid);
+    my $result = OAR::API::struct_job($data,$STRUCTURE);
     OAR::API::add_job_uris($result,$ext);
     OAR::Stat::close_db_connection; 
     print $header;
-    if ($ext eq "html") { OAR::API::job_html_header($j); };
+    if ($ext eq "html") { OAR::API::job_html_header($data); };
     print OAR::API::export($result,$ext);
     last;
   };
@@ -544,87 +544,6 @@ SWITCH: for ($q) {
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export($resources,$ext);
     OAR::Stat::close_db_connection;
-    last;
-  };
-  #}}}
-  #
-  #{{{ GET /jobs/<id>/extratime] : get extratime status for a job
-  #
-  $URI = qr{^/jobs/(\d+)/extratime(\.yaml|\.json|\.html)?$};
-  OAR::API::GET( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
-    my $jobid = $1;
-    my $ext=OAR::API::set_ext($q,$2);
-    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
-
-    # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
-      OAR::API::ERROR( 401, "Permission denied",
-        "Anonymous request is not allowed" );
-      last;
-    }
-    $authenticated_user = $1;
-    $ENV{OARDO_USER} = $authenticated_user;
-    my ($error, $http_error, $short_msg, $long_msg) = OAR::Extratime::prepare($jobid, $authenticated_user, undef);
-    if ($error > 0) {
-      OAR::API::ERROR($http_error, $short_msg, $long_msg);
-      last;
-    }
-    my $result = OAR::Extratime::status();
-
-    print $header;
-    print $HTML_HEADER if ($ext eq "html");
-    print OAR::API::export($result,$ext);
-    last;
-  };
-  #
-  #{{{ POST or PUT /jobs/<id>/extratime] : request extratime for a job
-  #
-  $URI = qr{^/jobs/(\d+)/extratime(\.yaml|\.json|\.html)?$};
-  OAR::API::POST( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
-    my $jobid = $1;
-    my $ext=OAR::API::set_ext($q,$3);
-    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
-
-    # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
-      OAR::API::ERROR( 401, "Bad request",
-        "Anonymous request is not allowed" );
-      last;
-    }
-    $authenticated_user = $1;
-    $ENV{OARDO_USER} = $authenticated_user;
-
-    # Check and get the submitted data
-    # From encoded data
-    my $extratime;
-    if ($q->param('POSTDATA')) {
-      $extratime = OAR::API::check_extratime( $q->param('POSTDATA'), $q->content_type );
-    }
-    # From html form
-    else {
-      $extratime = OAR::API::check_extratime( $q->Vars, $q->content_type );
-    }
-    my ($error, $http_status, $short_msg, $long_msg);
-    ($error, $http_status, $short_msg, $long_msg) = OAR::Extratime::prepare($jobid, $authenticated_user, $extratime->{'delay_next_jobs'});
-    if ($error > 0) {
-      OAR::API::ERROR($http_status, $short_msg, $long_msg);
-      last;
-    }
-    ($error, $http_status, $short_msg, $long_msg) = OAR::Extratime::request($extratime->{duration});
-    if ($error > 0) {
-      OAR::API::ERROR($http_status, $short_msg, $long_msg);
-      last;
-    }
-
-    print $q->header( -status => $http_status, -type => "$type" );
-    print $HTML_HEADER if ($ext eq "html");
-    print OAR::API::export( { 'id' => "$jobid",
-                    'status' => "$short_msg",
-                    'cmd_output' => "$long_msg",
-                    'api_timestamp' => time()
-                  } , $ext );
     last;
   };
   #}}}
@@ -739,11 +658,10 @@ SWITCH: for ($q) {
   # (better to use the URI above)
   #
   $URI = qr{^/jobs/(\d+)(\.yaml|\.json|\.html)*$};
-  OAR::API::POST( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
+  (OAR::API::PUT( $_, $URI ) || OAR::API::POST( $_, $URI )) && do { $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=OAR::API::set_ext($q,$2);
-    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, DELETE");
+    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, PUT, DELETE");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -786,17 +704,48 @@ SWITCH: for ($q) {
       $cmd    = "$OARDODO_CMD $OARRESUME_CMD $jobid";
       $status = "Resume request registered";
     }
+    # Signal
+    elsif ( $job->{method} eq "signal" ) {
+      $cmd    = "$OARDODO_CMD $OARDEL_CMD -s $job->{signal} $jobid";
+      $status = "Signal sending request registered"; 
+    }
+    # Extratime
+    elsif ( $job->{method} eq "extratime" ) {
+      # nothing here, see below
+    }
     else {
       OAR::API::ERROR(400,"Bad query","Could not understand ". $job->{method} ." method"); 
       last;
     }
 
-    my $cmdRes = OAR::API::send_cmd($cmd,"Oar");
-    print $q->header( -status => 202, -type => "$type" );
+    my $message;
+    my $http_status;
+    if ( $job->{method} eq "extratime" ) {
+      # Check and get the submitted data
+      # From encoded data
+      my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+      my $error;
+      ($error, $http_status, $status, $message) =
+        OAR::Extratime::request($dbh, $jobid, $authenticated_user, $job->{duration}, $job->{'delay_next_jobs'});
+      OAR::IO::disconnect($dbh);
+
+      if ($error > 0) {
+        OAR::API::ERROR($http_status, $status, $message);
+      }
+    }
+    else {
+      $http_status = 202;
+      $message = OAR::API::send_cmd($cmd,"Oar");
+    }
+ 
+    print $q->header( -status => $http_status, -type => "$type" );
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export( { 'id' => "$jobid",
                     'status' => "$status",
-                    'cmd_output' => "$cmdRes",
+                    'cmd_output' => "$message",
                     'api_timestamp' => time(),
                     'links' => [ { 'rel' => 'self' , 'href' => 
                           OAR::API::htmlize_uri(OAR::API::make_uri("jobs/$jobid",$ext,0),$ext) } ]

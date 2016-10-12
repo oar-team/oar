@@ -194,8 +194,8 @@ sub get_accounting_summary_byproject($$$$$$);
 sub get_last_project_karma($$$$);
 
 # EXTRATIME
-sub add_extratime_request($$$$);
-sub update_extratime_request($$$$$);
+sub add_extratime($$$$);
+sub update_extratime($$$$$$);
 sub get_extratime_for_job($$);
 sub get_jobs_for_extratime($);
 sub get_possible_job_end_time_in_interval($$$$$);
@@ -7714,25 +7714,27 @@ sub is_an_event_exists($$$){
 # Add an extra time request to the database:
 # add 1 line to the extratime table
 # Args: dbh, job_id of the job which the user wants extra time for
-sub add_extratime_request($$$$) {
+sub add_extratime($$$$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $delay_next_jobs = shift;
     my $pending = shift;
+    my $delay_next_jobs = shift;
     $dbh->do("INSERT INTO extratime (job_id,pending,delay_next_jobs) VALUES ($job_id,$pending,'$delay_next_jobs')");
 }
 
 # Update an extratime request after processing
 # Args: dbh, job_id, total extratime added to the job
-sub update_extratime_request($$$$$) {
+sub update_extratime($$$$$$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $delay_next_jobs = shift;
     my $pending = shift;
+    my $delay_next_jobs = shift;
     my $granted = shift;
-    $dbh->do("UPDATE extratime SET pending=$pending".
-        ((defined($delay_next_jobs))?",delay_next_jobs='$delay_next_jobs'":"").
+    my $granted_with_delaying_next_jobs = shift;
+    $dbh->do("UPDATE extratime SET pending=$pending,".
+        ((defined($delay_next_jobs))?"delay_next_jobs='$delay_next_jobs'":"").
         ((defined($granted))?",granted=$granted":"").
+        ((defined($granted_with_delaying_next_jobs))?",granted_with_delaying_next_jobs=$granted_with_delaying_next_jobs":"").
         " WHERE job_id = $job_id");
 }
 
@@ -7741,7 +7743,7 @@ sub update_extratime_request($$$$$) {
 sub get_extratime_for_job($$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $sth = $dbh->prepare("SELECT pending, granted, delay_next_jobs FROM extratime WHERE job_id = $job_id");
+    my $sth = $dbh->prepare("SELECT pending, delay_next_jobs, granted, granted_with_delaying_next_jobs FROM extratime WHERE job_id = $job_id");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     return $ref;
@@ -7753,7 +7755,7 @@ sub get_jobs_for_extratime($) {
     my $dbh = shift;
     my $req = <<EOS;
 SELECT
-  j.job_id, e.pending, e.granted, e.delay_next_jobs, j.start_time, m.moldable_walltime, a.resource_id
+  j.job_id, e.pending, e.delay_next_jobs, e.granted, e.granted_with_delaying_next_jobs, j.start_time, m.moldable_walltime, a.resource_id
 FROM
   jobs j, moldable_job_descriptions m, assigned_resources a, extratime e
 WHERE
@@ -7770,8 +7772,9 @@ EOS
         $jobs->{$job_id}->{start_time} = $ref->{start_time};
         $jobs->{$job_id}->{walltime} = $ref->{moldable_walltime};
         $jobs->{$job_id}->{pending} = $ref->{pending};
-        $jobs->{$job_id}->{granted} = $ref->{granted};
         $jobs->{$job_id}->{delay_next_jobs} = $ref->{delay_next_jobs};
+        $jobs->{$job_id}->{granted} = $ref->{granted};
+        $jobs->{$job_id}->{granted_with_delaying_next_jobs} = $ref->{granted_with_delaying_next_jobs};
         push(@{$jobs->{$job_id}->{resources}}, $ref->{resource_id});
     }
     return $jobs;
