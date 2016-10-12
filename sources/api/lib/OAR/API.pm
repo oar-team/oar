@@ -1216,10 +1216,24 @@ sub check_job_update($$) {
   my $job = import_data_with_content_type($data, $content_type, "job");
 
   # Job must have a "method" field
-  unless ( $job->{method} ) {
+  if ( not exists ($job->{method}) ) {
     ERROR 400, 'Missing Required Field',
       'A job update must have a "method" field!';
     exit 0;
+  }
+  elsif  ($job->{method} eq "extratime") {
+    unless ( $job->{duration} ) { 
+      ERROR 400, 'Missing Required Field',
+        'Extratime request must have a duration field';
+      exit 0;
+    }
+  }
+  elsif  ($job->{method} eq "signal") {
+    unless ( $job->{signal} ) { 
+      ERROR 400, 'Missing Required Field',
+        'Signal request must have a signal field';
+      exit 0;
+    }
   }
 
   return $job;
@@ -1453,24 +1467,6 @@ sub check_state($$) {
 
   return $state;
 }
-
-# Check the consistency of a posted extratime query
-sub check_extratime($$) {
-  my $data         = shift;
-  my $content_type = shift;
-
-  my $extratime = import_data_with_content_type($data, $content_type, "extratime");
-
-  # Parameter must have a "mode" field
-  unless ( $extratime->{duration}) {
-    ERROR 400, 'Missing Required Field',
-      'Extratime request must have a duration field';
-    exit 0;
-  }
-
-  return $extratime;
-}
-
 
 
 ##############################################################################

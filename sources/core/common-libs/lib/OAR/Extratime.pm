@@ -11,19 +11,60 @@ my $REMOTE_PORT;
 my $EXTRA_TIME_DURATION;
 my $EXTRA_TIME_REQUEST_DELAY;
 my $EXTRA_TIME_MINIMUM_WALLTIME;
-my $EXTRA_TIME_FORCE_ALLOWED_USERS;
+my $EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS;
 
-my $dbh;
-my $job;
-my $moldable;
-my $delay_next_jobs;
-my $lusr;
-
-sub prepare($$$) {
+sub get($$) {
+    my $dbh = shift;
     my $jobid = shift;
-    $lusr = shift;
-    $delay_next_jobs = shift;
-    $dbh = OAR::IO::connect() or return  (1, 500, "Database error", "Cannot connect to OAR database");
+
+    my $job = OAR::IO::get_job($dbh,$jobid);
+    my $extratime = OAR::IO::get_extratime_for_job($dbh, $jobid); # no lock here
+
+    OAR::Conf::init_conf($ENV{OARCONFFILE});
+    $REMOTE_HOST = OAR::Conf::get_conf("SERVER_HOSTNAME");
+    $REMOTE_PORT = OAR::Conf::get_conf("SERVER_PORT");
+    $EXTRA_TIME_DURATION = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DURATION", $job->{queue_name}, 0);
+    $EXTRA_TIME_REQUEST_DELAY = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_REQUEST_DELAY", $job->{queue_name}, 0);
+    $EXTRA_TIME_MINIMUM_WALLTIME = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_MINIMUM_WALLTIME", $job->{queue_name}, 0);
+    $EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", $job->{queue_name}, "");
+
+    my $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
+    my $now = OAR::IO::get_date($dbh);
+    my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
+    my $allowed_request_date = $job->{start_time} + $moldable->{moldable_walltime} + $suspended - $EXTRA_TIME_REQUEST_DELAY;
+
+    if ($EXTRA_TIME_DURATION <= 0 or $job->{state} ne "Running" or $moldable->{moldable_walltime} < $EXTRA_TIME_MINIMUM_WALLTIME or ($EXTRA_TIME_REQUEST_DELAY > 0 and $allowed_request_date > $now)) {
+        $extratime->{possible} = 0;
+    } else {
+        $extratime->{possible} = $EXTRA_TIME_DURATION;
+    }
+    if (not defined($extratime->{pending})) {
+        $extratime->{pending} = 0;
+    }
+    if (not defined($extratime->{granted})) {
+        $extratime->{granted} = 0;
+    }
+    if ($EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS ne "*" and not grep(/^$job->{user}$/,split(/[,\s]+/,$EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS))) {
+        $extratime->{delay_next_jobs} = "FORBIDDEN";
+    } elsif (not exists($extratime->{delay_next_jobs}) or $extratime->{pending} == 0) {
+        delete $extratime->{delay_next_jobs};
+    }
+    if (exists($extratime->{granted_with_delaying_next_jobs}) and defined($extratime->{granted_with_delaying_next_jobs}) and $extratime->{granted_with_delaying_next_jobs} == 0) {
+        delete $extratime->{granted_with_delaying_next_jobs};
+    }
+    return $extratime;
+}
+
+sub request($$$$$) {
+    my $dbh = shift;
+    my $jobid = shift;
+    my $lusr = shift;
+    my $requested_extratime = shift;
+    my $delay_next_jobs = shift;
+    my $job;
+    my $moldable;
+    my @result;
+
     $job = OAR::IO::get_job($dbh, $jobid);
 
     if (not defined($job)) {
@@ -36,7 +77,7 @@ sub prepare($$$) {
     $EXTRA_TIME_DURATION = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DURATION", $job->{queue_name}, 0);
     $EXTRA_TIME_REQUEST_DELAY = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_REQUEST_DELAY", $job->{queue_name}, 0);
     $EXTRA_TIME_MINIMUM_WALLTIME = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_MINIMUM_WALLTIME", $job->{queue_name}, 0);
-    $EXTRA_TIME_FORCE_ALLOWED_USERS = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", $job->{queue_name}, "");
+    $EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", $job->{queue_name}, "");
 
     # Is extratime possible ?
     if (not defined($lusr)) {
@@ -57,12 +98,12 @@ sub prepare($$$) {
         return (3, 403, "Forbidden", "Job $jobid is not running");
     }
 
-    # No $delay_next_jobs => undef
+    # If $delay_next_jobs != YES then undef
     if (defined($delay_next_jobs) and uc($delay_next_jobs) ne "YES") {
         $delay_next_jobs = undef;
     }
     # Can extra time delay next jobs ?
-    if (defined($delay_next_jobs) and $EXTRA_TIME_FORCE_ALLOWED_USERS ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$EXTRA_TIME_FORCE_ALLOWED_USERS)))) {
+    if (defined($delay_next_jobs) and $EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS)))) {
         return (3, 403, "Forbidden", "Delaying next jobs is not allowed");
     }
     
@@ -79,47 +120,25 @@ sub prepare($$$) {
     if ($EXTRA_TIME_REQUEST_DELAY > 0 and $allowed_request_date > $now) {
         return (3, 403, "Forbidden", "Request of extra time for job $jobid is only possible in the last ".$EXTRA_TIME_REQUEST_DELAY." s before the end of the job (from ".localtime($allowed_request_date)." onwards)");
     }
-    return (0, 200, "OK", "OK");
-}
 
-sub status() {
-    my $current_extratime = OAR::IO::get_extratime_for_job($dbh, $job->{job_id}); # no lock here
-    OAR::IO::disconnect($dbh);
-    if (not defined($current_extratime)) {
-        $current_extratime = {
-            walltime => $moldable->{moldable_walltime},
-            granted => 0,
-            pending => 0,
-            delay_next_jobs => 'NO'
-        };
-    } else {
-        $current_extratime->{walltime} = $moldable->{moldable_walltime};
-    }
-    return $current_extratime;
-}
-
-sub request($) {
-    my $requested_extratime = shift;
-    my @result;
     OAR::IO::lock_table($dbh,['oarextratime']);
     my $current_extratime = OAR::IO::get_extratime_for_job($dbh, $job->{job_id}); # locked here
     if (defined($current_extratime)) { # Update a request
         if ($current_extratime->{granted} + $requested_extratime > $EXTRA_TIME_DURATION and not grep(/^$lusr$/,('root','oar'))) { 
             @result = (3, 503, "Forbidden", "Request cannot be accepted: you cannot get more than ".$EXTRA_TIME_DURATION." s of extra time");
         } else {
-            OAR::IO::update_extratime_request($dbh,$job->{job_id},(defined($delay_next_jobs)?'YES':'NO'),$requested_extratime, undef);
+            OAR::IO::update_extratime($dbh,$job->{job_id},$requested_extratime, ((defined($delay_next_jobs) and $requested_extratime > 0)?'YES':'NO'), undef, undef);
             @result = (0, 202, "Accepted", "Extra time request updated for job ".$job->{job_id}.". It will be handled shortly");
         }
     } else { # New request
         if ($requested_extratime > $EXTRA_TIME_DURATION and not grep(/^$lusr$/,('root','oar'))) {
             @result = (3, 503, "Forbidden", "Request cannot be accepted: you cannot get more than ".$EXTRA_TIME_DURATION." s of extra time");
         } else {
-            OAR::IO::add_extratime_request($dbh,$job->{job_id},(defined($delay_next_jobs)?'YES':'NO'),$requested_extratime);
+            OAR::IO::add_extratime($dbh,$job->{job_id},$requested_extratime,((defined($delay_next_jobs) and $requested_extratime > 0)?'YES':'NO'));
             @result = (0, 202, "Accepted", "Extra time request registered for job ".$job->{job_id}.". It will be handled shortly");
         }
     }
     OAR::IO::unlock_table($dbh);
-    OAR::IO::disconnect($dbh);
 
     if ($result[0] == 0) {
         OAR::Tools::notify_tcp_socket($REMOTE_HOST,$REMOTE_PORT,"Extratime");
