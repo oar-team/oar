@@ -17,12 +17,12 @@ umask(oct("022"));
 sub usage {
     return <<EOS;
 Usage:
-  $0 [<options>] <job_id> [<extra_time>]
+  $0 [options] <job_id> [duration]
 
 Manage extra time requests for a job.
-- If extra time is given, the command requests the addition of some extra time
-  to the job or update a previous request.
-- If no extra time is given, the command shows the current extra time status for
+- If duration is given, the command requests the addition of that duration to
+  the walltime of the job, or update a previous request.
+- If no duration is given, the command shows the current extra time status for
   the job.
 Job must be running.
 Extra time is to be given as an number of seconds.

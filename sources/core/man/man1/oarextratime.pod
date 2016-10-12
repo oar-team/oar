@@ -4,15 +4,15 @@ oarextratime - request or query extra time for a job handled by the OAR batch sc
 
 =head1 SYNOPSIS
 
-B<oarextratime> [options] <job_id> [extra_time]
+B<oarextratime> [options] <job_id> [duration]
 
 =head1 DESCRIPTION
 
 This command allows users to request or query extra time for a job.
 
-If I<extra_time> is given, the command requests the addition of some extra time to the job or update a previous request.
+If I<duration> is given, the command requests the addition of that duration to the walltime of the job, or update a previous request.
 
-If I<extra_time> is not given, the command shows the current extra time status for the job.
+If I<duration> is not given, the command shows the current extra time status for the job.
 
 Job must be I<running>.  Extra time is to be given as an number of seconds.
 
