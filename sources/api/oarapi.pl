@@ -35,6 +35,7 @@ use OAR::Conf qw(init_conf dump_conf get_conf_list get_conf is_conf set_value);
 use OAR::IO;
 use OAR::Stat;
 use OAR::Nodes;
+use OAR::Extratime;
 use OAR::Tools;
 use OAR::Version;
 use POSIX;
@@ -543,6 +544,87 @@ SWITCH: for ($q) {
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export($resources,$ext);
     OAR::Stat::close_db_connection;
+    last;
+  };
+  #}}}
+  #
+  #{{{ GET /jobs/<id>/extratime] : get extratime status for a job
+  #
+  $URI = qr{^/jobs/(\d+)/extratime(\.yaml|\.json|\.html)?$};
+  OAR::API::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $jobid = $1;
+    my $ext=OAR::API::set_ext($q,$2);
+    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      OAR::API::ERROR( 401, "Permission denied",
+        "Anonymous request is not allowed" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_USER} = $authenticated_user;
+    my ($error, $http_error, $short_msg, $long_msg) = OAR::Extratime::prepare($jobid, $authenticated_user, undef);
+    if ($error > 0) {
+      OAR::API::ERROR($http_error, $short_msg, $long_msg);
+      last;
+    }
+    my $result = OAR::Extratime::status();
+
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export($result,$ext);
+    last;
+  };
+  #
+  #{{{ POST or PUT /jobs/<id>/extratime] : request extratime for a job
+  #
+  $URI = qr{^/jobs/(\d+)/extratime(\.yaml|\.json|\.html)?$};
+  OAR::API::POST( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $jobid = $1;
+    my $ext=OAR::API::set_ext($q,$3);
+    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
+
+    # Must be authenticated
+    if ( not $authenticated_user =~ /(\w+)/ ) {
+      OAR::API::ERROR( 401, "Bad request",
+        "Anonymous request is not allowed" );
+      last;
+    }
+    $authenticated_user = $1;
+    $ENV{OARDO_USER} = $authenticated_user;
+
+    # Check and get the submitted data
+    # From encoded data
+    my $extratime;
+    if ($q->param('POSTDATA')) {
+      $extratime = OAR::API::check_extratime( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $extratime = OAR::API::check_extratime( $q->Vars, $q->content_type );
+    }
+    my ($error, $http_status, $short_msg, $long_msg);
+    ($error, $http_status, $short_msg, $long_msg) = OAR::Extratime::prepare($jobid, $authenticated_user, $extratime->{'delay_next_jobs'});
+    if ($error > 0) {
+      OAR::API::ERROR($http_status, $short_msg, $long_msg);
+      last;
+    }
+    ($error, $http_status, $short_msg, $long_msg) = OAR::Extratime::request($extratime->{duration});
+    if ($error > 0) {
+      OAR::API::ERROR($http_status, $short_msg, $long_msg);
+      last;
+    }
+
+    print $q->header( -status => $http_status, -type => "$type" );
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export( { 'id' => "$jobid",
+                    'status' => "$short_msg",
+                    'cmd_output' => "$long_msg",
+                    'api_timestamp' => time()
+                  } , $ext );
     last;
   };
   #}}}

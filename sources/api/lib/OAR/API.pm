@@ -1454,6 +1454,23 @@ sub check_state($$) {
   return $state;
 }
 
+# Check the consistency of a posted extratime query
+sub check_extratime($$) {
+  my $data         = shift;
+  my $content_type = shift;
+
+  my $extratime = import_data_with_content_type($data, $content_type, "extratime");
+
+  # Parameter must have a "mode" field
+  unless ( $extratime->{duration}) {
+    ERROR 400, 'Missing Required Field',
+      'Extratime request must have a duration field';
+    exit 0;
+  }
+
+  return $extratime;
+}
+
 
 
 ##############################################################################
