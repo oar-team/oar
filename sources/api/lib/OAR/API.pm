@@ -604,16 +604,16 @@ sub struct_job_resources($$) {
   my $structure=shift;
   my $result=[];
   foreach my $r (@{$resources->{assigned_resources}}) {
-    push(@$result,{'id' => int($r), 'status' => 'assigned'});
+    push(@$result,{'id' => int($r->{resource_id}), 'properties' => $r, 'status' => 'assigned'});
   }
   if (ref($resources->{reserved_resources}) eq "HASH") {
     foreach my $r (keys(%{$resources->{reserved_resources}})) {
-      push(@$result,{'id' => int($r), 'status' => 'reserved'});
+      push(@$result,{'id' => int($r), 'properties' => $resources->{reserved_resources}->{$r}, 'status' => 'reserved'});
     }
   }
   if (ref($resources->{scheduled_resources}) eq "HASH") {
     foreach my $r (keys(%{$resources->{scheduled_resources}})) {
-      push(@$result,{'id' => int($r), 'status' => 'scheduled'});
+      push(@$result,{'id' => int($r), 'properties' => $resources->{scheduled_resources}->{$r}, 'status' => 'scheduled'});
     }
   }
   return $result;

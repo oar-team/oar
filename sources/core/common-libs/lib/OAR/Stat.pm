@@ -302,7 +302,7 @@ sub get_job_resources($) {
     my @assigned_resources;
     my @assigned_hostnames;
     if (defined($job_info->{assigned_moldable_job}) && $job_info->{assigned_moldable_job} ne ""){
-        @assigned_resources = OAR::IO::get_job_resources($base,$job_info->{assigned_moldable_job});
+        @assigned_resources = OAR::IO::get_job_resources_properties($base,$job_info->{job_id});
         @assigned_hostnames = OAR::IO::get_job_network_address($base,$job_info->{assigned_moldable_job});
     }
     if ($job_info->{reservation} eq "Scheduled" and $job_info->{state} eq "Waiting") {
