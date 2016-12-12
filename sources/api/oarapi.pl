@@ -506,7 +506,7 @@ SWITCH: for ($q) {
         OAR::API::add_nodes_uris($nodes,$ext,'');
         $data->{'nodes'}=$nodes;
     }
-    $data->{extratime} = OAR::Stat::get_job_extratime($jobid);
+    ($data->{extratime},) = OAR::Stat::get_job_extratime($jobid);
     my $result = OAR::API::struct_job($data,$STRUCTURE);
     OAR::API::add_job_uris($result,$ext);
     OAR::Stat::close_db_connection; 
@@ -733,7 +733,7 @@ SWITCH: for ($q) {
       OAR::IO::disconnect($dbh);
 
       if ($error > 0) {
-        OAR::API::ERROR($http_status, $status, $message);
+        OAR::API::ERROR($http_status, ucfirst($status), ucfirst($message));
       }
     }
     else {
@@ -744,8 +744,8 @@ SWITCH: for ($q) {
     print $q->header( -status => $http_status, -type => "$type" );
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export( { 'id' => "$jobid",
-                    'status' => "$status",
-                    'cmd_output' => "$message",
+                    'status' => ucfirst($status),
+                    'cmd_output' => ucfirst($message),
                     'api_timestamp' => time(),
                     'links' => [ { 'rel' => 'self' , 'href' => 
                           OAR::API::htmlize_uri(OAR::API::make_uri("jobs/$jobid",$ext,0),$ext) } ]
