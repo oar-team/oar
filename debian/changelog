@@ -1,3 +1,10 @@
+oar (2.5.7-3) UNRELEASED; urgency=medium
+
+  * Fix recommends/suggests in oar-server-mysql: any variant of mysql can
+    do (Closes: #848477)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sun, 18 Dec 2016 21:19:41 +0100
+
 oar (2.5.7-2) unstable; urgency=high
 
   * enabling hardening flags

@@ -81,8 +81,8 @@ Depends: ${misc:Depends},
          ${perl:Depends},
          libdbi-perl,
          libdbd-mysql-perl
-Recommends: mysql-client
-Suggests: mysql-server
+Recommends: default-mysql-client | virtual-mysql-client
+Suggests: default-mysql-server | virtual-mysql-server
 Description: OAR batch scheduler MySQL server backend package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
