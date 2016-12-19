@@ -1,9 +1,10 @@
-oar (2.5.7-3) UNRELEASED; urgency=medium
+oar (2.5.7-3) unstable; urgency=medium
 
+  [ Pierre Neyron ]
   * Fix recommends/suggests in oar-server-mysql: any variant of mysql can
     do (Closes: #848477)
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Sun, 18 Dec 2016 21:19:41 +0100
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 19 Dec 2016 14:47:53 +0100
 
 oar (2.5.7-2) unstable; urgency=high
 
