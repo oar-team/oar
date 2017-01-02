@@ -146,7 +146,7 @@ Resubmit the given job as a new one.
 
 =item B<-k, --use-job-key>
 
-Activate the job-key mechanism: a job-key will be generated for the job, which can be used my the B<oarsh> command in place of the B<OAR_JOB_ID>. That job-key also allows to connect to a job from a machine which is outside the OAR cluster the job belong to (e.g. in a grid of OAR clusters), given the job-key is available on that machine.
+Activate the job-key mechanism: a job-key will be generated for the job, which can be used my the B<oarsh> command in place of the B<OAR_JOB_ID>. That job-key also allows one to connect to a job from a machine which is outside the OAR cluster the job belong to (e.g. in a grid of OAR clusters), given the job-key is available on that machine.
 
 The job-key mechanism may be activated by default in the configuration of your OAR cluster. In that case, the -k option is useless. 
 
