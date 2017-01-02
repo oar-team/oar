@@ -1,11 +1,21 @@
 OAR CHANGELOG
 =============
 
+version 2.5.8:
+--------------
+
+  - [job_resource_manager] manage nvidia gpu with the cgroup devices
+  - [oarextratime] add functionality: extra time can now be requested for job
+    (increase the walltime). See the oarextratime command and oar.conf
+  - [scheduler] fix the besteffort + deploy VS adv. reservation case
+  - [api] some improvement in the Apache configuration and tests
+
 version 2.5.7:
 --------------
 
 This version mainly brings a security fix for the oarsh command. It is highly
-recommanded to upgrade, since all previous versions of OAR are affected.
+recommended to upgrade (server, frontend(s) and nodes), since all previous
+versions of OAR are affected. 
 
   - [oarsh] fix a security hole when passing option to OpenSSH. See oar.conf to
     adapt settings to your setup, if required (OARSH_* variables)

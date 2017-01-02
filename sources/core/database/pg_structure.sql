@@ -4,7 +4,7 @@ CREATE TABLE schema (
   version VARCHAR( 255 ) NOT NULL,
   name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.5.5','');
+INSERT INTO schema VALUES ('2.5.8','');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
@@ -310,3 +310,13 @@ CREATE INDEX resource_next_state ON resources (next_state);
 CREATE INDEX resource_suspended_jobs ON resources (suspended_jobs);
 CREATE INDEX resource_type ON resources (type);
 CREATE INDEX resource_network_address ON resources (network_address);
+
+CREATE TABLE extratime (
+  job_id integer NOT NULL default '0',
+  pending integer NOT NULL default '0',
+  delay_next_jobs varchar(3) check (delay_next_jobs in ('YES','NO')) NOT NULL default 'NO', 
+  granted integer NOT NULL default '0',
+  granted_with_delaying_next_jobs integer NOT NULL default '0',
+  PRIMARY KEY (job_id)
+);
+CREATE INDEX extratime_job_id ON extratime (job_id);

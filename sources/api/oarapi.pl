@@ -35,6 +35,7 @@ use OAR::Conf qw(init_conf dump_conf get_conf_list get_conf is_conf set_value);
 use OAR::IO;
 use OAR::Stat;
 use OAR::Nodes;
+use OAR::Extratime;
 use OAR::Tools;
 use OAR::Version;
 use POSIX;
@@ -353,6 +354,8 @@ SWITCH: for ($q) {
     if ( $authenticated_user =~ /(\w+)/ ) {
       $authenticated_user = $1;
       $ENV{OARDO_USER} = $authenticated_user;
+    }else{
+      $ENV{OARDO_USER} = '';
     }
 
     OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
@@ -471,7 +474,7 @@ SWITCH: for ($q) {
     my $jobid = $1;
     my $details = $2;
     my $ext=OAR::API::set_ext($q,$3);
-    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, DELETE");
+    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, PUT, DELETE");
     
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -493,22 +496,22 @@ SWITCH: for ($q) {
         "Job not found" );
       last;
     }
-    my $j=OAR::Stat::get_job_data(@$job[0],1);
+    my $data=OAR::Stat::get_job_data(@$job[0],1);
     if (defined($details) and $details eq "/details") {
         my $job_resources = OAR::Stat::get_job_resources(@$job[0]);
         my $resources = OAR::API::struct_job_resources($job_resources,$STRUCTURE);
         my $nodes= OAR::API::struct_job_nodes($job_resources,$STRUCTURE);
         OAR::API::add_resources_uris($resources,$ext,'');
-        $j->{'resources'}=$resources;
+        $data->{'resources'}=$resources;
         OAR::API::add_nodes_uris($nodes,$ext,'');
-        $j->{'nodes'}=$nodes;
+        $data->{'nodes'}=$nodes;
     }
-
-    my $result = OAR::API::struct_job($j,$STRUCTURE);
+    ($data->{extratime},) = OAR::Stat::get_job_extratime($jobid);
+    my $result = OAR::API::struct_job($data,$STRUCTURE);
     OAR::API::add_job_uris($result,$ext);
     OAR::Stat::close_db_connection; 
     print $header;
-    if ($ext eq "html") { OAR::API::job_html_header($j); };
+    if ($ext eq "html") { OAR::API::job_html_header($data); };
     print OAR::API::export($result,$ext);
     last;
   };
@@ -655,11 +658,10 @@ SWITCH: for ($q) {
   # (better to use the URI above)
   #
   $URI = qr{^/jobs/(\d+)(\.yaml|\.json|\.html)*$};
-  OAR::API::POST( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
+  (OAR::API::PUT( $_, $URI ) || OAR::API::POST( $_, $URI )) && do { $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=OAR::API::set_ext($q,$2);
-    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
+    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, PUT, DELETE");
  
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -702,17 +704,48 @@ SWITCH: for ($q) {
       $cmd    = "$OARDODO_CMD $OARRESUME_CMD $jobid";
       $status = "Resume request registered";
     }
+    # Signal
+    elsif ( $job->{method} eq "signal" ) {
+      $cmd    = "$OARDODO_CMD $OARDEL_CMD -s $job->{signal} $jobid";
+      $status = "Signal sending request registered"; 
+    }
+    # Extratime
+    elsif ( $job->{method} eq "extratime" ) {
+      # nothing here, see below
+    }
     else {
       OAR::API::ERROR(400,"Bad query","Could not understand ". $job->{method} ." method"); 
       last;
     }
 
-    my $cmdRes = OAR::API::send_cmd($cmd,"Oar");
-    print $q->header( -status => 202, -type => "$type" );
+    my $message;
+    my $http_status;
+    if ( $job->{method} eq "extratime" ) {
+      # Check and get the submitted data
+      # From encoded data
+      my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+      my $error;
+      ($error, $http_status, $status, $message) =
+        OAR::Extratime::request($dbh, $jobid, $authenticated_user, $job->{duration}, $job->{'delay_next_jobs'});
+      OAR::IO::disconnect($dbh);
+
+      if ($error > 0) {
+        OAR::API::ERROR($http_status, ucfirst($status), ucfirst($message));
+      }
+    }
+    else {
+      $http_status = 202;
+      $message = OAR::API::send_cmd($cmd,"Oar");
+    }
+ 
+    print $q->header( -status => $http_status, -type => "$type" );
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export( { 'id' => "$jobid",
-                    'status' => "$status",
-                    'cmd_output' => "$cmdRes",
+                    'status' => ucfirst($status),
+                    'cmd_output' => ucfirst($message),
                     'api_timestamp' => time(),
                     'links' => [ { 'rel' => 'self' , 'href' => 
                           OAR::API::htmlize_uri(OAR::API::make_uri("jobs/$jobid",$ext,0),$ext) } ]
@@ -932,7 +965,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=OAR::API::set_ext($q,$2);
-    (my $header, my $type)=OAR::API::set_output_format($ext);
+    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, DELETE");
 
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
@@ -1004,13 +1037,19 @@ SWITCH: for ($q) {
     my $ext = OAR::API::set_ext($q,$2);
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
     print $q->header( -status => 200, -type => $type );
-    my $json = decode_json $q->param('POSTDATA');
-    my $state = $json->{'state'};
-    if ($state eq 'running'){
+    my $state;
+    if ($q->param('POSTDATA')) {
+      $state = OAR::API::check_state( $q->param('POSTDATA'), $q->content_type );
+    }
+    # From html form
+    else {
+      $state = OAR::API::check_state( $q->Vars, $q->content_type );
+    }
+    if ($state->{'state'} eq 'running'){
         OAR::API::runJob($1);
-    } elsif($state eq 'terminated'){
+    } elsif($state->{'state'} eq 'terminated'){
         OAR::API::terminateJob($1);
-    } elsif($state eq 'error'){
+    } elsif($state->{'state'} eq 'error'){
         OAR::API::errorJob($1);
     } else {
         die "unknown state"
@@ -1534,7 +1573,7 @@ SWITCH: for ($q) {
     $cmd = "$API_RESOURCES_LIST_GENERATION_CMD $auto_offset".$description->{resources}.$cmd_properties;
     # execute the command
     my $cmdRes = OAR::API::send_cmd($cmd,"Oar");
-    my $data = OAR::API::import_data($cmdRes,"yaml");
+    my $data = OAR::API::import_data_with_format($cmdRes,"yaml");
     OAR::API::struct_resource_list_fix_ints($data);
     $data = OAR::API::add_pagination($data,@$data,$q->path_info,undef,$ext,0,0,$STRUCTURE);
     print $header;

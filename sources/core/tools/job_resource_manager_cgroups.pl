@@ -11,8 +11,6 @@
 #                 cgroup have cpu.shares=1024 (no priority)
 #     - [cpuacct] Allow to have an accounting of the cpu times used by the
 #                 job processes
-#     - [devices] Allow or deny the access of devices for each job processes
-#                 (By default every devices are allowed)
 #     - [freezer] Permit to suspend or resume the job processes.
 #                 This is used by the suspend/resume of OAR (oarhold/oarresume)
 #     - [blkio]   Put an IO share corresponding to the ratio between reserved
@@ -27,6 +25,13 @@
 #                 (need to do some benchmarks)
 #                 You can ENABLE this feature by putting 'my $ENABLE_MEMCG =
 #                 "YES";' in the following code
+#     - [devices] Allow or deny the access of devices for each job processes
+#                 (By default every devices are allowed)
+#                 You can ENABLE this feature to manage NVIDIA GPUs by putting
+#                 'my $ENABLE_DEVICESCG = "YES";' in the following code.
+#                 Also there must be a resource property named 'gpudevice'
+#                 configured. This property must contain the GPU id which is
+#                 allowed to be used (id on the compute node).
 #
 # Usage:
 # This script is deployed from the server and executed as oar on the nodes.
@@ -45,6 +50,8 @@ sub print_log($$);
 
 # Put YES if you want to use the memory cgroup
 my $ENABLE_MEMCG = "NO";
+# Put YES if you want to use the device cgroup (nvidia devices only currently)
+my $ENABLE_DEVICESCG = "NO";
 
 my $OS_cgroups_path = "/sys/fs/cgroup";  # Where the OS mounts by itself the cgroups
                                          # (systemd for example
@@ -241,6 +248,36 @@ if ($ARGV[0] eq "init"){
         $IO_ratio = 1000;
         if (system( '/bin/echo '.$IO_ratio.' | cat > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset_path_job.'/blkio.weight')){
             exit_myself(5,"Failed to set the blkio.weight to $IO_ratio");
+        }
+
+        if ($ENABLE_DEVICESCG eq "YES"){
+            my @devices_deny = ();
+            opendir(my($dh), "/dev") or exit_myself(5,"Failed to open /dev directory for ENABLE_DEVICESCG feature");
+            my @files = grep { /nvidia/ } readdir($dh);
+            foreach (@files){
+                if ($_ =~ /nvidia(\d+)/){
+                    push (@devices_deny, $1);
+                }
+            }
+            closedir($dh);
+            if ($#devices_deny > -1){
+                # now remove from denied devices our reserved devices
+                foreach my $r (@{$Cpuset->{'resources'}}){
+                    if (($r->{type} eq "default") and
+                        ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
+                        ($r->{'gpudevice'} ne '')
+                       ){
+                        @devices_deny = grep { $_ !=  $r->{'gpudevice'} } @devices_deny;
+                    }
+                }
+                print_log(3,"Deny NVIDIA GPUs: @devices_deny");
+                my $devices_cgroup = $Cgroup_directory_collection_links."/devices/".$Cpuset_path_job."/devices.deny";
+                foreach my $dev (@devices_deny){
+                    if (system("oardodo /bin/echo 'c 195:$dev rwm' > $devices_cgroup")) {
+                        exit_myself(5,"Failed to set the devices.deny to c 195:$dev rwm");
+                    }
+                }
+            }
         }
 
         # Assign the corresponding share of memory if memory cgroup enabled.
@@ -522,7 +559,7 @@ sub exit_myself($$){
     my $exit_code = shift;
     my $str = shift;
 
-    warn("[job_resource_manager_cgroups][$Cpuset->{job_id}][ERROR] ".$str."\n");
+    warn("[job_resource_manager_cgroups][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][ERROR] ".$str."\n");
     exit($exit_code);
 }
 
@@ -532,7 +569,7 @@ sub print_log($$){
     my $str = shift;
 
     if ($l <= $Log_level){
-        print("[job_resource_manager_cgroups][$Cpuset->{job_id}][DEBUG] $str\n");
+        print("[job_resource_manager_cgroups][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][DEBUG] $str\n");
     }
 }
 

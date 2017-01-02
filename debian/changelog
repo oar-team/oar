@@ -1,3 +1,17 @@
+oar (2.5.8~rc1-1) unstable; urgency=medium
+
+  * New upstream release candidate 
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 02 Jan 2017 17:23:44 +0100
+
+oar (2.5.7-3) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * Fix recommends/suggests in oar-server-mysql: any variant of mysql can
+    do (Closes: #848477)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 19 Dec 2016 14:47:53 +0100
+
 oar (2.5.7-2~bpo8+1) jessie-backports; urgency=medium
 
   * Rebuild for jessie-backports.

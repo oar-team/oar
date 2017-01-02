@@ -2,7 +2,6 @@ $LOAD_PATH << '.'
 
 require 'oarrestapi_lib'
 
-USER=ENV['USER']
 $jobid = ""
 
 describe OarApi do
@@ -11,6 +10,7 @@ describe OarApi do
     # APIURI="http://www.grenoble.grid5000.fr/oarapi"
     #Object of OarApis class
     @oar_server = OarApi.new(APIURI)
+    @post_oar_server = OarApi.new(POST_APIURI)
   end
   describe "Submission" do  
     #Submitting a job
@@ -25,11 +25,11 @@ sleep 120
 "
       job = { 'resource' => "/nodes=1/core=2" , 'script' => script, 'scanscript' => 1 }
       lambda {
-         @oar_server.submit_job(job)
+         @post_oar_server.submit_job(job)
       }.should_not raise_exception
 
-      @oar_server.jobstatus['id'].to_i.should > 0  
-      $jobid=@oar_server.jobstatus['id']
+      @post_oar_server.jobstatus['id'].to_i.should > 0  
+      $jobid=@post_oar_server.jobstatus['id']
     end
   end
 
@@ -76,10 +76,10 @@ sleep 120
   describe "Deletion" do
     it "should delete the currently submitted job using the post api and jobid" do
       lambda {
-        @oar_server.del_job($jobid)
+        @post_oar_server.del_job($jobid)
       }.should_not raise_exception
 
-      @oar_server.deletestatus['status'].should == "Delete request registered"    
+      @post_oar_server.deletestatus['status'].should == "Delete request registered"    
     end
 
     #Check the queue to ensure the job deleted is no more there #Negative Test
