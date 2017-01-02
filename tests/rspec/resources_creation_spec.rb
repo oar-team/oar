@@ -5,7 +5,7 @@ require 'shared_examples'
 
 describe OarApi do
   before :all do
-    @oar_server = OarApi.new(APIURI)
+    @oar_server = OarApi.new(POST_APIURI)
   end
   
   describe "Array of resources submission" do

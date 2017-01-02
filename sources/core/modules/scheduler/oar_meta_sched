@@ -50,10 +50,7 @@ my $Log_scheduling = get_conf("SCHEDULER_LOG_DECISIONS");
 if (defined($Log_scheduling) and $Log_scheduling ne "yes") { $Log_scheduling = undef; }
 
 #minimum of seconds between each jobs
-my $Security_time_overhead = 1;
-if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
-    $Security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
-}
+my $Security_time_overhead = get_conf_with_default_param("SCHEDULER_JOB_SECURITY_TIME", 1);
 
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
@@ -93,10 +90,49 @@ my $current_time_sql = "0000-00-00 00:00:00";
 
 my $resa_admin_waiting_timeout = get_conf("RESERVATION_WAITING_RESOURCES_TIMEOUT");
 
+my $Extra_time_duration = get_conf_with_default_param("EXTRA_TIME_DURATION", 0);
+
 oar_debug("[MetaSched] Starting Meta Scheduler\n");
 
 ###########################################################################################################
-#Initialize Gantt tables with scheduled reservation jobs, Running jobs, toLaunch jobs and Launching jobs; #
+# Handle extra time requests                                                                              #
+###########################################################################################################
+
+sub process_extratime_requests($) {
+    my $dbh = shift;
+    OAR::IO::lock_table($dbh,['oarextratime']);
+    my $jobs = OAR::IO::get_jobs_for_extratime($dbh);
+    my $now = OAR::IO::get_date($dbh);
+    foreach my $jobid (keys(%$jobs)) {
+        my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
+        my $from = $jobs->{$jobid}->{start_time} + $jobs->{$jobid}->{walltime} + $suspended;
+        my $to = $from + $jobs->{$jobid}->{pending};
+        my $fit = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $Security_time_overhead, $jobs->{$jobid}->{delay_next_jobs}) - $from;
+        if ($fit <= 0) {
+            oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}." s: no extra time could be added for now\n");
+            next;
+        } elsif ($fit < $jobs->{$jobid}->{pending}) {
+            oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}." s: only ".$fit." s added for now (delaying next jobs: ".$jobs->{$jobid}->{delay_next_jobs}.")\n");
+        } elsif ($fit == $jobs->{$jobid}->{pending}) {
+            oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}."s: granted (delaying next jobs: ".$jobs->{$jobid}->{delay_next_jobs}.")\n");
+        } else {
+            oar_debug("[MetaSched] [$jobid] bogus extra time: ".$jobs->{$jobid}->{pending}." < $fit, this should not happen\n");
+            next;
+        }
+        my $new_walltime =  $jobs->{$jobid}->{walltime} + $fit;
+        my $new_pending = $jobs->{$jobid}->{pending} - $fit;
+        OAR::IO::update_extratime($dbh, $jobid, $new_pending, ($new_pending == 0)?'NO':undef, $jobs->{$jobid}->{granted} + $fit, ($jobs->{$jobid}->{delay_next_jobs} eq 'YES')?($jobs->{$jobid}->{granted_with_delaying_next_jobs} + $fit):undef);
+        OAR::IO::update_walltime_for_job($dbh, $jobid, $new_walltime, $fit."s of extra time added to the job (new walltime = ${new_walltime}s)".(($jobs->{$jobid}->{delay_next_jobs} eq 'YES')?" (with delaying next jobs)":""));
+    }
+    OAR::IO::unlock_table($dbh);
+}
+
+if ($Extra_time_duration =~ /^{.*}$/ or $Extra_time_duration >= 0) {
+    process_extratime_requests($base);
+}
+
+###########################################################################################################
+# Initialize Gantt tables with scheduled reservation jobs, Running jobs, toLaunch jobs and Launching jobs #
 ###########################################################################################################
 
 # First get resources that we must add for each reservation jobs
@@ -642,7 +678,11 @@ sub check_reservation_jobs($$){
 sub check_jobs_to_kill(){
     oar_debug("[MetaSched] Begin precessing of besteffort jobs to kill\n");
     my $return = 0;
-    my %nodes_for_jobs_to_launch = OAR::IO::get_gantt_resources_for_jobs_to_launch($base,$current_time_sec);
+    # Delete besteffort jobs in advance to let enough time to get back the nodes
+    # in a good shape for the reservations
+    my $besteffort_kill_duration = get_conf_with_default_param("SCHEDULER_BESTEFFORT_KILL_DURATION_BEFORE_RESERVATION", 0);
+    $besteffort_kill_duration = $Security_time_overhead if ($besteffort_kill_duration < $Security_time_overhead);
+    my %nodes_for_jobs_to_launch = OAR::IO::get_gantt_resources_for_jobs_to_launch($base,$current_time_sec + $besteffort_kill_duration);
     my %fragged_jobs = ();
     foreach my $r (keys(%nodes_for_jobs_to_launch)){
         if (defined($besteffort_resource_occupation{$r})) {

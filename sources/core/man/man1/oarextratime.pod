@@ -1,0 +1,65 @@
+=head1 NAME
+
+oarextratime - request or query extra time for a job handled by the OAR batch scheduler.
+
+=head1 SYNOPSIS
+
+B<oarextratime> [options] <job_id> [duration]
+
+=head1 DESCRIPTION
+
+This command allows users to request or query extra time for a job.
+
+If I<duration> is given, the command requests the addition of that duration to the walltime of the job, or update a previous request.
+
+If I<duration> is not given, the command shows the current extra time status for the job.
+
+Job must be I<running>.  Extra time is to be given as an number of seconds.
+
+Once a request is registered, it will by handled during the next pass of scheduling and granted if it fits with other jobs.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-D, --delay-next-jobs>
+
+Request extra time to possibly delay next batch jobs (but not advance reservations), if needed in order to fit in the resources allocation. Warning: this implies delaying any other batch jobs, including the ones from other users. Using this option may be prohibited.
+
+=item B<-h, --help>
+
+Print help command message.
+
+=item B<-V, --version>
+
+Print OAR version.
+
+=back
+
+=head1 NOTES
+
+The extra time functionality allows one to increase the I<walltime> of a job, as an emergency measure when some more time is critically needed to complete a work. There is no warranty that extra time can be granted, since it depends on the resources availability (next jobs).
+
+I<Please mind the walltime of the job and do not rely too much on extra time.>
+
+The shell environment variables of the job are not updated (OAR_JOB_WALLTIME, OAR_JOB_WALLTIME_SECONDS). 
+
+Extra time events for a job are listed in the I<oarstat> output.
+
+As per configuration, the extra time functionality may be disabled in your installation.
+
+As per configuration, an extra time request may only be possible some time before the predicted end of the job.
+
+Configuration can be set per queue.
+
+I<Read your local documentation or ask your administrator(s) to know the configured settings.>
+
+The extra time functionality does not support the computation of the resources shared allocation in the case of jobs of type timesharing or container/inner or placeholder/allowed.
+
+=head1 SEE ALSO
+
+oarstat(1), oarsub(1), oardel(1)
+
+=head1 COPYRIGHTS
+
+ Copyright 2003-2016 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
