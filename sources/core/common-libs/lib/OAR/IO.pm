@@ -5201,7 +5201,8 @@ sub get_current_assigned_nodes($) {
                                 FROM assigned_resources, resources
                                 WHERE
                                     assigned_resources.assigned_resource_index = \'CURRENT\' AND
-                                    resources.resource_id = assigned_resources.resource_id
+                                    resources.resource_id = assigned_resources.resource_id AND
+                                    resources.type = \'default\'
                             ");
     $sth->execute();
     my %result;
@@ -5211,28 +5212,6 @@ sub get_current_assigned_nodes($) {
     $sth->finish();
 
     return(\%result);
-}
-
-
-# get_current_assigned_resources
-# returns the current resources
-# parameters : base
-sub get_current_assigned_resources($) {
-    my $dbh = shift;
-
-    my $sth = $dbh->prepare("   SELECT resource_id
-                                FROM assigned_resources
-                                WHERE
-                                    assigned_resource_index = \'CURRENT\'
-                            ");
-    $sth->execute();
-    my @result;
-    while (my $ref = $sth->fetchrow_hashref()){
-        push(@result, $ref->{resource_id});
-    }
-    $sth->finish();
-
-    return(@result);
 }
 
 
