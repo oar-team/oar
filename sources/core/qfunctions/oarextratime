@@ -24,7 +24,7 @@ Manage extra time requests for a job.
 - If no duration is given, the command shows the current extra time status for
   the job.
 - If a duration is given, the command requests the addition of that duration to
-  the walltime of the job, or update a previous request.
+  the walltime of the job, or update a pending request.
 The extra time duration is to be given as a number of seconds.
 The job must be running to request extra time.
 

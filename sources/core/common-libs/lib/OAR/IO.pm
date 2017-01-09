@@ -7710,8 +7710,8 @@ sub update_extratime($$$$$$) {
     my $delay_next_jobs = shift;
     my $granted = shift;
     my $granted_with_delaying_next_jobs = shift;
-    $dbh->do("UPDATE extratime SET pending=$pending,".
-        ((defined($delay_next_jobs))?"delay_next_jobs='$delay_next_jobs'":"").
+    $dbh->do("UPDATE extratime SET pending=$pending".
+        ((defined($delay_next_jobs))?",delay_next_jobs='$delay_next_jobs'":"").
         ((defined($granted))?",granted=$granted":"").
         ((defined($granted_with_delaying_next_jobs))?",granted_with_delaying_next_jobs=$granted_with_delaying_next_jobs":"").
         " WHERE job_id = $job_id");
