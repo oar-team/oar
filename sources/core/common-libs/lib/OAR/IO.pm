@@ -198,7 +198,7 @@ sub add_extratime($$$$);
 sub update_extratime($$$$$$);
 sub get_extratime_for_job($$);
 sub get_jobs_for_extratime($);
-sub get_possible_job_end_time_in_interval($$$$$);
+sub get_possible_job_end_time_in_interval($$$$$$);
 sub update_walltime_for_job($$$$);
 sub clean_past_extratime_requests($);
 
@@ -7741,7 +7741,8 @@ WHERE
   j.state = 'Running' AND
   j.job_id = e.job_id AND
   j.job_id = m.moldable_job_id AND
-  j.assigned_moldable_job = a.moldable_job_id
+  j.assigned_moldable_job = a.moldable_job_id AND
+  e.pending > 0
 EOS
     my $sth = $dbh->prepare($req);
     $sth->execute();
@@ -7762,26 +7763,31 @@ EOS
 
 # Compute the possible end time for a job in an interval of the gantt of the predicted jobs
 # Args: dbh, interval boundaries, scheduler job security time, delay_next_jobs
-sub get_possible_job_end_time_in_interval($$$$$) {
+sub get_possible_job_end_time_in_interval($$$$$$) {
     my $dbh = shift;
     my $from = shift;
     my $to = shift;
+    my $resources = shift;
     my $scheduler_job_security_time = shift;
     my $delay_next_jobs = shift;
     my $first = $to;
     $to += $scheduler_job_security_time;
     my $only_adv_reservations = ($delay_next_jobs eq 'YES')?"j.reservation != 'None' AND":"";
+    my $resource_list = join(", ", @$resources);
+    # NB: we do not remove jobs form the same user, because other jobs can be behind and this may change
+    # the scheduling for other users. The user can always delete his job if needed for extratime.
     my $req = <<EOS;
 SELECT
   DISTINCT gp.start_time
 FROM 
-  jobs j, moldable_job_descriptions m, gantt_jobs_predictions gp
+  jobs j, moldable_job_descriptions m, gantt_jobs_predictions gp, gantt_jobs_resources gr
 WHERE
   j.job_id = m.moldable_job_id AND
   $only_adv_reservations
   gp.moldable_job_id = m.moldable_id AND
   gp.start_time > $from AND
   gp.start_time <= $to AND
+  gr.moldable_job_id = gp.moldable_job_id AND
   NOT EXISTS (
     SELECT
       t.job_id
@@ -7790,7 +7796,8 @@ WHERE
     WHERE
       t.job_id = j.job_id AND
       t.type = 'besteffort'
-  )
+  ) AND
+  gr.resource_id IN ( $resource_list )
 EOS
     my $sth = $dbh->prepare($req);
     $sth->execute();
