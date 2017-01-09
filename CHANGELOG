@@ -9,6 +9,7 @@ version 2.5.8:
     (increase the walltime). See the oarextratime command and oar.conf
   - [scheduler] fix the besteffort + deploy VS adv. reservation case
   - [api] some improvement in the Apache configuration and tests
+  - [finaud] bugfix: make pingchecker run only on resources of type default
 
 version 2.5.7:
 --------------
