@@ -390,7 +390,7 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 #EXTRA_TIME_REQUEST_DELAY=0
 
 # Set the minimum walltime of jobs for which extra time can be requested
-# Default is 0, i.e. minimum walltime
+# Default is 0, i.e. no minimum walltime
 #EXTRA_TIME_MINIMUM_WALLTIME=0
 
 # List users (* for all) for which extra time can delay the next batch jobs (i.e. only advance reserations cannot be moved)
