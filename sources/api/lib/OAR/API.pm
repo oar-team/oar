@@ -1222,18 +1222,24 @@ sub check_job_update($$) {
     exit 0;
   }
   elsif  ($job->{method} eq "extratime") {
-    unless ( $job->{duration} ) { 
-      ERROR 400, 'Missing Required Field',
-        'Extratime request must have a duration field';
+    if (not defined($job->{duration})) {
+      ERROR(400, 'Missing Required Field', 'Extratime request must have a duration field');
       exit 0;
-    }
+    } 
+    if ($job->{duration} !~ /^\d+$/) { 
+      ERROR(400, 'Invalid Field', 'Duration field must be an integer');
+      exit 0;
+    } 
   }
   elsif  ($job->{method} eq "signal") {
-    unless ( $job->{signal} ) { 
-      ERROR 400, 'Missing Required Field',
-        'Signal request must have a signal field';
+    if (not defined($job->{signal})) {
+      ERROR(400, 'Missing Required Field', 'Signal request must have a signal field');
       exit 0;
-    }
+    } 
+    if ($job->{signal} !~ /^\d+$/ ) { 
+      ERROR(400, 'Invalid Field', 'Signal field must be an integer');
+      exit 0;
+    } 
   }
 
   return $job;
