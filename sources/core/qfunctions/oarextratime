@@ -63,7 +63,7 @@ my $dbh = OAR::IO::connect();
 if (not defined($requested_duration)) {
     my ($extratime, $job_state, $job_walltime) = OAR::Extratime::get($dbh, $jobid);
     if ($job_state eq "Running") {
-        print("Extra time status for job $jobid:\n");
+        print("Extra time status for job $jobid (job is running):\n");
         printf(" Current job walltime:        %8ds\n",$job_walltime);
         printf(" Maximum possible extra time: %8ds\n",$extratime->{possible});
         printf(" Already granted extra time:  %8ds%s\n",$extratime->{granted},(exists($extratime->{granted_with_delaying_next_jobs})?" (of which ".$extratime->{granted_with_delaying_next_jobs}."s may have delayed other jobs)":""));
