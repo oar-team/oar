@@ -1226,8 +1226,8 @@ sub check_job_update($$) {
       ERROR(400, 'Missing Required Field', 'Extratime request must have a duration field');
       exit 0;
     } 
-    if ($job->{duration} !~ /^\d+$/) { 
-      ERROR(400, 'Invalid Field', 'Duration field must be an integer');
+    if ($job->{duration} !~ /^@?\d+$/) { 
+      ERROR(400, 'Invalid Field', 'Duration field must be an integer (possibly prefixed by @)');
       exit 0;
     } 
   }

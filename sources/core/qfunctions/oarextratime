@@ -53,7 +53,7 @@ GetOptions (
 
 my $jobid = shift;
 my $requested_duration = shift;
-if (not defined($jobid) or (not defined($requested_duration) and defined($delay_next_jobs)) or (defined($requested_duration) and $requested_duration !~ /^\d+$/)) {
+if (not defined($jobid) or (not defined($requested_duration) and defined($delay_next_jobs)) or (defined($requested_duration) and $requested_duration !~ /^@?\d+$/)) {
     print(usage());
     exit(4);
 }
