@@ -506,7 +506,7 @@ SWITCH: for ($q) {
         OAR::API::add_nodes_uris($nodes,$ext,'');
         $data->{'nodes'}=$nodes;
     }
-    ($data->{extratime},) = OAR::Stat::get_job_extratime($jobid);
+    ($data->{'walltime-change'},) = OAR::Stat::get_job_extratime($jobid);
     my $result = OAR::API::struct_job($data,$STRUCTURE);
     OAR::API::add_job_uris($result,$ext);
     OAR::Stat::close_db_connection; 
@@ -710,7 +710,7 @@ SWITCH: for ($q) {
       $status = "Signal sending request registered"; 
     }
     # Extratime
-    elsif ( $job->{method} eq "extratime" ) {
+    elsif ( $job->{method} eq "walltime" ) {
       # nothing here, see below
     }
     else {
@@ -720,7 +720,7 @@ SWITCH: for ($q) {
 
     my $message;
     my $http_status;
-    if ( $job->{method} eq "extratime" ) {
+    if ( $job->{method} eq "walltime" ) {
       # Check and get the submitted data
       # From encoded data
       my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,

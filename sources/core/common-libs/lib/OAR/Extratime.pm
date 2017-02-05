@@ -131,51 +131,50 @@ sub request($$$$$) {
     }
     # Can extra time delay next jobs ?
     if (defined($delay_next_jobs) and $EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS)))) {
-        return (3, 403, "forbidden", "extra time for this job cannot delay other jobs");
+        return (3, 403, "forbidden", "walltime change for this job cannot delay other jobs");
     }
     
     # Is job walltime big enough to allow extra time ?
     if ($moldable->{moldable_walltime} < $EXTRA_TIME_MINIMUM_WALLTIME) {
-        return (3, 403, "forbidden", "extra time request is not allowed for a job with walltime < ${EXTRA_TIME_MINIMUM_WALLTIME}s");
+        return (3, 403, "forbidden", "walltime change is not allowed for a job with walltime < ${EXTRA_TIME_MINIMUM_WALLTIME}s");
     }
     
+    # Handle the case where extratime duration is given as a new absolute walltime or is negative
+    if ($requested_extratime =~ /^(\d+)$/) {
+        $requested_extratime = $1 - $moldable->{moldable_walltime};
+    } elsif ($requested_extratime =~ /^([-+]\d+)$/) {
+        $requested_extratime = $1;
+    }
+
+    # For negative extratime, do not allow end time before now
+    my $job_remaining_time = $job->{start_time} + $moldable->{moldable_walltime} + $suspended - $now;
+    if ($job_remaining_time < - $requested_extratime) { 
+        $requested_extratime = - $job_remaining_time;
+    }
+
     # Is job old enough for an extratime request ?
     my $now = OAR::IO::get_date($dbh);
     my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
     my $allowed_request_date = $job->{start_time} + $moldable->{moldable_walltime} + $suspended - $EXTRA_TIME_REQUEST_DELAY;
-    if ($EXTRA_TIME_REQUEST_DELAY > 0 and $allowed_request_date > $now) {
-        return (3, 403, "forbidden", "extra time request is not possible yet (only possible in the last ".$EXTRA_TIME_REQUEST_DELAY."s before the predicted end of the job)");
-    }
-
-    # Handle the case where extratime duration is given as a new absolute walltime or is negative
-    if ($requested_extratime =~ /^@(\d+)$/) {
-        $requested_extratime = $1 - $moldable->{moldable_walltime};
-    } elsif ($requested_extratime =~ /^-(\d+)$/) {
-        $requested_extratime = 0 - $1;
-    } elsif ($requested_extratime =~ /^+?(\d+)$/) {
-        $requested_extratime = $1;
-    }
-    # For negative extratime, for new end time to be in the future 
-    my $job_remaining_time = $job->{start_time} + $moldable->{moldable_walltime} + $suspended - $now;
-    if ($job_remaining_time < - $requested_extratime) { 
-        $requested_extratime = - $job_remaining_time;
+    if ($requested_extratime > 0 and $EXTRA_TIME_REQUEST_DELAY > 0 and $allowed_request_date > $now) {
+        return (3, 403, "forbidden", "walltime increase is not possible yet (only possible in the last ".$EXTRA_TIME_REQUEST_DELAY."s before the predicted end of the job)");
     }
 
     OAR::IO::lock_table($dbh,['oarextratime']);
     my $current_extratime = OAR::IO::get_extratime_for_job($dbh, $job->{job_id}); # locked here
     if (defined($current_extratime)) { # Update a request
         if ($current_extratime->{granted} + $requested_extratime > $EXTRA_TIME_DURATION and not grep(/^$lusr$/,('root','oar'))) { 
-            @result = (3, 503, "forbidden", "request cannot be accepted because job cannot get more than ".$EXTRA_TIME_DURATION."s of extra time");
+            @result = (3, 503, "forbidden", "request cannot be updated because the walltime cannot increase for more than ".$EXTRA_TIME_DURATION."s");
         } else {
             OAR::IO::update_extratime($dbh,$job->{job_id},$requested_extratime, ((defined($delay_next_jobs) and $requested_extratime > 0)?'YES':'NO'), $EXTRA_TIME_INCREMENT, undef, undef);
-            @result = (0, 202, "accepted", "extra time request updated for job ".$job->{job_id}." is accepted, it will be handled shortly");
+            @result = (0, 202, "accepted", "walltime change request updated for job ".$job->{job_id}.", it will be handled shortly");
         }
     } else { # New request
         if ($requested_extratime > $EXTRA_TIME_DURATION and not grep(/^$lusr$/,('root','oar'))) {
-            @result = (3, 503, "forbidden", "request cannot be accepted because job cannot get more than ".$EXTRA_TIME_DURATION."s of extra time");
+            @result = (3, 503, "forbidden", "request cannot be accepted because the walltime cannot increase for more than ".$EXTRA_TIME_DURATION."s");
         } else {
             OAR::IO::add_extratime($dbh,$job->{job_id},$requested_extratime,((defined($delay_next_jobs) and $requested_extratime > 0)?'YES':'NO', $EXTRA_TIME_INCREMENT));
-            @result = (0, 202, "accepted", "extra time request registered for job ".$job->{job_id}." is accepted, it will be handled shortly");
+            @result = (0, 202, "accepted", "walltime change request accepted for job ".$job->{job_id}.", it will be handled shortly");
         }
     }
     OAR::IO::unlock_table($dbh);

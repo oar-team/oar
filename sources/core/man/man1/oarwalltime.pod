@@ -1,0 +1,67 @@
+=head1 NAME
+
+oarwalltime - query or request a change of the walltime of a job handled by the OAR batch scheduler.
+
+=head1 SYNOPSIS
+
+B<oarwalltime> [options] <job_id> [[+/-]duration]
+
+=head1 DESCRIPTION
+
+This command manages requests to change the walltime of a job.
+
+If no I<duration> is given, the command shows the current walltime change status for the job.
+
+If a I<duration> is given, the command requests a change of the walltime of the job, or update a pending request.
+
+The I<duration> is to be given as a number of seconds, prefixed by + or - to increase of decrease the walltime. Otherwise it is considered a new walltime value.
+
+The job must be running to request extra time.
+
+Once a request is registered, it will by handled during the next pass of scheduling and granted if it fits with other jobs.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-D, --delay-next-jobs>
+
+Request walltime increase to possibly delay next batch jobs (but not advance reservations), if requiered to fit in the resources allocation. Warning: this implies delaying any other batch jobs, including the ones from other users. Using this option may be prohibited.
+
+=item B<-h, --help>
+
+Print help command message.
+
+=item B<-V, --version>
+
+Print OAR version.
+
+=back
+
+=head1 NOTES
+
+This functionality allows one to increase the I<walltime> of a job, as an emergency measure when some more time is critically needed to complete a work. There is no warranty that walltime can be increased, since it depends on the resources availability (next jobs).
+
+I<Please mind the walltime of the job and do not rely too much on extra time.>
+
+The shell environment variables of the job are not updated (OAR_JOB_WALLTIME, OAR_JOB_WALLTIME_SECONDS). 
+
+Walltime change events for a job are listed in the I<oarstat> output.
+
+As per configuration, the walltime change functionality may be disabled in your installation.
+
+As per configuration, a walltime increase request may only be possible some time before the predicted end of the job.
+
+Configuration can be set per queue.
+
+I<Read your local documentation or ask your administrator(s) to know the configured settings.>
+
+The walltime change functionality does not support the computation of the shared allocation of resources, in the case of jobs of type timesharing or container/inner or placeholder/allowed.
+
+=head1 SEE ALSO
+
+oarstat(1), oarsub(1), oardel(1)
+
+=head1 COPYRIGHTS
+
+ Copyright 2003-2017 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

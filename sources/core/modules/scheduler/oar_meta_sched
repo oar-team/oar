@@ -115,26 +115,20 @@ sub process_extratime_requests($) {
             my $to = $from + $fit;
             $fit = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $jobs->{$jobid}->{resources}, $Security_time_overhead, $jobs->{$jobid}->{delay_next_jobs}) - $from;
             if ($fit <= 0) {
-                oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}."s: no extra time could be added for now\n");
-                next;
-            } elsif ($fit < $jobs->{$jobid}->{pending}) {
-                oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}."s: only ".$fit." s added for now (delaying next jobs: ".$jobs->{$jobid}->{delay_next_jobs}.")\n");
-            } elsif ($fit == $jobs->{$jobid}->{pending}) {
-                oar_debug("[MetaSched] [$jobid] extra time request for ".$jobs->{$jobid}->{pending}."s: granted (delaying next jobs: ".$jobs->{$jobid}->{delay_next_jobs}.")\n");
-            } else {
-                oar_debug("[MetaSched] [$jobid] bogus extra time: ".$jobs->{$jobid}->{pending}." < $fit, this should not happen\n");
+                oar_debug("[MetaSched] [$jobid] walltime change for ".$jobs->{$jobid}->{pending}."s: walltime could not increase for now\n");
                 next;
             }
         }
         my $new_walltime =  $jobs->{$jobid}->{walltime} + $fit;
         my $new_pending = $jobs->{$jobid}->{pending} - $fit;
+        oar_debug("[MetaSched] [$jobid] walltime change: ".(($fit>0)?"+$fit":"$fit"))."s (pending: ".$new_pending."s, delaying next jobs: ".$jobs->{$jobid}->{delay_next_jobs}.")\n");
         OAR::IO::update_extratime($dbh, $jobid, $new_pending, ($new_pending == 0)?'NO':undef, undef, $jobs->{$jobid}->{granted} + $fit, ($jobs->{$jobid}->{delay_next_jobs} eq 'YES' and $fit > 0)?($jobs->{$jobid}->{granted_with_delaying_next_jobs} + $fit):undef);
         OAR::IO::update_walltime_for_job($dbh, $jobid, $new_walltime, "new walltime for job: ${new_walltime}s (".(($fit>0)?"+$fit":"$fit"))."s)".(($jobs->{$jobid}->{delay_next_jobs} eq 'YES')?" with delaying next jobs":""));
     }
     OAR::IO::unlock_table($dbh);
 }
 
-if ($Extra_time_duration =~ /^{.*}$/ or $Extra_time_duration >= 0) {
+if ($Extra_time_duration ne "-1"  and $Extra_time_duration ne "0") {
     process_extratime_requests($base);
 }
 
