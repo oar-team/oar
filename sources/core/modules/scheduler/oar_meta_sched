@@ -11,6 +11,7 @@ use Data::Dumper;
 use OAR::Tools;
 use OAR::Modules::Hulot;
 use OAR::Schedulers::GanttHoleStorage;
+use OAR::Extratime;
 
 # Log category
 set_current_log_category('scheduler');
@@ -106,6 +107,9 @@ sub process_extratime_requests($) {
     foreach my $jobid (keys(%$jobs)) {
         my $fit = $jobs->{$jobid}->{pending}; 
         if ($jobs->{$jobid}->{pending} > 0) {
+            if (defined($job->{$jobid}->{increment} and $job->{jobid}->{increment} ne "0") {
+                $fit = OAR::Extratime::walltime_percent($job->{$jobid}->{increment}, $job->{$jobid}->{walltime});
+            }
             my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
             my $from = $jobs->{$jobid}->{start_time} + $jobs->{$jobid}->{walltime} + $suspended;
             my $to = $from + $fit;
@@ -124,7 +128,7 @@ sub process_extratime_requests($) {
         }
         my $new_walltime =  $jobs->{$jobid}->{walltime} + $fit;
         my $new_pending = $jobs->{$jobid}->{pending} - $fit;
-        OAR::IO::update_extratime($dbh, $jobid, $new_pending, ($new_pending == 0)?'NO':undef, $jobs->{$jobid}->{granted} + $fit, ($jobs->{$jobid}->{delay_next_jobs} eq 'YES')?($jobs->{$jobid}->{granted_with_delaying_next_jobs} + $fit):undef);
+        OAR::IO::update_extratime($dbh, $jobid, $new_pending, ($new_pending == 0)?'NO':undef, undef, $jobs->{$jobid}->{granted} + $fit, ($jobs->{$jobid}->{delay_next_jobs} eq 'YES' and $fit > 0)?($jobs->{$jobid}->{granted_with_delaying_next_jobs} + $fit):undef);
         OAR::IO::update_walltime_for_job($dbh, $jobid, $new_walltime, "new walltime for job: ${new_walltime}s (".(($fit>0)?"+$fit":"$fit"))."s)".(($jobs->{$jobid}->{delay_next_jobs} eq 'YES')?" with delaying next jobs":""));
     }
     OAR::IO::unlock_table($dbh);

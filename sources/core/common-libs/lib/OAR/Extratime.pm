@@ -13,6 +13,18 @@ my $EXTRA_TIME_REQUEST_DELAY;
 my $EXTRA_TIME_MINIMUM_WALLTIME;
 my $EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS;
 
+sub walltime_percent($$) {
+    my $value = shift;
+    my $walltime = shift;
+    if ($value =~ /^(\d+)(%?)$/);
+        if (defined($2)) {
+             return $walltime * $1 / 100;
+        }
+    }
+    # value is not a percentage, return itself 
+    return $value;
+}
+
 sub get($$) {
     my $dbh = shift;
     my $jobid = shift;
@@ -27,6 +39,7 @@ sub get($$) {
     $REMOTE_HOST = OAR::Conf::get_conf("SERVER_HOSTNAME");
     $REMOTE_PORT = OAR::Conf::get_conf("SERVER_PORT");
     $EXTRA_TIME_DURATION = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DURATION", $job->{queue_name}, 0);
+    $EXTRA_TIME_INCREMENT = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_INCREMENT", $job->{queue_name}, 0);
     $EXTRA_TIME_REQUEST_DELAY = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_REQUEST_DELAY", $job->{queue_name}, 0);
     $EXTRA_TIME_MINIMUM_WALLTIME = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_MINIMUM_WALLTIME", $job->{queue_name}, 0);
     $EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", $job->{queue_name}, "");
@@ -34,6 +47,9 @@ sub get($$) {
     my $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
     my $now = OAR::IO::get_date($dbh);
     my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
+
+    $EXTRA_TIME_DURATION = walltime_percent($EXTRA_TIME_DURATION, $moldable->{moldable_walltime});
+    $EXTRA_TIME_REQUEST_DELAY = walltime_percent($EXTRA_TIME_REQUEST_DELAY, $moldable->{moldable_walltime});
 
     my $allowed_request_date = undef; 
     if ($job->{state} eq "Running") {
@@ -81,9 +97,14 @@ sub request($$$$$) {
     $REMOTE_HOST = OAR::Conf::get_conf("SERVER_HOSTNAME");
     $REMOTE_PORT = OAR::Conf::get_conf("SERVER_PORT");
     $EXTRA_TIME_DURATION = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DURATION", $job->{queue_name}, 0);
+    $EXTRA_TIME_INCREMENT = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_INCREMENT", $job->{queue_name}, 0);
     $EXTRA_TIME_REQUEST_DELAY = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_REQUEST_DELAY", $job->{queue_name}, 0);
     $EXTRA_TIME_MINIMUM_WALLTIME = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_MINIMUM_WALLTIME", $job->{queue_name}, 0);
     $EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS = OAR::Conf::get_conf_from_hash_with_default_value("EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS", $job->{queue_name}, "");
+
+    $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
+    $EXTRA_TIME_DURATION = walltime_percent($EXTRA_TIME_DURATION, $moldable->{moldable_walltime});
+    $EXTRA_TIME_REQUEST_DELAY = walltime_percent($EXTRA_TIME_REQUEST_DELAY, $moldable->{moldable_walltime});
 
     # Is extratime possible ?
     if (not defined($lusr)) {
@@ -114,7 +135,6 @@ sub request($$$$$) {
     }
     
     # Is job walltime big enough to allow extra time ?
-    $moldable = OAR::IO::get_current_moldable_job($dbh, $job->{assigned_moldable_job});
     if ($moldable->{moldable_walltime} < $EXTRA_TIME_MINIMUM_WALLTIME) {
         return (3, 403, "forbidden", "extra time request is not allowed for a job with walltime < ${EXTRA_TIME_MINIMUM_WALLTIME}s");
     }
@@ -147,15 +167,15 @@ sub request($$$$$) {
         if ($current_extratime->{granted} + $requested_extratime > $EXTRA_TIME_DURATION and not grep(/^$lusr$/,('root','oar'))) { 
             @result = (3, 503, "forbidden", "request cannot be accepted because job cannot get more than ".$EXTRA_TIME_DURATION."s of extra time");
         } else {
-            OAR::IO::update_extratime($dbh,$job->{job_id},$requested_extratime, ((defined($delay_next_jobs) and $requested_extratime > 0)?'YES':'NO'), undef, undef);
-            @result = (0, 202, "accepted", "extra time request updated for job ".$job->{job_id}.". It will be handled shortly");
+            OAR::IO::update_extratime($dbh,$job->{job_id},$requested_extratime, ((defined($delay_next_jobs) and $requested_extratime > 0)?'YES':'NO'), $EXTRA_TIME_INCREMENT, undef, undef);
+            @result = (0, 202, "accepted", "extra time request updated for job ".$job->{job_id}." is accepted, it will be handled shortly");
         }
     } else { # New request
         if ($requested_extratime > $EXTRA_TIME_DURATION and not grep(/^$lusr$/,('root','oar'))) {
             @result = (3, 503, "forbidden", "request cannot be accepted because job cannot get more than ".$EXTRA_TIME_DURATION."s of extra time");
         } else {
-            OAR::IO::add_extratime($dbh,$job->{job_id},$requested_extratime,((defined($delay_next_jobs) and $requested_extratime > 0)?'YES':'NO'));
-            @result = (0, 202, "accepted", "extra time request registered for job ".$job->{job_id}.". It will be handled shortly");
+            OAR::IO::add_extratime($dbh,$job->{job_id},$requested_extratime,((defined($delay_next_jobs) and $requested_extratime > 0)?'YES':'NO', $EXTRA_TIME_INCREMENT));
+            @result = (0, 202, "accepted", "extra time request registered for job ".$job->{job_id}." is accepted, it will be handled shortly");
         }
     }
     OAR::IO::unlock_table($dbh);
