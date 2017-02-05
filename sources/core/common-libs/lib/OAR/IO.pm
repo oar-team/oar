@@ -7742,7 +7742,7 @@ WHERE
   j.job_id = e.job_id AND
   j.job_id = m.moldable_job_id AND
   j.assigned_moldable_job = a.moldable_job_id AND
-  e.pending > 0
+  e.pending != 0
 EOS
     my $sth = $dbh->prepare($req);
     $sth->execute();

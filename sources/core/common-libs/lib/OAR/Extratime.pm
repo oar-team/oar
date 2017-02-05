@@ -127,12 +127,18 @@ sub request($$$$$) {
         return (3, 403, "forbidden", "extra time request is not possible yet (only possible in the last ".$EXTRA_TIME_REQUEST_DELAY."s before the predicted end of the job)");
     }
 
-    # Handle the case where extratime duration is given as a new absolute walltime
-    if ($requested_extratime =~ /^@\d+$/) {
+    # Handle the case where extratime duration is given as a new absolute walltime or is negative
+    if ($requested_extratime =~ /^@(\d+)$/) {
         $requested_extratime = $1 - $moldable->{moldable_walltime};
+    } elsif ($requested_extratime =~ /^-(\d+)$/) {
+        $requested_extratime = 0 - $1;
+    } elsif ($requested_extratime =~ /^+?(\d+)$/) {
+        $requested_extratime = $1;
     }
-    if ($requested_extratime < 0) { 
-        $requested_extratime = 0;
+    # For negative extratime, for new end time to be in the future 
+    my $job_remaining_time = $job->{start_time} + $moldable->{moldable_walltime} + $suspended - $now;
+    if ($job_remaining_time < - $requested_extratime) { 
+        $requested_extratime = - $job_remaining_time;
     }
 
     OAR::IO::lock_table($dbh,['oarextratime']);
