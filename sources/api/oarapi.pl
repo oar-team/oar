@@ -35,7 +35,7 @@ use OAR::Conf qw(init_conf dump_conf get_conf_list get_conf is_conf set_value);
 use OAR::IO;
 use OAR::Stat;
 use OAR::Nodes;
-use OAR::Extratime;
+use OAR::Walltime;
 use OAR::Tools;
 use OAR::Version;
 use POSIX;
@@ -506,7 +506,7 @@ SWITCH: for ($q) {
         OAR::API::add_nodes_uris($nodes,$ext,'');
         $data->{'nodes'}=$nodes;
     }
-    ($data->{'walltime-change'},) = OAR::Stat::get_job_extratime($jobid);
+    ($data->{'walltime-change'},) = OAR::Stat::get_job_walltime_change($jobid);
     my $result = OAR::API::struct_job($data,$STRUCTURE);
     OAR::API::add_job_uris($result,$ext);
     OAR::Stat::close_db_connection; 
@@ -709,8 +709,8 @@ SWITCH: for ($q) {
       $cmd    = "$OARDODO_CMD $OARDEL_CMD -s $job->{signal} $jobid";
       $status = "Signal sending request registered"; 
     }
-    # Extratime
-    elsif ( $job->{method} eq "walltime" ) {
+    # Walltime change
+    elsif ( $job->{method} eq "walltime-change" ) {
       # nothing here, see below
     }
     else {
@@ -720,7 +720,7 @@ SWITCH: for ($q) {
 
     my $message;
     my $http_status;
-    if ( $job->{method} eq "walltime" ) {
+    if ( $job->{method} eq "walltime-change" ) {
       # Check and get the submitted data
       # From encoded data
       my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
@@ -729,7 +729,7 @@ SWITCH: for ($q) {
                                                  );
       my $error;
       ($error, $http_status, $status, $message) =
-        OAR::Extratime::request($dbh, $jobid, $authenticated_user, $job->{duration}, $job->{'delay_next_jobs'});
+        OAR::Walltime::request($dbh, $jobid, $authenticated_user, $job->{duration}, $job->{force}, $job->{'delay_next_jobs'});
       OAR::IO::disconnect($dbh);
 
       if ($error > 0) {

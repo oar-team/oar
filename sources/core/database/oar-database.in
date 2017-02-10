@@ -257,6 +257,7 @@ sub mysql_ro_user_privileges() {
     mysql_admin_exec_sql("GRANT SELECT ON $db_name.queues TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
     mysql_admin_exec_sql("GRANT SELECT ON $db_name.resource_logs TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
     mysql_admin_exec_sql("GRANT SELECT ON $db_name.resources TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.walltime_change TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
 }
 
 sub fix_ro_user_privileges() {
@@ -319,7 +320,7 @@ sub create_database() {
                                                   queues,
                                                   resource_logs,
                                                   resources,
-                                                  extratime,
+                                                  walltime_change,
                                                   admission_rules_id_seq,
                                                   event_logs_event_id_seq,
                                                   files_file_id_seq,

@@ -4,27 +4,52 @@ oarwalltime - query or request a change of the walltime of a job handled by the 
 
 =head1 SYNOPSIS
 
-B<oarwalltime> [options] <job_id> [[+/-]duration]
+B<oarwalltime> [options] <job_id> [<[+/-]new walltime>]
 
 =head1 DESCRIPTION
 
 This command manages requests to change the walltime of a job.
 
-If no I<duration> is given, the command shows the current walltime change status for the job.
+If no I<new walltime> is given, the command shows the current walltime change status for the job.
 
-If a I<duration> is given, the command requests a change of the walltime of the job, or update a pending request.
+If a I<new walltime> is given, the command requests a change of the walltime of the job, or update a previous request.
 
-The I<duration> is to be given as a number of seconds, prefixed by + or - to increase of decrease the walltime. Otherwise it is considered a new walltime value.
+The I<new walltime> is to be passed in the format [+-]h:m:s. If no sign is used,
+The value is a new walltime absolute value (like passed to oarsub). If prefixed
+by +, the request is an increase of the walltime by the passed value. If
+prefixed by -, it is a decrease request.
 
-The job must be running to request extra time.
+Walltime changes can only be requested for a running job.
+
+There is no warranty that walltime can be increased, since it depends on the resources availability (next jobs).
 
 Once a request is registered, it will by handled during the next pass of scheduling and granted if it fits with other jobs.
+
+As per configuration:
+
+=over
+
+=item * the walltime change functionality may be disabled in your installation, and if not there is a maximum to the possible walltime increase
+
+=item * a walltime increase request may only be applied some time before the predicted end of the job. That apply time may be computed as a percentage of the walltime of the job
+
+=item * a walltime increase may happen incrementally, so that other scheduled jobs get more priority. That increment may be computed as a percentage of the walltime of the job
+
+=item * the functionnality may be configured differently from one queue to another.
+
+=back
+
+I<Read your site's documentation or ask your administrator to know the configured settings.>
 
 =head1 OPTIONS
 
 =over
 
-=item B<-D, --delay-next-jobs>
+=item B<--force>
+
+Request walltime increase to be applied at once: immediatly and not incrementally.
+
+=item B<--delay-next-jobs>
 
 Request walltime increase to possibly delay next batch jobs (but not advance reservations), if requiered to fit in the resources allocation. Warning: this implies delaying any other batch jobs, including the ones from other users. Using this option may be prohibited.
 
@@ -40,21 +65,14 @@ Print OAR version.
 
 =head1 NOTES
 
-This functionality allows one to increase the I<walltime> of a job, as an emergency measure when some more time is critically needed to complete a work. There is no warranty that walltime can be increased, since it depends on the resources availability (next jobs).
 
-I<Please mind the walltime of the job and do not rely too much on extra time.>
+All changes are logged. Changes using the force or delay-next-jobs options are accounted.
+
+I<Please mind the walltime of the job and do not rely too much on that functionality.>
 
 The shell environment variables of the job are not updated (OAR_JOB_WALLTIME, OAR_JOB_WALLTIME_SECONDS). 
 
 Walltime change events for a job are listed in the I<oarstat> output.
-
-As per configuration, the walltime change functionality may be disabled in your installation.
-
-As per configuration, a walltime increase request may only be possible some time before the predicted end of the job.
-
-Configuration can be set per queue.
-
-I<Read your local documentation or ask your administrator(s) to know the configured settings.>
 
 The walltime change functionality does not support the computation of the shared allocation of resources, in the case of jobs of type timesharing or container/inner or placeholder/allowed.
 

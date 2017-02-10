@@ -370,48 +370,51 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 ###############################################################################
 
 ###########################################################################
-# OAR EXTRA TIME                                                          #
-# Allow users to request some extra time to finish a job. Extra time is   #
-# only granted if it does not conflict with the next jobs.                #
+# WALLTIME CHANGE
+# Allow users to request change to the walltime of a job. Change is only  #
+# granted if it does not conflict with the next jobs.                     #
 # WARNING: This functionnality does not handle the resource sharing with  #
-# jobs of type timesharing, container/inner, placeholder/allowed. Extra   #
-# time requests will not be granted, just like with regular jobs.         #
+# jobs of type timesharing, container/inner, placeholder/allowed.         #
 ###############################################################################
 #
-# Extra time duration limit
-# -1 means that the extra time functionality is disabled (global setting, cannot be used per queue)
-#  0 means that the extra time functionality is allowed for oar and root only (with no limit)
-# >0 sets the maximum duration of possible extra time users can request in seconds
-# If ending by "%", the value will be computed as a percentage of the current walltime of the job
-#  default is 0
-#EXTRA_TIME_DURATION=0
+# Walltime change max allowed extension
+# -1 means that the walltime change is disabled (global setting, cannot be used per queue)
+#  0 means that the walltime change is allowed for oar and root only (with no limit)
+# >0 sets the maximum extension of walltime users can request, in seconds
+# If ending by "%", the value will be computed as a percentage of the current walltime of the job.
+# Default is 0
+#WALLTIME_MAX_EXTENSION=0
 
-# Set extra time request delay: do not accept requests from users until delay seconds before the predicted end of the job
-# If ending by "%", the value will be computed as a percentage of the current walltime of the job
-# Default is 0, i.e. no delay
-# Delay does not apply for negative values
-#EXTRA_TIME_REQUEST_DELAY=0
-
-# Set the minimum walltime of jobs for which extra time can be requested
+# Set the minimum walltime of jobs for which change can be requested
 # Default is 0, i.e. no minimum walltime
-#EXTRA_TIME_MINIMUM_WALLTIME=0
+#WALLTIME_MIN_FOR_CHANGE=0
 
-# Set an increment so that extratime if added gradually
+# Set walltime change apply time: postpone the trial/application of the requested change to the given value in second before the predicted end of the job
+# If ending by "%", the value will be computed as a percentage of the current walltime of the job
+# Default is 0, i.e. not postponed
+# NB: negative changes are applied at once
+#WALLTIME_CHANGE_APPLY_TIME=0
+
+# Set an increment so that walltime change if added gradually
 # Default is 0, i.e. extratime is not gradual
-# Not that for negative values, extratime is never gradual
-#EXTRA_TIME_INCREMENT=0
+# NB: negative changes are applied at once
+#WALLTIME_INCREMENT=0
 
-# List users (* for all) for which extra time can delay the next batch jobs (i.e. only advance reserations cannot be moved)
+# List users (* for all) for which walltime change can be forced to apply at once (force no wait / no increment)
 # Default is "", i.e. only root and the oar user are allowed
-#EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS=""
+#WALLTIME_ALLOWED_USERS_TO_FORCE=""
+
+# List users (* for all) for which walltime change can delay the next batch jobs (i.e. only advance reserations cannot be moved)
+# Default is "", i.e. only root and the oar user are allowed
+#WALLTIME_ALLOWED_USERS_TO_DELAY_JOBS=""
 
 # Those 4 settings can also be provided per queue, using the Perl hash syntax with the queue names as the keys.
 # Not defined queues get the value associated to the _ key, or if not defined either, the default value.
 # e.g.:
 # - Allow extra time requests for up to 2 hours for the default queue only (0 for others):
-#EXTRA_TIME_DURATION="{default => 7200}"
-# - Allow any user to delay next jobs with requesting extra time for a job in all but the besteffort queue:
-#EXTRA_TIME_DELAY_NEXT_JOBS_ALLOWED_USERS="{_ => '*', besteffort => ''}"
+#WALLTIME_MAX_EXTENSION="{default => 7200}"
+# - Allow any user to force the walltime change of a job in all but the besteffort queue:
+#WALLTIME_ALLOWED_USERS_TO_FORCE="{_ => '*', besteffort => ''}"
 
 ###########################################################################
 # ENERGY SAVING                                                           #

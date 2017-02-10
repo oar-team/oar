@@ -6,7 +6,7 @@ use Data::Dumper;
 use OAR::Version;
 use OAR::IO;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
-use OAR::Extratime qw(get);
+use OAR::Walltime qw(get);
 
 my $base;
 my $current_date = -1;
@@ -565,9 +565,9 @@ sub get_job_duration($$){
     return(sprintf("%i:%02i:%02i", $h,$m,$s));
 }
 
-sub get_job_extratime($){
+sub get_job_walltime_change($){
     my $jobid = shift;
-    return OAR::Extratime::get($base,$jobid);
+    return OAR::Walltime::get($base,$jobid);
 }
 
 1;

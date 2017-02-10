@@ -1221,9 +1221,9 @@ sub check_job_update($$) {
       'A job update must have a "method" field!';
     exit 0;
   }
-  elsif  ($job->{method} eq "walltime") {
+  elsif  ($job->{method} eq "walltime-change") {
     if (not defined($job->{duration})) {
-      ERROR(400, 'Missing Required Field', 'Extratime request must have a duration field');
+      ERROR(400, 'Missing Required Field', 'Walltime change request must have a duration field');
       exit 0;
     } 
     if ($job->{duration} !~ /^[-,+]?\d+$/) { 
