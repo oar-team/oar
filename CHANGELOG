@@ -1,6 +1,8 @@
 OAR CHANGELOG
 =============
 
+  - [api] added POST /media/force to overwrite a file
+
 version 2.5.8:
 --------------
 

@@ -2260,10 +2260,11 @@ SWITCH: for ($q) {
   #
   #{{{ POST /media/<file> : Upload a file and create underlying directories
   #
-  $URI = qr{^/media/(.*)$};
+  $URI = qr{^/media(/force)*/(.*)$};
   OAR::API::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $filename=$1;
+    my $force=$1;
+    my $filename=$2;
     my $ext = OAR::API::set_ext($q,undef);
     (my $header, my $type) = OAR::API::set_output_format($ext);
 
@@ -2292,7 +2293,7 @@ SWITCH: for ($q) {
     $file =~ s|/~/|$user_infos[7]/|;  
 
     # Check if the file already exists
-    if (system("$OARDODO_CMD","test","-f","$file") == 0) {
+    if (system("$OARDODO_CMD","test","-f","$file") == 0 and ($force eq "" or not defined($force))) {
       OAR::API::ERROR(403, "File already exists", "The file already exists");
       last;
     }
