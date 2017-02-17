@@ -680,9 +680,9 @@ SWITCH: for ($q) {
     my $job;
     if ($q->param('POSTDATA')) {
       $job = OAR::API::check_job_update( $q->param('POSTDATA'), $q->content_type );
-    }
-    # From html form
-    else {
+    } elsif ($q->param('PUTDATA')) {
+      $job = OAR::API::check_job_update( $q->param('PUTDATA'), $q->content_type );
+    } else {# From html form
       $job = OAR::API::check_job_update( $q->Vars, $q->content_type );
     }
     
