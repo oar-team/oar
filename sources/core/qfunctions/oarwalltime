@@ -66,7 +66,6 @@ if (not defined($jobid) or $jobid !~ /^\d+$/ or (not defined($new_walltime) and 
     exit(4);
 }
 
-use Data::Dumper;
 my $dbh = OAR::IO::connect();
 # Command is a query only, no request
 if (not defined($new_walltime)) {
@@ -78,14 +77,14 @@ if (not defined($new_walltime)) {
     my @granted_with = grep(!/: 0:0:0$/,("forced: ".$walltime_change->{granted_with_force}, "delaying next jobs: ".$walltime_change->{granted_with_delay_next_jobs}));
     if ($state eq "Running") {
         print("Walltime change status for job $jobid (job is running):\n");
-        printf("  Current walltime: %11s\n",$walltime_change->{current_walltime});
+        printf("  Current walltime: %11s\n",$walltime_change->{walltime});
         printf("  Possible increase: %10s\n",$walltime_change->{possible});
         printf("  Already granted: %12s",$walltime_change->{granted});
         print ((@granted_with)?" (".join(", ",@granted_with).")\n":"\n");
         printf("  Pending/unsatisfied: %8s\n",$walltime_change->{pending},(defined($walltime_change->{delay_next_jobs}) and $walltime_change->{delay_next_jobs} eq "YES")?" (will possibly delay next jobs)":"");
     } else {
         print("Walltime change status for job $jobid (job is not running):\n");
-        printf("  Walltime: %11s\n",$walltime_change->{current_walltime});
+        printf("  Walltime: %11s\n",$walltime_change->{walltime});
         printf("  Granted: %12s",$walltime_change->{granted});
         print ((@granted_with)?" (".join(", ",@granted_with).")\n":"\n");
         printf("  Unsatisfied: %8s\n",$walltime_change->{pending},(defined($walltime_change->{delay_next_jobs}) and $walltime_change->{delay_next_jobs} eq "YES")?" (will possibly delay next jobs)":"");

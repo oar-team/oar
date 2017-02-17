@@ -44,7 +44,7 @@ sub get($$) {
     my $walltime_change = OAR::IO::get_walltime_change_for_job($dbh, $jobid); # no lock here
 
     my $moldable = OAR::IO::get_moldable_job($dbh, $job->{assigned_moldable_job});
-    $walltime_change->{current_walltime} = $moldable->{moldable_walltime};
+    $walltime_change->{walltime} = $moldable->{moldable_walltime};
 
     if (not defined($walltime_change->{pending})) {
         $walltime_change->{pending} = 0;
@@ -60,7 +60,7 @@ sub get($$) {
     }
 
     OAR::Conf::init_conf($ENV{OARCONFFILE});
-    my $Walltime_max_increase = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_MAX_INCREASE",0)), $job->{queue_name}, $walltime_change->{current_walltime} - $walltime_change->{granted}, 0);
+    my $Walltime_max_increase = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_MAX_INCREASE",0)), $job->{queue_name}, $walltime_change->{walltime} - $walltime_change->{granted}, 0);
     my $Walltime_min_for_change = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_MIN_FOR_CHANGE",0)), $job->{queue_name}, undef, 0);
     my $Walltime_users_allowed_to_force = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_FORCE","")), $job->{queue_name}, undef, "");
     my $Walltime_users_allowed_to_delay_jobs = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_DELAY_JOBS","")), $job->{queue_name}, undef, "");
@@ -68,7 +68,7 @@ sub get($$) {
     my $now = OAR::IO::get_date($dbh);
     my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
 
-    if ($Walltime_max_increase == 0 or $job->{state} ne "Running" or $walltime_change->{current_walltime} < $Walltime_min_for_change) {
+    if ($Walltime_max_increase == 0 or $job->{state} ne "Running" or $walltime_change->{walltime} < $Walltime_min_for_change) {
         $walltime_change->{possible} = 0;
     } else {
         $walltime_change->{possible} = $Walltime_max_increase;
@@ -89,7 +89,7 @@ sub get($$) {
     $walltime_change->{granted} = OAR::IO::duration_to_sql_signed($walltime_change->{granted});
     $walltime_change->{granted_with_force} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_force});
     $walltime_change->{granted_with_delay_next_jobs} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_delay_next_jobs});
-    $walltime_change->{current_walltime} = OAR::IO::duration_to_sql($walltime_change->{current_walltime});
+    $walltime_change->{walltime} = OAR::IO::duration_to_sql($walltime_change->{walltime});
 
     return ($walltime_change, $job->{state});
 }

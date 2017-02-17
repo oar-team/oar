@@ -1222,12 +1222,8 @@ sub check_job_update($$) {
     exit 0;
   }
   elsif  ($job->{method} eq "walltime-change") {
-    if (not defined($job->{duration})) {
-      ERROR(400, 'Missing Required Field', 'Walltime change request must have a duration field');
-      exit 0;
-    } 
-    if ($job->{duration} !~ /^[-,+]?\d+$/) { 
-      ERROR(400, 'Invalid Field', 'Duration field must be an integer (possibly prefixed by +/-)');
+    if (not defined($job->{walltime})) {
+      ERROR(400, 'Missing Required Field', 'Walltime change request must have a walltime field');
       exit 0;
     } 
   }

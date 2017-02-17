@@ -506,7 +506,10 @@ SWITCH: for ($q) {
         OAR::API::add_nodes_uris($nodes,$ext,'');
         $data->{'nodes'}=$nodes;
     }
-    ($data->{'walltime-change'},) = OAR::Stat::get_job_walltime_change($jobid);
+    my ($walltime_change,) == OAR::Stat::get_job_walltime_change($jobid);
+    if (defined($walltime_change)) {
+        $data->{'walltime-change'} = $walltime_change;
+    }
     my $result = OAR::API::struct_job($data,$STRUCTURE);
     OAR::API::add_job_uris($result,$ext);
     OAR::Stat::close_db_connection; 
@@ -729,7 +732,7 @@ SWITCH: for ($q) {
                                                  );
       my $error;
       ($error, $http_status, $status, $message) =
-        OAR::Walltime::request($dbh, $jobid, $authenticated_user, $job->{duration}, $job->{force}, $job->{'delay_next_jobs'});
+        OAR::Walltime::request($dbh, $jobid, $authenticated_user, $job->{walltime}, $job->{force}, $job->{'delay_next_jobs'});
       OAR::IO::disconnect($dbh);
 
       if ($error > 0) {
