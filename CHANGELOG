@@ -7,8 +7,8 @@ version 2.5.8:
 --------------
 
   - [job_resource_manager] manage nvidia gpu with the cgroup devices
-  - [oarextratime] add functionality: extra time can now be requested for job
-    (increase the walltime). See the oarextratime command and oar.conf
+  - [walltime change] add functionality to allow changing the walltime of a
+    running job. See the oarwalltime command and oar.conf
   - [scheduler] fix the besteffort + deploy VS adv. reservation case
   - [api] some improvement in the Apache configuration and tests
   - [finaud] bugfix: make pingchecker run only on resources of type default
