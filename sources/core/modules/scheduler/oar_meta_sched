@@ -91,7 +91,7 @@ my $current_time_sql = "0000-00-00 00:00:00";
 
 my $resa_admin_waiting_timeout = get_conf("RESERVATION_WAITING_RESOURCES_TIMEOUT");
 
-my $Walltime_max_extension = get_conf("WALLTIME_MAX_EXTENSION");
+my $Walltime_change_enabled = uc(get_conf_with_default_param("WALLTIME_CHANGE_ENABLED","NO"));
 
 oar_debug("[MetaSched] Starting Meta Scheduler\n");
 
@@ -149,7 +149,7 @@ sub process_walltime_change_requests($) {
 }
 
 # Walltime change disabled if set to -1
-if (not defined($Walltime_max_extension) or $Walltime_max_extension ne "-1") {
+if ($Walltime_change_enabled eq "YES") {
     process_walltime_change_requests($base);
 }
 

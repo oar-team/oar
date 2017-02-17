@@ -70,13 +70,13 @@ use Data::Dumper;
 my $dbh = OAR::IO::connect();
 # Command is a query only, no request
 if (not defined($new_walltime)) {
-    my ($walltime_change, $job_state) = OAR::Walltime::get($dbh, $jobid);
-    if($job_state eq "Unknown") {
-        print("Error: unknown job.\n");
+    my ($walltime_change, $state) = OAR::Walltime::get($dbh, $jobid);
+    if(not defined($walltime_change)) {
+        print("Error: $state.\n");
         exit 2;
     }
     my @granted_with = grep(!/: 0:0:0$/,("forced: ".$walltime_change->{granted_with_force}, "delaying next jobs: ".$walltime_change->{granted_with_delay_next_jobs}));
-    if ($job_state eq "Running") {
+    if ($state eq "Running") {
         print("Walltime change status for job $jobid (job is running):\n");
         printf("  Current walltime: %11s\n",$walltime_change->{current_walltime});
         printf("  Possible increase: %10s\n",$walltime_change->{possible});

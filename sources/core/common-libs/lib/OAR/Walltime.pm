@@ -33,9 +33,13 @@ sub get($$) {
     my $dbh = shift;
     my $jobid = shift;
 
+    my $Walltime_change_enabled = uc(OAR::Conf::get_conf_with_default_param("WALL_TIME_CHANGE_ENABLED","NO");
+    if ($Walltime_change_enabled ne "YES") {
+        return (undef, "functionality is disabled");
+    }
     my $job = OAR::IO::get_job($dbh,$jobid);
     if (not defined($job)) {
-        return (undef, "Unknown", undef);
+        return (undef, "unknown job");
     }
     my $walltime_change = OAR::IO::get_walltime_change_for_job($dbh, $jobid); # no lock here
 
@@ -56,7 +60,7 @@ sub get($$) {
     }
 
     OAR::Conf::init_conf($ENV{OARCONFFILE});
-    my $Walltime_max_extension = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_MAX_EXTENSION",0)), $job->{queue_name}, $walltime_change->{current_walltime} - $walltime_change->{granted}, 0);
+    my $Walltime_max_increase = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_MAX_INCREASE",0)), $job->{queue_name}, $walltime_change->{current_walltime} - $walltime_change->{granted}, 0);
     my $Walltime_min_for_change = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_MIN_FOR_CHANGE",0)), $job->{queue_name}, undef, 0);
     my $Walltime_users_allowed_to_force = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_FORCE","")), $job->{queue_name}, undef, "");
     my $Walltime_users_allowed_to_delay_jobs = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_DELAY_JOBS","")), $job->{queue_name}, undef, "");
@@ -64,10 +68,10 @@ sub get($$) {
     my $now = OAR::IO::get_date($dbh);
     my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
 
-    if ($Walltime_max_extension <= 0 or $job->{state} ne "Running" or $walltime_change->{current_walltime} < $Walltime_min_for_change) {
+    if ($Walltime_max_increase == 0 or $job->{state} ne "Running" or $walltime_change->{current_walltime} < $Walltime_min_for_change) {
         $walltime_change->{possible} = 0;
     } else {
-        $walltime_change->{possible} = $Walltime_max_extension;
+        $walltime_change->{possible} = $Walltime_max_increase;
     }
     if ($Walltime_users_allowed_to_force ne "*" and not grep(/^$job->{job_user}$/,split(/[,\s]+/,$Walltime_users_allowed_to_force))) {
         $walltime_change->{force} = "FORBIDDEN";
@@ -101,6 +105,10 @@ sub request($$$$$$) {
     my $moldable;
     my @result;
 
+    my $Walltime_change_enabled = uc(OAR::Conf::get_conf_with_default_param("WALL_TIME_CHANGE_ENABLED","NO");
+    if ($Walltime_change_enabled ne "YES") {
+        return (5, 405, "not available", "functionality is disabled");
+    }
     $job = OAR::IO::get_job($dbh, $jobid);
 
     if (not defined($job)) {
@@ -112,13 +120,13 @@ sub request($$$$$$) {
     OAR::Conf::init_conf($ENV{OARCONFFILE});
     my $Remote_host = OAR::Conf::get_conf("SERVER_HOSTNAME");
     my $Remote_port = OAR::Conf::get_conf("SERVER_PORT");
-    my $Walltime_max_extension = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_MAX_EXTENSION",0)), $job->{queue_name}, $moldable->{moldable_walltime}, 0);
+    my $Walltime_max_increase = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_MAX_INCREASE",0)), $job->{queue_name}, $moldable->{moldable_walltime}, 0);
     my $Walltime_min_for_change = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_MIN_FOR_CHANGE",0)), $job->{queue_name}, undef, 0);
     my $Walltime_users_allowed_to_force = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_FORCE","")), $job->{queue_name}, undef, "");
     my $Walltime_users_allowed_to_delay_jobs = get_conf(eval(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_DELAY_JOBS","")), $job->{queue_name}, undef, "");
 
     my $Walltime_min_for_change_hms = join(":",OAR::IO::duration_to_hms($Walltime_min_for_change));
-    my $Walltime_max_extension_hms = "+".join(":",OAR::IO::duration_to_hms($Walltime_max_extension));
+    my $Walltime_max_increase_hms = "+".join(":",OAR::IO::duration_to_hms($Walltime_max_increase));
 
     # Parse new walltime and convert to seconds
     my ($sign,$hours,$min,$sec) = $new_walltime =~ /^([-+]?)(\d+)(?::(\d+)(?::(\d+))?)?$/;
@@ -132,12 +140,12 @@ sub request($$$$$$) {
         $new_walltime_seconds = $new_walltime_seconds - $moldable->{moldable_walltime};
     }
 
-    # Is extratime possible ?
+    # Is change possible ?
     if (not defined($lusr)) {
         return (1, 400, "bad request", "anonymous request is not allowed");
-    } elsif ($new_walltime_seconds > 0 and $Walltime_max_extension <= 0 and not grep(/^$lusr$/,('root','oar'))) { 
+    } elsif ($new_walltime_seconds > 0 and $Walltime_max_increase <= 0 and not grep(/^$lusr$/,('root','oar'))) { 
         return (3, 403, "forbidden", "user is not allowed to increase walltime");
-    } elsif ($Walltime_max_extension < 0) {
+    } elsif ($Walltime_max_increase < 0) {
         return (5, 405, "not available", "functionality is disabled");
     }
     
@@ -185,8 +193,8 @@ sub request($$$$$$) {
     OAR::IO::lock_table($dbh,['walltime_change']);
     my $current_walltime_change = OAR::IO::get_walltime_change_for_job($dbh, $job->{job_id}); # locked here
     if (defined($current_walltime_change)) { # Update a request
-        if ($current_walltime_change->{granted} + $new_walltime_seconds > $Walltime_max_extension and not grep(/^$lusr$/,('root','oar'))) { 
-            @result = (3, 503, "forbidden", "request cannot be updated because the walltime cannot increase by more than ".$Walltime_max_extension_hms);
+        if ($current_walltime_change->{granted} + $new_walltime_seconds > $Walltime_max_increase and not grep(/^$lusr$/,('root','oar'))) { 
+            @result = (3, 503, "forbidden", "request cannot be updated because the walltime cannot increase by more than ".$Walltime_max_increase_hms);
         } else {
             OAR::IO::update_walltime_change_request(
                 $dbh,
@@ -201,8 +209,8 @@ sub request($$$$$$) {
             @result = (0, 202, "accepted", "walltime change request updated for job ".$job->{job_id}.", it will be handled shortly");
         }
     } else { # New request
-        if ($new_walltime_seconds > $Walltime_max_extension and not grep(/^$lusr$/,('root','oar'))) {
-            @result = (3, 503, "forbidden", "request cannot be accepted because the walltime cannot increase by more than ".$Walltime_max_extension_hms);
+        if ($new_walltime_seconds > $Walltime_max_increase and not grep(/^$lusr$/,('root','oar'))) {
+            @result = (3, 503, "forbidden", "request cannot be accepted because the walltime cannot increase by more than ".$Walltime_max_increase_hms);
         } else {
             OAR::IO::add_walltime_change_request(
                 $dbh,

@@ -370,20 +370,25 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 ###############################################################################
 
 ###########################################################################
-# WALLTIME CHANGE
-# Allow users to request change to the walltime of a job. Change is only  #
-# granted if it does not conflict with the next jobs.                     #
+# WALLTIME CHANGE                                                         #
+# Allow a user to request a change to the walltime of a job. Change can   #
+# be an increase of a decrease. Increase is basically only granted if it  #
+# does not conflict with the next jobs,                                   #
 # WARNING: This functionnality does not handle the resource sharing with  #
 # jobs of type timesharing, container/inner, placeholder/allowed.         #
 ###############################################################################
 #
-# Walltime change max allowed extension
-# -1 means that the walltime change is disabled (global setting, cannot be used per queue)
-#  0 means that the walltime change is allowed for oar and root only (with no limit)
-# >0 sets the maximum extension of walltime users can request, in seconds
+# Activation of the feature, set to "yes" to activate (global setting, cannot be used per queue)
+# Default is "no", disabled
+#WALLTIME_CHANGE_ENABLED="no"
+#
+# Walltime change maximum allowed increase
+# -1 means that the walltime increase is not limited
+#  0 means that the walltime increase is allowed for oar and root only (with no limit)
+# >0 sets the maximum increase of walltime users can request, in seconds
 # If the value is in the ]0,1[ range, the actual value will be computed as that ratio of the walltime of the job
 # Default is 0
-#WALLTIME_MAX_EXTENSION=0
+#WALLTIME_MAX_INCREASE=0
 
 # Set the minimum walltime of jobs for which change can be requested
 # Default is 0, i.e. no minimum walltime
