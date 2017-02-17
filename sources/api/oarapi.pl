@@ -506,7 +506,7 @@ SWITCH: for ($q) {
         OAR::API::add_nodes_uris($nodes,$ext,'');
         $data->{'nodes'}=$nodes;
     }
-    my ($walltime_change,) == OAR::Stat::get_job_walltime_change($jobid);
+    my ($walltime_change,) = OAR::Stat::get_job_walltime_change($jobid);
     if (defined($walltime_change)) {
         $data->{'walltime-change'} = $walltime_change;
     }
