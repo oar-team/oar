@@ -111,18 +111,20 @@ sub process_walltime_change_requests($) {
         my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
         my $fit = $job->{pending}; 
         if ($fit > 0) {
-            oar_debug("[MetaSched] [$jobid] walltime change with delay_next_jobs: ".$job->{delay_next_jobs}.", force: ".$job->{force}."\n");
+            my $apply_time = OAR::Walltime::get_conf($Walltime_change_apply_time, $job->{queue_name}, $job->{walltime} - $job->{granted}, 0);
+            my $increment = OAR::Walltime::get_conf($Walltime_increment, $job->{queue_name}, $job->{walltime} - $job->{granted}, 0);
+            oar_debug("[MetaSched] [$jobid] walltime change: pending=".$fit."s delay_next_jobs=".$job->{delay_next_jobs}." force=".$job->{force}." apply_time=${apply_time}s increment=${increment}s\n");
             if (not defined($job->{force}) or $job->{force} ne "YES") {
-                my $apply_time = OAR::Walltime::get_conf($Walltime_change_apply_time, $job->{queue_name}, $job->{walltime} - $job->{granted}, 0);
-                my $increment = OAR::Walltime::get_conf($Walltime_increment, $job->{queue_name}, $job->{walltime} - $job->{granted}, 0);
-                oar_debug("[MetaSched] [$jobid] walltime change with apply time: $apply_time, increment: $increment\n");
-                if ($apply_time > 0 and $job->{start_time} + $job->{walltime} + $suspended - $apply_time > $now) {
+                my $delay = $job->{start_time} + $job->{walltime} + $suspended - $apply_time - $now;
+                if ($apply_time > 0 and $delay > 0) {
+                    oar_debug("[MetaSched] [$jobid] walltime change could apply in ${delay}s\n");
                     next; # next if activation time is set and activation date in the future
                 }
                 if ($increment > 0 and $increment < $fit) {
                     $fit = $increment;
                 }
             }
+            oar_debug("[MetaSched] [$jobid] walltime change try: $fit/".$job->{pending}."s\n");
             my $from = $job->{start_time} + $job->{walltime} + $suspended;
             my $to = $from + $fit;
             $fit = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $job->{resources}, $Security_time_overhead, $job->{delay_next_jobs}) - $from;

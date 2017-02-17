@@ -71,7 +71,7 @@ my $dbh = OAR::IO::connect();
 if (not defined($new_walltime)) {
     my ($walltime_change, $state) = OAR::Walltime::get($dbh, $jobid);
     if(not defined($walltime_change)) {
-        print("Error: $state.\n");
+        print(uc($state)."\n");
         exit 2;
     }
     my @granted_with = grep(!/: 0:0:0$/,("forced: ".$walltime_change->{granted_with_force}, "delaying next jobs: ".$walltime_change->{granted_with_delay_next_jobs}));
