@@ -12,6 +12,8 @@ version 2.5.8:
   - [scheduler] fix the besteffort + deploy VS adv. reservation case
   - [api] some improvement in the Apache configuration and tests
   - [finaud] bugfix: make pingchecker run only on resources of type default
+  - [drawgantt-svg] add a mark next to the label of the resources pointed by
+    the mouse
 
 version 2.5.7:
 --------------

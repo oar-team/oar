@@ -1128,6 +1128,7 @@ if ($aborted) {
 }
 $output_headers .= <<<EOT
   svgDocument = evt.target.ownerDocument;
+  resourcemark = svgDocument.getElementById("resourcemark");
   infobox = svgDocument.getElementById("infobox");
   infoboxrect = svgDocument.getElementById("infoboxrect");
   infoboxtext = svgDocument.getElementById("infoboxtext");
@@ -1194,6 +1195,13 @@ function rootMouseMove(evt) {
     zoom_x2 = evt.pageX;
     zoom_width=Math.abs(zoom_x2 - zoom_x1);
     zoomDraw();
+  }
+  if (evt.pageY > {$gantt_top} && evt.pageY < ({$gantt_top} + {$gantt_height})) {
+    y = Math.floor((evt.pageY - {$gantt_top}) / {$scale}) * {$scale} + {$gantt_top};
+    resourcemark.setAttribute("transform", "translate(0," + y + ")");    
+    resourcemark.setAttribute("display", "inline");
+  } else {
+    resourcemark.setAttribute("display", "none");
   }
 }
 function rootClick(evt) {
@@ -1364,8 +1372,11 @@ if ($display != 'no_mobile_ruler' and $display != "no_ruler") {
   $output .= '</g>';
 }
 
+
 // print volatile stuff: infobox + zoom
+$resourcemark_x = $CONF['label_right_align'] + 1;
 $output .= <<<EOT
+<rect id="resourcemark" x="{$resourcemark_x}" y="0" rx="0" ry="0" width="2" height="{$scale}" fill="#888888" stroke="#888888" stroke-width="1" style="opacity: 0.9" />
 <g id="infobox" display="none">
 <rect id="infoboxrect" x="0" y="0" rx="10" ry="10" width="200" height="150" fill="#FFFFFF" stroke="#888888" stroke-width="1" style="opacity: 0.9" />
 <text font-size="10" id="infoboxtext" x="10" y="10" fill="#000000" />
