@@ -285,7 +285,7 @@ class Db {
       $this->result = mysql_query($query, $this->handler) or die('Query failed: ' . mysql_error());
       $this->num_rows = mysql_num_rows($this->result);
     } elseif ($this->backend == "pg") {
-      $this->result = pg_query($this->handler, $query) or die('Query failed');
+      $this->result = pg_query_params($this->handler, $query, array()) or die('Query failed');
       $this->num_rows = pg_num_rows($this->result);
     } else {
       die ("Unknown database backend: " . $this-> backend . " (must be 'mysql' or 'pg'");
