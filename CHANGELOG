@@ -14,6 +14,9 @@ version 2.5.8:
   - [finaud] bugfix: make pingchecker run only on resources of type default
   - [drawgantt-svg] add a mark next to the label of the resources pointed by
     the mouse
+  - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
+    in new installation. For existing database, the following command apply the
+    fix: `oar-database --fix-ro-user-priv ...`
 
 version 2.5.7:
 --------------
