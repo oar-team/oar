@@ -715,13 +715,13 @@ sub is_timesharing_for_2_jobs($$$){
                                t.type
                              HAVING
                                COUNT(j.job_id) = 2 AND (
-                                 ( t.type = 'timesharing=user,name' AND
+                                 ( ( t.type = 'timesharing=user,name' OR t.type = 'timesharing=name,user' ) AND
                                    COUNT(DISTINCT j.job_user) = 1 AND
                                    COUNT(DISTINCT j.job_name) = 1 ) OR
-                                 ( t.type = 'timesharing=user,*' AND
+                                 ( ( t.type = 'timesharing=user,*' OR t.type = 'timesharing=*,user' ) AND
                                    COUNT(DISTINCT j.job_user) = 1 ) OR
-                                 ( t.type = 'timesharing=*,name' AND
-                                   COUNT(DISTINCT j.job_user) = 1 ) OR
+                                 ( ( t.type = 'timesharing=*,name' OR t.type = 'timesharing=name,*' ) AND
+                                   COUNT(DISTINCT j.job_name) = 1 ) OR
                                  t.type = 'timesharing=*,*' )
                             ");
     my $res = $sth->execute();
