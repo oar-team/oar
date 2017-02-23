@@ -74,8 +74,6 @@ The shell environment variables of the job are not updated (OAR_JOB_WALLTIME, OA
 
 Walltime change events for a job are listed in the I<oarstat> output.
 
-The walltime change functionality does not support the computation of the shared allocation of resources, in the case of jobs of type timesharing or container/inner or placeholder/allowed.
-
 =head1 SEE ALSO
 
 oarstat(1), oarsub(1), oardel(1)
