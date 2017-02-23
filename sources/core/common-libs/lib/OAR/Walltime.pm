@@ -43,8 +43,12 @@ sub get($$) {
     }
     my $walltime_change = OAR::IO::get_walltime_change_for_job($dbh, $jobid); # no lock here
 
-    my $moldable = OAR::IO::get_moldable_job($dbh, $job->{assigned_moldable_job});
-    $walltime_change->{walltime} = $moldable->{moldable_walltime};
+    if ($job->{assigned_moldable_job} != 0) {
+        my $moldable = OAR::IO::get_moldable_job($dbh, $job->{assigned_moldable_job});
+        $walltime_change->{walltime} = $moldable->{moldable_walltime};
+    } else {
+        $walltime_change->{walltime} = 0;
+    }
 
     if (not defined($walltime_change->{pending})) {
         $walltime_change->{pending} = 0;
@@ -86,12 +90,21 @@ sub get($$) {
         $walltime_change->{delay_next_jobs} = "NO";
     }
 
-    $walltime_change->{pending} = OAR::IO::duration_to_sql_signed($walltime_change->{pending});
-    $walltime_change->{granted} = OAR::IO::duration_to_sql_signed($walltime_change->{granted});
-    $walltime_change->{granted_with_force} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_force});
-    $walltime_change->{granted_with_delay_next_jobs} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_delay_next_jobs});
-    $walltime_change->{walltime} = OAR::IO::duration_to_sql($walltime_change->{walltime});
 
+    if ($walltime_change->{walltime} != 0) {
+        $walltime_change->{walltime} = OAR::IO::duration_to_sql($walltime_change->{walltime});
+        $walltime_change->{pending} = OAR::IO::duration_to_sql_signed($walltime_change->{pending});
+        $walltime_change->{granted} = OAR::IO::duration_to_sql_signed($walltime_change->{granted});
+        $walltime_change->{granted_with_force} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_force});
+        $walltime_change->{granted_with_delay_next_jobs} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_delay_next_jobs});
+    } else {
+        # job is not running yet, walltime may not be known yet, in case of a moldable job
+        delete $walltime_change->{walltime};
+        delete $walltime_change->{pending};
+        delete $walltime_change->{granted};
+        delete $walltime_change->{granted_with_force};
+        delete $walltime_change->{granted_with_delay_next_jobs};
+    }
     return ($walltime_change, $job->{state});
 }
 
