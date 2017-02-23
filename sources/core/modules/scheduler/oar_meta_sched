@@ -127,7 +127,19 @@ sub process_walltime_change_requests($) {
             oar_debug("[MetaSched] [$jobid] walltime change try: $fit/".$job->{pending}."s\n");
             my $from = $job->{start_time} + $job->{walltime} + $suspended;
             my $to = $from + $fit;
-            $fit = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $job->{resources}, $Security_time_overhead, $job->{delay_next_jobs}) - $from;
+            my $types = OAR::IO::get_job_types_hash($dbh,$jobid);
+            if (exists($types->{inner})) {
+                my $container_job = OAR::IO::get_running_job($dbh, $types->{inner});
+                if (defined($container_job)) {
+                    if ($container_job->{start_time} + $container_job->{moldable_walltime} < $to) {
+                        $to = $container_job->{start_time} + $container_job->{_moldable_walltime}; #container should never be suspended, makes no sense
+                        oar_debug("[MetaSched] [$jobid] walltime change for inner job limited to the container's boundaries: ".($to - $from)."s\n");
+                    }
+                } else {
+                    oar_debug("[MetaSched] [$jobid] walltime change for inner job but container is not found ?\n");
+                }
+            }
+            $fit = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $job->{resources}, $Security_time_overhead, $job->{delay_next_jobs}, $types, $job->{job_user}, $job->{job_name}) - $from;
             if ($fit <= 0) {
                 oar_debug("[MetaSched] [$jobid] walltime cannot be changed for now (pending: ".OAR::IO::duration_to_sql_signed($job->{pending}).")\n");
                 next;
