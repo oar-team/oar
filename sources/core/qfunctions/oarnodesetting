@@ -48,20 +48,20 @@ sub set_resources_properties($$$){
     $base->begin_work();
     $base->do("LOCK TABLE resources, resource_logs IN EXCLUSIVE MODE");
     foreach my $p (@{$arrayProp}){
-        if ($p =~ m/(.+)\s*=\s*(.+)/m){
+        if ($p =~ m/(.+)\s*=\s*(.*)/m){
             if (OAR::Tools::check_resource_system_property($1) == 1){
                 warn("/!\\ Cannot update property $1 because it is a system field.\n");
                 $exit_code = 8;
                 next;
             }
-            print("Set property $1 to $2...");
+            print("Set property $1 to '$2'...");
             my $ret = OAR::IO::set_resources_property($base,$resources,$1,$2);
             print(" $ret resource(s) updated.\n");
             if (not defined($ret) or ($ret < 0)){
                 $exit_code = 9;
             }
         }else{
-            warn("/!\\ Bad property syntax: -p property=value\n");
+            warn("/!\\ Bad property syntax: $p\n");
             $exit_code = 10;
         }
     }

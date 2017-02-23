@@ -222,7 +222,7 @@ describe OarApi do
         @api.get_link_href_from_array(links,"resources").should == "#{APIPATH}jobs/#{id}/resources"
       end
       it "should return jobs owned by the #{USER} user" do
-        @api.value['items'][0]['owner'].should == "#{USER}"
+        @api.value['items'][0][@api.owner_key].should == "#{USER}"
       end
     end
 
@@ -268,7 +268,7 @@ describe OarApi do
       end
       it_should_behave_like "Job"
       it "should be owned by the #{USER} user" do
-        @api.value['owner'].should == "#{USER}"
+        @api.value[@api.owner_key].should == "#{USER}"
       end
     end
     context "(with non-existent job)" do
@@ -311,7 +311,7 @@ describe OarApi do
       end
       it_should_behave_like "Job"
       it "should be owned by the #{USER} user" do
-        @api.value['owner'].should == "#{USER}"
+        @api.value[@api.owner_key].should == "#{USER}"
       end
       it "should have resources and nodes details" do
         @api.value['resources'].should be_an(Array)
@@ -651,16 +651,16 @@ describe OarApi do
   describe "Job submission" do
     it "should return a self link" do
       jhash = { 'resource' => "/nodes=1/core=1" , 'script' => "ls;pwd;whoami;sleep 60"}
-      @api.submit_job(jhash)
-      $ljobid = @api.jobstatus['id']
-      @api.value= @api.jobstatus
+      @post_api.submit_job(jhash)
+      $ljobid = @post_api.jobstatus['id']
+      @api.value= @post_api.jobstatus
       @api.get_self_link_href.should == "#{APIPATH}jobs/#{$ljobid}"
     end
     it "should return a 400 error on bad reservation date" do
       jhash = { 'resource' => "/nodes=1/core=1" , 'script' => "ls;pwd;whoami;sleep 60",
                 'reservation' => '1973-06-03 18:00:00' }
       begin
-        @api.submit_job(jhash)
+        @post_api.submit_job(jhash)
       rescue => e
         #puts e.response.body
         e.should respond_to('http_code')
@@ -710,7 +710,7 @@ describe OarApi do
       end
       t.should < timeout
       begin
-        @api.value=@post_api.post(@api.api,"jobs/#{$jobid+1}/resubmissions/new",nil)
+        @api.value=@post_api.post(@post_api.api,"jobs/#{$jobid+1}/resubmissions/new",nil)
       rescue => e
         puts e.response.body
       end

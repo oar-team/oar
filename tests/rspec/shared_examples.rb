@@ -1,14 +1,19 @@
 # All data structures minimum requirements
 shared_examples_for "All structures" do
-      specify { @api.value.should have_key('api_timestamp') }
-      specify('api_timestamp should be an integer') { @api.value['api_timestamp'].should be_a(Integer) }
       specify { @api.value.should have_key('links') }
       specify('links should be an array') { @api.value['links'].should be_an(Array) }
       specify('links should not be empty') { @api.value['links'].should_not be_empty }
       specify('self link should not be nil') { @api.get_self_link_href.should_not be_nil } 
 end
-shared_examples_for "All list structures" do
+# All top structures minimum requirements
+shared_examples_for "Top structures" do
       it_should_behave_like "All structures"
+      specify { @api.value.should have_key('api_timestamp') }
+      specify('api_timestamp should be an integer') { @api.value['api_timestamp'].should be_a(Integer) }
+end
+# All list structures minimum requirements
+shared_examples_for "All list structures" do
+      it_should_behave_like "Top structures"
       specify { @api.value.should have_key('items') }
       specify('items should be an array') { @api.value['items'].should be_an(Array) }
       specify { @api.value['items'].should_not be_empty }
@@ -36,12 +41,12 @@ shared_examples_for "JobId" do
 end 
 shared_examples_for "Job" do
       it_should_behave_like "JobId"
-      specify { @api.value.should have_key('owner') }
-      specify('job owner should not be nil') { @api.value['owner'].should_not be_nil }
+      specify { @api.value.should have_key(@api.owner_key) }
+      specify('job owner should not be nil') { @api.value[@api.owner_key].should_not be_nil }
       specify { @api.value.should have_key('state') }
       specify('job state should not be nil') { @api.value['state'].should_not be_nil }
-      specify { @api.value.should have_key('queue') }
-      specify('job queue should not be nil') { @api.value['queue'].should_not be_nil }
+      specify { @api.value.should have_key(@api.queue_key) }
+      specify('job queue should not be nil') { @api.value[@api.queue_key].should_not be_nil }
       specify { @api.value.should have_key('name') }
       specify('resources link should not be nil') { @api.get_link_href('resources').should_not be_nil } 
       specify('resources link should be correct') { 

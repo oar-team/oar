@@ -140,7 +140,7 @@ CREATE TABLE job_dependencies (
   job_id integer NOT NULL default '0',
   job_id_required integer NOT NULL default '0',
   min_start_shift varchar(12) NOT NULL default '',
-  max_start_shift  varchar(12) NOT NULL default '',
+  max_start_shift varchar(12) NOT NULL default '',
   job_dependency_index varchar(7) check (job_dependency_index in ('CURRENT','LOG')) NOT NULL default 'CURRENT',
   PRIMARY KEY  (job_id,job_id_required)
 );
@@ -312,3 +312,15 @@ CREATE INDEX resource_next_state ON resources (next_state);
 CREATE INDEX resource_suspended_jobs ON resources (suspended_jobs);
 CREATE INDEX resource_type ON resources (type);
 CREATE INDEX resource_network_address ON resources (network_address);
+
+CREATE TABLE walltime_change (
+  job_id integer NOT NULL default '0',
+  pending integer NOT NULL default '0',
+  force varchar(3) check (force in ('YES','NO')) NOT NULL default 'NO', 
+  delay_next_jobs varchar(3) check (delay_next_jobs in ('YES','NO')) NOT NULL default 'NO', 
+  granted integer NOT NULL default '0',
+  granted_with_force integer NOT NULL default '0',
+  granted_with_delay_next_jobs integer NOT NULL default '0',
+  PRIMARY KEY (job_id)
+);
+CREATE INDEX walltime_change_job_id ON walltime_change (job_id);

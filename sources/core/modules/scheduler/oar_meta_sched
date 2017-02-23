@@ -11,6 +11,7 @@ use Data::Dumper;
 use OAR::Tools;
 use OAR::Modules::Hulot;
 use OAR::Schedulers::Gantt;
+use OAR::Walltime;
 
 # Log category
 set_current_log_category('scheduler');
@@ -62,10 +63,7 @@ my $Log_scheduling = get_conf("SCHEDULER_LOG_DECISIONS");
 if (defined($Log_scheduling) and $Log_scheduling ne "yes") { $Log_scheduling = undef; }
 
 #minimum of seconds between each jobs
-my $Security_time_overhead = 1;
-if (is_conf("SCHEDULER_JOB_SECURITY_TIME")){
-    $Security_time_overhead = get_conf("SCHEDULER_JOB_SECURITY_TIME");
-}
+my $Security_time_overhead = get_conf_with_default_param("SCHEDULER_JOB_SECURITY_TIME", 1);
 
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
@@ -108,10 +106,84 @@ my $current_time_sql = "0000-00-00 00:00:00";
 
 my $resa_admin_waiting_timeout = get_conf("RESERVATION_WAITING_RESOURCES_TIMEOUT");
 
+my $Walltime_change_enabled = uc(get_conf_with_default_param("WALLTIME_CHANGE_ENABLED","NO"));
+
 oar_debug("[MetaSched] Starting Meta Scheduler\n");
 
 ###########################################################################################################
-#Initialize Gantt tables with scheduled reservation jobs, Running jobs, toLaunch jobs and Launching jobs; #
+# Handle walltime change requests                                                                              #
+###########################################################################################################
+
+sub process_walltime_change_requests($) {
+    my $dbh = shift;
+    OAR::IO::lock_table($dbh,['walltime_change']);
+    my $jobs = OAR::IO::get_jobs_with_walltime_change($dbh);
+    my $now = OAR::IO::get_date($dbh);
+    my $Walltime_change_apply_time = eval(OAR::Conf::get_conf_with_default_param("WALLTIME_CHANGE_APPLY_TIME",0));
+    my $Walltime_increment = eval(OAR::Conf::get_conf_with_default_param("WALLTIME_INCREMENT",0));
+    foreach my $jobid (keys(%$jobs)) {
+        my $job = $jobs->{$jobid};
+        my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
+        my $fit = $job->{pending}; 
+        if ($fit > 0) {
+            my $apply_time = OAR::Walltime::get_conf($Walltime_change_apply_time, $job->{queue_name}, $job->{walltime} - $job->{granted}, 0);
+            my $increment = OAR::Walltime::get_conf($Walltime_increment, $job->{queue_name}, $job->{walltime} - $job->{granted}, 0);
+            oar_debug("[MetaSched] [$jobid] walltime change: pending=".$fit."s delay_next_jobs=".$job->{delay_next_jobs}." force=".$job->{force}." apply_time=${apply_time}s increment=${increment}s\n");
+            if (not defined($job->{force}) or $job->{force} ne "YES") {
+                my $delay = $job->{start_time} + $job->{walltime} + $suspended - $apply_time - $now;
+                if ($apply_time > 0 and $delay > 0) {
+                    oar_debug("[MetaSched] [$jobid] walltime change could apply in ${delay}s\n");
+                    next; # next if activation time is set and activation date in the future
+                }
+                if ($increment > 0 and $increment < $fit) {
+                    $fit = $increment;
+                }
+            }
+            oar_debug("[MetaSched] [$jobid] walltime change try: $fit/".$job->{pending}."s\n");
+            my $from = $job->{start_time} + $job->{walltime} + $suspended;
+            my $to = $from + $fit;
+            my $types = OAR::IO::get_job_types_hash($dbh,$jobid);
+            if (exists($types->{inner})) {
+                my $container_job = OAR::IO::get_running_job($dbh, $types->{inner});
+                if (defined($container_job)) {
+                    if ($container_job->{start_time} + $container_job->{moldable_walltime} < $to) {
+                        $to = $container_job->{start_time} + $container_job->{_moldable_walltime}; #container should never be suspended, makes no sense
+                        oar_debug("[MetaSched] [$jobid] walltime change for inner job limited to the container's boundaries: ".($to - $from)."s\n");
+                    }
+                } else {
+                    oar_debug("[MetaSched] [$jobid] walltime change for inner job but container is not found ?\n");
+                }
+            }
+            $fit = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $job->{resources}, $Security_time_overhead, $job->{delay_next_jobs}, $types, $job->{job_user}, $job->{job_name}) - $from;
+            if ($fit <= 0) {
+                oar_debug("[MetaSched] [$jobid] walltime cannot be changed for now (pending: ".OAR::IO::duration_to_sql_signed($job->{pending}).")\n");
+                next;
+            }
+        } elsif ($fit < 0) {
+            my $job_remaining_time = $job->{start_time} + $job->{walltime} + $suspended - $now;
+            if ($job_remaining_time < -$fit) {
+               $fit = -$job_remaining_time;
+            }
+        }
+
+        my $new_walltime = $job->{walltime} + $fit;
+        my $new_pending = $job->{pending} - $fit;
+
+        my $message = "walltime changed: ".OAR::IO::duration_to_sql($new_walltime)." (granted: ".OAR::IO::duration_to_sql_signed($fit)."/pending: ".OAR::IO::duration_to_sql_signed($new_pending).(($job->{force} eq 'YES')?"/force":"").(($job->{delay_next_jobs} eq 'YES')?"/delay next jobs":"").")";
+        oar_debug("[MetaSched] [$jobid] $message\n");
+        OAR::IO::update_walltime_change_request($dbh, $jobid, $new_pending, ($new_pending == 0)?'NO':undef, ($new_pending == 0)?'NO':undef, $job->{granted} + $fit, ($job->{force} eq 'YES' and $fit > 0)?($job->{granted_with_force} + $fit):undef, ($job->{delay_next_jobs} eq 'YES' and $fit > 0)?($job->{granted_with_delaying_next_jobs} + $fit):undef);
+        OAR::IO::change_walltime($dbh, $jobid, $new_walltime, $message);
+    }
+    OAR::IO::unlock_table($dbh);
+}
+
+# Walltime change disabled if set to -1
+if ($Walltime_change_enabled eq "YES") {
+    process_walltime_change_requests($base);
+}
+
+###########################################################################################################
+# Initialize Gantt tables with scheduled reservation jobs, Running jobs, toLaunch jobs and Launching jobs #
 ###########################################################################################################
 
 # First get resources that we must add for each reservation jobs
@@ -222,7 +294,6 @@ foreach my $job (@initial_jobs){
 
         #Fill all other gantts
         OAR::Schedulers::GanttHoleStorage::fill_gantts($Gantt, $date, $job_duration + $Security_time_overhead, $resource_list_vec, $inner_id ,$placeholder_name, $allowed_name, $timesharing_user, $timesharing_name, "[MetaSched] [$i]"); 
->>>>>>> 2.5
     }else{
         #Stock information about besteffort jobs
         foreach my $r (@resource_list){

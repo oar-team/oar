@@ -95,7 +95,7 @@ fi
 
 # check host file
 if [ -z "$HOSTFILE" -o \( "$HOSTFILE" != "-" -a ! -r "$HOSTFILE" \) ]; then
-    echo -e "Error: cannot read host file\n" 1>&2
+    echo -e "Error: cannot read host file (warning: must be readable by the oar user)\n" 1>&2
     usage 1>&2
     exit 1
 fi
