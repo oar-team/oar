@@ -1,15 +1,23 @@
 OAR CHANGELOG
 =============
 
+
 version 2.5.8:
 --------------
 
   - [job_resource_manager] manage nvidia gpu with the cgroup devices
-  - [oarextratime] add functionality: extra time can now be requested for job
-    (increase the walltime). See the oarextratime command and oar.conf
+  - [walltime change] add functionality to allow changing the walltime of a
+    running job. See the oarwalltime command and oar.conf
   - [scheduler] fix the besteffort + deploy VS adv. reservation case
   - [api] some improvement in the Apache configuration and tests
+  - [api] added POST /media/force to overwrite a file
   - [finaud] bugfix: make pingchecker run only on resources of type default
+  - [drawgantt-svg] add a mark next to the label of the resources pointed by
+    the mouse
+  - [drawgantt-svg] fix possible SQL injection with the filters
+  - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
+    in new installation. For existing database, the following command apply the
+    fix: `oar-database --fix-ro-user-priv ...`
 
 version 2.5.7:
 --------------

@@ -648,7 +648,7 @@ while (1){
         ($command eq "BipBip") ||
         ($command eq "Scheduling") ||
         ($command eq "Qresume") ||
-        ($command eq "Extratime")
+        ($command eq "Walltime")
         ){
             $state="Scheduler";
         }elsif( $command eq "Qdel"){
