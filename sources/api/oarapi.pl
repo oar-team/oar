@@ -35,7 +35,7 @@ use OAR::Conf qw(init_conf dump_conf get_conf_list get_conf is_conf set_value);
 use OAR::IO;
 use OAR::Stat;
 use OAR::Nodes;
-use OAR::Extratime;
+use OAR::Walltime;
 use OAR::Tools;
 use OAR::Version;
 use POSIX;
@@ -506,7 +506,10 @@ SWITCH: for ($q) {
         OAR::API::add_nodes_uris($nodes,$ext,'');
         $data->{'nodes'}=$nodes;
     }
-    ($data->{extratime},) = OAR::Stat::get_job_extratime($jobid);
+    my ($walltime_change,) = OAR::Stat::get_job_walltime_change($jobid);
+    if (defined($walltime_change)) {
+        $data->{'walltime-change'} = $walltime_change;
+    }
     my $result = OAR::API::struct_job($data,$STRUCTURE);
     OAR::API::add_job_uris($result,$ext);
     OAR::Stat::close_db_connection; 
@@ -677,9 +680,9 @@ SWITCH: for ($q) {
     my $job;
     if ($q->param('POSTDATA')) {
       $job = OAR::API::check_job_update( $q->param('POSTDATA'), $q->content_type );
-    }
-    # From html form
-    else {
+    } elsif ($q->param('PUTDATA')) {
+      $job = OAR::API::check_job_update( $q->param('PUTDATA'), $q->content_type );
+    } else {# From html form
       $job = OAR::API::check_job_update( $q->Vars, $q->content_type );
     }
     
@@ -709,8 +712,8 @@ SWITCH: for ($q) {
       $cmd    = "$OARDODO_CMD $OARDEL_CMD -s $job->{signal} $jobid";
       $status = "Signal sending request registered"; 
     }
-    # Extratime
-    elsif ( $job->{method} eq "extratime" ) {
+    # Walltime change
+    elsif ( $job->{method} eq "walltime-change" ) {
       # nothing here, see below
     }
     else {
@@ -720,7 +723,7 @@ SWITCH: for ($q) {
 
     my $message;
     my $http_status;
-    if ( $job->{method} eq "extratime" ) {
+    if ( $job->{method} eq "walltime-change" ) {
       # Check and get the submitted data
       # From encoded data
       my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
@@ -729,7 +732,7 @@ SWITCH: for ($q) {
                                                  );
       my $error;
       ($error, $http_status, $status, $message) =
-        OAR::Extratime::request($dbh, $jobid, $authenticated_user, $job->{duration}, $job->{'delay_next_jobs'});
+        OAR::Walltime::request($dbh, $jobid, $authenticated_user, $job->{walltime}, $job->{force}, $job->{'delay_next_jobs'});
       OAR::IO::disconnect($dbh);
 
       if ($error > 0) {
@@ -2260,10 +2263,11 @@ SWITCH: for ($q) {
   #
   #{{{ POST /media/<file> : Upload a file and create underlying directories
   #
-  $URI = qr{^/media/(.*)$};
+  $URI = qr{^/media(/force)*/(.*)$};
   OAR::API::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $filename=$1;
+    my $force=$1;
+    my $filename=$2;
     my $ext = OAR::API::set_ext($q,undef);
     (my $header, my $type) = OAR::API::set_output_format($ext);
 
@@ -2292,7 +2296,7 @@ SWITCH: for ($q) {
     $file =~ s|/~/|$user_infos[7]/|;  
 
     # Check if the file already exists
-    if (system("$OARDODO_CMD","test","-f","$file") == 0) {
+    if (system("$OARDODO_CMD","test","-f","$file") == 0 and ($force eq "" or not defined($force))) {
       OAR::API::ERROR(403, "File already exists", "The file already exists");
       last;
     }

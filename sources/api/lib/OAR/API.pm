@@ -1221,19 +1221,21 @@ sub check_job_update($$) {
       'A job update must have a "method" field!';
     exit 0;
   }
-  elsif  ($job->{method} eq "extratime") {
-    unless ( $job->{duration} ) { 
-      ERROR 400, 'Missing Required Field',
-        'Extratime request must have a duration field';
+  elsif  ($job->{method} eq "walltime-change") {
+    if (not defined($job->{walltime})) {
+      ERROR(400, 'Missing Required Field', 'Walltime change request must have a walltime field');
       exit 0;
-    }
+    } 
   }
   elsif  ($job->{method} eq "signal") {
-    unless ( $job->{signal} ) { 
-      ERROR 400, 'Missing Required Field',
-        'Signal request must have a signal field';
+    if (not defined($job->{signal})) {
+      ERROR(400, 'Missing Required Field', 'Signal request must have a signal field');
       exit 0;
-    }
+    } 
+    if ($job->{signal} !~ /^\d+$/ ) { 
+      ERROR(400, 'Invalid Field', 'Signal field must be an integer');
+      exit 0;
+    } 
   }
 
   return $job;

@@ -80,29 +80,6 @@ sub init_conf ($){
   return 1;
 }
 
-## get config stored as a Perl hash
-## params: config name, hash key to use, default value
-## if config is not a hash, return the raw value
-## if key is not defined, use _ as the key, otherwise return default value
-sub get_conf_from_hash_with_default_value($$$) {
-    my $setting = shift;
-    my $key = shift;
-    my $default = shift;
-    my $rawvalue = get_conf_with_default_param($setting, $default);
-    if ($rawvalue =~ /^{.*}$/) {
-        my $hash = eval($rawvalue);
-        if (exists($hash->{$key})) {
-            return $hash->{$key};
-        } elsif (exists($hash->{_})) {
-            return $hash->{_};
-        } else {
-            return $default;
-        }
-    } else {
-        return $rawvalue;
-    }
-}
-
 ## retrieve a parameter if exists, set it to the default value otherwise
 ## params: arg1 param name, arg2 default value
 sub get_conf_with_default_param ( $$ ) {

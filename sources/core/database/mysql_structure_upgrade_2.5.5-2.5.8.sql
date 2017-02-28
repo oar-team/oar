@@ -1,10 +1,12 @@
 -- Create the extratime table
 CREATE TABLE IF NOT EXISTS extratime (
 job_id INT UNSIGNED NOT NULL ,
-pending INT UNSIGNED NOT NULL DEFAULT 0,
+pending INT NOT NULL DEFAULT 0,
+force ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 delay_next_jobs ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
-granted INT UNSIGNED NOT NULL DEFAULT 0,
-granted_with_delaying_next_jobs INT UNSIGNED NOT NULL DEFAULT 0,
+granted INT NOT NULL DEFAULT 0,
+granted_with_force INT NOT NULL DEFAULT 0,
+granted_with_delay_next_jobs INT NOT NULL DEFAULT 0,
 INDEX id (job_id),
 PRIMARY KEY (job_id)
 );
