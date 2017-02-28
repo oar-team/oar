@@ -257,17 +257,24 @@ sub mysql_ro_user_privileges() {
     mysql_admin_exec_sql("GRANT SELECT ON $db_name.queues TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
     mysql_admin_exec_sql("GRANT SELECT ON $db_name.resource_logs TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
     mysql_admin_exec_sql("GRANT SELECT ON $db_name.resources TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.walltime_change TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
 }
 
 sub fix_ro_user_privileges() {
+    if ($db_type eq "mysql") {
     # This revokes the wildcard select privilege that was made by previous
     # versions of this script and set up the correct privileges for the ro user
     # (the bug affected only mysql databases)
-    if ($db_type eq "mysql") {
-      print "Fixing the ro user privileges...\n";
+      print "Fixing the ro user privileges in MySQL...\n";
       mysql_admin_exec_sql("REVOKE SELECT ON $db_name.* FROM '$db_ro_user'".'@'."'localhost'") ;
       mysql_admin_exec_sql("REVOKE SELECT ON $db_name.* FROM '$db_ro_user'".'@'."'%'") ;
       mysql_ro_user_privileges();
+    } elsif ($db_type eq "Pg") {
+    # This revokes the create privilege which is given to anyone by default: oar_ro once connected could create tables.
+    # See: https://www.postgresql.org/docs/8.3/static/ddl-schemas.html#DDL-SCHEMAS-PRIV
+      print "Fixing the ro user privileges in PostgreSQL...\n";
+      pgsql_admin_exec_sql("REVOKE CREATE ON SCHEMA public FROM PUBLIC", $db_name);
+      pgsql_admin_exec_sql("GRANT CREATE ON SCHEMA public TO $db_user", $db_name);
     }
 }
 
@@ -289,6 +296,8 @@ sub create_database() {
         }
         print "Creating the database...\n";
         pgsql_admin_exec_sql("CREATE DATABASE $db_name OWNER $db_user");
+        pgsql_admin_exec_sql("REVOKE CREATE ON SCHEMA public FROM PUBLIC", $db_name);
+        pgsql_admin_exec_sql("GRANT CREATE ON SCHEMA public TO $db_user", $db_name);
         pgsql_admin_exec_sql("GRANT ALL PRIVILEGES ON DATABASE $db_name TO $db_user");
     }
 
@@ -319,7 +328,7 @@ sub create_database() {
                                                   queues,
                                                   resource_logs,
                                                   resources,
-                                                  extratime,
+                                                  walltime_change,
                                                   admission_rules_id_seq,
                                                   event_logs_event_id_seq,
                                                   files_file_id_seq,
@@ -546,7 +555,7 @@ unless ($db_name) {
 if ($action eq "create" or $action eq "drop" or $action eq "fix-ro-user-priv") {
     unless ($db_is_local and $db_type eq "Pg") {
         unless ($db_admin_user) {
-            print "Error: Please provide --db-admin-user and --db-admin-pass options (MySQL) or --db-is-local (PgSQL).\n";
+            print "Error: Please provide the database administrator credentials, e.g. with --db-admin-user and --db-admin-pass options or with --db-is-local (PostgreSQL only).\n";
             exit(1);
         }
         unless ($db_admin_pass) {

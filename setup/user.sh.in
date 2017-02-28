@@ -4,7 +4,7 @@ user_setup() {
     set_rights ${BINDIR}/oardel       6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
     set_rights ${BINDIR}/oarstat      6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
     set_rights ${BINDIR}/oarsub       6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
-    set_rights ${BINDIR}/oarextratime 6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
+    set_rights ${BINDIR}/oarwalltime 6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
     set_rights ${BINDIR}/oarhold      6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
     set_rights ${BINDIR}/oarresume    6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP} 
 }

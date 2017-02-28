@@ -173,6 +173,7 @@ sub hms_to_duration($$$);
 sub hms_to_sql($$$);
 sub duration_to_hms($);
 sub duration_to_sql($);
+sub duration_to_sql_signed($);
 sub sql_to_duration($);
 sub get_date($);
 
@@ -193,14 +194,13 @@ sub get_accounting_summary($$$$$);
 sub get_accounting_summary_byproject($$$$$$);
 sub get_last_project_karma($$$$);
 
-# EXTRATIME
-sub add_extratime($$$$);
-sub update_extratime($$$$$$);
-sub get_extratime_for_job($$);
-sub get_jobs_for_extratime($);
-sub get_possible_job_end_time_in_interval($$$$$$);
-sub update_walltime_for_job($$$$);
-sub clean_past_extratime_requests($);
+# WALLTIME CHANGE
+sub add_walltime_change_request($$$$$);
+sub update_walltime_change_request($$$$$$$$);
+sub get_walltime_change_for_job($$);
+sub get_jobs_with_walltime_change($);
+sub get_possible_job_end_time_in_interval($$$$$$$$$);
+sub change_walltime($$$$);
 
 # LOCK FUNCTIONS:
 sub get_lock($$$);
@@ -715,13 +715,13 @@ sub is_timesharing_for_2_jobs($$$){
                                t.type
                              HAVING
                                COUNT(j.job_id) = 2 AND (
-                                 ( t.type = 'timesharing=user,name' AND
+                                 ( ( t.type = 'timesharing=user,name' OR t.type = 'timesharing=name,user' ) AND
                                    COUNT(DISTINCT j.job_user) = 1 AND
                                    COUNT(DISTINCT j.job_name) = 1 ) OR
-                                 ( t.type = 'timesharing=user,*' AND
+                                 ( ( t.type = 'timesharing=user,*' OR t.type = 'timesharing=*,user' ) AND
                                    COUNT(DISTINCT j.job_user) = 1 ) OR
-                                 ( t.type = 'timesharing=*,name' AND
-                                   COUNT(DISTINCT j.job_user) = 1 ) OR
+                                 ( ( t.type = 'timesharing=*,name' OR t.type = 'timesharing=name,*' ) AND
+                                   COUNT(DISTINCT j.job_name) = 1 ) OR
                                  t.type = 'timesharing=*,*' )
                             ");
     my $res = $sth->execute();
@@ -2260,6 +2260,25 @@ sub get_job($$) {
                                 FROM jobs
                                 WHERE
                                     job_id = $job_id
+                            ");
+    $sth->execute();
+
+    my $ref = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return($ref);
+}
+
+sub get_running_job($$) {
+    my $dbh = shift;
+    my $job_id = shift;
+
+    my $sth = $dbh->prepare("   SELECT j.start_time, m.moldable_walltime
+                                FROM jobs j, moldable_job_id m
+                                WHERE
+                                    job_id = $job_id AND 
+                                    j.state = 'Running'
+                                    j.assigned_moldable_job = m.moldable_id
                             ");
     $sth->execute();
 
@@ -7069,6 +7088,20 @@ sub duration_to_sql($) {
     return hms_to_sql($hour,$min,$sec);
 }
 
+# duration_to_sql_signed
+# same a above but with sign
+sub duration_to_sql_signed($) {
+    my $duration=shift;
+    my $sign = "";
+    if ($duration > 0) {
+        $sign = "+";
+    } elsif ($duration < 0) {
+        $sign = "-";
+    }
+    my ($hour,$min,$sec)=duration_to_hms(abs($duration));
+    return $sign.hms_to_sql($hour,$min,$sec);
+}
+
 
 
 # sql_to_duration
@@ -7688,73 +7721,79 @@ sub is_an_event_exists($$$){
     return($r[0]);
 }
 
-# EXTRA TIME
+# WALLTIME CHANGE
 
 # Add an extra time request to the database:
-# add 1 line to the extratime table
-# Args: dbh, job_id of the job which the user wants extra time for
-sub add_extratime($$$$) {
+# add 1 line to the walltime_change table
+sub add_walltime_change_request($$$$$) {
     my $dbh = shift;
     my $job_id = shift;
     my $pending = shift;
+    my $force = shift;
     my $delay_next_jobs = shift;
-    $dbh->do("INSERT INTO extratime (job_id,pending,delay_next_jobs) VALUES ($job_id,$pending,'$delay_next_jobs')");
+    $dbh->do("INSERT INTO walltime_change (job_id,pending,force,delay_next_jobs) VALUES ($job_id,$pending,'$force','$delay_next_jobs')");
 }
 
-# Update an extratime request after processing
-# Args: dbh, job_id, total extratime added to the job
-sub update_extratime($$$$$$) {
+# Update an walltime change request after processing
+sub update_walltime_change_request($$$$$$$$) {
     my $dbh = shift;
     my $job_id = shift;
     my $pending = shift;
+    my $force = shift;
     my $delay_next_jobs = shift;
     my $granted = shift;
-    my $granted_with_delaying_next_jobs = shift;
-    $dbh->do("UPDATE extratime SET pending=$pending".
+    my $granted_with_force = shift;
+    my $granted_with_delay_next_jobs = shift;
+    $dbh->do("UPDATE walltime_change SET pending=$pending".
+        ((defined($force))?",force='$force'":"").
         ((defined($delay_next_jobs))?",delay_next_jobs='$delay_next_jobs'":"").
         ((defined($granted))?",granted=$granted":"").
-        ((defined($granted_with_delaying_next_jobs))?",granted_with_delaying_next_jobs=$granted_with_delaying_next_jobs":"").
+        ((defined($granted_with_force))?",granted_with_force=$granted_with_force":"").
+        ((defined($granted_with_delay_next_jobs))?",granted_with_delay_next_jobs=$granted_with_delay_next_jobs":"").
         " WHERE job_id = $job_id");
 }
 
 # Get the current extra time added for a given job
-#  Args: dbh, job_id
-sub get_extratime_for_job($$) {
+sub get_walltime_change_for_job($$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $sth = $dbh->prepare("SELECT pending, delay_next_jobs, granted, granted_with_delaying_next_jobs FROM extratime WHERE job_id = $job_id");
+    my $sth = $dbh->prepare("SELECT pending, force, delay_next_jobs, granted, granted_with_force, granted_with_delay_next_jobs FROM walltime_change WHERE job_id = $job_id");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     return $ref;
 }
 
 # Get all jobs with extra time requests to process
-# Args: dbh
-sub get_jobs_for_extratime($) {
+sub get_jobs_with_walltime_change($) {
     my $dbh = shift;
     my $req = <<EOS;
 SELECT
-  j.job_id, e.pending, e.delay_next_jobs, e.granted, e.granted_with_delaying_next_jobs, j.start_time, m.moldable_walltime, a.resource_id
+  j.job_id, j.queue_name, j.start_time, j.job_user, j.job_name, m.moldable_walltime, w.pending, w.force, w.delay_next_jobs, w.granted, w.granted_with_force, w.granted_with_delay_next_jobs, a.resource_id
 FROM
-  jobs j, moldable_job_descriptions m, assigned_resources a, extratime e
+  jobs j, moldable_job_descriptions m, assigned_resources a, walltime_change w
 WHERE
   j.state = 'Running' AND
-  j.job_id = e.job_id AND
-  j.job_id = m.moldable_job_id AND
+  j.job_id = w.job_id AND
+  j.assigned_moldable_job = m.moldable_id AND
   j.assigned_moldable_job = a.moldable_job_id AND
-  e.pending > 0
+  w.pending != 0
 EOS
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my $jobs = {};
     while (my $ref = $sth->fetchrow_hashref()) {
         my $job_id = $ref->{job_id};
+        $jobs->{$job_id}->{queue_name} = $ref->{queue_name};
         $jobs->{$job_id}->{start_time} = $ref->{start_time};
+        $jobs->{$job_id}->{job_user} = $ref->{job_user};
+        $jobs->{$job_id}->{job_name} = $ref->{job_name};
         $jobs->{$job_id}->{walltime} = $ref->{moldable_walltime};
         $jobs->{$job_id}->{pending} = $ref->{pending};
+        $jobs->{$job_id}->{force} = $ref->{force};
         $jobs->{$job_id}->{delay_next_jobs} = $ref->{delay_next_jobs};
         $jobs->{$job_id}->{granted} = $ref->{granted};
-        $jobs->{$job_id}->{granted_with_delaying_next_jobs} = $ref->{granted_with_delaying_next_jobs};
+        $jobs->{$job_id}->{granted_with_force} = $ref->{granted_with_force};
+        $jobs->{$job_id}->{granted_with_delay_next_jobs} = $ref->{granted_with_delay_next_jobs};
         push(@{$jobs->{$job_id}->{resources}}, $ref->{resource_id});
     }
     return $jobs;
@@ -7762,20 +7801,37 @@ EOS
 
 
 # Compute the possible end time for a job in an interval of the gantt of the predicted jobs
-# Args: dbh, interval boundaries, scheduler job security time, delay_next_jobs
-sub get_possible_job_end_time_in_interval($$$$$$) {
+sub get_possible_job_end_time_in_interval($$$$$$$$$) {
     my $dbh = shift;
     my $from = shift;
     my $to = shift;
     my $resources = shift;
     my $scheduler_job_security_time = shift;
     my $delay_next_jobs = shift;
+    my $job_types = shift;
+    my $job_user = shift;
+    my $job_name = shift;
     my $first = $to;
     $to += $scheduler_job_security_time;
     my $only_adv_reservations = ($delay_next_jobs eq 'YES')?"j.reservation != 'None' AND":"";
     my $resource_list = join(", ", @$resources);
     # NB: we do not remove jobs form the same user, because other jobs can be behind and this may change
     # the scheduling for other users. The user can always delete his job if needed for extratime.
+    my $exclude = "";
+    if (defined($job_types->{timesharing})) {
+        if ($job_types->{timesharing} eq 'user,*' or $job_types->{timesharing} eq '*,user') {
+            $exclude .= "((t.type = 'timesharing=user,*' OR t.type = 'timesharing=*,user') and j.job_user = $job_user) OR ";
+        } elsif ($job_types->{timesharing} eq 'name,*' or $job_types->{timesharing} eq '*,name') {
+            $exclude .= "((t.type = 'timesharing=*,name' OR t.type = 'timesharing=name,*') and j.job_name = $job_name) OR ";
+        } elsif ($job_types->{timesharing} eq 'name,user' or $job_types->{timesharing} eq 'user,name') {
+            $exclude .= "((t.type = 'timesharing=user,name' OR t.type = 'timesharing=name,user') and j.job_name = '$job_name' AND j.job_user = '$job_user') OR ";
+        } elsif ($job_types->{timesharing} eq '*,*') {
+            $exclude .= "t.type = 'timesharing=*,*' OR";
+        }
+    }
+    if (defined($job_types->{allowed})) {
+      $exclude = "t.type = 'placeholder=".$job_types->{allowed}."' OR ";
+    }
     my $req = <<EOS;
 SELECT
   DISTINCT gp.start_time
@@ -7794,8 +7850,9 @@ WHERE
     FROM
       job_types t
     WHERE
-      t.job_id = j.job_id AND
-      t.type = 'besteffort'
+      t.job_id = j.job_id AND (
+      $exclude
+      t.type = 'besteffort' )
   ) AND
   gr.resource_id IN ( $resource_list )
 EOS
@@ -7809,31 +7866,14 @@ EOS
     return $first;
 }
 
-# Increase the walltime of a job and add an event
-# Args: dbh, job_id, new walltime, message
-sub update_walltime_for_job($$$$) {
+# change the walltime of a job and add an event
+sub change_walltime($$$$) {
     my $dbh = shift;
     my $job_id = shift;
     my $new_walltime = shift;
     my $message = shift;
     $dbh->do("UPDATE moldable_job_descriptions SET moldable_walltime=$new_walltime FROM jobs WHERE jobs.job_id = moldable_job_id AND jobs.job_id = $job_id");
-    $dbh->do("INSERT INTO event_logs (type,job_id,date,description,to_check) VALUES ('EXTRATIME',$job_id,EXTRACT(EPOCH FROM current_timestamp),' $message','NO')");
-}
-
-# Remove extra time requests for old jobs which are not running any more
-# Args: dbh
-sub clean_past_extratime_requests($) {
-    my $dbh = shift;
-    my $req = <<EOS;
-DELETE FROM 
-  extratime 
-USING
-  jobs
-WHERE
-  extratime.job_id = jobs.job_id AND
-  jobs.state != 'Running'
-EOS
-    $dbh->do($req);
+    $dbh->do("INSERT INTO event_logs (type,job_id,date,description,to_check) VALUES ('WALLTIME',$job_id,EXTRACT(EPOCH FROM current_timestamp),' $message','NO')");
 }
 
 # LOCK FUNCTIONS:
