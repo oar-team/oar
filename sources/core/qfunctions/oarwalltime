@@ -1,0 +1,105 @@
+#!/usr/bin/perl
+# Request a change of walltime for a job
+
+use strict;
+use warnings;
+use DBI();
+use OAR::IO;
+use OAR::Version;
+use OAR::Walltime;
+use Getopt::Long;
+
+my $Old_umask = sprintf("%lo",umask());
+umask(oct("022"));
+
+# Display command help
+sub usage {
+    return <<EOS;
+Usage:
+  $0 [options] <job_id> [<[+/-]new walltime>]
+
+Manage walltime change requests for a job.
+- If no new walltime is given, the command shows the current walltime change 
+  status for the job.
+- If a new walltime is given, the command requests a change of the walltime of the
+  job, or update a previous request.
+
+The new walltime is to be passed in the format [+-]h:m:s. If no sign is used,
+The value is a new walltime absolute value (like passed to oarsub). If prefixed
+by +, the request is an increase of the walltime by the passed value. If
+prefixed by -, it is a decrease request.
+
+The job must be running to request a walltime change.
+
+Options:
+      --force            request the change to apply at once
+      --delay-next-jobs  allow an extra time request to succeed even if it
+                         must delay other jobs, including other users' jobs
+  -V, --version          print OAR version
+  -h, --help             print help
+
+EOS
+}
+
+sub version {
+    print("OAR version: ".OAR::Version::get_version()."\n");
+    exit(0);
+}
+
+# Parse command line
+Getopt::Long::Configure("gnu_getopt", "pass_through");
+my $force = undef;
+my $delay_next_jobs = undef;
+GetOptions (
+            "force" => \$force,
+            "delay-next-jobs" => \$delay_next_jobs,
+            "help|h" => sub { print(usage()); exit(0); },
+            "version|V" => sub { print("OAR version: ".OAR::Version::get_version()."\n"); exit(0); },
+           ) or exit(1);
+
+my $jobid = shift;
+my $new_walltime = shift;
+my $more_args = shift;
+if (not defined($jobid) or $jobid !~ /^\d+$/ or (not defined($new_walltime) and (defined($delay_next_jobs) or defined($force))) or (defined($new_walltime) and $new_walltime !~ /^[-+]?\d+(?::\d+(?::\d+)?)?$/) or defined($more_args)) {
+    print("Syntax error.\n\n");
+    print(usage());
+    exit(4);
+}
+
+my $dbh = OAR::IO::connect();
+# Command is a query only, no request
+if (not defined($new_walltime)) {
+    my ($walltime_change, $state) = OAR::Walltime::get($dbh, $jobid);
+    if(not defined($walltime_change)) {
+        print(uc($state)."\n");
+        exit 2;
+    }
+    if (not exists($walltime_change->{walltime})) {
+        print("Walltime change status for job $jobid (job is not running yet):\n  N/A\n");
+    } else {
+        my @granted_with = grep(!/: 0:0:0$/,("forced: ".$walltime_change->{granted_with_force}, "delaying next jobs: ".$walltime_change->{granted_with_delay_next_jobs}));
+        if ($state eq "Running") {
+            print("Walltime change status for job $jobid (job is running):\n");
+            printf("  Current walltime: %11s\n",$walltime_change->{walltime});
+            printf("  Possible increase: %10s\n",$walltime_change->{possible});
+            printf("  Already granted: %12s",$walltime_change->{granted});
+            print ((@granted_with)?" (".join(", ",@granted_with).")\n":"\n");
+            printf("  Pending/unsatisfied: %8s\n",$walltime_change->{pending},(defined($walltime_change->{delay_next_jobs}) and $walltime_change->{delay_next_jobs} eq "YES")?" (will possibly delay next jobs)":"");
+        } else {
+            print("Walltime change status for job $jobid (job is not running):\n");
+            printf("  Walltime: %11s\n",$walltime_change->{walltime});
+            printf("  Granted: %12s",$walltime_change->{granted});
+            print ((@granted_with)?" (".join(", ",@granted_with).")\n":"\n");
+            printf("  Unsatisfied: %8s\n",$walltime_change->{pending},(defined($walltime_change->{delay_next_jobs}) and $walltime_change->{delay_next_jobs} eq "YES")?" (will possibly delay next jobs)":"");
+        }
+    }
+    OAR::IO::disconnect($dbh);
+    exit 0;
+} 
+
+# Request
+my $lusr=$ENV{OARDO_USER};
+my ($error, undef, $status, $message) = OAR::Walltime::request($dbh, $jobid, $lusr, $new_walltime, defined($force)?"YES":"NO", defined($delay_next_jobs)?"YES":"NO");
+OAR::IO::disconnect($dbh);
+print(ucfirst("$status: $message.\n"));
+exit($error);

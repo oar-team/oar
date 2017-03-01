@@ -257,17 +257,24 @@ sub mysql_ro_user_privileges() {
     mysql_admin_exec_sql("GRANT SELECT ON $db_name.queues TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
     mysql_admin_exec_sql("GRANT SELECT ON $db_name.resource_logs TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
     mysql_admin_exec_sql("GRANT SELECT ON $db_name.resources TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
+    mysql_admin_exec_sql("GRANT SELECT ON $db_name.walltime_change TO '$db_ro_user'".'@'."'%' IDENTIFIED BY '$db_ro_pass'") ;
 }
 
 sub fix_ro_user_privileges() {
+    if ($db_type eq "mysql") {
     # This revokes the wildcard select privilege that was made by previous
     # versions of this script and set up the correct privileges for the ro user
     # (the bug affected only mysql databases)
-    if ($db_type eq "mysql") {
-      print "Fixing the ro user privileges...\n";
+      print "Fixing the ro user privileges in MySQL...\n";
       mysql_admin_exec_sql("REVOKE SELECT ON $db_name.* FROM '$db_ro_user'".'@'."'localhost'") ;
       mysql_admin_exec_sql("REVOKE SELECT ON $db_name.* FROM '$db_ro_user'".'@'."'%'") ;
       mysql_ro_user_privileges();
+    } elsif ($db_type eq "Pg") {
+    # This revokes the create privilege which is given to anyone by default: oar_ro once connected could create tables.
+    # See: https://www.postgresql.org/docs/8.3/static/ddl-schemas.html#DDL-SCHEMAS-PRIV
+      print "Fixing the ro user privileges in PostgreSQL...\n";
+      pgsql_admin_exec_sql("REVOKE CREATE ON SCHEMA public FROM PUBLIC", $db_name);
+      pgsql_admin_exec_sql("GRANT CREATE ON SCHEMA public TO $db_user", $db_name);
     }
 }
 
@@ -289,6 +296,8 @@ sub create_database() {
         }
         print "Creating the database...\n";
         pgsql_admin_exec_sql("CREATE DATABASE $db_name OWNER $db_user");
+        pgsql_admin_exec_sql("REVOKE CREATE ON SCHEMA public FROM PUBLIC", $db_name);
+        pgsql_admin_exec_sql("GRANT CREATE ON SCHEMA public TO $db_user", $db_name);
         pgsql_admin_exec_sql("GRANT ALL PRIVILEGES ON DATABASE $db_name TO $db_user");
     }
 
@@ -297,7 +306,40 @@ sub create_database() {
 
     if ($db_ro_user and $db_ro_pass) {
         if ($db_type eq "Pg")  {
-            pgsql_admin_exec_sql("GRANT SELECT ON schema,accounting,admission_rules,assigned_resources,event_log_hostnames,event_logs,files,frag_jobs,gantt_jobs_predictions,gantt_jobs_predictions_visu,gantt_jobs_resources,gantt_jobs_resources_visu,job_dependencies,job_resource_descriptions,job_resource_groups,job_state_logs,job_types,jobs,moldable_job_descriptions,queues,resource_logs,resources,admission_rules_id_seq,event_logs_event_id_seq,files_file_id_seq,job_resource_groups_res_group_id_seq,job_state_logs_job_state_log_id_seq,job_types_job_type_id_seq,moldable_job_descriptions_moldable_id_seq,resource_logs_resource_log_id_seq,resources_resource_id_seq,jobs_job_id_seq TO $db_ro_user", $db_name);
+            pgsql_admin_exec_sql("GRANT SELECT ON schema,
+                                                  accounting,
+                                                  admission_rules,
+                                                  assigned_resources,
+                                                  event_log_hostnames,
+                                                  event_logs,
+                                                  files,
+                                                  frag_jobs,
+                                                  gantt_jobs_predictions,
+                                                  gantt_jobs_predictions_visu,
+                                                  gantt_jobs_resources,
+                                                  gantt_jobs_resources_visu,
+                                                  job_dependencies,
+                                                  job_resource_descriptions,
+                                                  job_resource_groups,
+                                                  job_state_logs,
+                                                  job_types,
+                                                  jobs,
+                                                  moldable_job_descriptions,
+                                                  queues,
+                                                  resource_logs,
+                                                  resources,
+                                                  walltime_change,
+                                                  admission_rules_id_seq,
+                                                  event_logs_event_id_seq,
+                                                  files_file_id_seq,
+                                                  job_resource_groups_res_group_id_seq,
+                                                  job_state_logs_job_state_log_id_seq,
+                                                  job_types_job_type_id_seq,
+                                                  moldable_job_descriptions_moldable_id_seq,
+                                                  resource_logs_resource_log_id_seq,
+                                                  resources_resource_id_seq,
+                                                  jobs_job_id_seq
+                                  TO $db_ro_user", $db_name);
         } elsif ($db_type eq "mysql") {
             print "Creating the database read-only user...\n";
             mysql_ro_user_privileges();
@@ -513,7 +555,7 @@ unless ($db_name) {
 if ($action eq "create" or $action eq "drop" or $action eq "fix-ro-user-priv") {
     unless ($db_is_local and $db_type eq "Pg") {
         unless ($db_admin_user) {
-            print "Error: Please provide --db-admin-user and --db-admin-pass options (MySQL) or --db-is-local (PgSQL).\n";
+            print "Error: Please provide the database administrator credentials, e.g. with --db-admin-user and --db-admin-pass options or with --db-is-local (PostgreSQL only).\n";
             exit(1);
         }
         unless ($db_admin_pass) {

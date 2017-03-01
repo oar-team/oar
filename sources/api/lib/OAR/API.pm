@@ -103,8 +103,8 @@ sub import_html_form($) {
   return $data;
 }
 
-# Load data into a hashref
-sub import_data($$) {
+# Load data into a hashref, using format
+sub import_data_with_format($$) {
   (my $data, my $format) = @_;
   if ($format eq "yaml") { import_yaml($data); }
   elsif ($format eq "dumper") { import_dumper($data); }
@@ -113,6 +113,34 @@ sub import_data($$) {
     ERROR 400, "Unknown $format format", $@;
     exit 0;
   }
+}
+
+# Load data into a hashref, using content_type
+sub import_data_with_content_type($$$) {
+  my ($data, $content_type, $msg) = @_;
+  # content_type may be of the form "application/json; charset=UTF-8"
+  ($content_type)=split(/\s*;\s*/,$content_type);
+  my $obj;
+
+  # If the data comes in the YAML format
+  if ( $content_type eq 'text/yaml' ) {
+    $obj=import_yaml($data);
+  }
+  # If the data comes in the JSON format
+  elsif ( $content_type eq 'application/json') {
+    $obj=import_json($data);
+  }
+  # If the data comes from an html form
+  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
+    $obj=import_html_form($data);
+  }
+  # We expect the data to be in YAML or JSON format
+  else {
+    ERROR 406, ucfirst($msg).' description must be in YAML or JSON',
+      "The correct format for a $msg request is text/yaml or application/json. ";
+    exit 0;
+  }
+  return $obj;
 }
 
 # Export a hash into YAML
@@ -1131,33 +1159,8 @@ sub ERROR($$$) {
 sub check_job($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $job;
-  
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
 
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $job=import_yaml($data);
-  }
-
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json') {
-    $job=import_json($data);
-  }
-
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $job=import_html_form($data);
-  }
-
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, 'Job description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or application/json. "
-      . $content_type;
-    exit 0;
-  }
+  my $job = import_data_with_content_type($data, $content_type, "job");
 
   # Job must have a "script" or script_path field unless there's a reservation
   unless ( $job->{reservation} or $job->{script} or $job->{script_path} or $job->{command}) {
@@ -1209,39 +1212,30 @@ sub check_job($$) {
 sub check_job_update($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $job;
 
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
-
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $job=import_yaml($data);
-  }
-
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json' ) {
-    $job=import_json($data);
-  }
-
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $job=import_html_form($data);
-  }
-
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, 'Job description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or application/json. "
-      . $content_type;
-    exit 0;
-  }
+  my $job = import_data_with_content_type($data, $content_type, "job");
 
   # Job must have a "method" field
-  unless ( $job->{method} ) {
+  if ( not exists ($job->{method}) ) {
     ERROR 400, 'Missing Required Field',
       'A job update must have a "method" field!';
     exit 0;
+  }
+  elsif  ($job->{method} eq "walltime-change") {
+    if (not defined($job->{walltime})) {
+      ERROR(400, 'Missing Required Field', 'Walltime change request must have a walltime field');
+      exit 0;
+    } 
+  }
+  elsif  ($job->{method} eq "signal") {
+    if (not defined($job->{signal})) {
+      ERROR(400, 'Missing Required Field', 'Signal request must have a signal field');
+      exit 0;
+    } 
+    if ($job->{signal} !~ /^\d+$/ ) { 
+      ERROR(400, 'Invalid Field', 'Signal field must be an integer');
+      exit 0;
+    } 
   }
 
   return $job;
@@ -1251,35 +1245,14 @@ sub check_job_update($$) {
 sub check_resources($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $resources;
 
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
+  my $resources = import_data_with_content_type($data, $content_type, "resources");
 
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $resources=import_yaml($data);
-  }
-
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json' ) {
-    $resources=import_json($data);
-  }
-
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $resources=import_html_form($data);
+  # If the data comes from an html form, data is actually in yaml format
+  if ( $content_type =~ /^application\/x-www-form-urlencoded\s*;/ ) {
     $resources=import_yaml($resources->{"yaml_array"});
   }
 
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, 'Resource description must be in YAML or JSON',
-      "The correct format for a resource request is text/yaml or application/json. "
-      . $content_type;
-    exit 0;
-  }
- 
  my $resources_array;
  if ( ref($resources) eq "HASH") {
    $resources_array = [ $resources ] ;
@@ -1322,33 +1295,8 @@ sub check_resources($$) {
 sub check_resource_state($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $resource;
 
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
-
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $resource=import_yaml($data);
-  }
-
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json' ) {
-    $resource=import_json($data);
-  }
-
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $resource=import_html_form($data);
-  }
-
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, 'Job description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or application/json. "
-      . $content_type;
-    exit 0;
-  }
+  my $resource = import_data_with_content_type($data, $content_type, "resource");
 
   # Resource must have a "state" field
   unless ( $resource->{state} ) {
@@ -1372,33 +1320,8 @@ sub check_resource_state($$) {
 sub check_resource_description($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $description;
 
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
-
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $description = import_yaml($data);
-  }
-
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json' ) {
-    $description = import_json($data);
-  }
-
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $description = import_html_form($data);
-  }
-
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, 'Resource description must be in YAML or JSON',
-      "The correct format for resource description is text/yaml or application/json. "
-      . $content_type;
-    exit 0;
-  }
+  my $description = import_data_with_content_type($data, $content_type, "resource generation");
 
   # Resource description must have a "expression" field
   unless ( $description->{resources} ) {
@@ -1423,33 +1346,8 @@ sub check_resource_description($$) {
 sub check_grid_job($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $job;
 
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
-
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $job=import_yaml($data);
-  }
-
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json' ) {
-    $job=import_json($data);
-  }
-
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $job=import_html_form($data);
-  }
-
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, 'Job description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or application/json. "
-      . $content_type;
-    exit 0;
-  }
+  my $job = import_data_with_content_type($data, $content_type, "grid job");
 
   # Job must have a "resources" or "file" field
   unless ( $job->{resources} or $job->{file} ) {
@@ -1479,33 +1377,8 @@ sub check_grid_job($$) {
 sub check_admission_rule($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $admission_rule;
 
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
-
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $admission_rule = import_yaml($data);
-  }
-
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json' ) {
-    $admission_rule = import_json($data);
-  }
-
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $admission_rule = import_html_form($data);
-  }
-
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, 'Admission rule description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or application/json. "
-      . $content_type;
-    exit 0;
-  }
+  my $admission_rule = import_data_with_content_type($data, $content_type, "admission rule");
 
   # Admission rule must have a "priority" field
   unless ( $admission_rule->{priority}) {
@@ -1533,33 +1406,8 @@ sub check_admission_rule($$) {
 sub check_admission_rule_update($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $admission_rule;
 
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
-
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $admission_rule = import_yaml($data);
-  }
-
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json' ) {
-    $admission_rule = import_json($data);
-  }
-
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $admission_rule = import_html_form($data);
-  }
-
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, 'Admission rule description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or application/json. "
-      . $content_type;
-    exit 0;
-  }
+  my $admission_rule = import_data_with_content_type($data, $content_type, "admission rule");
   
   # Admission rule must have either a "method" or the "priority" and "enabled" and "rule" fields
   unless ( $admission_rule->{method} or ( $admission_rule->{priorty} and $admission_rule->{enabled} and $admission_rule->{rule} ) ) {
@@ -1575,33 +1423,8 @@ sub check_admission_rule_update($$) {
 sub check_configuration_variable($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $parameter;
 
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
-
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $parameter = import_yaml($data);
-  }
-
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json' ) {
-    $parameter = import_json($data);
-  }
-
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $parameter = import_html_form($data);
-  }
-
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, 'Configuration variable description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or application/json. "
-      . $content_type;
-    exit 0;
-  }
+  my $parameter = import_data_with_content_type($data, $content_type, "configuration variable");
 
   # Parameter must have a "value" field
   unless ( $parameter->{value}) {
@@ -1617,33 +1440,8 @@ sub check_configuration_variable($$) {
 sub check_chmod($$) {
   my $data         = shift;
   my $content_type = shift;
-  my $parameter;
 
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
-
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $parameter = import_yaml($data);
-  }
-
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json' ) {
-    $parameter = import_json($data);
-  }
-
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $parameter = import_html_form($data);
-  }
-
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, 'Configuration variable description must be in YAML or JSON',
-      "The correct format for a job request is text/yaml or application/json. "
-      . $content_type;
-    exit 0;
-  }
+  my $parameter = import_data_with_content_type($data, $content_type, "chmod");
 
   # Parameter must have a "mode" field
   unless ( $parameter->{mode}) {
@@ -1655,6 +1453,22 @@ sub check_chmod($$) {
   return $parameter;
 }
 
+# Check the consistency of a posted state query
+sub check_state($$) {
+  my $data         = shift;
+  my $content_type = shift;
+
+  my $state = import_data_with_content_type($data, $content_type, "state");
+
+  # Parameter must have a "mode" field
+  unless ( $state->{state}) {
+    ERROR 400, 'Missing Required Field',
+      'State query must have a state field';
+    exit 0;
+  }
+
+  return $state;
+}
 
 
 ##############################################################################

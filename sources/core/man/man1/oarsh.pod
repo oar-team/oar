@@ -28,7 +28,7 @@ If not using the job-key mechanism, the B<OAR_JOB_ID> environment variable has t
 
 =item B<OAR_JOB_KEY_FILE>
 
-If using the job-key mechanism (see B<oarsub> -k -e/-i), B<oarsh> can use the job-key defined by the B<OAR_JOB_KEY_FILE> environment variable to connect to job on the remote machine. That mechanism can allow to connect to a job from a machine which is outside the OAR cluster the job belong to (e.g. in a grid of OAR clusters), given the job-key is available on that machine. NB: it is also possible to give the job-key using B<oarsh> -i option.
+If using the job-key mechanism (see B<oarsub> -k -e/-i), B<oarsh> can use the job-key defined by the B<OAR_JOB_KEY_FILE> environment variable to connect to job on the remote machine. That mechanism can allow one to connect to a job from a machine which is outside the OAR cluster the job belong to (e.g. in a grid of OAR clusters), given the job-key is available on that machine. NB: it is also possible to give the job-key using B<oarsh> -i option.
 
 =back
 

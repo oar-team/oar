@@ -7,8 +7,14 @@ require 'uri'
 USER=ENV['USER']
 APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/" unless ENV['APIURI']
 APIURI=ENV['APIURI'] if ENV['APIURI']
+POST_APIURI=APIURI unless ENV['POST_APIURI']
+POST_APIURI=ENV['POST_APIURI'] if ENV['POST_APIURI']
 api_uri = URI(APIURI)
+post_api_uri = URI(POST_APIURI)
 APIPATH=api_uri.path
+POST_APIPATH=post_api_uri.path
+MODE="oar2" unless ENV['MODE']
+MODE=ENV['MODE'] if ENV['MODE']
 
 #######################################################################
 #Coded By Narayanan K - GSOC Testsuites project  - RESTful API Library
@@ -18,10 +24,17 @@ APIPATH=api_uri.path
 
 class OarApi
 attr_accessor :jobhash, :statushash, :specificjobdetails, :oarv, :oartz, :jobarray, :deletehash, :apiuri, :value
-attr_reader :deletestatus,:jobstatus,:api,:chkpointstatus,:holdjob,:rholdjob,:signalreturn,:resumejob,:resources,:resourcedetails,:resstatus,:specificres,:noderesources
+attr_reader :deletestatus,:jobstatus,:api,:chkpointstatus,:holdjob,:rholdjob,:signalreturn,:resumejob,:resources,:resourcedetails,:resstatus,:specificres,:noderesources,:owner_key,:queue_key
 def initialize(apiuri,get_uri="")
   @api = RestClient::Resource.new apiuri
   @apiuri = URI.parse(apiuri)
+  if MODE=="oar3"
+    @owner_key="user"
+    @queue_key="queue_name"
+  else
+    @owner_key="owner"
+    @queue_key="queue"
+  end
 end
 
 # Converts the given uri, to something relative
@@ -45,7 +58,8 @@ end
 def get(api,uri)
     uri=rel_uri(uri)
 #  begin
-    return JSON.parse(api[uri].get(:accept => 'application/json'))
+    return JSON.parse(api[uri].get(:accept => 'application/json',
+                                   :'x-api-path-prefix' => APIPATH))
 #  rescue => e
 #    if e.respond_to?('http_code')
 #      puts "ERROR #{e.http_code}:\n #{e.response.body}"
@@ -70,7 +84,8 @@ end
 def post(api,uri,j)
     uri=rel_uri(uri)
     j=j.to_json
-    return JSON.parse(api[uri].post( j,:content_type  => 'application/json'))
+    return JSON.parse(api[uri].post( j,:content_type  => 'application/json',
+                                       :'x-api-path-prefix' => POST_APIPATH))
 end
 
 ########################################################################
@@ -86,7 +101,8 @@ end
 def delete(api, uri)
  uri=rel_uri(uri)
  begin
-   return JSON.parse(api[uri].delete(:content_type => 'application/json'))
+   return JSON.parse(api[uri].delete(:content_type => 'application/json',
+                                     :'x-api-path-prefix' => POST_APIPATH))
  rescue => e
  if e.respond_to?('http_code')
       puts "ERROR #{e.http_code}:\n #{e.response.body}"

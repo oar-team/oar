@@ -147,7 +147,7 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 #</Location>                                                             
 
 
-# In this last example, we set up a trusted connection with a client that 
+# In this example, we set up a trusted connection with a client that 
 # has a specific SSL certificate. This client may do queries for whatever login
 # name that it sends through the X_REMOTE_IDENT header variable.
 # This is commonly the case for a grid middleware that has already authenticated 
@@ -177,3 +177,93 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 #</Location>
 
 </virtualhost>
+
+## CIGRI CONFIG
+# The following is a complete example configuration for an SSL enabled OAR API
+# to serve requests to a CiGri server (see http://cigri.imag.fr)
+# For this we set up a complete virtualhost, listening on the 6669 port.
+# The API will be reachable on the following uri:
+#    "https://<your_server_name>:6669/oarapi-cigri/"
+# This configuration needs :
+#   - Apache version >= 2.4
+#   - Modules enabled: mod_ssl, mod_suexec, mod_fastcgi and mod_rewrite
+# You need to change at least the "Require host" and "SSLRequire" lines:
+#   - "Require host <cigri server hostname>" : to restrict the access to the
+#      CiGri server.
+#   - "SSLRequire <condition>" : to set up a condition on the CiGri server's
+#     certificate.
+# By this way, the CiGri server is well authenticated and can safely send
+# usernames to the API into the header variable X_REMOTE_IDENT.
+
+#Listen 6669
+#<VirtualHost *:6669>
+#
+#  SSLEngine On
+#  SSLCertificateFile    /etc/ssl/certs/ssl-cert-snakeoil.pem
+#  SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+#  SSLCACertificateFile /etc/ssl/certs/ca-certificates.crt
+#
+#  ErrorLog ${APACHE_LOG_DIR}/error_oarapi_cigri.log
+#  CustomLog ${APACHE_LOG_DIR}/access_oarapi_cigri.log combined
+#
+#  # Set up the /oarapi-cigri URI
+#  ScriptAlias /oarapi-cigri /usr/lib/cgi-bin/oarapi/oarapi.cgi
+#  FastCgiServer /usr/lib/cgi-bin/oarapi/oarapi.cgi -processes 2 -user oar -group oar
+#  SuexecUserGroup oar oar
+#
+#  <Directory "/usr/lib/cgi-bin">
+#        AllowOverride None
+#        Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+#        Order allow,deny
+#        Allow from all
+#  </Directory>
+#  <Directory /usr/lib/cgi-bin/oarapi>
+#     Options +ExecCGI -MultiViews +FollowSymLinks
+#     SetEnv OARCONFFILE /etc/oar/oar.conf
+#     AddHandler fcgid-script .cgi
+#     # Set here the name of the CiGri server that
+#     # be allowed to connect to this API
+#     Require host killeen.ujf-grenoble.fr
+#  </Directory>
+#
+#   # Transmit important header variables to the environment
+#   RewriteEngine On
+#   RewriteCond %{HTTP:X_API_PATH_PREFIX}  (.*)
+#   RewriteRule .* - [E=X_API_PATH_PREFIX:%1]
+#
+#  <Location /oarapi-cigri>
+#     Options +ExecCGI -MultiViews +FollowSymLinks
+#
+#     # Checks on the client certificate, to authenticate the client.
+#     SSLVerifyClient require
+#     SSLVerifyDepth  1
+#     SSLRequire ( %{SSL_CLIENT_S_DN_OU} eq "CIMENT" and %{SSL_CLIENT_S_DN_CN} eq "CIGRI" )
+#
+#     RewriteEngine On
+#
+#     # Copy the X_REMOTE_IDENT header into the same environment variable
+#     RewriteCond %{HTTP:X_REMOTE_IDENT}  (.*)
+#     RewriteRule .* - [E=X_REMOTE_IDENT:%1]
+#
+#     ## Add some checks on the X_REMOTE_IDENT header
+#     ## This example allows only users kameleon and oar to be authenticated to the API
+#     #
+#     ## Empty the header, checks will be made on the variable
+#     ## Warning: the header must be removed, or the API may use it and the following filters
+#     ## will have no effect! Furthermore, the API may replace underscores by hyphens, so, be
+#     ## sure to remove all possible forms
+#     #RequestHeader unset X_REMOTE_IDENT
+#     #RequestHeader unset X-REMOTE-IDENT
+#     #RequestHeader unset X-REMOTE_IDENT
+#     #RequestHeader unset X_REMOTE-IDENT
+#     ## Now, the actual checks. The 2 following conditions have an implicit "AND".
+#     ## If they are both true, then, the X_REMOTE_IDENT variable is emptied to disable
+#     ## authentification (only public uris will be accessible)
+#     #RewriteCond %{ENV:X_REMOTE_IDENT} !=kameleon
+#     #RewriteCond %{ENV:X_REMOTE_IDENT} !=oar
+#     #RewriteRule .* - [E=X_REMOTE_IDENT:]
+#  </Location>
+#</virtualhost>
+#
+## END OF CIGRI CONFIG
+
