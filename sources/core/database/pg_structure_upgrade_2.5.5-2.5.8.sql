@@ -11,6 +11,8 @@ CREATE TABLE walltime_change (
 );
 CREATE INDEX walltime_change_job_id ON walltime_change (job_id);
 
+GRANT SELECT ON walltime_change TO %%DB_RO_USER%%;
+
 -- Update the database schema version
 DELETE FROM schema;
 INSERT INTO schema(version, name) VALUES ('2.5.8', '');

@@ -43,6 +43,7 @@ my $DEFAULT_MYSQL_LAST_VERSION;
 #
 # meta functions/parameters defined during the execution (depending on the db type)
 #
+my $template_cmd = "cat";
 my $exec_sql;
 my $exec_sql_file;
 my %DEFAULT_UPGRADES;
@@ -81,7 +82,7 @@ my $dbh;
 #
 # Gather the sql file information for upgrading the database
 #
-open LIST, "find %%OARDIR%%/database -name '*_structure_upgrade_*-*.sql' |" or die "Unable to list the upstructure upgrade sql file";
+open LIST, "find %%OARDIR%%/database -name '*_structure_upgrade_*-*.sql' |" or die "Unable to list the SQL file for structure upgrades";
 while (<LIST>) {
     my ($line) = $_;
     chomp($line);
@@ -174,14 +175,14 @@ sub get_current_schema_version() {
 sub init_database() {
     check_user_db_access($db_user,$db_pass);
     print "Initializing database '$db_name'...\n";
-    &$exec_sql_file($DEFAULT_STRUCTURE) == 0       or die "Fail to execute $DEFAULT_STRUCTURE.\n";
-    &$exec_sql_file($DEFAULT_DATA) == 0            or die "Fail to execute $DEFAULT_DATA.\n";
-    &$exec_sql_file($DEFAULT_ADMISSION_RULES) == 0 or die "Fail to execute $DEFAULT_ADMISSION_RULES.\n";
+    &$exec_sql_file($DEFAULT_STRUCTURE) == 0       or die "Failed to execute $DEFAULT_STRUCTURE.\n";
+    &$exec_sql_file($DEFAULT_DATA) == 0            or die "Failed to execute $DEFAULT_DATA.\n";
+    &$exec_sql_file($DEFAULT_ADMISSION_RULES) == 0 or die "Failed to execute $DEFAULT_ADMISSION_RULES.\n";
 }
 
 sub reset_database() {
     print "Resetting database '$db_name'...\n";
-    &$exec_sql_file($DEFAULT_RESET) == 0  or die "Fail to execute $DEFAULT_RESET\n.";
+    &$exec_sql_file($DEFAULT_RESET) == 0  or die "Failed to execute $DEFAULT_RESET\n.";
     init_database();
 }
 
@@ -197,11 +198,14 @@ sub upgrade_database() {
         print "The database is up to date (version $current_version).\n";
     } else {
         print "The current schema version is $current_version. Upgrading to $DEFAULT_LAST_VERSION.\n"; 
+        # DB_USER / DB_PASS are useless in upgrade files
+        print "Apply templates:\n  DB_NAME=$db_name\n  DB_RO_USER=$db_ro_user\n  DB_RO_PASS=$db_ro_pass\n";
+        $template_cmd = "perl -pe 's/%%DB_NAME%%/$db_name/g;s/%%DB_RO_USER%%/$db_ro_user/g;s/%%DB_RO_PASS%%/$db_ro_pass/g;'";
         while($current_version ne $DEFAULT_LAST_VERSION) {
             if ($DEFAULT_UPGRADES{$current_version}) {
                 my ($to_version, $to_file) = @{$DEFAULT_UPGRADES{$current_version}};
                 print "Uprgading from '$current_version' to '$to_version'...\n";
-	    	    &$exec_sql_file($to_file) == 0 or die "Fail to upgrade the database from $current_version to $to_file with $to_file\n.";
+	    	    &$exec_sql_file($to_file) == 0 or die "Failed to upgrade the database from $current_version to $to_file with $to_file\n.";
             } else {
                	die "Unable to upgrade from the version '$current_version'\n";
             }
@@ -372,9 +376,9 @@ sub mysql_exec_sql_file {
         print "executing '$file'\n";
     }
     if ($force_sql) {
-        return system("mysql --force --user='$db_user' --password='$db_pass' --host='$db_host' --port='$db_port' $db_name < $file");
+        return system("$template_cmd $file | mysql --force --user='$db_user' --password='$db_pass' --host='$db_host' --port='$db_port' $db_name");
     } else {
-        return system("mysql --user='$db_user' --password='$db_pass' --host='$db_host' --port='$db_port' $db_name < $file");
+        return system("$template_cmd $file | mysql --user='$db_user' --password='$db_pass' --host='$db_host' --port='$db_port' $db_name");
     }
 }
 
@@ -383,7 +387,7 @@ sub pgsql_exec_sql_file {
     if ($debug) { 
         print "executing '$file'\n";
     }
-    return system("PGUSER='$db_user' PGPASSWORD='$db_pass' PGHOST='$db_host' PGPORT='$db_port' psql -q $db_name < $file");
+    return system("$template_cmd $file | PGUSER='$db_user' PGPASSWORD='$db_pass' PGHOST='$db_host' PGPORT='$db_port' psql -q $db_name");
     
 }
 
