@@ -2467,7 +2467,7 @@ SWITCH: for ($q) {
 
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print OAR::API::export(\$result,$ext);
+    print OAR::API::export($result,$ext);
     OAR::IO::disconnect($dbh);
     last;
   };
