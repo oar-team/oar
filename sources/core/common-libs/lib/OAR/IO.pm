@@ -1197,7 +1197,7 @@ sub get_possible_wanted_resources($$$$$$$){
             if ($i < $#wanted_resources){
                 $wanted_children_number = $wanted_resources[$i+1]->{value};
             }else{
-                $wanted_children_number = 0;
+                $wanted_children_number = -1;
             }
             OAR::Schedulers::ResourceTree::set_needed_children_number($father_ref,$wanted_children_number);
             # Verify if we must keep this child if this is resource_id resource name
