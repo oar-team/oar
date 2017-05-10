@@ -1201,6 +1201,9 @@ function rootMouseMove(evt) {
     zoom_width=Math.abs(zoom_x2 - zoom_x1);
     zoomDraw();
   }
+  if (resourcemark == null) {
+    resourcemark = svgDocument.getElementById("resourcemark");
+  }
   if (evt.pageY > {$gantt_top} && evt.pageY < ({$gantt_top} + {$gantt_height})) {
     y = Math.floor((evt.pageY - {$gantt_top}) / {$scale}) * {$scale} + {$gantt_top};
     resourcemark.setAttribute("transform", "translate(0," + y + ")");    
