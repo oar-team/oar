@@ -171,7 +171,7 @@ foreach my $i (@events_to_check){
                 }
                 $Exit_code = 1;
             }
-            my $msg = "[NodeChangeState] Set nodes to suspected after error ($i->{type}): ".join(", ",@hosts);
+            my $msg = "[NodeChangeState] Set nodes to suspected after error ($i->{type}): ".join(", ",@hosts)."\n";
             oar_warn($msg);
             send_log_by_email("Suspecting nodes",$msg);
         }
