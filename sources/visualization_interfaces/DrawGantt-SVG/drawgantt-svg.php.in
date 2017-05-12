@@ -763,18 +763,18 @@ class Resource {
   }
   function label() {
     global $CONF;
+    $label = $this->id;
     if ($this->type == 'cpuset') {
-      return sprintf($CONF['cpuset_label_display_string'],$this->id);
-    } else {
-      if (array_key_exists($this->type, $CONF['label_display_regex'])) {
-        if (is_array($CONF['label_display_regex'][$this->type])) {
-          return preg_replace($CONF['label_display_regex'][$this->type][0],$CONF['label_display_regex'][$this->type][1],$this->id);
-        } else {
-          return preg_replace($CONF['label_display_regex'][$this->type],'$1',$this->id);
-        }
+      $label = sprintf($CONF['cpuset_label_display_string'], $label);
+    }
+    if (array_key_exists($this->type, $CONF['label_display_regex'])) {
+      if (is_array($CONF['label_display_regex'][$this->type])) {
+        $label = preg_replace($CONF['label_display_regex'][$this->type][0],$CONF['label_display_regex'][$this->type][1],$label);
+      } else {
+        $label = preg_replace($CONF['label_display_regex'][$this->type],'$1',$label);
       }
     }
-    return $this->id;
+    return $label;
   }
   function cmp($r) {
     global $CONF;
