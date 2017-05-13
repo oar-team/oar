@@ -114,6 +114,7 @@ sub add_child($$$$){
     my $resource_value = shift;
     my $tree_root_ref = shift;   # First node of the tree
 
+    $resource_value = "" if (!defined($resource_value));
     my $tmp_ref;
     if (!defined($tree_ref->[1]->{$resource_value})){
         # Create a new tree node
