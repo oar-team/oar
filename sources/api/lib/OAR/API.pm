@@ -799,6 +799,24 @@ sub set_output_format {
   return ($header,$type);
 }
 
+# Create a URI regex with no tail
+sub uri_regex_no_tail($) {
+  my $r=shift;
+  return qr{^/$r$};
+}
+
+# Create a URI regex ending by yaml, json or html
+sub uri_regex_html_json_yaml($) {
+  my $r=shift;
+  return uri_regex_no_tail($r.'(?:\.(html|json|yaml))?');
+}
+
+# Create a URI regex ending by tar.gz or tgz
+sub uri_regex_tgz($) {
+  my $r=shift;
+  return uri_regex_no_tail($r.'(?:\.(tar.gz|tgz))?');
+}
+
 # Return the extension (second parameter) if defined, or the
 # corresponding one if the content_type if set.
 sub set_ext($$) {
@@ -859,6 +877,7 @@ sub HEAD($$) {
 
 sub GET($$) {
   ( my $q, my $path ) = @_;
+warn "$q -> $path\n";
   if   ( $q->request_method eq 'GET' && $q->path_info =~ /$path/ ) { return 1; }
   else                                                             { return 0; }
 }
