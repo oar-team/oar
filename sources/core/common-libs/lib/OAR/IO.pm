@@ -6904,7 +6904,7 @@ sub get_gantt_visu_scheduled_job_resources($$){
     my $dbh = shift;
     my $moldable_job_id = shift;
 
-    my $sth = $dbh->prepare("SELECT r.resource_id, r.network_address, r.state
+    my $sth = $dbh->prepare("SELECT r.*
                              FROM gantt_jobs_resources_visu g, moldable_job_descriptions m, resources r
                              WHERE
                                 m.moldable_job_id = $moldable_job_id
@@ -6912,14 +6912,13 @@ sub get_gantt_visu_scheduled_job_resources($$){
                                 AND g.resource_id = r.resource_id
                             ");
     $sth->execute();
-    my %h;
-    while (my @ref = $sth->fetchrow_array()) {
-        $h{$ref[0]}->{'network_address'}=$ref[1];
-        $h{$ref[0]}->{'current_state'}=$ref[2];
+    my $h;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $h->{$ref->{resource_id}}=$ref;
     }
     $sth->finish();
 
-    return \%h;
+    return $h;
 }
 
 # TIME CONVERSION
