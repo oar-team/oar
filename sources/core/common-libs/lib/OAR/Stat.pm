@@ -372,7 +372,7 @@ sub get_job_data($$){
             owner => $job_info->{job_user},
             job_user => $job_user,
             state => $job_info->{state},
-            assigned_resources => \@nodes,
+            assigned_resources => get_job_resources_properties($job_info->{job_id}),
             assigned_network_address => \@node_hostnames,
             queue => $job_info->{queue_name},
             command => $job_info->{command},
@@ -412,7 +412,7 @@ sub get_job_data($$){
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
             state => $job_info->{state},
-            assigned_resources => \@nodes,
+            assigned_resources => get_job_resources_properties($job_info->{job_id}),
             assigned_network_address => \@node_hostnames,
             queue => $job_info->{queue_name},
             command => $job_info->{command},
@@ -441,8 +441,11 @@ sub get_job_data($$){
 
 sub get_job_resources_properties($) {
 	my $jobid= shift;
-	my @job_resources_properties = OAR::IO::get_job_resources_properties($base, $jobid);
-	return @job_resources_properties;
+	my $job_resources_properties;
+    foreach my $resource (OAR::IO::get_job_resources_properties($base, $jobid)) {
+        $job_resources_properties->{$resource->{resource_id}} = $resource;
+    }
+	return $job_resources_properties;
 }
 
 sub get_job_state($) {

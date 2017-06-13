@@ -18,6 +18,8 @@ version 2.5.8:
   - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
     in new installation. For existing database, the following command apply the
     fix: `oar-database --fix-ro-user-priv ...`
+  - [oarstat] make oarstat display all the properties of the resources assigned
+    or reserved for a job, when using the Perl or Yaml or JSON output
 
 version 2.5.7:
 --------------
