@@ -298,25 +298,26 @@ sub get_specific_jobs {
 
 sub get_job_resources($) {
     my $job_info=shift;
-    my $reserved_resources=[];
-    my $scheduled_resources=[];
-    my @assigned_resources;
-    my @assigned_hostnames;
-    if (defined($job_info->{assigned_moldable_job}) && $job_info->{assigned_moldable_job} ne ""){
-        @assigned_resources = OAR::IO::get_job_resources($base,$job_info->{assigned_moldable_job});
-        @assigned_hostnames = OAR::IO::get_job_network_address($base,$job_info->{assigned_moldable_job});
+    my $resources;
+    if (defined($job_info->{assigned_moldable_job}) and $job_info->{assigned_moldable_job} ne "0"){
+        $resources->{resources_status} = "assigned";
+        $resources->{resources} = get_job_resources_properties($job_info->{assigned_moldable_job});
+        my @network_addresses = OAR::IO::get_job_network_address($base,$job_info->{assigned_moldable_job});
+        $resources->{network_addresses} = \@network_addresses;
+    } elsif ($job_info->{state} eq "Waiting") {
+        $resources->{resources} = OAR::IO::get_gantt_visu_scheduled_job_resources($base,$job_info->{job_id});
+        if ($job_info->{reservation} eq "Scheduled") { # Advance reservation
+            $resources->{resources_status} = "reserved";
+        } elsif ($job_info->{reservation} eq "None") { # Batch job
+            $resources->{resources_status} = "scheduled";
+        } else {
+            warn "Warning: could not determine resources status\n";
+        }
+    } else {
+        warn "Warning: could not determine resources\n";
+
     }
-    if ($job_info->{reservation} eq "Scheduled" and $job_info->{state} eq "Waiting") {
-        $reserved_resources = OAR::IO::get_gantt_visu_scheduled_job_resources($base,$job_info->{job_id});
-    }
-    if ($job_info->{reservation} eq "None" and $job_info->{state} eq "Waiting") {
-        $scheduled_resources = OAR::IO::get_gantt_visu_scheduled_job_resources($base,$job_info->{job_id});
-    }
-    return { assigned_resources  => \@assigned_resources,
-             assigned_hostnames  => \@assigned_hostnames,
-             reserved_resources  => $reserved_resources, 
-             scheduled_resources  => $scheduled_resources 
-         };
+    return $resources;
 }
 
 sub get_job_data($$){
@@ -324,8 +325,6 @@ sub get_job_data($$){
     my $full_view = shift;
     
     my $dbh = $base;
-    my @nodes;
-    my @node_hostnames;
     my $mold;
     my @date_tmp;
     my @job_events;
@@ -338,17 +337,14 @@ sub get_job_data($$){
     $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
 
     my $resources_string = "";
-    my $reserved_resources;
+
+    my $resources = get_job_resources($job_info);
+
     if ($job_info->{assigned_moldable_job} ne "" && $job_info->{assigned_moldable_job} ne "0"){
-        @nodes = OAR::IO::get_job_resources($dbh,$job_info->{assigned_moldable_job});
-        @node_hostnames = OAR::IO::get_job_network_address($dbh,$job_info->{assigned_moldable_job});
         $mold = OAR::IO::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
     }else{
       # Try to get the moldable description of a waiting job
       $mold = OAR::IO::get_scheduled_job_description($dbh,$job_info->{job_id});
-    }
-    if ($job_info->{reservation} eq "Scheduled" and $job_info->{state} eq "Waiting") {
-        $reserved_resources = OAR::IO::get_gantt_visu_scheduled_job_resources($dbh,$job_info->{job_id});
     }
 	
 	if (defined($full_view)){
@@ -395,8 +391,6 @@ sub get_job_data($$){
             owner => $job_info->{job_user},
             job_user => $job_user,
             state => $job_info->{state},
-            assigned_resources => get_job_resources_properties($job_info->{job_id}),
-            assigned_network_address => \@node_hostnames,
             queue => $job_info->{queue_name},
             command => $job_info->{command},
             launchingDirectory => $job_info->{launching_directory},
@@ -419,7 +413,8 @@ sub get_job_data($$){
             exit_code => $job_info->{exit_code},
             stdout_file => OAR::Tools::replace_jobid_tag_in_string($job_info->{stdout_file},$job_info->{job_id}),
             stderr_file => OAR::Tools::replace_jobid_tag_in_string($job_info->{stderr_file},$job_info->{job_id}),
-            initial_request => ""
+            initial_request => "",
+            %$resources
         );
         if (($ENV{OARDO_USER} eq $job_info->{job_user})
             or ($ENV{OARDO_USER} eq "oar")
@@ -435,8 +430,6 @@ sub get_job_data($$){
             name => $job_info->{job_name},
             owner => $job_info->{job_user},
             state => $job_info->{state},
-            assigned_resources => get_job_resources_properties($job_info->{job_id}),
-            assigned_network_address => \@node_hostnames,
             queue => $job_info->{queue_name},
             command => $job_info->{command},
             launchingDirectory => $job_info->{launching_directory},
@@ -452,13 +445,10 @@ sub get_job_data($$){
             project => $job_info->{project},
             cpuset_name => $cpuset_name,
             types => \@job_types,
-            dependencies => \@job_dependencies
+            dependencies => \@job_dependencies,
+            %$resources
         );
     }
-    if (defined($reserved_resources)) {
-        $data_to_display{'reserved_resources'}=$reserved_resources;
-    }
-
     return(\%data_to_display);
 }
 

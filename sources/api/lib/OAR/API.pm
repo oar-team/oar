@@ -335,26 +335,16 @@ sub add_nodes_uris($$$) {
 }
 
 # Add uris to resources of a job
-# OBSOLETE!
+# OBSOLETE! PN: why??
 sub add_job_resources_uris($$$) {
-  my $resources = shift;
+  my $data = shift;
   my $ext = shift;
   my $prefix = shift;
-  foreach my $assigned_resource (@{$resources->{assigned_resources}}) {
-    $assigned_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$assigned_resource->{id},$ext,0);
-    $assigned_resource->{resource_uri}=htmlize_uri($assigned_resource->{resource_uri},$ext);
+  foreach my $resource (@{$data->{resources}}) {
+    $resource->{resource_uri}=htmlize_uri(OAR::API::make_uri($prefix."resources/".$resource->{id},$ext,0),$ext);
   }
-  foreach my $reserved_resource (@{$resources->{reserved_resources}}) {
-    $reserved_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$reserved_resource->{id},$ext,0);
-    $reserved_resource->{resource_uri}=htmlize_uri($reserved_resource->{resource_uri},$ext);
-  }
-  foreach my $assigned_node (@{$resources->{assigned_nodes}}) {
-    $assigned_node->{node_uri}=OAR::API::make_uri($prefix."resources/nodes/".$assigned_node->{node},$ext,0);
-    $assigned_node->{node_uri}=htmlize_uri($assigned_node->{node_uri},$ext);
-  }
-  $resources->{job_uri}=OAR::API::make_uri($prefix."jobs/".$resources->{job_id},$ext,0);
-  $resources->{job_uri}=htmlize_uri($resources->{job_uri},$ext);
-  $resources->{api_timestamp}=time();
+  $data->{job_uri}=htmlize_uri(OAR::API::make_uri($prefix."jobs/".$data->{job_id},$ext,0),$ext);
+  $data->{api_timestamp}=time();
 }
 
 # Add uris to a grid sites list
@@ -600,23 +590,13 @@ sub struct_job_list_details($$) {
 
 # OAR RESOURCES OF A JOB
 sub struct_job_resources($$) {
-  my $resources=shift;
+  my $data=shift;
   my $structure=shift;
-  my $result=[];
-  foreach my $r (@{$resources->{assigned_resources}}) {
-    push(@$result,{'id' => int($r), 'status' => 'assigned'});
+  my $resources = [];
+  foreach my $resource_id (keys (%{$data->{resources}})) {
+    push(@$resources,{'id' => int($resource_id), %{$data->{resources}->{$resource_id}} });
   }
-  if (ref($resources->{reserved_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{reserved_resources}})) {
-      push(@$result,{'id' => int($r), 'status' => 'reserved'});
-    }
-  }
-  if (ref($resources->{scheduled_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
-      push(@$result,{'id' => int($r), 'status' => 'scheduled'});
-    }
-  }
-  return $result;
+  return $resources;
 }
 
 sub struct_job_nodes($$) {
@@ -624,27 +604,11 @@ sub struct_job_nodes($$) {
   my $structure=shift;
   my $result=[];
   my $network_addresses={};
-  my $network_address;
-  foreach my $n (@{$resources->{assigned_hostnames}}) {
-    push(@$result,{'network_address' => $n, 'status' => 'assigned'});
-  }
-  if (ref($resources->{reserved_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{reserved_resources}})) {
-      $network_address=$resources->{reserved_resources}->{$r}->{network_address};
-      if (!defined($network_addresses->{$network_address})) {;      
-        push(@$result,{'network_address' => $network_address, 'status' => 'reserved'});
-        $network_addresses->{$network_address}=1;
-      }
-    }
-  }
-  $network_addresses={};
-  if (ref($resources->{scheduled_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
-      $network_address=$resources->{scheduled_resources}->{$r}->{network_address};
-      if (!defined($network_addresses->{$network_address})) {;      
-        push(@$result,{'network_address' => $network_address, 'status' => 'scheduled'});
-        $network_addresses->{$network_address}=1;
-      }
+  foreach my $r (keys(%{$resources->{resources}})) {
+    my $n=$resources->{resources}->{$r}->{network_address};
+    if ($resources->{resources}->{$r}->{type} eq 'default' and defined($n) and $n ne "" and not defined($network_addresses->{$n})) {      
+      push(@$result,{'network_address' => $n});
+      $network_addresses->{$n}=1;
     }
   }
   return $result;

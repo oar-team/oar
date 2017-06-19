@@ -313,8 +313,13 @@ sub print_job_data($){
                 print("    wanted_resources = $data->{$job_info->{job_id}}->{wanted_resources}\n");
                 print("    types = ".join(", ",@{$data->{$job_info->{job_id}}->{types}})."\n");
                 print("    dependencies = ".join(" ",@{$data->{$job_info->{job_id}}->{dependencies}})."\n");
-                print("    assigned_resources = ".join("+",@{$data->{$job_info->{job_id}}->{assigned_resources}})."\n");
-                print("    assigned_hostnames = ".join("+",@{$data->{$job_info->{job_id}}->{assigned_network_address}})."\n");
+                if ($data->{$job_info->{job_id}}->{resources_status} eq "assigned") {
+                    print("    assigned_resources = ".join("+",(sort {$a<=>$b} keys(%{$data->{$job_info->{job_id}}->{resources}})))."\n");
+                    print("    assigned_hostnames = ".join("+",@{$data->{$job_info->{job_id}}->{network_addresses}})."\n");
+                } else {
+                    print("    assigned_resources = \n");
+                    print("    assigned_hostnames = \n");
+                }
                 print("    queue = $job_info->{queue_name}\n");
                 $job_info->{command} = '' if (!defined($job_info->{command}));
                 print("    command = $job_info->{command}\n");
@@ -330,12 +335,12 @@ sub print_job_data($){
                 print("    jobType = $job_info->{job_type}\n");
                 print("    properties = $job_info->{properties}\n");
                 print("    reservation = $job_info->{reservation}\n");
-                if (defined $data->{$job_info->{job_id}}->{'reserved_resources'}) {
+                if ($data->{$job_info->{job_id}}->{resources_status} eq 'reserved') {
                     print("    reserved_resources = ");
                     my @tmp_array_ok;
                     my @tmp_array_ko;
-                    for my $r (keys %{$data->{$job_info->{job_id}}->{'reserved_resources'}}) {
-                        if ($data->{$job_info->{job_id}}->{'reserved_resources'}->{$r}->{'current_state'} eq "Alive") {
+                    for my $r (keys %{$data->{$job_info->{job_id}}->{resources}}) {
+                        if ($data->{$job_info->{job_id}}->{resources}->{$r}->{state} eq "Alive") {
                             push (@tmp_array_ok,$r);
                         } else {
                             push (@tmp_array_ko,$r);
