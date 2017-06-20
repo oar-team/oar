@@ -748,38 +748,6 @@ sub struct_resource_list($$$) {
   }
 }
 
-
-sub get_list_nodes($) {
-	my $expression = shift;
-	my $pattern = qr{/(node|nodes)=(.*?)(/|$)};
-	my $result;
-	
-	if ($expression =~ /$pattern/) {
-		my $prefix = $1;
-		my $value = $2;
-		if ($value =~ /\{(.+)\}/) {
-			for (my $i=1; $i<=$1; $i++) {
-				push(@$result, $prefix.$i);
-            }  
-        }
-        else {
-        	my @params = split(/,/,$value);
-        	foreach my $param (@params) {
-        		if ($param =~ /\[(\d+)-(\d+)\]/) {
-        			for (my $i=$1; $i<=$2; $i++) {
-        				push(@$result, $prefix.$i);
-        			}
-        		}
-        		else {
-        			push(@$result, $param);
-        		}
-        	}
-        }
-	}
-
-	return $result;
-}
-
 # GRID SITE LIST
 sub struct_sites_list($$) {
   my $sites = shift;
