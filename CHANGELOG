@@ -18,8 +18,11 @@ version 2.5.8:
   - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
     in new installation. For existing database, the following command apply the
     fix: `oar-database --fix-ro-user-priv ...`
-  - [oarstat] make oarstat display all the properties of the resources assigned
-    or reserved for a job, when using the Perl or Yaml or JSON output
+  - [oarstat] renamed assigned_hostnames to assigned_nodes in the full display
+  - [oarstat] display all the properties of the resources assigned, scheduled
+    or reserved for a job, when using the Perl or YAML or JSON full display
+  - [oarstat] show the nodes for waiting jobs, when using the Perl or YAML or
+    JSON full display 
 
 version 2.5.7:
 --------------

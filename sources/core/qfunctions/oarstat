@@ -315,10 +315,10 @@ sub print_job_data($){
                 print("    dependencies = ".join(" ",@{$data->{$job_info->{job_id}}->{dependencies}})."\n");
                 if ($data->{$job_info->{job_id}}->{resources_status} eq "assigned") {
                     print("    assigned_resources = ".join("+",(sort {$a<=>$b} keys(%{$data->{$job_info->{job_id}}->{resources}})))."\n");
-                    print("    assigned_hostnames = ".join("+",@{$data->{$job_info->{job_id}}->{network_addresses}})."\n");
+                    print("    assigned_nodes = ".join("+",@{$data->{$job_info->{job_id}}->{nodes}})."\n");
                 } else {
                     print("    assigned_resources = \n");
-                    print("    assigned_hostnames = \n");
+                    print("    assigned_nodes = \n");
                 }
                 print("    queue = $job_info->{queue_name}\n");
                 $job_info->{command} = '' if (!defined($job_info->{command}));

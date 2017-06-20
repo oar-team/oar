@@ -516,9 +516,6 @@ sub struct_job($$) {
     delete $job->{launchingDirectory};
     delete $job->{job_user};
     delete $job->{job_uid};
-    delete $job->{reserved_resources};
-    delete $job->{assigned_resources};
-    delete $job->{assigned_network_address};
     return $job;
   }
 }
@@ -602,16 +599,8 @@ sub struct_job_resources($$) {
 sub struct_job_nodes($$) {
   my $resources=shift;
   my $structure=shift;
-  my $result=[];
-  my $network_addresses={};
-  foreach my $r (keys(%{$resources->{resources}})) {
-    my $n=$resources->{resources}->{$r}->{network_address};
-    if ($resources->{resources}->{$r}->{type} eq 'default' and defined($n) and $n ne "" and not defined($network_addresses->{$n})) {      
-      push(@$result,{'network_address' => $n});
-      $network_addresses->{$n}=1;
-    }
-  }
-  return $result;
+
+  return [ map { {node => $_} } @{$resources->{nodes}} ]; 
 }
 
 

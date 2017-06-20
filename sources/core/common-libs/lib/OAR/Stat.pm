@@ -5,7 +5,7 @@ use warnings;
 use Data::Dumper;
 use OAR::Version;
 use OAR::IO;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use OAR::Walltime qw(get);
 
 my $base;
@@ -298,18 +298,16 @@ sub get_specific_jobs {
 
 sub get_job_resources($) {
     my $job_info=shift;
-    my $resources;
+    my $data;
     if (defined($job_info->{assigned_moldable_job}) and $job_info->{assigned_moldable_job} ne "0"){
-        $resources->{resources_status} = "assigned";
-        $resources->{resources} = get_job_resources_properties($job_info->{assigned_moldable_job});
-        my @network_addresses = OAR::IO::get_job_network_address($base,$job_info->{assigned_moldable_job});
-        $resources->{network_addresses} = \@network_addresses;
+        $data->{resources_status} = "assigned";
+        $data->{resources} = get_job_resources_properties($job_info->{assigned_moldable_job});
     } elsif ($job_info->{state} eq "Waiting") {
-        $resources->{resources} = OAR::IO::get_gantt_visu_scheduled_job_resources($base,$job_info->{job_id});
+        $data->{resources} = OAR::IO::get_gantt_visu_scheduled_job_resources($base,$job_info->{job_id});
         if ($job_info->{reservation} eq "Scheduled") { # Advance reservation
-            $resources->{resources_status} = "reserved";
+            $data->{resources_status} = "reserved";
         } elsif ($job_info->{reservation} eq "None") { # Batch job
-            $resources->{resources_status} = "scheduled";
+            $data->{resources_status} = "scheduled";
         } else {
             warn "Warning: could not determine resources status\n";
         }
@@ -317,7 +315,17 @@ sub get_job_resources($) {
         warn "Warning: could not determine resources\n";
 
     }
-    return $resources;
+    my $nodes_resources = get_conf_with_default_param("OARSUB_NODES_RESOURCES","network_address");
+    $data->{nodes} = [];
+    my $nodes = {};
+    foreach my $r (keys(%{$data->{resources}})) {
+        my $n=$data->{resources}->{$r}->{$nodes_resources};
+        if ($data->{resources}->{$r}->{type} eq 'default' and defined($n) and $n ne "" and not defined($nodes->{$n})) {      
+            push(@{$data->{nodes}},$n);
+            $nodes->{$n}=1;
+        }
+    }
+    return $data;
 }
 
 sub get_job_data($$){
