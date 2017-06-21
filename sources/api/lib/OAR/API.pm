@@ -274,18 +274,6 @@ sub add_joblist_uris($$) {
   }
 }
 
-# Add uris to a oar job list for oargrid
-sub add_joblist_griduris($$$) {
-  my $jobs = shift;
-  my $ext = shift;
-  my $site = shift;
-    foreach my $job ( keys( %{$jobs} ) ) {
-      $jobs->{$job}->{uri}=OAR::API::make_uri("sites/$site/jobs/$job",$ext,0);
-      $jobs->{$job}->{uri}=OAR::API::htmlize_uri($jobs->{$job}->{uri},$ext);
-      $jobs->{$job}->{api_timestamp}=time();
-  }
-}
-
 # Add uris to a list of jobs of a resource
 sub add_jobs_on_resource_uris($$) {
   my $jobs = shift,
@@ -355,82 +343,6 @@ sub add_job_resources_uris($$$) {
   $resources->{job_uri}=OAR::API::make_uri($prefix."jobs/".$resources->{job_id},$ext,0);
   $resources->{job_uri}=htmlize_uri($resources->{job_uri},$ext);
   $resources->{api_timestamp}=time();
-}
-
-# Add uris to a grid sites list
-sub add_sites_uris($$) {
-  my $sites = shift;
-  my $ext = shift;
-  foreach my $site ( keys( %{$sites} ) ) {
-      $sites->{$site}->{uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("sites/$site",$ext,0),
-                               $ext
-                             );
-      $sites->{$site}->{resources_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("sites/$site/resources",$ext,0),
-                               $ext
-                             );
-      $sites->{$site}->{timezone_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("sites/$site/timezone",$ext,0),
-                               $ext
-                             );
-      $sites->{$site}->{api_timestamp}=time();
-  }
-}
-
-# Add uris to a grid job list
-sub add_gridjobs_uris($$) {
-  my $jobs = shift;
-  my $ext = shift;
-  foreach my $job ( keys( %{$jobs} ) ) {
-      $jobs->{$job}->{uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/$job",$ext,0),
-                               $ext
-                             );
-      $jobs->{$job}->{nodes_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/$job/resources/nodes",$ext,0),
-                               $ext
-                             );
-      $jobs->{$job}->{api_timestamp}=time();
-  }
-}
-
-# Add uris to a grid job
-sub add_gridjob_uris($$) {
-  my $job = shift;
-  my $ext = shift;
-  # Timestamp
-  $job->{api_timestamp}=time();
-  # List of resources
-  $job->{resources_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/". $job->{id} ."/resources",$ext,0),
-                               $ext
-                             );
-  # List of resources without details (nodes only)
-  $job->{nodes_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/". $job->{id} ."/resources/nodes",$ext,0),
-                               $ext
-                             );
-  # Link to the batch job on the corresponding cluster
-  foreach my $cluster (keys %{$job->{clusterJobs}}) {
-    foreach my $cluster_job (keys %{$job->{clusterJobs}->{$cluster}}) {
-      $job->{clusterJobs}->{$cluster}->{$cluster_job}->{uri}=OAR::API::htmlize_uri(
-              OAR::API::make_uri("sites/$cluster/jobs/" 
-                 .$job->{clusterJobs}->{$cluster}->{$cluster_job}->{batchId},$ext,0),
-              $ext
-              );
-    }
-  }
-  # Ssh keys
-  $job->{ssh_private_key_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/".$job->{id}."/keys/private",$ext,0),
-                               $ext
-                             );
-  $job->{ssh_public_key_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/".$job->{id}."/keys/public",$ext,0),
-                               $ext
-                             );
- 
 }
 
 # Add uris to a single admission rule
@@ -746,120 +658,6 @@ sub struct_resource_list($$$) {
     }
     return $result; 
   }
-}
-
-# GRID SITE LIST
-sub struct_sites_list($$) {
-  my $sites = shift;
-  my $structure = shift;
-  my $result;
-  my $uri;
-  foreach my $s ( keys( %{$sites} ) ) {
-    if ($structure eq "simple") { push(@$result,{ site => $s, 
-                                                  uri => $sites->{$s}->{uri},
-                                                  api_timestamp => $sites->{$s}->{api_timestamp} });}
-    else                        { $result->{$s}->{uri} = $sites->{$s}->{uri};
-                                  $result->{$s}->{api_timestamp} = $sites->{$s}->{api_timestamp}; }
-  }
-  return $result; 
-}
-
-# GRID SITE
-sub struct_site($$) {
-  my $site = shift;
-  my $structure = shift;
-  if ($structure eq "simple") { 
-    my $s=(keys( %{$site}))[0];
-    $site->{$s}->{site}=$s; 
-    return $site->{$s}; 
-  }
-  else { return $site; }
-}
-
-# GRID JOB
-sub struct_gridjob($$) {
-  my $job = shift;
-  my $structure = shift;
-  my @cluster_jobs;
-  foreach my $cluster (keys %{$job->{clusterJobs}}) {
-    foreach my $cluster_job (keys %{$job->{clusterJobs}->{$cluster}}) {
-      # Cleaning
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{weight};
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{nodes};
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{env};
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{name};
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{queue};
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{part};
-      # For the simple data structure
-      push (@cluster_jobs, 
-         { 'cluster' => $cluster,
-           'id' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{batchId},
-           'properties' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{properties},
-           'rdef' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{rdef},
-           'uri' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{uri},
-           'api_timestamp' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{api_timestamp}
-          })
-    }
-  }
-  if ($structure eq "simple") {
-    delete $job->{clusterJobs};
-    $job->{cluster_jobs}=\@cluster_jobs;
-  }
-  return $job;
-}
-
-# GRID JOB LIST
-sub struct_gridjobs_list($$) {
-  my $jobs = shift;
-  my $structure = shift;
-  my $result;
-  foreach my $job ( keys( %{$jobs} ) ) {
-    my $hashref = {
-                  nodes => $jobs->{$job}->{nodes},
-                  uri => $jobs->{$job}->{uri},
-                  api_timestamp => $jobs->{$job}->{api_timestamp},
-    };
-    if ($structure eq 'oar') {
-      $result->{$job} = $hashref;
-    }
-    elsif ($structure eq 'simple') {
-      $hashref->{id}=$job;
-      push (@$result,$hashref);
-    }
-  }
-  return $result;
-}
-
-# GRID JOB RESOURCES
-sub struct_gridjob_resources($$) {
-  my $resources = shift;
-  my $structure = shift;
-  my $result;
-  if ($structure eq "simple") {
-    foreach my $resource ( keys( %{$resources} ) ) {
-      push (@$result,{ site => $resource, jobs => $resources->{$resource} });
-    }
-    return $result;
-  }
-  else {
-    return $resources;
-  } 
-}
-
-# LIST OF NODES FOR A GRID JOB
-sub struct_gridjob_nodes($$) {
-  my $resources = shift;
-  my $structure = shift;
-  my @result;
-  foreach my $site ( keys( %{$resources} ) ) {
-    foreach my $job ( keys( %{$resources->{$site}} ) ) {
-      my $nodes=$resources->{$site}->{$job}->{nodes};
-      foreach my $node (@$nodes) {
-        @result=(@result,$node);
-      }
-    }
-  }
-  return \@result;
 }
 
 
@@ -1308,37 +1106,6 @@ sub check_resource_description($$) {
   #}
 
   return $description;
-}
-
-# Check the consistency of a posted grid job and load it into a hashref
-sub check_grid_job($$) {
-  my $data         = shift;
-  my $content_type = shift;
-
-  my $job = import_data_with_content_type($data, $content_type, "grid job");
-
-  # Job must have a "resources" or "file" field
-  unless ( $job->{resources} or $job->{file} ) {
-    ERROR 400, 'Missing Required Field',
-      'A grid job must have a resources or file field!';
-    exit 0;
-  }
-
-  # Clean options with an empty parameter that is normaly required
-  parameter_option($job,"walltime");
-  parameter_option($job,"queue");
-  parameter_option($job,"identity_file");
-  parameter_option($job,"timeout");
-  parameter_option($job,"program");
-  parameter_option($job,"type");
-  parameter_option($job,"start_date");
-  parameter_option($job,"directory");
-
-  # Manage toggle options (no parameter)
-  toggle_option($job,"FORCE");
-  toggle_option($job,"verbose");
-
-  return $job;
 }
 
 # Check the consistency of a posted oar admission rule and load it into a hashref
