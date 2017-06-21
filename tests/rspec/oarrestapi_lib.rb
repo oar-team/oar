@@ -5,7 +5,7 @@ require 'pp'
 require 'uri'
 
 USER=ENV['USER']
-APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/" unless ENV['APIURI']
+APIURI="http://#{USER}:#{USER}@localhost:6668/oarapi-priv/" unless ENV['APIURI']
 APIURI=ENV['APIURI'] if ENV['APIURI']
 POST_APIURI=APIURI unless ENV['POST_APIURI']
 POST_APIURI=ENV['POST_APIURI'] if ENV['POST_APIURI']
