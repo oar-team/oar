@@ -110,7 +110,8 @@ $OAR::API::ABSOLUTE_URIS=1;
 if (is_conf("API_ABSOLUTE_URIS")){ $OAR::API::ABSOLUTE_URIS=get_conf("API_ABSOLUTE_URIS"); }
 
 # nodes alias as set in oar.conf (OARSUB_NODES_RESOURCES), default network_address
-$OAR::API::nodes_resource_name = get_conf_with_default_param("OARSUB_NODES_RESOURCES","network_address");
+my $nodes_resource_name = get_conf_with_default_param("OARSUB_NODES_RESOURCES","network_address");
+$OAR::API::nodes_resource_name = $nodes_resource_name;
 
 # TMP directory
 my $TMPDIR="/tmp";
@@ -1463,7 +1464,7 @@ SWITCH: for ($q) {
     my $query;
     my $Resource;
     if ($id == 0) {
-      $query="WHERE network_address = \"$node\" AND cpuset = $cpuset";
+      $query="WHERE $nodes_resource_name = \"$node\" AND cpuset = $cpuset";
     }
     else {
       $query="WHERE resource_id=$id";
