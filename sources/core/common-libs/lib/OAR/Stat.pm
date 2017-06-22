@@ -344,9 +344,7 @@ sub get_job_data($$){
     
     $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $job_info->{job_id}) if (defined($Cpuset_field));
 
-    my $resources_string = "";
 
-    my $resources = get_job_resources($job_info);
 
     if ($job_info->{assigned_moldable_job} ne "" && $job_info->{assigned_moldable_job} ne "0"){
         $mold = OAR::IO::get_moldable_job($dbh,$job_info->{assigned_moldable_job});
@@ -356,6 +354,8 @@ sub get_job_data($$){
     }
 	
 	if (defined($full_view)){
+        my $resources_string = "";
+        my $resources = get_job_resources($job_info);
         @date_tmp = OAR::IO::get_gantt_job_start_time_visu($dbh,$job_info->{job_id});
         @job_events = OAR::IO::get_job_events($dbh,$job_info->{job_id});
         @job_dependencies = OAR::IO::get_current_job_dependencies($dbh,$job_info->{job_id});
@@ -454,7 +454,6 @@ sub get_job_data($$){
             cpuset_name => $cpuset_name,
             types => \@job_types,
             dependencies => \@job_dependencies,
-            %$resources
         );
     }
     return(\%data_to_display);

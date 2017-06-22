@@ -496,8 +496,10 @@ SWITCH: for ($q) {
         "Job not found" );
       last;
     }
-    my $data=OAR::Stat::get_job_data(@$job[0],1);
+    my $data;
+
     if (defined($details) and $details eq "/details") {
+        $data=OAR::Stat::get_job_data(@$job[0],1);
         my $job_resources = OAR::Stat::get_job_resources(@$job[0]);
         my $resources = OAR::API::struct_job_resources($job_resources,$STRUCTURE);
         my $nodes= OAR::API::struct_job_nodes($job_resources,$STRUCTURE);
@@ -505,7 +507,10 @@ SWITCH: for ($q) {
         $data->{'resources'}=$resources;
         OAR::API::add_nodes_uris($nodes,$ext,'');
         $data->{'nodes'}=$nodes;
+    } else {
+        $data=OAR::Stat::get_job_data(@$job[0],undef);
     }
+
     my ($walltime_change,) = OAR::Stat::get_job_walltime_change($jobid);
     if (defined($walltime_change)) {
         $data->{'walltime-change'} = $walltime_change;
