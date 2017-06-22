@@ -315,11 +315,11 @@ sub get_job_resources($) {
         warn "Warning: could not determine resources\n";
 
     }
-    my $nodes_resources = get_conf_with_default_param("OARSUB_NODES_RESOURCES","network_address");
+    my $nodes_resource_name = get_conf_with_default_param("OARSUB_NODES_RESOURCES","network_address");
     $data->{nodes} = [];
     my $nodes = {};
     foreach my $r (keys(%{$data->{resources}})) {
-        my $n=$data->{resources}->{$r}->{$nodes_resources};
+        my $n=$data->{resources}->{$r}->{$nodes_resource_name};
         if ($data->{resources}->{$r}->{type} eq 'default' and defined($n) and $n ne "" and not defined($nodes->{$n})) {      
             push(@{$data->{nodes}},$n);
             $nodes->{$n}=1;

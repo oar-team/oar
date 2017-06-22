@@ -31,7 +31,7 @@
 use strict;
 use DBI();
 use OAR::API;
-use OAR::Conf qw(init_conf dump_conf get_conf_list get_conf is_conf set_value);
+use OAR::Conf qw(init_conf dump_conf get_conf_list get_conf is_conf set_value get_conf_with_default_param);
 use OAR::IO;
 use OAR::Stat;
 use OAR::Nodes;
@@ -89,7 +89,6 @@ my $stageout_dir = get_conf("STAGEOUT_DIR");
 my $stagein_dir = get_conf("STAGEIN_DIR");
 my $allow_create_node = get_conf("DESKTOP_COMPUTING_ALLOW_CREATE_NODE");
 my $expiry = get_conf("DESKTOP_COMPUTING_EXPIRY");
-
 # Enable this if you are ok with a simple pidentd "authentication"
 # Not very secure, but useful for testing (no need for login/password)
 # or in the case you fully trust the client hosts (with an apropriate
@@ -109,6 +108,9 @@ if (is_conf("API_DEFAULT_MAX_ITEMS_NUMBER")){ $MAX_ITEMS = get_conf("API_DEFAULT
 # Relative/absolute uris config variable
 $OAR::API::ABSOLUTE_URIS=1;
 if (is_conf("API_ABSOLUTE_URIS")){ $OAR::API::ABSOLUTE_URIS=get_conf("API_ABSOLUTE_URIS"); }
+
+# nodes alias as set in oar.conf (OARSUB_NODES_RESOURCES), default network_address
+$OAR::API::nodes_resource_name = get_conf_with_default_param("OARSUB_NODES_RESOURCES","network_address");
 
 # TMP directory
 my $TMPDIR="/tmp";
