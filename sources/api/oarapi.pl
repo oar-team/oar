@@ -48,7 +48,7 @@ use File::Listing qw(parse_dir);
 
 #use Data::Dumper;
 
-my $VERSION="1.0.2";
+my $VERSION="1.0.3";
 
 ##############################################################################
 # CONFIGURATION AND INITIALIZATION STUFF
