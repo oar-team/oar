@@ -1431,15 +1431,19 @@ SWITCH: for ($q) {
   #
   #{{{ DELETE /resources/(<id>|<node>/<cpuset) : Delete a resource (by id or node+cpuset)
   #
-  $URI = OAR::API::uri_regex_html_json_yaml('resources/(?:(\d+)|([\w.-]+)/(\d+))');
+  $URI = OAR::API::uri_regex_html_json_yaml('resources/(?:(\d+)|/nodes/([\w.-]+)/(\d+))');
   OAR::API::DELETE( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $id;
-    my $node;
-    my $cpuset;
-    if ($2) { $node=$1; $id=0; $cpuset=$2; $cpuset =~ s,^/,, ;}
-    else    { $node=""; $id=$1; $cpuset=""; } ;
-    my $ext=OAR::API::set_ext($q,$3);
+    my $id = 0;
+    my $node = "";
+    my $cpuset = "";
+    if (defined($2)) {
+        $node=$2;
+        $cpuset=$3;
+    } else {
+        $id=$1;
+    }
+    my $ext=OAR::API::set_ext($q,$4);
     (my $header)=OAR::API::set_output_format($ext);
 
     # Must be administrator (oar user)
@@ -1464,7 +1468,7 @@ SWITCH: for ($q) {
     my $query;
     my $Resource;
     if ($id == 0) {
-      $query="WHERE $nodes_resource_name = \"$node\" AND cpuset = $cpuset";
+      $query="WHERE $nodes_resource_name = '$node' AND cpuset = '$cpuset'";
     }
     else {
       $query="WHERE resource_id=$id";
@@ -1475,7 +1479,11 @@ SWITCH: for ($q) {
     if ($res[0]) { $Resource=$res[0];}
     else { 
       OAR::IO::disconnect($base);
-      OAR::API::ERROR(404,"Not found","Corresponding resource could not be found ($id,$node,$cpuset)");
+      if ($id == 0) {
+        OAR::API::ERROR(404,"Not found","Corresponding resource could not be found ($node/$cpuset)");
+      } else {
+        OAR::API::ERROR(404,"Not found","Corresponding resource could not be found ($id)");
+      }
       last;
     }
 
