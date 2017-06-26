@@ -1197,7 +1197,7 @@ sub get_possible_wanted_resources($$$$$$$){
             if ($i < $#wanted_resources){
                 $wanted_children_number = $wanted_resources[$i+1]->{value};
             }else{
-                $wanted_children_number = 0;
+                $wanted_children_number = -1;
             }
             OAR::Schedulers::ResourceTree::set_needed_children_number($father_ref,$wanted_children_number);
             # Verify if we must keep this child if this is resource_id resource name
@@ -6904,7 +6904,7 @@ sub get_gantt_visu_scheduled_job_resources($$){
     my $dbh = shift;
     my $moldable_job_id = shift;
 
-    my $sth = $dbh->prepare("SELECT r.resource_id, r.network_address, r.state
+    my $sth = $dbh->prepare("SELECT r.*
                              FROM gantt_jobs_resources_visu g, moldable_job_descriptions m, resources r
                              WHERE
                                 m.moldable_job_id = $moldable_job_id
@@ -6912,14 +6912,13 @@ sub get_gantt_visu_scheduled_job_resources($$){
                                 AND g.resource_id = r.resource_id
                             ");
     $sth->execute();
-    my %h;
-    while (my @ref = $sth->fetchrow_array()) {
-        $h{$ref[0]}->{'network_address'}=$ref[1];
-        $h{$ref[0]}->{'current_state'}=$ref[2];
+    my $h;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $h->{$ref->{resource_id}}=$ref;
     }
     $sth->finish();
 
-    return \%h;
+    return $h;
 }
 
 # TIME CONVERSION
