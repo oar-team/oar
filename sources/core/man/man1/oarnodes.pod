@@ -4,7 +4,7 @@ oarnodes - show information about the nodes managed by OAR.
 
 =head1 SYNOPSIS
 
-B<oarnodes> [ -a | -s | -r <integer> | --sql <sql_properties> | -l | -h | -V ] [<list of nodes>] [ -e [<date>] | -X | -Y | -D ]
+B<oarnodes> [ -s | -r <integer> | --sql <sql_properties> | -l | -h | -V ] [<list of nodes>] [ -e [<date>] | -X | -Y | -D ]
 
 =head1 DESCRIPTION
 
@@ -13,10 +13,6 @@ Display information about the nodes managed by OAR.
 =head1 OPTION
 
 =over
-
-=item B<-a, --all>
-
-Show all resources with their properties.
 
 =item B<-r, --resource>
 

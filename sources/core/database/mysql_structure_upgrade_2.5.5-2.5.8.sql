@@ -11,6 +11,8 @@ INDEX id (job_id),
 PRIMARY KEY (job_id)
 );
 
+GRANT SELECT ON %%DB_NAME%%.walltime_change TO '%%DB_RO_USER%%'@'%' IDENTIFIED BY '%%DB_RO_PASS%%';
+
 -- Update the database schema version
 DELETE FROM `schema`;
 INSERT INTO `schema`(version, name) VALUES ('2.5.8', '');

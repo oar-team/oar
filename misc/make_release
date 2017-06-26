@@ -1,0 +1,159 @@
+#!/bin/bash -e
+# Tarball release script. See http://oar.imag.fr/wiki:tarball_release
+
+confirm() {
+  read -n 1 -s -p "$1 " ANSWER
+  echo
+  if [ "$ANSWER" != "y" -a "$ANSWER" != "Y" ]; then
+    echo "Aborted!"
+    exit 1
+  fi
+}
+
+usage() {
+  cat <<EOF
+$0 [<OPTIONS>] <ACTION>
+Actions:
+  release
+  push-tags
+  push-ftp
+  drop-tags
+  all
+
+Options:
+  -S    This is a stable release
+  -V <version>  Gives the version of the release
+  -r    Gives git remote (multiple possible)
+  -v            Verbose
+  -f <hostname>  Gives the OAR FTP hostname for ssh
+EOF
+}
+
+verbose() {
+  if [ -n "$VERBOSE" ]; then
+    set -x
+  fi
+}
+
+unverbose() {
+  set +x
+}
+
+release() {
+  if [ -z "$VERSION" ]; then
+    read -p "Version ? " VERSION
+  fi
+  confirm "Release tarball for OAR version $VERSION ?"
+  git pull --rebase
+  confirm "Push ?"
+  verbose
+  for r in ${REMOTES[*]}; do 
+    git push -n $r 2.5
+  done
+  git tag -s $VERSION -m $VERSION
+  git describe 
+  if [ -n "$(git status --porcelain)" ]; then
+    git status -s
+    confirm "Clean git repository ?"
+    git clean -f
+  fi
+  make tarball
+  unverbose
+}
+
+push_tags() {
+  confirm "Push tag ?"
+  verbose
+  for r in ${REMOTES[*]}; do 
+    git push $r --tags -n
+  done
+  for r in ${REMOTES[*]}; do 
+    git push $r --tags
+  done
+  unverbose
+}
+
+drop_tags() {
+  confirm "Drop tag $VERSION ?"
+  verbose
+  for r in ${REMOTES[*]}; do 
+    git push $r --delete $VERSION || true
+  done
+  git tag -d $VERSION
+  unverbose
+}
+
+push_ftp() {
+  confirm "Push to ftpmaster@oar ?"
+  verbose
+  scp ../tarballs/oar-${VERSION}.tar.gz $OARFTP:oar-ftp.imag.fr/oar/sources/testing/
+  ssh $OARFTP \
+    "cd oar-ftp.imag.fr/oar/sources/testing/ && md5sum oar-$VERSION.tar.gz > oar-$VERSION.tar.gz.md5sum && sha1sum oar-$VERSION.tar.gz > oar-$VERSION.tar.gz.sha1sum"
+  
+  if [ -n "$STABLE" ]; then
+    ssh $OARFTP \
+      "cd oar-ftp.imag.fr/oar/sources/stable/ && for f in oar-$VERSION.tar.gz oar-$VERSION.tar.gz.md5sum oar-$VERSION.tar.gz.sha1sum; do ln -s ../testing/\$f . ; done"
+  fi
+  unverbose
+}
+
+OARFTP=ftpmaster@oar-ftp.lig
+declare -a REMOTES
+getopt() {
+  unset OPTIND
+  while getopts "r:V:f:Sv" OPT; do
+    case $OPT in
+      r)
+        REMOTES+=($OPTARG)
+        ;;
+      S)
+        STABLE=1
+        ;;
+      V)
+        VERSION=$OPTARG
+        ;;
+      v)
+        VERBOSE=1
+        ;;
+      f)
+        OARFTP=$OPTARG
+        ;;
+      *)
+        usage;
+        ;;
+    esac
+  done
+}
+
+getopt "$@"
+shift $((OPTIND - 1))
+ACTION=$1
+shift
+getopt "$@"
+
+if [ -z "${REMOTES[*]}" ]; then
+  REMOTES=("github" "origin")
+fi
+
+case $ACTION in
+  release)
+    release
+    ;;
+  push-tags)
+    push_tags
+    ;;
+  push-ftp)
+    push_ftp
+    ;;
+  drop-tags)
+    drop_tags
+    ;;
+  all)
+    release
+    push_tags
+    push_ftp
+  ;;
+  *)
+    usage;
+    ;;
+esac
