@@ -112,6 +112,7 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          openssh-client,
          openssh-server,
+         lsb-base (>= 3.0-6),
          oar-common (= ${binary:Version})
 Suggests: oar-doc,
           xauth
@@ -210,7 +211,6 @@ Section: net
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
-         perl-modules,
          libjson-perl,
          libyaml-perl,
          libwww-perl,
