@@ -35,7 +35,7 @@ As per configuration:
 
 =item * a walltime increase may happen incrementally, so that other scheduled jobs get more priority. That increment may be computed as a percentage of the walltime of the job
 
-=item * the functionnality may be configured differently from one queue to another.
+=item * the functionality may be configured differently from one queue to another.
 
 =back
 
@@ -47,11 +47,11 @@ I<Read your site's documentation or ask your administrator to know the configure
 
 =item B<--force>
 
-Request walltime increase to be applied at once: immediatly and not incrementally.
+Request walltime increase to be applied at once: immediately and not incrementally.
 
 =item B<--delay-next-jobs>
 
-Request walltime increase to possibly delay next batch jobs (but not advance reservations), if requiered to fit in the resources allocation. Warning: this implies delaying any other batch jobs, including the ones from other users. Using this option may be prohibited.
+Request walltime increase to possibly delay next batch jobs (but not advance reservations), if required to fit in the resources allocation. Warning: this implies delaying any other batch jobs, including the ones from other users. Using this option may be prohibited.
 
 =item B<-h, --help>
 
