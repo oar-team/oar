@@ -316,6 +316,12 @@ describe OarApi do
         @api.value['resources'].should be_an(Array)
         @api.value['nodes'].should be_an(Array)
       end
+      it "should have a resources_status" do
+        @api.value.should have_key('resources_status')
+      end
+      it "should have a valid resources_status field (scheduled or reserved or assigned)" do
+        @api.value['resources_status'].should match(/(scheduled|reserved|assigned)/)
+      end
       context "should have resources behaving correctly" do
         before(:all) do
           @api.value=@value['resources'][0]
@@ -327,9 +333,6 @@ describe OarApi do
           @api.value=@value['nodes'][0]
         end
         it_should_behave_like "Node"
-        it "should have a status" do
-          @api.value.should have_key('status')
-        end
       end
     end
     context "(with non-existent job)" do
@@ -379,6 +382,12 @@ describe OarApi do
         @api.value['resources'].should be_an(Array) 
         @api.value['nodes'].should be_an(Array)
       end
+      it "should have a resources_status" do
+        @api.value.should have_key('resources_status')
+      end
+      it "should have a valid resources_status field (scheduled or reserved or assigned)" do
+        @api.value['resources_status'].should match(/(scheduled|reserved|assigned)/)
+      end
       context "should have resources behaving correctly" do
         before(:all) do
           @api.value=@values["items"][0]['resources'][0]
@@ -390,9 +399,6 @@ describe OarApi do
           @api.value=@values["items"][0]['nodes'][0]
         end
         it_should_behave_like "Node"
-        it "should have a status" do
-          @api.value.should have_key('status')
-        end
       end
     end
   end
@@ -410,12 +416,6 @@ describe OarApi do
         @api.value=@api.value['items'][0]
       end
       it_should_behave_like "ResourceId"
-      it "should have a status field" do
-        @api.value['status'].should_not be_nil
-      end
-      it "should have a valid status field (reserved or assigned)" do
-        @api.value['status'].should match(/(reserved|assigned)/)
-      end
     end
   end
 
