@@ -372,7 +372,7 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 ###########################################################################
 # WALLTIME CHANGE                                                         #
 # Allow a user to request a change to the walltime of a job. Change can   #
-# be an increase of a decrease. Increase is basically only granted if it  #
+# be an increase or a decrease. Increase is basically only granted if it  #
 # does not conflict with the next jobs.                                   #
 ###############################################################################
 #

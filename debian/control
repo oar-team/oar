@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 9),
                po-debconf,
                perl,
                python-sphinx | python3-sphinx
-Standards-Version: 3.9.7
+Standards-Version: 4.0.0
 Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
 Homepage: http://oar.imag.fr/
 
@@ -112,6 +112,7 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          openssh-client,
          openssh-server,
+         lsb-base (>= 3.0-6),
          oar-common (= ${binary:Version})
 Suggests: oar-doc,
           xauth
@@ -210,7 +211,6 @@ Section: net
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
-         perl-modules,
          libjson-perl,
          libyaml-perl,
          libwww-perl,

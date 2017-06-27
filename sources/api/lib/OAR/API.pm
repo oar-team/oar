@@ -11,6 +11,7 @@ use CGI qw/:standard/;
 our $ABSOLUTE_URIS;
 our $q;
 our $DEBUG_MODE;
+our $nodes_resource_name; # See OARSUB_NODES_RESOURCES in oar.conf (network_address by default)
 our $extension;
 our $HTTP_X_API_PATH_PREFIX;
 
@@ -274,18 +275,6 @@ sub add_joblist_uris($$) {
   }
 }
 
-# Add uris to a oar job list for oargrid
-sub add_joblist_griduris($$$) {
-  my $jobs = shift;
-  my $ext = shift;
-  my $site = shift;
-    foreach my $job ( keys( %{$jobs} ) ) {
-      $jobs->{$job}->{uri}=OAR::API::make_uri("sites/$site/jobs/$job",$ext,0);
-      $jobs->{$job}->{uri}=OAR::API::htmlize_uri($jobs->{$job}->{uri},$ext);
-      $jobs->{$job}->{api_timestamp}=time();
-  }
-}
-
 # Add uris to a list of jobs of a resource
 sub add_jobs_on_resource_uris($$) {
   my $jobs = shift,
@@ -303,8 +292,8 @@ sub add_resources_uris($$$) {
   foreach my $resource (@$resources) {
     my $links;
     my $node;
-    if (defined($resource->{network_address})) {
-      $node=OAR::API::make_uri($prefix."resources/nodes/".$resource->{network_address},$ext,0);
+    if (defined($resource->{$nodes_resource_name})) {
+      $node=OAR::API::make_uri($prefix."resources/nodes/".$resource->{$nodes_resource_name},$ext,0);
       $node=OAR::API::htmlize_uri($node,$ext);
       push (@$links, { href => $node, title => "node", rel => "member" });
     }
@@ -326,7 +315,7 @@ sub add_nodes_uris($$$) {
   my $prefix = shift;
   foreach my $node (@$nodes) {
     my $links;
-    my $self=OAR::API::make_uri($prefix."resources/nodes/".$node->{network_address},$ext,0);
+    my $self=OAR::API::make_uri($prefix."resources/nodes/".$node->{$nodes_resource_name},$ext,0);
     $self=OAR::API::htmlize_uri($self,$ext);
     push (@$links, { href => $self, rel => "self" });
     $node->{links}=$links;
@@ -335,102 +324,16 @@ sub add_nodes_uris($$$) {
 }
 
 # Add uris to resources of a job
-# OBSOLETE!
+# OBSOLETE! PN: why??
 sub add_job_resources_uris($$$) {
-  my $resources = shift;
+  my $data = shift;
   my $ext = shift;
   my $prefix = shift;
-  foreach my $assigned_resource (@{$resources->{assigned_resources}}) {
-    $assigned_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$assigned_resource->{id},$ext,0);
-    $assigned_resource->{resource_uri}=htmlize_uri($assigned_resource->{resource_uri},$ext);
+  foreach my $resource (@{$data->{resources}}) {
+    $resource->{resource_uri}=htmlize_uri(OAR::API::make_uri($prefix."resources/".$resource->{id},$ext,0),$ext);
   }
-  foreach my $reserved_resource (@{$resources->{reserved_resources}}) {
-    $reserved_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$reserved_resource->{id},$ext,0);
-    $reserved_resource->{resource_uri}=htmlize_uri($reserved_resource->{resource_uri},$ext);
-  }
-  foreach my $assigned_node (@{$resources->{assigned_nodes}}) {
-    $assigned_node->{node_uri}=OAR::API::make_uri($prefix."resources/nodes/".$assigned_node->{node},$ext,0);
-    $assigned_node->{node_uri}=htmlize_uri($assigned_node->{node_uri},$ext);
-  }
-  $resources->{job_uri}=OAR::API::make_uri($prefix."jobs/".$resources->{job_id},$ext,0);
-  $resources->{job_uri}=htmlize_uri($resources->{job_uri},$ext);
-  $resources->{api_timestamp}=time();
-}
-
-# Add uris to a grid sites list
-sub add_sites_uris($$) {
-  my $sites = shift;
-  my $ext = shift;
-  foreach my $site ( keys( %{$sites} ) ) {
-      $sites->{$site}->{uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("sites/$site",$ext,0),
-                               $ext
-                             );
-      $sites->{$site}->{resources_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("sites/$site/resources",$ext,0),
-                               $ext
-                             );
-      $sites->{$site}->{timezone_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("sites/$site/timezone",$ext,0),
-                               $ext
-                             );
-      $sites->{$site}->{api_timestamp}=time();
-  }
-}
-
-# Add uris to a grid job list
-sub add_gridjobs_uris($$) {
-  my $jobs = shift;
-  my $ext = shift;
-  foreach my $job ( keys( %{$jobs} ) ) {
-      $jobs->{$job}->{uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/$job",$ext,0),
-                               $ext
-                             );
-      $jobs->{$job}->{nodes_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/$job/resources/nodes",$ext,0),
-                               $ext
-                             );
-      $jobs->{$job}->{api_timestamp}=time();
-  }
-}
-
-# Add uris to a grid job
-sub add_gridjob_uris($$) {
-  my $job = shift;
-  my $ext = shift;
-  # Timestamp
-  $job->{api_timestamp}=time();
-  # List of resources
-  $job->{resources_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/". $job->{id} ."/resources",$ext,0),
-                               $ext
-                             );
-  # List of resources without details (nodes only)
-  $job->{nodes_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/". $job->{id} ."/resources/nodes",$ext,0),
-                               $ext
-                             );
-  # Link to the batch job on the corresponding cluster
-  foreach my $cluster (keys %{$job->{clusterJobs}}) {
-    foreach my $cluster_job (keys %{$job->{clusterJobs}->{$cluster}}) {
-      $job->{clusterJobs}->{$cluster}->{$cluster_job}->{uri}=OAR::API::htmlize_uri(
-              OAR::API::make_uri("sites/$cluster/jobs/" 
-                 .$job->{clusterJobs}->{$cluster}->{$cluster_job}->{batchId},$ext,0),
-              $ext
-              );
-    }
-  }
-  # Ssh keys
-  $job->{ssh_private_key_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/".$job->{id}."/keys/private",$ext,0),
-                               $ext
-                             );
-  $job->{ssh_public_key_uri}=OAR::API::htmlize_uri(
-                               OAR::API::make_uri("grid/jobs/".$job->{id}."/keys/public",$ext,0),
-                               $ext
-                             );
- 
+  $data->{job_uri}=htmlize_uri(OAR::API::make_uri($prefix."jobs/".$data->{job_id},$ext,0),$ext);
+  $data->{api_timestamp}=time();
 }
 
 # Add uris to a single admission rule
@@ -526,9 +429,6 @@ sub struct_job($$) {
     delete $job->{launchingDirectory};
     delete $job->{job_user};
     delete $job->{job_uid};
-    delete $job->{reserved_resources};
-    delete $job->{assigned_resources};
-    delete $job->{assigned_network_address};
     return $job;
   }
 }
@@ -600,54 +500,20 @@ sub struct_job_list_details($$) {
 
 # OAR RESOURCES OF A JOB
 sub struct_job_resources($$) {
-  my $resources=shift;
+  my $data=shift;
   my $structure=shift;
-  my $result=[];
-  foreach my $r (@{$resources->{assigned_resources}}) {
-    push(@$result,{'id' => int($r), 'status' => 'assigned'});
+  my $resources = [];
+  foreach my $resource_id (keys (%{$data->{resources}})) {
+    push(@$resources,{'id' => int($resource_id), %{$data->{resources}->{$resource_id}} });
   }
-  if (ref($resources->{reserved_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{reserved_resources}})) {
-      push(@$result,{'id' => int($r), 'status' => 'reserved'});
-    }
-  }
-  if (ref($resources->{scheduled_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
-      push(@$result,{'id' => int($r), 'status' => 'scheduled'});
-    }
-  }
-  return $result;
+  return $resources;
 }
 
 sub struct_job_nodes($$) {
   my $resources=shift;
   my $structure=shift;
-  my $result=[];
-  my $network_addresses={};
-  my $network_address;
-  foreach my $n (@{$resources->{assigned_hostnames}}) {
-    push(@$result,{'network_address' => $n, 'status' => 'assigned'});
-  }
-  if (ref($resources->{reserved_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{reserved_resources}})) {
-      $network_address=$resources->{reserved_resources}->{$r}->{network_address};
-      if (!defined($network_addresses->{$network_address})) {;      
-        push(@$result,{'network_address' => $network_address, 'status' => 'reserved'});
-        $network_addresses->{$network_address}=1;
-      }
-    }
-  }
-  $network_addresses={};
-  if (ref($resources->{scheduled_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
-      $network_address=$resources->{scheduled_resources}->{$r}->{network_address};
-      if (!defined($network_addresses->{$network_address})) {;      
-        push(@$result,{'network_address' => $network_address, 'status' => 'scheduled'});
-        $network_addresses->{$network_address}=1;
-      }
-    }
-  }
-  return $result;
+
+  return [ map { {$nodes_resource_name => $_} } @{$resources->{nodes}} ]; 
 }
 
 
@@ -673,7 +539,7 @@ sub filter_resource_list($) {
     push(@$filtered_resources,{ id => int($resource->{resource_id}),
                                 state => $resource->{state},
                                 available_upto => int($resource->{available_upto}),
-                                network_address => $resource->{network_address}
+                                $nodes_resource_name => $resource->{$nodes_resource_name}
                               });
   }
   return $filtered_resources;
@@ -690,7 +556,7 @@ sub struct_resource_list_hash_to_array($) {
       foreach my $id ( keys (%{$resources->{$r}})) {
         push (@$array,{ 'state' => $resources->{$r}->{$id},
                         'id' => int($id),
-                        'network_address' => $r});
+                        '$nodes_resource_name' => $r});
       }
     }
   }
@@ -746,152 +612,6 @@ sub struct_resource_list($$$) {
     }
     return $result; 
   }
-}
-
-
-sub get_list_nodes($) {
-	my $expression = shift;
-	my $pattern = qr{/(node|nodes)=(.*?)(/|$)};
-	my $result;
-	
-	if ($expression =~ /$pattern/) {
-		my $prefix = $1;
-		my $value = $2;
-		if ($value =~ /\{(.+)\}/) {
-			for (my $i=1; $i<=$1; $i++) {
-				push(@$result, $prefix.$i);
-            }  
-        }
-        else {
-        	my @params = split(/,/,$value);
-        	foreach my $param (@params) {
-        		if ($param =~ /\[(\d+)-(\d+)\]/) {
-        			for (my $i=$1; $i<=$2; $i++) {
-        				push(@$result, $prefix.$i);
-        			}
-        		}
-        		else {
-        			push(@$result, $param);
-        		}
-        	}
-        }
-	}
-
-	return $result;
-}
-
-# GRID SITE LIST
-sub struct_sites_list($$) {
-  my $sites = shift;
-  my $structure = shift;
-  my $result;
-  my $uri;
-  foreach my $s ( keys( %{$sites} ) ) {
-    if ($structure eq "simple") { push(@$result,{ site => $s, 
-                                                  uri => $sites->{$s}->{uri},
-                                                  api_timestamp => $sites->{$s}->{api_timestamp} });}
-    else                        { $result->{$s}->{uri} = $sites->{$s}->{uri};
-                                  $result->{$s}->{api_timestamp} = $sites->{$s}->{api_timestamp}; }
-  }
-  return $result; 
-}
-
-# GRID SITE
-sub struct_site($$) {
-  my $site = shift;
-  my $structure = shift;
-  if ($structure eq "simple") { 
-    my $s=(keys( %{$site}))[0];
-    $site->{$s}->{site}=$s; 
-    return $site->{$s}; 
-  }
-  else { return $site; }
-}
-
-# GRID JOB
-sub struct_gridjob($$) {
-  my $job = shift;
-  my $structure = shift;
-  my @cluster_jobs;
-  foreach my $cluster (keys %{$job->{clusterJobs}}) {
-    foreach my $cluster_job (keys %{$job->{clusterJobs}->{$cluster}}) {
-      # Cleaning
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{weight};
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{nodes};
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{env};
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{name};
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{queue};
-      delete $job->{clusterJobs}->{$cluster}->{$cluster_job}->{part};
-      # For the simple data structure
-      push (@cluster_jobs, 
-         { 'cluster' => $cluster,
-           'id' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{batchId},
-           'properties' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{properties},
-           'rdef' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{rdef},
-           'uri' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{uri},
-           'api_timestamp' => $job->{clusterJobs}->{$cluster}->{$cluster_job}->{api_timestamp}
-          })
-    }
-  }
-  if ($structure eq "simple") {
-    delete $job->{clusterJobs};
-    $job->{cluster_jobs}=\@cluster_jobs;
-  }
-  return $job;
-}
-
-# GRID JOB LIST
-sub struct_gridjobs_list($$) {
-  my $jobs = shift;
-  my $structure = shift;
-  my $result;
-  foreach my $job ( keys( %{$jobs} ) ) {
-    my $hashref = {
-                  nodes => $jobs->{$job}->{nodes},
-                  uri => $jobs->{$job}->{uri},
-                  api_timestamp => $jobs->{$job}->{api_timestamp},
-    };
-    if ($structure eq 'oar') {
-      $result->{$job} = $hashref;
-    }
-    elsif ($structure eq 'simple') {
-      $hashref->{id}=$job;
-      push (@$result,$hashref);
-    }
-  }
-  return $result;
-}
-
-# GRID JOB RESOURCES
-sub struct_gridjob_resources($$) {
-  my $resources = shift;
-  my $structure = shift;
-  my $result;
-  if ($structure eq "simple") {
-    foreach my $resource ( keys( %{$resources} ) ) {
-      push (@$result,{ site => $resource, jobs => $resources->{$resource} });
-    }
-    return $result;
-  }
-  else {
-    return $resources;
-  } 
-}
-
-# LIST OF NODES FOR A GRID JOB
-sub struct_gridjob_nodes($$) {
-  my $resources = shift;
-  my $structure = shift;
-  my @result;
-  foreach my $site ( keys( %{$resources} ) ) {
-    foreach my $job ( keys( %{$resources->{$site}} ) ) {
-      my $nodes=$resources->{$site}->{$job}->{nodes};
-      foreach my $node (@$nodes) {
-        @result=(@result,$node);
-      }
-    }
-  }
-  return \@result;
 }
 
 
@@ -1033,6 +753,24 @@ sub set_output_format {
   return ($header,$type);
 }
 
+# Create a URI regex with no tail
+sub uri_regex_no_tail($) {
+  my $r=shift;
+  return qr{^/$r$};
+}
+
+# Create a URI regex ending by yaml, json or html
+sub uri_regex_html_json_yaml($) {
+  my $r=shift;
+  return uri_regex_no_tail($r.'(?:\.(html|json|yaml))?');
+}
+
+# Create a URI regex ending by tar.gz or tgz
+sub uri_regex_tgz($) {
+  my $r=shift;
+  return uri_regex_no_tail($r.'(?:\.(tar.gz|tgz))?');
+}
+
 # Return the extension (second parameter) if defined, or the
 # corresponding one if the content_type if set.
 sub set_ext($$) {
@@ -1093,6 +831,7 @@ sub HEAD($$) {
 
 sub GET($$) {
   ( my $q, my $path ) = @_;
+warn "$q -> $path\n";
   if   ( $q->request_method eq 'GET' && $q->path_info =~ /$path/ ) { return 1; }
   else                                                             { return 0; }
 }
@@ -1242,6 +981,7 @@ sub check_job_update($$) {
 }
 
 # Check the consistency of a posted oar resource and load it into a hashref
+# Used for the resources creation => need a network_address (must not use $nodes_resource_name here!)
 sub check_resources($$) {
   my $data         = shift;
   my $content_type = shift;
@@ -1267,15 +1007,15 @@ sub check_resources($$) {
  } 
  foreach my $r (@$resources_array) {
     # Resource must have a "hostname" or "network_address" field
-    unless ( $r->{hostname} or $r->{network_address} ) {
+    if (not defined($r->{hostname}) and not defined($r->{network_address})) {
       ERROR 400, 'Missing Required Field',
-        'A resource must have a hosname field or a network_address property!';
+        'A resource must have a hostname field or a network_address property!';
       exit 0;
     }
 
     # Fill network_address with $hostname if provided
-    if ( ! $r->{network_address} && $r->{hostname} ) {
-      $r->{network_address}=$r->{hostname};
+    if ( not defined($r->{network_address}) and defined($r->{hostname}) ) {
+      $r->{network_address} = $r->{hostname};
       delete $r->{hostname};
     }
 
@@ -1340,37 +1080,6 @@ sub check_resource_description($$) {
   #}
 
   return $description;
-}
-
-# Check the consistency of a posted grid job and load it into a hashref
-sub check_grid_job($$) {
-  my $data         = shift;
-  my $content_type = shift;
-
-  my $job = import_data_with_content_type($data, $content_type, "grid job");
-
-  # Job must have a "resources" or "file" field
-  unless ( $job->{resources} or $job->{file} ) {
-    ERROR 400, 'Missing Required Field',
-      'A grid job must have a resources or file field!';
-    exit 0;
-  }
-
-  # Clean options with an empty parameter that is normaly required
-  parameter_option($job,"walltime");
-  parameter_option($job,"queue");
-  parameter_option($job,"identity_file");
-  parameter_option($job,"timeout");
-  parameter_option($job,"program");
-  parameter_option($job,"type");
-  parameter_option($job,"start_date");
-  parameter_option($job,"directory");
-
-  # Manage toggle options (no parameter)
-  toggle_option($job,"FORCE");
-  toggle_option($job,"verbose");
-
-  return $job;
 }
 
 # Check the consistency of a posted oar admission rule and load it into a hashref

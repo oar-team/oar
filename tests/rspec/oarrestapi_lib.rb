@@ -5,7 +5,7 @@ require 'pp'
 require 'uri'
 
 USER=ENV['USER']
-APIURI="http://#{USER}:#{USER}@localhost/oarapi-priv/" unless ENV['APIURI']
+APIURI="http://#{USER}:#{USER}@localhost:6668/oarapi-priv/" unless ENV['APIURI']
 APIURI=ENV['APIURI'] if ENV['APIURI']
 POST_APIURI=APIURI unless ENV['POST_APIURI']
 POST_APIURI=ENV['POST_APIURI'] if ENV['POST_APIURI']
@@ -58,8 +58,7 @@ end
 def get(api,uri)
     uri=rel_uri(uri)
 #  begin
-    return JSON.parse(api[uri].get(:accept => 'application/json',
-                                   :'x-api-path-prefix' => APIPATH))
+    return JSON.parse(api[uri].get(:accept => 'application/json'))
 #  rescue => e
 #    if e.respond_to?('http_code')
 #      puts "ERROR #{e.http_code}:\n #{e.response.body}"
@@ -84,8 +83,7 @@ end
 def post(api,uri,j)
     uri=rel_uri(uri)
     j=j.to_json
-    return JSON.parse(api[uri].post( j,:content_type  => 'application/json',
-                                       :'x-api-path-prefix' => POST_APIPATH))
+    return JSON.parse(api[uri].post( j,:content_type  => 'application/json'))
 end
 
 ########################################################################
@@ -101,8 +99,7 @@ end
 def delete(api, uri)
  uri=rel_uri(uri)
  begin
-   return JSON.parse(api[uri].delete(:content_type => 'application/json',
-                                     :'x-api-path-prefix' => POST_APIPATH))
+   return JSON.parse(api[uri].delete(:content_type => 'application/json'))
  rescue => e
  if e.respond_to?('http_code')
       puts "ERROR #{e.http_code}:\n #{e.response.body}"

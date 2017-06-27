@@ -114,6 +114,7 @@ sub add_child($$$$){
     my $resource_value = shift;
     my $tree_root_ref = shift;   # First node of the tree
 
+    $resource_value = "" if (!defined($resource_value));
     my $tmp_ref;
     if (!defined($tree_ref->[1]->{$resource_value})){
         # Create a new tree node
@@ -567,6 +568,7 @@ sub delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($$){
                         or (($tree_ref != $current_node)
                             and (get_needed_children_number(get_father($current_node)) > 0)
                             and ($nb_children_validated{get_father($current_node)} >= get_needed_children_number(get_father($current_node))))
+                        or (get_needed_children_number($current_node) == 0)                 # For stupid requests with 0 item wanted
                        ){
                         # we want to delete the root
                         return(undef) if ($tree_ref == $current_node);
@@ -602,6 +604,7 @@ sub delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($$){
                             and (get_max_available_children($current_node) > get_current_children_number($current_node)))
                         or ((get_needed_children_number($current_node) == -2)                # BEST
                             and (get_current_children_number($current_node) <= 0))
+                        or (get_needed_children_number($current_node) == 0)                  # For stupid requests with 0 item wanted
                        ){
 #                       print("DELETE 3 : ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
                         # Delete sub tree that does not fit with wanted resources 

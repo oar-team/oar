@@ -88,7 +88,7 @@ $CONF['timezone'] = "UTC";
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
 $CONF['resource_labels'] = array('network_address','cpuset'); // properties to describe resources (labels on the left). Must also be part of resource_hierarchy below 
 $CONF['cpuset_label_display_string'] = "%02d";
-$CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1
+$CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1). label will be replaced with the 1st selection of the regex, unless an array is used with the replacement string as the second argument.
   'network_address' => '/^([^.]+)\..*$/',
   );
 $CONF['label_cmp_regex'] = array( // substring selection regex for comparing and sorting labels (resources)
