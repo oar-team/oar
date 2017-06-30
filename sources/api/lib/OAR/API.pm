@@ -556,7 +556,7 @@ sub struct_resource_list_hash_to_array($) {
       foreach my $id ( keys (%{$resources->{$r}})) {
         push (@$array,{ 'state' => $resources->{$r}->{$id},
                         'id' => int($id),
-                        '$nodes_resource_name' => $r});
+                        $nodes_resource_name => $r});
       }
     }
   }
