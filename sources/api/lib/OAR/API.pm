@@ -831,7 +831,6 @@ sub HEAD($$) {
 
 sub GET($$) {
   ( my $q, my $path ) = @_;
-warn "$q -> $path\n";
   if   ( $q->request_method eq 'GET' && $q->path_info =~ /$path/ ) { return 1; }
   else                                                             { return 0; }
 }
