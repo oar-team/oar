@@ -4250,9 +4250,9 @@ WHERE
         )
     ) AND
     jobs.start_time < $date_end AND
-    jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-    moldable_job_descriptions.moldable_job_id = jobs.job_id AND
-    resources.resource_id = assigned_resources.resource_id
+    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
+    moldable_job_descriptions.moldable_id = assigned_resources.moldable_job_id AND
+    assigned_resources.resource_id = resources.resource_id
 ORDER BY
     jobs.job_id
 EOT

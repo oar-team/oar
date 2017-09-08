@@ -25,6 +25,7 @@ version 2.5.8:
     in new installation. For existing database, the following command apply the
     fix: `oar-database --fix-ro-user-priv ...`
   - [drawgantt-svg] improve the label_display_regex text replacement mechanism
+  - [drawgantt-svg/oarstat] fix past and current moldable jobs display
 
 version 2.5.7:
 --------------
