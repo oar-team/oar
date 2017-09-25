@@ -435,7 +435,7 @@ SWITCH: for ($q) {
                   # SQL queries. Maybe to optimize...
                   my $detailed_jobs;
                   foreach my $j (@$jobs) {
-                    my $job_resources = OAR::Stat::get_job_resources($j);
+                    my $job_resources = OAR::API::get_job_resources($j);
                     $j = OAR::Stat::get_job_data($j,1);
                     my $resources = OAR::API::struct_job_resources($job_resources,$STRUCTURE);
                     my $nodes= OAR::API::struct_job_nodes($job_resources,$STRUCTURE);
@@ -498,7 +498,7 @@ SWITCH: for ($q) {
     }
     my $data=OAR::Stat::get_job_data(@$job[0],1);
     if (defined($details) and $details eq "/details") {
-        my $job_resources = OAR::Stat::get_job_resources(@$job[0]);
+        my $job_resources = OAR::API::get_job_resources(@$job[0]);
         my $resources = OAR::API::struct_job_resources($job_resources,$STRUCTURE);
         my $nodes= OAR::API::struct_job_nodes($job_resources,$STRUCTURE);
         OAR::API::add_resources_uris($resources,$ext,'');
@@ -534,7 +534,7 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database"
                                                  );
     my $job = OAR::Stat::get_specific_jobs([$jobid]);
-    my $resources=OAR::Stat::get_job_resources(@$job[0]);
+    my $resources=OAR::API::get_job_resources(@$job[0]);
     if ($item eq "resources") {
       $resources = OAR::API::struct_job_resources($resources,$STRUCTURE);
       OAR::API::add_resources_uris($resources,$ext,''); 

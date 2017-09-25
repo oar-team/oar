@@ -511,55 +511,68 @@ sub struct_job_list_details($$) {
 
 
 # OAR RESOURCES OF A JOB
+
+sub get_job_resources($) {
+    my $job_info=shift;
+    my $data;
+    my $status = "UNKNOWN";
+    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
+    if (defined($job_info->{assigned_moldable_job}) and $job_info->{assigned_moldable_job} ne "0"){
+        foreach my $resource (OAR::IO::get_job_resources_properties($base, $job_info->{job_id})) {
+            $data->{resources}->{$resource->{resource_id}} = $resource;
+        }
+        $status = "assigned";
+    } elsif ($job_info->{state} eq "Waiting") {
+        $data->{resources} = OAR::IO::get_gantt_visu_scheduled_job_resources($base,$job_info->{job_id}, 1);
+        if ($job_info->{reservation} eq "Scheduled") { # Advance reservation
+            $status = "reserved";
+        } elsif ($job_info->{reservation} eq "None") { # Batch job
+            $status = "scheduled";
+        } else {
+            warn "Warning: could not determine resources status\n";
+        }
+    } else {
+        warn "Warning: could not determine resources\n";
+    }
+    foreach my $r (values(%{$data->{resources}})) {
+        delete($r->{'state_num'});
+        delete($r->{'last_available_upto'});
+        delete($r->{'next_state'});
+        delete($r->{'finaud_decision'});
+        delete($r->{'next_finaud_decision'});
+        delete($r->{'last_job_date'});
+        delete($r->{'suspended_jobs'});
+        delete($r->{'expiry_date'});
+        delete($r->{'scheduler_priority'});
+    }
+    OAR::IO::disconnect($base);
+    $data->{nodes} = {};
+    foreach my $r (keys(%{$data->{resources}})) {
+        $data->{resources}->{$r}->{id} = $r;
+        $data->{resources}->{$r}->{status} = $status;
+        my $n=$data->{resources}->{$r}->{network_address};
+        if ($data->{resources}->{$r}->{type} eq 'default' and defined($n) and $n ne "") {
+            if (not defined($data->{nodes}->{$n})) {
+                $data->{nodes}->{$n}->{network_address} = $n;
+                $data->{nodes}->{$n}->{status} = $status;
+            }
+        }
+    }
+    return $data;
+}
+
 sub struct_job_resources($$) {
-  my $resources=shift;
+  my $data=shift;
   my $structure=shift;
-  my $result=[];
-  foreach my $r (@{$resources->{assigned_resources}}) {
-    push(@$result,{'id' => int($r), 'status' => 'assigned'});
-  }
-  if (ref($resources->{reserved_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{reserved_resources}})) {
-      push(@$result,{'id' => int($r), 'status' => 'reserved'});
-    }
-  }
-  if (ref($resources->{scheduled_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
-      push(@$result,{'id' => int($r), 'status' => 'scheduled'});
-    }
-  }
-  return $result;
+  my @resources = values(%{$data->{resources}});
+  return \@resources;
 }
 
 sub struct_job_nodes($$) {
-  my $resources=shift;
+  my $data=shift;
   my $structure=shift;
-  my $result=[];
-  my $network_addresses={};
-  my $network_address;
-  foreach my $n (@{$resources->{assigned_hostnames}}) {
-    push(@$result,{'network_address' => $n, 'status' => 'assigned'});
-  }
-  if (ref($resources->{reserved_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{reserved_resources}})) {
-      $network_address=$resources->{reserved_resources}->{$r}->{network_address};
-      if (!defined($network_addresses->{$network_address})) {;      
-        push(@$result,{'network_address' => $network_address, 'status' => 'reserved'});
-        $network_addresses->{$network_address}=1;
-      }
-    }
-  }
-  $network_addresses={};
-  if (ref($resources->{scheduled_resources}) eq "HASH") {
-    foreach my $r (keys(%{$resources->{scheduled_resources}})) {
-      $network_address=$resources->{scheduled_resources}->{$r}->{network_address};
-      if (!defined($network_addresses->{$network_address})) {;      
-        push(@$result,{'network_address' => $network_address, 'status' => 'scheduled'});
-        $network_addresses->{$network_address}=1;
-      }
-    }
-  }
-  return $result;
+  my @nodes = values(%{$data->{nodes}});
+  return \@nodes;
 }
 
 
@@ -877,7 +890,6 @@ sub HEAD($$) {
 
 sub GET($$) {
   ( my $q, my $path ) = @_;
-warn "$q -> $path\n";
   if   ( $q->request_method eq 'GET' && $q->path_info =~ /$path/ ) { return 1; }
   else                                                             { return 0; }
 }
