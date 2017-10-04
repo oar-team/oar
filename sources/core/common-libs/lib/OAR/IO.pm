@@ -2274,10 +2274,10 @@ sub get_running_job($$) {
     my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT j.start_time, m.moldable_walltime
-                                FROM jobs j, moldable_job_id m
+                                FROM jobs j, moldable_job_descriptions m
                                 WHERE
                                     job_id = $job_id AND 
-                                    j.state = 'Running'
+                                    j.state = 'Running' AND
                                     j.assigned_moldable_job = m.moldable_id
                             ");
     $sth->execute();
