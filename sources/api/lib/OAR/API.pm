@@ -535,15 +535,7 @@ sub get_job_resources($) {
         warn "Warning: could not determine resources\n";
     }
     foreach my $r (values(%{$data->{resources}})) {
-        delete($r->{'state_num'});
-        delete($r->{'last_available_upto'});
-        delete($r->{'next_state'});
-        delete($r->{'finaud_decision'});
-        delete($r->{'next_finaud_decision'});
-        delete($r->{'last_job_date'});
-        delete($r->{'suspended_jobs'});
-        delete($r->{'expiry_date'});
-        delete($r->{'scheduler_priority'});
+        delete($r->{'resource_id'});
     }
     OAR::IO::disconnect($base);
     $data->{nodes} = {};
