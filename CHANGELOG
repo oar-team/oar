@@ -14,30 +14,18 @@ version 2.5.8:
   - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
     in new installation. For existing database, the following command apply the
     fix: `oar-database --fix-ro-user-priv ...`
-  - [oarstat] renamed assigned_hostnames to assigned_nodes in the full display
-  - [oarstat] display all the properties of the resources assigned, scheduled
-    or reserved for a job, when using the Perl or YAML or JSON full display
-  - [oarstat] show the nodes for waiting jobs, when using the Perl or YAML or
-    JSON full display, add a resources_status key to jobs, with value: scheduled
-    (waiting batch job), reserved (waiting advance reservation) or assigned
-    (running job)
   - [api] some improvement in the Apache configuration and tests
   - [api] added POST /media/force to overwrite a file
-  - [api] bump version 1.0.3
+  - [finaud] bugfix: make pingchecker run only on resources of type default
   - [api] hardening on the syntax of the URIs (should not impact good URIs!)
-  - [api] display all the properties of the resources assigned, scheduled
-    or reserved for a job
-  - [api] resources and nodes for a job do not have a status anymore,
-    information is moved to the job structure itself as resources_status (see
-    above)
-  - [api/oarstat] take the OARSUB_NODES_RESOURCE configuration into account
-    when displaying nodes, since it may not be network_address in some setups
-  - [api/oarstat] fix nodes: nodes are resources with type = 'default'
   - [drawgantt-svg] add a mark next to the label of the resources pointed by
     the mouse
   - [drawgantt-svg] fix possible SQL injection with the filters
+  - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
+    in new installation. For existing database, the following command apply the
+    fix: `oar-database --fix-ro-user-priv ...`
   - [drawgantt-svg] improve the label_display_regex text replacement mechanism
-
+  - [drawgantt-svg/oarstat] fix past and current moldable jobs display
 
 version 2.5.7:
 --------------

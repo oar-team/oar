@@ -31,7 +31,7 @@
 use strict;
 use DBI();
 use OAR::API;
-use OAR::Conf qw(init_conf dump_conf get_conf_list get_conf is_conf set_value get_conf_with_default_param);
+use OAR::Conf qw(init_conf dump_conf get_conf_list get_conf is_conf set_value);
 use OAR::IO;
 use OAR::Stat;
 use OAR::Nodes;
@@ -48,7 +48,7 @@ use File::Listing qw(parse_dir);
 
 #use Data::Dumper;
 
-my $VERSION="1.0.3";
+my $VERSION="1.0.2";
 
 ##############################################################################
 # CONFIGURATION AND INITIALIZATION STUFF
@@ -89,6 +89,7 @@ my $stageout_dir = get_conf("STAGEOUT_DIR");
 my $stagein_dir = get_conf("STAGEIN_DIR");
 my $allow_create_node = get_conf("DESKTOP_COMPUTING_ALLOW_CREATE_NODE");
 my $expiry = get_conf("DESKTOP_COMPUTING_EXPIRY");
+
 # Enable this if you are ok with a simple pidentd "authentication"
 # Not very secure, but useful for testing (no need for login/password)
 # or in the case you fully trust the client hosts (with an apropriate
@@ -108,10 +109,6 @@ if (is_conf("API_DEFAULT_MAX_ITEMS_NUMBER")){ $MAX_ITEMS = get_conf("API_DEFAULT
 # Relative/absolute uris config variable
 $OAR::API::ABSOLUTE_URIS=1;
 if (is_conf("API_ABSOLUTE_URIS")){ $OAR::API::ABSOLUTE_URIS=get_conf("API_ABSOLUTE_URIS"); }
-
-# nodes alias as set in oar.conf (OARSUB_NODES_RESOURCES), default network_address
-my $nodes_resource_name = get_conf_with_default_param("OARSUB_NODES_RESOURCES","network_address");
-$OAR::API::nodes_resource_name = $nodes_resource_name;
 
 # TMP directory
 my $TMPDIR="/tmp";
@@ -438,7 +435,7 @@ SWITCH: for ($q) {
                   # SQL queries. Maybe to optimize...
                   my $detailed_jobs;
                   foreach my $j (@$jobs) {
-                    my $job_resources = OAR::Stat::get_job_resources($j);
+                    my $job_resources = OAR::API::get_job_resources($j);
                     $j = OAR::Stat::get_job_data($j,1);
                     my $resources = OAR::API::struct_job_resources($job_resources,$STRUCTURE);
                     my $nodes= OAR::API::struct_job_nodes($job_resources,$STRUCTURE);
@@ -499,21 +496,16 @@ SWITCH: for ($q) {
         "Job not found" );
       last;
     }
-    my $data;
-
+    my $data=OAR::Stat::get_job_data(@$job[0],1);
     if (defined($details) and $details eq "/details") {
-        $data=OAR::Stat::get_job_data(@$job[0],1);
-        my $job_resources = OAR::Stat::get_job_resources(@$job[0]);
+        my $job_resources = OAR::API::get_job_resources(@$job[0]);
         my $resources = OAR::API::struct_job_resources($job_resources,$STRUCTURE);
         my $nodes= OAR::API::struct_job_nodes($job_resources,$STRUCTURE);
         OAR::API::add_resources_uris($resources,$ext,'');
         $data->{'resources'}=$resources;
         OAR::API::add_nodes_uris($nodes,$ext,'');
         $data->{'nodes'}=$nodes;
-    } else {
-        $data=OAR::Stat::get_job_data(@$job[0],undef);
     }
-
     my ($walltime_change,) = OAR::Stat::get_job_walltime_change($jobid);
     if (defined($walltime_change)) {
         $data->{'walltime-change'} = $walltime_change;
@@ -542,7 +534,7 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database"
                                                  );
     my $job = OAR::Stat::get_specific_jobs([$jobid]);
-    my $resources=OAR::Stat::get_job_resources(@$job[0]);
+    my $resources=OAR::API::get_job_resources(@$job[0]);
     if ($item eq "resources") {
       $resources = OAR::API::struct_job_resources($resources,$STRUCTURE);
       OAR::API::add_resources_uris($resources,$ext,''); 
@@ -1431,19 +1423,15 @@ SWITCH: for ($q) {
   #
   #{{{ DELETE /resources/(<id>|<node>/<cpuset) : Delete a resource (by id or node+cpuset)
   #
-  $URI = OAR::API::uri_regex_html_json_yaml('resources/(?:(\d+)|/nodes/([\w.-]+)/(\d+))');
+  $URI = OAR::API::uri_regex_html_json_yaml('resources/(?:(\d+)|([\w.-]+)/(\d+))');
   OAR::API::DELETE( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
-    my $id = 0;
-    my $node = "";
-    my $cpuset = "";
-    if (defined($2)) {
-        $node=$2;
-        $cpuset=$3;
-    } else {
-        $id=$1;
-    }
-    my $ext=OAR::API::set_ext($q,$4);
+    my $id;
+    my $node;
+    my $cpuset;
+    if ($2) { $node=$1; $id=0; $cpuset=$2; $cpuset =~ s,^/,, ;}
+    else    { $node=""; $id=$1; $cpuset=""; } ;
+    my $ext=OAR::API::set_ext($q,$3);
     (my $header)=OAR::API::set_output_format($ext);
 
     # Must be administrator (oar user)
@@ -1468,7 +1456,7 @@ SWITCH: for ($q) {
     my $query;
     my $Resource;
     if ($id == 0) {
-      $query="WHERE $nodes_resource_name = '$node' AND cpuset = '$cpuset'";
+      $query="WHERE network_address = \"$node\" AND cpuset = $cpuset";
     }
     else {
       $query="WHERE resource_id=$id";
@@ -1479,11 +1467,7 @@ SWITCH: for ($q) {
     if ($res[0]) { $Resource=$res[0];}
     else { 
       OAR::IO::disconnect($base);
-      if ($id == 0) {
-        OAR::API::ERROR(404,"Not found","Corresponding resource could not be found ($node/$cpuset)");
-      } else {
-        OAR::API::ERROR(404,"Not found","Corresponding resource could not be found ($id)");
-      }
+      OAR::API::ERROR(404,"Not found","Corresponding resource could not be found ($id,$node,$cpuset)");
       last;
     }
 
