@@ -84,6 +84,10 @@ shared_examples_for "ResourceId" do
           @api.value['available_upto'].should be_a(Integer) 
         end
       }
+      specify('resource should have properties') { 
+          @api.value.should have_key('network_address')
+          @api.value.should have_key('state')
+      }
 end
 
 shared_examples_for "Resource" do
