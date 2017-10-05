@@ -1,3 +1,9 @@
+oar (2.5.8~rc5-1) unstable; urgency=medium
+
+  * New upstream release candidate 
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 05 Oct 2017 18:57:18 +0200
+
 oar (2.5.8~rc4-1) unstable; urgency=medium
 
   * New upstream release candidate 
