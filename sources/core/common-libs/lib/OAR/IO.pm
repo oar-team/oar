@@ -2274,10 +2274,10 @@ sub get_running_job($$) {
     my $job_id = shift;
 
     my $sth = $dbh->prepare("   SELECT j.start_time, m.moldable_walltime
-                                FROM jobs j, moldable_job_id m
+                                FROM jobs j, moldable_job_descriptions m
                                 WHERE
                                     job_id = $job_id AND 
-                                    j.state = 'Running'
+                                    j.state = 'Running' AND
                                     j.assigned_moldable_job = m.moldable_id
                             ");
     $sth->execute();
@@ -4250,9 +4250,9 @@ WHERE
         )
     ) AND
     jobs.start_time < $date_end AND
-    jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-    moldable_job_descriptions.moldable_job_id = jobs.job_id AND
-    resources.resource_id = assigned_resources.resource_id
+    jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
+    moldable_job_descriptions.moldable_id = assigned_resources.moldable_job_id AND
+    assigned_resources.resource_id = resources.resource_id
 ORDER BY
     jobs.job_id
 EOT
@@ -6903,8 +6903,9 @@ sub get_gantt_Alive_or_Standby_resources_for_job($$$){
 sub get_gantt_visu_scheduled_job_resources($$){
     my $dbh = shift;
     my $moldable_job_id = shift;
+    my $all_properties = shift;
 
-    my $sth = $dbh->prepare("SELECT r.*
+    my $sth = $dbh->prepare("SELECT ".(defined($all_properties)?"r.*":"r.resource_id, r.network_address, r.state")."
                              FROM gantt_jobs_resources_visu g, moldable_job_descriptions m, resources r
                              WHERE
                                 m.moldable_job_id = $moldable_job_id
@@ -6913,8 +6914,15 @@ sub get_gantt_visu_scheduled_job_resources($$){
                             ");
     $sth->execute();
     my $h;
-    while (my $ref = $sth->fetchrow_hashref()) {
-        $h->{$ref->{resource_id}}=$ref;
+    if (defined($all_properties)) {
+        while (my $ref = $sth->fetchrow_hashref()) {
+            $h->{$ref->{resource_id}} = $ref;
+        }
+    } else {
+        while (my @ref = $sth->fetchrow_array()) {
+            $h->{$ref[0]}->{'network_address'} = $ref[1];
+            $h->{$ref[0]}->{'current_state'} = $ref[2];
+        }
     }
     $sth->finish();
 

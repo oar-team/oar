@@ -1,0 +1,3 @@
+# ignore oardocker
+extend-diff-ignore = "(^|/)(\.oardocker/.*)$"
+

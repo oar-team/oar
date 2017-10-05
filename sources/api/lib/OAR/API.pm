@@ -11,7 +11,6 @@ use CGI qw/:standard/;
 our $ABSOLUTE_URIS;
 our $q;
 our $DEBUG_MODE;
-our $nodes_resource_name; # See OARSUB_NODES_RESOURCES in oar.conf (network_address by default)
 our $extension;
 our $HTTP_X_API_PATH_PREFIX;
 
@@ -292,8 +291,8 @@ sub add_resources_uris($$$) {
   foreach my $resource (@$resources) {
     my $links;
     my $node;
-    if (defined($resource->{$nodes_resource_name})) {
-      $node=OAR::API::make_uri($prefix."resources/nodes/".$resource->{$nodes_resource_name},$ext,0);
+    if (defined($resource->{network_address})) {
+      $node=OAR::API::make_uri($prefix."resources/nodes/".$resource->{network_address},$ext,0);
       $node=OAR::API::htmlize_uri($node,$ext);
       push (@$links, { href => $node, title => "node", rel => "member" });
     }
@@ -315,7 +314,7 @@ sub add_nodes_uris($$$) {
   my $prefix = shift;
   foreach my $node (@$nodes) {
     my $links;
-    my $self=OAR::API::make_uri($prefix."resources/nodes/".$node->{$nodes_resource_name},$ext,0);
+    my $self=OAR::API::make_uri($prefix."resources/nodes/".$node->{network_address},$ext,0);
     $self=OAR::API::htmlize_uri($self,$ext);
     push (@$links, { href => $self, rel => "self" });
     $node->{links}=$links;
@@ -324,16 +323,26 @@ sub add_nodes_uris($$$) {
 }
 
 # Add uris to resources of a job
-# OBSOLETE! PN: why??
+# OBSOLETE!
 sub add_job_resources_uris($$$) {
-  my $data = shift;
+  my $resources = shift;
   my $ext = shift;
   my $prefix = shift;
-  foreach my $resource (@{$data->{resources}}) {
-    $resource->{resource_uri}=htmlize_uri(OAR::API::make_uri($prefix."resources/".$resource->{id},$ext,0),$ext);
+  foreach my $assigned_resource (@{$resources->{assigned_resources}}) {
+    $assigned_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$assigned_resource->{id},$ext,0);
+    $assigned_resource->{resource_uri}=htmlize_uri($assigned_resource->{resource_uri},$ext);
   }
-  $data->{job_uri}=htmlize_uri(OAR::API::make_uri($prefix."jobs/".$data->{job_id},$ext,0),$ext);
-  $data->{api_timestamp}=time();
+  foreach my $reserved_resource (@{$resources->{reserved_resources}}) {
+    $reserved_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$reserved_resource->{id},$ext,0);
+    $reserved_resource->{resource_uri}=htmlize_uri($reserved_resource->{resource_uri},$ext);
+  }
+  foreach my $assigned_node (@{$resources->{assigned_nodes}}) {
+    $assigned_node->{node_uri}=OAR::API::make_uri($prefix."resources/nodes/".$assigned_node->{node},$ext,0);
+    $assigned_node->{node_uri}=htmlize_uri($assigned_node->{node_uri},$ext);
+  }
+  $resources->{job_uri}=OAR::API::make_uri($prefix."jobs/".$resources->{job_id},$ext,0);
+  $resources->{job_uri}=htmlize_uri($resources->{job_uri},$ext);
+  $resources->{api_timestamp}=time();
 }
 
 # Add uris to a single admission rule
@@ -429,6 +438,9 @@ sub struct_job($$) {
     delete $job->{launchingDirectory};
     delete $job->{job_user};
     delete $job->{job_uid};
+    delete $job->{reserved_resources};
+    delete $job->{assigned_resources};
+    delete $job->{assigned_network_address};
     return $job;
   }
 }
@@ -499,21 +511,60 @@ sub struct_job_list_details($$) {
 
 
 # OAR RESOURCES OF A JOB
+
+sub get_job_resources($) {
+    my $job_info=shift;
+    my $data;
+    my $status = "UNKNOWN";
+    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
+    if (defined($job_info->{assigned_moldable_job}) and $job_info->{assigned_moldable_job} ne "0"){
+        foreach my $resource (OAR::IO::get_job_resources_properties($base, $job_info->{job_id})) {
+            $data->{resources}->{$resource->{resource_id}} = $resource;
+        }
+        $status = "assigned";
+    } elsif ($job_info->{state} eq "Waiting") {
+        $data->{resources} = OAR::IO::get_gantt_visu_scheduled_job_resources($base,$job_info->{job_id}, 1);
+        if ($job_info->{reservation} eq "Scheduled") { # Advance reservation
+            $status = "reserved";
+        } elsif ($job_info->{reservation} eq "None") { # Batch job
+            $status = "scheduled";
+        } else {
+            warn "Warning: could not determine resources status\n";
+        }
+    } else {
+        warn "Warning: could not determine resources\n";
+    }
+    foreach my $r (values(%{$data->{resources}})) {
+        delete($r->{'resource_id'});
+    }
+    OAR::IO::disconnect($base);
+    $data->{nodes} = {};
+    foreach my $r (keys(%{$data->{resources}})) {
+        $data->{resources}->{$r}->{id} = $r;
+        $data->{resources}->{$r}->{status} = $status;
+        my $n=$data->{resources}->{$r}->{network_address};
+        if ($data->{resources}->{$r}->{type} eq 'default' and defined($n) and $n ne "") {
+            if (not defined($data->{nodes}->{$n})) {
+                $data->{nodes}->{$n}->{network_address} = $n;
+                $data->{nodes}->{$n}->{status} = $status;
+            }
+        }
+    }
+    return $data;
+}
+
 sub struct_job_resources($$) {
   my $data=shift;
   my $structure=shift;
-  my $resources = [];
-  foreach my $resource_id (keys (%{$data->{resources}})) {
-    push(@$resources,{'id' => int($resource_id), %{$data->{resources}->{$resource_id}} });
-  }
-  return $resources;
+  my @resources = values(%{$data->{resources}});
+  return \@resources;
 }
 
 sub struct_job_nodes($$) {
-  my $resources=shift;
+  my $data=shift;
   my $structure=shift;
-
-  return [ map { {$nodes_resource_name => $_} } @{$resources->{nodes}} ]; 
+  my @nodes = values(%{$data->{nodes}});
+  return \@nodes;
 }
 
 
@@ -539,7 +590,7 @@ sub filter_resource_list($) {
     push(@$filtered_resources,{ id => int($resource->{resource_id}),
                                 state => $resource->{state},
                                 available_upto => int($resource->{available_upto}),
-                                $nodes_resource_name => $resource->{$nodes_resource_name}
+                                network_address => $resource->{network_address}
                               });
   }
   return $filtered_resources;
@@ -556,7 +607,7 @@ sub struct_resource_list_hash_to_array($) {
       foreach my $id ( keys (%{$resources->{$r}})) {
         push (@$array,{ 'state' => $resources->{$r}->{$id},
                         'id' => int($id),
-                        '$nodes_resource_name' => $r});
+                        'network_address' => $r});
       }
     }
   }
@@ -831,7 +882,6 @@ sub HEAD($$) {
 
 sub GET($$) {
   ( my $q, my $path ) = @_;
-warn "$q -> $path\n";
   if   ( $q->request_method eq 'GET' && $q->path_info =~ /$path/ ) { return 1; }
   else                                                             { return 0; }
 }
@@ -981,7 +1031,6 @@ sub check_job_update($$) {
 }
 
 # Check the consistency of a posted oar resource and load it into a hashref
-# Used for the resources creation => need a network_address (must not use $nodes_resource_name here!)
 sub check_resources($$) {
   my $data         = shift;
   my $content_type = shift;
@@ -1007,15 +1056,15 @@ sub check_resources($$) {
  } 
  foreach my $r (@$resources_array) {
     # Resource must have a "hostname" or "network_address" field
-    if (not defined($r->{hostname}) and not defined($r->{network_address})) {
+    unless ( $r->{hostname} or $r->{network_address} ) {
       ERROR 400, 'Missing Required Field',
-        'A resource must have a hostname field or a network_address property!';
+        'A resource must have a hosname field or a network_address property!';
       exit 0;
     }
 
     # Fill network_address with $hostname if provided
-    if ( not defined($r->{network_address}) and defined($r->{hostname}) ) {
-      $r->{network_address} = $r->{hostname};
+    if ( ! $r->{network_address} && $r->{hostname} ) {
+      $r->{network_address}=$r->{hostname};
       delete $r->{hostname};
     }
 
