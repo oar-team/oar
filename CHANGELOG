@@ -21,9 +21,6 @@ version 2.5.8:
   - [drawgantt-svg] add a mark next to the label of the resources pointed by
     the mouse
   - [drawgantt-svg] fix possible SQL injection with the filters
-  - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
-    in new installation. For existing database, the following command apply the
-    fix: `oar-database --fix-ro-user-priv ...`
   - [drawgantt-svg] improve the label_display_regex text replacement mechanism
   - [drawgantt-svg/oarstat] fix past and current moldable jobs display
 
