@@ -43,7 +43,7 @@ fi
 
 case $ACTION in
   manage-debian-mirrors)
-    for d in wheezy wheezy-backports jessie jessie-backports stretch sid experimental; do
+    for d in wheezy wheezy-backports jessie jessie-backports stretch stretch-backports sid experimental; do
       if aptly mirror -raw=true list 2> /dev/null | grep -q -e "^$d$"; then
         echo "*** Mirror for $d already exists"
         if [ -z "$NO_MIRROR_UPDATE" ]; then
@@ -69,7 +69,7 @@ case $ACTION in
     done
   ;;
   create-testing-repos)
-    for d in wheezy-backports_beta jessie-backports_beta sid_beta sid_alpha; do
+    for d in wheezy-backports_beta jessie-backports_beta stretch-backports_beta sid_beta sid_alpha; do
       if aptly repo -raw=true list 2> /dev/null | grep -q -e "^${d}$"; then
         echo "*** Repo ${d} already exists"
       else
