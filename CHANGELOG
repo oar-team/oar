@@ -6,10 +6,11 @@ version 2.5.8:
 --------------
 
   - [job_resource_manager] manage nvidia gpu with the cgroup devices
-  - [walltime change] add functionality to allow changing the walltime of a
+  - [oarwalltime] add functionality to allow changing the walltime of a
     running job. See the oarwalltime command and oar.conf
   - [scheduler] fix the besteffort + deploy VS adv. reservation case
   - [oarsub/scheduler] fix warning "Use of uninitialized value $resource_value"
+  - [oarsub] fix unknown error message in case of job termination + typos
   - [finaud] fix: make pingchecker run only on resources of type default
   - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
     in new installation. For existing database, the following command apply the
@@ -23,6 +24,8 @@ version 2.5.8:
   - [drawgantt-svg] fix possible SQL injection with the filters
   - [drawgantt-svg] improve the label_display_regex text replacement mechanism
   - [drawgantt-svg/oarstat] fix past and current moldable jobs display
+  - [oar.conf] update SSH options to the one of OpenSSH 7.6p1
+
 
 version 2.5.7:
 --------------
