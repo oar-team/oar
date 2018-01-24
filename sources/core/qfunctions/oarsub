@@ -227,6 +227,8 @@ sub connect_job($$$){
         my $exit_value = $? >> 8;
         if ($exit_value == 2){
             warn("[ERROR] Cannot go into the working directory : $job->{launching_directory}\n");
+        }elsif($exit_value == 255){
+            warn("[ERROR] Job was terminated.\n");
         }elsif($exit_value != 0){
             warn("[ERROR] An unknown error occured : $?\n");
         }
