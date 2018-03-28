@@ -20,11 +20,6 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 #ScriptAlias /oarapi-priv %%CGIDIR%%/oarapi/oarapi.cgi
 #ScriptAlias /oarapi-cigri %%CGIDIR%%/oarapi/oarapi.cgi
 
-# FastCGI server
-<IfModule mod_fastcgi.c>
-  FastCgiServer %%CGIDIR%%/oarapi/oarapi.cgi -processes 3 -user oar -group oar
-</IfModule>
-
 # Suexec configuration
 <IfModule mod_suexec.c>
          SuexecUserGroup oar oar
@@ -37,7 +32,7 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
   SetEnv OARCONFFILE %%ETCDIR%%/oar/oar.conf
 
   # FastCGI handler
-  <IfModule mod_fastcgi.c>
+  <IfModule mod_fcgid.c>
      AddHandler fcgid-script .cgi
   </IfModule>
 

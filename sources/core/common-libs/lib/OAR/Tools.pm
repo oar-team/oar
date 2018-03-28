@@ -745,19 +745,6 @@ sub check_resource_property($){
 }
 
 
-# Check if a property can be manipulated by a user
-# return 0 if all is good otherwise return 1
-sub check_resource_system_property($){
-    my $prop = shift;
-
-    if ($prop =~ /^(resource_id|state|state_num|next_state|finaud_decision|next_finaud_decision|last_job_date|suspended_jobs|expiry_date|last_available_upto|scheduler_priority)$/ ) {
-        return(1);
-    }else{
-        return(0);
-    }
-}
-
-
 # Manage commands on several nodes like cpuset or suspend job
 # args : array of host to connect to, hashtable to transfer, name of the file containing the perl script, action to perform (start or stop), SSH command to use, taktuk cmd or undef, database ref
 sub manage_remote_commands($$$$$$$){
