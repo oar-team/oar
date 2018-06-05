@@ -175,13 +175,13 @@ fi
 
 if [ -n "$CREATE_PROPERTIES" -a -z "$YAML" ]; then
   cat <<EOF
-oarproperty -c -a host || true
-oarproperty -a cpu || true
-oarproperty -a core || true
+oarproperty -l | grep -q -e "^host$" || oarproperty -c -a host
+oarproperty -l | grep -q -e "^cpu$" || oarproperty -a cpu
+oarproperty -l | grep -q -e "^core$" || oarproperty -a core
 EOF
   if [ -n "$USE_THREADS" ]; then
     cat <<EOF
-oarproperty -a thread || true
+oarproperty -l | grep -q -e "^threads$" || oarproperty -a threads
 EOF
   fi
 fi
