@@ -181,7 +181,7 @@ oarproperty -l | grep -q -e "^core$" || oarproperty -a core
 EOF
   if [ -n "$USE_THREADS" ]; then
     cat <<EOF
-oarproperty -l | grep -q -e "^threads$" || oarproperty -a threads
+oarproperty -l | grep -q -e "^thread$" || oarproperty -a thread
 EOF
   fi
 fi
