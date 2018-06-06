@@ -4,10 +4,13 @@ HOSTS=
 CPUS=2
 CORES=4
 THREADS=1
+GPUS=
 HOST_PREFIX="node-"
-YAML=""
+YAML=
 CREATE_PROPERTIES=1
-USE_THREADS=""
+USE_THREADS=
+DO_GPU=
+DEBUG=
 
 usage() {
   cat <<EOF
@@ -22,11 +25,14 @@ Options:
     -C, --cpus <#>              # of cpu per host
     -c, --cores <#>             # of core per cpu
     -t, --threads <#>           # of threads per core
+    -g, --gpus <#>              # of gpus per cpu
     --host0 <#>                 first host id to use
     --cpu0 <#>                  first cpu id to use
     --core0 <#>                 first core id to use
     --thread0 <#>               first thread id to use
-    --cpuset <#>                # of cpusets/host (default: cpus*cores*threads)
+    --gpu0 <#>                  first gpu id to use
+    --cpusets <#>               # of cpusets/host (default: cpus*cores*threads)
+    --gpudevices <#>            # of gpu devices/host (default: cpus*gpus)
     --host-prefix <str>         hostname prefix (default: "node-")
     --host-suffix <str>         hostname suffix (e.g. ".domain")
     -a, --auto-offset           guess first host/cpu/core/thread ids
@@ -35,6 +41,7 @@ Options:
     -o, --write-to <file>       write commands to file
     -Y, --yaml                  generate YAML output
     -h, --help                  display this message
+    --debug                     enable debugging messages
 
 EOF
 }
@@ -44,12 +51,15 @@ die() {
 Error: $1
 
 EOF
-  usage 2>&1
   exit 1
 }
 
-LONG_OPTS="hosts:,cpus:,cores:,threads:,host-prefix:,host-suffix:,host0:,cpu0:,core0:,thread0:,cpuset:,append:,use-threads,write-to:,auto-offset,yaml,no-create-properties,help"
-SHORT_OPTS="H:C:c:t:P:S:A:o:TaYph"
+debug() {
+  [ -n "$DEBUG" ] && echo "DEBUG: $@" 1>&2
+}
+
+LONG_OPTS="hosts:,cpus:,cores:,threads:,gpus:,host-prefix:,host-suffix:,host0:,cpu0:,core0:,thread0:,gpu0:,cpuset:,cpusets:,gpudevices:,append:,use-threads,write-to:,auto-offset,yaml,no-create-properties,help,debug"
+SHORT_OPTS="H:C:c:t:g:P:S:A:o:TaYph"
 args=$(getopt -l $LONG_OPTS -o $SHORT_OPTS -q -- "$@")
 [ $? -gt 0 ] && die "Syntax error, $(getopt -l $LONG_OPTS -o $SHORT_OPTS -Q -- "$@" 2>&1)"
 
@@ -78,6 +88,10 @@ while [ $# -ge 1 ]; do
     THREADS=$2
     shift
     ;;
+  -g|--gpus)
+    GPUS=$2
+    shift
+    ;;
   -P|--host-prefix)
     HOST_PREFIX=$2
     shift
@@ -102,8 +116,16 @@ while [ $# -ge 1 ]; do
     THREAD0=$2
     shift
     ;;
-  --cpuset)
-    CPUSET=$2
+  --gpu0)
+    GPU0=$2
+    shift
+    ;;
+  --cpuset|--cpusets) # --cpuset kept for backward compat.
+    CPUSETS=$2
+    shift
+    ;;
+  --gpudevices)
+    GPUDEVICES=$2
     shift
     ;;
   -A|--append)
@@ -111,6 +133,7 @@ while [ $# -ge 1 ]; do
     shift
     ;;
   -o|--write-to)
+
     WRITE_TO=$2
     shift
     ;;
@@ -125,6 +148,9 @@ while [ $# -ge 1 ]; do
     ;;
   -Y|--yaml)
     YAML=1
+    ;;
+  --debug)
+    DEBUG=1
     ;;
   -h|--help)
     usage
@@ -147,26 +173,49 @@ if [ -n "$WRITE_TO" ]; then
   exec 1> >(tee -a $WRITE_TO)
 fi
 
-CPUSET=${CPUSET:-$((CPUS*CORES*THREADS))}
+if [ -n "$GPUS" -a $GPUS -gt 0 ]; then
+  if [ $CORES -lt $GPUS -o $((CORES % GPUS)) -ne 0 ]; then
+    die "Cannot manage $GPUS GPUs and $CORES cores per CPU: cores must be a multiple of GPUs."
+  fi
+  DO_GPUS=1
+  GPUDEVICES=${GPUDEVICES:-$((CPUS*GPUS))}
+else
+  # DO_GPUS not set, bug fix GPUS=1 to that the loops are ok
+  GPUS=1
+  GPUDEVICES=1
+fi
+
+CPUSETS=${CPUSETS:-$((CPUS*CORES*THREADS))}
+
 if [ -n "$AUTO_OFFSET" ]; then
   [ -z "$HOST0" ] && echo "# Warning: guessing a new hostname is not really reliable because of a sort issue for non-numeric properties. Please double-check."
   HOST0=${HOST0:-$(($(oarnodesetting --last-property-value host | perl -pe 's/^[^\d]*(\d+).*/$1/') + 1))}
+  debug "first host: $HOST0"
   CPU0=${CPU0:-$(($(oarnodesetting --last-property-value cpu) + 1))}
+  debug "first cpu: $CPU0"
   CORE0=${CORE0:-$(($(oarnodesetting --last-property-value core) + 1))}
+  debug "first core: $CORE0"
   if [ -n "$USE_THREADS" ]; then
     THREAD0=${THREAD0:-$(($(oarnodesetting --last-property-value thread) + 1))}
+    debug "first thread: $THREAD0"
+  fi
+  if [ -n "$GPUS" ]; then
+    GPU0=${GPU0:-$(($(oarnodesetting --last-property-value gpu) + 1))}
+    debug "first gpu: $GPU0"
   fi
 else
   HOST0=${HOST0:-1}
   CPU0=${CPU0:-0}
   CORE0=${CORE0:-0}
   THREAD0=${THREAD0:-0}
+  GPU0=${GPU0:-0}
 fi
 
 host=1
 thread=0
 core=0
 cpu=0
+gpu=0
 
 if [ -z "$USE_THREADS" ]; then
   # Force #threads=1 for the loop below to work. 
@@ -183,6 +232,11 @@ EOF
     cat <<EOF
 oarproperty -l | grep -q -e "^thread$" || oarproperty -a thread
 EOF
+	if [ -n "$DO_GPUS" ]; then
+		cat <<EOF
+oarproperty -l | grep -q -e "^gpu$" || oarproperty -a gpu
+EOF
+	fi
   fi
 fi
 
@@ -193,21 +247,27 @@ fi
 while [ $host -le $HOSTS ]; do
   hostname="'$HOST_PREFIX$((host+HOST0-1))$HOST_SUFFIX'"
   cpuset=0
+  gpudevice=0
+  debug "cpu loop $cpu < $CPUS * $host ?"
   while [ $cpu -lt $((CPUS * host)) ]; do
-    while [ $core -lt $((CORES * (cpu+1))) ]; do
-      while [ $thread -lt $((THREADS * (core+1))) ]; do
-        if [ -n "$YAML" ]; then
-          if [ -z "$USE_THREADS" ]; then
-            cat <<EOF
+    debug "gpu loop $gpu < $GPUS * ($cpu+1)"
+    while [ $gpu -lt $((GPUS * (cpu+1))) ]; do
+      debug "core loop $core < $CORES/$GPUS * ($gpu+1)"
+      while [ $core -lt $((CORES/GPUS * (gpu+1))) ]; do
+        debug "thread loop $thread < $THREADS * ($core+1)"
+        while [ $thread -lt $((THREADS * (core+1))) ]; do
+          if [ -n "$YAML" ]; then
+            if [ -z "$USE_THREADS" ]; then
+              cat <<EOF
 - network_address: $hostname
   host: $hostname
   cpu: $((cpu+CPU0))
   core: $((core+CORE0))
   cpuset: $cpuset
 EOF
-            echo -ne "$APPEND"
-          else
-            cat <<EOF
+              echo -ne "$APPEND"
+            else
+              cat <<EOF
 - network_address: $hostname
   host: $hostname
   cpu: $((cpu+CPU0))
@@ -215,19 +275,27 @@ EOF
   thread: $((thread+THREAD0))
   cpuset: $cpuset
 EOF
-            echo -ne "$APPEND"
-          fi
-        else
-          if [ -z "$USE_THREADS" ]; then
-            echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p cpuset=$cpuset $APPEND"
+              if [ -n "$DO_GPUS" ]; then
+                cat <<EOF
+  gpu: $((gpu+GPU0))
+EOF
+              fi
+              echo -ne "$APPEND"
+            fi
           else
-            echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=$cpuset $APPEND"
+            if [ -z "$USE_THREADS" ]; then
+              echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p cpuset=$cpuset ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=$gpudevice }$APPEND"
+            else
+              echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=$cpuset ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=$gpudevice }$APPEND"
+            fi
           fi
-        fi
-        ((thread++))
-        cpuset=$(((cpuset+1) % CPUSET))
+          ((thread++))
+          cpuset=$(((cpuset+1) % CPUSETS))
+        done
+        ((core++))
       done
-      ((core++))
+      ((gpu++))
+      gpudevice=$(((gpudevice+1) % GPUDEVICES))
     done
     ((cpu++))
   done

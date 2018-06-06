@@ -22,79 +22,99 @@ This script is also a good example of how one could create resources by himself 
 
 =item B<-T>, B<--use-threads>
 
-Use (create) the thread property
+Use (create) the thread property.
 
 =item B<-H>, B<--hosts> <#>
 
-# of hosts
+# of hosts.
 
 =item B<-C>, B<--cpus> <#>
 
-# of cpu per host
+# of cpu per host.
 
 =item B<-c>, B<--cores> <#>
 
-# of core per cpu
+# of core per cpu.
 
 =item B<-t>, B<--threads> <#>
 
-# of threads per core
+# of threads per core.
+
+=item B<-g>, B<--gpus> <#>
+
+# of gpus per cpu.
+WARNING:
+- # of cores per cpu must be a multiple of # of gpus;
+- multi-cpu hosts with only 1 gpu are not supported;
+If not set, no gpu resources is handled.
 
 =item B<--host-prefix> <str>
 
-Hostname prefix (default: "node-")
+Hostname prefix (default: "node-").
 
 =item B<--host-suffix> <str>
 
-Hostname suffix (e.g. ".domain")
+Hostname suffix (e.g. ".domain").
 
 =item B<--host0> <#>
 
-First host id to use
+First host id to use.
 
 =item B<--cpu0> <#>
 
-First cpu id to use
+First cpu id to use.
 
 =item B<--core0> <#>
 
-First core id to use
+First core id to use.
 
 =item B<--thread0> <#>
 
-First thread id to use
+First thread id to use.
 
-=item B<--cpuset> <#>
+=item B<--gpu0> <#>
 
-# of cpusets on host (default=cpus*cores*threads)
+First gpu id to use.
+
+=item B<--cpusets> <#>
+
+# of cpusets on host (default=cpus*cores*threads) (mainly useful for debug purposes).
+
+=item B<--gpudevices> <#>
+
+# of gpudevices on host (default=cpus*gpus) (mainly useful for debug purposes).
 
 =item B<-A>, B<--append> <str>
 
-Append a text string (extra properties)
+Append a text string (extra properties).
 
 =item B<-o>, B<--write-to> <file>
 
-Write commands to file
+Write commands to file.
 
 =item B<-p>, B<--no-create-properties>
 
-Do not generate oarproperty commands
+Do not generate oarproperty commands.
 
 =item B<-a>, B<--auto-offset>
 
-Guess the next host/cpu/core/thread ids to use from the OAR database (unless host0/cpu0/core0/thread0 is set)
+Guess the next host/cpu/core/thread ids to use from the OAR database (unless host0/cpu0/core0/thread0 is set).
 
-WARNING: host, cpu, core and thread properties must exist in your database or you will get errors
+WARNING: host, cpu, core and thread properties must exist in your database or you will get errors.
 
 =item B<-Y>, B<--yaml>
 
-Generate YAML output
+Generate YAML output.
 
 =item B<-h>, B<--help>
 
-Display this message
+Display usage.
 
 =back
+
+=head1 WARNING
+
+oar_resource_add does not know the actual hardware topology of the target machines. cpuset and gpudevice affinity to CPU may not be correct. See hwloc for instance to find out the correct topology and affinity e.g. what logical cpu and what gpu device is actually attached to what hardware CPU.
 
 =head1 EXAMPLES
 
@@ -146,7 +166,7 @@ oarnodesetting(1), oarproperty(1), oar_resources_init(1), bash(1)
 
 =head1 COPYRIGHTS
 
- Copyright 2003-2016 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2018 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =cut
 
