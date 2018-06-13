@@ -10,11 +10,11 @@ B<oar_resource_add> -H <# of hosts> [options]
 
 =head1 DESCRIPTION
 
-The script generate the oarproperty and oarnodesetting commands to generate resources following the host / cpu / core (/thread) hierarchy, possibly with GPU alongside.
+This tool generates the oarproperty and oarnodesetting commands to create OAR resources following the host / cpu / core (/ thread) hierarchy, possibly with GPU alongside.
 
-If some resources already exists, offsets can be provided, or guessed from OAR database (reminder: each physical element (cpu, core, thread, gpu) must have a unique identifier in OAR).
+REMINDER: Each physical element (each cpu, each core, each thread, each gpu) must have a unique identifier in the OAR resources database. If some resources already exists in the database (e.g. from a previously installed cluster), offsets can be given in the command line or guessed with the auto-offset option, so that identifiers for newly created resources are unique.
 
-This script is also a good example of how one could create resources by himself using basic script loops and the oarnodesetting command.
+This tool is also a good example of how one can create OAR resources using script loops and the oarnodesetting command. If it does not exactly fit your needs, feel free to read the script code and adapt it.
 
 =head1 OPTIONS
 
@@ -124,11 +124,11 @@ Display usage.
 
 =head1 WARNING
 
-oar_resource_add does not know the actual hardware topology of the target machines. cpuset and gpudevice affinity to CPU may not be correct. See hwloc for instance to find out the correct topology and affinity e.g. what logical cpu and what gpu device is actually attached to what hardware CPU, and use the --cputopo and --gputopo option accordingly.
+The oar_resource_add tool does not look at the actual hardware topology of the target machines. Core and GPU device affinity to CPU may not be correct. See the B<hwloc> commands for instance to find out the correct topology and affinity, and use the --cputopo and --gputopo options accordingly.
 
 =head1 SEE ALSO
 
-oarnodesetting(1), oarproperty(1), oar_resources_init(1), bash(1)
+oarnodesetting(1), oarproperty(1), oar_resources_init(1), bash(1), hwloc(7), lstopo(1)
 
 =head1 COPYRIGHTS
 
