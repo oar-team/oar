@@ -221,7 +221,7 @@ Recommends: libyaml-syck-perl
 Suggests: oar-doc,
           oar-server,
           apache2,
-          libapache2-mod-fcgid,
+          libapache2-mod-fastcgi,
           apache2-suexec-custom
 Description: OAR web services
  OAR is a versatile resource and task manager (also called a batch scheduler)
