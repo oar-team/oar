@@ -616,9 +616,8 @@ OARSH_OARSTAT_CMD="%%BINDIR%%/oarstat"
 #
 # $ cd path/to/openssh/sources/ 
 # $ grep getopt -A1 ssh.c | sed 's/.*"\(.\+\)".*/\1/' | xargs | sed 's/ //g'
-# 1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy
-#
-OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy"
+# 1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy
+OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy"
 
 # The following variable sets the OpenSSH options which oarsh actually uses.
 # Any option which is filtered out from the OPENSSH_OPTSTR variable above is 

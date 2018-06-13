@@ -141,7 +141,7 @@ sub scan_script($$){
                     }elsif ($line =~ m/^#OAR\s+(--array-param-file)\s*(.+)\s*$/m) {
                         $result{arrayparamfile} = $2;
                     }else{
-                        warn("/!\\ Not able to scan file line: $line");
+                        warn("/!\\ Not able to scan file line: $line.");
                         $error++;
                     }
                     chop($line);
@@ -154,7 +154,7 @@ sub scan_script($$){
             close_db_connection(); exit(12);
         }
     }else{
-        warn("[ERROR] Cannot execute: oardodo cat $file\n");
+        warn("[ERROR] Cannot execute: oardodo cat $file.\n");
         close_db_connection(); exit(12);
     }
     if ($error > 0){
@@ -180,7 +180,7 @@ sub read_array_param_file($){
             close_db_connection(); exit(12);
         }
     }else{
-        warn("[ERROR] Cannot execute: oardodo cat $array_param_file\n");
+        warn("[ERROR] Cannot execute: oardodo cat $array_param_file.\n");
         close_db_connection(); exit(12);
     }
     return \@array_params;
@@ -325,12 +325,12 @@ sub delete_jobs($$$){
 	open_db_connection();
 	lock_tables(["frag_jobs","event_logs","jobs"]);
 	foreach my $Job_id (@{$job_ids}) {
-		warn("Deleting the job $Job_id ...\n");
+		warn("Deleting the job $Job_id...\n");
 		my $err = frag_job($Job_id);
 	}
 	unlock_tables();
 	close_db_connection();
-	warn("Job(s) deleted\n");
+	warn("Job(s) deleted.\n");
 	#Signal Almigthy
 	signal_almighty($remote_host,$remote_port,"Qdel");
 }

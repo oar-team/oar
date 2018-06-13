@@ -10,11 +10,11 @@ B<oar_resource_add> -H <# of hosts> [options]
 
 =head1 DESCRIPTION
 
-The script generate the oarproperty and oarnodesetting commands to generate resources following the host/cpu/core/thread hierarchy.
+This tool generates the oarproperty and oarnodesetting commands to create OAR resources following the host / cpu / core (/ thread) hierarchy, possibly with GPU alongside.
 
-If resources are already registered, offsets can be provided, or guessed from OAR database.
+REMINDER: Each physical element (each cpu, each core, each thread, each gpu) must have a unique identifier in the OAR resources database. If some resources already exists in the database (e.g. from a previously installed cluster), offsets can be given in the command line or guessed with the auto-offset option, so that identifiers for newly created resources are unique.
 
-This script is also a good example of how one could create resources by himself using basic program loops and the oarnodesetting command.
+This tool is also a good example of how one can create OAR resources using script loops and the oarnodesetting command. If it does not exactly fit your needs, feel free to read the script code and adapt it.
 
 =head1 OPTIONS
 
@@ -22,131 +22,117 @@ This script is also a good example of how one could create resources by himself 
 
 =item B<-T>, B<--use-threads>
 
-Use (create) the thread property
+Use (create) the thread property.
 
 =item B<-H>, B<--hosts> <#>
 
-# of hosts
+# of hosts.
 
 =item B<-C>, B<--cpus> <#>
 
-# of cpu per host
+# of cpu per host.
 
 =item B<-c>, B<--cores> <#>
 
-# of core per cpu
+# of core per cpu.
 
 =item B<-t>, B<--threads> <#>
 
-# of threads per core
+# of threads per core.
+
+=item B<-g>, B<--gpus> <#>
+
+# of gpus per host.
+
+WARNING, not all hardware configurations are supported: For multi-GPU configurations, the # of cores per cpu must be a multiple of the # of gpus per cpu.
+
+If not set, no gpu resources is handled.
 
 =item B<--host-prefix> <str>
 
-Hostname prefix (default: "node-")
+Hostname prefix (default: "node-").
 
 =item B<--host-suffix> <str>
 
-Hostname suffix (e.g. ".domain")
+Hostname suffix (e.g. ".domain").
 
 =item B<--host0> <#>
 
-First host id to use
+First host id to use.
 
 =item B<--cpu0> <#>
 
-First cpu id to use
+First cpu id to use.
 
 =item B<--core0> <#>
 
-First core id to use
+First core id to use.
 
 =item B<--thread0> <#>
 
-First thread id to use
+First thread id to use.
 
-=item B<--cpuset> <#>
+=item B<--gpu0> <#>
 
-# of cpusets on host (default=cpus*cores*threads)
+First gpu id to use.
+
+=item B<--cpusets> <#>
+
+# of cpusets on host (mainly useful for development purposes when one wants to emulate more cores than systems really have).
+
+=item B<--cputopo> <list|RR>
+
+Provide the topology for the CPUs/cores/threads affinity (see hwloc), given a ordered list of the Linux CPU ids (as used in cpuset.cpus).
+
+Or, given the RR value, try to match a round-robin distribution of the core ids, with optionally HyperThreads as well.
+
+=item B<--gpudevices> <#>
+
+# of gpudevices on host (mainly useful for development purposes when one wants to emulate more GPUs than systems really have).
+
+=item B<--gputopo> <list>
+
+Provide the topology for the CPUs/GPUs affinity (see hwloc), given a ordered list of the Linux GPU device ids.
 
 =item B<-A>, B<--append> <str>
 
-Append a text string (extra properties)
+Append a text string (extra properties).
 
 =item B<-o>, B<--write-to> <file>
 
-Write commands to file
+Write commands to file.
 
 =item B<-p>, B<--no-create-properties>
 
-Do not generate oarproperty commands
+Do not generate oarproperty commands.
 
 =item B<-a>, B<--auto-offset>
 
-Guess the next host/cpu/core/thread ids to use from the OAR database (unless host0/cpu0/core0/thread0 is set)
+Guess the next host/cpu/core/thread/gpu ids to use from the OAR database (unless host0/cpu0/core0/thread0/gpu0 is set).
 
-WARNING: host, cpu, core and thread properties must exist in your database or you will get errors
+WARNING: properties must already exist in your database or you will get errors.
 
 =item B<-Y>, B<--yaml>
 
-Generate YAML output
+Generate YAML output.
 
 =item B<-h>, B<--help>
 
-Display this message
+Display usage.
 
 =back
 
-=head1 EXAMPLES
+=head1 WARNING
 
-$ oar_resources_add -T --hosts=2 --host0 5 --cpu0 8 --core0=64 --thread0=128 -A "mem=1024 gpu=NO"
-
-oarproperty -c -a host || true
-
-oarproperty -a cpu || true
-
-oarproperty -a core || true
-
-oarproperty -a thread || true
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=64 -p thread=128 -p cpuset=0 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=65 -p thread=129 -p cpuset=1 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=66 -p thread=130 -p cpuset=2 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=67 -p thread=131 -p cpuset=3 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=68 -p thread=132 -p cpuset=4 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=69 -p thread=133 -p cpuset=5 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=70 -p thread=134 -p cpuset=6 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=71 -p thread=135 -p cpuset=7 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=72 -p thread=136 -p cpuset=0 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=73 -p thread=137 -p cpuset=1 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=74 -p thread=138 -p cpuset=2 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=75 -p thread=139 -p cpuset=3 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=76 -p thread=140 -p cpuset=4 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=77 -p thread=141 -p cpuset=5 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=78 -p thread=142 -p cpuset=6 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=79 -p thread=143 -p cpuset=7 mem=1024 gpu=NO
+The oar_resource_add tool does not look at the actual hardware topology of the target machines. Core and GPU device affinity to CPU may not be correct. See the B<hwloc> commands for instance to find out the correct topology and affinity, and use the --cputopo and --gputopo options accordingly.
 
 =head1 SEE ALSO
 
-oarnodesetting(1), oarproperty(1), oar_resources_init(1), bash(1)
+oarnodesetting(1), oarproperty(1), oar_resources_init(1), bash(1), hwloc(7), lstopo(1)
 
 =head1 COPYRIGHTS
 
- Copyright 2003-2016 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2018 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =cut
 
