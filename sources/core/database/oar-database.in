@@ -142,7 +142,7 @@ Options:
      --db-ro-user=DB_RO_USER        Set the read-only database user 
      --db-ro-pass=DB_RO_PASS        Set the read-only database pass 
 
-     --db-is-local                  The database is local, the script can use the local admin account to execute command (for PostgreSQL)
+     --db-is-local                  The database is local, the script can use the local admin account to execute command (PostgreSQL) or the unix socket (MySQL)
      --db-admin-user=DB_ADMIN_USER  Set the database admin user to create the database. Only used with the --create action
      --db-admin-pass=DB_ADMIN_PASS  Set the database admin password to create the database. Only used with the --create action
  -y, --force-yes                    Force oar-database to continue without prompt even if it could be harmful
@@ -408,7 +408,12 @@ sub mysql_admin_exec_sql {
     if ($debug) {
         print "executing '$query'\n";
     }
-    return system("mysql --user='$db_admin_user' --password='$db_admin_pass' --host='$db_host' --port='$db_port' -e \"$query\"");
+    }
+    if ($db_is_local) {
+        return system("mysql -e \"$query\"");
+    } else {
+        return system("mysql --user='$db_admin_user' --password='$db_admin_pass' --host='$db_host' --port='$db_port' -e \"$query\"");
+    }
 }
 sub pgsql_exec_sql {
     my ($query) = @_;
@@ -557,9 +562,9 @@ unless ($db_name) {
 }
 
 if ($action eq "create" or $action eq "drop" or $action eq "fix-ro-user-priv") {
-    unless ($db_is_local and $db_type eq "Pg") {
+    unless ($db_is_local) {
         unless ($db_admin_user) {
-            print "Error: Please provide the database administrator credentials, e.g. with --db-admin-user and --db-admin-pass options or with --db-is-local (PostgreSQL only).\n";
+            print "Error: Please provide the database administrator credentials (with --db-admin-user and --db-admin-pass) or use --db-is-local.\n";
             exit(1);
         }
         unless ($db_admin_pass) {

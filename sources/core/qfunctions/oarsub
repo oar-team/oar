@@ -139,7 +139,7 @@ sub connect_job($$$){
         my $types = OAR::Sub::get_current_job_types($job_id);
         #noop
         if (defined($types->{noop})){
-            warn("/!\\ It is not possible to connect to a NOOP job.\n");
+            warn("[ERROR] It is not possible to connect to a NOOP job.\n");
             OAR::Sub::close_db_connection();
             exit(17);
         }
@@ -226,9 +226,11 @@ sub connect_job($$$){
         system({$cmd[0]} @cmd);
         my $exit_value = $? >> 8;
         if ($exit_value == 2){
-            warn("[ERROR] Cannot go into the working directory : $job->{launching_directory}\n");
+            warn("[ERROR] Cannot go into the working directory: $job->{launching_directory}.\n");
+        }elsif($exit_value == 255){
+            warn("[ERROR] Job was terminated.\n");
         }elsif($exit_value != 0){
-            warn("[ERROR] An unknown error occured : $?\n");
+            warn("[ERROR] An unknown error occured ($?).\n");
         }
         if ($stop_oarexec > 0){
 			my %params = (
@@ -240,13 +242,13 @@ sub connect_job($$$){
 						  );
             OAR::Sub::signal_oarexec(\%params);
         }
-        print("Disconnected from OAR job $job_id\n");
+        print("Disconnected from OAR job $job_id.\n");
     }else{
         if ($job->{state} ne "Running"){
-            warn("/!\\ ERROR : the job $job_id is not running. Its current state is $job->{state}.\n");
+            warn("[ERROR] the job $job_id is not running. Its current state is $job->{state}.\n");
         }
         if (($lusr ne $job->{job_user}) and ($lusr ne "oar")){
-            warn("/!\\ ERROR : you are not the right user for the job $job_id. This job is owned by $job->{job_user}.\n");
+            warn("[ERROR] you are not the right user for the job $job_id. This job is owned by $job->{job_user}.\n");
         }
         OAR::Sub::close_db_connection();
         return(20);
@@ -575,14 +577,14 @@ if (is_conf("OAR_RUNTIME_DIRECTORY")){
 }
 my $default_oar_dir = OAR::Sub::get_default_oarexec_directory();
 if (!(((-d $default_oar_dir) and (-O $default_oar_dir)) or (mkdir($default_oar_dir)))){
-    die("ERROR: Cannot create the OAR directory $default_oar_dir or bad permissions.\n");
+    die("[ERROR] Cannot create the OAR directory $default_oar_dir or bad permissions.\n");
 }
 
 my $binpath;
 if (defined($ENV{OARDIR})){
     $binpath = $ENV{OARDIR}."/";
 }else{
-    die("ERROR: OARDIR env variable must be defined.\n");
+    die("[ERROR] OARDIR env variable must be defined.\n");
 }
 
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
@@ -657,7 +659,7 @@ if (defined($ENV{OAR_JOB_KEY_FILE})){
 OAR::Sub::open_db_connection();
 
 if (defined($Resubmit)){
-    print("Resubmitting job $Resubmit ...");
+    print("Resubmitting job $Resubmit...");
     my $err = OAR::Sub::resubmit_job($Resubmit);
     OAR::Sub::close_db_connection();
     if ($err > 0){
@@ -665,22 +667,21 @@ if (defined($Resubmit)){
         print("DONE\n");
         print("OAR_JOB_ID=$Job_id\n");
         if (defined(OAR::Sub::signal_almighty($remote_host,$remote_port,"Qsub"))){
-            warn("Cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
+            warn("[ERROR] Cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
             exit(3);
         }
         exit(0);
     }else{
-        print("ERROR\n");
         if ($err == -1){
-            warn("/!\\ An interactive job or a reservation cannot be resubmitted\n");
+            warn("[ERROR] An interactive job or a reservation cannot be resubmitted.\n");
         }elsif ($err == -2){
-            warn("/!\\ The job must be in Error or Terminated state\n");
+            warn("[ERROR] The job must be in Error or Terminated state.\n");
         }elsif ($err == -3){
-            warn("/!\\ You are not the right user\n");
+            warn("[ERROR] You are not the right user.\n");
         }elsif ($err == -4){
-            warn("/!\\ Another active job is using the same ssh keys\n");
+            warn("[ERROR] Another active job is using the same ssh keys.\n");
         }else{
-            warn("/!\\ Unknown error\n");
+            warn("[ERROR] Unknown error ($err).\n");
         }
         exit(4);
     }
@@ -692,19 +693,19 @@ if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && (!defined($c
 }
 
 if (($Interactive == 1) and ($Reservation ne "0")){
-    warn("/!\\ A reservation cannot be interactive.\n");
+    warn("[ERROR] A reservation cannot be interactive.\n");
     usage();
     OAR::Sub::close_db_connection(); exit(7);
 }
 
 if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
-    warn("/!\\ A desktop computing job cannot be interactive.\n");
+    warn("[ERROR] A desktop computing job cannot be interactive.\n");
     usage();
     OAR::Sub::close_db_connection(); exit(17);
 }
 if (grep(/^noop$/, @Type)){
     if ($Interactive == 1){
-        warn("/!\\ A NOOP job cannot be interactive.\n");
+        warn("[ERROR] A noop job cannot be interactive.\n");
         OAR::Sub::close_db_connection(); exit(17);
     }
 }
@@ -712,7 +713,7 @@ if (grep(/^noop$/, @Type)){
 if (defined($notify) && $notify =~ m/^.*exec\s*:.+$/m){
     my $notify_exec_regexp = '[a-zA-Z0-9_.\/ -]+';
     unless ($notify =~ m/.*exec\s*:($notify_exec_regexp)$/m){
-      warn("/!\\ Insecure characters found in notification method (the allowed regexp is: $notify_exec_regexp).\n");
+      warn("[ERROR] Insecure characters found in notification method (the allowed regexp is: $notify_exec_regexp).\n");
       OAR::Sub::close_db_connection(); exit(16);
     }
 }
@@ -852,7 +853,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
 
     $array_job_nb = 1 if (!defined($array_job_nb));
     if($array_job_nb <= 0){
-        warn("/!\\ An array job must have a positive number of sub-jobs\n");
+        warn("[ERROR] An array job must have a positive number of sub-jobs.\n");
         usage();
         OAR::Sub::close_db_connection(); exit(6);
     }
@@ -877,7 +878,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
             $Reservation = OAR::Sub::sql_to_local("$1 $2");
         }else{
-            warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
+            warn("[ERROR] Syntax error near the -r or --reservation option. The reservation date synstax is : \"2027-03-25 17:32:12\".\n");
             OAR::Sub::close_db_connection; exit(7);
         }
         ($Server, $server_port) = OAR::Sub::init_tcp_server();
@@ -964,7 +965,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
             $Reservation = OAR::Sub::sql_to_local("$1 $2");
         }else{
-            warn("Syntax error near -r or --reservation option. Reservation date exemple : \"2007-03-25 17:32:12\"\n");
+            warn("[ERROR] Syntax error near the -r or --reservation option. The reservation date synstax is : \"2027-03-25 17:32:12\".\n");
             OAR::Sub::close_db_connection(); exit(7);
         }
     }
@@ -1022,21 +1023,21 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode) or ($JSON_mod
 OAR::Sub::close_db_connection();
 
 if ((@{$Job_id_list_ref} < 1) or ($Job_id_list_ref->[-1] <= 0)){
-    warn("Oarsub failed: please verify your request syntax or ask for support to your admin.\n");
+    warn("[ERROR] Oarsub failed, please verify your request syntax.\n");
     exit(8);
 }
 
 #Signal Almigthy
 if (defined(OAR::Sub::signal_almighty($remote_host,$remote_port,"$Cmd_executor"))){
     #qdel(1);
-    warn("Cannot connect to executor $remote_host:$remote_port so I kill this job. Is OAR started?\n");
+    warn("[ERROR] Cannot connect to executor $remote_host:$remote_port. Job is killed.\n");
     exit(9);
 }
 
 my $answer;
 if ($Reservation ne "0"){
     #Reservation mode
-    print("Reservation mode : waiting validation...\n");
+    print("Reservation mode: waiting validation...\n");
     my $client = $Server->accept();
     $answer = <$client>;
     chop($answer);
@@ -1048,7 +1049,7 @@ if ($Reservation ne "0"){
     }
 }elsif ($Interactive==1) {
     #Interactive mode
-    print("Interactive mode : waiting...\n");
+    print("Interactive mode: waiting...\n");
     my $prev_str = "";
     do{
         my $client = $Server->accept();
