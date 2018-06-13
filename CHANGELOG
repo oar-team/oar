@@ -25,7 +25,11 @@ version 2.5.8:
   - [drawgantt-svg] improve the label_display_regex text replacement mechanism
   - [drawgantt-svg/oarstat] fix past and current moldable jobs display
   - [oar.conf] update SSH options to the one of OpenSSH 7.6p1
-
+  - [oar-database] support --db-is-local (UNIX socket) for MySQL (MariaDB)
+  - [oar-node] fix warnings with OAR's sshd configuration
+  - [oar-resource-add] fix the auto-offset option
+  - [oar-resource-add] add support for creating GPU resources
+  - [oar-resource-add] add support to handle the CPU and GPU topologies
 
 version 2.5.7:
 --------------
