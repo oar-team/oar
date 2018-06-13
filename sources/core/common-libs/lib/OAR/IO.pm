@@ -5143,10 +5143,8 @@ sub get_resource_last_value_of_property($$) {
 
     my %properties = list_resource_properties_fields($dbh);
     if (grep(/^$property$/,keys(%properties))) {
-        my $sth = $dbh->prepare("   SELECT $property
+        my $sth = $dbh->prepare("   SELECT MAX($property)
                                     FROM resources
-                                    ORDER BY $property DESC
-                                    LIMIT 1
                                 ");
         $sth->execute();
 
