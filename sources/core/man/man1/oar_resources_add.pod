@@ -10,11 +10,11 @@ B<oar_resource_add> -H <# of hosts> [options]
 
 =head1 DESCRIPTION
 
-The script generate the oarproperty and oarnodesetting commands to generate resources following the host/cpu/core/thread hierarchy.
+The script generate the oarproperty and oarnodesetting commands to generate resources following the host / cpu / core (/thread) hierarchy, possibly with GPU alongside.
 
-If resources are already registered, offsets can be provided, or guessed from OAR database.
+If some resources already exists, offsets can be provided, or guessed from OAR database (reminder: each physical element (cpu, core, thread, gpu) must have a unique identifier in OAR).
 
-This script is also a good example of how one could create resources by himself using basic program loops and the oarnodesetting command.
+This script is also a good example of how one could create resources by himself using basic script loops and the oarnodesetting command.
 
 =head1 OPTIONS
 
@@ -42,10 +42,10 @@ Use (create) the thread property.
 
 =item B<-g>, B<--gpus> <#>
 
-# of gpus per cpu.
-WARNING:
-- # of cores per cpu must be a multiple of # of gpus;
-- multi-cpu hosts with only 1 gpu are not supported;
+# of gpus per host.
+
+WARNING, not all hardware configurations are supported: For multi-GPU configurations, the # of cores per cpu must be a multiple of the # of gpus per cpu.
+
 If not set, no gpu resources is handled.
 
 =item B<--host-prefix> <str>
@@ -78,11 +78,21 @@ First gpu id to use.
 
 =item B<--cpusets> <#>
 
-# of cpusets on host (default=cpus*cores*threads) (mainly useful for debug purposes).
+# of cpusets on host (mainly useful for development purposes when one wants to emulate more cores than systems really have).
+
+=item B<--cputopo> <list|RR>
+
+Provide the topology for the CPUs/cores/threads affinity (see hwloc), given a ordered list of the Linux CPU ids (as used in cpuset.cpus).
+
+Or, given the RR value, try to match a round-robin distribution of the core ids, with optionally HyperThreads as well.
 
 =item B<--gpudevices> <#>
 
-# of gpudevices on host (default=cpus*gpus) (mainly useful for debug purposes).
+# of gpudevices on host (mainly useful for development purposes when one wants to emulate more GPUs than systems really have).
+
+=item B<--gputopo> <list>
+
+Provide the topology for the CPUs/GPUs affinity (see hwloc), given a ordered list of the Linux GPU device ids.
 
 =item B<-A>, B<--append> <str>
 
@@ -98,9 +108,9 @@ Do not generate oarproperty commands.
 
 =item B<-a>, B<--auto-offset>
 
-Guess the next host/cpu/core/thread ids to use from the OAR database (unless host0/cpu0/core0/thread0 is set).
+Guess the next host/cpu/core/thread/gpu ids to use from the OAR database (unless host0/cpu0/core0/thread0/gpu0 is set).
 
-WARNING: host, cpu, core and thread properties must exist in your database or you will get errors.
+WARNING: properties must already exist in your database or you will get errors.
 
 =item B<-Y>, B<--yaml>
 
@@ -114,51 +124,7 @@ Display usage.
 
 =head1 WARNING
 
-oar_resource_add does not know the actual hardware topology of the target machines. cpuset and gpudevice affinity to CPU may not be correct. See hwloc for instance to find out the correct topology and affinity e.g. what logical cpu and what gpu device is actually attached to what hardware CPU.
-
-=head1 EXAMPLES
-
-$ oar_resources_add -T --hosts=2 --host0 5 --cpu0 8 --core0=64 --thread0=128 -A "mem=1024 gpu=NO"
-
-oarproperty -c -a host || true
-
-oarproperty -a cpu || true
-
-oarproperty -a core || true
-
-oarproperty -a thread || true
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=64 -p thread=128 -p cpuset=0 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=65 -p thread=129 -p cpuset=1 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=66 -p thread=130 -p cpuset=2 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=8 -p core=67 -p thread=131 -p cpuset=3 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=68 -p thread=132 -p cpuset=4 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=69 -p thread=133 -p cpuset=5 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=70 -p thread=134 -p cpuset=6 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-5' -p host='node-5' -p cpu=9 -p core=71 -p thread=135 -p cpuset=7 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=72 -p thread=136 -p cpuset=0 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=73 -p thread=137 -p cpuset=1 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=74 -p thread=138 -p cpuset=2 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=10 -p core=75 -p thread=139 -p cpuset=3 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=76 -p thread=140 -p cpuset=4 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=77 -p thread=141 -p cpuset=5 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=78 -p thread=142 -p cpuset=6 mem=1024 gpu=NO
-
-oarnodesetting -a -h 'node-6' -p host='node-6' -p cpu=11 -p core=79 -p thread=143 -p cpuset=7 mem=1024 gpu=NO
+oar_resource_add does not know the actual hardware topology of the target machines. cpuset and gpudevice affinity to CPU may not be correct. See hwloc for instance to find out the correct topology and affinity e.g. what logical cpu and what gpu device is actually attached to what hardware CPU, and use the --cputopo and --gputopo option accordingly.
 
 =head1 SEE ALSO
 
