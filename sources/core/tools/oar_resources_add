@@ -200,7 +200,13 @@ declare -a CPUTOPO
 if [ -n "$CPUTOPO" ]; then
   if [ "$CPUTOPO" == "RR" ]; then
     for ((i=0;i<$CPUSETS;i++)); do
-      CPUTOPO[i]=$(((i*CPUS)%CPUSETS + (i*CPUS)/CPUSETS))
+      # Magic formula to compute the round-robin distribution for Xeon CPUs cores and HyperThreads optionaly.
+      # Core physical ids are distributed in round-robin on physical cpus.
+      # Same if HyperThreading is activated: the 1st hardware threads is distributed in round-robin
+      # and the second hardware threads as well but with an offset of +cpus*cores.
+      # This should match lstopo output for at least some Xeon CPUs !
+      # WARNING: it's Euclidian arithmetic.
+      CPUTOPO[i]=$((i/THREADS*CPUS%CPUSETS/THREADS*THREADS%(CPUSETS/THREADS) + i*CPUS/CPUSETS + i%THREADS*CPUS*CORES))
     done
   else
     CPUTOPO=(${CPUTOPO//,/ })
