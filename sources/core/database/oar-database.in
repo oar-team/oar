@@ -408,7 +408,6 @@ sub mysql_admin_exec_sql {
     if ($debug) {
         print "executing '$query'\n";
     }
-    }
     if ($db_is_local) {
         return system("mysql -e \"$query\"");
     } else {
