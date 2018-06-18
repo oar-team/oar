@@ -227,4 +227,4 @@ Description: OAR web services
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package installs a RESTful API for oar users. 
+ This package installs a RESTful API for oar users.
