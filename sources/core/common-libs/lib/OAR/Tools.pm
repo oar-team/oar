@@ -332,7 +332,7 @@ sub signal_oarexec($$$$$$$){
             $ssh_pid = fork();
             if ($ssh_pid == 0){
                 exec({$cmd_name} @cmd);
-                warn("[ERROR] Cannot find @cmd\n");
+                warn("[ERROR] Cannot find @cmd.\n");
                 exit(-1);
             }
             my $wait_res = -1;
@@ -385,7 +385,7 @@ sub fork_no_wait($$){
             $SIG{INT}  = 'IGNORE';
             $SIG{TERM} = 'IGNORE';
             exec($cmd);
-            warn("[ERROR] Cannot find $cmd\n");
+            warn("[ERROR] Cannot find $cmd.\n");
             exit(-1);
         }
     }
@@ -676,7 +676,7 @@ sub sentinelle($$$$$){
                         }
                     }else{
                         exec($nodes->[$index]);
-                        warn("[ERROR] Cannot find $nodes->[$index]\n");
+                        warn("[ERROR] Cannot find $nodes->[$index].\n");
                         exit(-1);
                     }
                 }
@@ -822,7 +822,7 @@ sub manage_remote_commands($$$$$$$){
             open(STDIN, "<& tak_stdin_read");
 
             exec($cmd);
-            warn("[ERROR] Cannot execute $cmd\n");
+            warn("[ERROR] Cannot execute $cmd.\n");
             exit(-1);
         }
         close(tak_node_read);
