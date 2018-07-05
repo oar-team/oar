@@ -24,6 +24,7 @@ version 2.5.8:
   - [drawgantt-svg] fix possible SQL injection with the filters
   - [drawgantt-svg] improve the label_display_regex text replacement mechanism
   - [drawgantt-svg/oarstat] fix past and current moldable jobs display
+  - [drawgantt-svg] fix drain display
   - [oar.conf] update SSH options to the one of OpenSSH 7.6p1
   - [oar-database] support --db-is-local (UNIX socket) for MySQL (MariaDB)
   - [oar-node] fix warnings with OAR's sshd configuration
