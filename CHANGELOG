@@ -9,6 +9,9 @@ version 2.5.8:
   - [oarwalltime] add functionality to allow changing the walltime of a
     running job. See the oarwalltime command and oar.conf
   - [scheduler] fix the besteffort + deploy VS adv. reservation case
+  - [scheduler] add the state=permissive job type, allowing jobs to be scheduled
+    and run (if noop or cosystem as well only) regardless of the aliveness of 
+    resources
   - [oarsub/scheduler] fix warning "Use of uninitialized value $resource_value"
   - [oarsub] fix unknown error message in case of job termination + typos
   - [oarnodesetting] do not kill noop jobs using by resources changed to

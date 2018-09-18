@@ -6674,14 +6674,31 @@ WHERE
     AND gp.start_time <= $date
     AND j.state = \'Waiting\'
     AND r.resource_id = gr.resource_id
-    AND CASE WHEN EXISTS (
+    AND CASE
+        WHEN (
+            EXISTS (
+                       SELECT 1
+                       FROM job_types t
+                       WHERE 
+                           m.moldable_job_id = t.job_id
+                           AND t.type = \'state=permissive\'
+            ) AND EXISTS (
+                       SELECT 1
+                       FROM job_types t
+                       WHERE 
+                           m.moldable_job_id = t.job_id
+                           AND (t.type = \'noop\' OR t.type LIKE \'noop=.%\' OR t.type = \'cosystem\' OR t.type LIKE \'cosystem=.%\')
+            )
+        ) THEN (
+            r.state IN (\'Alive\',\'Absent\',\'Suspected\',\'Dead\')
+        )
+        WHEN EXISTS (
                        SELECT 1
                        FROM job_types t
                        WHERE 
                            m.moldable_job_id = t.job_id
                            AND t.type in (\'deploy=standby\', \'cosystem=standby\', \'noop=standby\')
-        )
-        THEN (
+        ) THEN (
             (r.state = \'Alive\' OR ( r.state = \'Absent\' AND (gp.start_time + m.moldable_walltime) <= r.available_upto))
             AND NOT EXISTS ( 
                 SELECT 1
@@ -6714,6 +6731,7 @@ WHERE
         END
 EOS
     } else {
+        oar_debug("[MetaSched] Energy saving is OFF: job with type (deploy|cosystem|noop)=standby or state=permissive cannot run\n");
         $req = <<EOS;
 SELECT gp.moldable_job_id, gr.resource_id, j.job_id
 FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
