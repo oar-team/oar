@@ -3790,7 +3790,7 @@ sub get_resource_job_to_frag($$) {
                                     AND jobs.job_id NOT IN (
                                                              SELECT job_id from job_types
                                                              WHERE
-                                                                 type=\'cosystem\'
+                                                                 (type=\'cosystem\' OR type=\'noop\')
                                                                  AND types_index=\'CURRENT\'
                                                            )
                             ");
@@ -3912,7 +3912,7 @@ sub get_node_job_to_frag($$) {
                                     AND jobs.job_id NOT IN (
                                                              SELECT job_id from job_types
                                                              WHERE
-                                                                 type=\'cosystem\'
+                                                                 (type=\'cosystem\' OR type=\'noop\')
                                                                  AND types_index=\'CURRENT\'
                                                            )
                             ");

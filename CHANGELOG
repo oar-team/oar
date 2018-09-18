@@ -11,6 +11,8 @@ version 2.5.8:
   - [scheduler] fix the besteffort + deploy VS adv. reservation case
   - [oarsub/scheduler] fix warning "Use of uninitialized value $resource_value"
   - [oarsub] fix unknown error message in case of job termination + typos
+  - [oarnodesetting] do not kill noop jobs using by resources changed to
+    Dead or Absent
   - [finaud] fix: make pingchecker run only on resources of type default
   - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
     in new installation. For existing database, the following command apply the
