@@ -658,7 +658,7 @@ class Resource {
     }
   }
   function svg_drain($y) {
-    global $CONF, $output, $scale, $gantt_now, $gantt_width, $resource_base;
+    global $CONF, $output, $scale, $gantt_now, $gantt_width, $gantt_left_align, $resource_base;
     $drain = 0;
     foreach (array_values($this->resource_ids) as $rid) {
       if (array_key_exists($CONF['resource_drain_property'], $rid->properties) and ($rid->properties[$CONF['resource_drain_property']] == "YES")) {
