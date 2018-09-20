@@ -134,8 +134,8 @@ foreach my $i (@{$order}){
     # Do not take care of besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
-        my $job_duration = $already_scheduled_jobs{$i}->[1];
         my $resource_list_vec = $already_scheduled_jobs{$i}->[10];
+        my $job_duration = $already_scheduled_jobs{$i}->[1];
         if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
             # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
             ($resource_list_vec, @resource_list) = OAR::IO::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
@@ -210,10 +210,10 @@ oar_debug("[$scheduler_name] End phase 1 (running jobs)\n");
 # Begining of the real scheduling
 
 # Get list of Alive resources
-my $alive_resources_vector = '';
-foreach my $r (OAR::IO::get_resources_in_state($base,"Alive")){
-    vec($alive_resources_vector, $r->{resource_id}, 1) = 1;
-}
+my ($Alive_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
+my ($Absent_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
+my ($Suspected_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
+my ($Dead_resource_id_vec, @Dead_resource_ids) = OAR::IO::get_resource_ids_in_state($base,"Dead");
 
 # ENERGY SAVING: add fake occupations/holes from energy saving configuration 
 # CM part and Hulot part (wake up nodes in energy saving mode)
@@ -224,7 +224,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
     foreach my $t (keys(%{$upto_availability})){
         my $vec = '';
         foreach my $r (@{$upto_availability->{$t}}){
-            vec($alive_resources_vector, $r, 1) = 1;
+            vec($Alive_resource_id_vec, $r, 1) = 1;
             vec($vec,$r,1) = 1;
         }
         #Fill all the gantts
@@ -254,11 +254,6 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
 }
 # CM part
  
-my @Dead_resources;
-foreach my $r (OAR::IO::get_resources_in_state($base,"Dead")){
-    push(@Dead_resources, $r->{resource_id});
-}
-
 oar_debug("[$scheduler_name] Begin phase 2 (waiting jobs)\n");
 my @jobs = OAR::IO::get_jobs_to_schedule($base,$queue,$max_waiting_jobs_to_schedule);
 my $job_index = 0;
@@ -346,8 +341,11 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
         $gantt_to_use = $timesharing_gantts->{$container_num}->{$user}->{$name};
         oar_debug("[$scheduler_name] [$j->{job_id}] timesharing job: use gantt for ($container_num, $user, $name)\n");
     }
-    #oar_debug("[$scheduler_name] Use gantt for $j->{job_id}:\n".OAR::Schedulers::GanttHoleStorage::pretty_print($gantt_to_use)."\n");
-
+    my $available_resources_vector = $Alive_resource_id_vec;
+    # Allow for scheduling jobs on absent or suspected resources is job has type state=permissive 
+    if (defined($types->{state}) and $types->{state} eq "permissive") {
+        $available_resources_vector |= $Absent_resource_id_vec | $Suspected_resource_id_vec;
+    }
     my $job_properties = "\'1\'";
     if ((defined($j->{properties})) and ($j->{properties} ne "")){
         $job_properties = $j->{properties};
@@ -371,7 +369,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             if ((defined($m->{property})) and ($m->{property} ne "")){
                 $tmp_properties = $m->{property};
             }
-            my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
+            my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@Dead_resource_ids,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
             $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
             push(@tree_list, $tmp_tree);
             #my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
