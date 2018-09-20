@@ -1,3 +1,9 @@
+oar (2.5.8~rc7-1~bpo9+1) stretch-backports; urgency=medium
+
+  * Rebuild for stretch-backports.
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 21 Sep 2018 00:22:06 +0200
+
 oar (2.5.8~rc7-1) unstable; urgency=medium
 
   * New upstream release candidate
