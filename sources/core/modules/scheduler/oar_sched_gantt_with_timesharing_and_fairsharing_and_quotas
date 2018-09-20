@@ -232,6 +232,7 @@ foreach my $i (@{$order}){
                                                 $already_scheduled_jobs{$i}->[5]
                                                                      );
         }
+
         #Handle a job within a container
         my $container_num = 0;
         if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
@@ -264,7 +265,6 @@ foreach my $i (@{$order}){
                                                     $resource_list_vec
                                                                              );
             }
-            #OAR::Schedulers::GanttHoleStorage_with_quotas::pretty_print($Container_gantt_hash{$g});
         }
         foreach my $c (keys(%{$timesharing_gantts})){
             foreach my $u (keys(%{$timesharing_gantts->{$c}})){
@@ -292,7 +292,10 @@ oar_debug("[$scheduler_name] End phase 1 (running jobs)\n");
 # Begining of the real scheduling
 
 # Get list of Alive resources
-my ($alive_resources_vector, @alive_resources)= OAR::IO::get_resource_ids_in_state($base,"Alive");
+my ($Alive_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Alive");
+my ($Absent_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Absent");
+my ($Suspected_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
+my ($Dead_resource_id_vec, @Dead_resource_ids) = OAR::IO::get_resource_ids_in_state($base,"Dead");
 
 # ENERGY SAVING: add fake occupations/holes from energy saving configuration 
 # CM part and Hulot part (wake up nodes in energy saving mode)
@@ -303,7 +306,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
     foreach my $t (keys(%{$upto_availability})){
         my $vec = '';
         foreach my $r (@{$upto_availability->{$t}}){
-            vec($alive_resources_vector, $r, 1) = 1;
+            vec($Alive_resource_id_vec, $r, 1) = 1;
             vec($vec,$r,1) = 1;
         }
         #Fill all the gantts
@@ -335,8 +338,6 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
 }
 # CM part
  
-my ($Dead_resources_vec, @Dead_resources) = OAR::IO::get_resource_ids_in_state($base,"Dead");
-
 oar_debug("[$scheduler_name] Begin phase 2 (waiting jobs)\n");
 my @jobs = OAR::IO::get_fairsharing_jobs_to_schedule($base,$queue,$Karma_max_number_of_jobs_treated_per_user);
 ###############################################################################
@@ -487,6 +488,11 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     #OAR::Schedulers::GanttHoleStorage_with_quotas::pretty_print($gantt_to_use);
     #oar_debug("[$scheduler_name] [$j->{job_id}] Gantt data structure:\n".OAR::Schedulers::GanttHoleStorage_with_quotas::pretty_print($gantt_to_use));
 
+    my $available_resources_vector = $Alive_resource_id_vec;
+    # Allow for scheduling jobs on absent or suspected resources is job has type state=permissive 
+    if (defined($types->{state}) and $types->{state} eq "permissive") {
+        $available_resources_vector |= $Absent_resource_id_vec | $Suspected_resource_id_vec;
+    }
     my $job_properties = "\'1\'";
     if ((defined($j->{properties})) and ($j->{properties} ne "")){
         $job_properties = $j->{properties};
@@ -509,7 +515,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             if ((defined($m->{property})) and ($m->{property} ne "")){
                 $tmp_properties = $m->{property};
             }
-            my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$alive_resources_vector,undef,\@Dead_resources,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
+            my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@Dead_resource_ids,"$job_properties AND $tmp_properties", $m->{resources}, $Order_part);
             push(@tree_list, $tmp_tree);
         }
         my $gantt_timeout =  ($timeout - (time() - $initial_time)) / 4;

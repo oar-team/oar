@@ -1484,7 +1484,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     #Apply rules
     eval $rules;
     if ($@) {
-        warn("Admission Rule ERROR : $@ \n");
+        warn("$@\n");
         return(-2);
     }
 
@@ -3790,7 +3790,7 @@ sub get_resource_job_to_frag($$) {
                                     AND jobs.job_id NOT IN (
                                                              SELECT job_id from job_types
                                                              WHERE
-                                                                 type=\'cosystem\'
+                                                                 (type=\'cosystem\' OR type=\'noop\')
                                                                  AND types_index=\'CURRENT\'
                                                            )
                             ");
@@ -3912,7 +3912,7 @@ sub get_node_job_to_frag($$) {
                                     AND jobs.job_id NOT IN (
                                                              SELECT job_id from job_types
                                                              WHERE
-                                                                 type=\'cosystem\'
+                                                                 (type=\'cosystem\' OR type=\'noop\')
                                                                  AND types_index=\'CURRENT\'
                                                            )
                             ");
@@ -6674,14 +6674,31 @@ WHERE
     AND gp.start_time <= $date
     AND j.state = \'Waiting\'
     AND r.resource_id = gr.resource_id
-    AND CASE WHEN EXISTS (
+    AND CASE
+        WHEN (
+            EXISTS (
+                       SELECT 1
+                       FROM job_types t
+                       WHERE 
+                           m.moldable_job_id = t.job_id
+                           AND t.type = \'state=permissive\'
+            ) AND EXISTS (
+                       SELECT 1
+                       FROM job_types t
+                       WHERE 
+                           m.moldable_job_id = t.job_id
+                           AND (t.type = \'noop\' OR t.type LIKE \'noop=.%\' OR t.type = \'cosystem\' OR t.type LIKE \'cosystem=.%\')
+            )
+        ) THEN (
+            r.state IN (\'Alive\',\'Absent\',\'Suspected\',\'Dead\')
+        )
+        WHEN EXISTS (
                        SELECT 1
                        FROM job_types t
                        WHERE 
                            m.moldable_job_id = t.job_id
                            AND t.type in (\'deploy=standby\', \'cosystem=standby\', \'noop=standby\')
-        )
-        THEN (
+        ) THEN (
             (r.state = \'Alive\' OR ( r.state = \'Absent\' AND (gp.start_time + m.moldable_walltime) <= r.available_upto))
             AND NOT EXISTS ( 
                 SELECT 1
@@ -6714,6 +6731,7 @@ WHERE
         END
 EOS
     } else {
+        oar_debug("[MetaSched] Energy saving is OFF: job with type (deploy|cosystem|noop)=standby or state=permissive cannot run\n");
         $req = <<EOS;
 SELECT gp.moldable_job_id, gr.resource_id, j.job_id
 FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
@@ -7736,7 +7754,7 @@ sub add_walltime_change_request($$$$$) {
     my $pending = shift;
     my $force = shift;
     my $delay_next_jobs = shift;
-    $dbh->do("INSERT INTO walltime_change (job_id,pending,force,delay_next_jobs) VALUES ($job_id,$pending,'$force','$delay_next_jobs')");
+    $dbh->do("INSERT INTO walltime_change (job_id,pending,`force`,delay_next_jobs) VALUES ($job_id,$pending,'$force','$delay_next_jobs')");
 }
 
 # Update an walltime change request after processing
@@ -7750,7 +7768,7 @@ sub update_walltime_change_request($$$$$$$$) {
     my $granted_with_force = shift;
     my $granted_with_delay_next_jobs = shift;
     $dbh->do("UPDATE walltime_change SET pending=$pending".
-        ((defined($force))?",force='$force'":"").
+        ((defined($force))?",`force`='$force'":"").
         ((defined($delay_next_jobs))?",delay_next_jobs='$delay_next_jobs'":"").
         ((defined($granted))?",granted=$granted":"").
         ((defined($granted_with_force))?",granted_with_force=$granted_with_force":"").
@@ -7762,7 +7780,7 @@ sub update_walltime_change_request($$$$$$$$) {
 sub get_walltime_change_for_job($$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $sth = $dbh->prepare("SELECT pending, force, delay_next_jobs, granted, granted_with_force, granted_with_delay_next_jobs FROM walltime_change WHERE job_id = $job_id");
+    my $sth = $dbh->prepare("SELECT pending, `force`, delay_next_jobs, granted, granted_with_force, granted_with_delay_next_jobs FROM walltime_change WHERE job_id = $job_id");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     return $ref;
@@ -7773,18 +7791,32 @@ sub get_jobs_with_walltime_change($) {
     my $dbh = shift;
     my $req = <<EOS;
 SELECT
-  j.job_id, j.queue_name, j.start_time, j.job_user, j.job_name, m.moldable_walltime, w.pending, w.force, w.delay_next_jobs, w.granted, w.granted_with_force, w.granted_with_delay_next_jobs, a.resource_id
+  jobs.job_id,
+  jobs.queue_name,
+  jobs.start_time,
+  jobs.job_user,
+  jobs.job_name,
+  moldable_job_descriptions.moldable_walltime,
+  walltime_change.pending,
+  walltime_change.force,
+  walltime_change.delay_next_jobs,
+  walltime_change.granted,
+  walltime_change.granted_with_force,
+  walltime_change.granted_with_delay_next_jobs,
+  assigned_resources.resource_id
 FROM
-  jobs j, moldable_job_descriptions m, assigned_resources a, walltime_change w
+  jobs, moldable_job_descriptions, assigned_resources, walltime_change
 WHERE
-  j.state = 'Running' AND
-  j.job_id = w.job_id AND
-  j.assigned_moldable_job = m.moldable_id AND
-  j.assigned_moldable_job = a.moldable_job_id AND
-  w.pending != 0
+  jobs.state = 'Running' AND
+  jobs.job_id = walltime_change.job_id AND
+  jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
+  jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
+  walltime_change.pending != 0
 EOS
+    lock_table($dbh,["jobs","moldable_job_descriptions","assigned_resources","walltime_change"]);
     my $sth = $dbh->prepare($req);
     $sth->execute();
+    unlock_table($dbh);
     my $jobs = {};
     while (my $ref = $sth->fetchrow_hashref()) {
         my $job_id = $ref->{job_id};
@@ -7877,8 +7909,9 @@ sub change_walltime($$$$) {
     my $job_id = shift;
     my $new_walltime = shift;
     my $message = shift;
-    $dbh->do("UPDATE moldable_job_descriptions SET moldable_walltime=$new_walltime FROM jobs WHERE jobs.job_id = moldable_job_id AND jobs.job_id = $job_id");
-    $dbh->do("INSERT INTO event_logs (type,job_id,date,description,to_check) VALUES ('WALLTIME',$job_id,EXTRACT(EPOCH FROM current_timestamp),' $message','NO')");
+    $dbh->do("UPDATE moldable_job_descriptions, jobs SET moldable_job_descriptions.moldable_walltime=$new_walltime WHERE jobs.job_id = moldable_job_id AND jobs.job_id = $job_id");
+    add_new_event($dbh, 'WALLTIME', $job_id, $message);
+    check_event($dbh, 'WALLTIME', $job_id);
 }
 
 # LOCK FUNCTIONS:
