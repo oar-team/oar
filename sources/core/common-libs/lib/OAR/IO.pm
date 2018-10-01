@@ -7754,7 +7754,7 @@ sub add_walltime_change_request($$$$$) {
     my $pending = shift;
     my $force = shift;
     my $delay_next_jobs = shift;
-    $dbh->do("INSERT INTO walltime_change (job_id,pending,`force`,delay_next_jobs) VALUES ($job_id,$pending,'$force','$delay_next_jobs')");
+    $dbh->do("INSERT INTO walltime_change (job_id,pending,force,delay_next_jobs) VALUES ($job_id,$pending,'$force','$delay_next_jobs')");
 }
 
 # Update an walltime change request after processing
@@ -7768,7 +7768,7 @@ sub update_walltime_change_request($$$$$$$$) {
     my $granted_with_force = shift;
     my $granted_with_delay_next_jobs = shift;
     $dbh->do("UPDATE walltime_change SET pending=$pending".
-        ((defined($force))?",`force`='$force'":"").
+        ((defined($force))?",force='$force'":"").
         ((defined($delay_next_jobs))?",delay_next_jobs='$delay_next_jobs'":"").
         ((defined($granted))?",granted=$granted":"").
         ((defined($granted_with_force))?",granted_with_force=$granted_with_force":"").
@@ -7780,7 +7780,7 @@ sub update_walltime_change_request($$$$$$$$) {
 sub get_walltime_change_for_job($$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $sth = $dbh->prepare("SELECT pending, `force`, delay_next_jobs, granted, granted_with_force, granted_with_delay_next_jobs FROM walltime_change WHERE job_id = $job_id");
+    my $sth = $dbh->prepare("SELECT pending, force, delay_next_jobs, granted, granted_with_force, granted_with_delay_next_jobs FROM walltime_change WHERE job_id = $job_id");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     return $ref;
@@ -7791,32 +7791,18 @@ sub get_jobs_with_walltime_change($) {
     my $dbh = shift;
     my $req = <<EOS;
 SELECT
-  jobs.job_id,
-  jobs.queue_name,
-  jobs.start_time,
-  jobs.job_user,
-  jobs.job_name,
-  moldable_job_descriptions.moldable_walltime,
-  walltime_change.pending,
-  walltime_change.force,
-  walltime_change.delay_next_jobs,
-  walltime_change.granted,
-  walltime_change.granted_with_force,
-  walltime_change.granted_with_delay_next_jobs,
-  assigned_resources.resource_id
+  j.job_id, j.queue_name, j.start_time, j.job_user, j.job_name, m.moldable_walltime, w.pending, w.force, w.delay_next_jobs, w.granted, w.granted_with_force, w.granted_with_delay_next_jobs, a.resource_id
 FROM
-  jobs, moldable_job_descriptions, assigned_resources, walltime_change
+  jobs j, moldable_job_descriptions m, assigned_resources a, walltime_change w
 WHERE
-  jobs.state = 'Running' AND
-  jobs.job_id = walltime_change.job_id AND
-  jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
-  jobs.assigned_moldable_job = assigned_resources.moldable_job_id AND
-  walltime_change.pending != 0
+  j.state = 'Running' AND
+  j.job_id = w.job_id AND
+  j.assigned_moldable_job = m.moldable_id AND
+  j.assigned_moldable_job = a.moldable_job_id AND
+  w.pending != 0
 EOS
-    lock_table($dbh,["jobs","moldable_job_descriptions","assigned_resources","walltime_change"]);
     my $sth = $dbh->prepare($req);
     $sth->execute();
-    unlock_table($dbh);
     my $jobs = {};
     while (my $ref = $sth->fetchrow_hashref()) {
         my $job_id = $ref->{job_id};
@@ -7909,9 +7895,8 @@ sub change_walltime($$$$) {
     my $job_id = shift;
     my $new_walltime = shift;
     my $message = shift;
-    $dbh->do("UPDATE moldable_job_descriptions, jobs SET moldable_job_descriptions.moldable_walltime=$new_walltime WHERE jobs.job_id = moldable_job_id AND jobs.job_id = $job_id");
-    add_new_event($dbh, 'WALLTIME', $job_id, $message);
-    check_event($dbh, 'WALLTIME', $job_id);
+    $dbh->do("UPDATE moldable_job_descriptions SET moldable_walltime=$new_walltime FROM jobs WHERE jobs.job_id = moldable_job_id AND jobs.job_id = $job_id");
+    $dbh->do("INSERT INTO event_logs (type,job_id,date,description,to_check) VALUES ('WALLTIME',$job_id,EXTRACT(EPOCH FROM current_timestamp),' $message','NO')");
 }
 
 # LOCK FUNCTIONS:
