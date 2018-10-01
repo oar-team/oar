@@ -1,3 +1,9 @@
+oar (2.5.8~rc8-1~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 01 Oct 2018 21:26:42 +0200
+
 oar (2.5.8~rc8-1) unstable; urgency=medium
 
   * New upstream release candidate
