@@ -341,7 +341,7 @@ PRIMARY KEY (job_id,job_id_required)
 CREATE TABLE IF NOT EXISTS walltime_change (
 job_id INT UNSIGNED NOT NULL ,
 pending INT NOT NULL DEFAULT 0,
-`force` ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
+force ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 delay_next_jobs ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 granted INT NOT NULL DEFAULT 0,
 granted_with_force INT NOT NULL DEFAULT 0,
