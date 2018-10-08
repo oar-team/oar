@@ -6,10 +6,16 @@ version 2.5.8:
 --------------
 
   - [job_resource_manager] manage nvidia gpu with the cgroup devices
-  - [walltime change] add functionality to allow changing the walltime of a
+  - [oarwalltime] add functionality to allow changing the walltime of a
     running job. See the oarwalltime command and oar.conf
   - [scheduler] fix the besteffort + deploy VS adv. reservation case
+  - [scheduler] add the state=permissive job type, allowing jobs to be scheduled
+    and run (if noop or cosystem as well only) regardless of the aliveness of 
+    resources
   - [oarsub/scheduler] fix warning "Use of uninitialized value $resource_value"
+  - [oarsub] fix unknown error message in case of job termination + typos
+  - [oarnodesetting] do not kill noop jobs using by resources changed to
+    Dead or Absent
   - [finaud] fix: make pingchecker run only on resources of type default
   - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
     in new installation. For existing database, the following command apply the
@@ -21,11 +27,15 @@ version 2.5.8:
   - [drawgantt-svg] add a mark next to the label of the resources pointed by
     the mouse
   - [drawgantt-svg] fix possible SQL injection with the filters
-  - [oar-database] fix the privilegies of oar's read only user in PostgreSQL
-    in new installation. For existing database, the following command apply the
-    fix: `oar-database --fix-ro-user-priv ...`
   - [drawgantt-svg] improve the label_display_regex text replacement mechanism
   - [drawgantt-svg/oarstat] fix past and current moldable jobs display
+  - [drawgantt-svg] fix drain display
+  - [oar.conf] update SSH options to the one of OpenSSH 7.6p1
+  - [oar-database] support --db-is-local (UNIX socket) for MySQL (MariaDB)
+  - [oar-node] fix warnings with OAR's sshd configuration
+  - [oar-resource-add] fix the auto-offset option
+  - [oar-resource-add] add support for creating GPU resources
+  - [oar-resource-add] add support to handle the CPU and GPU topologies
 
 version 2.5.7:
 --------------

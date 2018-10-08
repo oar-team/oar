@@ -53,8 +53,8 @@ Admin Documentation
 
 .. _ref-dev-docs:
 
-Developer Documentation
-=======================
+Other Documentations
+====================
 
-    See the wiki section of OAR website: http://oar.imag.fr/wiki:start
+    See the contribs section of OAR website: http://oar.imag.fr/wiki:contribs (and feel free to contribute !).
 

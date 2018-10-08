@@ -89,7 +89,7 @@ sub wait_end_of_running_jobs($$){
             $timeCount++;
         }
         if ($timeCount >= $max_timeout){
-            print(" Timouted\n");
+            print(" Timeout\n");
             $exit_code = 11;
         }else{
             print(" Deleted\n");
@@ -186,7 +186,6 @@ Options:
      --last-property-value [property] Get the last value used for a property (as
                                       sorted by SQL's ORDER BY DESC)
      --help                           Display this help
-     --verbose                        Verbose output
  -V, --version                        Print OAR version number
 N.B.:
  - The states allowed are: Alive, Absent or Dead.
