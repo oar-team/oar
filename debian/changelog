@@ -1,3 +1,9 @@
+oar (2.5.8~rc8-1~bpo70+1) wheezy-backports; urgency=medium
+
+  * Rebuild for wheezy-backports.
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 08 Oct 2018 17:46:33 +0200
+
 oar (2.5.8~rc8-1) unstable; urgency=medium
 
   * New upstream release candidate
