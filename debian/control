@@ -6,7 +6,7 @@ Priority: extra
 Build-Depends: debhelper (>= 9),
                po-debconf,
                perl,
-               python3-sphinx
+               python-sphinx | python3-sphinx
 Standards-Version: 4.0.0
 Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
 Homepage: http://oar.imag.fr/
@@ -221,10 +221,10 @@ Recommends: libyaml-syck-perl
 Suggests: oar-doc,
           oar-server,
           apache2,
-          libapache2-mod-fcgid,
+          libapache2-mod-fastcgi,
           apache2-suexec-custom
 Description: OAR web services
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package installs a RESTful API for oar users.
+ This package installs a RESTful API for oar users. 
