@@ -11,9 +11,9 @@
 
 $CONF=array();
 
-// Default settings for the default view 
+// Default settings for the default view
 $CONF['default_start'] = ""; // default start and stop times (ctime values) ; unless you want to always show a
-$CONF['default_stop'] = "";  // same time frame, keep those values to "" 
+$CONF['default_stop'] = "";  // same time frame, keep those values to ""
 $CONF['default_relative_start'] = ""; // default relative start and stop times ([+-]<seconds>), mind setting it
 $CONF['default_relative_stop'] = "";  // accordingly to the nav_forecast values below, eg -24*3600*0.1 and 24*3600*0.9
 $CONF['default_timespan'] = 6*3600; // default timespan, should be one of the nav_timespans below
