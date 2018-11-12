@@ -506,19 +506,20 @@ class ResourceId {
 
 // Storage for the abstract resources, e.g. host, cpu, core, a.s.o, i.e. not resource_id
 class Resource {
-  public $id, $type, $parent, $children, $resource_ids;
-  function __construct($id, $type, $parent) {
+  public $id, $type, $parent, $children, $resource_ids, $data;
+  function __construct($id, $type, $parent, $data=array()) {
     $this->id = $id;
     $this->type = $type;
     $this->parent = $parent;
+    $this->data = $data;
     $this->children = array();
     $this->resource_ids = array();
     $this->jobs = array();
     $this->job2resource_groups = array();
   }
-  function add_child($id, $type) {
+  function add_child($id, $type, $data=array()) {
     if (! array_key_exists($id,$this->children)) {
-      $this->children[$id] = new Resource($id, $type, $this);
+      $this->children[$id] = new Resource($id, $type, $this, $data);
     }
     return $this->children[$id];
   }
@@ -569,6 +570,9 @@ class Resource {
       } else {
         array_push($labels, $this->label());
       }
+    }
+    if (array_key_exists(label_display_functions, $CONF) and array_key_exists($this->type, $CONF['label_display_functions'])) {
+      $labels = [$CONF['label_display_functions'][$this->type]($this)];
     }
     if (($this->type != $resource_base) and (count($this->resource_ids) >= 1)) {
       if ($this->type == $CONF['resource_group_level']) {
@@ -767,6 +771,9 @@ class Resource {
     if ($this->type == 'cpuset') {
       $label = sprintf($CONF['cpuset_label_display_string'], $label);
     }
+    if (array_key_exists(label_display_functions, $CONF) and array_key_exists($this->type, $CONF['label_display_functions'])) {
+        $label = $CONF['label_display_functions'][$this->type]($this);
+    }
     if (array_key_exists($this->type, $CONF['label_display_regex'])) {
       if (is_array($CONF['label_display_regex'][$this->type])) {
         $label = preg_replace($CONF['label_display_regex'][$this->type][0],$CONF['label_display_regex'][$this->type][1],$label);
@@ -779,7 +786,10 @@ class Resource {
   function cmp($r) {
     global $CONF;
     debug(4, "cmp: " . $this->id." ??? ".$r->id . " (" . $this->type . ")");
-    if (array_key_exists($this->type, $CONF['label_cmp_regex'])) {
+    if (array_key_exists($this->type, $CONF['function_for_resource_cmp'])) {
+      $v1 = [$CONF['function_for_resource_cmp'][$this->type]($this)];
+      $v2 = [$CONF['function_for_resource_cmp'][$r->type]($r)];
+    } elseif (array_key_exists($this->type, $CONF['label_cmp_regex'])) {
       $r1 = preg_match($CONF['label_cmp_regex'][$this->type],$this->id, $v1);
       $r2 = preg_match($CONF['label_cmp_regex'][$this->type],$r->id, $v2);
       if (!$r1 or !$r2) {
@@ -841,7 +851,7 @@ if ($timespan < $CONF['min_timespan']) {
 }
 
 // Retrieve the resource hierarchy
-$resource_root = new Resource($CONF['site'], 'site', NULL);
+$resource_root = new Resource($CONF['site'], 'site', NULL, array());
 $resource_ids = array();
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -894,10 +904,12 @@ function parse_jobs_from_db($query) {
 }
 
 if ($display != "mobile_ruler_only") {
-  $query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE ('.stripslashes($resource_filter).')':'');
+  $query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE ('.stripslashes($resource_filter).')':'') .' order by resource_id';
   debug(2,"retrieve resources from DB");
   $db->query($query);
 
+  $cpt = 0;
+  $lines = [];
   while ($line = $db->fetch_array()) {
     $rid = new ResourceId($line['resource_id'], $line['cpuset']);
     foreach ($CONF['resource_properties'] as $rp) {
@@ -908,9 +920,12 @@ if ($display != "mobile_ruler_only") {
     $r = $resource_root;
     foreach ($CONF['resource_hierarchy'] as $rh) {
       debug(4, "add resource $rh: " . $line[$rh] . " to " . $r->type . ": " . $r->id);
-      $r = $r->add_child($line[$rh],$rh);
+      // TODO: add resource description in the constructor
+      $r = $r->add_child($line[$rh],$rh,$line);
       $r->add_resource_id($rid);
     }
+    array_push($lines, $line);
+    $cpt += 1;
   }
   $db->free();
 
@@ -1394,7 +1409,7 @@ EOT;
 
 $script_exec_time = microtime(true) - $script_start_time;
 if ($display != 'mobile_ruler_only' and $display != 'no_ruler') {
-  $output .= '<text id="stats" font-size="10" x="'.($gantt_left_align + $gantt_width /2).'" y="'.($page_height - 5).'" text-anchor="middle" fill="#888888">OAR drawgantt-svg for '.$CONF['site'].' - ref date: '.date("Y-m-d H:i:s",($gantt_start_date + $gantt_stop_date) / 2).' timespan: '.(($timespan >= 3600*24)?(floor($timespan/3600/24)."d"):"").gmdate("H\hi\ms\s",$timespan).' - generated in '.sprintf("%.3f",$script_exec_time).'s</text>';
+  $output .= '<text id="stats" font-size="10" x="'.($gantt_left_align + $gantt_width /2).'" y="'.($page_height - 5).'" text-anchor="middle" fill="#888888">OAR drawgantt-svg for '.$CONF['site'].' - ref date: '.date("Y-m-d H:i:s",($gantt_start_date + $gantt_stop_date) / 2).' timespan: '.(($timespan >= 3600*24)?(floor($timespan/3600/24)."d"):"").gmdate("H\hi\ms\s",$timespan).' - generated in '.sprintf("%.3f",$script_exec_time).'s</text>'; 
 }
 // end SVG doc
 $output .=  <<<EOT
