@@ -904,12 +904,10 @@ function parse_jobs_from_db($query) {
 }
 
 if ($display != "mobile_ruler_only") {
-  $query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE ('.stripslashes($resource_filter).')':'') .' order by resource_id';
+  $query = 'SELECT ' . join(',',array_unique(array_merge($CONF['resource_properties'], $CONF['resource_hierarchy'], array('cpuset', 'resource_id')))) . ' FROM resources' . ($resource_filter?' WHERE ('.stripslashes($resource_filter).')':'');
   debug(2,"retrieve resources from DB");
   $db->query($query);
 
-  $cpt = 0;
-  $lines = [];
   while ($line = $db->fetch_array()) {
     $rid = new ResourceId($line['resource_id'], $line['cpuset']);
     foreach ($CONF['resource_properties'] as $rp) {
@@ -924,8 +922,6 @@ if ($display != "mobile_ruler_only") {
       $r = $r->add_child($line[$rh],$rh,$line);
       $r->add_resource_id($rid);
     }
-    array_push($lines, $line);
-    $cpt += 1;
   }
   $db->free();
 
@@ -1409,7 +1405,7 @@ EOT;
 
 $script_exec_time = microtime(true) - $script_start_time;
 if ($display != 'mobile_ruler_only' and $display != 'no_ruler') {
-  $output .= '<text id="stats" font-size="10" x="'.($gantt_left_align + $gantt_width /2).'" y="'.($page_height - 5).'" text-anchor="middle" fill="#888888">OAR drawgantt-svg for '.$CONF['site'].' - ref date: '.date("Y-m-d H:i:s",($gantt_start_date + $gantt_stop_date) / 2).' timespan: '.(($timespan >= 3600*24)?(floor($timespan/3600/24)."d"):"").gmdate("H\hi\ms\s",$timespan).' - generated in '.sprintf("%.3f",$script_exec_time).'s</text>'; 
+  $output .= '<text id="stats" font-size="10" x="'.($gantt_left_align + $gantt_width /2).'" y="'.($page_height - 5).'" text-anchor="middle" fill="#888888">OAR drawgantt-svg for '.$CONF['site'].' - ref date: '.date("Y-m-d H:i:s",($gantt_start_date + $gantt_stop_date) / 2).' timespan: '.(($timespan >= 3600*24)?(floor($timespan/3600/24)."d"):"").gmdate("H\hi\ms\s",$timespan).' - generated in '.sprintf("%.3f",$script_exec_time).'s</text>';
 }
 // end SVG doc
 $output .=  <<<EOT
