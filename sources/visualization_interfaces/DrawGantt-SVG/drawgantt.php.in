@@ -82,9 +82,9 @@ if (is_readable(CONFIG_FILE)) {
 }
 
 $resource_base = array_key_exists('resource_base',$_GET)?$_GET['resource_base']:$CONF['default_resource_base'];
-$filter = array_key_exists('filter',$_GET)?$_GET['filter']:reset(array_keys($CONF['nav_filters']));
+$filter = array_key_exists('filter',$_GET)?$_GET['filter']:array_keys($CONF['nav_filters'])[0];
 $filterSQL=$CONF['nav_filters'][$filter];
-$timezone = array_key_exists('timezone',$_GET)?$_GET['timezone']:reset($CONF['nav_timezones']);
+$timezone = array_key_exists('timezone',$_GET)?$_GET['timezone']:$CONF['nav_timezones'][0];
 $relative_start = array_key_exists('relative_start',$_GET)?$_GET['relative_start']:$CONF['default_relative_start'];
 $relative_stop = array_key_exists('relative_stop',$_GET)?$_GET['relative_stop']:$CONF['default_relative_stop'];
 $start = array_key_exists('start',$_GET)?$_GET['start']:$CONF['default_start'];
