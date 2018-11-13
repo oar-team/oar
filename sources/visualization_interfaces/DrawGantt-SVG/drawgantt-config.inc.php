@@ -11,9 +11,9 @@
 // Configuration
 ////////////////////////////////////////////////////////////////////////////////
 
-// Default settings for the default view 
+// Default settings for the default view
 $CONF['default_start'] = ""; // default start and stop times (ctime values) ; unless you want to always show a
-$CONF['default_stop'] = "";  // same time frame, keep those values to "" 
+$CONF['default_stop'] = "";  // same time frame, keep those values to ""
 $CONF['default_relative_start'] = ""; // default relative start and stop times ([+-]<seconds>), mind setting it
 $CONF['default_relative_stop'] = "";  // accordingly to the nav_forecast values below, eg -24*3600*0.1 and 24*3600*0.9
 $CONF['default_timespan'] = 6*3600; // default timespan, should be one of the nav_timespans below
@@ -78,7 +78,7 @@ $CONF['nav_custom_buttons'] = array( // custom buttons, click opens the url in a
 $CONF['db_type']="pg"; // choices: mysql for Mysql or pg for PostgreSQL
 $CONF['db_server']="127.0.0.1";
 $CONF['db_port']="5432"; // usually 3306 for Mysql or 5432 for PostgreSQL
-$CONF['db_name']="oar"; // OAR read only user account 
+$CONF['db_name']="oar"; // OAR read only user account
 $CONF['db_user']="oar_ro";
 $CONF['db_passwd']="oar_ro";
 $CONF['db_max_job_rows']=20000; // max number of job rows retrieved from database, which can be handled.
@@ -86,31 +86,36 @@ $CONF['db_max_job_rows']=20000; // max number of job rows retrieved from databas
 // Data display configuration
 $CONF['timezone'] = "UTC";
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
-$CONF['resource_labels'] = array('network_address','cpuset'); // properties to describe resources (labels on the left). Must also be part of resource_hierarchy below 
+$CONF['resource_labels'] = array('network_address','cpuset'); // properties to describe resources (labels on the left). Must also be part of resource_hierarchy below
 $CONF['cpuset_label_display_string'] = "%02d";
 $CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1). label will be replaced with the 1st selection of the regex, unless an array is used with the replacement string as the second argument.
   'network_address' => '/^([^.]+)\..*$/',
-  );
+  'type' => array('/^default$/','proc'),
+);
+$CONF['label_display_functions'] = array( // custom functions to format labels for display. The function takes the resource object as argument. This object returns the value for each property of the resource in $obj->data[property]
+);
 $CONF['label_cmp_regex'] = array( // substring selection regex for comparing and sorting labels (resources)
   'network_address' => '/^([^-]+)-(\d+)\..*$/',
-  );
+);
+$CONF['label_cmp_functions'] = array( // custom functions to format labels for comparison. The function takes the resource object as argument. This object returns the value for each property of the resource in $obj->data[property].
+);
 $CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
   'deploy', 'cpuset', 'besteffort', 'network_address', 'type', 'drain');
 $CONF['resource_hierarchy'] = array( // properties to use to build the resource hierarchy drawing
   'network_address','cpuset',
-  ); 
+);
 $CONF['resource_base'] = "cpuset"; // base resource of the hierarchy/grid
 $CONF['resource_group_level'] = "network_address"; // level of resources to separate with blue lines in the grid
 $CONF['resource_drain_property'] = "drain"; // if set, must also be one of the resource_properties above to activate the functionnality
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)', 'Drain' => 'url(#drainPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
-  'besteffort' => 'url(#besteffortPattern)', 
-  'deploy(=\w)?' => 'url(#deployPattern)', 
-  'container(=\w+)?' => 'url(#containerPattern)', 
-  'timesharing=(\*|user),(\*|name)' => 'url(#timesharingPattern)', 
+  'besteffort' => 'url(#besteffortPattern)',
+  'deploy(=\w)?' => 'url(#deployPattern)',
+  'container(=\w+)?' => 'url(#containerPattern)',
+  'timesharing=(\*|user),(\*|name)' => 'url(#timesharingPattern)',
   'placeholder=\w+' => 'url(#placeholderPattern)',
-  );
+);
 $CONF['job_click_url'] = ''; // set a URL to open when a job is double-clicked, %%JOBID%% is to be replaced by the jobid in the URL
 $CONF['resource_click_url'] = ''; // set a URL to open when a resource is double-clicked, %%TYPE%% is to be replaced by the resource type and %%ID%% by the resource id in the URL
 
@@ -139,41 +144,41 @@ $CONF['static_patterns'] = <<<EOT
 <polygon points="0,0 3,0 0,3" fill="#0000ff" stroke="#0000ff" stroke-width="1" />
 <polygon points="7,0 10,0 10,3 3,10 0,10 0,7" fill="#0000ff" stroke="#0000ff" stroke-width="1" />
 <polygon points="10,7 10,10 7,10" fill="#0000ff" stroke="#0000ff" stroke-width="1" />
-</pattern> 
+</pattern>
 <pattern id="suspectedPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
 <polygon points="0,0 3,0 0,3" fill="#ff0000" stroke="#ff0000" stroke-width="1" />
 <polygon points="7,0 10,0 10,3 3,10 0,10 0,7" fill="#ff0000" stroke="#ff0000" stroke-width="1" />
 <polygon points="10,7 10,10 7,10" fill="#ff0000" stroke="#ff0000" stroke-width="1" />
-</pattern> 
+</pattern>
 <pattern id="deadPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
 <polygon points="0,0 3,0 0,3" fill="#404040" stroke="#404040" stroke-width="1" />
 <polygon points="7,0 10,0 10,3 3,10 0,10 0,7" fill="#404040" stroke="#404040" stroke-width="1" />
 <polygon points="10,7 10,10 7,10" fill="#404040" stroke="#404040" stroke-width="1" />
-</pattern> 
+</pattern>
 <pattern id="standbyPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" viewBox="0 0 10 10" >
 <polygon points="0,0 3,0 0,3" fill="#88ffff" stroke="#88ffff" stroke-width="1" />
 <polygon points="7,0 10,0 10,3 3,10 0,10 0,7" fill="#88ffff" stroke="#88ffff" stroke-width="1" />
 <polygon points="10,7 10,10 7,10" fill="#88ffff" stroke="#88ffff" stroke-width="1" />
-</pattern> 
+</pattern>
 <pattern id="drainPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="15" height="10" viewBox="0 0 10 10" >
 <circle cx="5" cy="5" r="4" fill="#ff0000" stroke="#ff0000" stroke-width="1" />
 <line x1="2" y1="5" x2="9" y2="5" stroke="#ffffff" stroke-width="2" />
-</pattern> 
+</pattern>
 <pattern id="containerPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="0" y="20" fill="#888888">C</text>
-</pattern> 
+</pattern>
 <pattern id="besteffortPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="10" y="20" fill="#888888">B</text>
-</pattern> 
+</pattern>
 <pattern id="placeholderPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="10" y="20" fill="#888888">P</text>
-</pattern> 
+</pattern>
 <pattern id="deployPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="10" y="10" fill="#888888">D</text>
-</pattern> 
+</pattern>
 <pattern id="timesharingPattern" patternUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" viewBox="0 0 20 20" >
 <text font-size="10" x="10" y="20" fill="#888888">T</text>
-</pattern> 
+</pattern>
 EOT;
 
 // Standby state display options for the part shown in the future
@@ -196,8 +201,8 @@ EOT;
 //        return (int)(360 * fmod($job->job_id * $magic_number, 1));
 //    }
 //    // Other example: get the color's hue value as a function of the job_user value
-//    protected $cache = array(); 
-//    function job2int($job) { 
+//    protected $cache = array();
+//    function job2int($job) {
 //        // shuffled number based on the job_user:
 //        if (! array_key_exists($job->job_user, $this->cache)) {
 //            $n = (int) base_convert(substr(md5($job->job_user) ,0, 5), 16, 10);
