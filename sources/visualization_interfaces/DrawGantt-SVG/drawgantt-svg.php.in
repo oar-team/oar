@@ -24,12 +24,16 @@ $CONF['timezone'] = "UTC";
 $CONF['site'] = "My OAR resources"; // name for your infrastructure or site
 $CONF['resource_labels'] = array('network_address','cpuset'); // properties to describe resources (labels on the left). Must also be part of resource_hierarchy below
 $CONF['cpuset_label_display_string'] = "%02d";
-$CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1). label will be replaced with the 1st selection of the regex, unless an array is used with the replacement string as the second argument.
+$CONF['label_display_regex'] = array( // shortening regex for labels (e.g. to shorten node-1.mycluster to node-1). label will be replaced with the 1st selection of the regex, unless an array is used with the replacement string as the second argument
   'network_address' => '/^([^.]+)\..*$/',
   'type' => array('/^default$/','proc'),
 );
+$CONF['label_display_functions'] = array( // custom functions to format labels for display. The function takes the resource object as argument. This object returns the value for each property of the resource in $obj->data[property]
+);
 $CONF['label_cmp_regex'] = array( // substring selection regex for comparing and sorting labels (resources)
   'network_address' => '/^([^-]+)-(\d+)\..*$/',
+);
+$CONF['label_cmp_functions'] = array( // custom functions to format labels for comparison. The function takes the resource object as argument. This object returns the value for each property of the resource in $obj->data[property]
 );
 $CONF['resource_properties'] = array( // properties to display in the pop-up on top of the resources labels (on the left)
   'deploy', 'cpuset', 'besteffort', 'network_address', 'type', 'drain');
@@ -214,6 +218,7 @@ if (! in_array($resource_base, $CONF['resource_hierarchy'])) {
   $resource_base = end($CONF['resource_hierarchy']);
   debug(1, "set resource_base to $resource_base");
 }
+$resource_labels = (empty($CONF['resource_labels']))?array($resource_base):$CONF['resource_labels'];
 $gantt_left_align = $CONF['hierarchy_left_align'] + (3 + array_search($resource_base,$CONF['resource_hierarchy'])) * $CONF['hierarchy_resource_width'];
 $gantt_width = $CONF['gantt_min_width'];
 if (array_key_exists('width', $_GET) and $_GET['width'] > ($gantt_left_align + $CONF['gantt_min_width'] + $CONF['right_margin'])) {
@@ -561,18 +566,15 @@ class Resource {
     return $properties;
   }
   function svg_hierarchy($x, $y, $labels=NULL)  {
-    global $CONF, $output, $scale, $gantt_width, $gantt_left_align, $resource_base, $first_resource_base, $sorted_resources, $has_aggregated_resources;
+    global $CONF, $output, $scale, $gantt_width, $gantt_left_align, $resource_base, $first_resource_base, $sorted_resources, $has_aggregated_resources, $resource_labels;
     $h = 0;
     debug(3,"hierarchy: ". $this->id . "(" . $this->type . ")");
-    if (in_array($this->type, $CONF['resource_labels'])) {
+    if (in_array($this->type, $resource_labels)) {
       if ($labels == NULL) {
         $labels = array($this->label());
       } else {
         array_push($labels, $this->label());
       }
-    }
-    if (array_key_exists(label_display_functions, $CONF) and array_key_exists($this->type, $CONF['label_display_functions'])) {
-      $labels = [$CONF['label_display_functions'][$this->type]($this)];
     }
     if (($this->type != $resource_base) and (count($this->resource_ids) >= 1)) {
       if ($this->type == $CONF['resource_group_level']) {
@@ -595,7 +597,7 @@ class Resource {
         sort($value);
         array_push($popup, $key.": ".join(", ", array_unique($value)));
       }
-      if(in_array("cpuset", $CONF['resource_labels']) and ! in_array("cpuset", $CONF['resource_hierarchy']) and ! $has_aggregated_resources) {
+      if(in_array("cpuset", $resource_labels) and ! in_array("cpuset", $CONF['resource_hierarchy']) and ! $has_aggregated_resources) {
         array_push($labels, sprintf($CONF['cpuset_label_display_string'],reset($this->cpusets())));
       }
       $output .= '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $scale/2).'" text-anchor="end" dominant-baseline="central" onmouseover="mouseOver(evt, \''.htmlspecialchars(join("|", $popup)).'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" onclick="resourceclick(evt,\''.$this->type.'\',\''.$this->id.'\')">';
@@ -771,10 +773,9 @@ class Resource {
     if ($this->type == 'cpuset') {
       $label = sprintf($CONF['cpuset_label_display_string'], $label);
     }
-    if (array_key_exists(label_display_functions, $CONF) and array_key_exists($this->type, $CONF['label_display_functions'])) {
+    if (array_key_exists($this->type, $CONF['label_display_functions'])) {
         $label = $CONF['label_display_functions'][$this->type]($this);
-    }
-    if (array_key_exists($this->type, $CONF['label_display_regex'])) {
+    } elseif (array_key_exists($this->type, $CONF['label_display_regex'])) {
       if (is_array($CONF['label_display_regex'][$this->type])) {
         $label = preg_replace($CONF['label_display_regex'][$this->type][0],$CONF['label_display_regex'][$this->type][1],$label);
       } else {
@@ -786,9 +787,10 @@ class Resource {
   function cmp($r) {
     global $CONF;
     debug(4, "cmp: " . $this->id." ??? ".$r->id . " (" . $this->type . ")");
-    if (array_key_exists($this->type, $CONF['function_for_resource_cmp'])) {
-      $v1 = [$CONF['function_for_resource_cmp'][$this->type]($this)];
-      $v2 = [$CONF['function_for_resource_cmp'][$r->type]($r)];
+    if (array_key_exists($this->type, $CONF['label_cmp_functions'])) {
+      debug(5, "cmp: use label cmp function");
+      $v1 = [$CONF['label_cmp_functions'][$this->type]($this)];
+      $v2 = [$CONF['label_cmp_functions'][$this->type]($r)];
     } elseif (array_key_exists($this->type, $CONF['label_cmp_regex'])) {
       $r1 = preg_match($CONF['label_cmp_regex'][$this->type],$this->id, $v1);
       $r2 = preg_match($CONF['label_cmp_regex'][$this->type],$r->id, $v2);
