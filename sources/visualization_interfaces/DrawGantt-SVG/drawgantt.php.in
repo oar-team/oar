@@ -5,9 +5,20 @@
  *
  */
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Configuration: DO NOT EDIT HERE. Customization must go in /etc/oar/drawgantt-config.inc.php
-////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// DO NOT EDIT CONFIGURATION HERE 
+// Customization must go either in:
+// - %%OARCONFDIR%%/drawgantt-config.inc.php
+// or in:
+// - %%OARCONFDIR%%/drawgantt-config-SUFFIX.inc.php with SUFFIX being either:
+//   - set in a "config=SUFFIX" query param. SUFFIX must be made of alphanumeric
+//     or _ characters only
+//   or
+//   - guessed from the script path bottom directory. The directory name must
+//     use alphanumeric or _ characters only, and the resulting configuration
+//     file must exist.
+//   (mostly useful for a multi-drawgantt setup)
+////////////////////////////////////////////////////////////////////////////////
 
 $CONF=array();
 
@@ -74,13 +85,29 @@ $CONF['nav_custom_buttons'] = array( // custom buttons, click opens the url in a
   'my label' => 'http://my.url'      // remove all lines to disable (empty array)
 );
 
-// Overwrite configuration with values from drawgantt-config.inc.php
+// Manage the configuration file
 define('CONFIG_DIR', '%%OARCONFDIR%%');
-define('CONFIG_FILE', CONFIG_DIR . '/drawgantt-config.inc.php');
-if (is_readable(CONFIG_FILE)) {
-    require CONFIG_FILE;
+$config_file_suffix = '';
+// Look for a config file suffix in the query params
+if (array_key_exists('config',$_GET) and preg_match('/^\w+$/', $_GET['config'])) {
+  $config_file_suffix = $_GET['config'];
+  error_log('drawgantt: config suffix found in query params: '.$config_file_suffix);
+// Look for a config file suffix in the script path
+} elseif (preg_match('/^.*\/(\w+)\/.*$/',$_SERVER['SCRIPT_NAME'],$match) and is_file(CONFIG_DIR . '/drawgantt-config-'.$match[1].'.inc.php')) {
+  $config_file_suffix = $match[1];
+  error_log('drawgantt: config suffix guessed from URL: '.$config_file_suffix);
+}
+$config_file = CONFIG_DIR . '/drawgantt-config'.($config_file_suffix?'-'.$config_file_suffix:'').'.inc.php';
+if (is_readable($config_file)) {
+  error_log('drawgantt: use config file '.$config_file);
+  require $config_file;
+} else {
+  error_log('drawgantt: config file not readable: '.$config_file.', use default values.');
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Script parameters (GET)
+////////////////////////////////////////////////////////////////////////////////
 $resource_base = array_key_exists('resource_base',$_GET)?$_GET['resource_base']:$CONF['default_resource_base'];
 $filter = array_key_exists('filter',$_GET)?$_GET['filter']:array_keys($CONF['nav_filters'])[0];
 $filterSQL=$CONF['nav_filters'][$filter];
@@ -193,6 +220,7 @@ $output = <<<EOT
 </style>
 <script type="text/javascript">
   window.addEventListener("resize", reload_content, false);
+  var config = "$config_file_suffix";
   var start = 0;
   var stop = 0;
   var zoom_start = 0;
@@ -311,12 +339,12 @@ $output = <<<EOT
     scrolledX = window.scrollX;
     scrolledY = window.scrollY;
     var svgObj=document.getElementById("svgObj");
-    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
+    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"") + ((config)?"&config=" + config:"");
     document.getElementById("panel").style.visibility="hidden";
     document.getElementById("permalink").style.visibility="hidden";
     document.getElementById("waiter").style.visibility="visible";
     var href = window.location.href
-    document.getElementById("permalinkA").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"");
+    document.getElementById("permalinkA").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"") + ((config)?"&config=" + config:"");
     svgObj.data = newURL;
     svgObj.innerHTML = newURL;
   }
