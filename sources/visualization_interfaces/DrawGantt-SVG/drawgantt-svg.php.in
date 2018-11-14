@@ -14,9 +14,9 @@
 //   - set in a "config=SUFFIX" query param. SUFFIX must be made of alphanumeric
 //     or _ characters only
 //   or
-//   - guessed from the script path bottom directory. The directory name must
-//     use alphanumeric or _ characters only, and the resulting configuration
-//     file must exist.
+//   - guessed from the script path (latest word in the dirpath). The directory
+//     name must use alphanumeric or _ characters only, and the resulting
+//     configuration file must exist.
 //   (mostly useful for a multi-drawgantt setup)
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -205,7 +205,7 @@ if (array_key_exists('config',$_GET) and preg_match('/^\w+$/', $_GET['config']))
   $config_file_suffix = $_GET['config'];
   error_log('drawgantt-svg: config suffix found in query params: '.$config_file_suffix);
 // Look for a config file suffix in the script path
-} elseif (preg_match('/^.*\/(\w+)\/.*$/',$_SERVER['SCRIPT_NAME'],$match) and is_file(CONFIG_DIR . '/drawgantt-config-'.$match[1].'.inc.php')) {
+} elseif (preg_match('/^.*\W(\w+)\/.*$/',$_SERVER['SCRIPT_NAME'],$match) and is_file(CONFIG_DIR . '/drawgantt-config-'.$match[1].'.inc.php')) {
   $config_file_suffix = $match[1];
   error_log('drawgantt-svg: config suffix guessed from URL: '.$config_file_suffix);
 }
