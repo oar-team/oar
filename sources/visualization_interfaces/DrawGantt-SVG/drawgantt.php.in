@@ -118,6 +118,7 @@ $start = array_key_exists('start',$_GET)?$_GET['start']:$CONF['default_start'];
 $stop = array_key_exists('stop',$_GET)?$_GET['stop']:$CONF['default_stop'];
 $timespan = array_key_exists('timespan',$_GET)?$_GET['timespan']:$CONF['default_timespan'];
 $scale = array_key_exists('scale',$_GET)?$_GET['scale']:$CONF['default_scale'];
+$scheduler_priority = array_key_exists('scheduler_priority',$_GET)?'&scheduler_priority':'';
 
 $output = <<<EOT
 <!DOCTYPE html>
@@ -339,12 +340,12 @@ $output = <<<EOT
     scrolledX = window.scrollX;
     scrolledY = window.scrollY;
     var svgObj=document.getElementById("svgObj");
-    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"") + ((config)?"&config=" + config:"");
+    var newURL= "drawgantt-svg.php?width=" + (window.innerWidth - 50)  + "&start=" + start + "&stop=" + stop + ((filterSQL)?"&filter=" + filterSQL:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"") + ((config)?"&config=" + config:"") + "$scheduler_priority";
     document.getElementById("panel").style.visibility="hidden";
     document.getElementById("permalink").style.visibility="hidden";
     document.getElementById("waiter").style.visibility="visible";
     var href = window.location.href
-    document.getElementById("permalinkA").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"") + ((config)?"&config=" + config:"");
+    document.getElementById("permalinkA").href = href.substring(0,href.lastIndexOf(window.location.search)) + "?start=" + start + "&stop=" + stop + ((filter)?"&filter=" + filter:"") + ((timezone)?"&timezone=" + timezone:"") + ((baseResource)?"&resource_base=" + baseResource:"") + ((scale)?"&scale=" + scale:"") + ((config)?"&config=" + config:"") + "$scheduler_priority";
     svgObj.data = newURL;
     svgObj.innerHTML = newURL;
   }

@@ -504,13 +504,14 @@ class Job2ResourceGroup {
 
 // Storage class for the resource_ids
 class ResourceId {
-  public $id, $cpuset, $states, $resources, $properties;
+  public $id, $cpuset, $states, $resources, $properties, $events;
   function __construct($id, $cpuset) {
     $this->id = $id;
     $this->cpuset = $cpuset;
     $this->states = array();
     $this->resources = array();
     $this->properties = array();
+    $this->events = array();
   }
   function add_state($value, $start, $stop) {
     array_push($this->states, new State($value, $start, $stop));
@@ -521,6 +522,13 @@ class ResourceId {
   function add_property($key, $value) {
     $this->properties[$key] = $value;
     ksort($this->properties);
+  }
+  function add_event($date, $key, $value) {
+    if (array_key_exists($date, $this->events)) {
+      array_push($this->events[$date], "$key=$value");
+    } else {
+      $this->events[$date] = array("$key=$value");
+    }
   }
 }
 
@@ -697,6 +705,27 @@ class Resource {
         debug(4, $info);
       }
       $output .= '<rect x="'.date2px($gantt_now).'" y="'.$y.'" width="'.($gantt_width - date2px($gantt_now) + $gantt_left_align).'" height="'.$height.'" fill="'.$CONF['state_colors']['Drain'].'" stroke-width="0" style="opacity: 0.5" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" onclick="resourceclick(evt,\''.$this->type.'\',\''.$this->id.'\')"/>';
+    }
+  }
+  function svg_events($y) {
+    global $CONF, $output, $scale, $gantt_now, $gantt_width, $gantt_left_align, $resource_base;
+    $events = array();
+    foreach (array_values($this->resource_ids) as $rid) {
+      foreach ($rid->events as $date => $evs) {
+        $events[$date][$rid->id]=$evs;
+      }
+    }
+    ksort($events);
+    foreach ($events as $date => $rid2evs) {
+      $info = "";
+      ksort($rid2evs);
+      foreach ($rid2evs as $rid => $evs) {
+        sort($evs);
+        foreach ($evs as $e) {
+          $info .= "|rid=$rid: $e";
+        }
+      }
+      $output .= '<circle cx="'.date2px($date).'" cy="'.($y+$scale/2).'" r="'.($scale/2).'" fill="red" stroke-width="0" style="opacity: 0.5" onmouseover="mouseOver(evt, \''.$info.'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)"/>';
     }
   }
   function svg_jobs($y) {
@@ -942,7 +971,8 @@ if ($display != "mobile_ruler_only") {
   }
   $db->free();
 
-  // Retrieve the states of resources
+  // Retrieve the resources states from resource_log
+  $show_scheduler_priority = (array_key_exists('scheduler_priority', $_GET))?"OR (attribute = 'scheduler_priority' AND date_start > $gantt_start_date)":"";
   $value_int = $db->cast("value","int");
   $query = <<<EOT
 SELECT resource_id, date_start, date_stop, value, attribute
@@ -963,6 +993,7 @@ AND (
     AND {$value_int} > {$gantt_now}
     AND date_stop = 0
   )
+  {$show_scheduler_priority}
 )
 EOT;
   $available_upto_lines = array();
@@ -973,8 +1004,12 @@ EOT;
       if (array_key_exists($line['resource_id'], $resource_ids)) {
         $resource_ids[$line['resource_id']]->add_state($line['value'], $line['date_start'], $line['date_stop']);
       }
-    } else {
+    } elseif ($line['attribute'] == 'available_upto') {
       array_push($available_upto_lines, $line);
+    } elseif ($line['attribute'] == 'scheduler_priority') {
+      if (array_key_exists($line['resource_id'], $resource_ids)) {
+        $resource_ids[$line['resource_id']]->add_event($line['date_start'],'scheduler_priority',$line['value']);
+      }
     }
   }
   $db->free();
@@ -1128,6 +1163,7 @@ if ($display != "mobile_ruler_only") {
   $y = $gantt_top;
   foreach ($sorted_resources as $r) {
     $r->svg_jobs($y);
+    $r->svg_events($y);
     $y += $scale;
   }
   $output .= $output_labels;
