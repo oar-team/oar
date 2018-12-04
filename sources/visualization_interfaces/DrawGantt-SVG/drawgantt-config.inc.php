@@ -18,7 +18,7 @@ $CONF['default_relative_start'] = ""; // default relative start and stop times (
 $CONF['default_relative_stop'] = "";  // accordingly to the nav_forecast values below, eg -24*3600*0.1 and 24*3600*0.9
 $CONF['default_timespan'] = 6*3600; // default timespan, should be one of the nav_timespans below
 $CONF['default_resource_base'] = 'cpuset'; // default base resource, should be one of the nav_resource_bases below
-$CONF['default_scale'] = 10; // default vertical scale of the grid, should be one of the nav_scales bellow
+$CONF['default_scale'] = 10; // default vertical scale of the grid, should be one of the nav_scales below
 
 // Navigation bar configuration
 $CONF['nav_timespans'] = array( // proposed timespan in the "set" bar
