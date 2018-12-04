@@ -2,13 +2,14 @@ Source: oar
 Maintainer: Pierre Neyron <pierre.neyron@free.fr>
 Uploaders: Vincent Danjean <vdanjean@debian.org>
 Section: utils
-Priority: extra
-Build-Depends: debhelper (>= 9),
+Priority: optional
+Build-Depends: debhelper-compat (= 11),
                po-debconf,
                perl,
                python3-sphinx
-Standards-Version: 4.0.0
+Standards-Version: 4.2.1
 Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
+Vcs-Browser: https://github.com/oar-team/oar
 Homepage: http://oar.imag.fr/
 
 Package: liboar-perl
