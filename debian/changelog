@@ -1,3 +1,10 @@
+oar (2.5.8~rc8-2) unstable; urgency=medium
+
+  * Refresh packaging
+  * Bash snipsets to be sourced are not binaries
+
+ -- Vincent Danjean <vdanjean@debian.org>  Tue, 04 Dec 2018 16:06:18 +0100
+
 oar (2.5.8~rc8-1) unstable; urgency=medium
 
   * New upstream release candidate
