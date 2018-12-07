@@ -1,0 +1,12 @@
+Add missing dependency in Makefile
+--- a/Makefiles/shared/shared.mk
++++ b/Makefiles/shared/shared.mk
+@@ -140,7 +140,7 @@
+ 
+ build_setup_scripts: $(MODULE_SETUP_BUILDED_FILES)
+ 
+-$(MODULE_SETUP_BUILDED_FILES): $(MODULE_SETUP_TOBUILD_FILES)
++$(MODULE_SETUP_BUILDED_FILES): $(MODULE_SETUP_TOBUILD_FILES) setup/templates/header.sh
+ 	cat setup/templates/header.sh $< > $@
+ 
+ clean_setup_scripts:
