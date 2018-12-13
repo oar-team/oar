@@ -1,6 +1,6 @@
-oar (2.5.8~rc8-3) UNRELEASED; urgency=medium
+oar (2.5.8~rc8-3) unstable; urgency=medium
 
-  * Fix install of data files (Closes: #916304)
+  * Really fix Makefile for parallel builds (Closes: #916304)
 
  -- Vincent Danjean <vdanjean@debian.org>  Thu, 13 Dec 2018 22:17:30 +0100
 
