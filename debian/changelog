@@ -1,9 +1,13 @@
 oar (2.5.8-1) unstable; urgency=medium
 
+  [ Pierre Neyron ]
   * New upstream release
   * Remove patches as they were applied upstream
+  [ Vincent Danjean ]
+  * Switch to dh 12
+  * Bump Standards-Version (no change needed)
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 04 Jan 2019 19:48:16 +0100
+ -- Vincent Danjean <vdanjean@debian.org>  Fri, 04 Jan 2019 21:06:58 +0100
 
 oar (2.5.8~rc8-3) unstable; urgency=medium
 
