@@ -1,6 +1,6 @@
 oar (2.5.8-1) unstable; urgency=medium
 
-  * New upstream
+  * New upstream release
   * Remove patches as they were applied upstream
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 04 Jan 2019 19:48:16 +0100
