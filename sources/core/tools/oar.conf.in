@@ -255,6 +255,11 @@ SCHEDULER_RESOURCE_ORDER="scheduler_priority ASC, state_num ASC, available_upto 
 # "scheduler_priority" depends of the position of the field name.
 SCHEDULER_PRIORITY_HIERARCHY_ORDER="network_address/resource_id"
 
+# Log scheduler priority changes to the resource_logs table
+# Useful for debug only, Can be displayed with drawgantt-svg with
+# "scheduler_priority" set a query argument)
+# LOG_SCHEDULER_PRIORITY_CHANGES="no"
+
 # You can specify a type of resources that will be always assigned for each job
 # (for exemple: enable all jobs to be able to log on the cluster frontales)
 # For more information, see the FAQ
