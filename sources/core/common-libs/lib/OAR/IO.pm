@@ -5821,6 +5821,8 @@ sub update_current_scheduler_priority($$$$$){
     
     $state = "STOP" if ($state ne "START");
 
+    my $log_scheduluer_priority_changes = (is_conf("LOG_SCHEDULER_PRIORITY_CHANGES") and lc(get_conf("LOG_SCHEDULER_PRIORITY_CHANGES")) eq "yes")?1:0;
+
     if (is_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER")){
         my $date = get_date($dbh);
         my $types = OAR::IO::get_job_types_hash($dbh,$job_id);
@@ -5858,13 +5860,15 @@ sub update_current_scheduler_priority($$$$$){
                             WHERE
                                 $f IN (".$value_str.")
                            ";
-                $dbh->do($req);       
-                $dbh->do("INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
+                $dbh->do($req);
+                if ($log_scheduluer_priority_changes) {
+                    $dbh->do("INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
                           SELECT resources.resource_id,\'scheduler_priority\',CONCAT(resources.scheduler_priority,\' ($value*$index*$coeff\@job $job_id/$f)\'),\'$date\',\'NO\'
                           FROM resources
                           WHERE
                               $f IN (".$value_str.")
-             ");
+                    ");
+                }
             }
             add_new_event($dbh,"SCHEDULER_PRIORITY_UPDATED_$state",$job_id,"Scheduler priority for job $job_id updated (".get_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER").")");
         }
