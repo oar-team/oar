@@ -3,6 +3,7 @@
 # OAR jobs can create files into $CHECKPOINTS_DIR
 
 CHECKPOINTS_DIR=/var/lib/checkpoints
+TMP_DIR_FOR_DUMPS=/var/tmp
 
 mkdir -p $CHECKPOINTS_DIR
 chmod 1777 $CHECKPOINTS_DIR
@@ -32,14 +33,22 @@ do
 	  if [ "$job_user" = "$proc_user" ]
           then
             cd $dir
-	    mkdir -p checkpoint
-	    chown $job_user checkpoint
+	    DIR=$(mktemp -d -p $TMP_DIR_FOR_DUMPS)
             echo "CRIU dump of job $job_id, pid $pid into $dir..."
-            criu dump -D checkpoint --shell-job -t $pid
+            criu dump -D $DIR --shell-job -t $pid
             if [ $? = 0 ]
             then
-  	      echo "Checkpoint ok!"
-              touch checkpoint_ok
+	      if [ -d ./checkpoint ]
+	      then
+	        rm -rf checkpoint.old
+	        mv -f ./checkpoint ./checkpoint.old
+	      fi
+	      mv $DIR ./checkpoint && touch checkpoint_ok
+	      chown $job_user checkpoint
+  	      echo "Checkpoint ok"
+	    else
+              echo "Checkpoint failed!"
+	      rm -rf $DIR
             fi
             echo "CRIU dump of job $job_id ended"
             rm $file
