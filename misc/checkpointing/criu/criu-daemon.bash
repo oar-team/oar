@@ -82,11 +82,18 @@ do
         criu restore -D checkpoint --pidfile pidfile -d --shell-job
         if [ $? = 0 ]
         then
-          echo "Resume ok!"
 	  chown $job_user checkpoint/pidfile
+	  # Put the processes into the right cpuset
+	  parent_pid=$(cat checkpoint/pidfile)
+	  original_cpuset=$(grep "^$parent_pid$" /dev/cpuset/oar/$job_user_*/tasks|sed "s/tasks:.*//")
+	  for pid in `cat $original_cpuset/tasks`
+          do
+	    echo $pid >> $cpuset/tasks
+	  done
+	  rmdir $original_cpuset
           touch resume_ok
 	  chown $job_user resume_ok
-	  echo $(cat checkpoint/pidfile) >> $cpuset/tasks
+          echo "Resume ok!"
         fi
         echo "CRIU resume of job $job_id ended"
         rm $file
