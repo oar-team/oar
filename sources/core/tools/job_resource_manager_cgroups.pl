@@ -50,6 +50,8 @@ sub print_log($$);
 
 # Put YES if you want to use the memory cgroup
 my $ENABLE_MEMCG = "NO";
+# Put YES if you want to use the perf_event cgroup
+my $ENABLE_PERF_EVENTCG = "NO";
 # Put YES if you want to use the device cgroup (nvidia devices only currently)
 my $ENABLE_DEVICESCG = "NO";
 
@@ -146,6 +148,7 @@ if ($ARGV[0] eq "init"){
                 if (!(-r $OS_cgroups_path.'/cpuset/tasks')){
                     my $cgroup_list = "cpuset,cpu,cpuacct,devices,freezer,blkio";
                     $cgroup_list .= ",memory" if ($ENABLE_MEMCG eq "YES");
+                    $cgroup_list .= ",perf_event" if ($ENABLE_PERF_EVENTCG eq "YES");
                     if (system('oardodo mkdir -p '.$Cgroup_mount_point.' &&
                                 oardodo mount -t cgroup -o '.$cgroup_list.' none '.$Cgroup_mount_point.' || exit 1
                                 oardodo rm -f /dev/cpuset
@@ -157,7 +160,8 @@ if ($ARGV[0] eq "init"){
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/devices &&
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/freezer &&
                                 oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/blkio &&
-                                [ "'.$ENABLE_MEMCG.'" =  "YES" ] && oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/memory || true
+                                [ "'.$ENABLE_MEMCG.'" =  "YES" ] && oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/memory || true &&
+                                [ "'.$ENABLE_PERF_EVENTCG.'" =  "YES" ] && oardodo ln -s '.$Cgroup_mount_point.' '.$Cgroup_directory_collection_links.'/perf_event || true
                                ')){
                         exit_myself(4,"Failed to mount cgroup pseudo filesystem");
                     }
@@ -172,7 +176,8 @@ if ($ARGV[0] eq "init"){
                                 oardodo ln -s '.$OS_cgroups_path.'/devices '.$Cgroup_directory_collection_links.'/devices &&
                                 oardodo ln -s '.$OS_cgroups_path.'/freezer '.$Cgroup_directory_collection_links.'/freezer &&
                                 oardodo ln -s '.$OS_cgroups_path.'/blkio '.$Cgroup_directory_collection_links.'/blkio &&
-                                [ "'.$ENABLE_MEMCG.'" =  "YES" ] && oardodo ln -s '.$OS_cgroups_path.'/memory '.$Cgroup_directory_collection_links.'/memory || true
+                                [ "'.$ENABLE_MEMCG.'" =  "YES" ] && oardodo ln -s '.$OS_cgroups_path.'/memory '.$Cgroup_directory_collection_links.'/memory || true &&
+                                [ "'.$ENABLE_PERF_EVENTCG.'" =  "YES" ] && oardodo ln -s '.$OS_cgroups_path.'/perf_event '.$Cgroup_directory_collection_links.'/perf_event || true
                                ')){
                         exit_myself(4,"Failed to link existing OS cgroup pseudo filesystem");
                     }
