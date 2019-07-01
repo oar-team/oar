@@ -98,7 +98,8 @@ Specify a specific type (I<besteffort>, I<timesharing>, I<idempotent>, I<cosyste
 Notes:
   - a job with the B<besteffort> type will be scheduled with the lowest priority and will be killed if a "normal" job needs its resources.
   - a job with the B<idempotent> type will be automatically resubmitted if its exit code is 99 and its duration > 60s.
-  - a job with the B<idempotent> and B<besteffort> types will automatically be resubmitted whenever killed by OAR before its normal termination to execute a non-besteffort jobs.
+  - a job with the B<idempotent> and B<besteffort> types but with no B<checkpoint> delay will automatically be resubmitted whenever killed by OAR before its normal termination to execute a non-besteffort jobs.
+  - a job with the B<idempotent> and B<besteffort> types with a B<checkpoint> delay will be automatically resubmitted resubmitted if its exit code is 99 and its duration > 60s (that is, as if only B<idempotent> was present).
   - a job with the B<noop> type does nothing except reserving the resources. It is ended at the end of it walltime or when using the oardel command.
 
 =item B<-d, --directory> <DIR>
