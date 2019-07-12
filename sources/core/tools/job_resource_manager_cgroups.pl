@@ -34,7 +34,7 @@
 #                 allowed to be used (id on the compute node).
 #
 # Usage:
-# This script is deployed from the server and executed as oar on the nodes.
+# This script is deployed from the server and executed as oar on the nodes
 # ARGV[0] can have two different values:
 #     - "init"  : then this script must create the right cpuset and assign
 #                 corresponding cpus
@@ -50,7 +50,7 @@ sub print_log($$);
 
 # Put YES if you want to use the memory cgroup
 my $ENABLE_MEMCG = "NO";
-# Put YES if you want to use the device cgroup (nvidia devices only currently)
+# Put YES if you want to use the device cgroup (supports nvidia devices only for now)
 my $ENABLE_DEVICESCG = "NO";
 
 my $OS_cgroups_path = "/sys/fs/cgroup";  # Where the OS mounts by itself the cgroups
@@ -73,11 +73,11 @@ my $Cpuset_lock_file = "$ENV{HOME}/cpuset.lock.";
 # cgroups in the same place with the same hierarchy.
 my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 
-# Retrieve parameters from STDIN in the "Cpuset" structure which looks like: 
+# Retrieve parameters from STDIN in the "Cpuset" structure which looks like:
 # $Cpuset = {
-#               job_id => id of the corresponding job
-#               name => "cpuset name"
-#               cpuset_path => "relative path in the cpuset FS"
+#               job_id => id of the corresponding job,
+#               name => "cpuset name",
+#               cpuset_path => "relative path in the cpuset FS",
 #               nodes => hostname => [array with the content of the database cpuset field]
 #               ssh_keys => {
 #                               public => {
@@ -123,13 +123,9 @@ my @Cpuset_cpus;
 if (defined($Cpuset->{cpuset_path})){
     $Cpuset_path_job = $Cpuset->{cpuset_path}.'/'.$Cpuset->{name};
     foreach my $l (@{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}}){
-        foreach my $c (split("[, \+]",$l)){
-            push(@Cpuset_cpus, $c);
-        }
+        push(@Cpuset_cpus, split(/[,\s]+/, $l));
     }
 }
-
-
 
 print_log(3,"$ARGV[0]");
 if ($ARGV[0] eq "init"){
@@ -199,30 +195,38 @@ if ($ARGV[0] eq "init"){
             exit_myself(16,"Failed to open or create $Cpuset->{oar_tmp_directory}/job_manager_lock_file");
         }
 
-        # Be careful with the physical_package_id. Is it corresponding to the memory banch?
+        # Be careful with the physical_package_id. Is it corresponding to the memory bank?
         # Create job cgroup
-        if (system( 'for d in '.$Cgroup_directory_collection_links.'/*; do
-                       oardodo mkdir -p $d/'.$Cpuset_path_job.' || exit 1
-                       oardodo chown -R oar $d/'.$Cpuset_path_job.' || exit 2
-                       /bin/echo 0 | cat > $d/'.$Cpuset_path_job.'/notify_on_release || exit 3
-                     done
-                     /bin/echo 0 | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive &&
-                     MEM=
-                     for c in '."@Cpuset_cpus".'; do
-                       for n in /sys/devices/system/node/node* ; do
-                         if [ -r "$n/cpu$c" ]; then
-                           MEM=$(basename $n | sed s/node//g),$MEM
-                         fi
-                       done
-                     done
-                     echo $MEM > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems &&
-                     /bin/echo '.join(",",@Cpuset_cpus).' | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus
-                    ')){
-            exit_myself(5,"Failed to create and feed the cpuset $Cpuset_path_job");
+         # Locking around the creation of the cpuset for that user, to prevent race condition during the dirty-user-based cleanup
+        if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
+            flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
+            if (system('for d in '.$Cgroup_directory_collection_links.'/*; do
+                          oardodo mkdir -p $d/'.$Cpuset_path_job.' || exit 1
+                          oardodo chown -R oar $d/'.$Cpuset_path_job.' || exit 2
+                          /bin/echo 0 | cat > $d/'.$Cpuset_path_job.'/notify_on_release || exit 3
+                        done
+                        /bin/echo 0 | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpu_exclusive &&
+                        MEM=
+                        for c in '."@Cpuset_cpus".'; do
+                          for n in /sys/devices/system/node/node* ; do
+                            if [ -r "$n/cpu$c" ]; then
+                              MEM=$(basename $n | sed s/node//g),$MEM
+                            fi
+                          done
+                        done
+                        echo $MEM > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems &&
+                        /bin/echo '.join(",",@Cpuset_cpus).' | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus
+                       ')){
+                exit_myself(5,"Failed to create and feed the cpuset $Cpuset_path_job");
+            }
+            flock(LOCK,LOCK_UN) or die "flock failed: $!\n";
+            close(LOCK);
+        } else {
+            exit_myself(16,"[cpuset_manager] Error opening $Cpuset_lock_file");
         }
 
-        # Put a share of disk IO corresponding of the ratio between the number
-        # of cores of this job cgroup and the number of cores of the node
+        # Put a share for IO disk corresponding of the ratio between the number
+        # of cpus of this cgroup and the number of cpus of the node
         my @cpu_cgroup_uniq_list;
         my %cpu_cgroup_name_hash;
         foreach my $i (@Cpuset_cpus){
@@ -231,7 +235,7 @@ if ($ARGV[0] eq "init"){
                 push(@cpu_cgroup_uniq_list, $i);
             }
         }
-        # Get the whole cores of the node
+        # Get the whole cpus of the node
         my @node_cpus;
         if (open(CPUS, "$Cgroup_directory_collection_links/cpuset/cpuset.cpus")){
             my $str = <CPUS>;
@@ -321,7 +325,6 @@ if ($ARGV[0] eq "init"){
         }else{
             exit_myself(19,"Failed to create node file $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}");
         }
-
         ## create resource set file
         if (open(RESFILE, "> $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources")){
             foreach my $r (@{$Cpuset->{resources}}){
@@ -337,7 +340,6 @@ if ($ARGV[0] eq "init"){
         }else{
             exit_myself(19,"Failed to create resource file $Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources");
         }
-
         ## Write environment file
         if (open(ENVFILE, "> $Cpuset->{oar_tmp_directory}/$Cpuset->{name}.env")){
             my $filecontent = <<"EOF";
@@ -354,7 +356,6 @@ export OAR_FILE_NODES='$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}'
 export OAR_RESOURCE_PROPERTIES_FILE='$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources'
 export OAR_JOB_WALLTIME='$Cpuset->{walltime}'
 export OAR_JOB_WALLTIME_SECONDS='$Cpuset->{walltime_seconds}'
-
 export OAR_NODEFILE=\$OAR_FILE_NODES
 export OAR_NODE_FILE=\$OAR_FILE_NODES
 export OAR_RESOURCE_FILE=\$OAR_RESOURCE_PROPERTIES_FILE
@@ -454,11 +455,10 @@ EOF
                 do
                     oardodo kill -9 $PROCESSES > /dev/null 2>&1
                     PROCESSES=$(cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks)
-                done'
-              );
-
+                done');
+        
         # Locking around the cleanup of the cpuset for that user, to prevent a creation to occure at the same time
-        # which would allow race condition for the user-based clean-up mechanism
+        # which would allow race condition for the dirty-user-based clean-up mechanism
         if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
             flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
             if (system('if [ -w '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty ]; then
@@ -470,24 +470,26 @@ EOF
                           if [ -d $d ]; then
                             oardodo rmdir $d > /dev/null 2>&1 || exit 1
                           fi
-                        done
-                       ')){
+                        done')){
                 # Uncomment this line if you want to use several network_address properties
                 # which are the same physical computer (linux kernel)
                 #exit(0);
                 exit_myself(6,"Failed to delete the cpuset $Cpuset_path_job");
             }
-            # user-based cleanup: do cleanup only if that is the last job of the user on that host.
+            # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
             my @cpusets = ();
             if (opendir(DIR, $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/')) {
                 @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
                 closedir DIR;
             } else {
-              exit_myself(18,"Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}");
+                exit_myself(18,"Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}");
             }
             if ($#cpusets < 0) {
                 # No other jobs on this node at this time
                 my $useruid=getpwnam($Cpuset->{user});
+                if ($useruid == ''){
+                    print_log(3,"Cannot get information from user '$Cpuset->{user}' job #'$Cpuset->{job_id}' (line 481)");
+                }
                 my $ipcrm_args="";
                 if (open(IPCMSG,"< /proc/sysvipc/msg")) {
                     <IPCMSG>;
@@ -527,7 +529,7 @@ EOF
                 }
                 if ($ipcrm_args) {
                     print_log (3,"Purging SysV IPC: ipcrm $ipcrm_args.");
-                    system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args"); 
+                    system("OARDO_BECOME_USER=$Cpuset->{user} oardodo ipcrm $ipcrm_args");
                 }
                 print_log (3,"Purging @TMP_DIRECTORIES_TO_CLEAR.");
                 system('for d in '."@TMP_DIRECTORIES_TO_CLEAR".'; do
@@ -572,4 +574,3 @@ sub print_log($$){
         print("[job_resource_manager_cgroups][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][DEBUG] $str\n");
     }
 }
-

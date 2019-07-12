@@ -1,0 +1,49 @@
+#!/bin/bash
+#OAR -n test_script
+#OAR -t idempotent
+#OAR -l nodes=1/core=1,walltime=00:03:00
+#OAR -O test.%jobid%.stdout
+#OAR -E test.%jobid%.stderr
+#OAR --project admin
+#OAR --checkpoint 60
+#OAR --notify mail:bruno.bzeznik@univ-grenoble-alpes.fr
+
+# Handler for checkpointing signal sent by OAR
+handler() { echo "Caught checkpoint signal at: `date`"
+	    echo "Checkpointing..."
+	    echo -e "$PROG_PID\n$(pwd)" > /var/lib/checkpoints/$OAR_JOB_ID.checkpoint
+           }
+trap handler SIGUSR2
+
+# Load environment
+. /applis/ciment/v2/env.bash
+module load /bettik/LECA/ENVIRONMENT/modulefiles/x86_64/obitools/1.2.9_gcc-4.6.2
+echo "OBITools loaded"
+
+# A checkpoint exists, resuming it
+if [ -e checkpoint_ok ]
+then
+  rm -f checkpoint/pidfile
+  echo -e "$(pwd)" > /var/lib/checkpoints/$OAR_JOB_ID.resume
+  # Wait for the restore (for pidfile to be created)
+  while [ \! -e checkpoint/pidfile ]
+  do
+    sleep 5
+  done
+  PROG_PID=$(cat checkpoint/pidfile)
+
+# No checkpoint, starting the program
+else
+  nohup obiclean  -d 1 -r 0.5 -s merged_sample  test.uniq.fasta > test.uniq.filtered.fasta &
+  PROG_PID=$!
+fi
+
+# Wait for $PROG_PID (`wait` does not work in all cases, and 
+# bash kills the script when a trap occurs within a wait)
+while [ -e /proc/$PROG_PID ]
+do
+  sleep 1
+done
+
+# Idempotent job exits with 99 code to be automatically re-submitted
+exit 99
