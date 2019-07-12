@@ -11,8 +11,8 @@
 #     - "clean" : then this script must kill all processes in the cpuset and
 #                 clean the cpuset structure
 
-# TAKTUK_HOSTNAME environment variable must be defined and must be a name
-# that we will be able to find in the transfered hashtable ($Cpuset variable).
+# TAKTUK_HOSTNAME environment variable must be defined and must be a key
+# of the transfered hash table ($Cpuset variable).
 use Fcntl ':flock';
 #use Data::Dumper;
 
@@ -26,9 +26,9 @@ my $Cpuset;
 my $Log_level;
 my $Cpuset_lock_file = "$ENV{HOME}/cpuset.lock.";
 
-# Retrieve parameters from STDIN in the "Cpuset" structure which looks like: 
+# Retrieve parameters from STDIN in the "Cpuset" structure which looks like:
 # $Cpuset = {
-#               job_id => id of the corresponding job
+#               job_id => id of the corresponding job,
 #               name => "cpuset name",
 #               cpuset_path => "relative path in the cpuset FS",
 #               nodes => hostname => [array with the content of the database cpuset field]
@@ -67,26 +67,12 @@ if (defined($Cpuset->{cpuset_path})){
     @Cpuset_cpus = @{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}};
 }
 
-
-
 print_log(3,"$ARGV[0]");
 if ($ARGV[0] eq "init"){
     # Initialize cpuset for this node
     # First, create the tmp oar directory
     if (!(((-d $Cpuset->{oar_tmp_directory}) and (-O $Cpuset->{oar_tmp_directory})) or (mkdir($Cpuset->{oar_tmp_directory})))){
         exit_myself(13,"Directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created");
-    }
-
-    if (defined($Cpuset->{job_uid})){
-        my $prevuser = getpwuid($Cpuset->{job_uid});
-        system("oardodo /usr/sbin/userdel -f $prevuser") if (defined($prevuser));
-        my @tmp = getpwnam($Cpuset->{user});
-        if ($#tmp < 0){
-            exit_myself(15,"Cannot get information from user '$Cpuset->{user}'");
-        }
-        if (system("oardodo /usr/sbin/adduser --disabled-password --gecos 'OAR temporary user' --no-create-home --force-badname --quiet --home $tmp[7] --gid $tmp[3] --shell $tmp[8] --uid $Cpuset->{job_uid} $Cpuset->{job_user}")){
-            exit_myself(15,"Failed to create $Cpuset->{job_user} with uid $Cpuset->{job_uid} and home $tmp[7] and group $tmp[3] and shell $tmp[8]");
-        }
     }
 
     if (defined($Cpuset_path_job)){
