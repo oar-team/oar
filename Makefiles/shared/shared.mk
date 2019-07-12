@@ -47,8 +47,9 @@ SHARED_ACTIONS=perllib oardata oarbin doc man1 bin sbin examples setup_scripts i
 
 
 clean_shared: clean_templates clean_man1 clean_setup_scripts
+	$(RM) -f setup/templates/header-*.sh.in
+	$(RM) -f setup/templates/header-*.sh
 build_shared: build_templates build_man1 build_setup_scripts
-	rm -f setup/templates/header.sh
 
 install_shared: $(patsubst %, install_%,$(SHARED_ACTIONS)) install_setup_scripts
 setup_shared: run_setup_scripts
@@ -79,10 +80,12 @@ TEMPLATE_SOURCE_FILES=$(filter %.in, $(PROCESS_TEMPLATE_FILES) \
 				     $(CGIDIR_FILES) \
 				     $(WWWDIR_FILES) \
 				     $(MODULE_SETUP_SOURCE_FILES) \
-				     setup/templates/header.sh.in \
+				     setup/templates/header-$(MODULE).sh.in \
 			)
 TEMPLATE_BUILDED_FILES=$(patsubst %.in,%,$(TEMPLATE_SOURCE_FILES))
 
+setup/templates/header-$(MODULE).sh.in: setup/templates/header.sh.in
+	cp $^ $@
 
 build_templates: $(TEMPLATE_BUILDED_FILES)
 
@@ -140,8 +143,8 @@ install_setup_scripts: $(MODULE_SETUP_TARGET_FILES)
 
 build_setup_scripts: $(MODULE_SETUP_BUILDED_FILES)
 
-$(MODULE_SETUP_BUILDED_FILES): $(MODULE_SETUP_TOBUILD_FILES)
-	cat setup/templates/header.sh $< > $@
+$(MODULE_SETUP_BUILDED_FILES): $(MODULE_SETUP_TOBUILD_FILES) setup/templates/header-$(MODULE).sh
+	cat setup/templates/header-$(MODULE).sh $< > $@
 
 clean_setup_scripts:
 	-rm -f $(MODULE_SETUP_BUILDED_FILES)
@@ -151,7 +154,7 @@ uninstall_setup_scripts:
 
 $(MODULE_SETUP_TARGET_FILES): $(MODULE_SETUP_BUILDED_FILES)
 	install -d $(DESTDIR)$(OARDIR)/setup
-	install -m 0755 $< $@
+	install -m 0644 $< $@
 
 #
 # OAR_PERLLIB

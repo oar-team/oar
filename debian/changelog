@@ -1,3 +1,28 @@
+oar (2.5.8-1) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * New upstream release
+  * Remove patches as they were applied upstream
+  [ Vincent Danjean ]
+  * Switch to dh 12
+  * Bump Standards-Version (no change needed)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Fri, 04 Jan 2019 21:06:58 +0100
+
+oar (2.5.8~rc8-3) unstable; urgency=medium
+
+  * Really fix Makefile for parallel builds (Closes: #916304)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Thu, 13 Dec 2018 22:17:30 +0100
+
+oar (2.5.8~rc8-2) unstable; urgency=medium
+
+  * Refresh packaging
+  * Bash snipsets to be sourced are not binaries
+  * Fix Makefile dependencies for parallel builds
+
+ -- Vincent Danjean <vdanjean@debian.org>  Fri, 07 Dec 2018 15:28:18 +0100
+
 oar (2.5.8~rc8-1~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports.
