@@ -21,12 +21,16 @@ my $base = OAR::IO::connect();
 my @node_list_tmp = OAR::IO::get_finaud_nodes($base);
 my $Occupied_nodes;
 my $check_occupied_nodes = 'no';
+my $disable_suspected_nodes_repair = 'no';
 
 # get in conf the options that tells if we have to check nodes
 # that are running jobs.
 init_conf($ENV{OARCONFFILE});
 if (is_conf("CHECK_NODES_WITH_RUNNING_JOB")){
     $check_occupied_nodes = get_conf("CHECK_NODES_WITH_RUNNING_JOB");
+}
+if (is_conf("DISABLE_SUSPECTED_NODES_REPAIR")){
+    $disable_suspected_nodes_repair = get_conf("DISABLE_SUSPECTED_NODES_REPAIR");
 }
 
 if ($check_occupied_nodes eq 'no'){
@@ -62,7 +66,7 @@ foreach my $i (values(%Nodes_hash)){
         OAR::IO::add_new_event_with_host($base, "FINAUD_ERROR", 0, "Finaud has detected an error on the node", [$i->{network_address}]);
         $return_value = 1;
         oar_debug("[finaud] Set the next state of $i->{network_address} to Suspected\n");
-    }elsif (!defined($bad_node_hash{$i->{network_address}}) and ($i->{state} eq "Suspected")){
+    }elsif (!defined($bad_node_hash{$i->{network_address}}) and $i->{state} eq "Suspected" and $disable_suspected_nodes_repair eq 'no'){
         OAR::IO::set_node_nextState($base,$i->{network_address},"Alive");
         OAR::IO::update_node_nextFinaudDecision($base,$i->{network_address},"YES");
         OAR::IO::add_new_event_with_host($base, "FINAUD_RECOVER", 0, "Finaud has detected that the node comes back", [$i->{network_address}]);
