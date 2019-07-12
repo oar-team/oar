@@ -122,6 +122,9 @@ OPENSSH_CMD="/usr/bin/ssh -p 6667"
 # Set the frequency for checking Alive and Suspected resources (0 means never)
 FINAUD_FREQUENCY="300"
 
+# To disable the suspected nodes repair in finaud (nodes comes back), set the following to 'yes'
+#DISABLE_SUSPECTED_NODES_REPAIR='no'
+
 # Set time after which Suspected resources become Dead (default is 0 and it
 # means never) 
 #DEAD_SWITCH_TIME="600"
