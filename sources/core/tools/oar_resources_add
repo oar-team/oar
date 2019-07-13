@@ -53,7 +53,7 @@ EOF
 }
 
 die() {
-  cat <<EOF 2>&1
+  cat <<EOF 1>&2
 Error: $1
 
 EOF
@@ -171,12 +171,14 @@ while [ $# -ge 1 ]; do
     exit 0
     ;;
   *)
-    usage
+    usage 1>&2
     exit 1
     ;;
   esac
   shift
 done
+
+[ -n "$1" ] && die "Syntax error, unknown argument: $1"
 
 [ -n "$HOSTS" ] && [ $HOSTS -gt 0 ] || die "Syntax error, need a # of host."
 
@@ -243,7 +245,7 @@ declare -a GPUTOPO
 if [ -n "$GPUTOPO" ]; then
   GPUTOPO=(${GPUTOPO//,/ })
   if [ ${#GPUTOPO[@]} -ne $GPUDEVICES ]; then
-		die "Bad definition of GPU topology, ${#GPUTOPO[@]} elements (${GPUTOPO[*]}) instead of $GPUDEVICES."
+    die "Bad definition of GPU topology, ${#GPUTOPO[@]} elements (${GPUTOPO[*]}) instead of $GPUDEVICES."
   fi
 else
   GPUTOPO=($(seq 0 $((GPUDEVICES-1))))
@@ -297,11 +299,11 @@ EOF
     cat <<EOF
 oarproperty -l | grep -q -e "^thread$" || oarproperty -a thread
 EOF
-	if [ -n "$DO_GPUS" ]; then
-		cat <<EOF
+  fi
+  if [ -n "$DO_GPUS" ]; then
+    cat <<EOF
 oarproperty -l | grep -q -e "^gpu$" || oarproperty -a gpu
 EOF
-	fi
   fi
 fi
 
