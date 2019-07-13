@@ -14,6 +14,7 @@ CPUSETS=
 CPUTOPO=
 GPUDEVICES=
 GPUTOPO=
+DO_REPAIR=
 DEBUG=
 
 usage() {
@@ -44,6 +45,7 @@ Options:
     -a, --auto-offset           guess next host/cpu/core/thread/gpu ids
     -p, --no-create-properties  do not generate oarproperty commands
     -A, --append <str>          append a text string (extra properties)
+    -R, --repair                do not create, repair existing properties (fix cpu/gpu topologie)
     -o, --write-to <file>       write commands to file
     -Y, --yaml                  generate YAML output
     -h, --help                  display this message
@@ -64,8 +66,8 @@ debug() {
   [ -n "$DEBUG" ] && echo "DEBUG: $@" 1>&2
 }
 
-LONG_OPTS="hosts:,cpus:,cores:,threads:,gpus:,host-prefix:,host-suffix:,host0:,cpu0:,core0:,thread0:,gpu0:,cpuset:,cpusets:,cputopo:,gpudevices:,gputopo:,append:,use-threads,write-to:,auto-offset,yaml,no-create-properties,help,debug"
-SHORT_OPTS="H:C:c:t:g:P:S:A:o:TaYph"
+LONG_OPTS="hosts:,cpus:,cores:,threads:,gpus:,host-prefix:,host-suffix:,host0:,cpu0:,core0:,thread0:,gpu0:,cpuset:,cpusets:,cputopo:,gpudevices:,gputopo:,append:,use-threads,write-to:,auto-offset,yaml,no-create-properties,repair,help,debug"
+SHORT_OPTS="H:C:c:t:g:P:S:A:o:TRaYph"
 args=$(getopt -l $LONG_OPTS -o $SHORT_OPTS -q -- "$@")
 [ $? -gt 0 ] && die "Syntax error, $(getopt -l $LONG_OPTS -o $SHORT_OPTS -Q -- "$@" 2>&1)."
 
@@ -160,6 +162,9 @@ while [ $# -ge 1 ]; do
   -p|--no-create-properties)
     CREATE_PROPERTIES=
     ;;
+  -R|--repair)
+    DO_REPAIR=1
+    ;;
   -Y|--yaml)
     YAML=1
     ;;
@@ -181,6 +186,8 @@ done
 [ -n "$1" ] && die "Syntax error, unknown argument: $1"
 
 [ -n "$HOSTS" ] && [ $HOSTS -gt 0 ] || die "Syntax error, need a # of host."
+
+[ -n "$DO_REPAIR" ] && [ -n "$CPUSETS" -o -n "$GPUDEVICES" ] && die "Error: cannot use -R/--repair with --cpusets/-C and --gpudevices/-G."
 
 if [ -n "$WRITE_TO" ]; then
   if [ -e "$WRITE_TO" ]; then
@@ -289,7 +296,7 @@ if [ -z "$USE_THREADS" ]; then
   THREADS=1
 fi
 
-if [ -n "$CREATE_PROPERTIES" -a -z "$YAML" ]; then
+if [ -n "$CREATE_PROPERTIES" -a -z "$YAML" -a -z "$DO_REPAIR" ]; then
   cat <<EOF
 oarproperty -l | grep -q -e "^host$" || oarproperty -c -a host
 oarproperty -l | grep -q -e "^cpu$" || oarproperty -a cpu
@@ -352,10 +359,18 @@ EOF
             fi
             echo -e "$APPEND"
           else
-            if [ -z "$USE_THREADS" ]; then
-              echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p cpuset=${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+            if [ -z "$DO_REPAIR" ]; then
+              if [ -z "$USE_THREADS" ]; then
+                echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p cpuset=${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+              else
+                echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+              fi
             else
-              echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+              if [ -z "$USE_THREADS" ]; then
+                echo "oarnodesetting --sql \"network_address = $hostname and cpuset = ${CPUTOPO[$cpuset]}\" -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+              else
+                echo "oarnodesetting --sql \"network_address = $hostname and cpuset = ${CPUTOPO[$cpuset]}\" -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+              fi
             fi
           fi
           ((thread++))
