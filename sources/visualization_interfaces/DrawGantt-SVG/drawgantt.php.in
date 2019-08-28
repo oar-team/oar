@@ -338,7 +338,7 @@ $output = <<<EOT
   function set_now() {
     var date = new Date();
     date.setTime(Math.floor(date.getTime() / 1000) * 1000);
-    document.getElementById("datetime").value = date.toISOString();
+    document.getElementById("datetime").value = date.toString();
   }
   function reload_content() {
     scrolledX = window.scrollX;
@@ -391,7 +391,7 @@ $output = <<<EOT
   function show_timepicker() {
     var date = new Date();
     date.setTime((start + (stop - start)/2)*1000);
-    document.getElementById("datetime").value = date.toISOString();
+    document.getElementById("datetime").value = date.toString();
     document.getElementById("timepicker").style.visibility="visible";
     document.getElementById("panel").style.visibility="hidden";
   }
@@ -454,7 +454,7 @@ $output .= <<<EOT
 <div id="permalink"><span id="permalinkSpan">Use the contextual menu (e.g. right click) to copy permalink</span><a id="permalinkA" href=".">PERMALINK</a></div>
 <div id="waiter">PROCESSING DATA, PLEASE WAIT...</div>
 <div id="timepicker" align="center">
-ref date:<input id="datetime" type="datetime"/><button type="button" onclick="set_now()">now</button>
+ref date:<input id="datetime" type="text" size="40" placeholder="Enter a datetime..."/><button type="button" onclick="set_now()">now</button>
 timespan:<select id="timespan"/>
 EOT;
 foreach ($CONF['nav_timespans'] as $key => $value) {
