@@ -326,10 +326,14 @@ $output = <<<EOT
   function set_time() {
     var time = Math.floor(Date.parse(document.getElementById("datetime").value) / 1000);
     var span = document.getElementById("timespan").value;
-    start = Math.floor(time - +span / 2);
-    stop = Math.floor(time + +span / 2);
-    hide_timepicker();
-    reload_content();
+    if (isNaN(time)) {
+      alert("Cannot parse datetime format: " + document.getElementById("datetime").value);
+    } else {
+      start = Math.floor(time - +span / 2);
+      stop = Math.floor(time + +span / 2);
+      hide_timepicker();
+      reload_content();
+    }
   }
   function set_now() {
     var date = new Date();
