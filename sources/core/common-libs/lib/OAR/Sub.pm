@@ -144,7 +144,7 @@ sub scan_script($$){
                         warn("/!\\ Not able to scan file line: $line.");
                         $error++;
                     }
-                    chop($line);
+                    chomp($line);
                     $Initial_request_string .= "; $line";
                 }
             }
