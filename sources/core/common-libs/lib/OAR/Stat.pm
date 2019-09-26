@@ -148,7 +148,7 @@ sub count_jobs_for_user_query {
     $state = $statement;
 	}
 
-	my $total =  OAR::IO::count_jobs_for_user_query($base,$from,$to,$state,$user,undef,undef,$array,$ids);
+	my $total =  OAR::IO::count_jobs_for_user_query($base,$from,$to,$state,undef,undef,$user,$array,$ids);
 	return $total;
 }
 
