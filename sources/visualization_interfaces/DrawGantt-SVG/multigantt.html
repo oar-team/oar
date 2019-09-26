@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script>
+    jQuery(function($) {
+        var panelList = $('#draggablePanelList');
+
+        panelList.sortable({
+            // Only make the .panel-heading child elements support dragging.
+            // Omit this to make then entire <li>...</li> draggable.
+            handle: '.panel-heading', 
+            update: function() {
+                $('.panel', panelList).each(function(index, elem) {
+                     var $listItem = $(elem),
+                         newIndex = $listItem.index();
+
+                     // Persist the new indices.
+                });
+            }
+        });
+    });
+    </script>
+    <style type="text/css">
+        body {
+            overflow-y: scroll;
+        }
+        .panel-resizable {
+            resize: vertical;
+            overflow-y: scroll;
+            padding: 0px;
+        }
+        /* show the move cursor as the user moves the mouse over the panel header.*/
+        .panel-heading {
+            cursor: move;
+        }
+        .gantt {
+            width: 100%;
+            margin: 0px;
+        }
+    </style>
+</head>
+<style>
+.gantt {
+    witdh: 100%;
+}
+</style>
+<body>
+
+<nav class="navbar navbar-light bg-light">
+  <form class="form-inline">
+    <button class="btn btn-outline-success" type="button">Button</button>
+  </form>
+</nav>
+<ul id="draggablePanelList" class="list-unstyled">
+    <li class="panel panel-info">
+        <div class="panel-heading">head1</div>
+        <div class="panel-body panel-resizable">
+        <object class="gantt" type="image/svg+xml" data="drawgantt-svg.php?width=2234"></object>
+        </div>
+        <div class="panel-footer">foot1</div>
+    </li>
+    <li class="panel panel-info">
+        <div class="panel-heading">head2</div>
+        <div class="panel-body panel-resizable">
+        <object class="gantt" type="image/svg+xml" data="drawgantt-svg.php?width=2234"></object>
+        </div>
+        <div class="panel-footer">foot2</div>
+    </li>
+</ul>
+</body>
+</html>

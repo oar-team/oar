@@ -122,6 +122,9 @@ OPENSSH_CMD="/usr/bin/ssh -p 6667"
 # Set the frequency for checking Alive and Suspected resources (0 means never)
 FINAUD_FREQUENCY="300"
 
+# To disable the suspected nodes repair in finaud (nodes comes back), set the following to 'yes'
+#DISABLE_SUSPECTED_NODES_REPAIR='no'
+
 # Set time after which Suspected resources become Dead (default is 0 and it
 # means never) 
 #DEAD_SWITCH_TIME="600"
@@ -254,6 +257,11 @@ SCHEDULER_RESOURCE_ORDER="scheduler_priority ASC, state_num ASC, available_upto 
 # The syntax is field names separated by "/". The value affected to 
 # "scheduler_priority" depends of the position of the field name.
 SCHEDULER_PRIORITY_HIERARCHY_ORDER="network_address/resource_id"
+
+# Log scheduler priority changes to the resource_logs table
+# Useful for debug only, Can be displayed with drawgantt-svg with
+# "scheduler_priority" set a query argument)
+# LOG_SCHEDULER_PRIORITY_CHANGES="no"
 
 # You can specify a type of resources that will be always assigned for each job
 # (for exemple: enable all jobs to be able to log on the cluster frontales)
