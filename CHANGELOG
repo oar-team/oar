@@ -3,7 +3,9 @@ OAR CHANGELOG
 
 version 2.5.9:
 --------------
-  - [finaud] add option to disable the suspected nodes repair
+  - [db] added some indexes to improve performance
+  - [nodecheck] add option to disable the suspected nodes repair
+  - [oarexec] fix oarsub shell termination (job killed) 
 
 version 2.5.8:
 --------------
