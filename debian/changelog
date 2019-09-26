@@ -1,3 +1,9 @@
+oar (2.5.9~g5k2-1~bpo9+1) stretch-backports; urgency=medium
+
+  * Rebuild for stretch-backports.
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 26 Sep 2019 17:50:28 +0200
+
 oar (2.5.9~g5k2-1) unstable; urgency=medium
 
   * Pre-release for G5K (various fixes)
