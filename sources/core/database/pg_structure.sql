@@ -281,6 +281,7 @@ CREATE INDEX finaud ON resource_logs (finaud_decision);
 CREATE INDEX val ON resource_logs (value);
 CREATE INDEX date_start ON resource_logs (date_start);
 CREATE INDEX date_stop ON resource_logs (date_stop);
+CREATE INDEX ix_resource_logs_id_dstop_attr ON resource_logs (resource_id, date_stop, attribute);
 
 
 CREATE TABLE resources (

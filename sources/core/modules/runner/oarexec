@@ -120,11 +120,9 @@ sub clean_all(){
                 my $ppid = $1;
                 my ($children,$cmd_name) = OAR::Tools::get_one_process_children($ppid);
                 my @pid_list = @{$children};
-                shift(@pid_list);
-                shift(@pid_list);
-                if ($cmd_name =~ m/$file/m){
+                if ($cmd_name =~ /OAR_JOBID=$Job_id\D/m){
                     # remove ppid
-                    print("[oarexec $Job_id] kill oarsub connections @pid_list\n");
+                    print("[oarexec $Job_id] kill oarsub processes: @pid_list\n");
                     system({"oardodo"} "oardodo","kill","-9",@pid_list) if ($#pid_list >= 0);
                 }else{
                     print("[oarexec $Job_id] want to kill oarsub connections @pid_list BUT it seems that there is no OAR oarsub processes\n");

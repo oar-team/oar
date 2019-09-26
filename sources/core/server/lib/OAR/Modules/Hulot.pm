@@ -431,6 +431,7 @@ sub start_energy_loop() {
                     elsif (time > $nodes_list_running{$key}->{'timeout'}) {
                         change_node_state( $base, $key, "Suspected" );
                         my $str = "[Hulot] Node $key was suspected because it did not wake up before the end of the timeout\n";
+                        oar_debug($str);
                         OAR::IO::add_new_event_with_host($base, "LOG_SUSPECTED", 0, $str, [$key]);
 
                         # Remove suspected node from the list running nodes
