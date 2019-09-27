@@ -2,20 +2,18 @@ Source: oar
 Maintainer: Pierre Neyron <pierre.neyron@free.fr>
 Uploaders: Vincent Danjean <vdanjean@debian.org>
 Section: utils
-Priority: optional
-Build-Depends: debhelper-compat (= 12),
+Priority: extra
+Build-Depends: debhelper (>= 9),
                po-debconf,
                perl,
                python3-sphinx
-Standards-Version: 4.3.0
+Standards-Version: 4.0.0
 Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
-Vcs-Browser: https://github.com/oar-team/oar
 Homepage: http://oar.imag.fr/
 
 Package: liboar-perl
 Architecture: any
 Section: perl
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
@@ -32,7 +30,6 @@ Description: OAR batch scheduler common library package
 
 Package: oar-common
 Architecture: any
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
@@ -51,7 +48,6 @@ Description: OAR batch scheduler common package
 
 Package: oar-server
 Architecture: any
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
@@ -80,7 +76,6 @@ Description: OAR batch scheduler server package
 
 Package: oar-server-mysql
 Architecture: any
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
@@ -97,7 +92,6 @@ Description: OAR batch scheduler MySQL server backend package
 
 Package: oar-server-pgsql
 Architecture: any
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
@@ -114,7 +108,6 @@ Description: OAR batch scheduler PostgreSQL server backend package
 
 Package: oar-node
 Architecture: any
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          openssh-client,
@@ -131,7 +124,6 @@ Description: OAR batch scheduler node package
 
 Package: oar-user
 Architecture: any
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
@@ -153,7 +145,6 @@ Description: OAR batch scheduler user package
 
 Package: oar-user-mysql
 Architecture: any
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
@@ -168,7 +159,6 @@ Description: OAR batch scheduler MySQL user backend package
 
 Package: oar-user-pgsql
 Architecture: any
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
@@ -184,7 +174,6 @@ Description: OAR batch scheduler PostgreSQL user backend package
 Package: oar-web-status
 Architecture: all
 Section: web
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          apache2 | httpd-cgi,
@@ -207,7 +196,6 @@ Description: OAR batch scheduler visualization tool package
 Package: oar-doc
 Architecture: all
 Section: doc
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          libjs-jquery,
          libjs-underscore
@@ -220,7 +208,6 @@ Description: OAR batch scheduler documentation package
 Package: oar-restful-api
 Architecture: any
 Section: net
-Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},

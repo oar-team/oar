@@ -30,7 +30,7 @@ export TARGET_DIST=debian
 CFLAGS += -Wall
 
 %:
-	dh $@
+	dh $@ 
 
 override_dh_auto_build:
 	dh_auto_build -- -e packages-build   PACKAGES_DIR=$(CURDIR)/$(INSTALLDIR)
@@ -46,7 +46,7 @@ override_dh_auto_install:
 	## oar-node
 	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/init.d/oar-node > debian/oar-node.init
 	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/default/oar-node > debian/oar-node.default
-	# disable the automatic installation of this cron, by default
+	# disable the automatic installation of this cron, by default 
 	#cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/cron.d/oar-node > debian/oar-node.cron.d
 		
 	## oar-common
