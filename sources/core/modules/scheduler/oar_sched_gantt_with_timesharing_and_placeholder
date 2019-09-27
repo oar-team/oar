@@ -229,8 +229,9 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     if (defined($types->{expire})) {
         my $expire_time_sec = OAR::IO::sql_to_local($types->{expire});
         if ($scheduler_init_date > $expire_time_sec) {
-            oar_debug("[$scheduler_name] [$i] job will never run (expire=$types->{expire}), setting it to error\n");
-            OAR::IO::set_job_message($base, $i, "job canceled because expired");
+            my $message = "job will never run (expire=$types->{expire}), setting it to error";
+            oar_debug("[$scheduler_name] [$i] $message\n");
+            OAR::IO::set_job_message($base, $i, ucfirst($message));
             OAR::IO::set_job_state($base, $i, "toError");
             next;
         }
@@ -240,8 +241,9 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     if (defined($types->{deadline})) {
         $deadline_time_sec = OAR::IO::sql_to_local($types->{deadline});
         if ($scheduler_init_date > $deadline_time_sec) {
-            oar_debug("[$scheduler_name] [$i] job will never run (deadline=$types->{deadline}), setting it to error\n");
-            OAR::IO::set_job_message($base, $i, "job canceled because of its deadline");
+            my $message = "job will never run (deadline=$types->{deadline}), setting it to error";
+            oar_debug("[$scheduler_name] [$i] $message\n");
+            OAR::IO::set_job_message($base, $i, ucfirst($message));
             OAR::IO::set_job_state($base, $i, "toError");
             next;
         }
@@ -260,8 +262,8 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                     $scheduler_init_date = $sched_tmp + (2 * $security_time_overhead);
                 }
             }else{
-                my $message = "Cannot determine scheduling time due to dependency with the job $d";
-                OAR::IO::set_job_message($base,$i,$message);
+                my $message = "cannot determine scheduling time due to dependency with the job $d";
+                OAR::IO::set_job_message($base,$i, ucfirst($message));
                 oar_debug("[$scheduler_name] [$i] $message\n");
                 $skip_job = 1;
                 last;
@@ -284,7 +286,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
                 $inner_id=0;
             } else {
                 my $message = "inner job: container $inner_id does not exist, inner job will never run, setting it to error";
-                oar_warn("[$scheduler_name] [$i] $message");
+                oar_warn("[$scheduler_name] [$i] $message\n");
                 OAR::IO::set_job_message($base, $i, ucfirst($message));
                 OAR::IO::set_job_state($base, $i, "toError");
             }
@@ -395,7 +397,7 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     }else{
         oar_debug("[$scheduler_name] [$i] job couldn't be scheduled\n");
         my $message = "cannot find enough resources for job $i";
-        OAR::IO::set_job_message($base,$i,$message);
+        OAR::IO::set_job_message($base,$i, ucfirst($message));
         OAR::IO::set_job_scheduler_info($base,$i,$message);
         oar_debug("[$scheduler_name] [$i] $message\n");
     }
