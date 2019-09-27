@@ -39,6 +39,7 @@ sub disconnect($);
 sub get_job_challenge($$);
 sub get_jobs_in_state($$);
 sub get_jobs_in_state_for_user($$$);
+sub get_all_waiting_jobids($);
 sub is_job_desktop_computing($$);
 sub get_job_current_hostnames($$);
 sub get_job_current_resources($$$);
@@ -552,6 +553,25 @@ sub get_jobs_in_state($$) {
         push(@res, $ref);
     }
     return(@res);
+}
+
+# get_all_waiting_jobs
+# parameters : base, job state
+# return value : jobid of all jobs in the waiting state
+# side effects : singleton
+my $all_waiting_jobids = undef;
+sub get_all_waiting_jobids($) {
+    my $dbh = shift;
+    if (not defined($all_waiting_jobids)) {
+        my $sth = $dbh->prepare("   SELECT job_id
+                                    FROM jobs
+                                    WHERE
+                                        state = 'Waiting'
+                                ");
+        $sth->execute();
+        $all_waiting_jobids = [ map {@$_} @{$sth->fetchall_arrayref([0])} ];
+    }
+    return @$all_waiting_jobids;
 }
 
 # get_jobs_in_multiple_states
