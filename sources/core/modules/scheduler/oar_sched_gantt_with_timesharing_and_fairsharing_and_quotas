@@ -194,7 +194,7 @@ sub parse_timesharing($$$){
 # Keep the track of the usage for each token
 my %Token_values;
 
-oar_debug("[$scheduler_name] Begin phase 1 (running jobs)\n");
+oar_debug("[$scheduler_name] Begin phase 1 (already scheduled jobs)\n");
 # Take care of currently scheduled jobs (gantt in the database)
 my ($order,%already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
 foreach my $i (@{$order}){
@@ -286,7 +286,7 @@ foreach my $i (@{$order}){
     }
 }
 
-oar_debug("[$scheduler_name] End phase 1 (running jobs)\n");
+oar_debug("[$scheduler_name] End phase 1 (already scheduled jobs)\n");
 
 # End of the initialisation
 # Begining of the real scheduling

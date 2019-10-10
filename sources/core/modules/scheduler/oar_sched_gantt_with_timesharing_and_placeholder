@@ -105,7 +105,7 @@ my $Gantt = {};
 $Gantt->{0}->{""}->{""}->{""} = OAR::Schedulers::GanttHoleStorage::new($max_resources, $minimum_hole_time);
 OAR::Schedulers::GanttHoleStorage::add_new_resources($Gantt->{0}->{""}->{""}->{""}, $All_resource_list_vec);
 
-oar_debug("[$scheduler_name] Begin phase 1 (running jobs)\n");
+oar_debug("[$scheduler_name] Begin phase 1 (already scheduled jobs)\n");
 # Take care of currently scheduled jobs (gantt in the database)
 my ($order,%already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
 foreach my $i (@{$order}){
@@ -157,7 +157,7 @@ foreach my $i (@{$order}){
     }
 }
 
-oar_debug("[$scheduler_name] End phase 1 (running jobs)\n");
+oar_debug("[$scheduler_name] End phase 1 (already scheduled jobs)\n");
 
 # End of the initialisation
 # Begining of the real scheduling
