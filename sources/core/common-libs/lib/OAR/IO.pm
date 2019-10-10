@@ -6259,7 +6259,7 @@ sub get_gantt_scheduled_jobs($){
                                 g1.moldable_job_id = g2.moldable_job_id
                                 AND m.moldable_id = g2.moldable_job_id
                                 AND j.job_id = m.moldable_job_id
-                             ORDER BY j.start_time, j.job_id
+                             ORDER BY g2.start_time, j.job_id
                             ");
     }else{
         $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended,j.project
@@ -6269,7 +6269,7 @@ sub get_gantt_scheduled_jobs($){
                                 AND g1.moldable_job_id = g2.moldable_job_id
                                 AND m.moldable_id = g2.moldable_job_id
                                 AND j.job_id = m.moldable_job_id
-                             ORDER BY j.start_time, j.job_id
+                             ORDER BY g2.start_time, j.job_id
                             ");
     }
     $sth->execute();
