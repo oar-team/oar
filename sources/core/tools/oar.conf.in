@@ -109,6 +109,13 @@ OPENSSH_CMD="/usr/bin/ssh -p 6667"
 # Change the meta scheduler in use.
 #META_SCHED_CMD="oar_meta_sched"
 
+# Storable recursion limit
+# The use of Perl Storable::dclone for job resource lookups may be limited, so that it avoids
+# segmentation faults, but raise an error "Max. recursion depth with nested structures exceeded".
+# The value must be tuned with regard to the size of the resource table and to the frontend and
+# server memory size. Default is -1, no limit.
+# STORABLE_RECURSION_LIMIT = -1
+
 ###############################################################################
 
 ########################################################################
@@ -296,7 +303,6 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 # oar_sched_gantt_with_timesharing_and_fairsharing* to calculate the timesharing
 # policy. Default is 1 day (86400s)
 #ACCOUNTING_WINDOW="86400"
-
 
 ###############################################################
 # Parameters available if you are using the                   #
