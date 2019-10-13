@@ -1061,7 +1061,7 @@ if ($Reservation ne "0"){
                 $prev_str = $1;
             }
         }elsif ($answer ne "GOOD JOB"){
-            print("$answer\n");
+            print("$answer");
         }
     }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED") and ($answer !~ /^ERROR/));
     print("\n");

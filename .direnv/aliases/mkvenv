@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+mkvenv () 
+{ 
+    VENV_PATH="$HOME/.virtualenvs/$PROJECT_NAME";
+    virtualenv $VENV_PATH;
+    PATH="$HOME/.virtualenvs/$PROJECT_NAME/bin/:$PATH" make init;
+    direnv reload
+}
+mkvenv
