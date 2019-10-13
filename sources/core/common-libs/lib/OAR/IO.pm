@@ -39,6 +39,7 @@ sub disconnect($);
 sub get_job_challenge($$);
 sub get_jobs_in_state($$);
 sub get_jobs_in_state_for_user($$$);
+sub get_all_waiting_jobids($);
 sub is_job_desktop_computing($$);
 sub get_job_current_hostnames($$);
 sub get_job_current_resources($$$);
@@ -552,6 +553,25 @@ sub get_jobs_in_state($$) {
         push(@res, $ref);
     }
     return(@res);
+}
+
+# get_all_waiting_jobs
+# parameters : base, job state
+# return value : jobid of all jobs in the waiting state
+# side effects : singleton
+my $all_waiting_jobids = undef;
+sub get_all_waiting_jobids($) {
+    my $dbh = shift;
+    if (not defined($all_waiting_jobids)) {
+        my $sth = $dbh->prepare("   SELECT job_id
+                                    FROM jobs
+                                    WHERE
+                                        state = 'Waiting'
+                                ");
+        $sth->execute();
+        $all_waiting_jobids = [ map {@$_} @{$sth->fetchall_arrayref([0])} ];
+    }
+    return @$all_waiting_jobids;
 }
 
 # get_jobs_in_multiple_states
@@ -6239,7 +6259,7 @@ sub get_gantt_scheduled_jobs($){
                                 g1.moldable_job_id = g2.moldable_job_id
                                 AND m.moldable_id = g2.moldable_job_id
                                 AND j.job_id = m.moldable_job_id
-                             ORDER BY j.start_time, j.job_id
+                             ORDER BY g2.start_time, j.job_id
                             ");
     }else{
         $sth = $dbh->prepare("SELECT j.job_id, g2.start_time, m.moldable_walltime, g1.resource_id, j.queue_name, j.state, j.job_user, j.job_name,m.moldable_id,j.suspended,j.project
@@ -6249,7 +6269,7 @@ sub get_gantt_scheduled_jobs($){
                                 AND g1.moldable_job_id = g2.moldable_job_id
                                 AND m.moldable_id = g2.moldable_job_id
                                 AND j.job_id = m.moldable_job_id
-                             ORDER BY j.start_time, j.job_id
+                             ORDER BY g2.start_time, j.job_id
                             ");
     }
     $sth->execute();

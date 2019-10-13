@@ -4,8 +4,12 @@ package OAR::Schedulers::ResourceTree;
 use warnings;
 use strict;
 #use Data::Dumper;
+use OAR::Conf qw(get_conf_with_default_param);
 use Storable qw(dclone);
 #use Time::HiRes qw(gettimeofday);
+
+$Storable::recursion_limit = get_conf_with_default_param("STORABLE_RECURSION_LIMIT",-1);
+$Storable::recursion_limit_hash = get_conf_with_default_param("STORABLE_RECURSION_LIMIT",-1);
 
 ###############################################################################
 #                       RESOURCE TREE MANAGEMENT                              #
