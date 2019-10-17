@@ -1,3 +1,10 @@
+oar (2.5.8-2) unstable; urgency=medium
+
+  * Revert to stretch behavior for Storable::dclone perl function (Closes:
+    #942467)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Thu, 17 Oct 2019 20:31:05 +0200
+
 oar (2.5.8-1) unstable; urgency=medium
 
   [ Pierre Neyron ]

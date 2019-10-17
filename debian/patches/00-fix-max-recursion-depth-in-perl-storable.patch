@@ -1,0 +1,18 @@
+Fix Max. recursion depth with nested structures
+
+Due to a restriction implemented in Perl's Storable module
+distributed in Buster, Storable::dclone prevent recursions that
+were used before by oar.
+Removing here this limitation, going back to the previous behavior.
+--- a/sources/core/common-libs/lib/OAR/Schedulers/ResourceTree.pm
++++ b/sources/core/common-libs/lib/OAR/Schedulers/ResourceTree.pm
+@@ -7,6 +7,9 @@
+ use Storable qw(dclone);
+ #use Time::HiRes qw(gettimeofday);
+ 
++$Storable::recursion_limit=-1;
++$Storable::recursion_limit_hash=-1;
++
+ ###############################################################################
+ #                       RESOURCE TREE MANAGEMENT                              #
+ ###############################################################################
