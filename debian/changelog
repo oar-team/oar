@@ -1,3 +1,10 @@
+oar (2.5.8-1+deb10u1) buster; urgency=medium
+
+  * Revert to stretch behavior for Storable::dclone perl function (Closes:
+    #942467) 
+
+ -- Vincent Danjean <vdanjean@debian.org>  Thu, 17 Oct 2019 15:31:19 +0200
+
 oar (2.5.8-1) unstable; urgency=medium
 
   [ Pierre Neyron ]
