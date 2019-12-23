@@ -1593,9 +1593,9 @@ SWITCH: for ($q) {
   # Accounting
   ###########################################
   #
-  #{{{ GET /accounting[<user>]?from=<from>,to=<to> : Show accounting informations between 2 unix timestamps
+  #{{{ GET /accounting/[<user>]?from=<from>,to=<to> : Show accounting informations between 2 unix timestamps
   #
-  $URI = OAR::API::uri_regex_html_json_yaml('accounting(/.+?)');
+  $URI = OAR::API::uri_regex_html_json_yaml('accounting(/.+?)*');
   OAR::API::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
 
