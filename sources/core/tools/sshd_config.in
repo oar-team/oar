@@ -52,7 +52,7 @@ PrintLastLog yes
 KeepAlive yes
 TCPKeepAlive yes
 
-AcceptEnv OAR_CPUSET OAR_JOB_USER
+AcceptEnv OAR_CPUSET OAR_USER_CPUSET OAR_USER_GPUDEVICE OAR_JOB_USER 
 PermitUserEnvironment yes
 #UseLogin no
 AllowUsers %%OAROWNER%%

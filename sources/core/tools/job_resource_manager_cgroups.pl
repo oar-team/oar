@@ -450,11 +450,15 @@ EOF
     # Clean cpuset on this node
     if (defined($Cpuset_path_job)){
         system('echo THAWED > '.$Cgroup_directory_collection_links.'/freezer/'.$Cpuset_path_job.'/freezer.state
-                PROCESSES=$(cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks)
-                while [ "$PROCESSES" != "" ]
-                do
-                    oardodo kill -9 $PROCESSES > /dev/null 2>&1
-                    PROCESSES=$(cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks)
+                for d in '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/* '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'; do
+                  if [ -d $d ]; then
+                    PROCESSES=$(cat $d/tasks)
+                    while [ "$PROCESSES" != "" ]
+                    do
+                        oardodo kill -9 $PROCESSES > /dev/null 2>&1
+                        PROCESSES=$(cat $d/tasks)
+                    done
+                  fi
                 done');
         
         # Locking around the cleanup of the cpuset for that user, to prevent a creation to occure at the same time
@@ -464,15 +468,20 @@ EOF
             if (system('if [ -w '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty ]; then
                           echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty
                         fi
-                        while ! oardodo rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.' ; do
-                          cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks | xargs -n1 ps -fh -p 1>&2
-                          echo retry in 1s... 1>&2
-                          sleep 1
-                        done
-                        for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'; do
-                          [ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty
+                        for d in '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/* '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'; do
                           if [ -d $d ]; then
-                            oardodo rmdir $d > /dev/null 2>&1 || exit 1
+                            [ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty
+                            while ! oardodo rmdir $d ; do
+                              cat $d/tasks | xargs -n1 ps -fh -p 1>&2
+                              echo retry in 1s... 1>&2
+                              sleep 1
+                            done
+                          fi
+                        done
+                        for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'/* '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'; do
+                          if [ -d $d ]; then
+                            [ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty
+                            oardodo rmdir $d > /dev/null 2>&1
                           fi
                         done')){
                 # Uncomment this line if you want to use several network_address properties
