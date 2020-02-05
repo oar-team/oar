@@ -108,7 +108,9 @@ OAR::Schedulers::GanttHoleStorage::add_new_resources($Gantt->{0}->{""}->{""}->{"
 oar_debug("[$scheduler_name] Begin phase 1 (already scheduled jobs)\n");
 # Take care of currently scheduled jobs (gantt in the database)
 my ($order,%already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
-foreach my $i (@{$order}){
+my @already_scheduled_jobs_list = @{$order};
+while (@already_scheduled_jobs_list) {
+    my $i = shift(@already_scheduled_jobs_list);
     my $container_id = 0;
     my $inner_id = 0;
     my $placeholder_name = "";
@@ -121,6 +123,22 @@ foreach my $i (@{$order}){
         my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
         my $resource_list_vec = $already_scheduled_jobs{$i}->[10];
         my $job_duration = $already_scheduled_jobs{$i}->[1];
+        if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
+            $inner_id = $1;
+            if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
+                oar_debug("[$scheduler_name] [$i] inner job: using container $inner_id\n");
+            }else{
+                if (grep(/^$inner_id$/,@already_scheduled_jobs_list)) {
+                    # The container job is later in the list, postpone inner job
+                   oar_debug("[$scheduler_name] [$i] inner job: container $inner_id is not know yet, postponing job.\n");
+                   push @already_scheduled_jobs_list, $i;
+                   next;
+                } else {
+                   oar_debug("[$scheduler_name] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
+                   $inner_id = 0;
+                }
+            }
+        }
         if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
             # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
             ($resource_list_vec, @resource_list) = OAR::IO::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
@@ -129,16 +147,6 @@ foreach my $i (@{$order}){
         if ($already_scheduled_jobs{$i}->[8] eq "YES"){
             # This job was suspended so we must recalculate the walltime
             $job_duration += OAR::IO::get_job_suspended_sum_duration($base,$i,$current_time);
-        }
-
-        if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
-            $inner_id = $1;
-            if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
-                oar_debug("[$scheduler_name] [$i] inner job: using container $inner_id\n");
-            }else{
-                oar_debug("[$scheduler_name] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
-                $inner_id = 0;
-            }
         }
         if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
             oar_debug("[$scheduler_name] [$i] job is ($inner_id,,,)\n");
