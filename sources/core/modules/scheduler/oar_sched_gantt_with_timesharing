@@ -129,7 +129,9 @@ sub parse_timesharing($$$){
 oar_debug("[$scheduler_name] Begin phase 1 (already scheduled jobs)\n");
 # Take care of currently scheduled jobs (gantt in the database)
 my ($order,%already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
-foreach my $i (@{$order}){
+my @already_scheduled_jobs_list = @{$order};
+while (@already_scheduled_jobs_list) {
+    my $i = shift(@already_scheduled_jobs_list);
     my $types = OAR::IO::get_job_types_hash($base,$i);
     # Do not take care of besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
@@ -161,7 +163,14 @@ foreach my $i (@{$order}){
                 $container_num = $1;
                 oar_debug("[$scheduler_name] [$i] inner job: using container $container_num\n");
             }else{
-                oar_debug("[$scheduler_name] [$i] inner job: container $1 does not exist, use container 0.\n");
+                if (grep(/^$1$/,@already_scheduled_jobs_list)) {
+                    # The container job is later in the list, postpone inner job
+                    oar_debug("[$scheduler_name] [$i] inner job: container $1 is not known yet, postponing job.\n");
+                    push @already_scheduled_jobs_list, $i;
+                    next;
+                } else {
+                    oar_debug("[$scheduler_name] [$i] inner job: container $1 does not exist but job is running, use container 0.\n");
+                }
             }
         }
         my $user;
