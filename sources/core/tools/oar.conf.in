@@ -383,6 +383,10 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # Default is 0, i.e. no minimum walltime
 #WALLTIME_MIN_FOR_CHANGE=0
 
+# Disallow walltime reduction
+# Default is "no", reduction is allowed
+#WALLTIME_REDUCTION_DISALLOWED="no"
+
 # Set walltime change apply time: postpone the trial/application of the requested change to the given value in second before the predicted end of the job
 # If the value is in the ]0,1[ range, the actual value will be computed as that ratio of the walltime of the job
 # Default is 0, i.e. not postponed
@@ -403,7 +407,7 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # Default is "", i.e. only root and the oar user are allowed
 #WALLTIME_ALLOWED_USERS_TO_DELAY_JOBS=""
 
-# The last 6 settings can also be provided per queue, using the Perl hash syntax with the queue names as the keys.
+# The last 7 settings can also be provided per queue, using the Perl hash syntax with the queue names as the keys.
 # Not defined queues get the value associated to the _ key, or if not defined either, the default value of the setting (see above)
 # e.g.:
 # - Allow walltime increase requests for up to 2 hours for the default queue only (0 for others):

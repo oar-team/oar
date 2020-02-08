@@ -148,6 +148,7 @@ sub request($$$$$$) {
     my $Remote_port = OAR::Conf::get_conf("SERVER_PORT");
     my $Walltime_max_increase = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_MAX_INCREASE",0), $job->{queue_name}, $moldable->{moldable_walltime}, 0);
     my $Walltime_min_for_change = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_MIN_FOR_CHANGE",0), $job->{queue_name}, undef, 0);
+    my $Walltime_reduction_disallowed = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_REDUCTION_DISALLOWED","NO"), $job->{queue_name}, undef, "NO");
     my $Walltime_users_allowed_to_force = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_FORCE",""), $job->{queue_name}, undef, "");
     my $Walltime_users_allowed_to_delay_jobs = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_DELAY_JOBS",""), $job->{queue_name}, undef, "");
 
@@ -164,6 +165,14 @@ sub request($$$$$$) {
         $new_walltime_delta_seconds = - $new_walltime_delta_seconds;
     } elsif ($sign ne "+") { # sign = ""
         $new_walltime_delta_seconds = $new_walltime_delta_seconds - $moldable->{moldable_walltime};
+    }
+
+    if ($new_walltime_delta_seconds == 0) {
+        return (1, 400, "bad request", "walltime change is null");
+    }
+
+    if ($new_walltime_delta_seconds < 0 and uc($Walltime_reduction_disallowed) ne "NO") {
+        return (1, 400, "bad request", "walltime reduction is not allowed");
     }
 
     # Is walltime change enabled ?
