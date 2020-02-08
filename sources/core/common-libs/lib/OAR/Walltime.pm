@@ -68,8 +68,8 @@ sub get($$) {
     OAR::Conf::init_conf($ENV{OARCONFFILE});
     my $Walltime_max_increase = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_MAX_INCREASE",0), $job->{queue_name}, $walltime_change->{walltime} - $walltime_change->{granted}, 0);
     my $Walltime_min_for_change = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_MIN_FOR_CHANGE",0), $job->{queue_name}, undef, 0);
-    my $Walltime_users_allowed_to_force = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_FORCE",""), $job->{queue_name}, undef, "");
-    my $Walltime_users_allowed_to_delay_jobs = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_DELAY_JOBS",""), $job->{queue_name}, undef, "");
+    my $Walltime_allowed_users_to_force = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_ALLOWED_USERS_TO_FORCE",""), $job->{queue_name}, undef, "");
+    my $Walltime_allowed_users_to_delay_jobs = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_ALLOWED_USERS_TO_DELAY_JOBS",""), $job->{queue_name}, undef, "");
 
     my $now = OAR::IO::get_date($dbh);
     my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
@@ -81,12 +81,12 @@ sub get($$) {
     } else {
         $walltime_change->{possible} = OAR::IO::duration_to_sql_signed($Walltime_max_increase);
     }
-    if ($Walltime_users_allowed_to_force ne "*" and not grep(/^$job->{job_user}$/,split(/[,\s]+/,$Walltime_users_allowed_to_force))) {
+    if ($Walltime_allowed_users_to_force ne "*" and not grep(/^$job->{job_user}$/,split(/[,\s]+/,$Walltime_allowed_users_to_force))) {
         $walltime_change->{force} = "FORBIDDEN";
     } elsif (not defined($walltime_change->{force}) or $walltime_change->{pending} == 0) {
         $walltime_change->{force} = "NO";
     }
-    if ($Walltime_users_allowed_to_delay_jobs ne "*" and not grep(/^$job->{job_user}$/,split(/[,\s]+/,$Walltime_users_allowed_to_delay_jobs))) {
+    if ($Walltime_allowed_users_to_delay_jobs ne "*" and not grep(/^$job->{job_user}$/,split(/[,\s]+/,$Walltime_allowed_users_to_delay_jobs))) {
         $walltime_change->{delay_next_jobs} = "FORBIDDEN";
     } elsif (not defined($walltime_change->{delay_next_jobs}) and $walltime_change->{pending} == 0) {
         $walltime_change->{delay_next_jobs} = "NO";
@@ -149,8 +149,8 @@ sub request($$$$$$) {
     my $Walltime_max_increase = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_MAX_INCREASE",0), $job->{queue_name}, $moldable->{moldable_walltime}, 0);
     my $Walltime_min_for_change = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_MIN_FOR_CHANGE",0), $job->{queue_name}, undef, 0);
     my $Walltime_reduction_disallowed = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_REDUCTION_DISALLOWED","NO"), $job->{queue_name}, undef, "NO");
-    my $Walltime_users_allowed_to_force = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_FORCE",""), $job->{queue_name}, undef, "");
-    my $Walltime_users_allowed_to_delay_jobs = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_USERS_ALLOWED_TO_DELAY_JOBS",""), $job->{queue_name}, undef, "");
+    my $Walltime_allowed_users_to_force = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_ALLOWED_USERS_TO_FORCE",""), $job->{queue_name}, undef, "");
+    my $Walltime_allowed_users_to_delay_jobs = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_ALLOWED_USERS_TO_DELAY_JOBS",""), $job->{queue_name}, undef, "");
 
     my $Walltime_min_for_change_hms = OAR::IO::duration_to_sql($Walltime_min_for_change);
     my $Walltime_max_increase_hms = OAR::IO::duration_to_sql($Walltime_max_increase);
@@ -185,7 +185,7 @@ sub request($$$$$$) {
         $force = undef;
     }
     # Can extra time delay next jobs ?
-    if (defined($force) and $Walltime_users_allowed_to_force ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$Walltime_users_allowed_to_force)))) {
+    if (defined($force) and $Walltime_allowed_users_to_force ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$Walltime_allowed_users_to_force)))) {
         return (3, 403, "forbidden", "walltime change for this job is not allowed to be forced");
     }
     
@@ -194,7 +194,7 @@ sub request($$$$$$) {
         $delay_next_jobs = undef;
     }
     # Can extra time delay next jobs ?
-    if (defined($delay_next_jobs) and $Walltime_users_allowed_to_delay_jobs ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$Walltime_users_allowed_to_delay_jobs)))) {
+    if (defined($delay_next_jobs) and $Walltime_allowed_users_to_delay_jobs ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$Walltime_allowed_users_to_delay_jobs)))) {
         return (3, 403, "forbidden", "walltime change for this job is not allowed to delay other jobs");
     }
     
