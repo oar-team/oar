@@ -203,9 +203,18 @@ sub request($$$$$$) {
         return (3, 403, "forbidden", "walltime change is not allowed for a job with walltime < $Walltime_min_for_change_hms");
     }
     
-    # For negative extratime, do not allow end time before now
     my $now = OAR::IO::get_date($dbh);
     my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
+
+    # If job defines a deadline (-t deadline=...), enforce it
+    my $jobtypes = OAR::IO::get_job_types_hash($dbh, $jobid);
+    if (defined($jobtypes->{deadline})) {
+        if (OAR::IO::sql_to_local($jobtypes->{deadline}) < $job->{start_time} + $moldable->{moldable_walltime} + $suspended + $new_walltime_delta_seconds) {
+            return (1, 403, "forbidden", "the requested walltime change does not fit with the job deadline ($jobtypes->{deadline})");
+        }
+    }
+
+    # For negative extratime, do not allow end time before now
     my $job_remaining_time = $job->{start_time} + $moldable->{moldable_walltime} + $suspended - $now;
     if ($job_remaining_time < - $new_walltime_delta_seconds) { 
         $new_walltime_delta_seconds = - $job_remaining_time;
