@@ -332,6 +332,13 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     next if ($skip_job == 1);
 
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
+        if ($1 == $j->{job_id}) {
+            my $message = "inner job: job cannot be its own container, setting it to error";
+            oar_warn("[$scheduler_name] [$j->{job_id}] $message\n");
+            OAR::IO::set_job_message($base, $j->{job_id}, ucfirst($message));
+            OAR::IO::set_job_state($base, $j->{job_id}, "toError");
+            next;
+        }
         if (defined($Container_gantt_hash{$1})){
             $gantt_to_use = $Container_gantt_hash{$1};
             $container_num = $1;

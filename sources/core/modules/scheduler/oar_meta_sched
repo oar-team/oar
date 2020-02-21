@@ -636,6 +636,13 @@ sub check_reservation_jobs($$){
                 my $available_resources_vector = $Alive_resource_id_vec | $Absent_resource_id_vec | $Suspected_resource_id_vec;
                 if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
                     $inner_id = $1;
+                    if ($inner_id == $i) {
+                        my $message = "inner job: job cannot be its own container, setting it to error";
+                        oar_warn("[MetaSched] [$i] $message\n");
+                        OAR::IO::set_job_message($base, $i, ucfirst($message));
+                        OAR::IO::set_job_state($base, $i, "toError");
+                        next;
+                    }
                     if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
                         oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
                     }else{
