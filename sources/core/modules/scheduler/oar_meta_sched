@@ -139,6 +139,13 @@ sub process_walltime_change_requests($) {
                     oar_debug("[MetaSched] [$jobid] walltime change for inner job but container is not found ?\n");
                 }
             }
+            if (exists($types->{deadline})) {
+                my $deadline = OAR::IO::sql_to_local($types->{deadline});
+                if ($deadline < $to) {
+                    $to = $deadline;
+                    oar_debug("[MetaSched] [$jobid] walltime change for job limited by its dealdine to ".($to - $from)."s\n");
+                }
+            }
             $fit = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $job->{resources}, $Security_time_overhead, $job->{delay_next_jobs}, $types, $job->{job_user}, $job->{job_name}) - $from;
             if ($fit <= 0) {
                 oar_debug("[MetaSched] [$jobid] walltime cannot be changed for now (pending: ".OAR::IO::duration_to_sql_signed($job->{pending}).")\n");
