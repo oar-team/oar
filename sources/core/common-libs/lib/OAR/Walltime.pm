@@ -213,20 +213,6 @@ sub request($$$$$$) {
             return (3, 403, "forbidden", "the requested walltime change does not fit with the job deadline ($jobtypes->{deadline})");
         }
     }
-    if (exists($jobtypes->{inner}) and $jobtypes->{inner} =~ /^\d+$/) {
-        my $container_id = $jobtypes->{inner};
-        my $container_job = OAR::IO::get_job($dbh, $container_id);
-        if (not defined($container_job)) {
-            return (3, 403, "forbidden", "could not find job container $container_id");
-        }
-        if ($container_job->{state} ne "Running") { 
-            return (3, 403, "forbidden", "inner job container $container_id is not running");
-        }
-        my $container_moldable = OAR::IO::get_current_moldable_job($dbh, $container_job->{assigned_moldable_job});
-        if ($container_job->{start_time} + $container_moldable->{moldable_walltime} + OAR::IO::get_job_suspended_sum_duration($dbh, $container_id, $now) < $job->{start_time} + $moldable->{moldable_walltime} + $suspended + $new_walltime_delta_seconds) {
-            return (3, 403, "forbidden", "the requested walltime change does not fit in the job container $container_id");
-        }
-    }
 
     # For negative extratime, do not allow end time before now
     my $job_remaining_time = $job->{start_time} + $moldable->{moldable_walltime} + $suspended - $now;
