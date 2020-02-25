@@ -951,10 +951,14 @@ foreach my $i (@queues){
                             $skip = "some nodes need to be booted first";
                         }
                     }
-                    if ($skip eq ""){
-                        oar_debug("[MetaSched] Early launch the job $job_id_to_schedule\n");
-                        my $job = OAR::IO::get_job($base,$job_id_to_schedule);
-                        prepare_job_to_be_launched($base, $job_id_to_schedule, $moldable_job_id_to_schedule, $job->{submission_time}, \@job_resources_to_schedule);
+                    if ($skip eq "") {
+                        if (not OAR::IO::is_inner_job_with_container_not_ready($base, $job_id_to_schedule)) {
+                            oar_debug("[MetaSched] Early launch the job $job_id_to_schedule\n");
+                            my $job = OAR::IO::get_job($base,$job_id_to_schedule);
+                            prepare_job_to_be_launched($base, $job_id_to_schedule, $moldable_job_id_to_schedule, $job->{submission_time}, \@job_resources_to_schedule);
+                        } else {
+                            oar_debug("[MetaSched] Not able to early launch $job_id_to_schedule: inner job with container not running yet\n");
+                        }
                     }else{
                         oar_debug("[MetaSched] Not able to early launch $job_id_to_schedule: $skip\n");
                     }
