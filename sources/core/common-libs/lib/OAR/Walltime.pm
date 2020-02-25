@@ -207,6 +207,10 @@ sub request($$$$$$) {
     my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
 
     my $jobtypes = OAR::IO::get_job_types_hash($dbh, $jobid);
+
+    # Arbitrary refuse to reduce container jobs, because we don't want to handle inner jobs which could possibly cross the new boundaries of their container, or should be reduced as well. 
+    if (exists($jobtypes->{container}) and $new_walltime_delta_seconds < 0) {
+        return (3, 403, "forbidden", "reducing the walltime of a container job is not allowed");
     }
 
     # For negative extratime, do not allow end time before now
