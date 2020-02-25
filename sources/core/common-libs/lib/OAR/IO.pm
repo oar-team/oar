@@ -91,6 +91,7 @@ sub get_jobs_to_schedule($$$);
 sub get_job_types_hash($$);
 sub set_moldable_job_max_time($$$);
 sub is_timesharing_for_2_jobs($$$);
+sub is_inner_job_with_container_not_ready($$);
 
 #ARRAY JOBS MANAGEMENT
 sub get_jobs_in_array($$);
@@ -6804,6 +6805,26 @@ EOS
     return(%res);
 }
 
+# In the case of an early launch, the get_gantt_jobs_to_launch function may be bypassed.
+# This allows to test if a job of type inner has its container running before launch
+sub is_inner_job_with_container_not_ready($$) {
+    my $dbh = shift;
+    my $job_id = shift;
+    # match the container jobid against what is given in the inner=<jobid> job type
+    my $match_container_job_against_inner_job_type = "CAST(jc.job_id AS VARCHAR) = SUBSTRING(t.type FROM 7)";
+    if ($Db_type eq "mysql") {
+        $match_container_job_against_inner_job_type = "CAST(jc.job_id AS CHAR) = SUBSTRING(t.type FROM 7)";
+    }
+    my $nbRes = $dbh->do("SELECT 1
+                         FROM job_types t, jobs jc
+                         WHERE
+                             t.job_id = $job_id
+                             AND t.type LIKE \'inner=%\'
+                             AND $match_container_job_against_inner_job_type
+                             AND jc.state != \'Running\'
+                         ");
+    return ($nbRes > 0);
+}
 
 #Get hostname that we must wake up to launch jobs
 #args : base, date in sql format, time to wait for the node to wake up
