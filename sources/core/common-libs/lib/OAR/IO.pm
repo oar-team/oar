@@ -6713,8 +6713,11 @@ sub get_gantt_jobs_to_launch($$){
 
     # postgresql is quicker without the moldable_index filter
     my $moldable_index_current = "";
+    # match the container jobid against what is given in the inner=<jobid> job type
+    my $match_container_job_against_inner_job_type = "CAST(jc.job_id AS VARCHAR) = SUBSTRING(t.type FROM 7)";
     if ($Db_type eq "mysql") {
         $moldable_index_current = "m.moldable_index = \'CURRENT\' AND";
+        $match_container_job_against_inner_job_type = "CAST(jc.job_id AS CHAR) = SUBSTRING(t.type FROM 7)";
     }
     my $req = <<EOS;
 SELECT gp.moldable_job_id, gr.resource_id, j.job_id
@@ -6726,6 +6729,14 @@ WHERE
     AND gp.start_time <= $date
     AND j.state = \'Waiting\'
     AND r.resource_id = gr.resource_id
+    AND NOT EXISTS ( SELECT 1
+                     FROM job_types t, jobs jc
+                     WHERE
+                         m.moldable_job_id = t.job_id
+                         AND t.type LIKE \'inner=%\'
+                         AND $match_container_job_against_inner_job_type
+                         AND jc.state != \'Running\'
+                   )
     AND CASE
         WHEN (
             EXISTS (
