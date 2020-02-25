@@ -6703,7 +6703,9 @@ sub get_last_wake_up_date_of_node($$){
     return($ref[0]);
 }
 
-#Get jobs to launch at a given date
+# Get jobs to launch at a given date: any waiting jobs which start date is passed and whose resources are all Alive, execpt inner job if container is not running
+# Exception 1: Jobs of type state:permissive + noop/cosystem can launched even if the state of some resources is not Alive
+# Execption 2: Jobs of type deploy/cosystem/noop=standby can be launched with some resources in standby (state = absent + available_upto > job stop time)
 #args : base, date in sql format
 sub get_gantt_jobs_to_launch($$){
     my $dbh = shift;
@@ -6714,11 +6716,7 @@ sub get_gantt_jobs_to_launch($$){
     if ($Db_type eq "mysql") {
         $moldable_index_current = "m.moldable_index = \'CURRENT\' AND";
     }
-    my $req;
-    # only use the "CASE WHEN.." query when the energy saving feature is on
-    # (although it would function for both cases)
-    if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes")) {
-        $req = <<EOS;
+    my $req = <<EOS;
 SELECT gp.moldable_job_id, gr.resource_id, j.job_id
 FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
 WHERE
@@ -6784,53 +6782,6 @@ WHERE
         )
         END
 EOS
-    } else {
-        oar_debug("[MetaSched] Energy saving is OFF: job with type (deploy|cosystem|noop)=standby cannot run\n");
-        $req = <<EOS;
-SELECT gp.moldable_job_id, gr.resource_id, j.job_id
-FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
-WHERE
-    $moldable_index_current gr.moldable_job_id = gp.moldable_job_id
-    AND m.moldable_id = gr.moldable_job_id
-    AND j.job_id = m.moldable_job_id
-    AND gp.start_time <= $date
-    AND j.state = \'Waiting\'
-    AND r.resource_id = gr.resource_id
-    AND CASE
-        WHEN (
-            EXISTS (
-                       SELECT 1
-                       FROM job_types t
-                       WHERE
-                           m.moldable_job_id = t.job_id
-                           AND t.type = \'state=permissive\'
-            ) AND EXISTS (
-                       SELECT 1
-                       FROM job_types t
-                       WHERE
-                           m.moldable_job_id = t.job_id
-                           AND (t.type = \'noop\' OR t.type = \'cosystem\')
-            )
-        ) THEN (
-            r.state IN (\'Alive\',\'Absent\',\'Suspected\',\'Dead\')
-        )
-        ELSE (
-            r.state = \'Alive\'
-            AND NOT EXISTS (
-                SELECT 1
-                FROM resources rr, gantt_jobs_resources gg
-                WHERE
-                    gg.moldable_job_id = gr.moldable_job_id
-                    AND rr.resource_id = gg.resource_id
-                    AND (
-                        rr.state IN (\'Dead\',\'Suspected\',\'Absent\')
-                        OR rr.next_state IN (\'Dead\',\'Suspected\',\'Absent\')
-                    )
-            )
-        )
-        END
-EOS
-    }
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
