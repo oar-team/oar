@@ -232,7 +232,9 @@ OAR::Schedulers::GanttHoleStorage::add_new_resources($Gantt->{0}->{""}->{""}->{"
 
 oar_debug("[MetaSched] Begin processing of already scheduled reservations (accepted with resources assigned)\n");
 # Add already scheduled reservations into the gantt
-foreach my $i (keys(%{$reservation_already_there})){
+my @reseration_already_there_list = keys(%{$reservation_already_there});
+while (@reseration_already_there_list) {
+    my $i = shift(@reseration_already_there_list);
     my $container_id = 0;
     my $inner_id = 0;
     my $placeholder_name = "";
@@ -241,18 +243,25 @@ foreach my $i (keys(%{$reservation_already_there})){
     my $timesharing_name = "";
     my $vec = '';
     my $types = OAR::IO::get_job_types_hash($base,$i);
-    my $job_there = OAR::IO::get_job($base,$i);
-    foreach my $r (@{$reservation_already_there->{$i}->{resources}}){
-        vec($vec, $r, 1) = 1;
-    }
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
         $inner_id = $1;
         if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
             oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
         }else{
-            oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
-            $inner_id = 0;
+            if (grep(/^$inner_id$/, @reseration_already_there_list)) {
+                # The container job is later in the list, postpone inner job
+                oar_debug("[MetaSched] [$i] inner job: container $inner_id is not known yet, postponing job.\n");
+                push @reseration_already_there_list, $i;
+                next;
+            } else {
+                oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
+                $inner_id = 0;
+            }
         }
+    }
+    my $job_there = OAR::IO::get_job($base,$i);
+    foreach my $r (@{$reservation_already_there->{$i}->{resources}}){
+        vec($vec, $r, 1) = 1;
     }
     if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
         oar_debug("[MetaSched] [$i] Job is ($inner_id,,,)\n");
@@ -272,7 +281,8 @@ oar_debug("[MetaSched] End processing of already scheduled reservations\n");
 
 oar_debug("[MetaSched] Begin processing of current jobs\n");
 my @initial_jobs = OAR::IO::get_jobs_in_multiple_states($base, ["Running","toLaunch","Launching","Finishing","Suspended","Resuming"]);
-foreach my $job (@initial_jobs){
+while (@initial_jobs) {
+    my $job = shift(@initial_jobs);
     my $container_id = 0;
     my $inner_id = 0;
     my $placeholder_name = "";
@@ -282,6 +292,26 @@ foreach my $job (@initial_jobs){
     my $i = $job->{job_id};
 
     next if ($job->{assigned_moldable_job} == 0);
+
+    my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
+
+    if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
+        $inner_id = $1;
+        if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
+            oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
+        }else{
+            if (grep(/^$inner_id$/, map {$_->{job_id}} @initial_jobs)) {
+                # The container job is later in the list, postpone inner job
+                oar_debug("[MetaSched] [$i] inner job: container $inner_id is not known yet, postponing job.\n");
+                push @initial_jobs, $job;
+                next;
+            } else {
+                oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
+                $inner_id = 0;
+            }
+        }
+    }
+
     my $mold = OAR::IO::get_current_moldable_job($base,$job->{assigned_moldable_job});
     # The list of resources on which the job is running
     my ($resource_list_vec, @resource_list) = OAR::IO::get_job_current_resources($base, $job->{assigned_moldable_job},undef);
@@ -297,8 +327,7 @@ foreach my $job (@initial_jobs){
     oar_debug("[MetaSched] [$i] add job in database\n");
     OAR::IO::add_gantt_scheduled_jobs($base,$job->{assigned_moldable_job},$date,\@resource_list);
 
-    my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
-    # Ignore besteffort jobs
+    # Ignore besteffort jobs (only handled in the besteffort queue => adv. resa cannot be bestfeffort)
     if (! defined($types->{besteffort})){
         my $job_duration = $mold->{moldable_walltime};
         if ($job->{state} eq "Suspended"){
@@ -310,15 +339,6 @@ foreach my $job (@initial_jobs){
             $job_duration += OAR::IO::get_job_suspended_sum_duration($base,$job->{job_id},$current_time_sec);
         }
 
-        if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
-            $inner_id = $1;
-            if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
-                oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
-            }else{
-                oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
-                $inner_id = 0;
-            }
-        }
         if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
             oar_debug("[MetaSched] [$i] Job is ($inner_id,,,)\n");
             $container_id = $i;
@@ -345,7 +365,8 @@ oar_debug("[MetaSched] End processing of current jobs\n");
 # handle accepted advance reservations which do not have assigned resources, mostly because the prediction tables were completely flushed from outside of OAR
 oar_debug("[MetaSched] Begin processing of the accepted reservations without assigned resources\n");
 my @Rjobs = OAR::IO::get_waiting_reservation_jobs($base);
-foreach my $job (@Rjobs){
+while (@Rjobs){
+    my $job = shift(@Rjobs);
     next if (defined($reservation_already_there->{$job->{job_id}}));
 
     my $container_id = 0;
@@ -357,6 +378,24 @@ foreach my $job (@Rjobs){
     my $i = $job->{job_id};
 
     my $types = OAR::IO::get_job_types_hash($base,$i);
+    if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
+        $inner_id = $1;
+        if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
+            oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
+        }else{
+            if (grep(/^$inner_id$/, map {$_->{job_id}} @Rjobs)) {
+                # The container job is later in the list, postpone inner job
+                oar_debug("[MetaSched] [$i] inner job: container $inner_id is not known yet, postponing job.\n");
+                push @Rjobs, $job;
+            } else {
+                oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist.\n");
+                OAR::IO::set_job_message($base,$i,"Container $inner_id does not exist");
+                OAR::IO::set_job_scheduler_info($base,$i,"Container $inner_id does not exist");
+                $inner_id=0;
+            }
+            next;
+        }
+    }
 
     my $job_descriptions = OAR::IO::get_resources_data_structure_current_job($base,$job->{job_id});
     # For reservation we take the first moldable job
@@ -365,18 +404,6 @@ foreach my $job (@Rjobs){
     # Get the list of resources where the reservation will be able to be launched = resources in state Alive, Absent or Suspected
     # It is assumed here that Absent and Suspected resources could become Alive by the time of the start of the advance reservation job
     my $available_resources_vector = $Alive_resource_id_vec | $Absent_resource_id_vec | $Suspected_resource_id_vec;
-    if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
-        $inner_id = $1;
-        if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
-            oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
-        }else{
-            oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist.\n");
-            OAR::IO::set_job_message($base,$i,"Container $inner_id does not exist");
-            OAR::IO::set_job_scheduler_info($base,$i,"Container $inner_id does not exist");
-            $inner_id=0;
-            next;
-        }
-    }
     if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
         oar_debug("[MetaSched] [$i] Job is ($inner_id,,,) and is a container (ignoring any timesharing or placeholder)\n");
     } else {
@@ -559,7 +586,9 @@ sub check_reservation_jobs($$){
         # Build gantt diagram of other jobs
         # Take care of currently scheduled jobs except besteffort jobs if queue_name is not besteffort
         my ($order, %already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
-        foreach my $i (keys(%already_scheduled_jobs)){
+        my @already_scheduled_jobs_list = @{$order};
+        while (@already_scheduled_jobs_list) {
+            my $i = shift(@already_scheduled_jobs_list);
             my $container_id = 0;
             my $inner_id = 0;
             my $placeholder_name = "";
@@ -567,10 +596,27 @@ sub check_reservation_jobs($$){
             my $timesharing_user = "";
             my $timesharing_name = "";
             my $types = OAR::IO::get_job_types_hash($base,$i);
+            # Ignore besteffort jobs
             if ((! defined($types->{besteffort})) or ($queue_name eq "besteffort")){
                 my @resource_list = @{$already_scheduled_jobs{$i}->[3]};
                 my $resource_list_vec = $already_scheduled_jobs{$i}->[10];
                 my $job_duration = $already_scheduled_jobs{$i}->[1];
+                if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
+                    $inner_id = $1;
+                    if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
+                        oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
+                    }else{
+                        if (grep(/^$inner_id$/, @already_scheduled_jobs_list)) {
+                            # The container job is later in the list, postpone inner job
+                            oar_debug("[MetaSched] [$i] inner job: container $inner_id is not known yet, postponing job.\n");
+                            push @already_scheduled_jobs_list, $i;
+                            next;
+                        } else {
+                            oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
+                            $inner_id = 0;
+                        }
+                    }
+                }
                 if ($already_scheduled_jobs{$i}->[4] eq "Suspended"){
                     # Remove resources of the type specified in SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE
                     ($resource_list_vec, @resource_list) = OAR::IO::get_job_current_resources($base, $already_scheduled_jobs{$i}->[7],\@Sched_available_suspended_resource_type);
@@ -581,15 +627,6 @@ sub check_reservation_jobs($$){
                     $job_duration += OAR::IO::get_job_suspended_sum_duration($base,$i,$current_time_sec);
                 }
 
-                if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
-                    $inner_id = $1;
-                    if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
-                        oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
-                    }else{
-                        oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
-                        $inner_id = 0;
-                    }
-                }
                 if (defined($types->{container})){ # A container job cannot be placeholder or allowed or timesharing. 
                     oar_debug("[MetaSched] [$i] Job is ($inner_id,,,)\n");
                     $container_id = $i;
@@ -606,7 +643,8 @@ sub check_reservation_jobs($$){
             }
         }
         oar_debug("[MetaSched] Try and schedule new reservations of queue $queue_name\n");
-        foreach my $job (@jobs_to_sched){
+        while (@jobs_to_sched) {
+            my $job = shift(@jobs_to_sched);
             my $container_id = 0;
             my $inner_id = 0;
             my $placeholder_name = "";
@@ -647,12 +685,15 @@ sub check_reservation_jobs($$){
                         oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
                     }else{
                         #is the container yet to schedule, by this scheduler or another ?
-                        if (grep(/^$inner_id$/, @jobs_to_sched) or grep (/^$inner_id$/, OAR::IO::get_all_waiting_jobids($base))) {
+                        if (grep(/^$inner_id$/, map {$_->{job_id}} @jobs_to_sched)) {
+                            # The container job is later in the list, postpone inner job
+                            oar_debug("[MetaSched] [$i] inner job: container $inner_id is not known yet, postponing job.\n");
+                            push @jobs_to_sched, $job;
+                        } elsif (grep(/^$inner_id$/, OAR::IO::get_all_waiting_jobids($base))) {
                             my $message = "inner job: container $inner_id is yet to scheduled, inner job not scheduled";
                             oar_debug("[MetaSched] [$i] $message\n");
                             OAR::IO::set_job_message($base,$i, ucfirst($message));
                             OAR::IO::set_job_scheduler_info($base,$i,$message);
-                            $inner_id=0;
                         } else {
                             my $message = "inner job: container $inner_id does not exist, inner job will never run, setting it to error";
                             oar_warn("[MetaSched] [$i] $message\n");
