@@ -293,11 +293,9 @@ sub karma($){
 ###############################################################################
 
 @jobs = sort({karma($a) <=> karma($b)} @jobs);
-my $job_index = 0;
-while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
-    my $j = $jobs[$job_index];
+while (@jobs and ((time() - $initial_time) < $timeout)){
+    my $j = shift(@jobs);
     my $i = $j->{job_id};
-    $job_index ++;
     oar_debug("[$scheduler_name] [$i] start scheduling (Karma note = ".karma($j).")\n");
 
     my $container_id = 0;
@@ -376,12 +374,14 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
             oar_debug("[$scheduler_name] [$i] inner job: using container $inner_id\n");
         }else{
             #is the container yet to schedule, by this scheduler or another ?
-            if (grep(/^$inner_id$/, @jobs) or grep (/^$inner_id$/, OAR::IO::get_all_waiting_jobids($base))) {
+            if (grep(/^$inner_id$/, map {$_->{job_id}} @jobs)) {
+                # The container job is later in the list, postpone inner job
+                oar_debug("[$scheduler_name] [$i] inner job: container $inner_id is not known yet, postponing job.\n");
+                push @jobs, $j;
+            } elsif (grep (/^$inner_id$/, OAR::IO::get_all_waiting_jobids($base))) {
                 my $message = "inner job: container $inner_id is yet to scheduled, inner job not scheduled";
                 oar_debug("[$scheduler_name] [$i] $message\n");
                 OAR::IO::set_job_message($base,$i, ucfirst($message));
-                #OAR::IO::set_job_scheduler_info($base,$i,$message);
-                $inner_id=0;
             } else {
                 my $message = "inner job: container $inner_id does not exist, inner job will never run, setting it to error";
                 oar_warn("[$scheduler_name] [$i] $message\n");
@@ -557,7 +557,7 @@ oar_debug("[$scheduler_name] End phase 2 (waiting jobs)\n");
 OAR::IO::disconnect($base);
 OAR::IO::disconnect($base_ro);
 
-if ($job_index <= $#jobs){
+if (@jobs){
     oar_debug("[$scheduler_name] Warning: some jobs were not scheduled because the scheduler's timeout was reached ($timeout s)\n");
 }
 
