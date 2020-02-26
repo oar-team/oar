@@ -1,3 +1,9 @@
+oar (2.5.9~g5k4-1~bpo10+1) buster-backports; urgency=medium
+
+  * Rebuild for buster-backports.
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 26 Feb 2020 17:40:53 +0100
+
 oar (2.5.9~g5k4-1) unstable; urgency=medium
 
   * Pre-release for G5K (various fixes)
