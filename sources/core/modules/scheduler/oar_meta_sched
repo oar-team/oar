@@ -1103,7 +1103,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
             if (OAR::Modules::Hulot::wake_up_nodes(\@nodes) ) {
                 oar_error("[MetaSched] Error: Communication problem with the energy saving module (Hulot)\n");
             }
-						$flagHulot=1;
+            $flagHulot=1;
         }
         # Not using the built-in energy saving module to wake up nodes
         else {
