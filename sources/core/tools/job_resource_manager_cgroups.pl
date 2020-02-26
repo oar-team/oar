@@ -464,7 +464,11 @@ EOF
             if (system('if [ -w '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty ]; then
                           echo 0 > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/memory.force_empty
                         fi
-                        oardodo rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.' &&
+                        while ! oardodo rmdir '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.' ; do
+                          cat '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/tasks | xargs -n1 ps -fh -p 1>&2
+                          echo retry in 1s... 1>&2
+                          sleep 1
+                        done
                         for d in '.$Cgroup_directory_collection_links.'/*/'.$Cpuset_path_job.'; do
                           [ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty
                           if [ -d $d ]; then
