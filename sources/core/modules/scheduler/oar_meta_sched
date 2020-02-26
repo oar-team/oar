@@ -254,7 +254,7 @@ while (@reseration_already_there_list) {
                 push @reseration_already_there_list, $i;
                 next;
             } else {
-                oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
+                oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is already scheduled, use container 0.\n");
                 $inner_id = 0;
             }
         }
@@ -612,7 +612,7 @@ sub check_reservation_jobs($$){
                             push @already_scheduled_jobs_list, $i;
                             next;
                         } else {
-                            oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is running, use container 0.\n");
+                            oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is already scheduled, use container 0.\n");
                             $inner_id = 0;
                         }
                     }

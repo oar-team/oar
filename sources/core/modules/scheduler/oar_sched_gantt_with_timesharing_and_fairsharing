@@ -228,7 +228,7 @@ while (@already_scheduled_jobs_list) {
                     push @already_scheduled_jobs_list, $i;
                     next;
                 } else {
-                    oar_debug("[$scheduler_name] [$i] inner job: container $1 does not exist but job is running, use container 0.\n");
+                    oar_debug("[$scheduler_name] [$i] inner job: container $1 does not exist but job is already scheduled or running, use container 0.\n");
                 }
             }
         }
