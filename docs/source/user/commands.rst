@@ -8,9 +8,14 @@ one of these computers first.
 .. toctree::
     :maxdepth: 2
 
-    commands/oarstat
-    commands/oarnodes
     commands/oarsub
     commands/oardel
+    commands/oarsh
+    commands/oarwalltime
+    commands/oarstat
+    commands/oarnodes
+    commands/oarprint
     commands/oarhold
     commands/oarresume
+
+For more details, read the manual pages of the commands.

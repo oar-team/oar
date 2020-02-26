@@ -12,7 +12,7 @@ package OAR::IO;
 require Exporter;
 
 use DBI;
-use OAR::Conf qw(init_conf get_conf is_conf reset_conf);
+use OAR::Conf qw(init_conf get_conf get_conf_with_default_param is_conf reset_conf);
 use Data::Dumper;
 use Time::Local;
 use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
@@ -64,6 +64,7 @@ sub set_job_state($$$);
 sub set_job_resa_state($$$);
 sub set_job_message($$$);
 sub frag_job($$);
+sub frag_inner_jobs($$$);
 sub ask_checkpoint_job($$);
 sub ask_signal_job($$$);
 sub hold_job($$$);
@@ -90,6 +91,7 @@ sub get_jobs_to_schedule($$$);
 sub get_job_types_hash($$);
 sub set_moldable_job_max_time($$$);
 sub is_timesharing_for_2_jobs($$$);
+sub is_inner_job_with_container_not_ready($$);
 
 #ARRAY JOBS MANAGEMENT
 sub get_jobs_in_array($$);
@@ -365,7 +367,7 @@ sub connect_one() {
     my $user = get_conf("DB_BASE_LOGIN");
     my $pwd = get_conf("DB_BASE_PASSWD");
     $Db_type = get_conf("DB_TYPE");
-    
+
     my $log_level = get_conf("LOG_LEVEL");
 
     $Remote_host = get_conf("SERVER_HOSTNAME");
@@ -2920,6 +2922,7 @@ sub frag_job($$) {
 
     my $job = get_job($dbh, $job_id);
 
+    my $result;
     if((defined($job)) && (($lusr eq $job->{job_user}) or ($lusr eq "oar") or ($lusr eq "root"))) {
         my $nbRes = $dbh->do("SELECT *
                               FROM frag_jobs
@@ -2932,16 +2935,37 @@ sub frag_job($$) {
                       VALUES ($job_id,\'$date\')
                      ");
             add_new_event($dbh,"FRAG_JOB_REQUEST",$job_id,"User $lusr requested to frag the job $job_id");
-            return(0);
+            $result = 0;
         }else{
             # Job already killed
-            return(-2);
+            $result = -2;
         }
     }else{
-        return(-1);
+        $result = -1;
     }
+    frag_inner_jobs($dbh, $job_id, "");
+    return $result;
 }
 
+#If KILL_INNER_JOBS_WITH_CONTAINER is set, frag the inner jobs if not already fragged
+sub frag_inner_jobs($$$) {
+    my $dbh = shift;
+    my $container_job_id = shift;
+    my $message = shift;
+    my $regexp_op = "~";
+    if (lc(get_conf_with_default_param("KILL_INNER_JOBS_WITH_CONTAINER", "no")) eq "yes") {
+        my $date = get_date($dbh);
+        if ($dbh->do("SELECT job_id FROM job_types WHERE job_id = $container_job_id AND type = 'container'") > 0) {
+            if (defined($message)) {
+                oar_debug($message);
+            }
+            $dbh->do("INSERT INTO frag_jobs (frag_id_job, frag_date) SELECT job_id,\'$date\' FROM job_types WHERE type = \'inner=$container_job_id\' AND NOT EXISTS (SELECT * FROM frag_jobs WHERE frag_id_job = job_id)
+                     ");
+            $dbh->do("INSERT INTO event_logs (type,job_id,date,description) SELECT \'FRAG_JOB_REQUEST\',t.job_id,\'$date\',\'Container job $container_job_id was fragged, frag inner job\' FROM job_types t WHERE t.type = \'inner=$container_job_id\' AND NOT EXISTS (SELECT * FROM event_logs e WHERE e.job_id = t.job_id AND e.type = \'FRAG_JOB_REQUEST\')
+                     ");
+        }
+    }
+}
 
 # ask_checkpoint_job
 # Verify if the user is able to checkpoint the job
@@ -6680,7 +6704,9 @@ sub get_last_wake_up_date_of_node($$){
     return($ref[0]);
 }
 
-#Get jobs to launch at a given date
+# Get jobs to launch at a given date: any waiting jobs which start date is passed and whose resources are all Alive, execpt inner job if container is not running
+# Exception 1: Jobs of type state:permissive + noop/cosystem can launched even if the state of some resources is not Alive
+# Execption 2: Jobs of type deploy/cosystem/noop=standby can be launched with some resources in standby (state = absent + available_upto > job stop time)
 #args : base, date in sql format
 sub get_gantt_jobs_to_launch($$){
     my $dbh = shift;
@@ -6688,14 +6714,13 @@ sub get_gantt_jobs_to_launch($$){
 
     # postgresql is quicker without the moldable_index filter
     my $moldable_index_current = "";
+    # match the container jobid against what is given in the inner=<jobid> job type
+    my $match_container_job_against_inner_job_type = "CAST(jc.job_id AS VARCHAR) = SUBSTRING(t.type FROM 7)";
     if ($Db_type eq "mysql") {
         $moldable_index_current = "m.moldable_index = \'CURRENT\' AND";
+        $match_container_job_against_inner_job_type = "CAST(jc.job_id AS CHAR) = SUBSTRING(t.type FROM 7)";
     }
-    my $req;
-    # only use the "CASE WHEN.." query when the energy saving feature is on
-    # (although it would function for both cases)
-    if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes")) {
-        $req = <<EOS;
+    my $req = <<EOS;
 SELECT gp.moldable_job_id, gr.resource_id, j.job_id
 FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
 WHERE
@@ -6705,18 +6730,26 @@ WHERE
     AND gp.start_time <= $date
     AND j.state = \'Waiting\'
     AND r.resource_id = gr.resource_id
+    AND NOT EXISTS ( SELECT 1
+                     FROM job_types t, jobs jc
+                     WHERE
+                         m.moldable_job_id = t.job_id
+                         AND t.type LIKE \'inner=%\'
+                         AND $match_container_job_against_inner_job_type
+                         AND jc.state != \'Running\'
+                   )
     AND CASE
         WHEN (
             EXISTS (
                        SELECT 1
                        FROM job_types t
-                       WHERE 
+                       WHERE
                            m.moldable_job_id = t.job_id
                            AND t.type = \'state=permissive\'
             ) AND EXISTS (
                        SELECT 1
                        FROM job_types t
-                       WHERE 
+                       WHERE
                            m.moldable_job_id = t.job_id
                            AND (t.type = \'noop\' OR t.type LIKE \'noop=.%\' OR t.type = \'cosystem\' OR t.type LIKE \'cosystem=.%\')
             )
@@ -6731,7 +6764,7 @@ WHERE
                            AND t.type in (\'deploy=standby\', \'cosystem=standby\', \'noop=standby\')
         ) THEN (
             (r.state = \'Alive\' OR ( r.state = \'Absent\' AND (gp.start_time + m.moldable_walltime) <= r.available_upto))
-            AND NOT EXISTS ( 
+            AND NOT EXISTS (
                 SELECT 1
                 FROM resources rr, gantt_jobs_resources gg
                 WHERE
@@ -6761,32 +6794,6 @@ WHERE
         )
         END
 EOS
-    } else {
-        oar_debug("[MetaSched] Energy saving is OFF: job with type (deploy|cosystem|noop)=standby or state=permissive cannot run\n");
-        $req = <<EOS;
-SELECT gp.moldable_job_id, gr.resource_id, j.job_id
-FROM gantt_jobs_resources gr, gantt_jobs_predictions gp, jobs j, moldable_job_descriptions m, resources r
-WHERE
-    $moldable_index_current gr.moldable_job_id = gp.moldable_job_id
-    AND m.moldable_id = gr.moldable_job_id
-    AND j.job_id = m.moldable_job_id
-    AND gp.start_time <= $date
-    AND j.state = \'Waiting\'
-    AND r.resource_id = gr.resource_id
-    AND r.state = \'Alive\'
-    AND NOT EXISTS ( 
-        SELECT 1
-        FROM resources rr, gantt_jobs_resources gg
-        WHERE
-            gg.moldable_job_id = gr.moldable_job_id
-            AND rr.resource_id = gg.resource_id
-            AND (
-                rr.state IN (\'Dead\',\'Suspected\',\'Absent\')
-                OR rr.next_state IN (\'Dead\',\'Suspected\',\'Absent\')
-            )
-    )
-EOS
-    }
     my $sth = $dbh->prepare($req);
     $sth->execute();
     my %res ;
@@ -6798,6 +6805,26 @@ EOS
     return(%res);
 }
 
+# In the case of an early launch, the get_gantt_jobs_to_launch function may be bypassed.
+# This allows to test if a job of type inner has its container running before launch
+sub is_inner_job_with_container_not_ready($$) {
+    my $dbh = shift;
+    my $job_id = shift;
+    # match the container jobid against what is given in the inner=<jobid> job type
+    my $match_container_job_against_inner_job_type = "CAST(jc.job_id AS VARCHAR) = SUBSTRING(t.type FROM 7)";
+    if ($Db_type eq "mysql") {
+        $match_container_job_against_inner_job_type = "CAST(jc.job_id AS CHAR) = SUBSTRING(t.type FROM 7)";
+    }
+    my $nbRes = $dbh->do("SELECT 1
+                         FROM job_types t, jobs jc
+                         WHERE
+                             t.job_id = $job_id
+                             AND t.type LIKE \'inner=%\'
+                             AND $match_container_job_against_inner_job_type
+                             AND jc.state != \'Running\'
+                         ");
+    return ($nbRes > 0);
+}
 
 #Get hostname that we must wake up to launch jobs
 #args : base, date in sql format, time to wait for the node to wake up

@@ -188,7 +188,9 @@ my %Token_values;
 oar_debug("[$scheduler_name] Begin phase 1 (already scheduled jobs)\n");
 # Take care of currently scheduled jobs (gantt in the database)
 my ($order,%already_scheduled_jobs) = OAR::IO::get_gantt_scheduled_jobs($base);
-foreach my $i (@{$order}){
+my @already_scheduled_jobs_list = @{$order};
+while (@already_scheduled_jobs_list) {
+    my $i = shift(@already_scheduled_jobs_list);
     my $types = OAR::IO::get_job_types_hash($base,$i);
     # Do not take care of besteffort jobs
     if ((! defined($types->{besteffort})) or ($queue eq "besteffort")){
@@ -220,7 +222,14 @@ foreach my $i (@{$order}){
                 $container_num = $1;
                 oar_debug("[$scheduler_name] [$i] inner job: using container $container_num\n");
             }else{
-                oar_debug("[$scheduler_name] [$i] inner job: container $1 does not exist, use container 0.\n");
+                if (grep(/^$1$/,@already_scheduled_jobs_list)) {
+                    # The container job is later in the list, postpone inner job
+                    oar_debug("[$scheduler_name] [$i] inner job: container $1 is not known yet, postponing job.\n");
+                    push @already_scheduled_jobs_list, $i;
+                    next;
+                } else {
+                    oar_debug("[$scheduler_name] [$i] inner job: container $1 does not exist but job is already scheduled or running, use container 0.\n");
+                }
             }
         }
         my $user;
@@ -341,10 +350,8 @@ sub karma($){
 ###############################################################################
 
 @jobs = sort({karma($a) <=> karma($b)} @jobs);
-my $job_index = 0;
-while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
-    my $j = $jobs[$job_index];
-    $job_index ++;
+while (@jobs and ((time() - $initial_time) < $timeout)){
+    my $j = shift(@jobs);
     oar_debug("[$scheduler_name] [$j->{job_id}] start scheduling (Karma note = ".karma($j).")\n");
     
     my $gantt_to_use = $Container_gantt_hash{0};
@@ -408,13 +415,24 @@ while (($job_index <= $#jobs) and ((time() - $initial_time) < $timeout)){
     next if ($skip_job == 1);
 
     if (defined($types->{inner}) and ($types->{inner} =~ /^(\d+)$/)){
+        if ($1 == $j->{job_id}) {
+            my $message = "inner job: job cannot be its own container, setting it to error";
+            oar_warn("[$scheduler_name] [$j->{job_id}] $message\n");
+            OAR::IO::set_job_message($base, $j->{job_id}, ucfirst($message));
+            OAR::IO::set_job_state($base, $j->{job_id}, "toError");
+            next;
+        }
         if (defined($Container_gantt_hash{$1})){
             $gantt_to_use = $Container_gantt_hash{$1};
             $container_num = $1;
             oar_debug("[$scheduler_name] [$j->{job_id}] inner job: using container $container_num\n");
         }else{
             #is the container yet to schedule, by this scheduler or another ?
-            if (grep(/^$1$/, @jobs) or grep (/^$1$/, OAR::IO::get_all_waiting_jobids($base))) {
+            if (grep(/^$1$/, map {$_->{job_id}} @jobs)) {
+                # The container job is later in the list, postpone inner job
+                oar_debug("[$scheduler_name] [$j->{job_id}] inner job: container $1 is not known yet, postponing job.\n");
+                push @jobs, $j;
+            } elsif (grep (/^$1$/, OAR::IO::get_all_waiting_jobids($base))) {
                 my $message = "inner job: container $1 is yet to scheduled, inner job not scheduled";
                 oar_debug("[$scheduler_name] [$j->{job_id}] $message\n");
                 OAR::IO::set_job_message($base,$j->{job_id}, ucfirst($message));
@@ -633,7 +651,7 @@ oar_debug("[$scheduler_name] End phase 2 (waiting jobs)\n");
 OAR::IO::disconnect($base);
 OAR::IO::disconnect($base_ro);
 
-if ($job_index <= $#jobs){
+if (@jobs){
     oar_debug("[$scheduler_name] Warning: some jobs were not scheduled because the scheduler's timeout was reached ($timeout s)\n");
 }
 
