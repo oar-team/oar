@@ -70,8 +70,10 @@ my $current = OAR::IO::get_date($base);
 foreach my $j (OAR::IO::get_timered_job($base)){
     my $job_ref = OAR::IO::get_job($base,$j->{job_id});
     if (($job_ref->{state} eq "Terminated") || ($job_ref->{state} eq "Error") || ($job_ref->{state} eq "Finishing")){
+        oar_debug("[sarko] Set to FRAGGED job $j->{job_id}\n");
         OAR::IO::job_fragged($base,$j->{job_id});
-        oar_debug("[sarko] I set to FRAGGED the job $j->{job_id}\n");
+        # Frag again inner jobs: handle a possible race condition if new inner jobs after frag_job was called
+        OAR::IO::frag_inner_jobs($base,$j->{job_id}, "[sarko] Frag any remaining inner jobs of container job $j->{job_id}\n");
     }else{
         my $frag_date = OAR::IO::get_frag_date($base,$j->{job_id});
         oar_debug("[sarko] frag date : $frag_date , $frag_date\n");

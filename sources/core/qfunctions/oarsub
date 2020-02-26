@@ -1054,17 +1054,16 @@ if ($Reservation ne "0"){
     do{
         my $client = $Server->accept();
         $answer = <$client>;
-        chop($answer);
+        chomp($answer);
         if ($answer =~ /\](.*)$/){
             if ($1 ne $prev_str){
                 print("$answer\n");
                 $prev_str = $1;
             }
         }elsif ($answer ne "GOOD JOB"){
-            print("$answer");
+            print("$answer\n");
         }
     }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED") and ($answer !~ /^ERROR/));
-    print("\n");
     if ($answer eq "GOOD JOB"){
         exit(connect_job($Job_id_list_ref->[0],1,$Openssh_cmd));
     }else{
