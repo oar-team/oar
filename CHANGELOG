@@ -3,6 +3,7 @@ OAR CHANGELOG
 
 version 2.5.9:
 --------------
+
   - [scheduler] add the SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS option, so
     that adv. reservation scheduling is not impacted by the current state of
     the resources
@@ -21,7 +22,12 @@ version 2.5.9:
   - [DB] add an index to the resource_log table
   - [oar_resource_add] add support reparing the resource properties
   - [oarexec] add support to disable the auto-repair of suspected nodes
-
+  - [job_resource_manager/oarsh] add the COMPUTE_THREAD_SIBLINGS option, to let
+    OAR automatically set the HT thread siblings if not set in the resources
+    hierarchy with a thread resource, or in the resource cpuset field
+  - [oarsh] add support to let oarsh create a sub cgroup with either a subset of
+    the cpuset or of the devices in the shell opened on the node. See an
+    example of usage with GNU Parallel in the website documentation.
 
 version 2.5.8:
 --------------
