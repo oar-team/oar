@@ -200,6 +200,13 @@ if ($ARGV[0] eq "init"){
          # Locking around the creation of the cpuset for that user, to prevent race condition during the dirty-user-based cleanup
         if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
             flock(LOCK,LOCK_EX) or die "flock failed: $!\n";
+            # @Cpuset_cpus is an array of string containing either "1" or "1,17,33,49" if multiple logicial cpus / threads are set in the cpuset field of the OAR DB (but not interval, e.g. '1-3').
+            # The cpuset.cpus special file can be set using an unorder, redondant list of comma separated values, possibly also including intervals (e.g. the thread siblings list could be '1-3').
+            # No need to sort or transform intervals, e.g. "1,5-8,2,6" is ok. Retrieving the actual content of the file after setting it will give "1-2,5-8"
+            my $job_cpuset_cpus_cmd = '/bin/echo '.join(",",@Cpuset_cpus).' | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus';
+            if (exists($Cpuset->{'compute_thread_siblings'}) { # If COMPUTE_THREAD_SIBLINGS="yes" in oar.conf, that means that the OAR DB has not info about the hyper thread siblings, so we have compute it here.
+                $job_cpuset_cpus_cmd = 'for i in '.join(" ", map {s/,/ /gr} @Cpuset_cpus).'; do cat /sys/devices/system/cpu/cpu$i/topology/thread_siblings_list; done | paste -sd, -" > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus';
+            }
             if (system('for d in '.$Cgroup_directory_collection_links.'/*; do
                           oardodo mkdir -p $d/'.$Cpuset_path_job.' || exit 1
                           oardodo chown -R oar $d/'.$Cpuset_path_job.' || exit 2
@@ -216,7 +223,7 @@ if ($ARGV[0] eq "init"){
                         done
                         echo $MEM > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems &&
                         /bin/echo '.join(",",@Cpuset_cpus).' | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus
-                       ')){
+                       '.$job_cpuset_cpus_cmd)){
                 exit_myself(5,"Failed to create and feed the cpuset $Cpuset_path_job");
             }
             flock(LOCK,LOCK_UN) or die "flock failed: $!\n";

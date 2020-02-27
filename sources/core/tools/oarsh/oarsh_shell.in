@@ -39,8 +39,18 @@ function add_process_to_cpuset() {
     # Add all processes to the OAR job cgroups
     for p in $@; do
         if [ -r $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/tasks ]; then
+            # If the user gave OAR_USER_CPUSET, a sub cpuset cgroup has to be created and configured. If not, just use the one created by the job resources manager.
             if [ -n "$OAR_USER_CPUSET" ]; then
                 if [[ "$OAR_USER_CPUSET" == +([[:digit:],]) ]]; then
+                    # If COMPUTE_THREAD_SIBLINGS="yes" in oar.conf, that means that the OAR DB has not info about the hyper thread siblings, so we have compute it here.
+                    # See the job_resource_manager_cgroup.pl script for more details on that matter.
+                    if [ "${COMPUTE_THREAD_SIBLINGS,,}" == "yes" ]; then
+                        OAR_USER_CPUSET=$(
+                            for i in ${OAR_USER_CPUSET//,/ }; do
+                                cat /sys/devices/system/cpu/cpu$i/topology/thread_siblings_list
+                            done | paste -sd, -
+                        )
+                    fi
                     if $OARDIR/oardodo/oardodo sh -c "mkdir -p $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET" && \
                        $OARDIR/oardodo/oardodo sh -c "echo $OAR_USER_CPUSET > $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/cpuset.cpus" && \
                        $OARDIR/oardodo/oardodo sh -c "cat $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/cpuset.mems > $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/cpuset.mems"
@@ -68,6 +78,7 @@ function add_process_to_cpuset() {
 
             if [ -r "$CPUSET_MOUNT_POINT/devices/$CPUSETNAME/tasks" ]; then
                 if [ -n "$OAR_USER_GPUDEVICE" ]; then
+                    # If the user gave OAR_USER_GPUDEVICE, a sub device cgroup has to be created and configured. If not, just use the one created by the job resources manager.
                     if [[ "$OAR_USER_GPUDEVICE" == +([:digit:],]) ]]; then
                         if $OARDIR/oardodo/oardodo sh -c "mkdir -p $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE"; then
                             # deny any nvidia device which is not requested in $OAR_USER_GPUDEVICE
@@ -98,9 +109,9 @@ function add_process_to_cpuset() {
                         OAR_USER_GPUDEVICE=""
                     fi
                 fi
-                # OAR_USER_GPUDEVICE is mostly undefined: only oarsh lets the user define it very optionally
-                # Most of all, it is never defined when OAR shell is called by oarsub
-                # When executing the shell for oarsub, it feeds the job's default cgroup/devices tasks
+                # Only oarsh lets the user define OAR_USER_GPUDEVICE, optionally. It is never defined when OAR shell is called by oarsub.
+                # When executing the shell for oarsub, the job's default devices cgroup tasks is feeded:
+                # OAR_USER_GPUDEVICE is undefined and ".../$OAR_USER_GPUDEVICE/tasks" becomes "...//tasks", with a harmless double "/".
                 $OARDIR/oardodo/oardodo sh -c "echo $p > $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/tasks" || return 1
             fi 
             for c in $CPUSET_MOUNT_POINT/*; do

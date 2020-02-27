@@ -601,6 +601,14 @@ JOB_RESOURCE_MANAGER_FILE="%%OARCONFDIR%%/job_resource_manager_cgroups.pl"
 # to set OARSUB_FORCE_JOB_KEY="yes")
 CPUSET_PATH="/oar"
 
+# When HT is on, but thread resources are not defined in the resource
+# hierarchy, nor the thread siblings defined in the cpuset resource field, let
+# OAR automatically retrieve the thread siblings from the system information,
+# and set them to the cpuset of the job at runtime.
+# Default: "no", just set the cpuset value defined in the cpuset resource field.
+# This must be set both in the server and nodes configuration files.
+#COMPUTE_THREAD_SIBLINGS="no"
+
 # Command to get a process cpuset
 # If unset, OAR (oarsh) will read /proc/self/cpuset.
 #GET_CURRENT_CPUSET_CMD="cat /proc/self/cpuset"
