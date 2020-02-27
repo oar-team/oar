@@ -21,7 +21,7 @@ my $base = OAR::IO::connect();
 my $base_ro = OAR::IO::connect_ro();
 
 init_conf($ENV{OARCONFFILE});
-my $Order_part = get_conf("SCHEDULER_RESOURCE_ORDER");
+my $Order_part = get_conf_with_default_param("SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS", get_conf("SCHEDULER_RESOURCE_ORDER"));
 
 my $binpath;
 if (defined($ENV{OARDIR})){
