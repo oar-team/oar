@@ -79,12 +79,12 @@ function add_process_to_cpuset() {
             if [ -r "$CPUSET_MOUNT_POINT/devices/$CPUSETNAME/tasks" ]; then
                 if [ -n "$OAR_USER_GPUDEVICE" ]; then
                     # If the user gave OAR_USER_GPUDEVICE, a sub device cgroup has to be created and configured. If not, just use the one created by the job resources manager.
-                    if [[ "$OAR_USER_GPUDEVICE" == +([:digit:],]) ]]; then
+                    if [[ "$OAR_USER_GPUDEVICE" == +([[:digit:],]) ]]; then
                         if $OARDIR/oardodo/oardodo sh -c "mkdir -p $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE"; then
                             # deny any nvidia device which is not requested in $OAR_USER_GPUDEVICE
                             for d in /dev/nvidia{,[1-9]}[0-9]; do
                                 if [[ ",$OAR_USER_GPUDEVICE," == !(*,${d#/dev/nvidia},*) ]]; then
-                                    if $OARDIR/oardodo/oardodo sh -c "echo c 159:${d#/dev/nvidia} rwm > $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/devices.deny"; then
+                                    if $OARDIR/oardodo/oardodo sh -c "echo c 195:${d#/dev/nvidia} rwm > $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/devices.deny"; then
                                         : # Everthing went fine
                                     else
                                         # It mostly failed because the OAR_USER_GPUDEVICE is not a subset of the job's gpudevices

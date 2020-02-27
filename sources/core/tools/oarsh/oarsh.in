@@ -20,11 +20,10 @@ OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
 # Forced OpenSSH configuration options
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=%%OARHOMEDIR%%/.ssh/known_hosts"
 CPUSET_PATH=
-# User defined cpuset or device to use to create a sub cgroup in the destination host (e.g. use case where oarsh runs on only one of the reserved GPU)
-export OAR_USER_CPUSET
-export OAR_USER_GPUDEVICE
-# Environment variables to be propagated by SSH.
-OARSH_OPENSSH_SENDENV="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE"
+# User defined cpuset or device to define a sub cgroup in the destination host (e.g. use case where oarsh runs on only one of the reserved GPU)
+# Separator can be indifferently ',' '.' ':' or '+'. GNU Parallel does not like ','.
+export OAR_USER_CPUSET=${OAR_USER_CPUSET//[.:+]/,}
+export OAR_USER_GPUDEVICE=${OAR_USER_GPUDEVICE//[.:+]/,}
 
 # If you set this variable to something different from 0 then oarsh will act
 # like a normal ssh without CPUSET restriction
@@ -162,7 +161,7 @@ fi
 # (oarsh acts like a ssh and can connect on every nodes)
 if [ "$OARSH_BYPASS_WHOLE_SECURITY" != "0" ]; then
     export OAR_CPUSET="undef"
-    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="$OARSH_OPENSSH_SENDENV" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
     echo "oarsh: Failed to connect using cpuset environement" 1>&2
     exit 5
 fi
@@ -186,7 +185,7 @@ then
     umask $TMPOLDUMASK
 
     umask $OLDUMASK
-    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_USER_CPUSET OAR_USER_GPUDEVICE" -i $TMP_JOB_KEY_FILE "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
     echo "oarsh: Failed to connect using the job key: $OAR_JOB_KEY_FILE" 1>&2
     exit 3
 fi
@@ -197,7 +196,7 @@ fi
 TMP_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OARDO_USER.jobkey"
 if [ -r $TMP_JOB_KEY_FILE ]; then
     umask $OLDUMASK
-    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $TMP_JOB_KEY_FILE "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_USER_CPUSET OAR_USER_GPUDEVICE" -i $TMP_JOB_KEY_FILE "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
     echo "oarsh: Failed to connect using the cpuset job key: $TMP_JOB_KEY_FILE" 1>&2
     exit 4
 fi
@@ -214,14 +213,14 @@ if [ "$CPUSET_PATH" != "" ]; then
             JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
             if [ -r $JOB_KEY_FILE ]; then
                 umask $OLDUMASK
-                exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -i $JOB_KEY_FILE "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
+                exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_USER_CPUSET OAR_USER_GPUDEVICE" -i $JOB_KEY_FILE "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
                 echo "oarsh: Failed to connect using the cpuset job key: $JOB_KEY_FILE" 1>&2
                 exit 4
             fi
             export OAR_CPUSET
             export OAR_JOB_USER=$OARDO_USER
             umask $OLDUMASK
-            exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="$OARSH_OPENSSH_SENDENV" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
+            exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
             echo "oarsh: Failed to connect using cpuset environement" 1>&2
             exit 5
         fi
@@ -272,7 +271,7 @@ if [ -n "$OAR_JOB_ID" ]; then
     export OAR_JOB_USER
     export OAR_CPUSET
     umask $OLDUMASK
-    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="$OARSH_OPENSSH_SENDENV" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
+    exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
     echo "oarsh: Failed to connect using cpuset environement" 1>&2
     exit 5
 fi
