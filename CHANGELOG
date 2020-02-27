@@ -3,9 +3,25 @@ OAR CHANGELOG
 
 version 2.5.9:
 --------------
-  - [db] added some indexes to improve performance
-  - [nodecheck] add option to disable the suspected nodes repair
-  - [oarexec] fix oarsub shell termination (job killed) 
+  - [scheduler] add the SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS option, so
+    that adv. reservation scheduling is not impacted by the current state of
+    the resources
+  - [admission rules] add an admission rule to force container to be adv.
+    reservations 
+  - [schedulers] fix the inner job before its container scheduling issues.
+  - [scheduler] waiting inner job in container that vanished are set to error  
+  - [oarexec] add an option to have inner jobs killer with their container  
+  - [oarexec] do not run inner job before the container is running
+  - [oarwalltime] make walltime change respect a defined job deadline
+  - [oarwalltime] add an option to disable the walltime reduction
+  - [oarwalltime] fix the per queue configuration which was broken
+  - [oarsub/scheduler] fix a bug with the recent Perl max recursion depth limit
+  - [drawgantt] show the timezone in the dates
+  - [oarexec] fix oarsub shell termination when the job is killed 
+  - [DB] add an index to the resource_log table
+  - [oar_resource_add] add support reparing the resource properties
+  - [oarexec] add support to disable the auto-repair of suspected nodes
+
 
 version 2.5.8:
 --------------
