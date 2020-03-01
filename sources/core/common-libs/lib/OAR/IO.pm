@@ -8351,6 +8351,7 @@ sub job_finishing_sequence($$$$$$){
                     name => $cpuset_name,
                     nodes => $cpuset_nodes,
                     cpuset_path => $cpuset_path,
+                    compute_thread_siblings => get_conf_with_default_param("COMPUTE_THREAD_SIBLINGS", "no"),
                     ssh_keys => {
                                     public => {
                                                 file_name => OAR::Tools::get_default_oar_ssh_authorized_keys_file(),
