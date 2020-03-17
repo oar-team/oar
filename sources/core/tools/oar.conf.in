@@ -237,6 +237,11 @@ SCHEDULER_TIMEOUT="30"
 # (default is 1)
 SCHEDULER_NB_PROCESSES=1
 
+# Enable or disable the early launch of job in the schedulers
+# Schedulers can notify the meta scheduler of a new job to launch while the scheduling
+# default is "yes"
+#SCHEDULER_LAUNCHER_OPTIMIZATION="yes"
+
 # Time to add between each jobs (for example: time for administration tasks or
 # time to let computers to reboot)
 # minimum time is 1 second

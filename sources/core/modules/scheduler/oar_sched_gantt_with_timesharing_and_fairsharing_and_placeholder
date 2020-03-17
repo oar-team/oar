@@ -542,6 +542,11 @@ while (@jobs and ((time() - $initial_time) < $timeout)){
                 oar_debug("[$scheduler_name] Update TOKEN $t to $Token_values{$t}\n");
             }
         }
+
+        if ($moldable_results[$index_to_choose]->{start_date} <= $current_time){
+            # Try tu run the job now
+            print("SCHEDRUN JOB_ID=$j->{job_id} MOLDABLE_JOB_ID=$moldable_results[$index_to_choose]->{moldable_id} RESOURCES=".join(',', @{$moldable_results[$index_to_choose]->{resources}})."\n");
+        }
     }else{
         oar_debug("[$scheduler_name] [$i] job couldn't be scheduled\n");
         my $message = "cannot find enough resources for job $i";
