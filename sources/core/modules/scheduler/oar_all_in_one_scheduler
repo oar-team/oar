@@ -398,7 +398,7 @@ sub process_walltime_change_requests($) {
                 my $container_job = OAR::IO::get_running_job($dbh, $types->{inner});
                 if (defined($container_job)) {
                     if ($container_job->{start_time} + $container_job->{moldable_walltime} < $to) {
-                        $to = $container_job->{start_time} + $container_job->{_moldable_walltime}; #container should never be suspended, makes no sense
+                        $to = $container_job->{start_time} + $container_job->{moldable_walltime}; #container should never be suspended, makes no sense
                         oar_debug("[MetaSched] [$jobid] walltime change for inner job limited to the container's boundaries: ".($to - $from)."s\n");
                     }
                 } else {
