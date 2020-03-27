@@ -28,6 +28,8 @@ version 2.5.9:
   - [oarsh] add support to let oarsh create a sub cgroup with either a subset of
     the cpuset or of the devices in the shell opened on the node. See an
     example of usage with GNU Parallel in the website documentation.
+  - [oarsub] add the OARSUB_NODE_EXEC_FILE which allows to run a custom command
+    on the head node of the job before the job shell
 
 version 2.5.8:
 --------------

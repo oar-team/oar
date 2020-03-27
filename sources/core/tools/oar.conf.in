@@ -218,7 +218,12 @@ PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 30 -w 20"
 #SERVER_PROLOGUE_EXEC_FILE="/path/to/prog"
 #SERVER_EPILOGUE_EXEC_FILE="/path/to/prog"
 
-#
+# File to execute on the head node of the job, upon the oarsub command
+# Arguments are: PIDs:JOB_USER:JOB_ID:JOB_NAME:JOB_PROJECT:JOB_WALLTIME
+# Where PIDs is a comma separated list of the PIDs of the processes involed in
+# the oarsub execution
+#OARSUB_NODE_EXEC_FILE="/path/to/prog"
+
 # File to execute just after a group of resources has been supected. It may 
 # be used to trigger automatic actions to heal the resources. The script is 
 # started with the list of resources put in its STDIN: resource_id followed
