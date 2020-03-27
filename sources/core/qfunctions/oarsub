@@ -144,7 +144,7 @@ sub connect_job($$$){
             exit(17);
         }
         my $hosts_tmp = OAR::Sub::get_job_current_hostnames($job_id);
-		my @hosts = @$hosts_tmp;
+        my @hosts = @$hosts_tmp;
         my $host_to_connect_via_ssh = $hosts[0];
         #deploy, cosystem and no host part
         if ((defined($types->{cosystem})) or ($#hosts < 0)){
@@ -177,21 +177,21 @@ sub connect_job($$$){
         my $node_file = OAR::Sub::get_default_oarexec_directory()."/$job_id";
         my $res_file = OAR::Sub::get_default_oarexec_directory()."/$job_id"."_resources";
         my $oarsub_pids = OAR::Sub::get_oarsub_connections_file_name($job_id);
-		my %params = (
-					  "node_file" => $node_file,
-					  "job_id" => $job_id,
-					  "array_id" => $job->{array_id},
-					  "array_index" => $job->{array_index},
-					  "user" => $lusr,
-					  "shell" => $shell,
-					  "launching_directory" => $job->{launching_directory},
-					  "resource_file" => $res_file,
-					  "job_name" => $job->{job_name},
-					  "job_project" => $job->{project},
-					  "job_walltime" => OAR::Sub::duration_to_sql($moldable->{moldable_walltime}),
-					  "job_walltime_sec" => $moldable->{moldable_walltime},
-					  "job_env" => $job->{job_env}
-					  );
+        my %params = (
+            "node_file" => $node_file,
+            "job_id" => $job_id,
+            "array_id" => $job->{array_id},
+            "array_index" => $job->{array_index},
+            "user" => $lusr,
+            "shell" => $shell,
+            "launching_directory" => $job->{launching_directory},
+            "resource_file" => $res_file,
+            "job_name" => $job->{job_name},
+            "job_project" => $job->{project},
+            "job_walltime" => OAR::Sub::duration_to_sql($moldable->{moldable_walltime}),
+            "job_walltime_sec" => $moldable->{moldable_walltime},
+            "job_env" => $job->{job_env}
+        );
         my $str = OAR::Sub::get_oarexecuser_script_for_oarsub(\%params);
         my ($cmd_name,@cmd_opts) = split(" ",$openssh_cmd);
         my @cmd;
@@ -233,13 +233,13 @@ sub connect_job($$$){
             warn("[ERROR] An unknown error occured ($?).\n");
         }
         if ($stop_oarexec > 0){
-			my %params = (
-						  "host" => $host_to_connect_via_ssh,
-						  "job_id" => $job_id,
-						  "signal" => "USR1",
-						  "time_to_wait" => 0,
-						  "ssh_cmd" => $openssh_cmd
-						  );
+            my %params = (
+                "host" => $host_to_connect_via_ssh,
+                "job_id" => $job_id,
+                "signal" => "USR1",
+                "time_to_wait" => 0,
+                "ssh_cmd" => $openssh_cmd
+            );
             OAR::Sub::signal_oarexec(\%params);
         }
         print("Disconnected from OAR job $job_id.\n");
@@ -339,7 +339,7 @@ EOS
 ## generate a job key if no import.
 ## function must exit with $job_key_priv and $job_key_pub set if $use_job_key is set.
 #sub job_key_management() {
-#		if (defined ($use_job_key) and !($import_job_key_inline ne "") and !($import_job_key_file ne "") and defined($ENV{OAR_JOB_KEY_FILE})){
+#    if (defined ($use_job_key) and !($import_job_key_inline ne "") and !($import_job_key_file ne "") and defined($ENV{OAR_JOB_KEY_FILE})){
 #        $import_job_key_file=$ENV{OAR_JOB_KEY_FILE};
 #    }
 #    if ((!defined($use_job_key)) and (($import_job_key_inline ne "") or ($import_job_key_file ne "") or ($export_job_key_file ne ""))){
@@ -729,9 +729,9 @@ if (defined($connect_job)){
 if (($Interactive == 0) and ($ARGV[0] ne "")) {
     my $exec = $ARGV[0];
     if (defined($Scan_script)){
-		my $scan_result_tmp = OAR::Sub::scan_script($exec, $Initial_request_string) if ($exec ne "");
-		my %scan_result = %$scan_result_tmp;
-		$Initial_request_string = $scan_result{initial_request};
+        my $scan_result_tmp = OAR::Sub::scan_script($exec, $Initial_request_string) if ($exec ne "");
+        my %scan_result = %$scan_result_tmp;
+        $Initial_request_string = $scan_result{initial_request};
         if (defined($scan_result{queue}) && !defined($Queue_name)){
             $Queue_name = $scan_result{queue}
         }elsif(defined($scan_result{queue}) && defined($Queue_name)){
@@ -883,7 +883,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
         }
         ($Server, $server_port) = OAR::Sub::init_tcp_server();
     }
-	# TODO: put in lib
+    # TODO: put in lib
     # stagein machinery
     if ((defined $stagein) and (grep(/^desktop_computing$/, @Type))) {
         #my $tempfile_to_delete;
@@ -905,7 +905,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             print "md5sum = $md5sum\n";
             print "(You may use the stagein-md5sum option with this md5sum for other job submitions with the same stagein)\n";
         }
-		OAR::Sub::get_lock($md5sum,3600) or die "Failed to lock stagein\n";
+        OAR::Sub::get_lock($md5sum,3600) or die "Failed to lock stagein\n";
         $idFile = OAR::Sub::get_stagein_id($md5sum);
         if (defined $idFile) {
             print "This stagein is already stored on the server.\n";
@@ -916,13 +916,13 @@ if (($Interactive == 0) and ($ARGV[0] ne "")) {
             print "Uploading stagein...\n";
             system "scp $stagein $location" and die "Stagein upload failed\n";
             my @stats = stat $stagein;
-			my %params = (
-						  "md5sum" => $md5sum,
-						  "location" => $location,
-						  "method" => $method,
-						  "compression" => $compression,
-						  "size" => $stats[7]
-			);
+            my %params = (
+                "md5sum" => $md5sum,
+                "location" => $location,
+                "method" => $method,
+                "compression" => $compression,
+                "size" => $stats[7]
+            );
             $idFile=OAR::Sub::set_stagein(\%params);
             defined $idFile or die "Failed to setup stagein\n";
         }
