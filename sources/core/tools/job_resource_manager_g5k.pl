@@ -460,15 +460,6 @@ EOF
     # Try to restart autofs if it was running (cf bug #10344)
     system('/bin/systemctl status autofs && oardodo /bin/systemctl restart autofs');
     # <-- GRID5000[storage]
-    # --> Grid5000[mic]
-    if (defined($Cpuset->{types}->{mic})){
-        if (!system("/etc/init.d/mpss status > /dev/null")){
-            my @tmp = getpwnam($Cpuset->{user});
-            system( "oardodo /usr/sbin/micctrl --useradd=$tmp[0] --uid=$tmp[2] --gid=$tmp[3] --sshkeys=$tmp[7]/.ssh");
-            system( 'oardodo /usr/bin/scp -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no /var/mpss/mic0/etc/passwd root@mic0:/etc/passwd');
-        }
-    }
-    # <-- Grid5000[mic]
 }elsif ($ARGV[0] eq "clean"){
     # delete ssh key files
     if ($Cpuset->{ssh_keys}->{private}->{key} ne ""){
@@ -630,14 +621,6 @@ EOF
         unlink("$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources");
     }
 
-    # --> Grid5000[mic]
-    if (defined($Cpuset->{types}->{mic})){
-        if (!system("/etc/init.d/mpss status > /dev/null")){
-            system( 'oardodo /usr/sbin/micctrl --userdel='.$Cpuset->{user});
-            system( 'oardodo /usr/bin/scp -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no /var/mpss/mic0/etc/passwd root@mic0:/etc/passwd');
-        }
-    }
-    # <-- Grid5000[mic]
     # --> Grid5000[tap_devices]
     # This code clean any tap device created by the user (bug #5489)
 
