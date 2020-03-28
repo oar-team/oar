@@ -219,17 +219,7 @@ sub print_events {
 sub print_gantt {
   my $hist = OAR::Stat::get_gantt($gantt_query);
   if (defined($hist)){
-    if (defined($DUMPER_mode)) {
-        print(Dumper($hist));
-    }elsif (defined($XML_mode)) {
-        my $dump = new XML::Dumper;
-        $dump->dtd;
-        print($dump->pl2xml($hist));
-    }elsif (defined($YAML_mode)) {
-        print(Dump($hist));
-	}elsif (defined($JSON_mode)){
-		print(JSON->new->pretty(1)->encode($hist));
-	}else{
+    if (dump_data($hist) == 0) {
         $Data::Dumper::Purity   = 1;
         $Data::Dumper::Terse    = 1;
         $Data::Dumper::Indent   = 1;
@@ -272,18 +262,8 @@ sub print_job_data($){
             $data->{ $j->{job_id} } = OAR::Stat::get_job_data($j,$full_view);
         }
     }
- 
-    if (defined($DUMPER_mode)){
-        print(Dumper($data));
-    }elsif(defined($XML_mode)){
-        my $dump = new XML::Dumper;
-        $dump->dtd;
-        print($dump->pl2xml($data));
-    }elsif(defined($YAML_mode)){
-        print(Dump($data));
-    }elsif(defined($JSON_mode)){
-        print(JSON->new->pretty(1)->encode($data));
-    }else{
+
+    if (dump_data($data) == 0) {
         my %hashestat = (
             'Waiting' => 'W',
             'toLaunch' => 'L',
@@ -475,21 +455,36 @@ EOS
 sub print_job_state_data($){
     my $data = shift;
 
-    if (defined($DUMPER_mode)){
-        print(Dumper($data));
-    }elsif(defined($XML_mode)){
-        my $dump = new XML::Dumper;
-        $dump->dtd;
-        print($dump->pl2xml($data));
-    }elsif(defined($YAML_mode)){
-        print(YAML::Dump($data));
-    }elsif(defined($JSON_mode)){
-        print(JSON->new->pretty(1)->encode($data));
-    }else{
+    if (dump_data($data) == 0) {
         foreach my $j (keys %$data){
            print "$j: ". $data->{$j} ."\n";
         }
     }
+}
+
+sub dump_data($) {
+    my $data = shift;
+    if (defined($data)) {
+        if(defined($JSON_mode)){
+            print(JSON->new->pretty(1)->encode($data));
+            return 1;
+        }
+        if(defined($YAML_mode)){
+            print(YAML::Dump($data));
+            return 2;
+        }
+        if (defined($DUMPER_mode)){
+            print(Dumper($data));
+            return 3;
+        }
+        if(defined($XML_mode)){
+            my $dump = new XML::Dumper;
+            $dump->dtd;
+            print($dump->pl2xml($data));
+            return 4;
+        }
+    }
+    return 0;
 }
 
 sub print_oar_version {
