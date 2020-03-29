@@ -11,7 +11,7 @@ version 2.5.9:
     reservations 
   - [schedulers] fix the inner job before its container scheduling issues.
   - [scheduler] waiting inner job in container that vanished are set to error  
-  - [oarexec] add an option to have inner jobs killer with their container  
+  - [oarexec] add an option to have inner jobs killed with their container  
   - [oarexec] do not run inner job before the container is running
   - [oarwalltime] make walltime change respect a defined job deadline
   - [oarwalltime] add an option to disable the walltime reduction
@@ -25,11 +25,13 @@ version 2.5.9:
   - [job_resource_manager/oarsh] add the COMPUTE_THREAD_SIBLINGS option, to let
     OAR automatically set the HT thread siblings if not set in the resources
     hierarchy with a thread resource, or in the resource cpuset field
+  - [job_resource_manager] rework code, support more cgroup subsystems
   - [oarsh] add support to let oarsh create a sub cgroup with either a subset of
     the cpuset or of the devices in the shell opened on the node. See an
     example of usage with GNU Parallel in the website documentation.
   - [oarsub] add the OARSUB_NODE_EXEC_FILE which allows to run a custom command
     on the head node of the job before the job shell
+  - [oarstat] fix JSON/YAML/XML output when no job to display
 
 version 2.5.8:
 --------------
