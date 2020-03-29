@@ -75,7 +75,7 @@ COSYSTEM_HOSTNAME="127.0.0.1"
 
 # Specify the database field that will be considered to fill the node file used
 # by the user on the first node of the job. for each different value of this
-# field then OAR will put 1 line in the node file (default: resource_id). 
+# field then OAR will put 1 line in the node file (default: resource_id).
 #NODE_FILE_DB_FIELD_DISTINCT_VALUES="resource_id"
 
 # If you want to free a process per job on the server you can change this tag
@@ -133,7 +133,7 @@ FINAUD_FREQUENCY="300"
 #DISABLE_SUSPECTED_NODES_REPAIR='no'
 
 # Set time after which Suspected resources become Dead (default is 0 and it
-# means never) 
+# means never)
 #DEAD_SWITCH_TIME="600"
 
 # Set to yes if you want to check the nodes that runs jobs. (no is the default value)
@@ -147,7 +147,7 @@ FINAUD_FREQUENCY="300"
 
 # sentinelle.pl
 # If you want to use sentinelle.pl then you must use this tag.
-# (sentinelle.pl is like a "for" of ssh but it adds timeout and window to 
+# (sentinelle.pl is like a "for" of ssh but it adds timeout and window to
 # avoid overloading the server)
 # (sentinelle.pl is provided with OAR in the install directory)
 PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 30 -w 20"
@@ -279,9 +279,9 @@ SCHEDULER_RESOURCE_ORDER="scheduler_priority ASC, state_num ASC, available_upto 
 # available_upto and suspended_jobs are not relevant for decisions in the future 
 SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS="network_address ASC, resource_id ASC"
 
-# If next line is uncommented then OAR will automatically update the value of 
+# If next line is uncommented then OAR will automatically update the value of
 # "scheduler_priority" field corresponding to the besteffort jobs.
-# The syntax is field names separated by "/". The value affected to 
+# The syntax is field names separated by "/". The value affected to
 # "scheduler_priority" depends of the position of the field name.
 SCHEDULER_PRIORITY_HIERARCHY_ORDER="network_address/resource_id"
 
@@ -319,7 +319,7 @@ SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 #RESERVATION_WAITING_RESOURCES_TIMEOUT="300"
 
 # Set the granularity of the OAR accounting feature (in seconds)
-# Used by the oaraccounting command and the 
+# Used by the oaraccounting command and the
 # oar_sched_gantt_with_timesharing_and_fairsharing* to calculate the timesharing
 # policy. Default is 1 day (86400s)
 #ACCOUNTING_WINDOW="86400"
@@ -497,11 +497,11 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # - nodes are suspected if they do not wake up before a timeout
 # - some nodes can be kept always alive depending on some properties
 # - the launching of wakeup/shutdown commands can be windowized to prevent
-#   from electric peeks 
+#   from electric peeks
 # Possible values are "yes" and "no"
 ENERGY_SAVING_INTERNAL="no"
 
-# Path to the script used by the energy saving module to wake up nodes. 
+# Path to the script used by the energy saving module to wake up nodes.
 # This command is executed from the oar server host.
 # OAR puts the node list on its STDIN (one hostname by line).
 # The scheduler looks at the available_upto field in the resources table to know
@@ -520,12 +520,12 @@ ENERGY_SAVING_INTERNAL="no"
 # have to wake up and 2000 seconds otherwise.
 #ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT="900"
 
-# You can set up a number of nodes that must always be on. You can use the 
+# You can set up a number of nodes that must always be on. You can use the
 # syntax in the examples if you want a number of alive nodes of different types
 # (corresponding to a specific sql properties requierement).
 # Example 1: keep alive 10 nodes on the whole cluster:
 #ENERGY_SAVING_NODES_KEEPALIVE="type='default':10"
-# Example 2: keep alive 4 nodes on the paradent cluster AND 6 nodes on the 
+# Example 2: keep alive 4 nodes on the paradent cluster AND 6 nodes on the
 # paraquad cluster AND 2 nodes accepting besteffort
 #ENERGY_SAVING_NODES_KEEPALIVE="cluster='paradent':4 & cluster='paraquad':6 & besteffort='YES':2"
 # By default, keepalive is disabled:
@@ -539,8 +539,8 @@ ENERGY_SAVING_INTERNAL="no"
 
 # Parameter to bypas the window mechanism embedded in the energy saving module.
 # Possible values are "yes" and "no"
-# When set to "yes", the list of nodes to wake up or shut down is passed to 
-# ENERGY_SAVING_NODE_MANAGER_*_CMD through stdin. 
+# When set to "yes", the list of nodes to wake up or shut down is passed to
+# ENERGY_SAVING_NODE_MANAGER_*_CMD through stdin.
 #ENERGY_SAVING_WINDOW_FORKER_BYPASS="no"
 
 # Time in second between execution of each window.
@@ -553,7 +553,7 @@ ENERGY_SAVING_INTERNAL="no"
 #ENERGY_SAVING_WINDOW_TIMEOUT="120"
 
 # The energy saving module can be automatically restarted after reaching
-# this number of cycles. This is a workaround for some DBD modules that do 
+# this number of cycles. This is a workaround for some DBD modules that do
 # not always free memory correctly.
 #ENERGY_MAX_CYCLES_UNTIL_REFRESH=5000
 
@@ -576,7 +576,7 @@ ENERGY_SAVING_INTERNAL="no"
 
 
 # To allow users to hold or resume their jobs. By default it's restricted to oar and
-# root users due to global scheduling impact and possible priority bypassing.  
+# root users due to global scheduling impact and possible priority bypassing.
 #USERS_ALLOWED_HOLD_RESUME="yes"
 
 ###############################################################################
@@ -709,16 +709,16 @@ OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 #API_JOBS_URI_DEFAULT_PARAMS="state=Finishing,Running,Resuming,Suspended,Launching,toLaunch,Waiting,toAckReservation,Hold"
 
 # Set to 0 if you want the API to provide relative uris.
-# Relative uris may help if your API is behind a reverse proxy, 
-# as you don't have to rewrite the uris, but due to the possible confusion 
-# between "resources" and "resources/", it may not work with some libraries 
+# Relative uris may help if your API is behind a reverse proxy,
+# as you don't have to rewrite the uris, but due to the possible confusion
+# between "resources" and "resources/", it may not work with some libraries
 # like "ruby Restfully".
 # In addition, you can use the X_API_PATH_PREFIX http header variable to prepend each uris
 # returned by the API by a given prefix. (for example: curl -i -H'X_API_PATH_PREFIX: http://prefix_a/la/noix/' ...)
 #API_ABSOLUTE_URIS=1
 
 # Api stress_factor script
-# This script should return at least a real value between 0 and 1 that is given by 
+# This script should return at least a real value between 0 and 1 that is given by
 # the OAR api for the "GET /stress_factor" URI.
 # Warning: this script is run by root and the output is parsed as a list of
 # variables as is!
@@ -745,4 +745,3 @@ OARSTAT_DEFAULT_OUTPUT_FORMAT=2
 # Colmet hdf5 files path with filename prefix
 # The API will automatically append .<timestamp>.hdf5
 #API_COLMET_HDF5_PATH_PREFIX="/var/lib/colmet/hdf5/cluster"
-
