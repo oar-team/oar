@@ -75,10 +75,28 @@ if ((grep(/^besteffort$/, @{$type_list})) and ($reservationField ne "None")){
 }
 ');
 
--- Only advance-reservation jobs can be of type container
-INSERT INTO admission_rules (priority, enabled, rule) VALUES (8, 'YES', E'# Only advance-reservation jobs can be of type container
-if ((grep(/^container$/, @{$type_list})) and ($reservationField eq "None")){
-    die("[ADMISSION RULE] Error: Only advance-reservation jobs can be of type container\\n");
+-- A advance-reservation inner job requires an advance-reservation container
+INSERT INTO admission_rules (priority, enabled, rule) VALUES (8, 'YES', E'# An advance-reservation inner job requires an advance-reservation container
+my %type_hash = map { my ($k,$v) = /^([^=]+)(?:=(.+))?$/; $k => $v } @$type_list;
+
+if (exists($type_hash{inner})) {
+    my $sth = $dbh->prepare("SELECT reservation
+                             FROM jobs
+                             WHERE
+                                 job_id = $type_hash{inner} AND
+                                 state IN('Waiting','Hold','toLaunch','toAckReservation',
+                                          'Launching','Running','Suspended','Resuming') 
+                            ");
+    $sth->execute();
+    my ($container_reservation) = $sth->fetchrow_array();
+
+    if (defined($container_reservation)) {
+        if ($container_reservation eq "None" and not $reservationField eq "None") {
+            die("[ADMISSION RULE] Error: an advance-reservation inner job requires the container to be an advance reservation as well.\n");
+        }
+    } else {
+        die("[ADMISSION RULE] Error: inner job is requesting an invalid container id.\n");
+    }
 }
 ');
 
