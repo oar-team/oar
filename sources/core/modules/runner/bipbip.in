@@ -4,7 +4,7 @@
 
 use OAR::IO;
 use Sys::Hostname;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use OAR::Conf qw(init_conf dump_conf get_conf get_conf_with_default_param is_conf);
 use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
 use OAR::PingChecker;
 use OAR::Tools;
@@ -240,6 +240,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         name => $Cpuset_name,
         nodes => $cpuset_nodes,
         cpuset_path => $Cpuset_path,
+        compute_thread_siblings => get_conf_with_default_param("COMPUTE_THREAD_SIBLINGS", "no"),
         ssh_keys => {
                         public => {
                                     file_name => OAR::Tools::get_default_oar_ssh_authorized_keys_file(),

@@ -3,9 +3,35 @@ OAR CHANGELOG
 
 version 2.5.9:
 --------------
-  - [db] added some indexes to improve performance
-  - [nodecheck] add option to disable the suspected nodes repair
-  - [oarexec] fix oarsub shell termination (job killed) 
+
+  - [scheduler] add the SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS option, so
+    that adv. reservation scheduling is not impacted by the current state of
+    the resources
+  - [admission rules] add an admission rule to force container to be adv.
+    reservations 
+  - [schedulers] fix the inner job before its container scheduling issues.
+  - [scheduler] waiting inner job in container that vanished are set to error  
+  - [oarexec] add an option to have inner jobs killed with their container  
+  - [oarexec] do not run inner job before the container is running
+  - [oarwalltime] make walltime change respect a defined job deadline
+  - [oarwalltime] add an option to disable the walltime reduction
+  - [oarwalltime] fix the per queue configuration which was broken
+  - [oarsub/scheduler] fix a bug with the recent Perl max recursion depth limit
+  - [drawgantt] show the timezone in the dates
+  - [oarexec] fix oarsub shell termination when the job is killed 
+  - [DB] add an index to the resource_log table
+  - [oar_resource_add] add support reparing the resource properties
+  - [oarexec] add support to disable the auto-repair of suspected nodes
+  - [job_resource_manager/oarsh] add the COMPUTE_THREAD_SIBLINGS option, to let
+    OAR automatically set the HT thread siblings if not set in the resources
+    hierarchy with a thread resource, or in the resource cpuset field
+  - [job_resource_manager] rework code, support more cgroup subsystems
+  - [oarsh] add support to let oarsh create a sub cgroup with either a subset of
+    the cpuset or of the devices in the shell opened on the node. See an
+    example of usage with GNU Parallel in the website documentation.
+  - [oarsub] add the OARSUB_NODE_EXEC_FILE which allows to run a custom command
+    on the head node of the job before the job shell
+  - [oarstat] fix JSON/YAML/XML output when no job to display
 
 version 2.5.8:
 --------------

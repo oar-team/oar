@@ -409,6 +409,11 @@ while (@jobs and ((time() - $initial_time) < $timeout)){
         OAR::IO::add_gantt_scheduled_jobs($base,$moldable_results[$index_to_choose]->{moldable_id}, $moldable_results[$index_to_choose]->{start_date},$moldable_results[$index_to_choose]->{resources});
         OAR::IO::set_job_message($base,$i,"FIFO scheduling OK");
         OAR::IO::set_job_scheduler_info($base,$i,"FIFO scheduling OK");
+
+        if ($moldable_results[$index_to_choose]->{start_date} <= $current_time){
+            # Try tu run the job now
+            print("SCHEDRUN JOB_ID=$j->{job_id} MOLDABLE_JOB_ID=$moldable_results[$index_to_choose]->{moldable_id} RESOURCES=".join(',', @{$moldable_results[$index_to_choose]->{resources}})."\n");
+        }
     }else{
         oar_debug("[$scheduler_name] [$i] job couldn't be scheduled\n");
         my $message = "cannot find enough resources for job $i";

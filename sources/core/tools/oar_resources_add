@@ -310,7 +310,7 @@ EOF
   if [ -n "$DO_GPUS" ]; then
     cat <<EOF
 oarproperty -l | grep -q -e "^gpu$" || oarproperty -a gpu
-oarproperty -l | grep -q -e "^gpu$" || oarproperty -c -a gpudevice
+oarproperty -l | grep -q -e "^gpudevice$" || oarproperty -c -a gpudevice
 EOF
   fi
 fi
