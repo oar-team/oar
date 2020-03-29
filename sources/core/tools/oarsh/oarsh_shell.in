@@ -1,8 +1,11 @@
 #!/bin/bash
-# $Id$
-# This is the shell program used with the oarsh script.
-# It adds its own process in the cpuset OAR_CPUSET and launches
-# the shell or the script of the user OAR_JOB_USER.
+# This is the login shell program for the oar user, used by oarsub/oarexec and
+# oarsh It adds its own process in the OAR cgroups (defined by OAR_CPUSET) and
+# runs the shell or the script of the user defined by OAR_JOB_USER.
+#
+# If OAR_USER_CPUSET resp. OAR_USER_GPUDEVICE is set by the user calling oarsh
+# (not possible with oarsub), it creates a cgroup sub directory for cpuset
+# resp. devices with the requested subset of cpusets or gpudevices allocated.
 
 DEFAULT_SHELL=/bin/bash
 XAUTH_LOCATION="%%XAUTHCMDPATH%%"
@@ -19,15 +22,13 @@ JOBENVFILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.env"
 
 OLDUMASK=$(umask)
 umask 0022
+shopt -s nullglob
 
 # $1 = Name of the cpuset
 # $2,$3,... = PIDs to add
-# Add PIDS into the cpuset $1
+# Add PIDS into the job cgroups
 function add_process_to_cpuset() {
     [ "$1" = "undef" ] && return
-    ######################
-    # CPUSET assignation #
-    ###########################################################################
     CPUSETNAME=$1
     if [ ! -w /dev/cpuset/$CPUSETNAME/tasks ]; then
         echo "oarsh: Cannot find cpuset file : /dev/cpuset/$CPUSETNAME/tasks" 1>&2
@@ -35,13 +36,86 @@ function add_process_to_cpuset() {
     fi
     shift
 
-    # Add each processes to the right OAR cgroups
+    # Add all processes to the OAR job cgroups
     for p in $@; do
         if [ -r $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/tasks ]; then
+            # If the user gave OAR_USER_CPUSET, a sub cpuset cgroup has to be created and configured. If not, just use the one created by the job resources manager.
+            if [ -n "$OAR_USER_CPUSET" ]; then
+                if [[ "$OAR_USER_CPUSET" == +([[:digit:],]) ]]; then
+                    # If COMPUTE_THREAD_SIBLINGS="yes" in oar.conf, that means that the OAR DB has not info about the hyper thread siblings, so we have compute it here.
+                    # See the job_resource_manager_cgroup.pl script for more details on that matter.
+                    if [ "${COMPUTE_THREAD_SIBLINGS,,}" == "yes" ]; then
+                        OAR_USER_CPUSET=$(
+                            for i in ${OAR_USER_CPUSET//,/ }; do
+                                cat /sys/devices/system/cpu/cpu$i/topology/thread_siblings_list
+                            done | paste -sd, -
+                        )
+                    fi
+                    if $OARDIR/oardodo/oardodo sh -c "mkdir -p $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET" && \
+                       $OARDIR/oardodo/oardodo sh -c "echo $OAR_USER_CPUSET > $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/cpuset.cpus" && \
+                       $OARDIR/oardodo/oardodo sh -c "cat $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/cpuset.mems > $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/cpuset.mems"
+                    then
+                        : # Everthing went fine
+                    else
+                        # It mostly failed because the OAR_USER_CPUSET is not a subset of the job's cpuset
+                        # We do not want OAR to fail and the resource to become suspected here
+                        echo "Warning: Failed to set user cpuset as requested by OAR_USER_CPUSET=$OAR_USER_CPUSET, use the default one" 1>&2
+                        # Fallback to no OAR_USER_CPUSET defined
+                        OAR_USER_CPUSET=""
+                    fi
+                else
+                    # OAR_USER_CPUSET is defined but syntax is incorrect
+                    echo "Warning: Failed to set user cpuset as requested by OAR_USER_CPUSET=$OAR_USER_CPUSET, use the default one" 1>&2
+                    OAR_USER_CPUSET=""
+                fi
+            fi
             # Feed at least cpuset (security)
-            $OARDIR/oardodo/oardodo sh -c "echo $p > $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/tasks" || return 1
+            # OAR_USER_CPUSET is mostly undefined:
+            # Only oarsh lets the user define it optionally
+            # It is never defined when OAR shell is called by oarsub
+            # When executing the shell for oarsub, it feeds the job's default cgroup/cpuset tasks
+            $OARDIR/oardodo/oardodo sh -c "echo $p > $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/tasks" || return 1
+
+            if [ -r "$CPUSET_MOUNT_POINT/devices/$CPUSETNAME/tasks" ]; then
+                if [ -n "$OAR_USER_GPUDEVICE" ]; then
+                    # If the user gave OAR_USER_GPUDEVICE, a sub device cgroup has to be created and configured. If not, just use the one created by the job resources manager.
+                    if [[ "$OAR_USER_GPUDEVICE" == +([[:digit:],]) ]]; then
+                        if $OARDIR/oardodo/oardodo sh -c "mkdir -p $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE"; then
+                            # deny any nvidia device which is not requested in $OAR_USER_GPUDEVICE
+                            for d in /dev/nvidia{,[1-9]}[0-9]; do
+                                if [[ ",$OAR_USER_GPUDEVICE," == !(*,${d#/dev/nvidia},*) ]]; then
+                                    if $OARDIR/oardodo/oardodo sh -c "echo c 195:${d#/dev/nvidia} rwm > $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/devices.deny"; then
+                                        : # Everthing went fine
+                                    else
+                                        # It mostly failed because the OAR_USER_GPUDEVICE is not a subset of the job's gpudevices
+                                        # We do not want OAR to fail and the resource to become suspected here
+                                        echo "Warning: Failed to set user gpudevice as requested by OAR_USER_GPUDEVICE=$OAR_USER_GPUDEVICE, use the default one" 1>&2
+                                        # Fallback to no OAR_USER_GPUDEVICE defined
+                                        OAR_USER_GPUDEVICE=""
+                                        break
+                                    fi
+                                fi
+                            done
+                        else
+                            # Should not fail here (only a mkdir) but we do not want OAR to fail and the resource to become suspected here
+                            echo "Warning: Failed to set user gpudevice as requested by OAR_USER_GPUDEVICE=$OAR_USER_GPUDEVICE, use the default one" 1>&2
+                            # Fallback to no OAR_USER_GPUDEVICE defined
+                            OAR_USER_GPUDEVICE=""
+                        fi
+                    else
+                        # OAR_USER_GPUDEVICE is defined but syntax is incorrect
+                        echo "Warning: Failed to set user gpudevice as requested by OAR_USER_GPUDEVICE=$OAR_USER_GPUDEVICE, use the default one" 1>&2
+                        # Fallback to no OAR_USER_GPUDEVICE defined
+                        OAR_USER_GPUDEVICE=""
+                    fi
+                fi
+                # Only oarsh lets the user define OAR_USER_GPUDEVICE, optionally. It is never defined when OAR shell is called by oarsub.
+                # When executing the shell for oarsub, the job's default devices cgroup tasks is feeded:
+                # OAR_USER_GPUDEVICE is undefined and ".../$OAR_USER_GPUDEVICE/tasks" becomes "...//tasks", with a harmless double "/".
+                $OARDIR/oardodo/oardodo sh -c "echo $p > $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/tasks" || return 1
+            fi 
             for c in $CPUSET_MOUNT_POINT/*; do
-                if [ "$c" != "$CPUSET_MOUNT_POINT/cpuset" -a -r "$c/$CPUSETNAME/tasks" ]; then
+                if [ "$c" != "$CPUSET_MOUNT_POINT/cpuset" -a "$c" != "$CPUSET_MOUNT_POINT/devices" -a -r "$c/$CPUSETNAME/tasks" ]; then
                     $OARDIR/oardodo/oardodo sh -c "echo $p > $c/$CPUSETNAME/tasks" || return 1
                 fi
             done
@@ -50,7 +124,6 @@ function add_process_to_cpuset() {
             $OARDIR/oardodo/oardodo sh -c "echo $p > /dev/cpuset/$CPUSETNAME/tasks" || return 1
         fi
     done
-    ###########################################################################
 }
 
 if [ "$OAR_JOB_USER" = "" ]
