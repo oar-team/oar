@@ -495,10 +495,6 @@ EOF
             exit_myself(10,"Error opening $Cpuset->{ssh_keys}->{public}->{file_name}");
         }
     }
-    # --> GRID5000[storage]
-    # Try to restart autofs if it was running (cf bug #10344)
-    system('/bin/systemctl status autofs && oardodo /bin/systemctl restart autofs');
-    # <-- GRID5000[storage]
 }elsif ($ARGV[0] eq "clean"){
     # delete ssh key files
     if ($Cpuset->{ssh_keys}->{private}->{key} ne ""){
@@ -691,6 +687,11 @@ EOF
         print_log(3, "Error opening $if_file for tap device discovery: $!");
     }
     # <-- Grid5000[tap_devices]
+
+    # --> GRID5000[storage]
+    # Try to restart autofs if it was running (cf bug #10344 and #11647)
+    system_with_log('/bin/systemctl status autofs && oardodo pkill -USR1 automount && oardodo pkill -HUP automount');
+    # <-- GRID5000[storage]
 }else{
     exit_myself(3,"Bad command line argument $ARGV[0]");
 }
