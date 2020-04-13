@@ -9,7 +9,7 @@
 
 DEFAULT_SHELL=/bin/bash
 XAUTH_LOCATION="%%XAUTHCMDPATH%%"
-CPUSET_MOUNT_POINT="/dev/oar_cgroups_links"
+CGROUP_MOUNT_POINT="/dev/oar_cgroups_links"
 OARDIR="%%OARDIR%%"
 OAR_RUNTIME_DIRECTORY="/tmp/oar_runtime"
 
@@ -38,22 +38,25 @@ function add_process_to_cpuset() {
 
     # Add all processes to the OAR job cgroups
     for p in $@; do
-        if [ -r $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/tasks ]; then
+        if [ -r $CGROUP_MOUNT_POINT/cpuset/$CPUSETNAME/tasks ]; then
             # If the user gave OAR_USER_CPUSET, a sub cpuset cgroup has to be created and configured. If not, just use the one created by the job resources manager.
             if [ -n "$OAR_USER_CPUSET" ]; then
                 if [[ "$OAR_USER_CPUSET" == +([[:digit:],]) ]]; then
-                    # If COMPUTE_THREAD_SIBLINGS="yes" in oar.conf, that means that the OAR DB has not info about the hyper thread siblings, so we have compute it here.
-                    # See the job_resource_manager_cgroup.pl script for more details on that matter.
+                    # Rewrite OAR_USER_CPUSET to remove any duplicate and sort, so that whatever the combination given, the cgroup name is the same
                     if [ "${COMPUTE_THREAD_SIBLINGS,,}" == "yes" ]; then
+                        # If COMPUTE_THREAD_SIBLINGS="yes" in oar.conf, that means that the OAR DB has not info about the hyper thread siblings, so we have compute it here.
+                        # See the job_resource_manager_cgroup.pl script for more details on that matter.
                         OAR_USER_CPUSET=$(
                             for i in ${OAR_USER_CPUSET//,/ }; do
                                 cat /sys/devices/system/cpu/cpu$i/topology/thread_siblings_list
-                            done | paste -sd, -
+                            done |  sort -un | paste -sd, -
                         )
+                    else
+                        OAR_USER_CPUSET=$(echo ${OAR_USER_CPUSET//,/ } | xargs -n1 | sort -un | paste -sd, -)
                     fi
-                    if $OARDIR/oardodo/oardodo sh -c "mkdir -p $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET" && \
-                       $OARDIR/oardodo/oardodo sh -c "echo $OAR_USER_CPUSET > $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/cpuset.cpus" && \
-                       $OARDIR/oardodo/oardodo sh -c "cat $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/cpuset.mems > $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/cpuset.mems"
+                    if $OARDIR/oardodo/oardodo sh -c "mkdir -p $CGROUP_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET" && \
+                       $OARDIR/oardodo/oardodo sh -c "echo $OAR_USER_CPUSET > $CGROUP_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/cpuset.cpus" && \
+                       $OARDIR/oardodo/oardodo sh -c "cat $CGROUP_MOUNT_POINT/cpuset/$CPUSETNAME/cpuset.mems > $CGROUP_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/cpuset.mems"
                     then
                         : # Everthing went fine
                     else
@@ -74,17 +77,19 @@ function add_process_to_cpuset() {
             # Only oarsh lets the user define it optionally
             # It is never defined when OAR shell is called by oarsub
             # When executing the shell for oarsub, it feeds the job's default cgroup/cpuset tasks
-            $OARDIR/oardodo/oardodo sh -c "echo $p > $CPUSET_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/tasks" || return 1
+            $OARDIR/oardodo/oardodo sh -c "echo $p > $CGROUP_MOUNT_POINT/cpuset/$CPUSETNAME/$OAR_USER_CPUSET/tasks" || return 1
 
-            if [ -r "$CPUSET_MOUNT_POINT/devices/$CPUSETNAME/tasks" ]; then
+            if [ -r "$CGROUP_MOUNT_POINT/devices/$CPUSETNAME/tasks" ]; then
                 if [ -n "$OAR_USER_GPUDEVICE" ]; then
                     # If the user gave OAR_USER_GPUDEVICE, a sub device cgroup has to be created and configured. If not, just use the one created by the job resources manager.
                     if [[ "$OAR_USER_GPUDEVICE" == +([[:digit:],]) ]]; then
-                        if $OARDIR/oardodo/oardodo sh -c "mkdir -p $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE"; then
+                        # Rewrite OAR_USER_GPUDEVICE to remove any duplicate and sort, so that whatever the combination given, the cgroup name is the same
+                        OAR_USER_GPUDEVICE=$(echo ${OAR_USER_GPUDEVICE//,/ } | xargs -n1 | sort -un | paste -sd, -)
+                        if $OARDIR/oardodo/oardodo sh -c "mkdir -p $CGROUP_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE"; then
                             # deny any nvidia device which is not requested in $OAR_USER_GPUDEVICE
                             for d in /dev/nvidia{,[1-9]}[0-9]; do
                                 if [[ ",$OAR_USER_GPUDEVICE," == !(*,${d#/dev/nvidia},*) ]]; then
-                                    if $OARDIR/oardodo/oardodo sh -c "echo c 195:${d#/dev/nvidia} rwm > $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/devices.deny"; then
+                                    if $OARDIR/oardodo/oardodo sh -c "echo c 195:${d#/dev/nvidia} rwm > $CGROUP_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/devices.deny"; then
                                         : # Everthing went fine
                                     else
                                         # It mostly failed because the OAR_USER_GPUDEVICE is not a subset of the job's gpudevices
@@ -112,10 +117,10 @@ function add_process_to_cpuset() {
                 # Only oarsh lets the user define OAR_USER_GPUDEVICE, optionally. It is never defined when OAR shell is called by oarsub.
                 # When executing the shell for oarsub, the job's default devices cgroup tasks is feeded:
                 # OAR_USER_GPUDEVICE is undefined and ".../$OAR_USER_GPUDEVICE/tasks" becomes "...//tasks", with a harmless double "/".
-                $OARDIR/oardodo/oardodo sh -c "echo $p > $CPUSET_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/tasks" || return 1
+                $OARDIR/oardodo/oardodo sh -c "echo $p > $CGROUP_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/tasks" || return 1
             fi 
-            for c in $CPUSET_MOUNT_POINT/*; do
-                if [ "$c" != "$CPUSET_MOUNT_POINT/cpuset" -a "$c" != "$CPUSET_MOUNT_POINT/devices" -a -r "$c/$CPUSETNAME/tasks" ]; then
+            for c in $CGROUP_MOUNT_POINT/*; do
+                if [ "$c" != "$CGROUP_MOUNT_POINT/cpuset" -a "$c" != "$CGROUP_MOUNT_POINT/devices" -a -r "$c/$CPUSETNAME/tasks" ]; then
                     $OARDIR/oardodo/oardodo sh -c "echo $p > $c/$CPUSETNAME/tasks" || return 1
                 fi
             done

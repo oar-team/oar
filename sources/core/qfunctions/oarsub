@@ -692,7 +692,7 @@ if (defined($Resubmit)){
     }
 }
 
-if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && (!defined($connect_job))){
+if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && !defined($connect_job) && !grep(/^noop(?:=standby)?$/, @Type)){
     usage();
     OAR::Sub::close_db_connection(); exit(5);
 }
@@ -708,11 +708,9 @@ if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
     usage();
     OAR::Sub::close_db_connection(); exit(17);
 }
-if (grep(/^noop$/, @Type)){
-    if ($Interactive == 1){
-        warn("[ERROR] A noop job cannot be interactive.\n");
-        OAR::Sub::close_db_connection(); exit(17);
-    }
+if (($Interactive == 1) and grep(/^noop(?:=standby)?$/, @Type)){
+    warn("[ERROR] A noop job cannot be interactive.\n");
+    OAR::Sub::close_db_connection(); exit(17);
 }
 
 if (defined($notify) && $notify =~ m/^.*exec\s*:.+$/m){
@@ -731,7 +729,7 @@ if (defined($connect_job)){
 }
 # End connection to a reservation
 
-if (($Interactive == 0) and ($ARGV[0] ne "")) {
+if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type))){
     my $exec = $ARGV[0];
     if (defined($Scan_script)){
         my $scan_result_tmp = OAR::Sub::scan_script($exec, $Initial_request_string) if ($exec ne "");
