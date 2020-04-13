@@ -228,9 +228,9 @@ if ($ARGV[0] eq "init"){
             # after setting it will give "1-2,5-8"
             my $job_cpuset_cpus_cmd = '/bin/echo '.join(",",@Cpuset_cpus).' | cat > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus';
             if (exists($Cpuset->{'compute_thread_siblings'}) and lc($Cpuset->{'compute_thread_siblings'}) eq "yes") {
-                # If COMPUTE_THREAD_SIBLINGS="yes" in oar.conf, that means that the OAR DB has not info about the hyper 
-                # thread siblings, so we have compute it here.
-                $job_cpuset_cpus_cmd = 'for i in '.join(" ", map {s/,/ /gr} @Cpuset_cpus).'; do cat /sys/devices/system/cpu/cpu$i/topology/thread_siblings_list; done | paste -sd, -" > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus';
+                # If COMPUTE_THREAD_SIBLINGS="yes" in oar.conf, that means that the OAR DB has not info about the
+                # HT threads siblings, so we have compute it here.
+                $job_cpuset_cpus_cmd = 'for i in '.join(" ", map {s/,/ /gr} @Cpuset_cpus).'; do cat /sys/devices/system/cpu/cpu$i/topology/thread_siblings_list; done | paste -sd, - > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.cpus';
             }
             system('set -e
                     for d in '.$Cgroup_directory_collection_links.'/*; do
