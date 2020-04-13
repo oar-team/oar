@@ -31,7 +31,9 @@ version 2.5.9:
     example of usage with GNU Parallel in the website documentation.
   - [oarsub] add the OARSUB_NODE_EXEC_FILE which allows to run a custom command
     on the head node of the job before the job shell
+  - [oarsub] make oarsub noop jobs with no script
   - [oarstat] fix JSON/YAML/XML output when no job to display
+  - [oarstat] oarstat -j can now use the OAR_JOB_ID environment variable
 
 version 2.5.8:
 --------------
