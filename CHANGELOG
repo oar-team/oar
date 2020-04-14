@@ -20,7 +20,7 @@ version 2.5.9:
   - [drawgantt] show the timezone in the dates
   - [oarexec] fix oarsub shell termination when the job is killed 
   - [DB] add an index to the resource_log table
-  - [oar_resource_add] add support reparing the resource properties
+  - [oar_resource_add] add support for reparing the resource properties
   - [oarexec] add support to disable the auto-repair of suspected nodes
   - [job_resource_manager/oarsh] add the COMPUTE_THREAD_SIBLINGS option, to let
     OAR automatically set the HT thread siblings if not set in the resources
@@ -31,7 +31,7 @@ version 2.5.9:
     example of usage with GNU Parallel in the website documentation.
   - [oarsub] add the OARSUB_NODE_EXEC_FILE which allows to run a custom command
     on the head node of the job before the job shell
-  - [oarsub] make oarsub noop jobs with no script
+  - [oarsub] make oarsub accept the submission of a noop job with no script
   - [oarstat] fix JSON/YAML/XML output when no job to display
   - [oarstat] oarstat -j can now use the OAR_JOB_ID environment variable
 
