@@ -10,7 +10,7 @@ Build-Depends: debhelper-compat (= 12),
 Standards-Version: 4.3.0
 Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
 Vcs-Browser: https://github.com/oar-team/oar
-Homepage: http://oar.imag.fr/
+Homepage: https://oar.imag.fr/
 
 Package: liboar-perl
 Architecture: any
