@@ -1,3 +1,9 @@
+oar (2.5.8-3) UNRELEASED; urgency=medium
+
+  * Wrap long lines in changelog entries: 2.5.3-3.
+
+ -- Debian Janitor <janitor@jelmer.uk>  Tue, 28 Apr 2020 22:21:45 +0000
+
 oar (2.5.8-2) unstable; urgency=medium
 
   * Revert to stretch behavior for Storable::dclone perl function (Closes:
@@ -221,8 +227,8 @@ oar (2.5.3-3) unstable; urgency=low
   * Fix oar-user dependency on oar-user-mysql or oar-user-postgresql
   * Fix prologues and epilogues configuration files permissions:
     add patch to set mod 0755
-  * Fix oarsub copyright in pod (man), this corrects the "FTBFS with perl 5.18: POD failure" reported by Debian
-    (Closes: #720431)
+  * Fix oarsub copyright in pod (man), this corrects the "FTBFS with perl 5.18:
+    POD failure" reported by Debian (Closes: #720431)
   * Fix the database structure version: must be 2.5.2
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 09 Sep 2013 00:03:38 +0200
