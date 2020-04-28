@@ -7,7 +7,7 @@ Build-Depends: debhelper-compat (= 12),
                po-debconf,
                perl,
                python3-sphinx
-Standards-Version: 4.3.0
+Standards-Version: 4.5.0
 Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
 Vcs-Browser: https://github.com/oar-team/oar
 Homepage: https://oar.imag.fr/

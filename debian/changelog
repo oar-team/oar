@@ -2,6 +2,7 @@ oar (2.5.8-3) UNRELEASED; urgency=medium
 
   * Wrap long lines in changelog entries: 2.5.3-3.
   * Use secure URI in Homepage field.
+  * Update standards version to 4.5.0, no changes needed.
 
  -- Debian Janitor <janitor@jelmer.uk>  Tue, 28 Apr 2020 22:21:45 +0000
 
