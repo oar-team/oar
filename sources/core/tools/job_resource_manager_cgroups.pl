@@ -56,6 +56,7 @@ use Fcntl ':flock';
 sub exit_myself($$);
 sub print_log($$);
 sub system_with_log($);
+sub get_actual_cpu_ids($);
 
 ###############################################################################
 # Script configuration start
@@ -141,7 +142,10 @@ if (!defined($Cpuset->{log_level})){
 }
 $Log_level = $Cpuset->{log_level};
 my $Cpuset_path_job;
+# List of all the logical cpus of the job
 my @Cpuset_cpus;
+# List of the 1st logical cpu of each resource of the job
+my @Cpuset_cpus_1st;
 my $Oardocker_node_cg_path = "";
 # Get the data structure only for this node
 if (defined($Cpuset->{cpuset_path})){
@@ -152,7 +156,9 @@ if (defined($Cpuset->{cpuset_path})){
     }
     $Cpuset_path_job = $Cpuset->{cpuset_path}.'/'.$Cpuset->{name};
     foreach my $l (@{$Cpuset->{nodes}->{$ENV{TAKTUK_HOSTNAME}}}){
-        push(@Cpuset_cpus, split(/[,\s]+/, $l));
+        my @a = split(/[,\s]+/, $l);
+        push(@Cpuset_cpus, @a);
+        push(@Cpuset_cpus_1st, $a[0]);
     }
 }
 
@@ -249,9 +255,11 @@ if ($ARGV[0] eq "init"){
                              '.$job_cpuset_cpus_cmd)
             and exit_myself(5,"Failed to create and feed the cpuset cpus $Cpuset_path_job");
             if ($Cpuset_cg_mem_nodes eq "all"){
+                # add all the memory nodes, even if the cpu which the memory node is attached to is not in the job
                 system_with_log('cat '.$Cgroup_directory_collection_links.'/cpuset/cpuset.mems > '.$Cgroup_directory_collection_links.'/cpuset/'.$Cpuset_path_job.'/cpuset.mems')
                 and exit_myself(5,"Failed to feed the mem nodes to cpuset $Cpuset_path_job");
             } else {
+                # add only the memory nodes associated to cpus which are in the job
                 system_with_log('set -e
                         for d in '.$Cgroup_directory_collection_links.'/*; do
                             MEM=
@@ -273,26 +281,60 @@ if ($ARGV[0] eq "init"){
         }
 
         # Compute the actual job cpus (@Cpuset_cpus may not have the HT included, depending on the OAR resources definiton)
-        my @job_cpus;
-        if (open(CPUS, $Cgroup_directory_collection_links."/cpuset/".$Cpuset_path_job."/cpuset.cpus")){
-            my $str = <CPUS>;
-            chop($str);
-            $str =~ s/\-/\.\./g;
-            @job_cpus = eval($str);
-            close(CPUS);
-        }else{
-            exit_myself(5,"Failed to retrieve the cpu list of the job $Cgroup_directory_collection_links/cpuset/$Cpuset_path_job/cpuset.cpus");
-        }
+        my ($actual_job_cpu_ids_str, @actual_job_cpu_ids) = get_actual_cpu_ids($Cpuset_path_job);
         # Get all the cpus of the node
-        my @node_cpus;
-        if (open(CPUS, $Cgroup_directory_collection_links."/cpuset/cpuset.cpus")){
-            my $str = <CPUS>;
-            chop($str);
-            $str =~ s/\-/\.\./g;
-            @node_cpus = eval($str);
-            close(CPUS);
-        }else{
-            exit_myself(5,"Failed to retrieve the cpu list of the node $Cgroup_directory_collection_links/cpuset/cpuset.cpus");
+        my ($actual_node_cpu_ids_str, @actual_node_cpu_ids) = get_actual_cpu_ids("");
+
+        # smt=off job type: disable threads except the first of each core of the job (all threads are activatved by default)
+        if (exists($Cpuset->{types}->{smt}) and lc($Cpuset->{types}->{smt}) eq 'off') {
+          # This block handles the 3 differents cases of OAR resources configurations:
+          # 1- resource hiearchy does not define threads, and the cpuset property gives only the cpu id of the 1st thread: in that case,
+          #    the smt job type must be allowed with whole node only (because it's not possible to renable threads for a subset of cores)
+          # 2- resource hiearchy does not define threads, but the cpuset property gives the cpu ids of all the threads
+          # 3- resource hiearchy defines the threads: in that case the smt job type must be forbidden for thread level job requests
+          my $cpuset_cpus_1st_str = join(",", sort ({$a<=>$b} @Cpuset_cpus_1st));
+          if ($cpuset_cpus_1st_str eq $actual_job_cpu_ids_str) {
+              # a/ Either there is no SMT in this node (neither list shows more that one thread by core), or
+              # b/ OAR defines the SMT thread property in its resources (case 3, both lists show many threads by core)
+              # Let's find out if it's a/ or b/
+              my @actual_1st_threads = ();
+              foreach my $c (@actual_job_cpu_ids) {
+                  my $thread_siblings;
+                  if (open(THREAD_SIBLINGS, "/sys/devices/system/cpu/cpu$c/topology/thread_siblings_list")){
+                      $thread_siblings = <THREAD_SIBLINGS>;
+                      close THREAD_SIBLINGS;
+                  }else{
+                      exit_myself(5,"Failed to retrieve /sys/devices/system/cpu/cpu$c/topology/thread_siblings_list");
+                  }
+                  chop $thread_siblings;
+                  if ($thread_siblings eq $c) {
+                      # This a/: core is alone, no siblings -> no SMT on this node
+                      # Case 1 and 2 should always fall in here.
+                      # The guess is sufficent by looking at the 1st core only.
+                      print_log(3,"There is not SMT on this node, no thread to disable");
+                      last;
+                  } elsif ($thread_siblings =~ /^$c,/) {
+                      print_log(4,"Add cpu id $c to the list of the first thread of cores");
+                      push(@actual_1st_threads,$c);
+                  } else {
+                      print_log(4,"Do not add cpu id $c to the list of the first thread of cores");
+                  }
+              }
+              if (@actual_1st_threads) {
+                  # This is b/: we are in case 3. Update the @Cpuset_cpus_1st variables with only 1st threads
+                  @Cpuset_cpus_1st = @actual_1st_threads;
+              }
+          }
+          # The job uses all the cpus of the nodes, we can disable HT globally
+          foreach my $c (@actual_job_cpu_ids) {
+              if (not grep(/^$c$/, @Cpuset_cpus_1st)) {
+                  print_log(3,"Disable cpu id $c");
+                  system_with_log("set -e; oardodo bash -c '/bin/echo 0 > /sys/devices/system/cpu/cpu$c/online'")
+                  and exit_myself(5,"Failed to disable logical cpu $c");
+              } else {
+                  print_log(4,"Do not disable cpu id $c");
+              }
+          }
         }
 
         # Tag network packets from processes of this job
@@ -303,7 +345,7 @@ if ($ARGV[0] eq "init"){
         # Put a share for IO disk corresponding of the ratio between the number
         # of cpus of this cgroup and the number of cpus of the node
         if ($Enable_blkio_cg eq "YES") {
-            my $IO_ratio = sprintf("%.0f",(($#job_cpus + 1) / ($#node_cpus + 1) * 1000)) ;
+            my $IO_ratio = sprintf("%.0f",(($#actual_job_cpu_ids + 1) / ($#actual_node_cpu_ids + 1) * 1000)) ;
             # TODO: Need to do more tests to validate so remove this feature
             #       Some values are not working when echoing, force value to 1000 for now.
             $IO_ratio = 1000;
@@ -355,7 +397,7 @@ if ($ARGV[0] eq "init"){
                 exit_myself(5,"Failed to retrieve the global memory from /proc/meminfo");
             }
             exit_myself(5,"Failed to parse /proc/meminfo to retrive MemTotal") if (!defined($mem_global_kb));
-            my $mem_kb = sprintf("%.0f", (($#job_cpus + 1) / ($#node_cpus + 1) * $mem_global_kb));
+            my $mem_kb = sprintf("%.0f", (($#actual_job_cpu_ids + 1) / ($#actual_node_cpu_ids + 1) * $mem_global_kb));
             system_with_log('/bin/echo '.$mem_kb.' | cat > '.$Cgroup_directory_collection_links.'/memory/'.$Cpuset_path_job.'/memory.limit_in_bytes')
             and exit_myself(5,"Failed to set the memory.limit_in_bytes to $mem_kb");
         }
@@ -520,6 +562,30 @@ EOF
                              fi
                          done');
 
+        # smt=off job type: reactivate all threads of the job
+        if (exists($Cpuset->{types}->{smt}) and lc($Cpuset->{types}->{smt}) eq 'off') {
+            # Compute the actual job cpus
+            my ($actual_node_cpu_ids_str, ) = get_actual_cpu_ids("");
+            my ($actual_job_cpu_ids_str, ) = get_actual_cpu_ids($Cpuset_path_job);
+            if ($actual_node_cpu_ids_str eq $actual_job_cpu_ids_str) {
+                # Job has got a whole node, we reactivate all logical cpus (harmless if already activated)
+                # This covers the case where OAR knows only about the 1st thread of cores (smt job type allowed on whole nodes only in that case)
+                print_log(3,"Reactivate all threads");
+                system_with_log('set -e; for c in /sys/devices/system/cpu/cpu*/online; do
+                                     oardodo bash -c "echo 1 > $c"
+                                 done');
+            } else {
+                # Reactivate the threads disabled for the job
+                print_log(3,"Reactivate all the threads of the job");
+                # cpu0 does not have an online file, it cannot be disabled or renabled
+                my @cpuset_cpus_except0 = grep(!/^0$/, @Cpuset_cpus);
+                my $cpuset_cpus_str = (@cpuset_cpus_except0 > 1) ? "{".join(",",@cpuset_cpus_except0)."}" : $cpuset_cpus_except0[0];
+                system_with_log('set -e; for c in /sys/devices/system/cpu/cpu'.$cpuset_cpus_str.'/online; do
+                                     oardodo bash -c "echo 1 > $c"
+                                 done');
+            }
+        }
+
         # Locking around the cleanup of the cpuset for that user, to prevent a creation to occure at the same time
         # which would allow race condition for the dirty-user-based clean-up mechanism
         if (open(LOCK,">", $Cpuset_lock_file.$Cpuset->{user})){
@@ -627,6 +693,24 @@ EOF
 }
 
 exit(0);
+
+# Get the actual cpu ids of a cpuset cgroup
+sub get_actual_cpu_ids($) {
+    my $cpuset_path = shift || "";
+    my $actual_cpu_ids_str;
+    my @actual_cpu_ids;
+    if (open(CPUS, $Cgroup_directory_collection_links."/cpuset".$cpuset_path."/cpuset.cpus")){
+        $actual_cpu_ids_str = <CPUS>;
+        chop($actual_cpu_ids_str);
+        $actual_cpu_ids_str =~ s/\-/\.\./g;
+        @actual_cpu_ids = eval($actual_cpu_ids_str);
+        $actual_cpu_ids_str = join(",", @actual_cpu_ids); #force it to be csv
+        close(CPUS);
+    }else{
+        exit_myself(5,"Failed to retrieve the cpu ids of $Cgroup_directory_collection_links/cpuset$cpuset_path/cpuset.cpus");
+    }
+    return ($actual_cpu_ids_str, @actual_cpu_ids);
+}
 
 # Print error message and exit
 sub exit_myself($$){
