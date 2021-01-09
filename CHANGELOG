@@ -34,6 +34,7 @@ version 2.5.9:
   - [oarsub] make oarsub accept the submission of a noop job with no script
   - [oarstat] fix JSON/YAML/XML output when no job to display
   - [oarstat] oarstat -j can now use the OAR_JOB_ID environment variable
+  - [oarstat] fix YAML display with the YAML::Syck library
 
 version 2.5.8:
 --------------
