@@ -821,25 +821,31 @@ SWITCH: for ($q) {
 
     # Make the query (the hash is converted into a list of long options)
     my $oarcmd = "$OARSUB_CMD ";
-    my $workdir = "~$authenticated_user";
+    my $directory = "~$authenticated_user";
     my $command = "";
     my $script = "";
     my $param_file = "";
     my $tmpfilename = "";
     my $tmpparamfilename = "";
-    my @user_infos;
+    my @user_infos = getpwnam($authenticated_user);
     # Alias resources=resource
     if (defined($job->{resources})) {
       $job->{resource} = $job->{resources} ;
       delete($job->{resources});
     }
+
+    # Keep compatibility with workdir parameter
+    if (defined($job->{workdir})) {
+      $directory = $job->{workdir};
+      delete($job->{workdir});
+    }
+
     # Options parsing
     foreach my $option ( keys( %{$job} ) ) {
       if ($option eq "script_path") {
         $job->{script_path} =~ s/(\\*)"/$1$1\\"/g;
         $command = " \"$job->{script_path}\"";
         # Expand ~ to home directory
-        @user_infos=getpwnam($authenticated_user);
         $command =~ s|/~/|$user_infos[7]/|;
       }
       elsif ($option eq "command") {
@@ -847,23 +853,18 @@ SWITCH: for ($q) {
         $job->{command} =~ s/(\\*)"/$1$1\\"/g;
         $command = " \"$job->{command}\"";
         # Expand ~ to home directory
-        @user_infos=getpwnam($authenticated_user);
         $command =~ s|/~/|$user_infos[7]/|;
       }
       elsif ($option eq "script") {
         $script = $job->{script};
         # Expand ~ to home directory
-        @user_infos=getpwnam($authenticated_user);
         $script =~ s|/~/|$user_infos[7]/|;
       }
       elsif ($option eq "param_file") {
         $param_file = $job->{param_file};
       }
-      elsif ($option eq "workdir") {
-        $workdir = $job->{workdir};
-        # Expand ~ to home directory
-        @user_infos=getpwnam($authenticated_user);
-        $workdir =~ s|/~/|$user_infos[7]/|;
+      elsif ($option eq "directory") {
+        $directory = $job->{directory};
       }
       elsif (ref($job->{$option}) eq "ARRAY") {
         foreach my $elem (@{$job->{$option}}) {
@@ -885,6 +886,11 @@ SWITCH: for ($q) {
     $oarcmd =~ s/(\\*)"/$1$1\\"/g;
     my $cmd;
 
+    # Expand ~ to home directory.
+    # This operation is not done in the foreach above, because if directory is
+    # not set through the API query, it will use the default which contains ~.
+    $directory =~ s|/~/|$user_infos[7]/|;
+
     # If a parameters file is provided, we create a temporary file
     # and write the parameters inside.
     if ($param_file ne "") {
@@ -894,7 +900,7 @@ SWITCH: for ($q) {
       $oarcmd .= " --array-param-file=$tmpparamfilename";
     }
 
-    # If a script is provided, we create a file into the workdir and write
+    # If a script is provided, we create a file into the job directory and write
     # the script inside.
     if ($script ne "") {
       my $TMP;
@@ -907,9 +913,9 @@ SWITCH: for ($q) {
       # performance cost.
       chmod 0755, $tmpfilename;
       $oarcmd .= " ./". basename($tmpfilename);
-      $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"cp $tmpfilename $workdir/ && cd $workdir && $oarcmd\"";
+      $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"cp $tmpfilename $directory/ && cd $directory && $oarcmd\"";
     }else{
-      $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"cd $workdir && $oarcmd\"";
+      $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"cd $directory && $oarcmd\"";
     }
     # Escapes some special characters (especially security fix with backquote)
     $cmd =~ s/(\\*)(`|\$)/$1$1\\$2/g;
