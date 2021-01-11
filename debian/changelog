@@ -1,3 +1,10 @@
+oar (2.5.9-1) unstable; urgency=medium
+
+  * New release
+  * Fix various bugs/cleanup found by lintian
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 11 Jan 2021 16:44:43 +0100
+
 oar (2.5.9~g5k6-1) unstable; urgency=medium
 
   * Pre-release for G5K (various fixes)
