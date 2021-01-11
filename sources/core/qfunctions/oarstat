@@ -481,7 +481,7 @@ sub dump_data($) {
             return 1;
         }
         if(defined($YAML_mode)){
-            print(YAML::Dump($data));
+            print(Dump($data));
             return 2;
         }
         if (defined($DUMPER_mode)){
