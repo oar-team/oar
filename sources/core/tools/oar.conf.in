@@ -89,7 +89,7 @@ DETACH_JOB_FROM_SERVER="1"
 #MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING=25
 
 # Command to use to connect to other nodes (default is "ssh" in the PATH)
-OPENSSH_CMD="/usr/bin/ssh -p 6667"
+OPENSSH_CMD="/usr/bin/ssh -p 6667 -e none"
 
 # Set the timeout value for each ssh connection (default is 120)
 #OAR_SSH_CONNECTION_TIMEOUT="200"
@@ -302,7 +302,7 @@ SCHEDULER_PRIORITY_HIERARCHY_ORDER="network_address/resource_id"
 #SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default licence VLAN"
 SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 
-# This value is a minimun delay in seconds between to scheduler run.
+# This value is a minimun delay in seconds between two scheduler runs.
 # In other words: the scheduler will only be launched if its last call is at
 # least 5s old.  This lets other OAR modules have more time to run.
 # Warning: this delay will impact the validation of the advance reservations.
@@ -644,7 +644,7 @@ OARSH_OARSTAT_CMD="%%BINDIR%%/oarstat"
 # $ cd path/to/openssh/sources/ 
 # $ grep getopt -A1 ssh.c | sed 's/.*"\(.\+\)".*/\1/' | xargs | sed 's/ //g'
 # 1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy
-OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy"
+OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxAB:CD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy"
 
 # The following variable sets the OpenSSH options which oarsh actually uses.
 # Any option which is filtered out from the OPENSSH_OPTSTR variable above is 
@@ -652,14 +652,14 @@ OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:X
 # WARNING: if not fitlered out, some options may allow root exploit using oarsh.
 # At least the following OpenSSH options are recommanded to be fitlered out: 
 #  -a -A -i -l -o -p -E -F -G -I -w
-OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
+OPENSSH_OPTSTR_FILTERED="1246b:c:fm:nqstvxBCNPQ:TVXYy"
 
 # The following variable forces OpenSSH configuration options for the ssh call 
 # made by in oarsh, so that, for security reasons, they cannot be set by the
 # user (whenever "o:" is not filtered out in the OPENSSH_OPTSTR_FILTERED
 # variable above).
 # WARNING: for security, do not change unless you know what you are doing
-OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=%%OARHOMEDIR%%/.ssh/known_hosts"
+OARSH_OPENSSH_DEFAULT_OPTIONS="-e none -oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=%%OARHOMEDIR%%/.ssh/known_hosts"
 
 # If the following variable is set to a value which is not 0, oarsh will act
 # like a normal ssh, **without** the CPUSET isolation mechanism.
