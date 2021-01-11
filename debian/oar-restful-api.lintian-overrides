@@ -1,3 +1,0 @@
-# The C file are only C wrapper (there are no character arrays used on the 
-# stack of any routines)
-oar-restful-api binary: hardening-no-stackprotector
