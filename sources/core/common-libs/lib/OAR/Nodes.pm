@@ -134,11 +134,13 @@ sub is_job_tokill($){
 sub get_resources_infos($){
 	my $resources = shift;
 	my %resources_infos;
-	foreach my $current_resource (@$resources){
-		my $properties = OAR::IO::get_resource_info($base, $current_resource);
-		add_running_jobs_to_resource_properties($properties);
-		$resources_infos{$current_resource} = $properties
-	}
+
+    foreach my $current_resource (@$resources){
+          my $properties = OAR::IO::get_resource_info($base, $current_resource);
+          add_running_jobs_to_resource_properties($properties);
+          $resources_infos{$current_resource} = $properties
+    }
+
 	return \%resources_infos;
 }
 
@@ -148,14 +150,35 @@ sub get_resources_for_host($){
         return \@resources;
 }
 
-sub get_resources_infos_for_host($){
-	my $hostname = shift;
-	my @node_info = OAR::IO::get_node_info($base, $hostname);
-	my @resources;
-	foreach my $info (@node_info){
-		push @resources, $info->{resource_id};
-	}
-	return get_resources_infos(\@resources);
+sub get_resources_for_hosts($){
+    my $hosts = shift;
+    my @nodes_info;
+    my @resources;
+
+    if (@$hosts > 0) {
+        @nodes_info = OAR::IO::get_nodes_resources($base, $hosts);
+
+        foreach my $info (@nodes_info){
+            push @resources, $info->{resource_id};
+        }
+
+        return get_resources_infos(\@resources);
+    } else {
+        my $nodes_info = OAR::IO::get_all_resources($base);
+        my $resources_job = OAR::IO::get_resources_jobs($base);
+        foreach my $id (keys(%$resources_job)) {
+            if ($nodes_info->{$id}->{'state'} eq "Alive") {
+
+                my $jobs_string = '';
+                foreach my $current_job (@$resources_job{$id}) {
+                    $jobs_string .= join(", ", @$current_job);
+                }
+                $nodes_info->{$id}->{'jobs'} = $jobs_string;
+            }
+        }
+
+        return($nodes_info);
+    }
 }
 
 sub get_jobs_running_on_resource($){

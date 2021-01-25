@@ -81,11 +81,27 @@ sub print_oar_version(){
 }
 
 sub print_events($$){
-	my $date_from = shift;
-	my $hostnames = shift;
-        my $dump_mode=0;
-        my %result;
-        $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
+  my $date_from = shift;
+  my $hostnames = shift;
+  if (@$hostnames == 0) {
+      $hostnames = OAR::Nodes::get_all_hosts();
+  }
+  my $dump_mode=0;
+  my $result = OAR::Nodes::get_all_events($date_from);
+  $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
+
+  if (!$dump_mode) {
+    foreach my $current_hostname (@$hostnames){
+      foreach my $current_event (@{$result->{$current_hostname}}) {
+          printf("%s| %s| %s: %s\n",
+            OAR::Nodes::format_date($current_event->{'date'}),
+            $current_event->{'job_id'},
+            $current_event->{'type'},
+            $current_event->{'description'}
+          );
+      }
+    }
+  }
 
 	foreach my $current_hostname (@$hostnames){
           $result{$current_hostname}=OAR::Nodes::get_events($current_hostname, $date_from);
@@ -163,19 +179,15 @@ sub print_all_hostnames(){
 
 sub print_hosts_infos($){
 	my $nodes = shift;
-	my $infos;
-	foreach my $current_node (@$nodes){
-		my $infos_for_host = OAR::Nodes::get_resources_infos_for_host($current_node);
-		while ( my ($id,$info) = each %$infos_for_host ){
-		    $infos->{$id} = $info; # modify here to add depth (sorted by network_address)
-		}
-	}
-	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
-	    format_result($infos);
-	}
-	else{
-	    print_resources_flat_way($infos);
-	}
+	my $infos = OAR::Nodes::get_resources_for_hosts($nodes);
+
+    if (%$infos == 0) {
+        print("\/!\\ No nodes to display...\n");
+    } elsif (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+        format_result($infos);
+    } else {
+        print_resources_flat_way($infos);
+    }
 }
 
 sub print_resources_infos($){
@@ -249,10 +261,10 @@ OAR::Nodes::open_db_connection() or die "DB connection error, exiting.\n";
 # Nodes list handling (set @nodes to what has been requested)
 if($ARGV[0]){
     @nodes = @ARGV;
-}else{
-    my $nodes_tmp = OAR::Nodes::get_all_hosts();
-	@nodes = @$nodes_tmp;
+} else {
+    @nodes = ();
 }
+
 # SQL where handling, add resources that match sql clause to @resources
 if (defined($sql_property)) {
 	add_sql_resources($sql_property);
@@ -275,11 +287,8 @@ elsif ($listall){
 elsif ($#resources >= 0 || defined($sql_property)){ # -r or --sql where called
 	print_resources_infos(\@resources);
 }
-elsif ($#nodes >= 0){ # a hostname was given or not (in this case all hostnames)
+else {
 	print_hosts_infos(\@nodes);
-}
-else{
-	print "\/!\\ No nodes to display...\n";
 }
 
 OAR::Nodes::close_db_connection();

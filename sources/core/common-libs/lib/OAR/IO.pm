@@ -5176,6 +5176,31 @@ sub get_resource_info($$) {
 }
 
 
+# get_all_resources
+# returns a ref to a hash containing data for all resources
+# parameters : base
+# return value : ref
+# side effects : /
+sub get_all_resources($) {
+    my $dbh = shift;
+
+    my %resources_infos;
+
+    my $sth = $dbh->prepare("   SELECT * FROM resources
+                                ORDER BY
+                                    network_address ASC, resource_id ASC
+                            ");
+    $sth->execute();
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $resources_infos{$ref->{'resource_id'}} = $ref;
+    }
+    $sth->finish();
+
+    return \%resources_infos;
+}
+
+
 # get_resource_next_value_for_property
 # returns the next possible numerical value for a property
 # parameters : base, property
@@ -5213,6 +5238,33 @@ sub get_node_info($$) {
                                 WHERE
                                     network_address = \'$hostname\'
                                 ORDER BY resource_id ASC
+                            ");
+    $sth->execute();
+
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+
+# get_nodes_resources
+# returns a ref to some hash containing data for the node list passed in parameter
+# parameters : base, hosts
+# return value : ref
+sub get_nodes_resources($$) {
+    my $dbh = shift;
+    my $nodes = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE
+                                    network_address IN (".join(",", map {"'$_'"} @{$nodes}).")
+                                ORDER BY
+                                    network_address ASC, resource_id ASC
                             ");
     $sth->execute();
 
