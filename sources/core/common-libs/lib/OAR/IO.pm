@@ -7793,6 +7793,91 @@ sub get_events_for_hostname($$$){
     return(@results);
 }
 
+
+# Get events for the list of nodes given as parameter
+# If date is given, returns events since that date, else return the 30 last events.
+# args: database ref, host list, date
+sub get_events_for_hosts($$$){
+    my $dbh = shift;
+    my $hosts = shift;
+    my $date = shift;
+    my $sth;
+    if ($date eq "") {
+        $sth = $dbh->prepare("SELECT date, description, event_id, hostname, job_id,
+                                    to_check, type
+                              FROM (SELECT date, description, el.event_id, hostname, el.job_id,
+                                      to_check, type, ROW_NUMBER() OVER
+                                      (PARTITION BY hostname ORDER BY date DESC) as r
+                                    FROM event_log_hostnames AS elh, event_logs AS el
+                                    WHERE elh.event_id = el.event_id
+                                          AND elh.hostname IN
+                                                (".join(",", map {"'$_'"} @{$hosts}).")
+                                    ) q
+                              WHERE q.r <= 30
+                              ORDER BY date DESC, hostname");
+    } else {
+        $sth = $dbh->prepare("SELECT date, description, el.event_id, hostname, job_id,
+                                     to_check, type
+                              FROM event_log_hostnames AS elh, event_logs AS el
+                              WHERE
+                                  elh.event_id = el.event_id
+                                  AND elh.hostname IN
+                                        (".join(",", map {"'$_'"} @{$hosts}).")
+                                  AND el.date >= " .
+                             sql_to_local($date) .
+                             " ORDER BY el.date DESC");
+    }
+    $sth->execute();
+
+    my @results;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        unshift(@results, $ref);
+    }
+    $sth->finish();
+
+    return(@results);
+}
+
+
+# Get all events
+# If date is given, returns events since that date, else return the 30 last events.
+# args: database ref, date
+sub get_all_events($$){
+    my $dbh = shift;
+    my $date = shift;
+    my $sth;
+    if ($date eq "") {
+        $sth = $dbh->prepare("SELECT date, description, event_id, hostname, job_id,
+                                    to_check, type
+                              FROM (SELECT date, description, el.event_id, hostname, el.job_id,
+                                      to_check, type, ROW_NUMBER() OVER
+                                      (PARTITION BY hostname ORDER BY date DESC) as r
+                                    FROM event_log_hostnames AS elh, event_logs AS el
+                                    WHERE elh.event_id = el.event_id) q
+                              WHERE q.r <= 30
+                              ORDER BY date DESC, hostname");
+    } else {
+        $sth = $dbh->prepare("SELECT date, description, el.event_id, hostname, job_id,
+                                     to_check, type
+                              FROM event_log_hostnames AS elh, event_logs AS el
+                              WHERE
+                                  elh.event_id = el.event_id
+                                  AND el.date >= " .
+                             sql_to_local($date) .
+                             " ORDER BY el.date DESC");
+    }
+    $sth->execute();
+
+    my @results;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        unshift(@results, $ref);
+    }
+    $sth->finish();
+
+    return(@results);
+}
+
+
 # Get the last event for the given type
 # args: database ref, event type
 # returns: the requested event

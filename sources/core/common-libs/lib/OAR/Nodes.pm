@@ -80,10 +80,27 @@ sub get_requested_resources($$){
 }
 
 sub get_events($$){
-	my $hostname = shift;
-	my $date_from = shift;
-	my @events = OAR::IO::get_events_for_hostname($base, $hostname, $date_from);
-	return \@events;
+    my $hosts = shift;
+    my $date_from = shift;
+    my %events_per_host;
+    my @events;
+
+    if (@$hosts == 0) {
+        @events = OAR::IO::get_all_events($base, $date_from);
+    } elsif (@$hosts == 1) {
+        @events = OAR::IO::get_events_for_hostname($base, @$hosts[0], $date_from);
+    } else {
+        @events = OAR::IO::get_events_for_hosts($base, $hosts, $date_from);
+    }
+
+    foreach my $event (@events) {
+        if (!defined($events_per_host{$event->{'hostname'}})) {
+            $events_per_host{$event->{'hostname'}} = [];
+        }
+        push(@{$events_per_host{$event->{'hostname'}}}, $event);
+    }
+
+    return \%events_per_host;
 }
 
 sub get_resources_with_given_sql($){
