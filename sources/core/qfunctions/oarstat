@@ -171,7 +171,7 @@ exit(0);
 sub print_usage{
     print <<EOS;
 Usage: oarstat [-X|-Y|-D|-f|-s] [-j [job_id]|--array array_id] [--sql SQL_properties] [-u [user]] [--array] [--compact] [--format num]
-       oarstat [-e|-p] [-j jobid|--array array_id] 
+       oarstat [-X|-Y|-J|-D] [-e|-p] [-j jobid|--array array_id]
        oarstat [-X|-Y|-J|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
        oarstat --accounting "YYYY-MM-DD, YYYY-MM-DD"
 
@@ -511,9 +511,16 @@ sub print_properties {
 
     if($#job_ids >= 0){
         my @resources;
+        my %resources_dump;
         foreach my $j (@job_ids){
-            push  (@resources, OAR::Stat::get_job_resources_properties($j));
+            my @res = OAR::Stat::get_job_resources_properties($j);
+            if (@res > 0) {
+                push (@resources, @res);
+                $resources_dump{$j} = \@res;
+            }
         }
+
+        my $lines = "";
         foreach my $r (@resources){
             my $line = "";
             foreach my $p (keys(%{$r})){
@@ -523,10 +530,12 @@ sub print_properties {
                 }
             }
             chop($line);
-            if (!print("$line\n")){
-                OAR::Stat::close_db_connection();
-                exit(5);
-            }
+            $lines = $lines . $line . "\n";
+        }
+
+        if (dump_data(\%resources_dump) == 0 && !print("$lines")){
+            OAR::Stat::close_db_connection();
+            exit(5);
         }
     } else {
         warn("No job specified\n");
