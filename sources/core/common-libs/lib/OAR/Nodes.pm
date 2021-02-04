@@ -140,6 +140,32 @@ sub get_resources_states_for_host($){
 	return get_resources_states(\@resources);
 }
 
+sub get_resources_states_for_hosts($){
+    my $hosts = shift;
+    my @node_info;
+    my $resources_states;
+    my %resources_states_for_hosts;
+    my @resources;
+
+    if (@$hosts > 0) {
+        @node_info = OAR::IO::get_nodes_info($base, $hosts);
+    } else {
+        @node_info = OAR::IO::get_all_nodes_info($base);
+    }
+
+    foreach my $info (@node_info){
+        push @resources, $info->{resource_id};
+    }
+    $resources_states = get_resources_states(\@resources);
+
+    foreach my $info (@node_info){
+        $resources_states_for_hosts{$info->{host}}{$info->{resource_id}} =
+                                    $resources_states->{$info->{resource_id}};
+    }
+
+    return(\%resources_states_for_hosts);
+}
+
 sub get_resource_infos($){
   my $id=shift;
   my $resource = OAR::IO::get_resource_info($base,$id);
@@ -181,7 +207,7 @@ sub get_resources_for_hosts($){
             push @resources, $info->{resource_id};
         }
 
-        return get_resources_infos(\@resources);
+        return get_resources_info(\@resources);
     } else {
         my $nodes_info = OAR::IO::get_all_resources($base);
         my $resources_job = OAR::IO::get_resources_jobs($base);

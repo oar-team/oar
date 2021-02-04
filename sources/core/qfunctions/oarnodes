@@ -125,24 +125,21 @@ sub format_result($){
 
 sub print_resources_states_for_hosts($){
     my $nodes = shift;
-    my %result;
-    if (@$nodes == 0) {
-        $nodes = OAR::Nodes::get_all_hosts();
-    }
-        my $dump_mode=0;
-        $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
+    my $result = OAR::Nodes::get_resources_states_for_hosts($nodes);
 
-        foreach my $current_host (@$nodes){
-          $result{$current_host}=OAR::Nodes::get_resources_states_for_host($current_host);
-          if (!$dump_mode) {
+    my $dump_mode = 0;
+    $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
+
+    if (!$dump_mode) {
+        foreach my $current_host (sort keys %{$result} ) {
             print "$current_host\n";
-            foreach my $k (sort keys %{$result{$current_host}} ) {
-            #while ( my ($k,$v) = each %{$result{$current_host}} ){
-	   	print "    $k : $result{$current_host}{$k}\n";
+            foreach my $k (sort keys %{$result->{$current_host}} ) {
+                print "    $k : $result->{$current_host}{$k}\n";
             }
-          }
         }
-        format_result(\%result) if $dump_mode;
+    }
+
+    format_result($result) if $dump_mode;
 }
 
 sub print_resources_states($){

@@ -5287,6 +5287,57 @@ sub get_node_info($$) {
 }
 
 
+# get_nodes_info
+# returns a ref to some hash containing data for the node list passed in parameter
+# parameters : base, hosts (array)
+# return value : ref
+sub get_nodes_info($$) {
+    my $dbh = shift;
+    my $hosts = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE
+                                    network_address IN (".join(",", map {"'$_'"} @{$hosts}).")
+                                ORDER BY resource_id ASC
+                            ");
+    $sth->execute();
+
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+
+# get_all_nodes_info
+# returns a ref to some hash containing data for all nodes
+# parameters : base, hosts (array)
+# return value : ref
+sub get_all_nodes_info($) {
+    my $dbh = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE network_address IS NOT NULL AND
+                                      network_address  <> ''
+                                ORDER BY resource_id ASC
+                            ");
+    $sth->execute();
+
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+
 # get_nodes_resources
 # returns a ref to some hash containing data for the node list passed in parameter
 # parameters : base, hosts
