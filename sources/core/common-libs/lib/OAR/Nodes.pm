@@ -116,16 +116,18 @@ sub get_nodes_with_given_sql($){
 }
 
 sub get_resources_states($){
-	my $resources = shift;
-	my %resources_states;
-	foreach my $current_resource (@$resources){
-		my $properties = OAR::IO::get_resource_info($base, $current_resource);
-                if ($properties->{state} eq "Absent" && $properties->{available_upto} >= time()) {
-                   $properties->{state} .= " (standby)";
-                }
-		$resources_states{$current_resource} = $properties->{state};
-	}
-	return \%resources_states;
+    my $resources = shift;
+    my %resources_states;
+    my $resources_infos = OAR::IO::get_resources_info($base, $resources);
+
+    foreach my $current_resource (keys %$resources_infos){
+        my $properties = $resources_infos->{$current_resource};
+        if ($properties->{state} eq "Absent" && $properties->{available_upto} >= time()) {
+            $properties->{state} .= " (standby)";
+        }
+        $resources_states{$current_resource} = $properties->{state};
+    }
+    return \%resources_states;
 }
 
 sub get_resources_states_for_host($){
@@ -148,17 +150,17 @@ sub is_job_tokill($){
   return OAR::IO::is_tokill_job($base,$id);
 }
 
-sub get_resources_infos($){
-	my $resources = shift;
-	my %resources_infos;
+sub get_resources_info($){
+    my $resources = shift;
+    my $resources_infos = OAR::IO::get_resources_info($base, $resources);
 
     foreach my $current_resource (@$resources){
-          my $properties = OAR::IO::get_resource_info($base, $current_resource);
+          my $properties = $resources_infos->{$current_resource};
           add_running_jobs_to_resource_properties($properties);
-          $resources_infos{$current_resource} = $properties
+          $resources_infos->{$current_resource} = $properties
     }
 
-	return \%resources_infos;
+    return $resources_infos;
 }
 
 sub get_resources_for_host($){

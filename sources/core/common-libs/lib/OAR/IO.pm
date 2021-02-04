@@ -5176,6 +5176,42 @@ sub get_resource_info($$) {
 }
 
 
+# get_resources_info
+# returns a ref to some hash containing data for the the resources passed in parameter
+# parameters : base, resources id (array)
+# return value : ref
+# side effects : /
+sub get_resources_info($$) {
+    my $dbh = shift;
+    my $resources = shift;
+    my $sth;
+    my %resources_info;
+
+    if (@$resources > 1) {
+        $sth = $dbh->prepare("   SELECT *
+                                 FROM resources
+                                 WHERE
+                                    resource_id IN (".join(",", @{$resources}).")
+                                ");
+    } else {
+        $sth = $dbh->prepare("   SELECT *
+                                 FROM resources
+                                 WHERE
+                                    resource_id = @$resources[0]
+                                ");
+    }
+
+    $sth->execute();
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $resources_info{$ref->{'resource_id'}} = $ref;
+    }
+    $sth->finish();
+
+    return \%resources_info;
+}
+
+
 # get_all_resources
 # returns a ref to a hash containing data for all resources
 # parameters : base

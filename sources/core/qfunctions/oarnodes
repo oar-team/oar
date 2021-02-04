@@ -124,8 +124,11 @@ sub format_result($){
 }
 
 sub print_resources_states_for_hosts($){
-	my $nodes = shift;
-        my %result;
+    my $nodes = shift;
+    my %result;
+    if (@$nodes == 0) {
+        $nodes = OAR::Nodes::get_all_hosts();
+    }
         my $dump_mode=0;
         $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
 
@@ -177,7 +180,7 @@ sub print_hosts_infos($){
 
 sub print_resources_infos($){
 	my $resources = shift;
-	my $res_infos = OAR::Nodes::get_resources_infos($resources);
+	my $res_infos = OAR::Nodes::get_resources_info($resources);
 	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
 	    format_result($res_infos);
 	}
