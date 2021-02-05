@@ -55,9 +55,11 @@ my @nodes;
 
 sub print_usage(){
     print <<EOS;
-Usage: oarnodes [ -r number | --sql sql_properties | -s | -l | -h | -V ]
-[list of nodes] [ -e [date] | -X | -Y | -D]
-Display node informations
+Display information on nodes
+Usage:
+  oarnodes [ -r <resource id> | --sql <sql_properties> | -s | -l | -h | -V ] [ -X | -Y | -D] [list of nodes] [ -e [<date>] ]
+or
+  oarnodes [ -r <resource id> | --sql <sql_properties> | -s | -l | -h | -V ] [ -X | -Y | -D] [ -e [<date>] ] -- [list of nodes]
 Options:
  -r, --resource     show the properties of the resource whose id is given as
                     parameter
