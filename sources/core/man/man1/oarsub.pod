@@ -12,6 +12,8 @@ B<oarsub> [OPTIONS] "<inline script>"
 
 B<oarsub> [OPTIONS] -I
 
+B<oarsub> [OPTIONS] -r "<START DATE>[, <END DATE>]"
+
 B<oarsub> [OPTIONS] -C <JOB ID>
 
 =head1 DESCRIPTION
@@ -21,6 +23,14 @@ A job is defined by the description of a set of resources needed to execute a ta
 A job may also be run interactively, and one may also use oarsub to connect to a previously submitted job.
 
 The scheduler is in charge of providing a set of resources which matchs the oarsub request. Once scheduled and launched, a job consists of one process executed on the first node of the resources it was attibuted, with a set of environment variables set, which describe the job. That means that the job's executable is responsible for connecting those resources and dispatching work among them.
+
+=head2 BATCH JOBS
+
+A batch job will be scheduled by OAR when the requested resources are available, with no time period constraint. In interactive mode (B<-I>), B<oarsub> will wait until the scheduler can give the resources and connect to the job.
+
+=head2 ADVANCE RESERVATION JOBS
+
+An advance reservation allow to request OAR that the job starts (and optionally ends) at a given time instead of letting the scheduler decide, and waits for validation. OAR will respond with I<OK> or I<KO> if it can (or not) schedule the job (if the requested resources are available at given time).
 
 =head1 OPTIONS
 
@@ -78,9 +88,9 @@ Set the the queue to submit the job to.
 Add a list of constraints on the resource properties for the job.
 The format of a contraint is the one of a WHERE clause using the SQL syntax.
 
-=item B<-r, --reservation>  <DATE>
+=item B<-r, --reservation> "<START DATE>[, <END DATE>]"
 
-Request that the job starts at a specified time. A job creation using this option is called an I<advance reservation> (as opposite to a I<submission>). 
+Request that the job starts (optionally ends) at a specified time. A job creation using this option is called an I<advance reservation> (as opposite to a I<submission>). Start and end dates can be given in the form I<YYYY-MM-DD hh:mm:ss>, but if I<YYYY-MM-DD> is omitted, it defaults to the current day. In hh:mm::ss, ss defaults to I<00> if omitted, as well as I<mm> if omitted also. Quotes are only required when spaces are present. When end date is provided, a walltime is calculated and will only be used if not provided in the resources request. The special keyword B<now> can also be use to request an advance reservation job that actually starts just now.
 
 =item B<--checkpoint> <DELAY>
 

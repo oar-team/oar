@@ -60,6 +60,8 @@ my $Job_id;
 my $Job_id_list_ref;
 my $Interactive = 0;
 my $Reservation = "0";
+my $Reservation_start;
+my $Reservation_end;
 my $Default_resources;
 my $Nodes_resources;
 my $connect_job ;
@@ -286,9 +288,19 @@ Options are:
  -q, --queue=<queue>           Set the queue to submit the job to
  -p, --property="<list>"       Add constraints to properties for the job.
                                (format is a WHERE clause from the SQL syntax)
- -r, --reservation=<date>      Request a job start time reservation, 
-                               instead of a submission. The date format is
-                               "YYYY-MM-DD HH:MM:SS".
+ -r, --reservation="<start date>[, <end date>]"
+                               Request that the job starts (optionally ends) at
+                               a specified time. A job creation using this option
+                               is called an I<advance reservation> (as opposite
+                               to a I<submission>, please see oarsub man page
+                               for more informations). Start and end dates can
+                               be given in the form I<YYYY-MM-DD hh:mm:ss>, but
+                               if I<YYYY-MM-DD> is omitted, it defaults to the
+                               current day. In hh:mm::ss, ss defaults to I<00>
+                               if omitted, as well as I<mm> if omitted also.
+                               When end date is provided, a walltime is calculated
+                               and will only be used if not provided in the
+                               resources request.
      --checkpoint=<delay>      Enable the checkpointing for the job. A signal 
                                is sent DELAY seconds before the walltime on
                                the first processus of the job 
@@ -843,7 +855,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
     }
 
     my @resource_list = parse_resource_descriptions(\@resource);
- 
+
     $Project = $Project_default if (!defined($Project));
     $Checkpoint_signal = $Checkpoint_signal_default if (!defined($Checkpoint_signal));
     $Directory = $Directory_default if (!defined($Directory));
@@ -861,31 +873,37 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         OAR::Sub::close_db_connection(); exit(6);
     }
 
-
-   
-#    job_key_management();
-
-    #if (!($exec =~ m/^\/.+$/m)){
-        # WARNING: we are not the real user, we are oar user!!!
-        # so $exec properties are not correct
-    #    if ( -e "$exec" ){
-    #        $exec = $Directory."/".$exec ;
-    #    }
-    #}
-
     $Cmd_executor = "Qsub";
 
     my $server_port;
     if ($Reservation ne "0"){
-        #Test if this job is a reservation and the syntax is right
-        if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
-            $Reservation = OAR::Sub::sql_to_local("$1 $2");
+        #Split the Reservation into the start and end time, then test if the syntax is right
+        ($Reservation_start, $Reservation_end) = split(",", $Reservation);
+        if ($Reservation_start =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m) {
+            $Reservation_start = OAR::Sub::sql_to_local("$1 $2");
         }else{
-            warn("[ERROR] Syntax error near the -r or --reservation option. The reservation date synstax is : \"2027-03-25 17:32:12\".\n");
+            warn("[ERROR] Syntax error of <start date> of the -r or --reservation option. The reservation date syntax is : \"2027-03-25 17:32:12\".\n");
             OAR::Sub::close_db_connection; exit(7);
         }
         ($Server, $server_port) = OAR::Sub::init_tcp_server();
     }
+
+    if ($Reservation_end ne undef) {
+        #Test if this job has a reservation end and the syntax is right
+        if ($Reservation_end =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m) {
+            $Reservation_end = OAR::Sub::sql_to_local("$1 $2");
+        } else {
+            warn("[ERROR] Syntax error of <end date> of the -r or --reservation option. The reservation date syntax is : \"2027-03-25 17:32:12\".\n");
+            OAR::Sub::close_db_connection(); exit(7);
+        }
+
+        my $reservation_walltime = $Reservation_end - $Reservation_start;
+
+        foreach my $list (@resource_list) {
+          @$list[1] = $reservation_walltime;
+        }
+    }
+
     # TODO: put in lib
     # stagein machinery
     if ((defined $stagein) and (grep(/^desktop_computing$/, @Type))) {
@@ -938,7 +956,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         $Initial_request_string =~ s/\Q$import_job_key_inline/[HIDDEN INLINE JOB KEY]/;
     }
 
-     $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
+     $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -946,7 +964,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
     $Cmd_executor = "Qsub -I";
 
     my @resource_list = parse_resource_descriptions(\@resource);
- 
+
     if (defined($array_param_file)){
         warn("/!\\ A parameter file-based array job cannot be interactive.\n");
 # user defined array_ids, 0 if interactive and/or non-array job 
@@ -965,15 +983,30 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         OAR::Sub::close_db_connection(); exit(8);
     }
 
-#    job_key_management();
-
     if ($Reservation ne "0"){
-        #Test if this job is a reservation and the syntax is right
-        if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
-            $Reservation = OAR::Sub::sql_to_local("$1 $2");
+        #Split the Reservation into the start and end time, then test if the syntax is right
+        ($Reservation_start, $Reservation_end) = split(",", $Reservation);
+        if ($Reservation_start =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m) {
+            $Reservation_start = OAR::Sub::sql_to_local("$1 $2");
         }else{
-            warn("[ERROR] Syntax error near the -r or --reservation option. The reservation date synstax is : \"2027-03-25 17:32:12\".\n");
+            warn("[ERROR] Syntax error of <start date> of the -r or --reservation option. The reservation date syntax is : \"2027-03-25 17:32:12\".\n");
+            OAR::Sub::close_db_connection; exit(7);
+        }
+    }
+
+    if ($Reservation_end ne undef) {
+        #Test if this job has a reservation end and the syntax is right
+        if ($Reservation_end =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m) {
+            $Reservation_end = OAR::Sub::sql_to_local("$1 $2");
+        } else {
+            warn("[ERROR] Syntax error of <end date> of the -r or --reservation option. The reservation date syntax is : \"2027-03-25 17:32:12\".\n");
             OAR::Sub::close_db_connection(); exit(7);
+        }
+
+        my $reservation_walltime = $Reservation_end - $Reservation_start;
+
+        foreach my $list (@resource_list) {
+          @$list[1] = $reservation_walltime;
         }
     }
 
@@ -984,7 +1017,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
     my $server_port;
     ($Server, $server_port) = OAR::Sub::init_tcp_server();
 
-     $Job_id_list_ref = OAR::Sub::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
+     $Job_id_list_ref = OAR::Sub::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }
 
 if ((!defined($Job_id_list_ref)) or (ref($Job_id_list_ref) ne "ARRAY")){
