@@ -1334,6 +1334,7 @@ sub job_key_management($$$$) {
                     return(-14,'','');
                 }
                 syswrite(FH,$import_job_key_inline);
+                syswrite(FH,"\n");
                 close(F);
             } else {
                 # file import
