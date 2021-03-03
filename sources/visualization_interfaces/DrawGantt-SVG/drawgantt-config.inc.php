@@ -101,6 +101,14 @@ $CONF['resource_hierarchy'] = array( // properties to use to build the resource 
 $CONF['resource_base'] = "cpuset"; // base resource of the hierarchy/grid
 $CONF['resource_group_level'] = "network_address"; // level of resources to separate with blue lines in the grid
 $CONF['resource_drain_property'] = "drain"; // if set, must also be one of the resource_properties above to activate the functionnality
+$CONF['state_descriptions'] = array( // description of the states
+  //'Absent#current' => 'Resource temporarily unavailable because rebooting/redeploying after either a deploy job or a job using sudo-g5k',
+  //'Absent#past' => 'Resource temporarily unavailable: temporarily shut down for energy saving or rebooting/redeploying after either a deploy job or a job using sudo-g5k',
+  //'Suspected' => 'Resource temporarily failing, should be repaired',
+  //'Dead' => 'Resource out of order, may never be repaired',
+  //'Standby' => 'Resource shut down for energy saving, will power on when required for a job',
+  //'Drain' => 'Resource not accepting jobs any more, waiting for a maintenance',
+  );
 $CONF['state_colors'] = array( // colors for the states of the resources in the gantt
   'Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)', 'Standby' => 'url(#standbyPattern)', 'Drain' => 'url(#drainPattern)');
 $CONF['job_colors'] = array( // colors for the types of the jobs in the gantt
