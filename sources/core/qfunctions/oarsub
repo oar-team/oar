@@ -290,14 +290,14 @@ Options are:
                                (format is a WHERE clause from the SQL syntax)
  -r, --reservation="<start date>[, <end date>]"
                                Request that the job starts (optionally ends) at
-                               a specified time. A job creation using this option
-                               is called an I<advance reservation> (as opposite
-                               to a I<submission>, please see oarsub man page
-                               for more informations). Start and end dates can
-                               be given in the form I<YYYY-MM-DD hh:mm:ss>, but
-                               if I<YYYY-MM-DD> is omitted, it defaults to the
-                               current day. In hh:mm::ss, ss defaults to I<00>
-                               if omitted, as well as I<mm> if omitted also.
+                               a specified time. Start and end dates can be given
+                               in the form 'YYYY-MM-DD hh:mm:ss', but if
+                               'YYYY-MM-DD' is omitted, it defaults to the
+                               current day. In 'hh:mm::ss', ss defaults to 00 if
+                               omitted, as well as mm if omitted also.
+                               The special keyword b<now> can also be use to
+                               request an advance reservation job that actually
+                               starts just now.
                                When end date is provided, a walltime is calculated
                                and will only be used if not provided in the
                                resources request.
@@ -561,15 +561,27 @@ sub parse_reservation($$) {
     my $interactive = shift;
     my $resource_list = shift;
     my $server_port;
-    my $date_format_regex = qr/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/;
+    my $date_format_regex = qr/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}):?(\d{1,2})?:?(\d{1,2})?\s*$/;
+    my $time_format_regex = qr/^\s*(\d{1,2}):?(\d{1,2})?:?(\d{1,2})?\s*$/;
 
     if ($Reservation ne "0"){
         #Split the Reservation into the start and end time, then test if the syntax is right
-        ($Reservation_start, $Reservation_end) = split(",", $Reservation);
+        ($Reservation_start, $Reservation_end) = split(/\s*,\s*/, $Reservation);
+        chomp($Reservation_start);
         if ($Reservation_start =~ m/$date_format_regex/m) {
-            $Reservation_start = OAR::Sub::sql_to_local("$1 $2");
+            $Reservation_start = OAR::Sub::sql_to_local("$1 $2 $3 $4");
+        } elsif ($Reservation_start =~ m/$time_format_regex/m) {
+            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+                                            localtime(time);
+            my $res_str = OAR::Sub::ymdhms_to_sql($year,$mon,$mday,$1,$2,$3);
+            $Reservation_start = OAR::Sub::sql_to_local("$res_str");
+        } elsif ($Reservation_start eq "now") {
+            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+                                            localtime(time);
+            my $now_str = OAR::Sub::ymdhms_to_sql($year,$mon,$mday,$hour,$min,$sec);
+            $Reservation_start = OAR::Sub::sql_to_local("$now_str");
         } else {
-            warn("[ERROR] Syntax error of <start date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n");
+            warn("[ERROR] Syntax error in <start date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n");
             OAR::Sub::close_db_connection; exit(7);
         }
 
@@ -581,20 +593,20 @@ sub parse_reservation($$) {
     if ($Reservation_end ne undef) {
         #Test if this job has a reservation end and the syntax is right
         if ($Reservation_end =~ m/$date_format_regex/m) {
-            $Reservation_end = OAR::Sub::sql_to_local("$1 $2");
+            $Reservation_end = OAR::Sub::sql_to_local("$1 $2 $3 $4");
         } else {
-            warn("[ERROR] Syntax error of <end date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n");
+            warn("[ERROR] Syntax error in <end date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n");
             OAR::Sub::close_db_connection(); exit(7);
         }
 
         my $reservation_walltime = $Reservation_end - $Reservation_start;
 
         foreach my $list (@{$resource_list}) {
-          @$list[1] = $reservation_walltime;
+            if (@$list[1] eq undef) {
+                @$list[1] = $reservation_walltime;
+            }
         }
-        print $reservation_walltime;
     }
-
 
     if ($interactive eq 1) {
         ($Server, $server_port) = OAR::Sub::init_tcp_server();
