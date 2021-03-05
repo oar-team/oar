@@ -288,14 +288,14 @@ Options are:
  -q, --queue=<queue>           Set the queue to submit the job to
  -p, --property="<list>"       Add constraints to properties for the job.
                                (format is a WHERE clause from the SQL syntax)
- -r, --reservation="<start date>[, <end date>]"
+ -r, --reservation="<start date|now>[, <end date>]"
                                Request that the job starts (optionally ends) at
                                a specified time. Start and end dates can be given
                                in the form 'YYYY-MM-DD hh:mm:ss', but if
                                'YYYY-MM-DD' is omitted, it defaults to the
                                current day. In 'hh:mm::ss', ss defaults to 00 if
                                omitted, as well as mm if omitted also.
-                               The special keyword b<now> can also be use to
+                               The special keyword 'now' can also be use to
                                request an advance reservation job that actually
                                starts just now.
                                When end date is provided, a walltime is calculated
