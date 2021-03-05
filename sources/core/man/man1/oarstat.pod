@@ -32,7 +32,7 @@ Print information for the given job.
 
 =item B<-e, --events>
 
-Print job events only.
+Print job events only. Machine parseable outputs are also available when used in conjunction with correct options (like B<-J>).
 
 =item B<-p, --properties>
 

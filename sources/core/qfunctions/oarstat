@@ -210,15 +210,27 @@ sub print_events {
     }
 
     my $events = OAR::Stat::get_events(\@job_ids);
+    my %events_dump;
     if (defined( $events )) {
+      my $lines = "";
       foreach my $event_hashref (@$events) {
-          printf(
+          $lines = $lines . sprintf(
             "%s> [%s] %s: %s\n",
             OAR::Stat::local_to_sql( $event_hashref->{'date'} ),
             $event_hashref->{'job_id'},
             $event_hashref->{'type'},
             $event_hashref->{'description'}
           );
+          %{$events_dump{$event_hashref->{'job_id'}}} = ('date' => $event_hashref->{'date'},
+                                                      'description' => $event_hashref->{'description'},
+                                                      'type' => $event_hashref->{'type'},
+                                                      );
+      }
+
+
+      if (dump_data(\%events_dump) == 0 && !print("$lines")){
+          OAR::Stat::close_db_connection();
+          exit(5);
       }
     }
     else {
