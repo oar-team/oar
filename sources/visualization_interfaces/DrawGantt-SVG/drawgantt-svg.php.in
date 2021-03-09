@@ -655,7 +655,8 @@ class Resource {
         array_push($popup, $key.": ".join(", ", array_unique($value)));
       }
       if(in_array("cpuset", $resource_labels) and ! in_array("cpuset", $CONF['resource_hierarchy']) and ! $has_aggregated_resources) {
-        array_push($labels, sprintf($CONF['cpuset_label_display_string'],reset($this->cpusets())));
+        $cpusets = $this->cpusets();
+        array_push($labels, sprintf($CONF['cpuset_label_display_string'],reset($cpusets)));
       }
       $output .= '<text font-size="10" x="'.$CONF['label_right_align'].'" y="'.($y + $scale/2).'" text-anchor="end" dominant-baseline="central" onmouseover="mouseOver(evt, \''.htmlspecialchars(join("|", $popup)).'\',\'\')" onmouseout="mouseOut(evt,\'\')" onmousemove="mouseMove(evt)" onclick="resourceclick(evt,\''.$this->type.'\',\''.$this->id.'\')">';
       $output .= join("/", $labels);
