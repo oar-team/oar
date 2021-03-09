@@ -35,7 +35,7 @@ do
             cd $dir
 	    DIR=$(mktemp -d -p $TMP_DIR_FOR_DUMPS)
             echo "CRIU dump of job $job_id, pid $pid into $dir..."
-            criu dump -D $DIR --shell-job -t $pid
+            criu dump -D $DIR --shell-job --tcp-established -t $pid
             if [ $? = 0 ]
             then
 	      if [ -d ./checkpoint ]
@@ -79,7 +79,7 @@ do
         cd $dir
 	rm -f checkpoint/pidfile
         echo "CRIU resume of job $job_id into $dir..."
-        criu restore -D checkpoint --pidfile pidfile -d --shell-job
+        criu restore -D checkpoint --pidfile pidfile -d --shell-job --tcp-close
         if [ $? = 0 ]
         then
 	  chown $job_user checkpoint/pidfile
