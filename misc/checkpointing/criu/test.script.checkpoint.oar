@@ -1,11 +1,11 @@
 #!/bin/bash
 #OAR -n test_script
 #OAR -t idempotent
-#OAR -l /nodes=1/core=4,walltime=00:3:00
+#OAR -l /nodes=1/core=4,walltime=00:5:00
 #OAR -O test.%jobid%.stdout
 #OAR -E test.%jobid%.stderr
-#OAR --project admin
-#OAR --checkpoint 30
+#OAR --project test
+#OAR --checkpoint 240
 #OAR --notify mail:Bruno.Bzeznik@univ-grenoble-alpes.fr
 
 # Handler for checkpointing signal sent by OAR
