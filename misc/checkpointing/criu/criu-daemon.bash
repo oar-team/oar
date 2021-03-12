@@ -34,6 +34,7 @@ do
           then
             cd $dir
 	    DIR=$(mktemp -d -p $TMP_DIR_FOR_DUMPS)
+            rm -f checkpoint_ok
             echo "CRIU dump of job $job_id, pid $pid into $dir..."
             criu dump -D $DIR --shell-job --tcp-established -t $pid
             if [ $? = 0 ]
@@ -43,8 +44,8 @@ do
 	        rm -rf checkpoint.old
 	        mv -f ./checkpoint ./checkpoint.old
 	      fi
-	      mv $DIR ./checkpoint && touch checkpoint_ok
-	      chown $job_user checkpoint
+	      chown $job_user $DIR
+	      mv $DIR ./checkpoint && touch checkpoint_ok && chown $job_user checkpoint_ok
   	      echo "Checkpoint ok"
 	    else
               echo "Checkpoint failed!"
