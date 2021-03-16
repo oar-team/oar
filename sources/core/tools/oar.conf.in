@@ -669,12 +669,22 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-e none -oProxyCommand=none -oPermitLocalCommand=
 # without having to care of their ssh configuration (e.g. key setup)
 #OARSH_BYPASS_WHOLE_SECURITY="0"
 
+#########
+# OARSTAT #
 ###############################################################################
 
 # Default oarstat output format.
 # See oarstat "--format" option to know the available values
 # (default is 1)
 OARSTAT_DEFAULT_OUTPUT_FORMAT=2
+
+# Set the behavior of oarstat regarding the "initial_request" field.
+# By default, users only see the "initial_request" info for their jobs.
+# This option changes this to let any user see the "initial_request" of any job.
+# Please note that even when set to "no", any user connecting to the OAR database
+# using the read only role and can see the initial_request field for any job.
+#OARSTAT_SHOW_OTHER_USERS_INITIAL_REQUEST="no"
+
 
 ###########
 # OAR API #
