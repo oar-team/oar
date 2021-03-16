@@ -276,8 +276,15 @@ SCHEDULER_GANTT_HOLE_MINIMUM_TIME="300"
 SCHEDULER_RESOURCE_ORDER="scheduler_priority ASC, state_num ASC, available_upto DESC, suspended_jobs ASC, network_address ASC, resource_id ASC"
 
 # Dedicated order for advance reservations (scheduler_priority, state_num,
-# available_upto and suspended_jobs are not relevant for decisions in the future 
+# available_upto and suspended_jobs are not relevant for decisions in a far
+# future
 SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS="network_address ASC, resource_id ASC"
+
+# Threshold in seconds defining the near future: Advance reservations starting
+# in the near future use SCHEDULER_RESOURCE_ORDER. Otherwise, they use
+# SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS (see above)
+# Default is 300 seconds
+# SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS_THRESHOLD="300"
 
 # If next line is uncommented then OAR will automatically update the value of
 # "scheduler_priority" field corresponding to the besteffort jobs.

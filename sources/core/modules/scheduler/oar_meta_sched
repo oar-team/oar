@@ -21,7 +21,9 @@ my $base = OAR::IO::connect();
 my $base_ro = OAR::IO::connect_ro();
 
 init_conf($ENV{OARCONFFILE});
-my $Order_part = get_conf_with_default_param("SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS", get_conf("SCHEDULER_RESOURCE_ORDER"));
+my $Order_part = get_conf_with_default_param("SCHEDULER_RESOURCE_ORDER", "");
+my $Order_part_ar = get_conf_with_default_param("SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS", $Order_part);
+my $Order_part_ar_threshold = get_conf_with_default_param("SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS_THRESHOLD", 300);
 
 my $binpath;
 if (defined($ENV{OARDIR})){
@@ -430,7 +432,8 @@ while (@Rjobs){
             $tmp_properties = $m->{property};
         }
         my $tmp_tree;
-        $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,$resource_id_used_list_vector,\@Dead_resource_ids,"$job_properties AND $tmp_properties", $m->{resources}, "".$Order_part);
+
+        $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,$resource_id_used_list_vector,\@Dead_resource_ids,"$job_properties AND $tmp_properties", $m->{resources}, get_job_order_part($job));
         $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($tmp_tree, undef);
         push(@tree_list, $tmp_tree);
         my @leafs = OAR::Schedulers::ResourceTree::get_tree_leafs($tmp_tree);
@@ -486,6 +489,20 @@ oar_debug("[MetaSched] End processing of the accepted reservations without assig
 ###########################################################################################################
 # End init scheduler                                                                                      #
 ###########################################################################################################
+
+# Advance reservations in a near future (defined by the threshold) use the same
+# resource order as the batch jobs, e.g. standby and besteffort resources are
+# taken into account for resources selection. Otherwise the advance reservation
+# specific resource order is used.
+sub get_job_order_part($) {
+    my $job = shift;
+    my $order = $Order_part_ar;
+    if ($job->{start_time} - $current_time_sec < $Order_part_ar_threshold) {
+        $order = $Order_part;
+    }
+    oar_debug("[MetaSched] [$job->{job_id}] use scheduling order: $order\n");
+    return $order;
+}
 
 # launch right reservation jobs
 # arg : queue name
@@ -564,11 +581,10 @@ sub treate_waiting_reservation_jobs($){
 
 
 # check for jobs with reservation
-# arg : queue name, order_part
+# arg : queue name
 # return 1 if there is at least a job to treate else 0
-sub check_reservation_jobs($$){
+sub check_reservation_jobs($){
     my $queue_name = shift;
-    my $order_part = shift;
 
     oar_debug("[MetaSched] Queue $queue_name: begin processing of new reservations\n");
 
@@ -722,7 +738,7 @@ sub check_reservation_jobs($$){
                     if ((defined($m->{property})) and ($m->{property} ne "")){
                         $tmp_properties = $m->{property};
                     }
-                    my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@Dead_resource_ids,"$job_properties AND $tmp_properties", $m->{resources}, $order_part);
+                    my $tmp_tree = OAR::IO::get_possible_wanted_resources($base_ro,$available_resources_vector,undef,\@Dead_resource_ids,"$job_properties AND $tmp_properties", $m->{resources}, get_job_order_part($job));
                     $tmp_tree = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tmp_tree);
                     push(@tree_list, $tmp_tree);
                 }
@@ -1021,7 +1037,7 @@ foreach my $i (@queues){
             OAR::IO::stop_a_queue($base,$name);
         }
         treate_waiting_reservation_jobs($name);
-        check_reservation_jobs($name,$Order_part);
+        check_reservation_jobs($name);
     }else{
         oar_debug("[MetaSched] Queue $name: No job\n");
     }
