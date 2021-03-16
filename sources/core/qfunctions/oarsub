@@ -934,6 +934,10 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         print "Stagein completed.\n";
     }
 
+    if ($import_job_key_inline ne "") {
+        $Initial_request_string =~ s/\Q$import_job_key_inline/[HIDDEN INLINE JOB KEY]/;
+    }
+
      $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }else{
     if ($ARGV[0] ne ""){
@@ -972,7 +976,11 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
             OAR::Sub::close_db_connection(); exit(7);
         }
     }
-    
+
+    if ($import_job_key_inline ne "") {
+        $Initial_request_string =~ s/\Q$import_job_key_inline/[HIDDEN INLINE JOB KEY]/;
+    }
+
     my $server_port;
     ($Server, $server_port) = OAR::Sub::init_tcp_server();
 
