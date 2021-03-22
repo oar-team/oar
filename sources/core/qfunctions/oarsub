@@ -266,65 +266,70 @@ sub connect_job($$$){
 #Print help message
 sub usage() {
     print <<EOS;
-Usage: $0 [options] [-I|-C|<script>]
+Usage: $0 [options] [-I|-C <job id>|-r <start date>[, <end date>]|<script>]
 Submit a job the OAR batch scheduler
 Options are:
- -I, --interactive             Request an interactive job. Open a login shell
-                               on the first node of the reservation instead of
-                               running a script.
- -C, --connect=<job id>        Connect to a running job
- -l, --resource=<list>         Set the requested resources for the job.
-                               The different parameters are resource properties
-                               registered in OAR database, and `walltime' which
-                               specifies the duration before the job must be 
-                               automatically terminated if still running.
-                               Walltime format is [hour:mn:sec|hour:mn|hour].
+ -I, --interactive             Request an interactive job.
+ -C, --connect=<job id>        Connect to a running job.
+ -l, --resource=<description>[,<walltime>]
+                               Set the description of the requested resources
+                               for the job and a walltime which specifies an
+                               estimation of the maximum duration of the job
+                               (the job process can terminate earlier).
                                Ex: host=4/cpu=1,walltime=2:00:00
+                               Option can be used several times, to define a
+                               moldable job: a job accepting different
+                               combination of resource definitions.
      --array <number>          Specify an array job with 'number' subjobs
-     --array-param-file <file> Specify an array job on which each subjob will 
-                               receive one line of the file as parameter
- -S, --scanscript              Batch mode only: asks oarsub to scan the given
-                               script for OAR directives (#OAR -l ...)
- -q, --queue=<queue>           Set the queue to submit the job to
- -p, --property="<list>"       Add constraints to properties for the job.
-                               (format is a WHERE clause from the SQL syntax)
+     --array-param-file <file> Specify an array job on which each subjob will
+                               receive one line of the file as parameter.
+ -S, --scanscript              Request oarsub to scan the script file given as
+                               the job command, for extra options to apply to
+                               the job (lines starting with #OAR).
+ -q, --queue=<queue>           Set the queue to submit the job to.
+ -p, --property="<SQL WHERE CLAUSE>"
+                               Add constraints to the wanted resource for the
+                               job, using the resources properties.
+                               Constraints use the SQL WHERE CLAUSE syntax.
  -r, --reservation="<start date|now>[, <end date>]"
-                               Request that the job starts (optionally ends) at
-                               a specified time. Start and end dates can be given
-                               in the form 'YYYY-MM-DD hh:mm:ss', but if
-                               'YYYY-MM-DD' is omitted, it defaults to the
-                               current day. In 'hh:mm::ss', ss defaults to 00 if
-                               omitted, as well as mm if omitted also.
-                               The special keyword 'now' can also be use to
-                               request an advance reservation job that actually
-                               starts just now.
-                               When end date is provided, a walltime is calculated
-                               and will only be used if not provided in the
-                               resources request.
-     --checkpoint=<delay>      Enable the checkpointing for the job. A signal 
+                               Request that the job starts (and optionally
+                               ends) at a specified time. Using this option,
+                               the job is called an advance reservation.
+                               Start and end dates use the YYYY-MM-DD hh:mm:ss
+                               format. If YYYY-MM-DD is omitted, it defaults to
+                               the current day. In hh:mm:ss, ss and mm can be
+                               omitted. Quotes are only required when spaces
+                               are present. When an end date is provided the
+                               job walltime is inferred, unless provided in the
+                               -l resources request which prevails. The special
+                               keyword now can be used as the start date to
+                               request an advance reservation job that starts
+                               just now.
+     --checkpoint=<delay>      Enable the checkpointing for the job. A signal
                                is sent DELAY seconds before the walltime on
-                               the first processus of the job 
+                               the first processus of the job.
      --signal=<#sig>           Specify the signal to use when checkpointing
-                               Use signal numbers, default is 12 (SIGUSR2)
+                               Use signal numbers, default is 12 (SIGUSR2).
  -t, --type=<type>             Specify a specific type (deploy, besteffort,
-                               cosystem, checkpoint, timesharing)
+                               cosystem, checkpoint, timesharing). Option can
+                               be specified several times.
  -d, --directory=<dir>         Specify the directory where to launch the
-                               command (default is current directory)
-     --project=<txt>           Specify a name of a project the job belongs to
- -n, --name=<txt>              Specify an arbitrary name for the job
+                               command (default is current directory).
+     --project=<txt>           Specify a name of a project the job belongs to.
+ -n, --name=<txt>              Specify an arbitrary name for the job.
  -a, --anterior=<job id>       Anterior job that must be terminated to start
-                               this new one
+                               this new one.
      --notify=<txt>            Specify a notification method
-                               (mail or command to execute). Ex: 
+                               (mail or command to execute). Ex:
                                    --notify "mail:name\@domain.com"
                                    --notify "exec:/path/to/script args"
-     --resubmit=<job id>       Resubmit the given job as a new one
- -k, --use-job-key             Activate the job-key mechanism. 
+     --resubmit=<job id>       Resubmit the given job as a new one.
+ -k, --use-job-key             Activate the job-key mechanism.
  -i, --import-job-key-from-file=<file>
                                Import the job-key to use from a files instead
                                of generating a new one.
      --import-job-key-inline=<txt>
-                               Import the job-key to use inline instead of 
+                               Import the job-key to use inline instead of
                                generating a new one.
  -e  --export-job-key-to-file=<file>
                                Export the job key to a file. Warning: the
@@ -338,15 +343,15 @@ Options are:
                                (the %jobid% pattern is automatically replaced)
      --hold                    Set the job state into Hold instead of Waiting,
                                so that it is not scheduled (you must run
-                               "oarresume" to turn it into the Waiting state)
- -s, --stagein=<dir|tgz>       Set the stagein directory or archive
-     --stagein-md5sum=<md5sum> Set the stagein file md5sum
- -D, --dumper                  Print result in DUMPER format
- -X, --xml                     Print result in XML format
- -Y, --yaml                    Print result in YAML format
- -J, --json                    Print result in JSON format
- -h, --help                    Print this help message
- -V, --version                 Print OAR version number
+                               "oarresume" to turn it into the Waiting state).
+ -s, --stagein=<dir|tgz>       Set the stagein directory or archive.
+     --stagein-md5sum=<md5sum> Set the stagein file md5sum.
+ -D, --dumper                  Print result in DUMPER format.
+ -X, --xml                     Print result in XML format.
+ -Y, --yaml                    Print result in YAML format.
+ -J, --json                    Print result in JSON format.
+ -h, --help                    Print this help message.
+ -V, --version                 Print OAR version number.
 EOS
 }
 
