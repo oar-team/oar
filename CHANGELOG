@@ -3,6 +3,7 @@ OAR CHANGELOG
 
 version 2.5.10:
 --------------
+
   - [scheduler] add the SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS_THRESHOLD
     option: advance reservations in a near future can use the same resources
     order as batch job, taking into account the standby and besteffort jobs)
@@ -14,6 +15,12 @@ version 2.5.10:
   - [oarnodes] Optimize OAR's resources querying (option -r)
   - [oarnodes] Optimize nodes' states querying
   - [oarnodes] Update usage and man page
+  - [oarsub] add a reservation end time possibility to -r option
+  - [oarsub] factorize the reservation parsing in interactive condition
+  - [oarsub] be more flexible about the reservation dates parsing
+  - [oarsub] add the 'now' keyword support to reservation request
+  - [man] rework oarsub man page
+  - [oarsub] update usage
 
 version 2.5.9:
 --------------
