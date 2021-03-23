@@ -9,6 +9,11 @@ version 2.5.10:
   - [oarstat] Add a machine parseable output for -p option
   - [oarstat] Add a machine parseable output for -e (events) option
   - [oarstat] Exit with an error if -p and --sql options are used together
+  - [oarnodes] Factorize SQL query used to get resources
+  - [oarnodes] Factorize SQL query to get nodes' events
+  - [oarnodes] Optimize OAR's resources querying (option -r)
+  - [oarnodes] Optimize nodes' states querying
+  - [oarnodes] Update usage and man page
 
 version 2.5.9:
 --------------
