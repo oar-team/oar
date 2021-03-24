@@ -1,6 +1,12 @@
 OAR CHANGELOG
 =============
 
+version 2.5.10:
+--------------
+  - [scheduler] add the SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS_THRESHOLD
+    option: advance reservations in a near future can use the same resources
+    order as batch job, taking into account the standby and besteffort jobs)
+
 version 2.5.9:
 --------------
 
