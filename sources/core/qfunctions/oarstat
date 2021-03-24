@@ -144,6 +144,11 @@ if (defined($compact) && (defined($XML_mode) || defined($YAML_mode) || defined($
     exit(1);
 }
 
+if (defined($properties_query) && defined($sql_property)) {
+    warn("/!\\ ERROR: Options --sql and -p cannot be used together\n");
+    exit(1);
+}
+
 OAR::Stat::open_db_connection() or die "DB connection error, exiting.\n";
 
 if (defined ($gantt_query)) {
@@ -171,7 +176,7 @@ exit(0);
 sub print_usage{
     print <<EOS;
 Usage: oarstat [-X|-Y|-D|-f|-s] [-j [job_id]|--array array_id] [--sql SQL_properties] [-u [user]] [--array] [--compact] [--format num]
-       oarstat [-e|-p] [-j jobid|--array array_id] 
+       oarstat [-X|-Y|-J|-D] [-e|-p] [-j jobid|--array array_id]
        oarstat [-X|-Y|-J|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
        oarstat --accounting "YYYY-MM-DD, YYYY-MM-DD"
 
@@ -210,15 +215,27 @@ sub print_events {
     }
 
     my $events = OAR::Stat::get_events(\@job_ids);
+    my %events_dump;
     if (defined( $events )) {
+      my $lines = "";
       foreach my $event_hashref (@$events) {
-          printf(
+          $lines = $lines . sprintf(
             "%s> [%s] %s: %s\n",
             OAR::Stat::local_to_sql( $event_hashref->{'date'} ),
             $event_hashref->{'job_id'},
             $event_hashref->{'type'},
             $event_hashref->{'description'}
           );
+          %{$events_dump{$event_hashref->{'job_id'}}} = ('date' => $event_hashref->{'date'},
+                                                      'description' => $event_hashref->{'description'},
+                                                      'type' => $event_hashref->{'type'},
+                                                      );
+      }
+
+
+      if (dump_data(\%events_dump) == 0 && !print("$lines")){
+          OAR::Stat::close_db_connection();
+          exit(5);
       }
     }
     else {
@@ -511,9 +528,16 @@ sub print_properties {
 
     if($#job_ids >= 0){
         my @resources;
+        my %resources_dump;
         foreach my $j (@job_ids){
-            push  (@resources, OAR::Stat::get_job_resources_properties($j));
+            my @res = OAR::Stat::get_job_resources_properties($j);
+            if (@res > 0) {
+                push (@resources, @res);
+                $resources_dump{$j} = \@res;
+            }
         }
+
+        my $lines = "";
         foreach my $r (@resources){
             my $line = "";
             foreach my $p (keys(%{$r})){
@@ -523,10 +547,12 @@ sub print_properties {
                 }
             }
             chop($line);
-            if (!print("$line\n")){
-                OAR::Stat::close_db_connection();
-                exit(5);
-            }
+            $lines = $lines . $line . "\n";
+        }
+
+        if (dump_data(\%resources_dump) == 0 && !print("$lines")){
+            OAR::Stat::close_db_connection();
+            exit(5);
         }
     } else {
         warn("No job specified\n");

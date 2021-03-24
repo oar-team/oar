@@ -6,6 +6,9 @@ version 2.5.10:
   - [scheduler] add the SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS_THRESHOLD
     option: advance reservations in a near future can use the same resources
     order as batch job, taking into account the standby and besteffort jobs)
+  - [oarstat] Add a machine parseable output for -p option
+  - [oarstat] Add a machine parseable output for -e (events) option
+  - [oarstat] Exit with an error if -p and --sql options are used together
 
 version 2.5.9:
 --------------
