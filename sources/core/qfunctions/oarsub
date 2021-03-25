@@ -625,6 +625,17 @@ sub parse_reservation($$) {
     return($Server, $server_port);
 }
 
+sub run_advance_reservation_validation_hook($$) {
+    my $hook = shift;
+    my $status = shift;
+    my $ret = system("$hook $Job_id_list_ref->[0] $status");
+
+    if ($ret != 0) {
+        warn("[ERROR] an error occured in the advance reservation validation hook\n");
+        exit(1);
+    }
+}
+
 #
 # Main
 #
@@ -1088,12 +1099,19 @@ if ($Reservation ne "0"){
     #Reservation mode
     print("Reservation mode: waiting validation...\n");
     my $client = $Server->accept();
+    my $advance_reservation_validation_hook = get_conf("ADVANCE_RESERVATION_VALIDATION_HOOK_EXEC_FILE");
     $answer = <$client>;
     chop($answer);
     if ($answer eq "GOOD RESERVATION"){
         print("Reservation valid --> OK\n");
-    }else{
+        if (defined($advance_reservation_validation_hook)) {
+            run_advance_reservation_validation_hook($advance_reservation_validation_hook, 1);
+        }
+    } else {
         print("Reservation not valid --> KO ($answer)\n");
+        if (defined($advance_reservation_validation_hook)) {
+            run_advance_reservation_validation_hook($advance_reservation_validation_hook, 0);
+        }
         exit(10);
     }
 }elsif ($Interactive==1) {

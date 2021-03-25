@@ -235,6 +235,13 @@ PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 30 -w 20"
 # job resource manager (e.g. on deploy and cosystem frontend).
 #PASSIVE_JOB_HOOK_EXEC_FILE="/path/to/prog"
 
+# File to execute as oar on the frontend where a user runs a oarsub command to
+# create an advance reservation job. It is executed after the scheduler gave
+# "OK" or "KO" for validation, so that additional actions can be taken.
+# Arguments are the JOBID and the scheduler's answer (1 when "OK" or
+# 0 when "KO")
+#ADVANCE_RESERVATION_VALIDATION_HOOK_EXEC_FILE="/path/to/prog"
+
 # File to execute just after a group of resources has been supected. It may 
 # be used to trigger automatic actions to heal the resources. The script is 
 # started with the list of resources put in its STDIN: resource_id followed
