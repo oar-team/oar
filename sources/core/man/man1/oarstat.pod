@@ -32,11 +32,11 @@ Print information for the given job.
 
 =item B<-e, --events>
 
-Print job events only.
+Print job events only. Machine parseable outputs are also available when used in conjunction with correct options (like B<-J>).
 
 =item B<-p, --properties>
 
-Print job properties in the same format as in the $OAR_RESOURCE_PROPERTIES_FILE file on the nodes.
+Print job properties in the same format as in the $OAR_RESOURCE_PROPERTIES_FILE file on the nodes. Machine parseable outputs are also available when used in conjunction with correct options (like B<-J>). Please note that no properties will be displayed for jobs in "Waiting" state.
 
 =item B<-s, --state>
 
@@ -48,7 +48,7 @@ Print information for the current user or the given one.
 If used with --accounting, print a more detailed accounting report for the user.
 
 =item B<--array> [array_id]
- 
+
 Toggle the visualization of array job information.  If an array_id is provided, print information relative to the subjobs of the given array job.
 
 =item B<-c, --compact>
@@ -91,7 +91,7 @@ Print history of jobs and state of resources between two dates like "2006-03-30 
 
 Shows accounting information between two dates like "2006-03-30, 2006-04-30".
  If --user is also used, more details are shown for this particular user.
- Warning: the accounting table must be up to date. The update must be done at superuser level with the oaraccounting command. 
+ Warning: the accounting table must be up to date. The update must be done at superuser level with the oaraccounting command.
 
 =item B<-V, --version>
 
