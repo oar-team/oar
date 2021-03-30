@@ -274,6 +274,11 @@ sub sql_to_local($){
 	return OAR::IO::sql_to_local($date);
 }
 
+sub ymdhms_to_sql($$$$$$) {
+    my ($year,$mon,$mday,$hour,$min,$sec) = @_;
+	return OAR::IO::ymdhms_to_sql($year,$mon,$mday,$hour,$min,$sec);
+}
+
 sub resubmit_job($){
 	my $job_id = shift;
 	return OAR::IO::resubmit_job($base, $job_id);
