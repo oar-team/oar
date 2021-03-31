@@ -89,7 +89,7 @@ DETACH_JOB_FROM_SERVER="1"
 #MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING=25
 
 # Command to use to connect to other nodes (default is "ssh" in the PATH)
-OPENSSH_CMD="/usr/bin/ssh -p 6667"
+OPENSSH_CMD="/usr/bin/ssh -p 6667 -e none"
 
 # Set the timeout value for each ssh connection (default is 120)
 #OAR_SSH_CONNECTION_TIMEOUT="200"
@@ -276,8 +276,15 @@ SCHEDULER_GANTT_HOLE_MINIMUM_TIME="300"
 SCHEDULER_RESOURCE_ORDER="scheduler_priority ASC, state_num ASC, available_upto DESC, suspended_jobs ASC, network_address ASC, resource_id ASC"
 
 # Dedicated order for advance reservations (scheduler_priority, state_num,
-# available_upto and suspended_jobs are not relevant for decisions in the future 
+# available_upto and suspended_jobs are not relevant for decisions in a far
+# future
 SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS="network_address ASC, resource_id ASC"
+
+# Threshold in seconds defining the near future: Advance reservations starting
+# in the near future use SCHEDULER_RESOURCE_ORDER. Otherwise, they use
+# SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS (see above)
+# Default is 300 seconds
+# SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS_THRESHOLD="300"
 
 # If next line is uncommented then OAR will automatically update the value of
 # "scheduler_priority" field corresponding to the besteffort jobs.
@@ -302,7 +309,7 @@ SCHEDULER_PRIORITY_HIERARCHY_ORDER="network_address/resource_id"
 #SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default licence VLAN"
 SCHEDULER_AVAILABLE_SUSPENDED_RESOURCE_TYPE="default"
 
-# This value is a minimun delay in seconds between to scheduler run.
+# This value is a minimun delay in seconds between two scheduler runs.
 # In other words: the scheduler will only be launched if its last call is at
 # least 5s old.  This lets other OAR modules have more time to run.
 # Warning: this delay will impact the validation of the advance reservations.
@@ -644,7 +651,7 @@ OARSH_OARSTAT_CMD="%%BINDIR%%/oarstat"
 # $ cd path/to/openssh/sources/ 
 # $ grep getopt -A1 ssh.c | sed 's/.*"\(.\+\)".*/\1/' | xargs | sed 's/ //g'
 # 1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy
-OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy"
+OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxAB:CD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy"
 
 # The following variable sets the OpenSSH options which oarsh actually uses.
 # Any option which is filtered out from the OPENSSH_OPTSTR variable above is 
@@ -652,14 +659,14 @@ OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:X
 # WARNING: if not fitlered out, some options may allow root exploit using oarsh.
 # At least the following OpenSSH options are recommanded to be fitlered out: 
 #  -a -A -i -l -o -p -E -F -G -I -w
-OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
+OPENSSH_OPTSTR_FILTERED="1246b:c:fm:nqstvxBCNPQ:TVXYy"
 
 # The following variable forces OpenSSH configuration options for the ssh call 
 # made by in oarsh, so that, for security reasons, they cannot be set by the
 # user (whenever "o:" is not filtered out in the OPENSSH_OPTSTR_FILTERED
 # variable above).
 # WARNING: for security, do not change unless you know what you are doing
-OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=%%OARHOMEDIR%%/.ssh/known_hosts"
+OARSH_OPENSSH_DEFAULT_OPTIONS="-e none -oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=%%OARHOMEDIR%%/.ssh/known_hosts"
 
 # If the following variable is set to a value which is not 0, oarsh will act
 # like a normal ssh, **without** the CPUSET isolation mechanism.
@@ -669,12 +676,22 @@ OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no -oUse
 # without having to care of their ssh configuration (e.g. key setup)
 #OARSH_BYPASS_WHOLE_SECURITY="0"
 
+#########
+# OARSTAT #
 ###############################################################################
 
 # Default oarstat output format.
 # See oarstat "--format" option to know the available values
 # (default is 1)
 OARSTAT_DEFAULT_OUTPUT_FORMAT=2
+
+# Set the behavior of oarstat regarding the "initial_request" field.
+# By default, users only see the "initial_request" info for their jobs.
+# This option changes this to let any user see the "initial_request" of any job.
+# Please note that even when set to "no", any user connecting to the OAR database
+# using the read only role and can see the initial_request field for any job.
+#OARSTAT_SHOW_OTHER_USERS_INITIAL_REQUEST="no"
+
 
 ###########
 # OAR API #

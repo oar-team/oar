@@ -5,7 +5,7 @@ use warnings;
 use Data::Dumper;
 use OAR::Version;
 use OAR::IO;
-use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
+use OAR::Conf qw(init_conf dump_conf get_conf get_conf_with_default_param is_conf);
 use OAR::Walltime qw(get);
 
 my $base;
@@ -14,6 +14,7 @@ my $current_date = -1;
 # Read config
 init_conf($ENV{OARCONFFILE});
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
+my $Other_users_request = get_conf_with_default_param("OARSTAT_SHOW_OTHER_USERS_INITIAL_REQUEST", "no");
 
 sub open_db_connection(){
 	$base  = OAR::IO::connect_ro_one();
@@ -421,9 +422,10 @@ sub get_job_data($$){
             stderr_file => OAR::Tools::replace_jobid_tag_in_string($job_info->{stderr_file},$job_info->{job_id}),
             initial_request => ""
         );
-        if (($ENV{OARDO_USER} eq $job_info->{job_user})
-            or ($ENV{OARDO_USER} eq "oar")
-            or ($ENV{OARDO_USER} eq "root")){
+        if (lc($Other_users_request) eq "yes" or
+            ($ENV{OARDO_USER} eq $job_info->{job_user})
+              or ($ENV{OARDO_USER} eq "oar")
+              or ($ENV{OARDO_USER} eq "root")){
             $data_to_display{initial_request} = $job_info->{initial_request};
 
         }

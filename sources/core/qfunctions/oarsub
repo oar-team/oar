@@ -60,6 +60,8 @@ my $Job_id;
 my $Job_id_list_ref;
 my $Interactive = 0;
 my $Reservation = "0";
+my $Reservation_start;
+my $Reservation_end;
 my $Default_resources;
 my $Nodes_resources;
 my $connect_job ;
@@ -264,55 +266,70 @@ sub connect_job($$$){
 #Print help message
 sub usage() {
     print <<EOS;
-Usage: $0 [options] [-I|-C|<script>]
+Usage: $0 [options] [-I|-C <job id>|-r <start date>[, <end date>]|<script>]
 Submit a job the OAR batch scheduler
 Options are:
- -I, --interactive             Request an interactive job. Open a login shell
-                               on the first node of the reservation instead of
-                               running a script.
- -C, --connect=<job id>        Connect to a running job
- -l, --resource=<list>         Set the requested resources for the job.
-                               The different parameters are resource properties
-                               registered in OAR database, and `walltime' which
-                               specifies the duration before the job must be 
-                               automatically terminated if still running.
-                               Walltime format is [hour:mn:sec|hour:mn|hour].
+ -I, --interactive             Request an interactive job.
+ -C, --connect=<job id>        Connect to a running job.
+ -l, --resource=<description>[,<walltime>]
+                               Set the description of the requested resources
+                               for the job and a walltime which specifies an
+                               estimation of the maximum duration of the job
+                               (the job process can terminate earlier).
                                Ex: host=4/cpu=1,walltime=2:00:00
+                               Option can be used several times, to define a
+                               moldable job: a job accepting different
+                               combination of resource definitions.
      --array <number>          Specify an array job with 'number' subjobs
-     --array-param-file <file> Specify an array job on which each subjob will 
-                               receive one line of the file as parameter
- -S, --scanscript              Batch mode only: asks oarsub to scan the given
-                               script for OAR directives (#OAR -l ...)
- -q, --queue=<queue>           Set the queue to submit the job to
- -p, --property="<list>"       Add constraints to properties for the job.
-                               (format is a WHERE clause from the SQL syntax)
- -r, --reservation=<date>      Request a job start time reservation, 
-                               instead of a submission. The date format is
-                               "YYYY-MM-DD HH:MM:SS".
-     --checkpoint=<delay>      Enable the checkpointing for the job. A signal 
+     --array-param-file <file> Specify an array job on which each subjob will
+                               receive one line of the file as parameter.
+ -S, --scanscript              Request oarsub to scan the script file given as
+                               the job command, for extra options to apply to
+                               the job (lines starting with #OAR).
+ -q, --queue=<queue>           Set the queue to submit the job to.
+ -p, --property="<SQL WHERE CLAUSE>"
+                               Add constraints to the wanted resource for the
+                               job, using the resources properties.
+                               Constraints use the SQL WHERE CLAUSE syntax.
+ -r, --reservation="<start date|now>[, <end date>]"
+                               Request that the job starts (and optionally
+                               ends) at a specified time. Using this option,
+                               the job is called an advance reservation.
+                               Start and end dates use the YYYY-MM-DD hh:mm:ss
+                               format. If YYYY-MM-DD is omitted, it defaults to
+                               the current day. In hh:mm:ss, ss and mm can be
+                               omitted. Quotes are only required when spaces
+                               are present. When an end date is provided the
+                               job walltime is inferred, unless provided in the
+                               -l resources request which prevails. The special
+                               keyword now can be used as the start date to
+                               request an advance reservation job that starts
+                               just now.
+     --checkpoint=<delay>      Enable the checkpointing for the job. A signal
                                is sent DELAY seconds before the walltime on
-                               the first processus of the job 
+                               the first processus of the job.
      --signal=<#sig>           Specify the signal to use when checkpointing
-                               Use signal numbers, default is 12 (SIGUSR2)
+                               Use signal numbers, default is 12 (SIGUSR2).
  -t, --type=<type>             Specify a specific type (deploy, besteffort,
-                               cosystem, checkpoint, timesharing)
+                               cosystem, checkpoint, timesharing). Option can
+                               be specified several times.
  -d, --directory=<dir>         Specify the directory where to launch the
-                               command (default is current directory)
-     --project=<txt>           Specify a name of a project the job belongs to
- -n, --name=<txt>              Specify an arbitrary name for the job
+                               command (default is current directory).
+     --project=<txt>           Specify a name of a project the job belongs to.
+ -n, --name=<txt>              Specify an arbitrary name for the job.
  -a, --anterior=<job id>       Anterior job that must be terminated to start
-                               this new one
+                               this new one.
      --notify=<txt>            Specify a notification method
-                               (mail or command to execute). Ex: 
+                               (mail or command to execute). Ex:
                                    --notify "mail:name\@domain.com"
                                    --notify "exec:/path/to/script args"
-     --resubmit=<job id>       Resubmit the given job as a new one
- -k, --use-job-key             Activate the job-key mechanism. 
+     --resubmit=<job id>       Resubmit the given job as a new one.
+ -k, --use-job-key             Activate the job-key mechanism.
  -i, --import-job-key-from-file=<file>
                                Import the job-key to use from a files instead
                                of generating a new one.
      --import-job-key-inline=<txt>
-                               Import the job-key to use inline instead of 
+                               Import the job-key to use inline instead of
                                generating a new one.
  -e  --export-job-key-to-file=<file>
                                Export the job key to a file. Warning: the
@@ -326,15 +343,15 @@ Options are:
                                (the %jobid% pattern is automatically replaced)
      --hold                    Set the job state into Hold instead of Waiting,
                                so that it is not scheduled (you must run
-                               "oarresume" to turn it into the Waiting state)
- -s, --stagein=<dir|tgz>       Set the stagein directory or archive
-     --stagein-md5sum=<md5sum> Set the stagein file md5sum
- -D, --dumper                  Print result in DUMPER format
- -X, --xml                     Print result in XML format
- -Y, --yaml                    Print result in YAML format
- -J, --json                    Print result in JSON format
- -h, --help                    Print this help message
- -V, --version                 Print OAR version number
+                               "oarresume" to turn it into the Waiting state).
+ -s, --stagein=<dir|tgz>       Set the stagein directory or archive.
+     --stagein-md5sum=<md5sum> Set the stagein file md5sum.
+ -D, --dumper                  Print result in DUMPER format.
+ -X, --xml                     Print result in XML format.
+ -Y, --yaml                    Print result in YAML format.
+ -J, --json                    Print result in JSON format.
+ -h, --help                    Print this help message.
+ -V, --version                 Print OAR version number.
 EOS
 }
 
@@ -543,6 +560,64 @@ sub parse_resource_descriptions($){
     }
 
     return(@result);
+}
+
+sub parse_reservation($$) {
+    my $interactive = shift;
+    my $resource_list = shift;
+    my $server_port;
+    my $date_format_regex = qr/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}):?(\d{1,2})?:?(\d{1,2})?\s*$/;
+    my $time_format_regex = qr/^\s*(\d{1,2}):?(\d{1,2})?:?(\d{1,2})?\s*$/;
+
+    if ($Reservation ne "0"){
+        #Split the Reservation into the start and end time, then test if the syntax is right
+        ($Reservation_start, $Reservation_end) = split(/\s*,\s*/, $Reservation);
+        chomp($Reservation_start);
+        if ($Reservation_start =~ m/$date_format_regex/m) {
+            $Reservation_start = OAR::Sub::sql_to_local("$1 $2 $3 $4");
+        } elsif ($Reservation_start =~ m/$time_format_regex/m) {
+            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+                                            localtime(time);
+            my $res_str = OAR::Sub::ymdhms_to_sql($year,$mon,$mday,$1,$2,$3);
+            $Reservation_start = OAR::Sub::sql_to_local("$res_str");
+        } elsif ($Reservation_start eq "now") {
+            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+                                            localtime(time);
+            my $now_str = OAR::Sub::ymdhms_to_sql($year,$mon,$mday,$hour,$min,$sec);
+            $Reservation_start = OAR::Sub::sql_to_local("$now_str");
+        } else {
+            warn("[ERROR] Syntax error in <start date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n");
+            OAR::Sub::close_db_connection; exit(7);
+        }
+
+        if ($interactive eq 0) {
+            ($Server, $server_port) = OAR::Sub::init_tcp_server();
+        }
+    }
+
+    if ($Reservation_end ne undef) {
+        #Test if this job has a reservation end and the syntax is right
+        if ($Reservation_end =~ m/$date_format_regex/m) {
+            $Reservation_end = OAR::Sub::sql_to_local("$1 $2 $3 $4");
+        } else {
+            warn("[ERROR] Syntax error in <end date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n");
+            OAR::Sub::close_db_connection(); exit(7);
+        }
+
+        my $reservation_walltime = $Reservation_end - $Reservation_start;
+
+        foreach my $list (@{$resource_list}) {
+            if (@$list[1] eq undef) {
+                @$list[1] = $reservation_walltime;
+            }
+        }
+    }
+
+    if ($interactive eq 1) {
+        ($Server, $server_port) = OAR::Sub::init_tcp_server();
+    }
+
+    return($Server, $server_port);
 }
 
 #
@@ -843,7 +918,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
     }
 
     my @resource_list = parse_resource_descriptions(\@resource);
- 
+
     $Project = $Project_default if (!defined($Project));
     $Checkpoint_signal = $Checkpoint_signal_default if (!defined($Checkpoint_signal));
     $Directory = $Directory_default if (!defined($Directory));
@@ -861,31 +936,10 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         OAR::Sub::close_db_connection(); exit(6);
     }
 
-
-   
-#    job_key_management();
-
-    #if (!($exec =~ m/^\/.+$/m)){
-        # WARNING: we are not the real user, we are oar user!!!
-        # so $exec properties are not correct
-    #    if ( -e "$exec" ){
-    #        $exec = $Directory."/".$exec ;
-    #    }
-    #}
-
     $Cmd_executor = "Qsub";
 
-    my $server_port;
-    if ($Reservation ne "0"){
-        #Test if this job is a reservation and the syntax is right
-        if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
-            $Reservation = OAR::Sub::sql_to_local("$1 $2");
-        }else{
-            warn("[ERROR] Syntax error near the -r or --reservation option. The reservation date synstax is : \"2027-03-25 17:32:12\".\n");
-            OAR::Sub::close_db_connection; exit(7);
-        }
-        ($Server, $server_port) = OAR::Sub::init_tcp_server();
-    }
+    ($Server, my $server_port) = parse_reservation(0, \@resource_list);
+
     # TODO: put in lib
     # stagein machinery
     if ((defined $stagein) and (grep(/^desktop_computing$/, @Type))) {
@@ -934,7 +988,11 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         print "Stagein completed.\n";
     }
 
-     $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
+    if ($import_job_key_inline ne "") {
+        $Initial_request_string =~ s/\Q$import_job_key_inline/[HIDDEN INLINE JOB KEY]/;
+    }
+
+     $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -942,7 +1000,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
     $Cmd_executor = "Qsub -I";
 
     my @resource_list = parse_resource_descriptions(\@resource);
- 
+
     if (defined($array_param_file)){
         warn("/!\\ A parameter file-based array job cannot be interactive.\n");
 # user defined array_ids, 0 if interactive and/or non-array job 
@@ -961,22 +1019,9 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         OAR::Sub::close_db_connection(); exit(8);
     }
 
-#    job_key_management();
+    ($Server, my $server_port) = parse_reservation(1, \@resource_list);
 
-    if ($Reservation ne "0"){
-        #Test if this job is a reservation and the syntax is right
-        if ($Reservation =~ m/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*$/m){
-            $Reservation = OAR::Sub::sql_to_local("$1 $2");
-        }else{
-            warn("[ERROR] Syntax error near the -r or --reservation option. The reservation date synstax is : \"2027-03-25 17:32:12\".\n");
-            OAR::Sub::close_db_connection(); exit(7);
-        }
-    }
-    
-    my $server_port;
-    ($Server, $server_port) = OAR::Sub::init_tcp_server();
-
-     $Job_id_list_ref = OAR::Sub::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
+    $Job_id_list_ref = OAR::Sub::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
 }
 
 if ((!defined($Job_id_list_ref)) or (ref($Job_id_list_ref) ne "ARRAY")){

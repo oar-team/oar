@@ -1334,6 +1334,7 @@ sub job_key_management($$$$) {
                     return(-14,'','');
                 }
                 syswrite(FH,$import_job_key_inline);
+                syswrite(FH,"\n");
                 close(F);
             } else {
                 # file import
@@ -5175,6 +5176,67 @@ sub get_resource_info($$) {
 }
 
 
+# get_resources_info
+# returns a ref to some hash containing data for the the resources passed in parameter
+# parameters : base, resources id (array)
+# return value : ref
+# side effects : /
+sub get_resources_info($$) {
+    my $dbh = shift;
+    my $resources = shift;
+    my $sth;
+    my %resources_info;
+
+    if (@$resources > 1) {
+        $sth = $dbh->prepare("   SELECT *
+                                 FROM resources
+                                 WHERE
+                                    resource_id IN (".join(",", @{$resources}).")
+                                ");
+    } else {
+        $sth = $dbh->prepare("   SELECT *
+                                 FROM resources
+                                 WHERE
+                                    resource_id = @$resources[0]
+                                ");
+    }
+
+    $sth->execute();
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $resources_info{$ref->{'resource_id'}} = $ref;
+    }
+    $sth->finish();
+
+    return \%resources_info;
+}
+
+
+# get_all_resources
+# returns a ref to a hash containing data for all resources
+# parameters : base
+# return value : ref
+# side effects : /
+sub get_all_resources($) {
+    my $dbh = shift;
+
+    my %resources_infos;
+
+    my $sth = $dbh->prepare("   SELECT * FROM resources
+                                ORDER BY
+                                    network_address ASC, resource_id ASC
+                            ");
+    $sth->execute();
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $resources_infos{$ref->{'resource_id'}} = $ref;
+    }
+    $sth->finish();
+
+    return \%resources_infos;
+}
+
+
 # get_resource_next_value_for_property
 # returns the next possible numerical value for a property
 # parameters : base, property
@@ -5212,6 +5274,84 @@ sub get_node_info($$) {
                                 WHERE
                                     network_address = \'$hostname\'
                                 ORDER BY resource_id ASC
+                            ");
+    $sth->execute();
+
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+
+# get_nodes_info
+# returns a ref to some hash containing data for the node list passed in parameter
+# parameters : base, hosts (array)
+# return value : ref
+sub get_nodes_info($$) {
+    my $dbh = shift;
+    my $hosts = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE
+                                    network_address IN (".join(",", map {"'$_'"} @{$hosts}).")
+                                ORDER BY resource_id ASC
+                            ");
+    $sth->execute();
+
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+
+# get_all_nodes_info
+# returns a ref to some hash containing data for all nodes
+# parameters : base, hosts (array)
+# return value : ref
+sub get_all_nodes_info($) {
+    my $dbh = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE network_address IS NOT NULL AND
+                                      network_address  <> ''
+                                ORDER BY resource_id ASC
+                            ");
+    $sth->execute();
+
+    my @res = ();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@res, $ref);
+    }
+    $sth->finish();
+
+    return(@res);
+}
+
+
+# get_nodes_resources
+# returns a ref to some hash containing data for the node list passed in parameter
+# parameters : base, hosts
+# return value : ref
+sub get_nodes_resources($$) {
+    my $dbh = shift;
+    my $nodes = shift;
+
+    my $sth = $dbh->prepare("   SELECT *
+                                FROM resources
+                                WHERE
+                                    network_address IN (".join(",", map {"'$_'"} @{$nodes}).")
+                                ORDER BY
+                                    network_address ASC, resource_id ASC
                             ");
     $sth->execute();
 
@@ -7739,6 +7879,91 @@ sub get_events_for_hostname($$$){
 
     return(@results);
 }
+
+
+# Get events for the list of nodes given as parameter
+# If date is given, returns events since that date, else return the 30 last events.
+# args: database ref, host list, date
+sub get_events_for_hosts($$$){
+    my $dbh = shift;
+    my $hosts = shift;
+    my $date = shift;
+    my $sth;
+    if ($date eq "") {
+        $sth = $dbh->prepare("SELECT date, description, event_id, hostname, job_id,
+                                    to_check, type
+                              FROM (SELECT date, description, el.event_id, hostname, el.job_id,
+                                      to_check, type, ROW_NUMBER() OVER
+                                      (PARTITION BY hostname ORDER BY date DESC) as r
+                                    FROM event_log_hostnames AS elh, event_logs AS el
+                                    WHERE elh.event_id = el.event_id
+                                          AND elh.hostname IN
+                                                (".join(",", map {"'$_'"} @{$hosts}).")
+                                    ) q
+                              WHERE q.r <= 30
+                              ORDER BY date DESC, hostname");
+    } else {
+        $sth = $dbh->prepare("SELECT date, description, el.event_id, hostname, job_id,
+                                     to_check, type
+                              FROM event_log_hostnames AS elh, event_logs AS el
+                              WHERE
+                                  elh.event_id = el.event_id
+                                  AND elh.hostname IN
+                                        (".join(",", map {"'$_'"} @{$hosts}).")
+                                  AND el.date >= " .
+                             sql_to_local($date) .
+                             " ORDER BY el.date DESC");
+    }
+    $sth->execute();
+
+    my @results;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        unshift(@results, $ref);
+    }
+    $sth->finish();
+
+    return(@results);
+}
+
+
+# Get all events
+# If date is given, returns events since that date, else return the 30 last events.
+# args: database ref, date
+sub get_all_events($$){
+    my $dbh = shift;
+    my $date = shift;
+    my $sth;
+    if ($date eq "") {
+        $sth = $dbh->prepare("SELECT date, description, event_id, hostname, job_id,
+                                    to_check, type
+                              FROM (SELECT date, description, el.event_id, hostname, el.job_id,
+                                      to_check, type, ROW_NUMBER() OVER
+                                      (PARTITION BY hostname ORDER BY date DESC) as r
+                                    FROM event_log_hostnames AS elh, event_logs AS el
+                                    WHERE elh.event_id = el.event_id) q
+                              WHERE q.r <= 30
+                              ORDER BY date DESC, hostname");
+    } else {
+        $sth = $dbh->prepare("SELECT date, description, el.event_id, hostname, job_id,
+                                     to_check, type
+                              FROM event_log_hostnames AS elh, event_logs AS el
+                              WHERE
+                                  elh.event_id = el.event_id
+                                  AND el.date >= " .
+                             sql_to_local($date) .
+                             " ORDER BY el.date DESC");
+    }
+    $sth->execute();
+
+    my @results;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        unshift(@results, $ref);
+    }
+    $sth->finish();
+
+    return(@results);
+}
+
 
 # Get the last event for the given type
 # args: database ref, event type
