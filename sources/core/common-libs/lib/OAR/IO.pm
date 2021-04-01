@@ -1151,7 +1151,6 @@ sub get_possible_wanted_resources($$$$$$$){
     my $properties = shift;
     my $wanted_resources_ref = shift;
     my $order_part = shift;
-
     my $sql_in_string = "\'1\'";
     if (defined($resources_to_ignore_array) and ($#{$resources_to_ignore_array} >= 0)){
         $sql_in_string = "resource_id NOT IN (";
@@ -1173,20 +1172,15 @@ sub get_possible_wanted_resources($$$$$$$){
                                 });
     }
     
-    my $sql_where_string = "\'1\'";
+    my $sql_where_string = join(" AND ", map {"$_->{resource} IS NOT NULL"} @wanted_resources);
     
     if ((defined($properties)) and ($properties ne "")){
         $sql_where_string .= " AND ( $properties )";
     }
     
     #Get only wanted resources
-    my $resource_string;
-    my $resource_tree_cache_key;
-    foreach my $r (@wanted_resources){
-        $resource_string .= " $r->{resource},";
-        $resource_tree_cache_key .= " $r->{resource}=$r->{value},";
-    }
-    chop($resource_string);
+    my $resource_string = join(",", map {$_->{resource}} @wanted_resources);
+    my $resource_tree_cache_key =join(",", map {"$_->{resource}=$_->{value}"} @wanted_resources);
 
     # Search if this was already seen
     if (defined($TREE_CACHE_HASH->{$resource_tree_cache_key}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector})){
@@ -1196,7 +1190,7 @@ sub get_possible_wanted_resources($$$$$$$){
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resources
                              WHERE
-                                ($sql_where_string) AND
+                                $sql_where_string AND
                                 $sql_in_string
                              $order_part
                             ");
