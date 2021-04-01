@@ -226,12 +226,10 @@ sub print_events {
             $event_hashref->{'type'},
             $event_hashref->{'description'}
           );
-          %{$events_dump{$event_hashref->{'job_id'}}} = ('date' => $event_hashref->{'date'},
-                                                      'description' => $event_hashref->{'description'},
-                                                      'type' => $event_hashref->{'type'},
-                                                      );
+          push @{$events_dump{$event_hashref->{'job_id'}}}, { 'date' => $event_hashref->{'date'},
+                                                              'description' => $event_hashref->{'description'},
+                                                              'type' => $event_hashref->{'type'} };
       }
-
 
       if (dump_data(\%events_dump) == 0 && !print("$lines")){
           OAR::Stat::close_db_connection();
