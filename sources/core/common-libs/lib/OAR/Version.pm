@@ -1,8 +1,8 @@
 package OAR::Version;
 require Exporter;
 
-my $OARVersion = "2.5.9";
-my $OARName = "Trump vaccine";
+my $OARVersion = "2.5.10";
+my $OARName = "Liberty hope";
 
 sub get_version(){
     return $OARVersion." (".$OARName.")";
