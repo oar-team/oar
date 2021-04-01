@@ -69,6 +69,7 @@ my $usage;
 my $version;
 my $user;
 my $text_format = get_conf_with_default_param("OARSTAT_DEFAULT_OUTPUT_FORMAT", "1");
+my $other_users_request = get_conf_with_default_param("OARSTAT_SHOW_OTHER_USERS_INITIAL_REQUEST", "no");
 $text_format = $ENV{OAR_OARSTAT_OUTPUT_FORMAT} if (defined($ENV{OAR_OARSTAT_OUTPUT_FORMAT}));
 ### END Variables declaration ###
 
@@ -79,7 +80,7 @@ $text_format = $ENV{OAR_OARSTAT_OUTPUT_FORMAT} if (defined($ENV{OAR_OARSTAT_OUTP
 Getopt::Long::Configure ("gnu_getopt");
 GetOptions ("help|h" => \$usage,
             "version|V" => \$version,
-            "job|j=i"  => \@job_ids,
+            "job|j:i"  => \@job_ids,
             "full|f"  => \$full_view,
             "state|s"  => \$state,
             "user|u:s" => \$user,
@@ -122,13 +123,29 @@ if (defined($JSON_mode) and $JSON_enabled != 1){
 
 $user = $ENV{OARDO_USER} if (defined($user) and ($user eq ''));
 
+if ($#job_ids == 0 and $job_ids[0] == 0) {
+    shift @job_ids;
+    if (exists($ENV{OAR_JOB_ID})) {
+        push(@job_ids, $ENV{OAR_JOB_ID});
+    } elsif (exists($ENV{OAR_JOBID})) {
+        push(@job_ids, $ENV{OAR_JOBID});
+    } else {
+        die("/!\\ ERROR: No job id provided in command line or environment variables\n");
+    }
+} 
+
 if (defined($array_id) && $array_id !=0 && (scalar @job_ids > 0)){
     warn("/!\\ ERROR: Conflicting Job IDs and Array IDs (--array and -j cannot be used together)\n");
     exit(1);
 }
 
 if (defined($compact) && (defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode) || defined($full_view))) {
-    warn("/!\\ ERROR: compact view cannot be used with exports or full view\n");
+    warn("/!\\ ERROR: Compact view cannot be used with exports or full view\n");
+    exit(1);
+}
+
+if (defined($properties_query) && defined($sql_property)) {
+    warn("/!\\ ERROR: Options --sql and -p cannot be used together\n");
     exit(1);
 }
 
@@ -158,25 +175,25 @@ exit(0);
 
 sub print_usage{
     print <<EOS;
-Usage: oarstat [-X|-Y|-D|-f|-s] [-j job_id|--array array_id] [--sql SQL_properties] [-u user] [--array] [--compact] [--format num]
-       oarstat [-e|-p] [-j jobid|--array array_id] 
+Usage: oarstat [-X|-Y|-D|-f|-s] [-j [job_id]|--array array_id] [--sql SQL_properties] [-u [user]] [--array] [--compact] [--format num]
+       oarstat [-X|-Y|-J|-D] [-e|-p] [-j jobid|--array array_id]
        oarstat [-X|-Y|-J|-D] --gantt "YYYY-MM-DD hh:mm:ss, YYYY-MM-DD hh:mm:ss"
        oarstat --accounting "YYYY-MM-DD, YYYY-MM-DD"
 
 Print job information
 
 Options:
-  -j, --job                 show informations only for the specified job
-  -f, --full                show full informations
+  -j, --job                 show informations for a given job
+  -f, --full                show the full information
   -s, --state               show only the state of a job (optimized query)
-  -u, --user                show informations for this user only
+  -u, --user                show informations a given user
       --array               show informations for the specified array_job(s) and
                             toggle array view in
   -c, --compact             prints a single line for array jobs
-  -g, --gantt               show job informations between two date-times
+  -g, --gantt               show jobs information between two date-times
   -e, --events              show job events
   -p, --properties          show job properties
-      --accounting          show accounting informations between two dates
+      --accounting          show accounting information between two dates
       --sql                 restricts display by applying the SQL where clause
                             on the table jobs (ex: "project = 'p1'")
       --format              select the text output format. Available values
@@ -198,15 +215,27 @@ sub print_events {
     }
 
     my $events = OAR::Stat::get_events(\@job_ids);
+    my %events_dump;
     if (defined( $events )) {
+      my $lines = "";
       foreach my $event_hashref (@$events) {
-          printf(
+          $lines = $lines . sprintf(
             "%s> [%s] %s: %s\n",
             OAR::Stat::local_to_sql( $event_hashref->{'date'} ),
             $event_hashref->{'job_id'},
             $event_hashref->{'type'},
             $event_hashref->{'description'}
           );
+          %{$events_dump{$event_hashref->{'job_id'}}} = ('date' => $event_hashref->{'date'},
+                                                      'description' => $event_hashref->{'description'},
+                                                      'type' => $event_hashref->{'type'},
+                                                      );
+      }
+
+
+      if (dump_data(\%events_dump) == 0 && !print("$lines")){
+          OAR::Stat::close_db_connection();
+          exit(5);
       }
     }
     else {
@@ -345,10 +374,11 @@ sub print_job_data($){
                 if (defined($data->{$job_info->{job_id}}->{cpuset_name})){
                     print("    cpuset_name = $data->{$job_info->{job_id}}->{cpuset_name}\n");
                 }
-                if ((defined($job_info->{initial_request})) and
+                if ((lc($other_users_request) eq "yes" and defined($job_info->{initial_request})) or
+                   ((defined($job_info->{initial_request})) and
                     (($ENV{OARDO_USER} eq $job_info->{job_user}) or
                      ($ENV{OARDO_USER} eq "oar") or
-                     ($ENV{OARDO_USER} eq "root"))
+                     ($ENV{OARDO_USER} eq "root")))
                    ){
                     print("    initial_request = $job_info->{initial_request}\n");
                 }else{
@@ -470,7 +500,7 @@ sub dump_data($) {
             return 1;
         }
         if(defined($YAML_mode)){
-            print(YAML::Dump($data));
+            print(Dump($data));
             return 2;
         }
         if (defined($DUMPER_mode)){
@@ -498,9 +528,16 @@ sub print_properties {
 
     if($#job_ids >= 0){
         my @resources;
+        my %resources_dump;
         foreach my $j (@job_ids){
-            push  (@resources, OAR::Stat::get_job_resources_properties($j));
+            my @res = OAR::Stat::get_job_resources_properties($j);
+            if (@res > 0) {
+                push (@resources, @res);
+                $resources_dump{$j} = \@res;
+            }
         }
+
+        my $lines = "";
         foreach my $r (@resources){
             my $line = "";
             foreach my $p (keys(%{$r})){
@@ -510,10 +547,12 @@ sub print_properties {
                 }
             }
             chop($line);
-            if (!print("$line\n")){
-                OAR::Stat::close_db_connection();
-                exit(5);
-            }
+            $lines = $lines . $line . "\n";
+        }
+
+        if (dump_data(\%resources_dump) == 0 && !print("$lines")){
+            OAR::Stat::close_db_connection();
+            exit(5);
         }
     } else {
         warn("No job specified\n");

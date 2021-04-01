@@ -84,18 +84,18 @@ if (exists($type_hash{inner})) {
                              FROM jobs
                              WHERE
                                  job_id = $type_hash{inner} AND
-                                 state IN('Waiting','Hold','toLaunch','toAckReservation',
-                                          'Launching','Running','Suspended','Resuming') 
+                                 state IN(''Waiting'',''Hold'',''toLaunch'',''toAckReservation'',
+                                          ''Launching'',''Running'',''Suspended'',''Resuming'') 
                             ");
     $sth->execute();
     my ($container_reservation) = $sth->fetchrow_array();
 
     if (defined($container_reservation)) {
         if ($container_reservation eq "None" and not $reservationField eq "None") {
-            die("[ADMISSION RULE] Error: an advance-reservation inner job requires the container to be an advance reservation as well.\n");
+            die("[ADMISSION RULE] Error: an advance-reservation inner job requires the container to be an advance reservation as well.\\n");
         }
     } else {
-        die("[ADMISSION RULE] Error: inner job is requesting an invalid container id.\n");
+        die("[ADMISSION RULE] Error: inner job is requesting an invalid container id.\\n");
     }
 }
 ');

@@ -4,7 +4,11 @@ oarnodes - show information about the nodes managed by OAR.
 
 =head1 SYNOPSIS
 
-B<oarnodes> [ -s | -r <integer> | --sql <sql_properties> | -l | -h | -V ] [<list of nodes>] [ -e [<date>] | -X | -Y | -D ]
+B<oarnodes> [ -r <resource id> | --sql <sql_properties> | -s | -l | -h | -V ] [ -X | -Y | -D] [list of nodes] [ -e [<date>] ]
+
+OR
+
+B<oarnodes> oarnodes [ -r <resource id> | --sql <sql_properties> | -s | -l | -h | -V ] [ -X | -Y | -D] [ -e [<date>] ] -- [list of nodes]
 
 =head1 DESCRIPTION
 
@@ -28,7 +32,7 @@ Show the nodes list.
 
 =item B<-e, --events>
 
-Print events related to a node: either since the date given as parameter or the last 20.
+Print events related to a node: either since the date given as parameter or the last 30.
 
 =item B<--sql>
 
