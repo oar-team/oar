@@ -599,6 +599,11 @@ sub parse_reservation($$) {
         #Test if this job has a reservation end and the syntax is right
         if ($Reservation_end =~ m/$date_format_regex/m) {
             $Reservation_end = OAR::Sub::sql_to_local("$1 $2 $3 $4");
+        } elsif ($Reservation_end =~ m/$time_format_regex/m) {
+            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+                                            localtime(time);
+            my $res_str = OAR::Sub::ymdhms_to_sql($year,$mon,$mday,$1,$2,$3);
+            $Reservation_end = OAR::Sub::sql_to_local("$res_str");
         } else {
             warn("[ERROR] Syntax error in <end date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n");
             OAR::Sub::close_db_connection(); exit(7);
