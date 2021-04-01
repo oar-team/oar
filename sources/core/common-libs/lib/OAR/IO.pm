@@ -5775,6 +5775,7 @@ sub set_node_expiryDate($$$) {
 # set resources property
 # change a property value in the resource table
 # parameters : base, a hash ref defining the nodes or resources to change, property name, value
+# if value is undef, it will translate to NULL in SQL (unset)
 # return : # of changed rows
 sub set_resources_property($$$$){
     my $dbh = shift;
@@ -5795,8 +5796,8 @@ sub set_resources_property($$$$){
                              FROM resources
                              WHERE
                                  $where
-                                 AND ( $property != \'$value\' OR $property IS NULL )
-                            ");
+                            ".(defined($value)?"AND ( $property != \'$value\' OR $property IS NULL )":"AND $property IS NOT NULL")
+                            );
     $sth->execute();
     my @ids = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -5805,7 +5806,7 @@ sub set_resources_property($$$$){
     my $nbRowsAffected = $#ids + 1;
     if ($nbRowsAffected > 0){
         $nbRowsAffected = $dbh->do("UPDATE resources
-                                    SET $property = \'$value\'
+                                    SET $property = " . (defined($value)?"\'$value\'":"NULL") . "
                                     WHERE
                                         resource_id IN (".join(",", @ids).")
                                    ");
@@ -5827,7 +5828,7 @@ sub set_resources_property($$$$){
             }
             my $query = "INSERT INTO resource_logs (resource_id,attribute,value,date_start) VALUES ";
             foreach my $i (@ids){
-                $query .= " ($i, \'$property\', \'$value\', \'$date\'),";
+                $query .= " ($i, \'$property\', ".(defined($value)?"\'$value\'":"\'<unset>\'").", \'$date\'),";
             }
             chop($query);
             $res = $dbh->do($query);

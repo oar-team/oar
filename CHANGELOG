@@ -24,6 +24,7 @@ version 2.5.10:
   - [oarsub] add the 'now' keyword support to reservation request
   - [man] rework oarsub man page
   - [oarsub] update usage
+  - [oarnodesetting] allow for unsetting the value of resource properties
 
 version 2.5.9:
 --------------
