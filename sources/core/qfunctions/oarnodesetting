@@ -51,14 +51,19 @@ sub set_resources_properties($$$){
         $base->do("LOCK TABLE resources, resource_logs IN EXCLUSIVE MODE");
     }
     foreach my $p (@{$arrayProp}){
-        if ($p =~ m/(.+)\s*=\s*(.*)/m){
+        if ($p =~ m/^(.+?)\s*(?:(!)|=\s*(.*))$/m){
+            my $ret;
             if (OAR::Tools::check_resource_system_property($1) == 1){
                 warn("/!\\ Cannot update property $1 because it is a system field.\n");
                 $exit_code = 8;
                 next;
             }
-            print("Set property $1 to '$2'...");
-            my $ret = OAR::IO::set_resources_property($base,$resources,$1,$2);
+            if ($2 eq "!") {
+                print("Unset property $1...");
+            } else {
+                print("Set property $1 to '$3'...");
+            }
+            $ret = OAR::IO::set_resources_property($base,$resources,$1,$3);
             print(" $ret resource(s) updated.\n");
             if (not defined($ret) or ($ret < 0)){
                 $exit_code = 9;
@@ -181,6 +186,7 @@ Options:
                                       the drain property to YES
  -p, --property ["property=value"]    Set the property of the resource to the
                                       given value
+ -p, --property ["property!]          Unset the property of the resource
  -n, --no-wait                        Do not wait for job end when the node
                                       switches to Absent or Dead
      --last-property-value [property] Get the last value used for a property (as

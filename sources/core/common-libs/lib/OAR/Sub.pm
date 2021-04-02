@@ -318,6 +318,12 @@ sub get_job_array_id($){
 sub add_micheline_job{
 	my ($jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$initial_request_string, $array_job_nb,$array_params_ref) = @_;
 	my $base_ro = OAR::IO::connect_ro();
+
+    # Hide the ssh inline private key (if used) in the initial_request
+    if ($import_job_key_inline ne "") {
+        $initial_request_string =~ s/\Q$import_job_key_inline/[HIDDEN INLINE JOB KEY]/;
+    }
+
     my $r = OAR::IO::add_micheline_job($base, $base_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$initial_request_string, $array_job_nb,$array_params_ref);
     OAR::IO::disconnect($base_ro);
     return($r);

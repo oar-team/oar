@@ -1151,7 +1151,6 @@ sub get_possible_wanted_resources($$$$$$$){
     my $properties = shift;
     my $wanted_resources_ref = shift;
     my $order_part = shift;
-
     my $sql_in_string = "\'1\'";
     if (defined($resources_to_ignore_array) and ($#{$resources_to_ignore_array} >= 0)){
         $sql_in_string = "resource_id NOT IN (";
@@ -1173,20 +1172,15 @@ sub get_possible_wanted_resources($$$$$$$){
                                 });
     }
     
-    my $sql_where_string = "\'1\'";
+    my $sql_where_string = join(" AND ", map {"$_->{resource} IS NOT NULL"} @wanted_resources);
     
     if ((defined($properties)) and ($properties ne "")){
         $sql_where_string .= " AND ( $properties )";
     }
     
     #Get only wanted resources
-    my $resource_string;
-    my $resource_tree_cache_key;
-    foreach my $r (@wanted_resources){
-        $resource_string .= " $r->{resource},";
-        $resource_tree_cache_key .= " $r->{resource}=$r->{value},";
-    }
-    chop($resource_string);
+    my $resource_string = join(",", map {$_->{resource}} @wanted_resources);
+    my $resource_tree_cache_key =join(",", map {"$_->{resource}=$_->{value}"} @wanted_resources);
 
     # Search if this was already seen
     if (defined($TREE_CACHE_HASH->{$resource_tree_cache_key}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector})){
@@ -1196,7 +1190,7 @@ sub get_possible_wanted_resources($$$$$$$){
     my $sth = $dbh->prepare("SELECT $resource_string
                              FROM resources
                              WHERE
-                                ($sql_where_string) AND
+                                $sql_where_string AND
                                 $sql_in_string
                              $order_part
                             ");
@@ -5775,6 +5769,7 @@ sub set_node_expiryDate($$$) {
 # set resources property
 # change a property value in the resource table
 # parameters : base, a hash ref defining the nodes or resources to change, property name, value
+# if value is undef, it will translate to NULL in SQL (unset)
 # return : # of changed rows
 sub set_resources_property($$$$){
     my $dbh = shift;
@@ -5795,8 +5790,8 @@ sub set_resources_property($$$$){
                              FROM resources
                              WHERE
                                  $where
-                                 AND ( $property != \'$value\' OR $property IS NULL )
-                            ");
+                            ".(defined($value)?"AND ( $property != \'$value\' OR $property IS NULL )":"AND $property IS NOT NULL")
+                            );
     $sth->execute();
     my @ids = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -5805,7 +5800,7 @@ sub set_resources_property($$$$){
     my $nbRowsAffected = $#ids + 1;
     if ($nbRowsAffected > 0){
         $nbRowsAffected = $dbh->do("UPDATE resources
-                                    SET $property = \'$value\'
+                                    SET $property = " . (defined($value)?"\'$value\'":"NULL") . "
                                     WHERE
                                         resource_id IN (".join(",", @ids).")
                                    ");
@@ -5827,7 +5822,7 @@ sub set_resources_property($$$$){
             }
             my $query = "INSERT INTO resource_logs (resource_id,attribute,value,date_start) VALUES ";
             foreach my $i (@ids){
-                $query .= " ($i, \'$property\', \'$value\', \'$date\'),";
+                $query .= " ($i, \'$property\', ".(defined($value)?"\'$value\'":"\'<unset>\'").", \'$date\'),";
             }
             chop($query);
             $res = $dbh->do($query);
