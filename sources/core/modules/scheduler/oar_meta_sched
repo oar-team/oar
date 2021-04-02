@@ -180,6 +180,20 @@ if ($Walltime_change_enabled eq "YES") {
 # Initialize Gantt tables with scheduled reservation jobs, Running jobs, toLaunch jobs and Launching jobs #
 ###########################################################################################################
 
+# Advance reservations in a near future (defined by the threshold) use the same
+# resource order as the batch jobs, e.g. standby and besteffort resources are
+# taken into account for resources selection. Otherwise the advance reservation
+# specific resource order is used.
+sub get_job_order_part($) {
+    my $job = shift;
+    my $order = $Order_part_ar;
+    if ($job->{start_time} - $current_time_sec < $Order_part_ar_threshold) {
+        $order = $Order_part;
+    }
+    oar_debug("[MetaSched] [$job->{job_id}] use scheduling order: $order\n");
+    return $order;
+}
+
 # First get resources that we must add for each reservation jobs
 if (defined($Resources_to_always_add_type)){
     my $tmp_result_state_resources = OAR::IO::get_specific_resource_states($base,$Resources_to_always_add_type);
@@ -489,20 +503,6 @@ oar_debug("[MetaSched] End processing of the accepted reservations without assig
 ###########################################################################################################
 # End init scheduler                                                                                      #
 ###########################################################################################################
-
-# Advance reservations in a near future (defined by the threshold) use the same
-# resource order as the batch jobs, e.g. standby and besteffort resources are
-# taken into account for resources selection. Otherwise the advance reservation
-# specific resource order is used.
-sub get_job_order_part($) {
-    my $job = shift;
-    my $order = $Order_part_ar;
-    if ($job->{start_time} - $current_time_sec < $Order_part_ar_threshold) {
-        $order = $Order_part;
-    }
-    oar_debug("[MetaSched] [$job->{job_id}] use scheduling order: $order\n");
-    return $order;
-}
 
 # launch right reservation jobs
 # arg : queue name

@@ -4,6 +4,9 @@ OAR CHANGELOG
 version 2.5.10:
 --------------
 
+  - [oarstat] Allow to see other users' initial_request
+  - [oarsub] ensure the inline job key is in a valid format, by adding \n
+  - [oarsub] remove ssh inline keys from initial_request
   - [scheduler] add the SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS_THRESHOLD
     option: advance reservations in a near future can use the same resources
     order as batch job, taking into account the standby and besteffort jobs)
@@ -21,6 +24,7 @@ version 2.5.10:
   - [oarsub] add the 'now' keyword support to reservation request
   - [man] rework oarsub man page
   - [oarsub] update usage
+  - [oarnodesetting] allow for unsetting the value of resource properties
 
 version 2.5.9:
 --------------

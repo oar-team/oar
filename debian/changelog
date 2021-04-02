@@ -1,3 +1,9 @@
+oar (2.5.10~g5k2-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Samir Noir <samir.noir@inria.fr>  Fri, 02 Apr 2021 08:14:17 +0000
+
 oar (2.5.10~g5k1-1~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports.

@@ -18,7 +18,7 @@ One uses B<oarsub> to submit a job to the B<OAR resources and jobs management sy
 A job is defined by a command to run and optionally the description of a set of wanted resources to execute a task.
 The I<command> can be any executable program or script file, or a script command line.
 
-The OAR scheduler is in charge of providing a set of resources which matches the B<oarsub> resource request (see the I<-l> option). Once scheduled and launched, the job executes the command on the first node (machine) of the assigned the resources, with some environment variables set (e.g. the assigned resources list, the job duration a.k.a walltime, ...). If many nodes (machines) are assigned to the job, it is let to the user's command to dispatch an execution on all nodes.
+The OAR scheduler is in charge of providing a set of resources which matches the B<oarsub> resource request (see the I<-l> option). Once scheduled and launched, the job executes the command on the first node (machine) of the assigned resources, with some environment variables set (e.g. the assigned resources list, the job duration a.k.a walltime, ...). If many nodes (machines) are assigned to the job, it is let to the user's command to dispatch an execution on all nodes.
 
 OAR defines two kinds of jobs: I<batch jobs> and I<advance reservation jobs>.
 
@@ -94,7 +94,7 @@ Request that the job starts (and optionally ends) at a specified time. Using
 this option, the job is called an I<advance reservation>.
 
 Start and end dates use the I<YYYY-MM-DD hh:mm:ss> format. If I<YYYY-MM-DD> is
-omitted, it defaults to the current day. In I<hh:mm::ss>, I<ss> and I<mm> can
+omitted, it defaults to the current day. In I<hh:mm:ss>, I<ss> and I<mm> can
 be omitted. Quotes are only required when spaces are present.  When an end date
 is provided the job I<walltime> is inferred, unless provided in the I<-l>
 resources request which prevails. The special keyword B<now> can be used as the
