@@ -599,6 +599,11 @@ sub parse_reservation($$) {
         #Test if this job has a reservation end and the syntax is right
         if ($Reservation_end =~ m/$date_format_regex/m) {
             $Reservation_end = OAR::Sub::sql_to_local("$1 $2 $3 $4");
+        } elsif ($Reservation_end =~ m/$time_format_regex/m) {
+            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+                                            localtime(time);
+            my $res_str = OAR::Sub::ymdhms_to_sql($year,$mon,$mday,$1,$2,$3);
+            $Reservation_end = OAR::Sub::sql_to_local("$res_str");
         } else {
             warn("[ERROR] Syntax error in <end date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n");
             OAR::Sub::close_db_connection(); exit(7);
@@ -986,10 +991,6 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         OAR::Sub::release_lock($md5sum) or die "Failed to unlock stagein\n";
         #unlink($tempfile_to_delete) if (defined($tempfile_to_delete));
         print "Stagein completed.\n";
-    }
-
-    if ($import_job_key_inline ne "") {
-        $Initial_request_string =~ s/\Q$import_job_key_inline/[HIDDEN INLINE JOB KEY]/;
     }
 
      $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
