@@ -1,14 +1,20 @@
 =head1 NAME
 
-oarnodesetting - Change the state and properties of a node in OAR.
+oarnodesetting - Change the state and properties of resources in OAR.
 
 =head1 SYNOPSIS
 
-B<oarnodesetting> [[-a] [-h hostname] [-p "property=value"]] || [[-r resource_id] || [--sql "sql syntax"] || [-h hostname]] [[-s state] || [-p "property=value"] || [-m on|off]] || [-d on|off]
+B<oarnodesetting> -a -h hostname [-p "property=value" [-p ...]]
+
+B<oarnodesetting> -h hostname [-s state] [-p "property=value" [-p ...]] [-m on | off]] [-d on | off]
+
+B<oarnodesetting> -r resource_id [-s state] [-p "property=value" [-p ...]] [-m on | off]] [-d on | off]
+
+B<oarnodesetting> --sql "SQL where clause"  [-s state] [-p "property=value" [-p ...]] [-m on | off]] [-d on | off]
 
 =head1 DESCRIPTION
 
-This command is used to Change the state and properties of a node in OAR.
+This command is used to Change the state and properties of resources in OAR.
 
 =head1 OPTIONS
 
@@ -36,7 +42,7 @@ Add a new resource.
 
 =item B<-s, --state> STATE
 
-Set the new state of the node. Possible states are: Alive, Absent and Dead.
+Set the new state of the resource. Possible states are: Alive, Absent and Dead.
 
 =item B<-m, --maintenance> [on|off]
 
@@ -48,11 +54,15 @@ Prevent new job to be scheduled on resources, this is equivalent to setting the 
 
 =item B<-p, --property> ["property=value"]
 
-Set the property of the node to the given value.
+Set the property of resources to the given value.
+
+=item B<-p, --property> [property!]
+
+Unset the property of resources.
 
 =item B<-n, --nowait>
 
-Do not wait for job ends when the node switches to Absent or Dead.
+Do not wait for job ends when resources switch to Absent or Dead.
 
 =item B<--last-property-value> [property]
 
@@ -66,10 +76,16 @@ Get the last value used for a property (as sorted by SQL's ORDER BY DESC)
 
 =item oarnodesetting -s Alive -h node012
 
-=item oarnodesetting -s Absent -h node012
+=item oarnodesetting -s Absent -r 21
+
+=item oarnodesetting -p mem=512 -h node012
+
+=item oarnodesetting -p "cpu_model=Xeon Gold 5120" -h node012
+
+=item oarnodesetting -p gpu! --sql "gpucount = 0"
 
 =back
 
 =head1 COPYRIGHTS
 
- Copyright 2003-2016 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2021 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
