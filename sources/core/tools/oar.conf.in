@@ -227,6 +227,14 @@ PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 30 -w 20"
 # job resource manager (e.g. on deploy and cosystem frontend).
 #INTERACTIVE_JOB_HOOK_EXEC_FILE="/path/to/prog"
 
+# File to execute as root on the head node of a job before running the script of
+# of a passibe job, allowing to alter the processes created for the user.
+# Arguments are: PIDs:JOB_USER:JOB_ID:JOB_NAME:JOB_PROJECT:JOB_WALLTIME
+# Where PIDs is a comma separated list of the PIDs of the involved processes.
+# Can be used to change the cgroups of processes if not taken care of by the
+# job resource manager (e.g. on deploy and cosystem frontend).
+#PASSIVE_JOB_HOOK_EXEC_FILE="/path/to/prog"
+
 # File to execute just after a group of resources has been supected. It may 
 # be used to trigger automatic actions to heal the resources. The script is 
 # started with the list of resources put in its STDIN: resource_id followed
