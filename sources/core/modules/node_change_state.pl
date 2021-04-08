@@ -43,8 +43,8 @@ foreach my $i (@events_to_check){
                  and (OAR::IO::is_an_event_exists($base, $i->{job_id},"SEND_KILL_JOB") <= 0)
                  and ($job->{stop_time} - $job->{start_time} > 60)
                 ){
-                my $new_job_id = OAR::IO::resubmit_job($base,$i->{job_id});
-                my $msg = "Resubmiting job $i->{job_id} => $new_job_id (type idempotent & exit code = 99 & duration > 60s)";
+                my $new_job_id = OAR::IO::resubmit_job($base,$i->{job_id},1);
+                my $msg = "[NodeChangeState] Resubmiting job $i->{job_id} => $new_job_id (type idempotent & exit code = 99 & duration > 60s)";
                 oar_warn($msg);
                 OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},$msg);
             }
@@ -209,8 +209,8 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT")
        ){
         if (($job->{reservation} eq "None") and ($job->{job_type} eq "PASSIVE") and (OAR::IO::is_job_already_resubmitted($base, $i->{job_id}) == 0)){
-            my $new_job_id = OAR::IO::resubmit_job($base,$i->{job_id});
-            my $msg = "[NodeChangeState] Resubmiting job $i->{job_id} => $new_job_id) (due to event $i->{type} & job is neither a reservation nor an interactive job)\n";
+            my $new_job_id = OAR::IO::resubmit_job($base,$i->{job_id},1);
+            my $msg = "[NodeChangeState] Resubmiting job $i->{job_id} => $new_job_id) (due to event $i->{type})\n";
             oar_warn($msg);
             OAR::IO::add_new_event($base,"RESUBMIT_JOB_AUTOMATICALLY",$i->{job_id},$msg);
         }
