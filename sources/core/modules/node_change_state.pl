@@ -142,8 +142,6 @@ foreach my $i (@events_to_check){
         }else{
             @hosts = OAR::IO::get_job_host_log($base,$job->{assigned_moldable_job});
             if (($i->{type} ne "EXTERMINATE_JOB") &&
-                ($i->{type} ne "CPUSET_ERROR") &&
-                ($i->{type} ne "CPUSET_CLEAN_ERROR") &&
                 ($i->{type} ne "FORCE_TERMINATE_FINISHING_JOB")
             ){
                 @hosts = ($hosts[0]);
