@@ -139,6 +139,19 @@ foreach my $i (@events_to_check){
                 ($i->{type} eq "RESUME_ERROR")
                ){
             @hosts = OAR::IO::get_hostname_event($base,$i->{event_id});
+        }elsif ((($i->{type} eq "PROLOGUE_ERROR") ||
+                 ($i->{type} eq "EPILOGUE_ERROR") ||
+                 ($i->{type} eq "CANNOT_WRITE_NODE_FILE") ||
+                 ($i->{type} eq "CANNOT_WRITE_PID_FILE") ||
+                 ($i->{type} eq "USER_SHELL") ||
+                 ($i->{type} eq "CANNOT_CREATE_TMP_DIRECTORY") ||
+                 ($i->{type} eq "SSH_TRANSFER_TIMEOUT") ||
+                 ($i->{type} eq "BAD_HASHTABLE_DUMP") ||
+                 ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT") ||
+                 ($i->{type} eq "EXIT_VALUE_OAREXEC")) &&
+                (defined($jobtypes->{deploy}) or defined($jobtypes->{cosystem}))
+               ){
+            oar_debug("[NodeChangeState] Not suspecting any nodes because error is on the deploy or cosystem frontend\n");
         }else{
             @hosts = OAR::IO::get_job_host_log($base,$job->{assigned_moldable_job});
             if (($i->{type} ne "EXTERMINATE_JOB") &&
