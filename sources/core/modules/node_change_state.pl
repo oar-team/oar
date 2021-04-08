@@ -30,12 +30,12 @@ my @events_to_check = OAR::IO::get_to_check_events($base);
 foreach my $i (@events_to_check){
     oar_debug("[NodeChangeState] Check events for the job $i->{job_id} with type $i->{type}\n");
     my $job = OAR::IO::get_job($base,$i->{job_id});
-    
+    my $jobtypes = OAR::IO::get_job_types_hash($base, $i->{job_id});
+
     ####################################################
     # Check if we must resubmit the idempotent jobs    #
     ####################################################
     if ((($i->{type} eq "SWITCH_INTO_TERMINATE_STATE") or ($i->{type} eq "SWITCH_INTO_ERROR_STATE")) and (defined($job->{exit_code}) and ( ($job->{exit_code} >> 8) == 99))){
-        my $jobtypes = OAR::IO::get_job_types_hash($base, $i->{job_id});
         if ((defined($jobtypes->{idempotent}))){
             if (($job->{reservation} eq "None")
                  and ($job->{job_type} eq "PASSIVE")
@@ -196,9 +196,6 @@ foreach my $i (@events_to_check){
     # Check if we must resubmit the job #
     #####################################
     if (
-        ($i->{type} eq "SERVER_PROLOGUE_TIMEOUT") ||
-        ($i->{type} eq "SERVER_PROLOGUE_EXIT_CODE_ERROR") ||
-        ($i->{type} eq "SERVER_PROLOGUE_ERROR") ||
         ($i->{type} eq "PING_CHECKER_NODE_SUSPECTED") ||
         ($i->{type} eq "CPUSET_ERROR") ||
         ($i->{type} eq "PROLOGUE_ERROR") ||
@@ -208,7 +205,9 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "CANNOT_CREATE_TMP_DIRECTORY") ||
         ($i->{type} eq "LAUNCHING_OAREXEC_TIMEOUT")
        ){
-        if (($job->{reservation} eq "None") and ($job->{job_type} eq "PASSIVE") and (OAR::IO::is_job_already_resubmitted($base, $i->{job_id}) == 0)){
+        # Do not resubmit deploy or cosystem job because oarexec will execute on the frontend again and most likely fail forever...
+        # Do not resubmit an advance reservation or an interactive job because this makes no sense.
+        if (not defined($jobtypes->{deploy}) and not defined($jobtypes->{cosystem}) and ($job->{reservation} eq "None") and ($job->{job_type} eq "PASSIVE") and (OAR::IO::is_job_already_resubmitted($base, $i->{job_id}) == 0)){
             my $new_job_id = OAR::IO::resubmit_job($base,$i->{job_id},1);
             my $msg = "[NodeChangeState] Resubmiting job $i->{job_id} => $new_job_id) (due to event $i->{type})\n";
             oar_warn($msg);
@@ -234,7 +233,6 @@ foreach my $i (@events_to_check){
             OAR::IO::set_job_state($base,$job->{job_id},"Suspended");
             OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Term");
         }elsif (($i->{type} eq "HOLD_RUNNING_JOB") and ($job->{state} eq "Running")){
-            my $jobtypes = OAR::IO::get_job_types_hash($base, $job->{job_id});
             if (defined($jobtypes->{noop})){
                 OAR::IO::suspend_job_action($base,$job->{job_id},$job->{assigned_moldable_job});
                 oar_debug("[NodeChangeStat]e [$job->{job_id}] suspend job of type noop\n");
