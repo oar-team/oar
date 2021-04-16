@@ -215,15 +215,15 @@ sub connect_job($$$){
         $cmd[$i] = "-t";$i++;
         $cmd[$i] = $host_to_connect_via_ssh;$i++;
         $str =~ s/\n//g;      
-        my $node_exec_file = get_conf("OARSUB_NODE_EXEC_FILE");
-        my $node_exec_cmd;
-        if (defined($node_exec_file)) {
-            $node_exec_cmd = "if test -x $node_exec_file; then oardodo $node_exec_file \$\$,\$PPID:$lusr:$job_id:$job->{name}:$job->{project}:$moldable->{moldable_walltime}; else true; fi && ";
+        my $interactive_job_hook_file = get_conf("INTERACTIVE_JOB_HOOK_EXEC_FILE");
+        my $interactive_job_hook_cmd;
+        if (defined($interactive_job_hook_file)) {
+            $interactive_job_hook_cmd = "if test -x $interactive_job_hook_file; then oardodo $interactive_job_hook_file \$\$,\$PPID:$lusr:$job_id:$job->{name}:$job->{project}:$moldable->{moldable_walltime}; else true; fi && ";
         }
         if ($ENV{DISPLAY} ne ""){
-            $cmd[$i] = "bash -c '${node_exec_cmd}echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$lusr oardodo $xauth_path merge -) && [ \"$lusr\" != \"$job_user\" ] && OARDO_BECOME_USER=$lusr oardodo bash --noprofile --norc -c \"chmod 660 \\\$HOME/.Xauthority\" ;TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$lusr oardodo $xauth_path merge -) && [ \"$lusr\" != \"$job_user\" ] && OARDO_BECOME_USER=$lusr oardodo bash --noprofile --norc -c \"chmod 660 \\\$HOME/.Xauthority\" ;TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
         }else{
-            $cmd[$i] = "bash -c '${node_exec_cmd}echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
         }
         #print("oarsub launchs command : @cmd\n");
         #essential : you become oar instead of the user
@@ -623,6 +623,17 @@ sub parse_reservation($$) {
     }
 
     return($Server, $server_port);
+}
+
+sub run_advance_reservation_validation_hook($$) {
+    my $hook = shift;
+    my $status = shift;
+    my $ret = system("$hook $Job_id_list_ref->[0] $status");
+
+    if ($ret != 0) {
+        warn("[ERROR] an error occured in the advance reservation validation hook\n");
+        exit(1);
+    }
 }
 
 #
@@ -1088,12 +1099,19 @@ if ($Reservation ne "0"){
     #Reservation mode
     print("Reservation mode: waiting validation...\n");
     my $client = $Server->accept();
+    my $advance_reservation_validation_hook = get_conf("ADVANCE_RESERVATION_VALIDATION_HOOK_EXEC_FILE");
     $answer = <$client>;
     chop($answer);
     if ($answer eq "GOOD RESERVATION"){
         print("Reservation valid --> OK\n");
-    }else{
+        if (defined($advance_reservation_validation_hook)) {
+            run_advance_reservation_validation_hook($advance_reservation_validation_hook, 1);
+        }
+    } else {
         print("Reservation not valid --> KO ($answer)\n");
+        if (defined($advance_reservation_validation_hook)) {
+            run_advance_reservation_validation_hook($advance_reservation_validation_hook, 0);
+        }
         exit(10);
     }
 }elsif ($Interactive==1) {

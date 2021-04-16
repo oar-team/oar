@@ -92,6 +92,7 @@ sub get_job_types_hash($$);
 sub set_moldable_job_max_time($$$);
 sub is_timesharing_for_2_jobs($$$);
 sub is_inner_job_with_container_not_ready($$);
+sub resubmit_job($$;$);
 
 #ARRAY JOBS MANAGEMENT
 sub get_jobs_in_array($$);
@@ -2647,9 +2648,10 @@ sub archive_some_moldable_job_nodes($$$){
 
 # Resubmit a job and give the new job_id
 # args : database, job id
-sub resubmit_job($$){
+sub resubmit_job($$;$){
     my $dbh = shift;
     my $job_id = shift;
+    my $nolock = shift;
 
     my $lusr= $ENV{OARDO_USER};
     
@@ -2659,7 +2661,7 @@ sub resubmit_job($$){
     return(-2) if (($job->{state} ne "Error") and ($job->{state} ne "Terminated") and ($job->{state} ne "Finishing"));
     return(-3) if (($lusr ne $job->{job_user}) and ($lusr ne "oar") and ($lusr ne "root"));
     
-    lock_table($dbh,["challenges","jobs"]);
+    lock_table($dbh,["challenges","jobs"]) if (not defined($nolock));
     # Verify the content of the ssh keys
     my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($dbh,$job_id);
     if (($ssh_public_key ne "") or ($ssh_private_key ne "")){
@@ -2713,7 +2715,7 @@ sub resubmit_job($$){
     $dbh->do("INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key)
               VALUES ($new_job_id,\'$random_number\',$priv_key,$pub_key)
              ");
-    unlock_table($dbh);
+    unlock_table($dbh) if (not defined($nolock));
 
     my $stdout_file = $dbh->quote($job->{stdout_file});
     my $stderr_file = $dbh->quote($job->{stderr_file});
@@ -8462,7 +8464,7 @@ sub check_end_of_job($$$$$$$$$$){
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
         }else{
-            my $strWARN = "[bipbip $job_id] error of oarexec, exit value = $error; the job $job_id is in Error and the node $hosts->[0] is Suspected; If this job is of type cosystem or deploy, check if the oar server is able to connect to the corresponding nodes, oar-node started";
+            my $strWARN = "[bipbip $job_id] error of oarexec, exit value = $error; the job $job_id is in Error";
             push(@events, {type => "EXIT_VALUE_OAREXEC", string => $strWARN});
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events);
         }
