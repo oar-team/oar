@@ -383,6 +383,10 @@ if (is_conf("EPILOGUE_EXEC_FILE")){
    $epilogue_exec_file = get_conf("EPILOGUE_EXEC_FILE"); 
 }
 
+my $passive_job_hook_exec_file;
+if (is_conf("PASSIVE_JOB_HOOK_EXEC_FILE")){
+   $passive_job_hook_exec_file = get_conf("PASSIVE_JOB_HOOK_EXEC_FILE"); 
+}
 my @oarexec_files = ($OAR_Tools_module_filepath,"$ENV{OARDIR}/oarexec");
 
 my $host_to_connect_via_ssh = $hosts[0];
@@ -431,6 +435,7 @@ my %data_to_transfer = (
         pro_epi_timeout	    => $pro_epi_timeout,
         prologue            => $prologue_exec_file,
         epilogue            => $epilogue_exec_file,
+        passive_job_hook    => $passive_job_hook_exec_file,
         tmp_directory       => OAR::Tools::get_default_oarexec_directory,
         detach_oarexec      => $Detach_oarexec,
         cpuset_full_path    => $oarexec_cpuset_path
