@@ -218,11 +218,29 @@ PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 30 -w 20"
 #SERVER_PROLOGUE_EXEC_FILE="/path/to/prog"
 #SERVER_EPILOGUE_EXEC_FILE="/path/to/prog"
 
-# File to execute on the head node of the job, upon the oarsub command
+# File to execute as root on the head node of a job before opening the
+# interactive shell for oarsub -I or oarsub -C <jobid>, allowing alter the
+# processes created for running the shell of the user.
 # Arguments are: PIDs:JOB_USER:JOB_ID:JOB_NAME:JOB_PROJECT:JOB_WALLTIME
-# Where PIDs is a comma separated list of the PIDs of the processes involed in
-# the oarsub execution
-#OARSUB_NODE_EXEC_FILE="/path/to/prog"
+# where PIDs is a comma separated list of the PIDs of the involved processes.
+# Can be used to change the cgroups of the processes if not taken care of by the
+# job resource manager (e.g. on deploy and cosystem frontend).
+#INTERACTIVE_JOB_HOOK_EXEC_FILE="/path/to/prog"
+
+# File to execute as root on the head node of a job before running the script of
+# of a passibe job, allowing to alter the processes created for the user.
+# Arguments are: PIDs:JOB_USER:JOB_ID:JOB_NAME:JOB_PROJECT:JOB_WALLTIME
+# Where PIDs is a comma separated list of the PIDs of the involved processes.
+# Can be used to change the cgroups of processes if not taken care of by the
+# job resource manager (e.g. on deploy and cosystem frontend).
+#PASSIVE_JOB_HOOK_EXEC_FILE="/path/to/prog"
+
+# File to execute as oar on the frontend where a user runs a oarsub command to
+# create an advance reservation job. It is executed after the scheduler gave
+# "OK" or "KO" for validation, so that additional actions can be taken.
+# Arguments are the JOBID and the scheduler's answer (1 when "OK" or
+# 0 when "KO")
+#ADVANCE_RESERVATION_VALIDATION_HOOK_EXEC_FILE="/path/to/prog"
 
 # File to execute just after a group of resources has been supected. It may 
 # be used to trigger automatic actions to heal the resources. The script is 
