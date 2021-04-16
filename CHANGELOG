@@ -25,6 +25,16 @@ version 2.5.10:
   - [man] rework oarsub man page
   - [oarsub] update usage
   - [oarnodesetting] allow for unsetting the value of resource properties
+  - [oarsub] rename OARSUB_NODE_EXEC_FILE to INTERACTIVE_JOB_HOOK_EXEC_FILE
+  - [oarexec] add PASSIVE_JOB_HOOK_EXEC_FILE
+  - [NodeChangeState] fix DB transaction error when resubmitting a job
+  - [NodeChangeState] do not resubmit jobs for deploy/cosystem and if
+    server_prologue error
+  - [NodeChangeState] on prologue/epilogue error, only set the first node to
+    suspected
+  - [NodeChangeState] Do not suspect nodes for prologue/epilogue error of
+    deploy/cosystem jobs
+  - [oarsub] add the advance reservation validation hook feature
 
 version 2.5.9:
 --------------
