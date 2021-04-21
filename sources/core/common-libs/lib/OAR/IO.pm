@@ -950,14 +950,16 @@ sub is_tokill_job($$) {
 # side effects : /
 sub get_to_kill_jobs($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT jobs.*
+    my $sth = $dbh->prepare("SELECT jobs.job_id, jobs.state, jobs.job_type, jobs.info_type
                              FROM frag_jobs, jobs
                              WHERE
                                 frag_state = \'LEON\'
                                 AND jobs.job_id = frag_jobs.frag_id_job
-                                AND jobs.state != \'Error\'
-                                AND jobs.state != \'Terminated\'
-                                AND jobs.state != \'Finishing\'
+                                AND jobs.state IN (\'Waiting\',\'Hold\',
+                                                   \'toLaunch\',\'toError\',
+                                                   \'toAckReservation\',
+                                                   \'Launching\',\'Running\',
+                                                   \'Suspended\',\'Resuming\')
                             ");
     $sth->execute();
     my @res = ();
