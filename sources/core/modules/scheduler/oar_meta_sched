@@ -1063,7 +1063,7 @@ my $flagHulot=0;
 if (is_conf("SCHEDULER_TIMEOUT")){
     $timeout_cmd = get_conf("SCHEDULER_TIMEOUT");
 }
-if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") 
+if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD")
           or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD")))
           and is_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME") and is_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME")){
 
@@ -1071,19 +1071,17 @@ if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD")
     my $idle_duration = get_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME");
     my $sleep_duration = get_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME");
 
-    my %nodes = OAR::IO::search_idle_nodes($base, $current_time_sec);
     my $tmp_time = $current_time_sec - $idle_duration;
     my @node_halt;
-    foreach my $n (keys(%nodes)){
-        if ($nodes{$n} < $tmp_time){
-            # Search if the node has enough time to sleep
-            my $tmp = OAR::IO::get_next_job_date_on_node($base,$n);
-            if (!defined($tmp) or ($tmp - $sleep_duration > $current_time_sec)){
-                # Search if node has not been woken up recently
-                my $wakeup_date = OAR::IO::get_last_wake_up_date_of_node($base,$n);
-                if (!defined($wakeup_date) or ($wakeup_date < $tmp_time)){
-                    push(@node_halt, $n);
-                }
+    my @nodes = OAR::IO::get_nodes_to_halt($base, $current_time_sec, $sleep_duration);
+    my @wakeup_dates = OAR::IO::get_last_wake_up_date_of_nodes($base, \@nodes);
+
+    foreach my $last_wakeup (@wakeup_dates) {
+        # Search if node has not been woken up recently
+        if ($last_wakeup->{'date'} < $tmp_time) {
+            my $wakeup_date = $last_wakeup->{'date'};
+            if (!defined($wakeup_date) or ($wakeup_date < $tmp_time)) {
+                push(@node_halt, $last_wakeup->{'hostname'});
             }
         }
     }

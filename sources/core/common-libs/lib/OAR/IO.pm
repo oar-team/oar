@@ -136,6 +136,7 @@ sub get_resources_data_structure_current_job($$);
 sub get_hosts_state($);
 sub get_alive_nodes_with_jobs($);
 sub get_resources_by_property($$);
+sub get_nodes_to_halt($$$);
 
 # QUEUES MANAGEMENT
 sub get_active_queues($);
@@ -6756,91 +6757,71 @@ sub update_scheduler_last_job_date($$$){
     return($dbh->do($req));
 }
 
-sub search_idle_nodes($$){
+sub get_nodes_to_halt($$$) {
     my $dbh = shift;
-    my $date = shift;
+    my $current_time = shift;
+    my $sleep_time = shift;
+    my @results;
 
     my $req = "SELECT resources.network_address
-               FROM resources, gantt_jobs_resources, gantt_jobs_predictions
+               FROM resources,
+                    (SELECT resources.network_address, MIN(gantt_jobs_predictions.start_time) AS min_start_time
+                     FROM resources
+                     LEFT JOIN gantt_jobs_resources ON resources.resource_id = gantt_jobs_resources.resource_id
+                     LEFT JOIN gantt_jobs_predictions ON
+                               gantt_jobs_resources.moldable_job_id = gantt_jobs_predictions.moldable_job_id
+                     WHERE resources.network_address IS NOT NULL AND
+                            resources.type = 'default'
+                     GROUP BY resources.network_address) as sq
                WHERE
-                   resources.resource_id = gantt_jobs_resources.resource_id AND
-                   gantt_jobs_predictions.start_time <= $date AND
-                   resources.network_address != \'\' AND
-                   resources.type = \'default\' AND
-		   gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id
-               GROUP BY resources.network_address
-              ";
+                   resources.network_address IS NOT NULL AND
+                   resources.type = 'default' AND
+                   resources.network_address = sq.network_address AND
+                   resources.state = 'Alive' AND
+                   resources.available_upto < 2147483647 AND
+                   resources.available_upto > 0 AND
+                   (sq.min_start_time >= $current_time + $sleep_time OR sq.min_start_time IS NULL)
+               GROUP BY resources.network_address, sq.min_start_time
+               ORDER BY resources.network_address";
+
 
     my $sth = $dbh->prepare($req);
     $sth->execute();
-    my %nodes_occupied;
+
     while (my @ref = $sth->fetchrow_array()) {
-        $nodes_occupied{$ref[0]} = 1;
+        push(@results, $ref[0]);
     }
     $sth->finish();
 
-    $req = "SELECT resources.network_address, MAX(resources.last_job_date)
-            FROM resources
-            WHERE
-                resources.state = \'Alive\' AND
-                resources.network_address != \'\' AND
-                resources.type = \'default\' AND
-                resources.available_upto < 2147483647 AND
-                resources.available_upto > 0
-            GROUP BY resources.network_address";
-    $sth = $dbh->prepare($req);
-    $sth->execute();
-    my %res ;
-    while (my @ref = $sth->fetchrow_array()) {
-        if (!defined($nodes_occupied{$ref[0]})){
-            $res{$ref[0]} = $ref[1];
-        }
-    }
-    $sth->finish();
-
-    return(%res);
+    return(@results);
 }
 
-
-sub get_next_job_date_on_node($$){
+sub get_last_wake_up_date_of_nodes($$) {
     my $dbh = shift;
-    my $hostname = shift;
+    my $hosts = shift;
+    my @results;
 
-    my $req = "SELECT MIN(gantt_jobs_predictions.start_time)
-               FROM resources, gantt_jobs_predictions, gantt_jobs_resources
-               WHERE
-                   resources.network_address = \'$hostname\' AND
-                   gantt_jobs_resources.resource_id = resources.resource_id AND
-                   gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id
-              ";
-
-    my $sth = $dbh->prepare($req);
-    $sth->execute();
-    my @ref = $sth->fetchrow_array();
-    $sth->finish();
-
-    return($ref[0]);
-}
-
-sub get_last_wake_up_date_of_node($$){
-    my $dbh = shift;
-    my $hostname = shift;
-
-    my $req = "SELECT date
-               FROM event_log_hostnames,event_logs
-               WHERE
-                  event_log_hostnames.event_id = event_logs.event_id AND
-                  event_log_hostnames.hostname = \'$hostname\' AND
-                  event_logs.type = \'WAKEUP_NODE\'
-               ORDER BY date DESC
-               LIMIT 1";
+    if (scalar @$hosts > 0) {
+        my $req = "SELECT hostname, date
+                   FROM (SELECT hostname, date, ROW_NUMBER() OVER
+                            (PARTITION BY hostname ORDER by date DESC) as r
+                        FROM event_log_hostnames, event_logs
+                        WHERE event_log_hostnames.event_id = event_logs.event_id
+                            AND event_log_hostnames.hostname IN
+                                    (".join(",", map {"'$_'"} @{$hosts}).")
+                            AND event_logs.type = 'WAKEUP_NODE') as q
+                    WHERE q.r = 1";
 
         my $sth = $dbh->prepare($req);
-    $sth->execute();
-    my @ref = $sth->fetchrow_array();
-    $sth->finish();
+        $sth->execute();
 
-    return($ref[0]);
+        while (my $ref = $sth->fetchrow_hashref()) {
+            unshift(@results, $ref);
+        }
+        $sth->finish();
+    }
+
+    return(@results);
 }
 
 # Get jobs to launch at a given date: any waiting jobs which start date is passed and whose resources are all Alive, execpt inner job if container is not running
