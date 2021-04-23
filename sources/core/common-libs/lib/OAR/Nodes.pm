@@ -10,7 +10,7 @@ use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 my $base;
 
 sub open_db_connection(){
-	$base  = OAR::IO::connect_ro_one();
+    $base  = OAR::IO::connect_ro_one();
         if (defined($base)) { return 1; }
         else {return 0; }
 }
@@ -68,15 +68,15 @@ sub get_all_resources(){
 }
 
 sub count_all_resources() {
-	my $total = OAR::IO::count_all_resources($base);
-	return $total;
+    my $total = OAR::IO::count_all_resources($base);
+    return $total;
 }
 
 sub get_requested_resources($$){
-	my $limit = shift;
-	my $offset = shift;
-	my @resources = OAR::IO::get_requested_resources($base,$limit,$offset);
-	return \@resources;
+    my $limit = shift;
+    my $offset = shift;
+    my @resources = OAR::IO::get_requested_resources($base,$limit,$offset);
+    return \@resources;
 }
 
 sub get_events($$){
@@ -104,15 +104,15 @@ sub get_events($$){
 }
 
 sub get_resources_with_given_sql($){
-	my $sql_clause = shift;
-	my @sql_resources = OAR::IO::get_resources_with_given_sql($base,$sql_clause);
-	return \@sql_resources;
+    my $sql_clause = shift;
+    my @sql_resources = OAR::IO::get_resources_with_given_sql($base,$sql_clause);
+    return \@sql_resources;
 }
 
 sub get_nodes_with_given_sql($){
-	my $sql_clause = shift;
-	my @sql_resources = OAR::IO::get_nodes_with_given_sql($base,$sql_clause);
-	return \@sql_resources;
+    my $sql_clause = shift;
+    my @sql_resources = OAR::IO::get_nodes_with_given_sql($base,$sql_clause);
+    return \@sql_resources;
 }
 
 sub get_resources_states($){
@@ -131,13 +131,13 @@ sub get_resources_states($){
 }
 
 sub get_resources_states_for_host($){
-	my $hostname = shift;
-	my @node_info = OAR::IO::get_node_info($base, $hostname);
-	my @resources;
-	foreach my $info (@node_info){
-		push @resources, $info->{resource_id};
-	}
-	return get_resources_states(\@resources);
+    my $hostname = shift;
+    my @node_info = OAR::IO::get_node_info($base, $hostname);
+    my @resources;
+    foreach my $info (@node_info){
+        push @resources, $info->{resource_id};
+    }
+    return get_resources_states(\@resources);
 }
 
 sub get_resources_states_for_hosts($){
@@ -190,8 +190,8 @@ sub get_resources_info($){
 }
 
 sub get_resources_for_host($){
-	my $hostname = shift;
-	my @resources = OAR::IO::get_node_info($base, $hostname);
+    my $hostname = shift;
+    my @resources = OAR::IO::get_node_info($base, $hostname);
         return \@resources;
 }
 
@@ -227,9 +227,9 @@ sub get_resources_for_hosts($){
 }
 
 sub get_jobs_running_on_resource($){
-	my $resource_id = shift;
-	my @jobs = OAR::IO::get_resource_job($base, $resource_id);
-	return \@jobs;
+    my $resource_id = shift;
+    my @jobs = OAR::IO::get_resource_job($base, $resource_id);
+    return \@jobs;
 }
 
 sub get_jobs_running_on_node($){
@@ -260,22 +260,22 @@ sub get_jobs_on_node($$){
 }
 
 sub add_running_jobs_to_resource_properties($){
-	my $info = shift;
-	if ($info->{state} eq "Alive"){
-		my $jobs = get_jobs_running_on_resource($info->{resource_id});
-		if (@$jobs > 0){
-# 			my $jobs_string = Dumper($jobs); # not proud of it...
-# 			$jobs = join(', ', split(/,/, $jobs_string));
-# 			$jobs =~ s/[\[\]\']//g;
-			my $jobs_string = '';
-			foreach my $current_job (@$jobs){
-				$jobs_string .= $current_job.", ";
-			}
-			chop($jobs_string); # remove last space
-			chop($jobs_string); # remove last ,
-			$info->{jobs} = $jobs_string;
-		}
-	}
+    my $info = shift;
+    if ($info->{state} eq "Alive"){
+        my $jobs = get_jobs_running_on_resource($info->{resource_id});
+        if (@$jobs > 0){
+#             my $jobs_string = Dumper($jobs); # not proud of it...
+#             $jobs = join(', ', split(/,/, $jobs_string));
+#             $jobs =~ s/[\[\]\']//g;
+            my $jobs_string = '';
+            foreach my $current_job (@$jobs){
+                $jobs_string .= $current_job.", ";
+            }
+            chop($jobs_string); # remove last space
+            chop($jobs_string); # remove last ,
+            $info->{jobs} = $jobs_string;
+        }
+    }
 }
 
 1;
