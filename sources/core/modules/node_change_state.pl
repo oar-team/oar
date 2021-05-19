@@ -23,6 +23,8 @@ my @resources_to_heal;
 my $Exit_code = 0;
 
 my $base = OAR::IO::connect();
+
+# The following line locks the tables in mysql, but just begins a transaction in postgresql
 OAR::IO::lock_table($base,["resources","assigned_resources","jobs","job_state_logs","event_logs","event_log_hostnames","frag_jobs","moldable_job_descriptions","challenges","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","resource_logs"]);
 
 # Check event logs
@@ -348,6 +350,11 @@ my @resources_id = keys(%resources_to_change);
 
 if (@resources_id > 0) {
     OAR::IO::get_lock($base, "nodechangestate", 3600); # only for MySQL
+    # To avoid deadlocks with postgresql, does lock the tables. This MUST also be done
+    # in other places (sarko, bipbip, ...)
+    if (OAR::IO::get_database_type() eq "Pg") {
+        $base->do("LOCK TABLE resources, resource_logs IN EXCLUSIVE MODE");
+    }
 
     my $resources_info = OAR::IO::get_resources_info($base, \@resources_id);
     ($Exit_code, %debug_info) = OAR::IO::set_resources_state($base, \%resources_to_change,
