@@ -64,6 +64,7 @@ sub set_job_state($$$);
 sub set_job_resa_state($$$);
 sub set_job_message($$$);
 sub frag_job($$);
+sub frag_jobs($$);
 sub frag_inner_jobs($$$);
 sub ask_checkpoint_job($$);
 sub ask_signal_job($$$);
@@ -2959,6 +2960,43 @@ sub frag_job($$) {
     return $result;
 }
 
+
+# frag_jobs
+# sets the flag 'ToFrag' of a job to 'Yes'
+# parameters : base, jobs_id (array ref)
+# side effects : changes the field ToFrag of the job in the table Jobs
+sub frag_jobs($$) {
+    my $dbh = shift;
+    my $jobs_id = shift;
+
+    my $lusr= $ENV{OARDO_USER};
+    my @jobs;
+
+    my $sth = $dbh->prepare("SELECT * FROM jobs LEFT JOIN frag_jobs on jobs.job_id = frag_jobs.frag_id_job
+                             WHERE frag_jobs.frag_id_job IS NULL AND
+                                   job_id IN (" . join(",", @$jobs_id) . ")"
+                                   . ($lusr eq 'root'  || $lusr eq 'oar' ? "" : " AND job_user = '$lusr'")
+                            );
+    $sth->execute();
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@jobs, $ref);
+    }
+    $sth->finish();
+
+    my $date = get_date($dbh);
+    $dbh->do("INSERT INTO frag_jobs (frag_id_job,frag_date)
+              VALUES " . join(",", map {"($_, '$date')"} @jobs)
+             );
+
+    foreach my $job (@jobs) {
+        add_new_event($dbh,"FRAG_JOB_REQUEST", $job,
+                      "User $lusr requested to frag the job $job");
+        frag_inner_jobs($dbh, $job, "");
+    }
+}
+
+
 #If KILL_INNER_JOBS_WITH_CONTAINER is set, frag the inner jobs if not already fragged
 sub frag_inner_jobs($$$) {
     my $dbh = shift;
@@ -5723,15 +5761,19 @@ sub set_resources_state($$$$) {
                 foreach my $j (@jobs) {
                     oar_debug("[NodeChangeState] $resources_info->{$resource_id}->{network_address}: " .
                               "must kill job $j.\n");
-                    OAR::IO::frag_job($dbh, $j);
                     # A Leon must be run
                     $exit_code = 2;
                 }
+                push(@jobs_to_frag, @jobs);
             }
         } else {
             oar_debug("[NodeChangeState] ($resources_info->{$resource_id}->{network_address}) " .
                       "$resource_id is already in the $resources_to_change->{$resource_id} state\n");
         }
+    }
+
+    if (@jobs_to_frag > 0) {
+        OAR::IO::frag_jobs($dbh, \@jobs_to_frag);
     }
 
     chop($update_values);
