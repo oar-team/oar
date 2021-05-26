@@ -216,6 +216,9 @@ sub sql_count($$);
 sub sql_select($$$$);
 sub inserts_from_file($$$);
 
+# PERL HELPER FUNCTIONS
+sub array_minus(\@@);
+
 # END OF PROTOTYPES
 
 my $Remote_host;
@@ -245,9 +248,18 @@ my $Default_job_walltime = 3600;
 
 # CONNECTION
 
-
 my $Max_db_connection_timeout = 30;
 my $Timeout_db_connection = 2;
+
+# List of job states
+
+my @Job_states = ('Waiting', 'Hold', 'toLaunch', 'toError', 'toAckReservation',
+                  'Launching', 'Running', 'Suspended', 'Resuming', 'Error',
+                  'Terminated', 'Finishing');
+my @Not_ended_job_states            = array_minus(@Job_states, 'Error', 'Terminated');
+my @Ended_job_states                = array_minus(@Job_states, @Not_ended_job_states);
+my @Waiting_to_running_job_states   = array_minus(@Job_states, ('Error', 'Terminated', 'Finishing'));
+my @Waiting_to_finishing_job_states = array_minus(@Job_states, ('Error', 'toError', 'Terminated'));
 
 # connect_db
 # Connects to database and returns the base identifier
@@ -524,7 +536,8 @@ sub get_count_same_ssh_keys_current_jobs($$$$){
     my $sth = $dbh->prepare("   SELECT COUNT(challenges.job_id)
                                 FROM challenges, jobs
                                 WHERE
-                                    jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\') AND
+                                    jobs.state IN
+                                        (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ") AND
                                     challenges.job_id = jobs.job_id AND
                                     challenges.ssh_private_key = $ssh_private_key AND
                                     challenges.ssh_public_key = $ssh_public_key AND
@@ -956,11 +969,8 @@ sub get_to_kill_jobs($) {
                              WHERE
                                 frag_state = \'LEON\'
                                 AND jobs.job_id = frag_jobs.frag_id_job
-                                AND jobs.state IN (\'Waiting\',\'Hold\',
-                                                   \'toLaunch\',\'toError\',
-                                                   \'toAckReservation\',
-                                                   \'Launching\',\'Running\',
-                                                   \'Suspended\',\'Resuming\')
+                                AND jobs.state IN
+                                    (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
                             ");
     $sth->execute();
     my @res = ();
@@ -3736,15 +3746,8 @@ sub get_resource_job($$) {
                                     AND assigned_resources.resource_id = $resource
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND (jobs.state = \'Waiting\'
-                                           OR jobs.state = \'Hold\'
-                                           OR jobs.state = \'toLaunch\'
-                                           OR jobs.state = \'toAckReservation\'
-                                           OR jobs.state = \'Launching\'
-                                           OR jobs.state = \'Running\'
-                                           OR jobs.state = \'Suspended\'
-                                           OR jobs.state = \'Resuming\'
-                                           OR jobs.state = \'Finishing\')
+                                    AND jobs.state IN
+                                        (" . join(",", map {"'$_'"} @Waiting_to_finishing_job_states) . ")
                             ");
     $sth->execute();
     my @res = ();
@@ -3795,15 +3798,8 @@ sub get_resources_jobs($) {
                                     AND moldable_job_descriptions.moldable_index = \'CURRENT\'
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND (jobs.state = \'Waiting\'
-                                           OR jobs.state = \'Hold\'
-                                           OR jobs.state = \'toLaunch\'
-                                           OR jobs.state = \'toAckReservation\'
-                                           OR jobs.state = \'Launching\'
-                                           OR jobs.state = \'Running\'
-                                           OR jobs.state = \'Suspended\'
-                                           OR jobs.state = \'Resuming\'
-                                           OR jobs.state = \'Finishing\');
+                                    AND jobs.state IN
+                                        (" . join(",", map {"'$_'"} @Waiting_to_finishing_job_states) . ")
                             ");
   $sth->execute();
   my %res;
@@ -3829,8 +3825,7 @@ sub get_resource_job_to_frag($$) {
                                     AND assigned_resources.resource_id = $resource
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+                                    AND jobs.state IN (" . join(",", map {"'$_'"} @Not_ended_job_states) . ")
                                     AND jobs.job_id NOT IN (
                                                              SELECT job_id from job_types
                                                              WHERE
@@ -3863,8 +3858,7 @@ sub get_node_job($$) {
                                     AND assigned_resources.resource_id = resources.resource_id
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+                                    AND jobs.state IN (" . join(",", map {"'$_'"} @Not_ended_job_states) . ")
                             ");
     $sth->execute();
     my @res = ();
@@ -3889,7 +3883,8 @@ sub get_alive_nodes_with_jobs($) {
                                     assigned_resources.resource_id = resources.resource_id
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
+                                    AND jobs.state IN
+                                                (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
                                     AND (resources.state = 'Alive' or resources.next_state='Alive')
                             ");
     }else{
@@ -3902,7 +3897,8 @@ sub get_alive_nodes_with_jobs($) {
                                     AND assigned_resources.resource_id = resources.resource_id
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
+                                    AND jobs.state IN
+                                                (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
                             ");
     }
 
@@ -3951,8 +3947,7 @@ sub get_node_job_to_frag($$) {
                                     AND assigned_resources.resource_id = resources.resource_id
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+                                    AND jobs.state IN (" . join(",", map {"'$_'"} @Not_ended_job_states) . ")
                                     AND jobs.job_id NOT IN (
                                                              SELECT job_id from job_types
                                                              WHERE
@@ -8696,6 +8691,15 @@ sub inserts_from_file($$$) {
   }
 
   $dbh->do($query);
+}
+
+# Return the difference between two arrays
+# arg: array ; example: ('Error', 'Hold')
+sub array_minus(\@@) {
+    my $a = shift;
+    my @b = @_;
+    my %e = map{ $_ => undef } @b;
+    return grep( ! exists( $e{$_} ), @$a );
 }
 
 # END OF THE MODULE
