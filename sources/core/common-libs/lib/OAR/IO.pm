@@ -7424,19 +7424,18 @@ sub check_accounting_update($$){
     my $dbh = shift;
     my $windowSize = shift;
 
-    my $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id), jobs.project
-
-               FROM jobs, moldable_job_descriptions, assigned_resources, resources
-               WHERE
-                   jobs.accounted = \'NO\' AND
-                   (jobs.state = \'Terminated\' OR jobs.state = \'Error\') AND
-                   jobs.stop_time >= jobs.start_time AND
-                   jobs.start_time > 1 AND
-                   jobs.assigned_moldable_job = moldable_job_descriptions.moldable_id AND
-                   assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id AND
-                   assigned_resources.resource_id = resources.resource_id AND
-                   resources.type = 'default'
-               GROUP BY jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime, jobs.job_id, jobs.project, jobs.job_user, jobs.queue_name
+    my $req = "SELECT jobs.start_time, jobs.stop_time, moldable_job_descriptions.moldable_walltime,
+                      jobs.job_id, jobs.job_user, jobs.queue_name, count(assigned_resources.resource_id),
+                      jobs.project, SUM(CASE WHEN resources.type = \'default\' THEN 1 ELSE 0 END) AS nb_default
+               FROM jobs
+               LEFT JOIN assigned_resources ON jobs.assigned_moldable_job = assigned_resources.moldable_job_id
+               LEFT JOIN moldable_job_descriptions ON assigned_resources.moldable_job_id =
+                                                      moldable_job_descriptions.moldable_id
+               LEFT JOIN resources ON assigned_resources.resource_id = resources.resource_id
+               WHERE jobs.accounted = \'NO\' AND (jobs.state = \'Terminated\' OR jobs.state = \'Error\')
+               GROUP BY jobs.job_id, jobs.start_time, jobs.stop_time,
+                        moldable_job_descriptions.moldable_walltime,
+                        jobs.project, jobs.job_user, jobs.queue_name
               ";
 
     my $sth = $dbh->prepare("$req");
@@ -7460,14 +7459,24 @@ sub check_accounting_update($$){
         my $start = $ref[0];
         my $stop = $ref[1];
         my $theoricalStopTime = $ref[2] + $start;
-        print("[ACCOUNTING] Treate job $ref[3]\n");
-        update_accounting($dbh,$sth1,$start,$stop,$windowSize,$ref[4],$ref[7],$ref[5],"USED",$ref[6]);
-        update_accounting($dbh,$sth1,$start,$theoricalStopTime,$windowSize,$ref[4],$ref[7],$ref[5],"ASKED",$ref[6]);
-        $dbh->do("  UPDATE jobs
-                    SET accounted = \'YES\'
-                    WHERE
-                        job_id = $ref[3]
-                 ");
+
+        if ($start eq 0 || $stop <= $start || $ref[8] < 1) {
+            print("[ACCOUNTING] Not applicable for job $ref[3]\n");
+            $dbh->do("  UPDATE jobs
+                        SET accounted = \'NA\'
+                        WHERE
+                            job_id = $ref[3]
+                     ");
+        } else {
+            print("[ACCOUNTING] Treating job $ref[3]\n");
+            update_accounting($dbh,$sth1,$start,$stop,$windowSize,$ref[4],$ref[7],$ref[5],"USED",$ref[6]);
+            update_accounting($dbh,$sth1,$start,$theoricalStopTime,$windowSize,$ref[4],$ref[7],$ref[5],"ASKED",$ref[6]);
+            $dbh->do("  UPDATE jobs
+                        SET accounted = \'YES\'
+                        WHERE
+                            job_id = $ref[3]
+                     ");
+        }
     }
 }
 
