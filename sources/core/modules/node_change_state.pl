@@ -352,9 +352,7 @@ if (@resources_id > 0) {
     OAR::IO::get_lock($base, "nodechangestate", 3600); # only for MySQL
     # To avoid deadlocks with postgresql, does lock the tables. This MUST also be done
     # in other places (sarko, bipbip, ...)
-    if (OAR::IO::get_database_type() eq "Pg") {
-        $base->do("LOCK TABLE resources, resource_logs IN EXCLUSIVE MODE");
-    }
+    OAR::IO::lock_table_exclusive($base, ["resources","resource_logs"]);
 
     my $resources_info = OAR::IO::get_resources_info($base, \@resources_id);
     ($Exit_code, %debug_info) = OAR::IO::set_resources_state($base, \%resources_to_change,

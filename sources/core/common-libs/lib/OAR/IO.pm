@@ -8348,7 +8348,7 @@ sub release_lock($$) {
 
 sub lock_table($$){
     my $dbh = shift;
-    my $tables= shift;
+    my $tables = shift;
 
     if ($Db_type eq "Pg"){
         $dbh->begin_work();
@@ -8359,6 +8359,21 @@ sub lock_table($$){
         }
         chop($str);
         $dbh->do($str);
+    }
+}
+
+# The lock_table subroutine only start a transaction when using PostgreSQL. In
+# some cases, we need an EXCLUSIVE lock on tables. This subroutine allows it.
+# Since lock_table() start the transaction, keeping one subroutine only requires
+# to add two parameters. Adding a new subroutine make it more understandable.
+# TODO: see if one day MySQL become deprecated in OAR to refactor those subroutines.
+sub lock_table_exclusive($$){
+    my $dbh = shift;
+    my $tables = shift;
+
+    if ($Db_type eq "Pg") {
+        $dbh->begin_work();
+        $dbh->do("LOCK TABLE " . join(",", @{$tables}) . "EXCLUSIVE MODE");
     }
 }
 
