@@ -136,6 +136,7 @@ sub get_resources_data_structure_current_job($$);
 sub get_hosts_state($);
 sub get_alive_nodes_with_jobs($);
 sub get_resources_by_property($$);
+sub get_nodes_to_halt($$$);
 
 # QUEUES MANAGEMENT
 sub get_active_queues($);
@@ -215,6 +216,9 @@ sub sql_count($$);
 sub sql_select($$$$);
 sub inserts_from_file($$$);
 
+# PERL HELPER FUNCTIONS
+sub array_minus(\@@);
+
 # END OF PROTOTYPES
 
 my $Remote_host;
@@ -244,9 +248,18 @@ my $Default_job_walltime = 3600;
 
 # CONNECTION
 
-
 my $Max_db_connection_timeout = 30;
 my $Timeout_db_connection = 2;
+
+# List of job states
+
+my @Job_states = ('Waiting', 'Hold', 'toLaunch', 'toError', 'toAckReservation',
+                  'Launching', 'Running', 'Suspended', 'Resuming', 'Error',
+                  'Terminated', 'Finishing');
+my @Not_ended_job_states            = array_minus(@Job_states, 'Error', 'Terminated');
+my @Ended_job_states                = array_minus(@Job_states, @Not_ended_job_states);
+my @Waiting_to_running_job_states   = array_minus(@Job_states, ('Error', 'Terminated', 'Finishing'));
+my @Waiting_to_finishing_job_states = array_minus(@Job_states, ('Error', 'toError', 'Terminated'));
 
 # connect_db
 # Connects to database and returns the base identifier
@@ -523,7 +536,8 @@ sub get_count_same_ssh_keys_current_jobs($$$$){
     my $sth = $dbh->prepare("   SELECT COUNT(challenges.job_id)
                                 FROM challenges, jobs
                                 WHERE
-                                    jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\') AND
+                                    jobs.state IN
+                                        (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ") AND
                                     challenges.job_id = jobs.job_id AND
                                     challenges.ssh_private_key = $ssh_private_key AND
                                     challenges.ssh_public_key = $ssh_public_key AND
@@ -950,14 +964,13 @@ sub is_tokill_job($$) {
 # side effects : /
 sub get_to_kill_jobs($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("SELECT jobs.*
+    my $sth = $dbh->prepare("SELECT jobs.job_id, jobs.state, jobs.job_type, jobs.info_type
                              FROM frag_jobs, jobs
                              WHERE
                                 frag_state = \'LEON\'
                                 AND jobs.job_id = frag_jobs.frag_id_job
-                                AND jobs.state != \'Error\'
-                                AND jobs.state != \'Terminated\'
-                                AND jobs.state != \'Finishing\'
+                                AND jobs.state IN
+                                    (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
                             ");
     $sth->execute();
     my @res = ();
@@ -3733,15 +3746,8 @@ sub get_resource_job($$) {
                                     AND assigned_resources.resource_id = $resource
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND (jobs.state = \'Waiting\'
-                                           OR jobs.state = \'Hold\'
-                                           OR jobs.state = \'toLaunch\'
-                                           OR jobs.state = \'toAckReservation\'
-                                           OR jobs.state = \'Launching\'
-                                           OR jobs.state = \'Running\'
-                                           OR jobs.state = \'Suspended\'
-                                           OR jobs.state = \'Resuming\'
-                                           OR jobs.state = \'Finishing\')
+                                    AND jobs.state IN
+                                        (" . join(",", map {"'$_'"} @Waiting_to_finishing_job_states) . ")
                             ");
     $sth->execute();
     my @res = ();
@@ -3792,15 +3798,8 @@ sub get_resources_jobs($) {
                                     AND moldable_job_descriptions.moldable_index = \'CURRENT\'
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND (jobs.state = \'Waiting\'
-                                           OR jobs.state = \'Hold\'
-                                           OR jobs.state = \'toLaunch\'
-                                           OR jobs.state = \'toAckReservation\'
-                                           OR jobs.state = \'Launching\'
-                                           OR jobs.state = \'Running\'
-                                           OR jobs.state = \'Suspended\'
-                                           OR jobs.state = \'Resuming\'
-                                           OR jobs.state = \'Finishing\');
+                                    AND jobs.state IN
+                                        (" . join(",", map {"'$_'"} @Waiting_to_finishing_job_states) . ")
                             ");
   $sth->execute();
   my %res;
@@ -3826,8 +3825,7 @@ sub get_resource_job_to_frag($$) {
                                     AND assigned_resources.resource_id = $resource
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+                                    AND jobs.state IN (" . join(",", map {"'$_'"} @Not_ended_job_states) . ")
                                     AND jobs.job_id NOT IN (
                                                              SELECT job_id from job_types
                                                              WHERE
@@ -3860,8 +3858,7 @@ sub get_node_job($$) {
                                     AND assigned_resources.resource_id = resources.resource_id
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+                                    AND jobs.state IN (" . join(",", map {"'$_'"} @Not_ended_job_states) . ")
                             ");
     $sth->execute();
     my @res = ();
@@ -3886,7 +3883,8 @@ sub get_alive_nodes_with_jobs($) {
                                     assigned_resources.resource_id = resources.resource_id
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
+                                    AND jobs.state IN
+                                                (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
                                     AND (resources.state = 'Alive' or resources.next_state='Alive')
                             ");
     }else{
@@ -3899,7 +3897,8 @@ sub get_alive_nodes_with_jobs($) {
                                     AND assigned_resources.resource_id = resources.resource_id
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
+                                    AND jobs.state IN
+                                                (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
                             ");
     }
 
@@ -3948,8 +3947,7 @@ sub get_node_job_to_frag($$) {
                                     AND assigned_resources.resource_id = resources.resource_id
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                    AND jobs.state != \'Terminated\'
-                                    AND jobs.state != \'Error\'
+                                    AND jobs.state IN (" . join(",", map {"'$_'"} @Not_ended_job_states) . ")
                                     AND jobs.job_id NOT IN (
                                                              SELECT job_id from job_types
                                                              WHERE
@@ -6754,91 +6752,71 @@ sub update_scheduler_last_job_date($$$){
     return($dbh->do($req));
 }
 
-sub search_idle_nodes($$){
+sub get_nodes_to_halt($$$) {
     my $dbh = shift;
-    my $date = shift;
+    my $current_time = shift;
+    my $sleep_time = shift;
+    my @results;
 
     my $req = "SELECT resources.network_address
-               FROM resources, gantt_jobs_resources, gantt_jobs_predictions
+               FROM resources,
+                    (SELECT resources.network_address, MIN(gantt_jobs_predictions.start_time) AS min_start_time
+                     FROM resources
+                     LEFT JOIN gantt_jobs_resources ON resources.resource_id = gantt_jobs_resources.resource_id
+                     LEFT JOIN gantt_jobs_predictions ON
+                               gantt_jobs_resources.moldable_job_id = gantt_jobs_predictions.moldable_job_id
+                     WHERE resources.network_address IS NOT NULL AND
+                            resources.type = 'default'
+                     GROUP BY resources.network_address) as sq
                WHERE
-                   resources.resource_id = gantt_jobs_resources.resource_id AND
-                   gantt_jobs_predictions.start_time <= $date AND
-                   resources.network_address != \'\' AND
-                   resources.type = \'default\' AND
-		   gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id
-               GROUP BY resources.network_address
-              ";
+                   resources.network_address IS NOT NULL AND
+                   resources.type = 'default' AND
+                   resources.network_address = sq.network_address AND
+                   resources.state = 'Alive' AND
+                   resources.available_upto < 2147483647 AND
+                   resources.available_upto > 0 AND
+                   (sq.min_start_time >= $current_time + $sleep_time OR sq.min_start_time IS NULL)
+               GROUP BY resources.network_address, sq.min_start_time
+               ORDER BY resources.network_address";
+
 
     my $sth = $dbh->prepare($req);
     $sth->execute();
-    my %nodes_occupied;
+
     while (my @ref = $sth->fetchrow_array()) {
-        $nodes_occupied{$ref[0]} = 1;
+        push(@results, $ref[0]);
     }
     $sth->finish();
 
-    $req = "SELECT resources.network_address, MAX(resources.last_job_date)
-            FROM resources
-            WHERE
-                resources.state = \'Alive\' AND
-                resources.network_address != \'\' AND
-                resources.type = \'default\' AND
-                resources.available_upto < 2147483647 AND
-                resources.available_upto > 0
-            GROUP BY resources.network_address";
-    $sth = $dbh->prepare($req);
-    $sth->execute();
-    my %res ;
-    while (my @ref = $sth->fetchrow_array()) {
-        if (!defined($nodes_occupied{$ref[0]})){
-            $res{$ref[0]} = $ref[1];
-        }
-    }
-    $sth->finish();
-
-    return(%res);
+    return(@results);
 }
 
-
-sub get_next_job_date_on_node($$){
+sub get_last_wake_up_date_of_nodes($$) {
     my $dbh = shift;
-    my $hostname = shift;
+    my $hosts = shift;
+    my @results;
 
-    my $req = "SELECT MIN(gantt_jobs_predictions.start_time)
-               FROM resources, gantt_jobs_predictions, gantt_jobs_resources
-               WHERE
-                   resources.network_address = \'$hostname\' AND
-                   gantt_jobs_resources.resource_id = resources.resource_id AND
-                   gantt_jobs_predictions.moldable_job_id = gantt_jobs_resources.moldable_job_id
-              ";
-
-    my $sth = $dbh->prepare($req);
-    $sth->execute();
-    my @ref = $sth->fetchrow_array();
-    $sth->finish();
-
-    return($ref[0]);
-}
-
-sub get_last_wake_up_date_of_node($$){
-    my $dbh = shift;
-    my $hostname = shift;
-
-    my $req = "SELECT date
-               FROM event_log_hostnames,event_logs
-               WHERE
-                  event_log_hostnames.event_id = event_logs.event_id AND
-                  event_log_hostnames.hostname = \'$hostname\' AND
-                  event_logs.type = \'WAKEUP_NODE\'
-               ORDER BY date DESC
-               LIMIT 1";
+    if (scalar @$hosts > 0) {
+        my $req = "SELECT hostname, date
+                   FROM (SELECT hostname, date, ROW_NUMBER() OVER
+                            (PARTITION BY hostname ORDER by date DESC) as r
+                        FROM event_log_hostnames, event_logs
+                        WHERE event_log_hostnames.event_id = event_logs.event_id
+                            AND event_log_hostnames.hostname IN
+                                    (".join(",", map {"'$_'"} @{$hosts}).")
+                            AND event_logs.type = 'WAKEUP_NODE') as q
+                    WHERE q.r = 1";
 
         my $sth = $dbh->prepare($req);
-    $sth->execute();
-    my @ref = $sth->fetchrow_array();
-    $sth->finish();
+        $sth->execute();
 
-    return($ref[0]);
+        while (my $ref = $sth->fetchrow_hashref()) {
+            unshift(@results, $ref);
+        }
+        $sth->finish();
+    }
+
+    return(@results);
 }
 
 # Get jobs to launch at a given date: any waiting jobs which start date is passed and whose resources are all Alive, execpt inner job if container is not running
@@ -8713,6 +8691,15 @@ sub inserts_from_file($$$) {
   }
 
   $dbh->do($query);
+}
+
+# Return the difference between two arrays
+# arg: array ; example: ('Error', 'Hold')
+sub array_minus(\@@) {
+    my $a = shift;
+    my @b = @_;
+    my %e = map{ $_ => undef } @b;
+    return grep( ! exists( $e{$_} ), @$a );
 }
 
 # END OF THE MODULE
