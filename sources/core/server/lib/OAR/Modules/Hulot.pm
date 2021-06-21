@@ -468,7 +468,7 @@ sub start_energy_loop() {
                             }
                             else {
                                 oar_debug(
-"[Hulot] Command '$nodes_list_running{$key}->{'command'}' is already running on node '$node'\n"
+"[Hulot] Command '$nodes_list_running{$key}->{'command'}' is already running on node '$node' (timeout in ".($nodes_list_running{$key}->{'timeout'} - time)."s)\n"
                                 );
                             }
                         }
@@ -765,6 +765,7 @@ sub get_timeout($$) {
         $timeout = @$timeouts{$tmp};
     }
     
+    oar_debug("[Hulot] Waking up $nb_nodes nodes: chosen timeout is ".$timeout."s\n");
     return $timeout;
 }
 
