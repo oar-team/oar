@@ -313,10 +313,10 @@ sub signal_oarexec($$$$$$$){
     $cmd[$c] = $host;$c++;
     if (defined($user_signal) && $user_signal ne ''){
         my $signal_file = OAR::Tools::get_oar_user_signal_file_name($job_id);
-	    $cmd[$c] = "bash -c 'echo $user_signal > $signal_file && test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
+        $cmd[$c] = "bash -c 'echo $user_signal > $signal_file && test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
     }
     else {
-    	$cmd[$c] = "bash -c 'test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
+        $cmd[$c] = "bash -c 'test -e $file && PROC=\$(cat $file) && kill -s CONT \$PROC && kill -s $signal \$PROC'";$c++;
     }
     $SIG{PIPE}  = 'IGNORE';
     my $pid = fork();
