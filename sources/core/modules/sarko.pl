@@ -76,7 +76,7 @@ foreach my $j (OAR::IO::get_timered_job($base)){
         OAR::IO::frag_inner_jobs($base,$j->{job_id}, "[sarko] Frag any remaining inner jobs of container job $j->{job_id}\n");
     }else{
         my $frag_date = OAR::IO::get_frag_date($base,$j->{job_id});
-        oar_debug("[sarko] frag date : $frag_date , $frag_date\n");
+        oar_debug("[sarko] frag date for job $j->{job_id}: $frag_date\n");
         if (($current > $frag_date+$Leon_soft_walltime) && ($current <= $frag_date+$Leon_walltime)){
             oar_debug("[sarko] Leon will RE-FRAG bipbip of job $j->{job_id}\n");
             OAR::IO::job_refrag($base,$j->{job_id});
