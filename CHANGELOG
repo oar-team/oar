@@ -35,6 +35,14 @@ version 2.5.10:
   - [NodeChangeState] Do not suspect nodes for prologue/epilogue error of
     deploy/cosystem jobs
   - [oarsub] add the advance reservation validation hook feature
+  - [oarnode] fix oarnode --sql if not resources to show
+  - [criu] added a sleep after pid migrations
+  - [Hulot] Add debug info regarding timeouts
+  - [sarko] fix debug message for job frag
+  - [accounting] change the behavior of accounting to be more efficient
+  - [leon] optimize SQL query of get_to_kill_jobs subroutine
+  - [MetaSched] Optimize querying of the last wake up for a list of node
+  - [IO.pm] Add constants to store often used OAR's job states
 
 version 2.5.9:
 --------------
