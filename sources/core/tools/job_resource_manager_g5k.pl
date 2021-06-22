@@ -326,8 +326,9 @@ if ($ARGV[0] eq "init"){
             system_with_log( '/bin/echo '.$IO_ratio.' | cat > '.$Cgroup_directory_collection_links.'/blkio/'.$Cpuset_path_job.'/blkio.weight')
             and exit_myself(5,"Failed to set the blkio.weight to $IO_ratio");
         }
-        # Manage devices, Nvidia GPUs only for now
+        # Manage GPU devices
         if ($Enable_devices_cg eq "YES"){
+            # Nvidia GPU
             my @devices_deny = ();
             opendir(my($dh), "/dev") or exit_myself(5,"Failed to open /dev directory for Enable_devices_cg feature");
             my @files = grep { /nvidia/ } readdir($dh);
@@ -352,6 +353,36 @@ if ($ARGV[0] eq "init"){
                 foreach my $dev (@devices_deny){
                     system_with_log("oardodo /bin/echo 'c 195:$dev rwm' > $devices_cgroup")
                     and exit_myself(5,"Failed to set the devices.deny to c 195:$dev rwm");
+                }
+            }
+            # Other GPU
+            @devices_deny = ();
+            opendir($dh, "/dev/dri") or exit_myself(5,"Failed to open /dev/dri directory for Enable_devices_cg feature");
+            @files = grep { /renderD/ } readdir($dh);
+            foreach (@files){
+                if ($_ =~ /renderD(\d+)/){
+                    push (@devices_deny, $1-128);
+                }
+            }
+            closedir($dh);
+            if ($#devices_deny > -1){
+                # now remove from denied devices our reserved devices
+                foreach my $r (@{$Cpuset->{'resources'}}){
+                    if (($r->{type} eq "default") and
+                        ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
+                        ($r->{'gpudevice'} ne '')
+                       ){
+                        @devices_deny = grep { $_ !=  $r->{'gpudevice'} } @devices_deny;
+                    }
+                }
+                print_log(3,"Deny other GPUs: @devices_deny");
+                my $devices_cgroup = $Cgroup_directory_collection_links."/devices/".$Cpuset_path_job."/devices.deny";
+                foreach my $dev (@devices_deny){
+                    system_with_log("oardodo /bin/echo 'c 226:$dev rwm' > $devices_cgroup")
+                    and exit_myself(5,"Failed to set the devices.deny to c 226:$dev rwm");
+                    my $renderdev = $dev + 128;
+                    system_with_log("oardodo /bin/echo 'c 226:$renderdev rwm' > $devices_cgroup")
+                    and exit_myself(5,"Failed to set the devices.deny to c 226:$renderdev rwm");
                 }
             }
         }
