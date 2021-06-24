@@ -47,9 +47,8 @@ sub set_resources_properties($$$){
     # The following line  locks the tables in mysql, but just begins a transaction in postgresql
     OAR::IO::lock_table($base, ["resources","resource_logs"]);
     # To avoid deadlocks with postgresql, does lock the tables. This MUST also be done in other places (node_change_state, sarko, bipbip, ...)
-    if (OAR::IO::get_database_type() eq "Pg") {
-        $base->do("LOCK TABLE resources, resource_logs IN EXCLUSIVE MODE");
-    }
+    OAR::IO::lock_table_exclusive($base, ["resources","resource_logs"]);
+
     foreach my $p (@{$arrayProp}){
         if ($p =~ m/^(.+?)\s*(?:(!)|=\s*(.*))$/m){
             my $ret;
