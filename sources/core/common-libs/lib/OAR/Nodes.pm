@@ -181,9 +181,11 @@ sub get_resources_info($){
     my $resources_infos = OAR::IO::get_resources_info($base, $resources);
 
     foreach my $current_resource (@$resources){
-          my $properties = $resources_infos->{$current_resource};
-          add_running_jobs_to_resource_properties($properties);
-          $resources_infos->{$current_resource} = $properties
+        my $properties = $resources_infos->{$current_resource};
+        if ($properties) {
+            add_running_jobs_to_resource_properties($properties);
+            $resources_infos->{$current_resource} = $properties
+        }
     }
 
     return $resources_infos;
@@ -192,7 +194,7 @@ sub get_resources_info($){
 sub get_resources_for_host($){
     my $hostname = shift;
     my @resources = OAR::IO::get_node_info($base, $hostname);
-        return \@resources;
+    return \@resources;
 }
 
 sub get_resources_for_hosts($){
