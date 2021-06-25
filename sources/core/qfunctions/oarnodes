@@ -115,7 +115,7 @@ sub add_sql_resources($){
 sub format_result($){
     my $result = shift;
 
-    if (!%$result) {
+    if (!defined($result) || !%$result) {
         $result = {};
     }
 
@@ -175,7 +175,7 @@ sub print_hosts_infos($){
 
     if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
         format_result($infos);
-    } elsif (%$infos == 0) {
+    } elsif (!defined($infos) || %$infos == 0) {
         print("\/!\\ No nodes to display...\n");
     } else {
         print_resources_flat_way($infos);

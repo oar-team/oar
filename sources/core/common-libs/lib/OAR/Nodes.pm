@@ -178,13 +178,17 @@ sub is_job_tokill($){
 
 sub get_resources_info($){
     my $resources = shift;
-    my $resources_infos = OAR::IO::get_resources_info($base, $resources);
+    my $resources_infos;
 
-    foreach my $current_resource (@$resources){
-        my $properties = $resources_infos->{$current_resource};
-        if ($properties) {
-            add_running_jobs_to_resource_properties($properties);
-            $resources_infos->{$current_resource} = $properties
+    if (@$resources > 0) {
+        $resources_infos = OAR::IO::get_resources_info($base, $resources);
+
+        foreach my $current_resource (@$resources){
+            my $properties = $resources_infos->{$current_resource};
+            if ($properties) {
+                add_running_jobs_to_resource_properties($properties);
+                $resources_infos->{$current_resource} = $properties
+            }
         }
     }
 
