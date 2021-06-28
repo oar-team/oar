@@ -612,8 +612,8 @@ sub parse_reservation($$) {
         my $reservation_walltime = $Reservation_end - $Reservation_start;
 
         foreach my $list (@{$resource_list}) {
-            if (@$list[1] eq undef) {
-                @$list[1] = $reservation_walltime;
+            if ($list->[1] eq undef) {
+                $list->[1] = $reservation_walltime;
             }
         }
     }

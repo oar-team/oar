@@ -5221,19 +5221,22 @@ sub get_resources_info($$) {
     my $sth;
     my %resources_info;
 
-    if (@$resources > 1) {
+    if (@$resources == 1) {
+        $sth = $dbh->prepare("   SELECT *
+                                 FROM resources
+                                 WHERE
+                                    resource_id = $resources->[0]
+                                ");
+    } elsif (@$resources > 1) {
         $sth = $dbh->prepare("   SELECT *
                                  FROM resources
                                  WHERE
                                     resource_id IN (".join(",", @{$resources}).")
                                 ");
     } else {
-        $sth = $dbh->prepare("   SELECT *
-                                 FROM resources
-                                 WHERE
-                                    resource_id = @$resources[0]
-                                ");
+        return \%resources_info;
     }
+
 
     $sth->execute();
 
