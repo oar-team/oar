@@ -88,7 +88,7 @@ sub get_events($$){
     if (@$hosts == 0) {
         @events = OAR::IO::get_all_events($base, $date_from);
     } elsif (@$hosts == 1) {
-        @events = OAR::IO::get_events_for_hostname($base, @$hosts[0], $date_from);
+        @events = OAR::IO::get_events_for_hostname($base, $hosts->[0], $date_from);
     } else {
         @events = OAR::IO::get_events_for_hosts($base, $hosts, $date_from);
     }

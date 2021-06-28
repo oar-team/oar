@@ -653,7 +653,7 @@ sub struct_resource_list($$$) {
   struct_resource_list_fix_ints($resources);
   if ($structure eq 'simple') {
     if (scalar @$resources == 1 && $compact == 1) {
-      return @$resources[0];
+      return $resources->[0];
     }
     else { return $resources ; }
   }
