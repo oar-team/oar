@@ -8375,8 +8375,7 @@ sub lock_table_exclusive($$){
     my $tables = shift;
 
     if ($Db_type eq "Pg") {
-        $dbh->begin_work();
-        $dbh->do("LOCK TABLE " . join(",", @{$tables}) . "EXCLUSIVE MODE");
+        $dbh->do("LOCK TABLE " . join(",", @{$tables}) . " IN EXCLUSIVE MODE");
     }
 }
 
