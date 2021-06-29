@@ -42,6 +42,17 @@ version 2.5.10:
   - [leon] optimize SQL query of get_to_kill_jobs subroutine
   - [MetaSched] Optimize querying of the last wake up for a list of node
   - [IO.pm] Add constants to store often used OAR's job states
+  - [Hulot] Fix unknown method oar_warning
+  - [job_resource_manager] add support for AMD gpus
+  - [oarsh] add support of AMD gpus
+  - [oardodo] parametrize the OOM killer setup of oardodo
+  - [NodeChangeState] factorize the resources state changing
+  - [NodeChangeState] correctly lock and make transaction with PostgreSQL
+  - [IO.pm] factorize jobs fragging made by NodeChangeState
+  - [IO.pm] Add an lock_table_exclusive subroutine, for postgresql
+  - [oarnodes] fix machine parseables output by returning an empty set
+  - [oarnodes] fix uninitialized value with -r option
+  - [oarnodes] fix issue when using non existing nodes in arguments
 
 version 2.5.9:
 --------------
