@@ -114,6 +114,11 @@ sub add_sql_resources($){
 
 sub format_result($){
     my $result = shift;
+
+    if (!defined($result) || !%$result) {
+        $result = {};
+    }
+
     if (defined($DUMPER_mode)){
         print(Dumper($result)."\n");
     }elsif(defined($XML_mode)){
@@ -168,10 +173,10 @@ sub print_hosts_infos($){
     my $nodes = shift;
     my $infos = OAR::Nodes::get_resources_for_hosts($nodes);
 
-    if (%$infos == 0) {
-        print("\/!\\ No nodes to display...\n");
-    } elsif (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
         format_result($infos);
+    } elsif (!defined($infos) || %$infos == 0) {
+        print("\/!\\ No nodes to display...\n");
     } else {
         print_resources_flat_way($infos);
     }

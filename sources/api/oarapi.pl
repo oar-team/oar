@@ -496,9 +496,9 @@ SWITCH: for ($q) {
         "Job not found" );
       last;
     }
-    my $data=OAR::Stat::get_job_data(@$job[0],1);
+    my $data=OAR::Stat::get_job_data($job->[0],1);
     if (defined($details) and $details eq "/details") {
-        my $job_resources = OAR::API::get_job_resources(@$job[0]);
+        my $job_resources = OAR::API::get_job_resources($job->[0]);
         my $resources = OAR::API::struct_job_resources($job_resources,$STRUCTURE);
         my $nodes= OAR::API::struct_job_nodes($job_resources,$STRUCTURE);
         OAR::API::add_resources_uris($resources,$ext,'');
@@ -534,7 +534,7 @@ SWITCH: for ($q) {
                                                 "Cannot connect to the database"
                                                  );
     my $job = OAR::Stat::get_specific_jobs([$jobid]);
-    my $resources=OAR::API::get_job_resources(@$job[0]);
+    my $resources=OAR::API::get_job_resources($job->[0]);
     if ($item eq "resources") {
       $resources = OAR::API::struct_job_resources($resources,$STRUCTURE);
       OAR::API::add_resources_uris($resources,$ext,''); 
@@ -2525,7 +2525,7 @@ SWITCH: for ($q) {
         "You have to install the colmet extraction script ($COLMET_EXTRACT_PATH), python and the h5py module.\nPlease, check https://github.com/oar-team/colmet/oar/api." );
     }
 
-    my $stop_time=@$job[0]->{'stop_time'};
+    my $stop_time=$job->[0]->{'stop_time'};
     if ($stop_time==0) { 
         my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
@@ -2540,7 +2540,7 @@ SWITCH: for ($q) {
         $stop_time=$to;
       }
     }
-    my $start_time=@$job[0]->{'start_time'};
+    my $start_time=$job->[0]->{'start_time'};
     if (defined($q->param('from'))) {
       my $from = $q->param('from');
       if ($from > $start_time) {
