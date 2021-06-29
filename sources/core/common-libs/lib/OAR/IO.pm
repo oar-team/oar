@@ -64,6 +64,7 @@ sub set_job_state($$$);
 sub set_job_resa_state($$$);
 sub set_job_message($$$);
 sub frag_job($$);
+sub frag_jobs($$);
 sub frag_inner_jobs($$$);
 sub ask_checkpoint_job($$);
 sub ask_signal_job($$$);
@@ -124,6 +125,8 @@ sub is_node_exists($$);
 sub get_resources_on_node($$);
 sub set_node_state($$$$);
 sub update_resource_nextFinaudDecision($$$);
+sub set_resource_state($$$$);
+sub set_resources_state($$$$);
 sub get_resources_change_state($);
 sub set_resource_nextState($$$);
 sub set_node_nextState($$$);
@@ -2957,6 +2960,43 @@ sub frag_job($$) {
     return $result;
 }
 
+
+# frag_jobs
+# sets the flag 'ToFrag' of a job to 'Yes'
+# parameters : base, jobs_id (array ref)
+# side effects : changes the field ToFrag of the job in the table Jobs
+sub frag_jobs($$) {
+    my $dbh = shift;
+    my $jobs_id = shift;
+
+    my $lusr= $ENV{OARDO_USER};
+    my @jobs;
+
+    my $sth = $dbh->prepare("SELECT * FROM jobs LEFT JOIN frag_jobs on jobs.job_id = frag_jobs.frag_id_job
+                             WHERE frag_jobs.frag_id_job IS NULL AND
+                                   job_id IN (" . join(",", @$jobs_id) . ")"
+                                   . ($lusr eq 'root'  || $lusr eq 'oar' ? "" : " AND job_user = '$lusr'")
+                            );
+    $sth->execute();
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@jobs, $ref);
+    }
+    $sth->finish();
+
+    my $date = get_date($dbh);
+    $dbh->do("INSERT INTO frag_jobs (frag_id_job,frag_date)
+              VALUES " . join(",", map {"($_, '$date')"} @jobs)
+             );
+
+    foreach my $job (@jobs) {
+        add_new_event($dbh,"FRAG_JOB_REQUEST", $job,
+                      "User $lusr requested to frag the job $job");
+        frag_inner_jobs($dbh, $job, "");
+    }
+}
+
+
 #If KILL_INNER_JOBS_WITH_CONTAINER is set, frag the inner jobs if not already fragged
 sub frag_inner_jobs($$$) {
     my $dbh = shift;
@@ -5181,19 +5221,22 @@ sub get_resources_info($$) {
     my $sth;
     my %resources_info;
 
-    if (@$resources > 1) {
+    if (@$resources == 1) {
+        $sth = $dbh->prepare("   SELECT *
+                                 FROM resources
+                                 WHERE
+                                    resource_id = $resources->[0]
+                                ");
+    } elsif (@$resources > 1) {
         $sth = $dbh->prepare("   SELECT *
                                  FROM resources
                                  WHERE
                                     resource_id IN (".join(",", @{$resources}).")
                                 ");
     } else {
-        $sth = $dbh->prepare("   SELECT *
-                                 FROM resources
-                                 WHERE
-                                    resource_id = @$resources[0]
-                                ");
+        return \%resources_info;
     }
+
 
     $sth->execute();
 
@@ -5677,6 +5720,89 @@ sub set_resource_state($$$$) {
     $dbh->do("INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
               VALUES ($resource_id, \'state\', \'$state\',\'$date\',\'$finaud\')
              ");
+}
+
+
+# set_resources_state
+# sets the state field of multiple resources
+# parameters : base, resources to change, resources info
+sub set_resources_state($$$$) {
+    my $dbh = shift;
+    my $resources_to_change = shift;
+    my $resources_info = shift;
+    my $resources_to_heal = shift;
+
+    my $update_values = '';
+    my $insert_values = '';
+    my $date = get_date($dbh);
+    my $exit_code = 1;
+    my $need_update = 0;
+    my %debug_info;
+    my @jobs_to_frag;
+
+    foreach my $resource_id (keys %$resources_to_change) {
+        if ($resources_info->{$resource_id}->{state} ne $resources_to_change->{$resource_id}) {
+            $need_update = 1;
+            $update_values = $update_values . "(" . $resource_id . ", '" .
+                             $resources_to_change->{$resource_id} . "', " .
+                             $State_to_num{$resources_to_change->{$resource_id}} . ", '" .
+                             $resources_info->{$resource_id}{next_finaud_decision} . "'),";
+            $insert_values = $insert_values . "(" . $resource_id . ", " . "'state', '" .
+                             $resources_to_change->{$resource_id} . "', " . $date . ", '" .
+                             $resources_info->{$resource_id}{next_finaud_decision} . "'),";
+            $debug_info{$resources_info->{$resource_id}->{network_address}}->{$resource_id} =
+                             $resources_to_change->{$resource_id};
+
+            if ($resources_to_change->{$resource_id} eq 'Suspected') {
+                push(@$resources_to_heal, $resource_id . " " .
+                     $resources_info->{$resource_id}->{network_address});
+            }
+
+            if (($resources_to_change->{$resource_id} eq 'Dead') ||
+                ($resources_to_change->{$resource_id} eq 'Absent')) {
+                my @jobs = OAR::IO::get_resource_job_to_frag($dbh, $resource_id);
+                foreach my $j (@jobs) {
+                    oar_debug("[NodeChangeState] $resources_info->{$resource_id}->{network_address}: " .
+                              "must kill job $j.\n");
+                    # A Leon must be run
+                    $exit_code = 2;
+                }
+                push(@jobs_to_frag, @jobs);
+            }
+        } else {
+            oar_debug("[NodeChangeState] ($resources_info->{$resource_id}->{network_address}) " .
+                      "$resource_id is already in the $resources_to_change->{$resource_id} state\n");
+        }
+    }
+
+    if (@jobs_to_frag > 0) {
+        OAR::IO::frag_jobs($dbh, \@jobs_to_frag);
+    }
+
+    chop($update_values);
+    chop($insert_values);
+
+    if ($need_update eq 1) {
+        $dbh->do("  UPDATE resources as r
+                    SET state = v.state, finaud_decision = v.finaud, state_num = v.state_num
+                    FROM (VALUES " . $update_values . ") as v(resource_id, state, state_num, finaud)
+                    WHERE
+                        r.resource_id = v.resource_id
+                 ");
+
+        $dbh->do("  UPDATE resource_logs
+                    SET date_stop = \'$date\'
+                    WHERE
+                        date_stop = 0
+                        AND attribute = \'state\'
+                        AND resource_id IN " . "(" .join(", ", keys(%$resources_to_change)) . ")"
+                 );
+        $dbh->do("  INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
+                    VALUES " . $insert_values . "
+                 ");
+    }
+
+    return ($exit_code, %debug_info);
 }
 
 
@@ -8225,7 +8351,7 @@ sub release_lock($$) {
 
 sub lock_table($$){
     my $dbh = shift;
-    my $tables= shift;
+    my $tables = shift;
 
     if ($Db_type eq "Pg"){
         $dbh->begin_work();
@@ -8236,6 +8362,21 @@ sub lock_table($$){
         }
         chop($str);
         $dbh->do($str);
+    }
+}
+
+# The lock_table subroutine only start a transaction when using PostgreSQL. In
+# some cases, we need an EXCLUSIVE lock on tables. This subroutine allows it.
+# Since lock_table() start the transaction, keeping one subroutine only requires
+# to add two parameters. Adding a new subroutine make it more understandable.
+# TODO: see if one day MySQL become deprecated in OAR to refactor those subroutines.
+sub lock_table_exclusive($$){
+    my $dbh = shift;
+    my $tables = shift;
+
+    if ($Db_type eq "Pg") {
+        $dbh->begin_work();
+        $dbh->do("LOCK TABLE " . join(",", @{$tables}) . "EXCLUSIVE MODE");
     }
 }
 
