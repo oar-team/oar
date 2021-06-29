@@ -88,7 +88,7 @@ sub get_events($$){
     if (@$hosts == 0) {
         @events = OAR::IO::get_all_events($base, $date_from);
     } elsif (@$hosts == 1) {
-        @events = OAR::IO::get_events_for_hostname($base, @$hosts[0], $date_from);
+        @events = OAR::IO::get_events_for_hostname($base, $hosts->[0], $date_from);
     } else {
         @events = OAR::IO::get_events_for_hosts($base, $hosts, $date_from);
     }
@@ -178,12 +178,18 @@ sub is_job_tokill($){
 
 sub get_resources_info($){
     my $resources = shift;
-    my $resources_infos = OAR::IO::get_resources_info($base, $resources);
+    my $resources_infos;
 
-    foreach my $current_resource (@$resources){
-          my $properties = $resources_infos->{$current_resource};
-          add_running_jobs_to_resource_properties($properties);
-          $resources_infos->{$current_resource} = $properties
+    if (@$resources > 0) {
+        $resources_infos = OAR::IO::get_resources_info($base, $resources);
+
+        foreach my $current_resource (@$resources){
+            my $properties = $resources_infos->{$current_resource};
+            if ($properties) {
+                add_running_jobs_to_resource_properties($properties);
+                $resources_infos->{$current_resource} = $properties
+            }
+        }
     }
 
     return $resources_infos;
@@ -192,7 +198,7 @@ sub get_resources_info($){
 sub get_resources_for_host($){
     my $hostname = shift;
     my @resources = OAR::IO::get_node_info($base, $hostname);
-        return \@resources;
+    return \@resources;
 }
 
 sub get_resources_for_hosts($){

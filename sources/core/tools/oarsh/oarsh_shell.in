@@ -101,6 +101,24 @@ function add_process_to_cpuset() {
                                     fi
                                 fi
                             done
+                            # deny any AMD device which is not requested in $OAR_USER_GPUDEVICE
+                            for d in /dev/dri/renderD1[2-9}][0-9]; do
+                                r=${d#/dev/dri/renderD}
+                                c=$((r - 128))
+                                if [[ ",$OAR_USER_GPUDEVICE," == !(*,$c,*) ]]; then
+                                    if $OARDIR/oardodo/oardodo sh -c "echo c 226:$c rwm > $CGROUP_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/devices.deny" && \
+                                       $OARDIR/oardodo/oardodo sh -c "echo c 226:$r rwm > $CGROUP_MOUNT_POINT/devices/$CPUSETNAME/$OAR_USER_GPUDEVICE/devices.deny"; then
+                                        : # Everthing went fine
+                                    else
+                                        # It mostly failed because the OAR_USER_GPUDEVICE is not a subset of the job's gpudevices
+                                        # We do not want OAR to fail and the resource to become suspected here
+                                        echo "Warning: Failed to set user gpudevice as requested by OAR_USER_GPUDEVICE=$OAR_USER_GPUDEVICE, use the default one" 1>&2
+                                        # Fallback to no OAR_USER_GPUDEVICE defined
+                                        OAR_USER_GPUDEVICE=""
+                                        break
+                                    fi
+                                fi
+                            done
                         else
                             # Should not fail here (only a mkdir) but we do not want OAR to fail and the resource to become suspected here
                             echo "Warning: Failed to set user gpudevice as requested by OAR_USER_GPUDEVICE=$OAR_USER_GPUDEVICE, use the default one" 1>&2

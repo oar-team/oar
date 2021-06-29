@@ -738,7 +738,7 @@ sub fill_timeouts ($) {
                 $timeouts{$vals[0]} =  $vals[1];
             }
             else {
-                oar_warning("[Hulot] \"$couple\" is not a valid couple for a timeout\n");
+                oar_warn("[Hulot] \"$couple\" is not a valid couple for a timeout\n");
             }
         }
     }
@@ -746,7 +746,7 @@ sub fill_timeouts ($) {
     #If no good value has been found, use the default one
     if ( keys( %timeouts ) == 0) {
         $timeouts{1} = $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT;
-        oar_warning("[Hulot] Timeout not properly defined, using default value: 
+        oar_warn("[Hulot] Timeout not properly defined, using default value: 
                      $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT\n");
     }
     

@@ -34,6 +34,7 @@
 
 #define OARDIR "%%OARDIR%%"
 #define OARCONFFILE "%%OARCONFDIR%%/oar.conf"
+#define OAROOMCONFFILE "%%OARCONFDIR%%/oom.conf"
 #define OARXAUTHLOCATION "%%XAUTHCMDPATH%%"
 #define OARUSER "%%OAROWNER%%"
 
@@ -117,15 +118,24 @@ int main(int ac, char **av){
         user_to_become = DEFAULTUSERTOBECOME;
     }
 
-    // Tell OOM to kill the user processes first except for root and oar
+    // Configure OOM killer to kill the user processes first except for root and oar
     if ( (strcmp(user_to_become, "root") != 0) && (strcmp(user_to_become, OARUSER) != 0) ){
         FILE *oom_file;
-        if ((oom_file = fopen("/proc/self/oom_score_adj", "w")) != NULL){
-            fprintf(oom_file, "1000");
+        int oom_score_adj = 1000; // default value with the new OOM interface
+        int oom_adj = 15;         // default value with the old OOM interface (fallback)
+        if ((oom_file = fopen(OAROOMCONFFILE, "r")) != NULL){ // try and read values for configuration file
+            char buffer[64];
+            if (fgets(buffer, 64, oom_file) != NULL){
+              sscanf(buffer, "%d:%d", &oom_score_adj, &oom_adj);
+            }
             fclose(oom_file);
-        }else{
+        } // else just use the default values (1000:15)
+        if ((oom_file = fopen("/proc/self/oom_score_adj", "w")) != NULL){
+            fprintf(oom_file, "%d", oom_score_adj);
+            fclose(oom_file);
+        }else{ // fallback using the old OOM interface
             if ((oom_file = fopen("/proc/self/oom_adj", "w")) != NULL){
-                fprintf(oom_file, "15");
+                fprintf(oom_file, "%d", oom_adj);
                 fclose(oom_file);
             }
         }
