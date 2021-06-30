@@ -2986,13 +2986,13 @@ sub frag_jobs($$) {
 
     my $date = get_date($dbh);
     $dbh->do("INSERT INTO frag_jobs (frag_id_job,frag_date)
-              VALUES " . join(",", map {"($_, '$date')"} @jobs)
+              VALUES " . join(",", map {"($_->{job_id}, '$date')"} @jobs)
              );
 
     foreach my $job (@jobs) {
-        add_new_event($dbh,"FRAG_JOB_REQUEST", $job,
-                      "User $lusr requested to frag the job $job");
-        frag_inner_jobs($dbh, $job, "");
+        add_new_event($dbh,"FRAG_JOB_REQUEST", $job->{job_id},
+                      "User $lusr requested to frag the job $job->{job_id}");
+        frag_inner_jobs($dbh, $job->{job_id}, "");
     }
 }
 
@@ -8375,8 +8375,7 @@ sub lock_table_exclusive($$){
     my $tables = shift;
 
     if ($Db_type eq "Pg") {
-        $dbh->begin_work();
-        $dbh->do("LOCK TABLE " . join(",", @{$tables}) . "EXCLUSIVE MODE");
+        $dbh->do("LOCK TABLE " . join(",", @{$tables}) . " IN EXCLUSIVE MODE");
     }
 }
 

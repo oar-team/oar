@@ -1,3 +1,9 @@
+oar (2.5.10~g5k6-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Samir Noir <samir.noir@inria.fr>  Wed, 30 Jun 2021 08:53:34 +0000
+
 oar (2.5.10~g5k5-1~bpo10+1) buster-backports; urgency=medium
 
   * Rebuild for buster-backports.
