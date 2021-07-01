@@ -2979,20 +2979,22 @@ sub frag_jobs($$) {
                             );
     $sth->execute();
 
-    while (my $ref = $sth->fetchrow_hashref()) {
-        push(@jobs, $ref);
-    }
-    $sth->finish();
+    if ($sth->rows > 0) {
+        while (my $ref = $sth->fetchrow_hashref()) {
+            push(@jobs, $ref);
+        }
+        $sth->finish();
 
-    my $date = get_date($dbh);
-    $dbh->do("INSERT INTO frag_jobs (frag_id_job,frag_date)
-              VALUES " . join(",", map {"($_->{job_id}, '$date')"} @jobs)
-             );
+        my $date = get_date($dbh);
+        $dbh->do("INSERT INTO frag_jobs (frag_id_job,frag_date)
+            VALUES " . join(",", map {"($_->{job_id}, '$date')"} @jobs)
+        );
 
-    foreach my $job (@jobs) {
-        add_new_event($dbh,"FRAG_JOB_REQUEST", $job->{job_id},
-                      "User $lusr requested to frag the job $job->{job_id}");
-        frag_inner_jobs($dbh, $job->{job_id}, "");
+        foreach my $job (@jobs) {
+            add_new_event($dbh,"FRAG_JOB_REQUEST", $job->{job_id},
+                "User $lusr requested to frag the job $job->{job_id}");
+            frag_inner_jobs($dbh, $job->{job_id}, "");
+        }
     }
 }
 
