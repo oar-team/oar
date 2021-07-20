@@ -7,7 +7,7 @@ export OARDO_UNINSTALL = $(MAKE) -f Makefiles/oardo/oardo.mk uninstall
 SHARED_INSTALL   = $(MAKE) -f Makefiles/shared/common_target.mk install
 SHARED_UNINSTALL = $(MAKE) -f Makefiles/shared/common_target.mk uninstall
 
-# == 
+# ==
 TARGET_DIST?=$(shell if [ -f /etc/debian_version ]; then echo "debian"; fi; \
 	             if [ -f /etc/redhat-release ]; then echo "redhat"; fi; \
 	      )
@@ -20,9 +20,9 @@ ifeq "$(SETUP_TYPE)" "deb"
 include Makefiles/shared/dist/debian-deb.mk
 else
 include Makefiles/shared/dist/debian-tgz.mk
-endif 
+endif
 
-endif 
+endif
 # == debian
 
 # == redhat
@@ -32,9 +32,9 @@ ifeq "$(SETUP_TYPE)" "rpm"
 include Makefiles/shared/dist/redhat-rpm.mk
 else
 include Makefiles/shared/dist/redhat-tgz.mk
-endif 
+endif
 
-endif 
+endif
 # == redhat
 
 include Makefiles/shared/dist/common.mk
@@ -124,7 +124,7 @@ $(TEMPLATE_BUILDED_FILES) : %: %.in
 	    s#%%SETUP_TYPE%%#$(SETUP_TYPE)#g;;\
 	    s#%%TARGET_DIST%%#$(TARGET_DIST)#g;;\
 	    s#%%OARDOPATH%%#/bin:/sbin:/usr/bin:/usr/sbin:$(BINDIR):$(SBINDIR):$(OARDIR)/oardodo#;;\
-	    " "$@.in" > $@ 
+	    " "$@.in" > $@
 
 clean_templates:
 	-rm -f $(TEMPLATE_BUILDED_FILES)
@@ -166,7 +166,7 @@ install_perllib:
 	cp -r $(OAR_PERLLIB)/* $(DESTDIR)$(PERLLIBDIR)/
 
 uninstall_perllib:
-	
+
 	(cd $(OAR_PERLLIB) && find . -type f -exec rm -f $(DESTDIR)$(PERLLIBDIR)/{} \;)
 else
 install_perllib:
@@ -210,7 +210,7 @@ SOURCE_MANDIR_FILES = $(filter %.pod, $(patsubst %.pod.in, %.pod, $(MANDIR_FILES
 BUILD_MANDIR_FILES = $(patsubst %.pod, %.1, $(SOURCE_MANDIR_FILES)) $(filter %.1,$(MANDIR_FILES))
 TARGET_MANDIR_FILES = $(addprefix $(DESTDIR)$(MANDIR)/man1, $(notdir $(BUILD_MANDIR_FILES)))
 
-install_man1: 
+install_man1:
 	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(MANDIR)/man1" SOURCE_FILES="$(BUILD_MANDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 uninstall_man1:

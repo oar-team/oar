@@ -17,7 +17,7 @@ INITDIR_FILES = setup/init.d/oar-node.in
 CRONDIR_FILES = setup/cron.d/oar-node.in
 
 DEFAULTDIR_FILES = setup/default/oar-node.in \
-                   setup/default/oar-node.exemple1.in 
+                   setup/default/oar-node.exemple1.in
 
 
 include Makefiles/shared/shared.mk
@@ -30,13 +30,13 @@ clean: clean_shared
 
 install: install_shared
 	install -d $(DESTDIR)$(OARCONFDIR)/check.d
-	
-	install -d $(DESTDIR)$(DOCDIR)/oarnodecheck 
+
+	install -d $(DESTDIR)$(DOCDIR)/oarnodecheck
 	install -m 0644 sources/core/tools/oarnodecheck/README $(DESTDIR)$(DOCDIR)/oarnodecheck
 	install -m 0644 sources/core/tools/oarnodecheck/template $(DESTDIR)$(DOCDIR)/oarnodecheck
-	
+
 uninstall: uninstall_shared
-	
+
 
 
 .PHONY: install setup uninstall build clean

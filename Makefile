@@ -3,11 +3,11 @@
 export SHELL=/bin/bash
 
 # Modules that can be builded
-MODULES = server user node monika drawgantt drawgantt-svg doc tools api www-conf common common-libs database  
+MODULES = server user node monika drawgantt drawgantt-svg doc tools api www-conf common common-libs database
 
 
 MODULES_LIST= $(patsubst %,% |, $(MODULES))|
-OPTIONS_LIST= OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR 
+OPTIONS_LIST= OARCONFDIR | OARUSER | OAROWNER | PREFIX | MANDIR | OARDIR | BINDIR | SBINDIR | DOCDIR
 
 # Define the makefile targets
 TARGETS_SUFFIX = build clean install uninstall
@@ -50,14 +50,14 @@ sanity-setup-check: sanity-check
 # Meta targets
 $(TARGETS_BUILD):     MODULE = $(patsubst %-build,%,$@)
 $(TARGETS_BUILD):     ACTION = build
-$(TARGETS_INSTALL):   MODULE = $(patsubst %-install,%,$@) 
+$(TARGETS_INSTALL):   MODULE = $(patsubst %-install,%,$@)
 $(TARGETS_INSTALL):   ACTION = install
-$(TARGETS_SETUP):     MODULE = $(patsubst %-setup,%,$@) 
+$(TARGETS_SETUP):     MODULE = $(patsubst %-setup,%,$@)
 $(TARGETS_SETUP):     ACTION = setup
-$(TARGETS_UNINSTALL): MODULE = $(patsubst %-uninstall,%,$@) 
-$(TARGETS_UNINSTALL): ACTION = uninstall 
-$(TARGETS_CLEAN):     MODULE = $(patsubst %-clean,%,$@) 
-$(TARGETS_CLEAN):     ACTION = clean 
+$(TARGETS_UNINSTALL): MODULE = $(patsubst %-uninstall,%,$@)
+$(TARGETS_UNINSTALL): ACTION = uninstall
+$(TARGETS_CLEAN):     MODULE = $(patsubst %-clean,%,$@)
+$(TARGETS_CLEAN):     ACTION = clean
 
 $(TARGETS_INSTALL):  sanity-check
 	$(MAKE) $(strip $(MODULE))-build
@@ -78,10 +78,10 @@ $(TARGETS_SETUP):
 
 # Dependencies
 server-setup: common-setup common-libs-setup database-setup
-server-install: sanity-check common-install common-libs-install database-install	
-server-clean: common-clean common-libs-clean database-clean 
-server-build: common-build common-libs-build database-build 
-server-uninstall: common-uninstall common-libs-uninstall database-uninstall 
+server-install: sanity-check common-install common-libs-install database-install
+server-clean: common-clean common-libs-clean database-clean
+server-build: common-build common-libs-build database-build
+server-uninstall: common-uninstall common-libs-uninstall database-uninstall
 
 user-setup: common-setup common-libs-setup
 user-install: sanity-check common-install common-libs-install
@@ -91,8 +91,8 @@ user-uninstall: common-uninstall common-libs-uninstall
 
 node-setup: common-setup
 node-install: sanity-check common-install
-node-clean: common-clean 
-node-build: common-build 
+node-clean: common-clean
+node-build: common-build
 node-uninstall: common-uninstall
 
 drawgantt-setup: www-conf-setup
@@ -131,46 +131,46 @@ P_TARGETS = $(patsubst %,packages-%,$(P_ACTIONS))
 
 packages-build:    P_ACTION = build
 packages-install:  P_ACTION = install
-packages-clean:    P_ACTION = clean 
+packages-clean:    P_ACTION = clean
 
 $(P_TARGETS):
 	# oar-doc
 	$(MAKE) -f Makefiles/doc.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-doc
-	
+
 	# oar-common
-	mkdir -p $(PACKAGES_DIR)/oar-common/var/lib/oar	
+	mkdir -p $(PACKAGES_DIR)/oar-common/var/lib/oar
 	$(MAKE) -f Makefiles/common.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common
-	
-	
+
+
 	# liboar-perl
-	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar	
+	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar
 	$(MAKE) -f Makefiles/common-libs.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/liboar-perl
-	
+
 	# oar-server
 	mkdir -p $(PACKAGES_DIR)/oar-server/var/lib/oar
 	$(MAKE) -f Makefiles/server.mk $(P_ACTION)\
     SHAREDIR=/usr/share/oar/oar-server \
                 DESTDIR=$(PACKAGES_DIR)/oar-server
-	
+
 	$(MAKE) -f Makefiles/database.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-server \
     SHAREDIR=/usr/share/oar/oar-server \
 		DOCDIR=/usr/share/doc/oar-server
-	
+
 	# oar-node
 	mkdir -p $(PACKAGES_DIR)/oar-node/var/lib/oar
 	mkdir -p $(PACKAGES_DIR)/oar-node/etc/init.d
 	$(MAKE) -f Makefiles/node.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-node
-	
+
 	# oar-user
 	mkdir -p $(PACKAGES_DIR)/oar-user/var/lib/oar
 	$(MAKE) -f Makefiles/user.mk $(P_ACTION)\
-                DESTDIR=$(PACKAGES_DIR)/oar-user 
-	
+                DESTDIR=$(PACKAGES_DIR)/oar-user
+
 	# oar-web-status
 	$(MAKE) -f Makefiles/monika.mk $(P_ACTION) \
                 DESTDIR=$(PACKAGES_DIR)/oar-web-status \
@@ -187,13 +187,13 @@ $(P_TARGETS):
 		DOCDIR=/usr/share/doc/oar-web-status \
 		SHAREDIR=/usr/share/oar/oar-web-status \
 		WWWDIR=/usr/share/oar-web-status
-	
+
 	# oar-restful-api
 	$(MAKE) -f Makefiles/api.mk $(P_ACTION) \
 	    DOCDIR=/usr/share/doc/oar-restful-api \
-	    DESTDIR=$(PACKAGES_DIR)/oar-restful-api 
-	
+	    DESTDIR=$(PACKAGES_DIR)/oar-restful-api
+
 	# keyring
 	$(MAKE) -f Makefiles/keyring.mk $(P_ACTION) \
-	    DESTDIR=$(PACKAGES_DIR)/oar-keyring 
-	
+	    DESTDIR=$(PACKAGES_DIR)/oar-keyring
+
