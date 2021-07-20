@@ -40,6 +40,7 @@ my $stateMode;
 my $usage;
 my $listall;
 my $sql_property;
+my $sql_property_resource_lookup;
 my $XML_mode;
 my $YAML_mode;
 my $JSON_mode;
@@ -249,6 +250,7 @@ if($ARGV[0]){
 # SQL where handling, add resources that match sql clause to @resources
 if (defined($sql_property)) {
     add_sql_resources($sql_property);
+    $sql_property_resource_lookup = 1;
 }
 
 if (defined($events)) {
@@ -265,7 +267,7 @@ elsif ($stateMode){
 elsif ($listall){
     print_all_hostnames();
 }
-elsif ($#resources >= 0){ # -r or --sql where called
+elsif ($#resources >= 0 || defined($sql_property_resource_lookup)) { # -r or --sql where called
     my $res_infos = OAR::Nodes::get_resources_info(\@resources);
     if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
         format_result($res_infos);
