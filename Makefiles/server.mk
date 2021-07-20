@@ -52,6 +52,8 @@ DEFAULTDIR_FILES = setup/default/oar-server.in
 
 INITDIR_FILES = setup/init.d/oar-server.in
 
+SYSTEMDDIR_FILES = setup/systemd/oar-server.service.in
+
 CRONDIR_FILES = setup/cron.d/oar-server.in
 
 include Makefiles/shared/shared.mk

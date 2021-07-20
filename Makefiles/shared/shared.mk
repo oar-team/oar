@@ -7,6 +7,14 @@ export OARDO_UNINSTALL = $(MAKE) -f Makefiles/oardo/oardo.mk uninstall
 SHARED_INSTALL   = $(MAKE) -f Makefiles/shared/common_target.mk install
 SHARED_UNINSTALL = $(MAKE) -f Makefiles/shared/common_target.mk uninstall
 
+# Detect if system is using systemd
+SYSTEMD_INIT? = $(shell if [ `ps --no-headers -o comm 1` = "systemd" ]; then \
+				echo "true"; \
+			else \
+				echo "false"; \
+			fi; \
+	   	)
+
 # ==
 TARGET_DIST?=$(shell if [ -f /etc/debian_version ]; then echo "debian"; fi; \
 	             if [ -f /etc/redhat-release ]; then echo "redhat"; fi; \
@@ -67,6 +75,7 @@ MODULE_SETUP_TARGET_FILES  = $(addprefix $(DESTDIR)$(OARDIR)/setup/,$(notdir $(b
 TEMPLATE_SOURCE_FILES=$(filter %.in, $(PROCESS_TEMPLATE_FILES) \
                                      $(MANDIR_FILES) \
                                      $(INITDIR_FILES) \
+                                     $(SYSTEMDDIR_FILES) \
                                      $(DEFAULTDIR_FILES) \
                                      $(LOGROTATEDIR_FILES) \
                                      $(CRONDIR_FILES) \
@@ -253,13 +262,23 @@ uninstall_examples:
 	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)" SOURCE_FILES="$(SHAREDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 #
-# INITDIR_FILES
+# INITDIR_FILES / SYSTEMDDIR_FILES
 #
+
+ifeq "$(SYSTEMD_INIT)" "true"
+install_init:
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/systemd" SOURCE_FILES="$(SYSTEMDDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+uninstall_init:
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/systemd" SOURCE_FILES="$(SYSTEMDDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+else
 install_init:
 	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/init.d" SOURCE_FILES="$(INITDIR_FILES)" TARGET_FILE_RIGHTS=0755
 
 uninstall_init:
 	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/init.d" SOURCE_FILES="$(INITDIR_FILES)" TARGET_FILE_RIGHTS=0755
+endif
 
 
 #
@@ -277,11 +296,16 @@ uninstall_cron:
 #
 # DEFAULTDIR_FILES
 #
+ifneq "$(SYSTEMD_INIT)" "true"
 install_default:
 	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/default" SOURCE_FILES="$(DEFAULTDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 uninstall_default:
 	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/default" SOURCE_FILES="$(DEFAULTDIR_FILES)" TARGET_FILE_RIGHTS=0644
+else
+install_default:
+uninstall_default:
+endif
 
 
 #

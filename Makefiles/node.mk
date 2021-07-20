@@ -2,17 +2,21 @@ MODULE=node
 SRCDIR=sources/core
 
 OARDIR_BINFILES=$(SRCDIR)/tools/oarnodecheck/oarnodecheckrun.in
+
 BINDIR_FILES=$(SRCDIR)/tools/oarnodecheck/oarnodechecklist.in \
 	     $(SRCDIR)/tools/oarnodecheck/oarnodecheckquery.in
 
 SHAREDIR_FILES= $(SRCDIR)/scripts/prologue \
-		  $(SRCDIR)/scripts/epilogue \
-		  $(SRCDIR)/tools/sshd_config.in
+		$(SRCDIR)/scripts/epilogue \
+		$(SRCDIR)/tools/sshd_config.in \
+		$(SRCDIR)/scripts/oar-node-service
 
 MANDIR_FILES = $(SRCDIR)/man/man1/oarnodechecklist.1 \
 	       $(SRCDIR)/man/man1/oarnodecheckquery.1
 
 INITDIR_FILES = setup/init.d/oar-node.in
+
+SYSTEMDDIR_FILES = setup/systemd/oar-node.service.in
 
 CRONDIR_FILES = setup/cron.d/oar-node.in
 
