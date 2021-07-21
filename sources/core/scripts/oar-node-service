@@ -1,0 +1,41 @@
+#!/bin/sh -eu
+
+# This script is called when oar-node service is started.
+# You can change this to use another method to switch the node into the Alive state
+
+start_oar_node() {
+    echo
+    echo " * Edit this file or override the oar-node systemd unit ExecStartPost to"
+    echo "   launch your custom script if you want to perform specific actions at start"
+    echo "   (e.g. switch the node to Alive)."
+}
+
+# This function is called when oar-node service is stopped.
+# You can change this to use another method to switch the node into the Absent state
+
+stop_oar_node() {
+    echo
+    echo " * Edit this file or override the oar-node systemd unit ExecStopPost to"
+    echo "   launch your custom script if you want to perform specific actions at stop"
+    echo "   (e.g. switch the node to Absent)."
+}
+
+usage() {
+        echo "Usage: $0 start|stop"
+}
+
+if [ $# -eq 0 ]; then
+    echo "Missing operation!"
+    usage
+    exit 1
+fi
+
+if [ $1 = "start" ]; then
+    start_oar_node
+elif [ $1 = "stop" ]; then
+    stop_oar_node
+else
+    echo "Unknown operation!"
+    usage
+    exit 1
+fi
