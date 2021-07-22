@@ -1,0 +1,36 @@
+#! /bin/sh
+set -e
+#set -x
+
+. /usr/share/debconf/confmodule
+. /usr/lib/oar/setup/api.sh
+
+PACKAGE=oar-restful-api
+
+case "$1" in
+    configure)
+        api_setup
+        MSG="Please look at the README.Debian file of the package for instructions to finalize OAR API installation" 
+        if [ -e /usr/share/apache2/apache2-maintscript-helper ] ; then
+            . /usr/share/apache2/apache2-maintscript-helper
+            #apache2_invoke enconf oar-restful-api.conf || exit $?
+            apache2_msg info "$MSG"
+        else
+            echo "$MSG"
+        fi
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0
+
+

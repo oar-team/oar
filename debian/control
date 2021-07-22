@@ -1,0 +1,243 @@
+Source: oar
+Maintainer: Grid'5000 developpers <g5k-developers@lists.grid5000.fr>
+Uploaders: Grid'5000 developpers <g5k-developers@lists.grid5000.fr>
+Section: utils
+Priority: optional
+Build-Depends: debhelper-compat (= 12),
+               po-debconf,
+               perl,
+               python3-sphinx
+Standards-Version: 4.5.1
+Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
+Vcs-Browser: https://github.com/oar-team/oar
+Homepage: http://oar.imag.fr/
+
+Package: liboar-perl
+Architecture: any
+Section: perl
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ${perl:Depends},
+         libdbi-perl
+Suggests: oar-server,
+          oar-user,
+          oar-node,
+          oar-doc
+Description: OAR batch scheduler common library package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This package installs the common libraries of the OAR batch scheduler
+
+Package: oar-common
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ${perl:Depends},
+         liboar-perl (= ${binary:Version}),
+         adduser,
+         ucf
+Suggests: oar-server,
+          oar-user,
+          oar-node,
+          oar-doc
+Description: OAR batch scheduler common package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This package installs the common part of the OAR batch scheduler
+
+Package: oar-server
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ${perl:Depends},
+         openssh-client,
+         cron,
+         lsb-base,
+         libsort-versions-perl,
+         libdbi-perl,
+         oar-common (= ${binary:Version}),
+         oar-server-pgsql (= ${binary:Version}) | oar-server-mysql (= ${binary:Version}),
+         perl (<< 5.17) | libterm-ui-perl
+Recommends: libxml-dumper-perl,
+            libyaml-perl,
+            libyaml-syck-perl
+Suggests: taktuk,
+          phpmyadmin,
+          oar-node,
+          oar-doc,
+          openssh-server
+Breaks: oar-admin
+Description: OAR batch scheduler server package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This package installs the server part of the OAR batch scheduler
+
+Package: oar-server-mysql
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ${perl:Depends},
+         libdbi-perl,
+         libdbd-mysql-perl
+Recommends: default-mysql-client | virtual-mysql-client
+Suggests: default-mysql-server | virtual-mysql-server
+Description: OAR batch scheduler MySQL server backend package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This empty package installs the MySQL dependencies for the server part of the
+ OAR batch scheduler.
+
+Package: oar-server-pgsql
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ${perl:Depends},
+         libdbi-perl,
+         libdbd-pg-perl
+Recommends: postgresql-client
+Suggests: postgresql
+Description: OAR batch scheduler PostgreSQL server backend package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This empty package installs the PostgreSQL dependencies for the server part of
+ the OAR batch scheduler.
+
+Package: oar-node
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         openssh-client,
+         openssh-server,
+         lsb-base (>= 3.0-6),
+         oar-common (= ${binary:Version})
+Suggests: oar-doc,
+          xauth
+Description: OAR batch scheduler node package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This package installs the execution node part of the OAR batch scheduler
+
+Package: oar-user
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ${perl:Depends},
+         libdbi-perl,
+         oar-common (= ${binary:Version}),
+         oar-user-pgsql (= ${binary:Version}) | oar-user-mysql (= ${binary:Version})
+Recommends: libxml-dumper-perl,
+            libyaml-perl,
+            libyaml-syck-perl
+Suggests: oar-doc,
+          openssh-client,
+          xauth
+Breaks: oar-admin
+Description: OAR batch scheduler user package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This package install the submission and query part of the OAR batch scheduler.
+
+Package: oar-user-mysql
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ${perl:Depends},
+         libdbi-perl,
+         libdbd-mysql-perl
+Description: OAR batch scheduler MySQL user backend package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This empty package installs the MySQL dependencies for the user part of the
+ OAR batch scheduler.
+
+Package: oar-user-pgsql
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ${perl:Depends},
+         libdbi-perl,
+         libdbd-pg-perl
+Description: OAR batch scheduler PostgreSQL user backend package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This empty package installs the PostgreSQL dependences for the user part of
+ the OAR batch scheduler.
+
+Package: oar-web-status
+Architecture: all
+Section: web
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         apache2 | httpd-cgi,
+         ${perl:Depends},
+         libdbi-perl,
+         libdbd-mysql-perl | libdbd-pg-perl,
+         libtie-ixhash-perl,
+         libappconfig-perl,
+         libsort-naturally-perl,
+         php,
+         php-mysql | php-pgsql
+Suggests: oar-doc
+Description: OAR batch scheduler visualization tool package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This package install the OAR batch scheduler web interfaces: drawgantt-svg
+ and monika.
+
+Package: oar-doc
+Architecture: all
+Section: doc
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         libjs-jquery,
+         libjs-underscore
+Description: OAR batch scheduler documentation package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This package install some documentation for OAR batch scheduler
+
+Package: oar-restful-api
+Architecture: any
+Section: net
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ${perl:Depends},
+         libjson-perl,
+         libyaml-perl,
+         libwww-perl,
+         libcgi-fast-perl,
+         oar-user,
+         apache2 | httpd-cgi
+Recommends: libyaml-syck-perl
+Suggests: oar-doc,
+          oar-server,
+          apache2,
+          libapache2-mod-fcgid,
+          apache2-suexec-custom
+Description: OAR web services
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This package installs a RESTful API for oar users.

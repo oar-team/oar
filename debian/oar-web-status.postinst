@@ -1,0 +1,41 @@
+#! /bin/sh
+set -e
+#set -x
+
+. /usr/share/debconf/confmodule
+
+. /usr/lib/oar/setup/www-conf.sh
+. /usr/lib/oar/setup/monika.sh
+. /usr/lib/oar/setup/drawgantt-svg.sh
+
+PACKAGE=oar-web-status
+
+case "$1" in
+    configure)
+        www_conf_setup
+        monika_setup
+        drawgantt_svg_setup
+        MSG="Please enable an Apache CGI module (e.g. cgi or cgid) for the Monika web app to function."
+        if [ -e /usr/share/apache2/apache2-maintscript-helper ] ; then
+            . /usr/share/apache2/apache2-maintscript-helper
+            apache2_has_module cgi || apache2_has_module cgid || apache2_msg info "$MSG"
+            apache2_invoke enconf oar-web-status.conf || exit $?
+        else 
+            echo "$MSG"
+        fi
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0
+
+
