@@ -1,0 +1,5 @@
+oar (2.5.10~g5k8-1) unstable; urgency=low
+
+  * acc1e540 [oarnodes] return valid parseable format in each cases
+
+ -- Samir Noir <samir.noir@inria.fr>  Thu, 22 Jul 2021 12:00:49 +0200
