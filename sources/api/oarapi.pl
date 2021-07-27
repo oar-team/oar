@@ -122,6 +122,14 @@ close(FILE);
 ##############################################################################
 my $q;
 my $fcgi_cycle_count=0;
+my $fcgi_max_cycle_count;
+
+if (defined($ENV{OAR_FCGI_MAX_CYCLE_COUNT})) {
+    $fcgi_max_cycle_count = $ENV{OAR_FCGI_MAX_CYCLE_COUNT};
+} else {
+    $fcgi_max_cycle_count = 200;
+}
+
 FCGI: while ($q = new CGI::Fast) {
 
 $fcgi_cycle_count++;
@@ -2669,7 +2677,7 @@ SWITCH: for ($q) {
   OAR::API::ERROR( 404, "Not found", "No way to handle your request " . $q->path_info );
 }
 
-if ($fcgi_cycle_count > 50) {
+if ($fcgi_cycle_count > $fcgi_max_cycle_count) {
   exit 0;
 }
 
