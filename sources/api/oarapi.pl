@@ -1,15 +1,7 @@
 #!/usr/bin/perl -w
-# vim: set foldmethod=marker:syntax: #
 #
 # This is the main cgi script for the OAR REST API
 # This script is part of the OAR project.
-#
-# Please, make a good usage of folding markers: {{{ and }}}
-# into comments. Under vim, use "za" to fold and "zo" to
-# unfold (or just go inside the title to automatically unfold)
-# You have to ":set modeline" into vim for the above modeline
-# to be interpreted by vim or just type the :set command given
-# by this modeline.
 #
 #    Copyright (C) 2009-2016 Laboratoire d'Informatique de Grenoble <http://www.liglab.fr>
 #
@@ -226,8 +218,6 @@ SWITCH: for ($q) {
   # API informations
   ###########################################
   #
-  #{{{ GET /: Root links
-  #
   $URI = OAR::API::uri_regex_html_json_yaml('');
   OAR::API::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
@@ -277,9 +267,9 @@ SWITCH: for ($q) {
     print OAR::API::export($root,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /version : Version informations
+  # GET /version : Version informations
   #
   $URI = OAR::API::uri_regex_html_json_yaml('version');
   OAR::API::GET( $_, $URI ) && do {
@@ -296,9 +286,9 @@ SWITCH: for ($q) {
     print OAR::API::export($version,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /whoami : Authenticated User informations
+  # GET /whoami : Authenticated User informations
   #
   $URI = OAR::API::uri_regex_html_json_yaml('whoami');
   OAR::API::GET( $_, $URI ) && do {
@@ -312,9 +302,9 @@ SWITCH: for ($q) {
     print OAR::API::export($version,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /timezone: Timezone information
+  # GET /timezone: Timezone information
   #
   $URI = OAR::API::uri_regex_html_json_yaml('timezone');
   OAR::API::GET( $_, $URI ) && do {
@@ -330,13 +320,12 @@ SWITCH: for ($q) {
     print OAR::API::export($version,$ext);
     last;
   };
-  #}}}
 
   ###########################################
   # Jobs
   ###########################################
   #
-  #{{{ GET /jobs[/details|table]?state=<state>,from=<from>,to=<to>,ids=<id1:id2:...> : List of jobs
+  # GET /jobs[/details|table]?state=<state>,from=<from>,to=<to>,ids=<id1:id2:...> : List of jobs
   #
   $URI = OAR::API::uri_regex_html_json_yaml('jobs(/details|/table)?');
   OAR::API::GET( $_, $URI ) && do {
@@ -464,9 +453,9 @@ SWITCH: for ($q) {
     print OAR::API::export($jobs,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /jobs/<id>[/details] : Infos of a job. Adding /details results in a "oarstat -f" equivalent
+  # GET /jobs/<id>[/details] : Infos of a job. Adding /details results in a "oarstat -f" equivalent
   #
   $URI = OAR::API::uri_regex_html_json_yaml('jobs/(\d+)(/details)?');
   OAR::API::GET( $_, $URI ) && do {
@@ -518,9 +507,9 @@ SWITCH: for ($q) {
     print OAR::API::export($result,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /jobs/<id>/[resources|nodes] : Resources or nodes assigned or scheduled to a job
+  # GET /jobs/<id>/[resources|nodes] : Resources or nodes assigned or scheduled to a job
   #
   $URI = OAR::API::uri_regex_html_json_yaml('jobs/(\d+)/(resources|nodes)');
   OAR::API::GET( $_, $URI ) && do {
@@ -549,9 +538,9 @@ SWITCH: for ($q) {
     OAR::Stat::close_db_connection;
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /jobs/[array/]<id>/checkpoints|deletions|holds|rholds|resumptions|resubmissions/new : Actions on a job (checkpoint, hold, resume,...)
+  # POST /jobs/[array/]<id>/checkpoints|deletions|holds|rholds|resumptions|resubmissions/new : Actions on a job (checkpoint, hold, resume,...)
   #
   $URI = OAR::API::uri_regex_html_json_yaml('jobs/(array/)?(\d+)/(checkpoints|deletions|holds|rholds|resumptions|resubmissions)/new');
   OAR::API::POST( $_, $URI ) && do {
@@ -654,9 +643,9 @@ SWITCH: for ($q) {
     }
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /jobs/<id> : Update of a job (delete, checkpoint, ...)
+  # POST /jobs/<id> : Update of a job (delete, checkpoint, ...)
   # Should not be used unless for delete from an http browser
   # (better to use the URI above)
   #
@@ -755,9 +744,9 @@ SWITCH: for ($q) {
                   } , $ext );
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /jobs/<id>/signals/<signal> : Signal sending
+  # POST /jobs/<id>/signals/<signal> : Signal sending
   #
   $URI = OAR::API::uri_regex_html_json_yaml('jobs/(\d+)/signals/(\d+)');
   OAR::API::POST( $_, $URI ) && do {
@@ -789,9 +778,9 @@ SWITCH: for ($q) {
                   } , $ext );
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /jobs : A new job (oarsub wrapper)
+  # POST /jobs : A new job (oarsub wrapper)
   #
   $URI = OAR::API::uri_regex_html_json_yaml('jobs');
   OAR::API::POST( $_, $URI ) && do {
@@ -959,9 +948,9 @@ SWITCH: for ($q) {
     }
     last;
   };
-  #}}}
+
   #
-  #{{{ DELETE /jobs/<id> : Delete a job (oardel wrapper)
+  # DELETE /jobs/<id> : Delete a job (oardel wrapper)
   #
   $URI = OAR::API::uri_regex_html_json_yaml('jobs/(\d+)');
   OAR::API::DELETE( $_, $URI ) && do {
@@ -990,9 +979,9 @@ SWITCH: for ($q) {
                   } , $ext );
     last;
   };
-  #}}}
+
   #
-  #{{{       /jobs/stagein and stageout (desktop computing)
+  # GET /jobs/stagein and stageout (desktop computing)
   #
   $URI = OAR::API::uri_regex_tgz('jobs/(\d+)/stagein');
   OAR::API::GET( $_, $URI ) && do {
@@ -1030,9 +1019,9 @@ SWITCH: for ($q) {
     print $q->header( -status => 200, -type => "application/x-tar" );
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /jobs/<id>/state : changes the state of a job
+  # POST /jobs/<id>/state : changes the state of a job
   #
   $URI = OAR::API::uri_regex_html_json_yaml('jobs/(\d+)/state');
   OAR::API::POST( $_, $URI ) && do {
@@ -1059,13 +1048,13 @@ SWITCH: for ($q) {
     }
     last;
   };
-  #}}}
+
 
   ###########################################
   # Resources
   ###########################################
   #
-  #{{{ GET /resources/(details|<id>) : List of resources or details of a resource
+  # GET /resources/(details|<id>) : List of resources or details of a resource
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources(/full|/details|/\d+)?');
   OAR::API::GET( $_, $URI ) && do {
@@ -1156,9 +1145,9 @@ SWITCH: for ($q) {
     print OAR::API::export($resources,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /resources/nodes/<node> : List the resources of a node
+  # GET /resources/nodes/<node> : List the resources of a node
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources/nodes/([\w.-]+?)');
   OAR::API::GET( $_, $URI ) && do {
@@ -1180,9 +1169,9 @@ SWITCH: for ($q) {
     print OAR::API::export($resources,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /resources/(<id>)/jobs : Jobs running on a resource
+  # GET /resources/(<id>)/jobs : Jobs running on a resource
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources(/\d+)/jobs');
   OAR::API::GET( $_, $URI ) && do {
@@ -1208,9 +1197,9 @@ SWITCH: for ($q) {
     print OAR::API::export($jobs,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /resources/nodes/<node>/jobs : Jobs running on a node
+  # GET /resources/nodes/<node>/jobs : Jobs running on a node
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources/nodes/([\w.-]+)/jobs');
   OAR::API::GET( $_, $URI ) && do {
@@ -1259,9 +1248,9 @@ SWITCH: for ($q) {
     print OAR::API::export($jobs,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /resources/<property>/jobs : List jobs running on resources, by property
+  # GET /resources/<property>/jobs : List jobs running on resources, by property
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources/([\w-]+)/jobs');
   OAR::API::GET( $_, $URI ) && do {
@@ -1307,9 +1296,9 @@ SWITCH: for ($q) {
     print OAR::API::export($output,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /resources : Create new resources
+  # POST /resources : Create new resources
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources');
   OAR::API::POST( $_, $URI ) && do {
@@ -1366,9 +1355,9 @@ SWITCH: for ($q) {
     OAR::IO::disconnect($dbh);
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /resources/<id>/state : Change the state of a resource
+  # POST /resources/<id>/state : Change the state of a resource
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources/(\d+)/state');
   OAR::API::POST( $_, $URI ) && do {
@@ -1419,9 +1408,9 @@ SWITCH: for ($q) {
     OAR::IO::disconnect($dbh);
     last;
   };
-  #}}}
+
   #
-  #{{{ DELETE /resources/(<id>|<node>/<cpuset) : Delete a resource (by id or node+cpuset)
+  # DELETE /resources/(<id>|<node>/<cpuset) : Delete a resource (by id or node+cpuset)
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources/(?:(\d+)|([\w.-]+)/(\d+))');
   OAR::API::DELETE( $_, $URI ) && do {
@@ -1508,9 +1497,9 @@ SWITCH: for ($q) {
     OAR::IO::disconnect($base);
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /resources/generate : Generate resources (needs an external command like oar_resources_add)
+  # POST /resources/generate : Generate resources (needs an external command like oar_resources_add)
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources/generate');
   OAR::API::POST( $_, $URI ) && do {
@@ -1587,13 +1576,13 @@ SWITCH: for ($q) {
     print OAR::API::export($data,$ext);
     last;
   };
-  #}}}
+
 
   ###########################################
   # Accounting
   ###########################################
   #
-  #{{{ GET /accounting[/<user>]?from=<from>,to=<to> : Show accounting informations between 2 unix timestamps
+  # GET /accounting[/<user>]?from=<from>,to=<to> : Show accounting informations between 2 unix timestamps
   #
   $URI = OAR::API::uri_regex_html_json_yaml('accounting(/.+?)?');
   OAR::API::GET( $_, $URI ) && do {
@@ -1657,13 +1646,13 @@ SWITCH: for ($q) {
     print OAR::API::export($accounting,$ext);
     last;
   };
-  #}}}
+
 
   ###########################################
   # Admission rules
   ###########################################
   #
-  #{{{ GET /admission_rules : List of all admissions rules
+  # GET /admission_rules : List of all admissions rules
   #
   $URI = OAR::API::uri_regex_html_json_yaml('admission_rules');
   OAR::API::GET( $_, $URI ) && do {
@@ -1705,9 +1694,9 @@ SWITCH: for ($q) {
     print OAR::API::export($admissions_rules,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /admission_rules/<id> : Details of an admission rule
+  # GET /admission_rules/<id> : Details of an admission rule
   #
   $URI = OAR::API::uri_regex_html_json_yaml('admission_rules/(\d+)');
   OAR::API::GET( $_, $URI ) && do {
@@ -1737,9 +1726,9 @@ SWITCH: for ($q) {
     }
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /admission_rules : Create a new admission rule
+  # POST /admission_rules : Create a new admission rule
   #
   $URI = OAR::API::uri_regex_html_json_yaml('admission_rules');
   (OAR::API::POST( $_, $URI ) || OAR::API::PUT( $_, $URI )) && do {
@@ -1795,9 +1784,9 @@ SWITCH: for ($q) {
     }
     last;
   };
-  #}}}
+
   #
-  #{{{ DELETE /admission_rules/<id> : Delete an admission rule
+  # DELETE /admission_rules/<id> : Delete an admission rule
   #
   $URI = OAR::API::uri_regex_html_json_yaml('admission_rules/(\d+)');
   OAR::API::DELETE( $_, $URI ) && do {
@@ -1834,9 +1823,9 @@ SWITCH: for ($q) {
     }
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /admission_rules/<id>[?method=delete]: Erase or Delete an admission rule
+  # POST /admission_rules/<id>[?method=delete]: Erase or Delete an admission rule
   #
   $URI = OAR::API::uri_regex_html_json_yaml('admission_rules/(\d+)');
   OAR::API::POST( $_, $URI ) && do {
@@ -1908,13 +1897,13 @@ SWITCH: for ($q) {
     }
     last;
   };
-  #}}}
+
 
   ###########################################
   # Config file edition
   ###########################################
   #
-  #{{{ GET /config : List of all the configured variables
+  # GET /config : List of all the configured variables
   #
   $URI = OAR::API::uri_regex_html_json_yaml('config');
   OAR::API::GET( $_, $URI ) && do {
@@ -1946,9 +1935,9 @@ SWITCH: for ($q) {
     print OAR::API::export($parameters,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /config/file : Get the raw configuration file
+  # GET /config/file : Get the raw configuration file
   #
   $URI = OAR::API::uri_regex_html_json_yaml('config/file');
   OAR::API::GET( $_, $URI ) && do {
@@ -1968,9 +1957,9 @@ SWITCH: for ($q) {
     print OAR::API::export($file,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /config/<variable_name> : Get a configuration variable value
+  # GET /config/<variable_name> : Get a configuration variable value
   #
   $URI = OAR::API::uri_regex_html_json_yaml('config/(\w+?)');
   OAR::API::GET( $_, $URI ) && do {
@@ -2009,9 +1998,9 @@ SWITCH: for ($q) {
     print OAR::API::export($parameter,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /config/<variable_name> : Change the value of a configuration parameter
+  # POST /config/<variable_name> : Change the value of a configuration parameter
   #
   $URI = OAR::API::uri_regex_html_json_yaml('config/(\w+?)');
   OAR::API::POST( $_, $URI ) && do {
@@ -2060,13 +2049,13 @@ SWITCH: for ($q) {
     print OAR::API::export($result,$ext);
     last;
   };
-  #}}}
+
 
   ###########################################
   # Desktop computing specific
   ###########################################
   #
-  #{{{ GET /desktop/agents : Desktop computing agent sign in
+  # GET /desktop/agents : Desktop computing agent sign in
   #
   $URI = OAR::API::uri_regex_html_json_yaml('desktop/agents');
   OAR::API::GET( $_, $URI ) && do {
@@ -2094,13 +2083,13 @@ SWITCH: for ($q) {
 
     last;
   };
-  #}}}
+
 
   ###########################################
   # Media (files) download/upload
   ###########################################
   #
-  #{{{ GET /media/ls/<path> : List files
+  # GET /media/ls/<path> : List files
   #
   $URI = OAR::API::uri_regex_no_tail('media/ls/(.*)');
   OAR::API::GET( $_, $URI ) && do {
@@ -2153,9 +2142,9 @@ SWITCH: for ($q) {
     print OAR::API::export($listing,$ext);
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /media/<file>?tail=<n> : Get a file (tail it to <n> lines if specified)
+  # GET /media/<file>?tail=<n> : Get a file (tail it to <n> lines if specified)
   #
   $URI = OAR::API::uri_regex_no_tail('media/(.*)');
   OAR::API::GET( $_, $URI ) && do {
@@ -2206,9 +2195,9 @@ SWITCH: for ($q) {
     }
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /media/chmod/<file>?mode=<mode> : Change the unix mode of a file
+  # POST /media/chmod/<file>?mode=<mode> : Change the unix mode of a file
   #
   $URI = OAR::API::uri_regex_no_tail('media/chmod/(.*)');
   OAR::API::POST( $_, $URI ) && do {
@@ -2259,9 +2248,9 @@ SWITCH: for ($q) {
     print $q->header( -status => 202, -type => "application/octet-stream" , -location => "/media/$file" );
     last;
   };
-  #}}}
+
   #
-  #{{{ POST /media/<file> : Upload a file and create underlying directories
+  # POST /media/<file> : Upload a file and create underlying directories
   #
   $URI = OAR::API::uri_regex_no_tail('media(/force)?/(.*)');
   OAR::API::POST( $_, $URI ) && do {
@@ -2357,9 +2346,9 @@ SWITCH: for ($q) {
                      } , $ext );
     last;
   };
-  #}}}
+
   #
-  #{{{ DELETE /media/<file> : Delete a file or a directory recursively
+  # DELETE /media/<file> : Delete a file or a directory recursively
   #
   $URI = OAR::API::uri_regex_no_tail('media/(.*)');
   OAR::API::DELETE( $_, $URI ) && do {
@@ -2400,13 +2389,13 @@ SWITCH: for ($q) {
     print `$OARDODO_CMD rm -rf $file`;
     last;
   };
-  #}}}
+
 
   ###########################################
   # SQL queries
   ###########################################
   #
-  #{{{ GET /select_all?query=<query>) : Allows select SQL queries into the OAR database (ro)
+  # GET /select_all?query=<query>) : Allows select SQL queries into the OAR database (ro)
   #
   $URI = OAR::API::uri_regex_html_json_yaml('select_all(.*?)');
   OAR::API::GET( $_, $URI ) && do {
@@ -2471,13 +2460,13 @@ SWITCH: for ($q) {
     OAR::IO::disconnect($dbh);
     last;
   };
-  #}}}
+
 
   ###########################################
   # Colmet
   ############################################
   #
-  #{{{ GET /colmet/job/<id>?[from=timestamp]&[to=timestamp]&[metrics=m1,m2...] : Extract colmet data for the given job
+  # GET /colmet/job/<id>?[from=timestamp]&[to=timestamp]&[metrics=m1,m2...] : Extract colmet data for the given job
   #
   $URI = OAR::API::uri_regex_no_tail('colmet/job/(\d+)');
   OAR::API::GET( $_, $URI ) && do {
@@ -2558,13 +2547,13 @@ SWITCH: for ($q) {
     print $cmdRes;
     last;
   };
-  #}}}
+
 
   ###########################################
   # Html stuff
   ###########################################
   #
-  #{{{ GET /index : Welcome page (html only)
+  # GET /index : Welcome page (html only)
   #
   $URI = OAR::API::uri_regex_no_tail('index\.html');
   OAR::API::GET( $_, $URI ) && do {
@@ -2573,9 +2562,9 @@ SWITCH: for ($q) {
     print "Welcome on the oar API\n";
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /jobs/form : Html form for job posting
+  # GET /jobs/form : Html form for job posting
   #
   $URI = OAR::API::uri_regex_no_tail('form\.html');
   OAR::API::GET( $_, $URI ) && do {
@@ -2593,9 +2582,9 @@ SWITCH: for ($q) {
     print $POSTFORM;
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /admission_rules/form : Html form for admission rules submission
+  # GET /admission_rules/form : Html form for admission rules submission
   #
   $URI = OAR::API::uri_regex_no_tail('admission_rules/form\.html');
   OAR::API::GET( $_, $URI ) && do {
@@ -2611,9 +2600,9 @@ SWITCH: for ($q) {
     print $POSTFORM;
     last;
   };
-  #}}}
+
   #
-  #{{{ GET /resources/form : Html form for resources generation
+  # GET /resources/form : Html form for resources generation
   #
   $URI = OAR::API::uri_regex_no_tail('resources/form\.html');
   OAR::API::GET( $_, $URI ) && do {
@@ -2629,14 +2618,14 @@ SWITCH: for ($q) {
     print $POSTFORM;
     last;
   };
-  #}}}
+
   #
 
   ###########################################
   # Misc
   ###########################################
   #
-  #{{{ GET /stress_factor/<cluster_name> : return the stress factor of the given cluster
+  # GET /stress_factor/<cluster_name> : return the stress factor of the given cluster
   #
   $URI = OAR::API::uri_regex_html_json_yaml('stress_factor');
   OAR::API::GET( $_, $URI ) && do {
@@ -2671,7 +2660,7 @@ SWITCH: for ($q) {
     print OAR::API::export(\%output,$ext);
     last;
   };
-  #}}}
+
 
   ###########################################
   # Anything else -> 404
