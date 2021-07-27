@@ -26,7 +26,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-# 
+#
 
 use strict;
 use DBI();
@@ -175,14 +175,14 @@ if ( defined( $ENV{AUTHENTICATE_UID} ) && $ENV{AUTHENTICATE_UID} ne "" ) {
 else {
   # Get ident id from headers or from environement if not in the headers
   my $remote_ident="";
-  if (defined($q->http('X_REMOTE_IDENT'))) { 
-    $remote_ident=$q->http('X_REMOTE_IDENT'); 
-  }elsif (defined($ENV{X_REMOTE_IDENT})) { 
-    $remote_ident=$ENV{X_REMOTE_IDENT}; 
+  if (defined($q->http('X_REMOTE_IDENT'))) {
+    $remote_ident=$q->http('X_REMOTE_IDENT');
+  }elsif (defined($ENV{X_REMOTE_IDENT})) {
+    $remote_ident=$ENV{X_REMOTE_IDENT};
   }
   if ( $TRUST_IDENT
     && $remote_ident ne ""
-    && $remote_ident ne "unknown" 
+    && $remote_ident ne "unknown"
     && $remote_ident ne "(null)" )
   {
     $authenticated_user = $remote_ident;
@@ -238,38 +238,38 @@ SWITCH: for ($q) {
                   "apilib_version" => OAR::API::get_version(),
                   "api_timestamp" => time(),
                   "api_timezone" => strftime("%Z", localtime()),
-                  "links" => [ 
-                      { 'rel' => 'self' , 
-                        'href' => OAR::API::htmlize_uri(OAR::API::make_uri("./",$ext,0),$ext) 
+                  "links" => [
+                      { 'rel' => 'self' ,
+                        'href' => OAR::API::htmlize_uri(OAR::API::make_uri("./",$ext,0),$ext)
                       },
-                      { 'rel' => 'collection', 
+                      { 'rel' => 'collection',
                         'href' => OAR::API::htmlize_uri(OAR::API::make_uri("resources",$ext,0),$ext),
                         'title' => 'resources'
                       } ,
-                      { 'rel' => 'collection', 
+                      { 'rel' => 'collection',
                         'href' => OAR::API::htmlize_uri(OAR::API::make_uri("resources/details",$ext,0),$ext),
                         'title' => 'full_resources'
                       } ,
-                      { 'rel' => 'collection', 
+                      { 'rel' => 'collection',
                         'href' => OAR::API::htmlize_uri(OAR::API::make_uri("jobs",$ext,0),$ext),
                         'title' => 'jobs'
                       } ,
-                      { 'rel' => 'collection', 
+                      { 'rel' => 'collection',
                         'href' => OAR::API::htmlize_uri(OAR::API::make_uri("jobs/details",$ext,0),$ext),
                         'title' => 'detailed_jobs'
                       } ,
-                      { 'rel' => 'collection', 
+                      { 'rel' => 'collection',
                         'href' => OAR::API::htmlize_uri(OAR::API::make_uri("jobs/table",$ext,0),$ext),
                         'title' => 'jobs_table'
                       } ,
-                      { 'rel' => 'collection', 
+                      { 'rel' => 'collection',
                         'href' => OAR::API::htmlize_uri(OAR::API::make_uri("config",$ext,0),$ext),
                         'title' => 'config'
                       } ,
-                      { 'rel' => 'collection', 
+                      { 'rel' => 'collection',
                         'href' => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules",$ext,0),$ext),
                         'title' => 'admission_rules'
-                      } 
+                      }
                              ]
              };
     print $header;
@@ -321,7 +321,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = OAR::API::set_ext($q,$1);
     (my $header, my $type)=OAR::API::set_output_format($ext);
-    my $version={ 
+    my $version={
                   "api_timestamp" => time(),
                   "timezone" => strftime("%Z", localtime())
                 };
@@ -342,9 +342,9 @@ SWITCH: for ($q) {
   OAR::API::GET( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $ext=OAR::API::set_ext($q,$2);
-    my $header ; my $type; 
+    my $header ; my $type;
     my $more_infos=$1;
-    if (!defined($more_infos)) { 
+    if (!defined($more_infos)) {
       ($header,$type)=OAR::API::set_output_format($ext,"GET, POST");
     }else{
       ($header,$type)=OAR::API::set_output_format($ext);
@@ -358,7 +358,7 @@ SWITCH: for ($q) {
       $ENV{OARDO_USER} = '';
     }
 
-    OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
+    OAR::Stat::open_db_connection or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                           );
@@ -396,7 +396,7 @@ SWITCH: for ($q) {
     if (!defined($q->param('from')) && !defined($q->param('to')) && !defined($q->param('state')) && !defined($q->param('limit'))) {
     	# get limit from defaut url
         my $param = qr{.*limit=(.*?)(&|$)};
-        
+
         if ($JOBS_URI_DEFAULT_PARAMS =~ m/$param/) {
         	$max_items = $1;
         }
@@ -414,20 +414,20 @@ SWITCH: for ($q) {
     # Construct ids array if any
     if (defined($q->param('ids'))) {
       @ids=split(':',$q->param('ids'));
-    } 
+    }
 
     # Get the requested user jobs
     my $jobs = OAR::Stat::get_jobs_for_user_query($user,$from,$to,$state,$max_items,$offset,$array,\@ids);
     my $total_jobs = OAR::Stat::count_jobs_for_user_query($user,$from,$to,$state,$array,\@ids);
-    
+
     if ( !defined $jobs || keys %$jobs == 0 ) {
       $jobs = OAR::API::struct_empty($STRUCTURE);
     }
     else {
-    	
+
     	$jobs = OAR::API::struct_job_list_hash_to_array($jobs);
       	OAR::API::add_joblist_uris($jobs,$ext);
-      	
+
       	if (defined($more_infos)) {
         	if ($more_infos eq "/details") {
            	  # will be useful for cigri and behaves as a oarstat -D
@@ -440,9 +440,9 @@ SWITCH: for ($q) {
                     my $resources = OAR::API::struct_job_resources($job_resources,$STRUCTURE);
                     my $nodes= OAR::API::struct_job_nodes($job_resources,$STRUCTURE);
                     OAR::API::add_resources_uris($resources,$ext,'');
-                    $j->{'resources'}=$resources; 
+                    $j->{'resources'}=$resources;
                     OAR::API::add_nodes_uris($nodes,$ext,'');
-                    $j->{'nodes'}=$nodes; 
+                    $j->{'nodes'}=$nodes;
                     $j = OAR::API::struct_job($j,$STRUCTURE);
                     OAR::API::add_job_uris($j,$ext);
                     push(@$detailed_jobs,$j);
@@ -456,7 +456,7 @@ SWITCH: for ($q) {
       	}
     }
     OAR::Stat::close_db_connection();
-    
+
     # add pagination informations
     $jobs = OAR::API::add_pagination($jobs,$total_jobs,$q->path_info,$q->query_string,$ext,$max_items,$offset,$STRUCTURE);
     print $header;
@@ -475,7 +475,7 @@ SWITCH: for ($q) {
     my $details = $2;
     my $ext=OAR::API::set_ext($q,$3);
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, PUT, DELETE");
-    
+
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
@@ -485,13 +485,13 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_USER} = $authenticated_user;
 
-    OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
+    OAR::Stat::open_db_connection or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
     my $job = OAR::Stat::get_specific_jobs([$jobid]);
     if (@$job == 0 ) {
-      OAR::Stat::close_db_connection; 
+      OAR::Stat::close_db_connection;
       OAR::API::ERROR( 404, "Job not found",
         "Job not found" );
       last;
@@ -512,7 +512,7 @@ SWITCH: for ($q) {
     }
     my $result = OAR::API::struct_job($data,$STRUCTURE);
     OAR::API::add_job_uris($result,$ext);
-    OAR::Stat::close_db_connection; 
+    OAR::Stat::close_db_connection;
     print $header;
     if ($ext eq "html") { OAR::API::job_html_header($data); };
     print OAR::API::export($result,$ext);
@@ -537,10 +537,10 @@ SWITCH: for ($q) {
     my $resources=OAR::API::get_job_resources($job->[0]);
     if ($item eq "resources") {
       $resources = OAR::API::struct_job_resources($resources,$STRUCTURE);
-      OAR::API::add_resources_uris($resources,$ext,''); 
+      OAR::API::add_resources_uris($resources,$ext,'');
     }else{
       $resources = OAR::API::struct_job_nodes($resources,$STRUCTURE);
-      OAR::API::add_nodes_uris($resources,$ext,''); 
+      OAR::API::add_nodes_uris($resources,$ext,'');
     }
     $resources = OAR::API::add_pagination($resources,@$resources,$q->path_info,undef,$ext,0,0,$STRUCTURE);
     print $header;
@@ -561,7 +561,7 @@ SWITCH: for ($q) {
     my $action = $3;
     my $ext=OAR::API::set_ext($q,$4);
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
- 
+
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
@@ -577,12 +577,12 @@ SWITCH: for ($q) {
     my $cmd; my $status;
     if ($action eq "deletions" ) {
       $cmd    = "$OARDODO_CMD $OARDEL_CMD $array $jobid";
-      $status = "Delete request registered"; 
+      $status = "Delete request registered";
     }
     # Checkpoint
     elsif ( $action eq "checkpoints" ) {
       $cmd    = "$OARDODO_CMD $OARDEL_CMD $array -c $jobid";
-      $status = "Checkpoint request registered"; 
+      $status = "Checkpoint request registered";
     }
     # Hold
     elsif ( $action eq "holds" ) {
@@ -606,7 +606,7 @@ SWITCH: for ($q) {
     }
     # Impossible to get here!
     else {
-      OAR::API::ERROR(400,"Bad query","Could not understand ". $action ." method"); 
+      OAR::API::ERROR(400,"Bad query","Could not understand ". $action ." method");
       last;
     }
 
@@ -627,9 +627,9 @@ SWITCH: for ($q) {
         print $HTML_HEADER if ($ext eq "html");
         print OAR::API::export( {
                         'id' => int($1),
-                        'links' => [ { 'rel' => 'self' , 'href' => 
+                        'links' => [ { 'rel' => 'self' , 'href' =>
                           OAR::API::htmlize_uri(OAR::API::make_uri("jobs/$1",$ext,0),$ext) },
-                                     { 'rel' => 'parent', 'href' => 
+                                     { 'rel' => 'parent', 'href' =>
                           OAR::API::htmlize_uri(OAR::API::make_uri("jobs/$jobid",$ext,0),$ext) } ],
                         'status' => "submitted",
                         'cmd_output' => "$cmdRes",
@@ -648,7 +648,7 @@ SWITCH: for ($q) {
                       'status' => "$status",
                       'cmd_output' => "$cmdRes",
                       'api_timestamp' => time(),
-                      'links' => [ { 'rel' => 'self' , 'href' => 
+                      'links' => [ { 'rel' => 'self' , 'href' =>
                           OAR::API::htmlize_uri(OAR::API::make_uri("jobs/$jobid",$ext,0),$ext) } ]
                     } , $ext );
     }
@@ -665,7 +665,7 @@ SWITCH: for ($q) {
     my $jobid = $1;
     my $ext=OAR::API::set_ext($q,$2);
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, PUT, DELETE");
- 
+
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
@@ -685,17 +685,17 @@ SWITCH: for ($q) {
     } else {# From html form
       $job = OAR::API::check_job_update( $q->Vars, $q->content_type );
     }
-    
+
     # Delete (alternative way to DELETE request, for html forms)
     my $cmd; my $status;
     if ( $job->{method} eq "delete" ) {
       $cmd    = "$OARDODO_CMD $OARDEL_CMD $jobid";
-      $status = "Delete request registered"; 
+      $status = "Delete request registered";
     }
     # Checkpoint
     elsif ( $job->{method} eq "checkpoint" ) {
       $cmd    = "$OARDODO_CMD $OARDEL_CMD -c $jobid";
-      $status = "Checkpoint request registered"; 
+      $status = "Checkpoint request registered";
     }
     # Hold
     elsif ( $job->{method} eq "hold" ) {
@@ -710,14 +710,14 @@ SWITCH: for ($q) {
     # Signal
     elsif ( $job->{method} eq "signal" ) {
       $cmd    = "$OARDODO_CMD $OARDEL_CMD -s $job->{signal} $jobid";
-      $status = "Signal sending request registered"; 
+      $status = "Signal sending request registered";
     }
     # Walltime change
     elsif ( $job->{method} eq "walltime-change" ) {
       # nothing here, see below
     }
     else {
-      OAR::API::ERROR(400,"Bad query","Could not understand ". $job->{method} ." method"); 
+      OAR::API::ERROR(400,"Bad query","Could not understand ". $job->{method} ." method");
       last;
     }
 
@@ -743,14 +743,14 @@ SWITCH: for ($q) {
       $http_status = 202;
       $message = OAR::API::send_cmd($cmd,"Oar");
     }
- 
+
     print $q->header( -status => $http_status, -type => "$type" );
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export( { 'id' => "$jobid",
                     'status' => ucfirst($status),
                     'cmd_output' => ucfirst($message),
                     'api_timestamp' => time(),
-                    'links' => [ { 'rel' => 'self' , 'href' => 
+                    'links' => [ { 'rel' => 'self' , 'href' =>
                           OAR::API::htmlize_uri(OAR::API::make_uri("jobs/$jobid",$ext,0),$ext) } ]
                   } , $ext );
     last;
@@ -766,7 +766,7 @@ SWITCH: for ($q) {
     my $signal = $2;
     my $ext=OAR::API::set_ext($q,$3);
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
- 
+
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
@@ -777,7 +777,7 @@ SWITCH: for ($q) {
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
     my $cmd    = "$OARDODO_CMD $OARDEL_CMD -s $signal $jobid";
-    my $status = "Signal sending request registered"; 
+    my $status = "Signal sending request registered";
 
     my $cmdRes = OAR::API::send_cmd($cmd,"Oar");
     print $q->header( -status => 202, -type => "$type" );
@@ -840,7 +840,7 @@ SWITCH: for ($q) {
         $command = " \"$job->{script_path}\"";
         # Expand ~ to home directory
         @user_infos=getpwnam($authenticated_user);
-        $command =~ s|/~/|$user_infos[7]/|;  
+        $command =~ s|/~/|$user_infos[7]/|;
       }
       elsif ($option eq "command") {
         # Escapes double quotes
@@ -848,13 +848,13 @@ SWITCH: for ($q) {
         $command = " \"$job->{command}\"";
         # Expand ~ to home directory
         @user_infos=getpwnam($authenticated_user);
-        $command =~ s|/~/|$user_infos[7]/|;  
+        $command =~ s|/~/|$user_infos[7]/|;
       }
       elsif ($option eq "script") {
         $script = $job->{script};
         # Expand ~ to home directory
         @user_infos=getpwnam($authenticated_user);
-        $script =~ s|/~/|$user_infos[7]/|;  
+        $script =~ s|/~/|$user_infos[7]/|;
       }
       elsif ($option eq "param_file") {
         $param_file = $job->{param_file};
@@ -863,7 +863,7 @@ SWITCH: for ($q) {
         $workdir = $job->{workdir};
         # Expand ~ to home directory
         @user_infos=getpwnam($authenticated_user);
-        $workdir =~ s|/~/|$user_infos[7]/|;  
+        $workdir =~ s|/~/|$user_infos[7]/|;
       }
       elsif (ref($job->{$option}) eq "ARRAY") {
         foreach my $elem (@{$job->{$option}}) {
@@ -901,14 +901,14 @@ SWITCH: for ($q) {
       ($TMP, $tmpfilename) = tempfile( "oarapi.subscript.XXXXX", DIR => $TMPDIR, UNLINK => 1 );
       print $TMP $script;
       # This is probably the most annoying thing about this trick:
-      # the tmp file (owned by oar at this stage) has to be readable by the user. 
-      # So, the user should be warned that his script may be public. 
+      # the tmp file (owned by oar at this stage) has to be readable by the user.
+      # So, the user should be warned that his script may be public.
       # We could make it owned by the user, with a OARDODO call, but it has a
       # performance cost.
       chmod 0755, $tmpfilename;
       $oarcmd .= " ./". basename($tmpfilename);
       $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"cp $tmpfilename $workdir/ && cd $workdir && $oarcmd\"";
-    }else{ 
+    }else{
       $cmd = "$OARDODO_CMD bash --noprofile --norc -c \"cd $workdir && $oarcmd\"";
     }
     # Escapes some special characters (especially security fix with backquote)
@@ -919,7 +919,7 @@ SWITCH: for ($q) {
     if ( $? != 0 ) {
       my $err = $? >> 8;
       # Error codes corresponding to an error into the user's request
-      if ( $err == 6 || $err == 4 || $err == 5 || $err == 7 
+      if ( $err == 6 || $err == 4 || $err == 5 || $err == 7
             || $err == 17 || $err == 16 || $err == 6
             || $err == 8 || $err == 10 ) {
         OAR::API::ERROR(
@@ -1082,13 +1082,13 @@ SWITCH: for ($q) {
     }else{
       ($header, $type)=OAR::API::set_output_format($ext,"GET, POST");
     }
- 
+
     # will the resources need be paged or not
     # by default resources results are paged
     my $paged = 1;
     my $compact = 0;
     my $max_items = $MAX_ITEMS;
-    
+
     # GET limit from uri parameter
     if (defined($q->param('limit'))) {
         $max_items = $q->param('limit');
@@ -1098,9 +1098,9 @@ SWITCH: for ($q) {
     if (defined($q->param('offset'))) {
         $offset = $q->param('offset');
     }
-    
+
     my $resources;
-    OAR::Nodes::open_db_connection or OAR::API::ERROR(500, 
+    OAR::Nodes::open_db_connection or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
@@ -1122,26 +1122,26 @@ SWITCH: for ($q) {
                         OAR::API::ERROR( 404, "Resource not found",
                         "Resource not found" );
         	}
-        	
+
         	# do not need to paging resource detail
         	$paged = 0;
                 $compact = 1;
         }
         else {
                 OAR::Nodes::close_db_connection;
-        	OAR::API::ERROR(500,"Error 666!","Error 666");           
+        	OAR::API::ERROR(500,"Error 666!","Error 666");
         }
     }
     else
     {
     	# get specified intervals of resources
-    	$resources = OAR::Nodes::get_requested_resources($max_items,$offset); 
-        $resources = OAR::API::filter_resource_list($resources); 
+    	$resources = OAR::Nodes::get_requested_resources($max_items,$offset);
+        $resources = OAR::API::filter_resource_list($resources);
     }
     OAR::API::fix_resource_ids($resources);
     OAR::API::add_resources_uris($resources,$ext,'');
     $resources = OAR::API::struct_resource_list($resources,$STRUCTURE,$compact);
-    
+
     # test if resources need to be paged
     if ($paged == 1) {
     	# get the total number of resources
@@ -1165,7 +1165,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext=OAR::API::set_ext($q,$2);
     (my $header, my $type)=OAR::API::set_output_format($ext);
-    OAR::Nodes::open_db_connection or OAR::API::ERROR(500, 
+    OAR::Nodes::open_db_connection or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
@@ -1189,17 +1189,17 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext=OAR::API::set_ext($q,$2);
     (my $header, my $type)=OAR::API::set_output_format($ext);
-    OAR::Nodes::open_db_connection or OAR::API::ERROR(500, 
+    OAR::Nodes::open_db_connection or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
     my $jobs;
-    if ($1 =~ /\/([0-9]+)/)  { 
+    if ($1 =~ /\/([0-9]+)/)  {
         my $job_array=OAR::Nodes::get_jobs_running_on_resource($1);
         foreach my $job_id (@$job_array) {
           push(@$jobs,{id =>int($job_id)});
         }
-        OAR::API::add_jobs_on_resource_uris($jobs,$ext); 
+        OAR::API::add_jobs_on_resource_uris($jobs,$ext);
     }
     OAR::Nodes::close_db_connection;
     $jobs = OAR::API::add_pagination($jobs,@$jobs,$q->path_info,undef,$ext,0,0,$STRUCTURE);
@@ -1217,7 +1217,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $ext = OAR::API::set_ext($q,$2);
     (my $header, my $type)=OAR::API::set_output_format($ext);
-    OAR::Nodes::open_db_connection or OAR::API::ERROR(500, 
+    OAR::Nodes::open_db_connection or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
@@ -1250,8 +1250,8 @@ SWITCH: for ($q) {
       foreach my $job_id (@$job_array) {
         push(@$jobs,{id =>int($job_id)});
       }
-    } 
-    OAR::API::add_jobs_on_resource_uris($jobs,$ext); 
+    }
+    OAR::API::add_jobs_on_resource_uris($jobs,$ext);
     OAR::Nodes::close_db_connection;
     $jobs = OAR::API::add_pagination($jobs,@$jobs,$q->path_info,undef,$ext,0,0,$STRUCTURE);
     print $header;
@@ -1310,7 +1310,7 @@ SWITCH: for ($q) {
   #}}}
   #
   #{{{ POST /resources : Create new resources
-  # 
+  #
   $URI = OAR::API::uri_regex_html_json_yaml('resources');
   OAR::API::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
@@ -1329,7 +1329,7 @@ SWITCH: for ($q) {
       last;
     }
     $ENV{OARDO_BECOME_USER} = "oar";
-  
+
     # Check and get the submited resource
     # From encoded data
     my $resources;
@@ -1341,7 +1341,7 @@ SWITCH: for ($q) {
       $resources = OAR::API::check_resources( $q->Vars, $q->content_type );
     }
 
-    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500, 
+    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
@@ -1354,7 +1354,7 @@ SWITCH: for ($q) {
       if (not $id =~ /^\d+$/) {
         OAR::IO::disconnect($dbh);
         OAR::API::ERROR(500,"SQL query failed into resources creation",$id);
-      } 
+      }
       push(@$result,{ id => $id, links => [ { rel => "self", href => "resources/$id" } ] });
     }
     $result = OAR::API::add_pagination($result,@ids,$q->path_info,$q->query_string,$ext,0,0,$STRUCTURE);
@@ -1365,11 +1365,11 @@ SWITCH: for ($q) {
     OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
     OAR::IO::disconnect($dbh);
     last;
-  }; 
+  };
   #}}}
   #
   #{{{ POST /resources/<id>/state : Change the state of a resource
-  # 
+  #
   $URI = OAR::API::uri_regex_html_json_yaml('resources/(\d+)/state');
   OAR::API::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
@@ -1389,7 +1389,7 @@ SWITCH: for ($q) {
       last;
     }
     $ENV{OARDO_BECOME_USER} = "oar";
-  
+
     # Check and get the submited resource
     # From encoded data
     my $resource;
@@ -1401,14 +1401,14 @@ SWITCH: for ($q) {
       $resource = OAR::API::check_resource_state( $q->Vars, $q->content_type );
     }
 
-    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500, 
+    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
     OAR::IO::set_resource_state($dbh,$id,$resource->{state},"NO");
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    print OAR::API::export( { 
+    print OAR::API::export( {
                       'status' => "Change state request registered",
                       'id' => "$id",
                       'api_timestamp' => time(),
@@ -1418,7 +1418,7 @@ SWITCH: for ($q) {
     OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
     OAR::IO::disconnect($dbh);
     last;
-  }; 
+  };
   #}}}
   #
   #{{{ DELETE /resources/(<id>|<node>/<cpuset) : Delete a resource (by id or node+cpuset)
@@ -1447,11 +1447,11 @@ SWITCH: for ($q) {
     }
     $ENV{OARDO_BECOME_USER} = "oar";
 
-    my $base = OAR::IO::connect() or OAR::API::ERROR(500, 
+    my $base = OAR::IO::connect() or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
- 
+
     # Check if the resource exists
     my $query;
     my $Resource;
@@ -1465,7 +1465,7 @@ SWITCH: for ($q) {
     $sth->execute();
     my @res = $sth->fetchrow_array();
     if ($res[0]) { $Resource=$res[0];}
-    else { 
+    else {
       OAR::IO::disconnect($base);
       OAR::API::ERROR(404,"Not found","Corresponding resource could not be found ($id,$node,$cpuset)");
       last;
@@ -1502,14 +1502,14 @@ SWITCH: for ($q) {
       print OAR::API::export( { 'status' => "deleted",'api_timestamp' => time() } , $ext );
     }else{
       OAR::IO::disconnect($base);
-      OAR::API::ERROR(403,"Forbidden","The resource $Resource must be in the Dead status"); 
+      OAR::API::ERROR(403,"Forbidden","The resource $Resource must be in the Dead status");
       last;
     }
     OAR::IO::disconnect($base);
     last;
   };
   #}}}
-  # 
+  #
   #{{{ POST /resources/generate : Generate resources (needs an external command like oar_resources_add)
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources/generate');
@@ -1541,12 +1541,12 @@ SWITCH: for ($q) {
     # Check and get the submited resource description
     # From encoded data
     my $description;
-    
+
     # command generation
-    my $cmd;    
+    my $cmd;
     # ressources properties
     my $cmd_properties="";
-    
+
     if ($q->param('POSTDATA')) {
       $description = OAR::API::check_resource_description( $q->param('POSTDATA'), $q->content_type );
       # getting properties
@@ -1600,7 +1600,7 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
 
     my $ext=OAR::API::set_ext($q,$2);
-    my $header ; my $type; 
+    my $header ; my $type;
     my $user=$1;
     ($header,$type)=OAR::API::set_output_format($ext,"GET");
 
@@ -1642,7 +1642,7 @@ SWITCH: for ($q) {
                                                  );
     my $accounting = OAR::API::struct_accounting(OAR::IO::get_accounting_summary_byproject($dbh,$from,$to,$user,undef,undef));
     my $total;
-    if (defined($accounting)) { 
+    if (defined($accounting)) {
       $total = @$accounting;
     }else{
       $accounting=OAR::API::struct_empty($STRUCTURE);
@@ -1660,7 +1660,7 @@ SWITCH: for ($q) {
   #}}}
 
   ###########################################
-  # Admission rules 
+  # Admission rules
   ###########################################
   #
   #{{{ GET /admission_rules : List of all admissions rules
@@ -1670,7 +1670,7 @@ SWITCH: for ($q) {
   	$_->path_info =~ m/$URI/;
     my $ext = OAR::API::set_ext($q,$1);
     (my $header, my $type) = OAR::API::set_output_format($ext);
-    
+
     # Must be administrator (oar user)
     OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
 
@@ -1684,20 +1684,20 @@ SWITCH: for ($q) {
     if (defined($q->param('offset'))) {
         $offset = $q->param('offset');
     }
-    OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
+    OAR::Stat::open_db_connection or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                           );
     # get specified intervals of admission rules
     my $admissions_rules = OAR::Stat::get_requested_admission_rules($max_items,$offset);
-    
+
     OAR::API::add_admission_rules_uris($admissions_rules,$ext);
     $admissions_rules = OAR::API::struct_admission_rule_list($admissions_rules,$STRUCTURE);
-    
+
     # get the total number of admissions rules
     my $total_rules = OAR::Stat::count_all_admission_rules();
     OAR::Stat::close_db_connection();
-    
+
     # add pagination informations
     $admissions_rules = OAR::API::add_pagination($admissions_rules,$total_rules,$q->path_info,$q->query_string,$ext,$max_items,$offset,$STRUCTURE);
     print $header;
@@ -1718,8 +1718,8 @@ SWITCH: for ($q) {
 
     # Must be administrator (oar user)
     OAR::API::authenticate_user($authenticated_user,"get admission rules","oar");
- 
-    OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
+
+    OAR::Stat::open_db_connection or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
@@ -1727,12 +1727,12 @@ SWITCH: for ($q) {
     if (defined($admission_rule->{id})) {
       OAR::API::add_admission_rule_uris($admission_rule,$ext);
       $admission_rule = OAR::API::struct_admission_rule($admission_rule,$STRUCTURE);
-      OAR::Stat::close_db_connection; 
+      OAR::Stat::close_db_connection;
       print $header;
       print $HTML_HEADER if ($ext eq "html");
       print OAR::API::export($admission_rule,$ext);
     }else{
-      OAR::Stat::close_db_connection; 
+      OAR::Stat::close_db_connection;
       OAR::API::ERROR(404,"Admission rule not found","No admission rule corresponding to id=$rule_id");
     }
     last;
@@ -1740,7 +1740,7 @@ SWITCH: for ($q) {
   #}}}
   #
   #{{{ POST /admission_rules : Create a new admission rule
-  # 
+  #
   $URI = OAR::API::uri_regex_html_json_yaml('admission_rules');
   (OAR::API::POST( $_, $URI ) || OAR::API::PUT( $_, $URI )) && do {
     $_->path_info =~ m/$URI/;
@@ -1749,7 +1749,7 @@ SWITCH: for ($q) {
 
     # Must be administrator (oar user)
     OAR::API::authenticate_user($authenticated_user,"create admission rules","oar");
-  
+
     # Check and get the submited admission rule
     # From encoded data
     my $admission_rule;
@@ -1765,7 +1765,7 @@ SWITCH: for ($q) {
       $admission_rule = OAR::API::check_admission_rule( $q->Vars, $q->content_type );
     }
 
-    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500, 
+    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
@@ -1775,7 +1775,7 @@ SWITCH: for ($q) {
 
       	print $header;
       	print $HTML_HEADER if ($ext eq "html");
-      	print OAR::API::export( { 
+      	print OAR::API::export( {
                       'id' => "$id",
                       'priority' => "$admission_rule->{priority}",
                       'enalbed' => "$admission_rule->{enabled}",
@@ -1783,10 +1783,10 @@ SWITCH: for ($q) {
                       'api_timestamp' => time(),
                       'uri' => OAR::API::htmlize_uri(OAR::API::make_uri("admission_rules/$id",$ext,0),$ext)
                     } , $ext );
-      	OAR::IO::disconnect($dbh); 
+      	OAR::IO::disconnect($dbh);
     }
     else {
-      OAR::IO::disconnect($dbh); 
+      OAR::IO::disconnect($dbh);
       OAR::API::ERROR(
         500,
         "Admission rule not created",
@@ -1809,7 +1809,7 @@ SWITCH: for ($q) {
     # Must be administrator (oar user)
     OAR::API::authenticate_user($authenticated_user,"delete admission rules","oar");
 
-    OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
+    OAR::Stat::open_db_connection or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
@@ -1818,7 +1818,7 @@ SWITCH: for ($q) {
     if (defined($admission_rule)) {
     	OAR::Stat::delete_specific_admission_rule($rule_id);
     	print $HTML_HEADER if ($ext eq "html");
-    	print OAR::API::export( { 
+    	print OAR::API::export( {
             'id' => "$admission_rule->{id}",
             'priority' => "$admission_rule->{priority}",
             'enalbed' => "$admission_rule->{enabled}",
@@ -1826,10 +1826,10 @@ SWITCH: for ($q) {
             'status' => "deleted",
             'api_timestamp' => time()
         } , $ext );
-        OAR::Stat::close_db_connection; 
+        OAR::Stat::close_db_connection;
     }
     else {
-        OAR::Stat::close_db_connection; 
+        OAR::Stat::close_db_connection;
     	OAR::API::ERROR(404,"Not found","Corresponding admission rule could not be found");
     }
     last;
@@ -1848,7 +1848,7 @@ SWITCH: for ($q) {
     # Must be administrator (oar user)
     OAR::API::authenticate_user($authenticated_user,"edit admission rules","oar");
 
-    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500, 
+    my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
@@ -1911,7 +1911,7 @@ SWITCH: for ($q) {
   #}}}
 
   ###########################################
-  # Config file edition 
+  # Config file edition
   ###########################################
   #
   #{{{ GET /config : List of all the configured variables
@@ -1924,7 +1924,7 @@ SWITCH: for ($q) {
 
     # Must be administrator (oar user)
     OAR::API::authenticate_user($authenticated_user,"get configuration variables","oar");
-    
+
     # get all configured parameters
     my $list_params = get_conf_list();
     # parameters hash result
@@ -1958,11 +1958,11 @@ SWITCH: for ($q) {
 
     # Must be administrator (oar user)
     OAR::API::authenticate_user($authenticated_user,"get configuration variables","oar");
-  
-    my $cmd="$OARDODO_CMD cat $config_file";   
+
+    my $cmd="$OARDODO_CMD cat $config_file";
     my $cmdRes = OAR::API::send_cmd($cmd,"cat $config_file");
     my $file= { 'path' => $config_file, 'file' => $cmdRes };
- 
+
     print $header;
     print $HTML_HEADER if ($ext eq "html");
     print OAR::API::export($file,$ext);
@@ -1978,7 +1978,7 @@ SWITCH: for ($q) {
   	my $variable = $1;
     my $ext = OAR::API::set_ext($q,$2);
     (my $header, my $type) = OAR::API::set_output_format($ext);
-    
+
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
@@ -2019,10 +2019,10 @@ SWITCH: for ($q) {
   	my $variable = $1;
     my $ext = OAR::API::set_ext($q,$2);
     (my $header, my $type) = OAR::API::set_output_format($ext,"GET, POST");
-    
+
     print $header;
     print $HTML_HEADER if ($ext eq "html");
-    
+
     # Must be administrator (oar user)
     if ( not $authenticated_user =~ /(\w+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
@@ -2099,7 +2099,7 @@ SWITCH: for ($q) {
   ###########################################
   # Media (files) download/upload
   ###########################################
-  # 
+  #
   #{{{ GET /media/ls/<path> : List files
   #
   $URI = OAR::API::uri_regex_no_tail('media/ls/(.*)');
@@ -2118,28 +2118,28 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    # Security escaping 
+    # Security escaping
     $path =~ s/(\\*)(`|\$)/$1$1\\$2/g;
 
     # Get the path and replace "~" by the home directory
     $path="/".$path;
     my @user_infos=getpwnam($authenticated_user);
-    $path =~ s|/~/|$user_infos[7]/|;  
- 
+    $path =~ s|/~/|$user_infos[7]/|;
+
     # Check file existency
     if (system("$OARDODO_CMD","test","-d","$path") != 0) {
       OAR::API::ERROR(404, "Not found", "Path not found: $path");
-      last;  
+      last;
     }
-    
+
     # Check file readability
     if (system("$OARDODO_CMD","test","-r","$path") != 0) {
       OAR::API::ERROR(403, "Forbidden","File could not be read: $path" );
-      last;  
+      last;
     }
 
     # Get the listing
-    my $cmd="$OARDODO_CMD ls -l $path";   
+    my $cmd="$OARDODO_CMD ls -l $path";
     my $cmdRes = OAR::API::send_cmd($cmd,"ls");
     my $listing=[];
     my ($l_name, $l_type, $l_size, $l_mtime, $l_mode);
@@ -2171,9 +2171,9 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    # Security escaping 
+    # Security escaping
     $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
-    
+
     # Tail parameter
     my $tail=0;
     if (defined($q->param('tail')) && $q->param('tail') =~ /^\d+$/) {
@@ -2183,18 +2183,18 @@ SWITCH: for ($q) {
     # Get the filename and replace "~" by the home directory
     my $file="/".$filename;
     my @user_infos=getpwnam($authenticated_user);
-    $file =~ s|/~/|$user_infos[7]/|;  
- 
+    $file =~ s|/~/|$user_infos[7]/|;
+
     # Check file existency
     if (system("$OARDODO_CMD","test","-f","$file") != 0) {
       OAR::API::ERROR(404, "Not found", "File not found: $file");
-      last;  
+      last;
     }
-    
+
     # Check file readability
     if (system("$OARDODO_CMD","test","-r","$file") != 0) {
       OAR::API::ERROR(403, "Forbidden","File could not be read: $file" );
-      last;  
+      last;
     }
 
     # Output the file
@@ -2214,7 +2214,7 @@ SWITCH: for ($q) {
   OAR::API::POST( $_, $URI ) && do {
     $_->path_info =~ m/$URI/;
     my $filename = $1;
- 
+
      # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
@@ -2224,14 +2224,14 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    # Security escaping 
+    # Security escaping
     $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
 
     # Get the filename and replace "~" by the home directory
     my $file="/".$filename;
     my @user_infos=getpwnam($authenticated_user);
     $file =~ s|/~/|$user_infos[7]/|;
-    
+
     # Check and get the submitted data
     # From encoded data
     my $chmod;
@@ -2287,13 +2287,13 @@ SWITCH: for ($q) {
         $OAR::API::extension=$ext;
     }
 
-    # Security escaping 
+    # Security escaping
     $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
 
     # Get the filename and replace "~" by the home directory
     my $file="/".$filename;
     my @user_infos=getpwnam($authenticated_user);
-    $file =~ s|/~/|$user_infos[7]/|;  
+    $file =~ s|/~/|$user_infos[7]/|;
 
     # Check if the file already exists
     if (system("$OARDODO_CMD","test","-f","$file") == 0 and ($force eq "" or not defined($force))) {
@@ -2305,15 +2305,15 @@ SWITCH: for ($q) {
     my $path=dirname($file);
     if (system("$OARDODO_CMD","mkdir","-p",$path) != 0) {
       OAR::API::ERROR(500, "mkpath error", "Problem while creating path: $path");
-      last; 
+      last;
     }
 
-   # Touch the file 
+   # Touch the file
    if (system("$OARDODO_CMD","touch",$file) != 0) {
        OAR::API::ERROR(500, "write error", "Error creating file: $file");
-       last; 
+       last;
     }
- 
+
     # Upload file from an html form
     if ($q->content_type =~ /^multipart\/form-data.*/) {
       my $fh = $q->upload('file');
@@ -2331,7 +2331,7 @@ SWITCH: for ($q) {
       if ($q->param('POSTDATA')) {
         if (system("$OARDODO_CMD","touch",$file) != 0) {
           OAR::API::ERROR(500, "write error", "Error creating file: $file");
-          last; 
+          last;
         }
         open (OUTFILE, "|$OARDODO_CMD bash --noprofile --norc -c \"cat > $file\"");
         print OUTFILE $q->param('POSTDATA');
@@ -2342,7 +2342,7 @@ SWITCH: for ($q) {
       last;
     }
     print $q->header( -status => 201, -location => "media/$file" );
-    # Warning: we should do this: 
+    # Warning: we should do this:
     #print $q->header( -status => 201, -type => $type, -location => "media/$file" );
     # But ajax queries form popular browsers add <pre></pre> tags
     # (http://dotclear.placeoweb.com/post/json-error-pre-tag-added-undesirable)
@@ -2351,8 +2351,8 @@ SWITCH: for ($q) {
     print OAR::API::export( {
                         'status' => "created",
                         'success' => "true",
-                        'links' => [ { "rel" => "self", 
-                                       "href" => OAR::API::htmlize_uri(OAR::API::make_uri("media/$file",undef,0),$ext) 
+                        'links' => [ { "rel" => "self",
+                                       "href" => OAR::API::htmlize_uri(OAR::API::make_uri("media/$file",undef,0),$ext)
                                    } ]
                      } , $ext );
     last;
@@ -2375,24 +2375,24 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_BECOME_USER} = $authenticated_user;
 
-    # Security escaping 
+    # Security escaping
     $filename =~ s/(\\*)(`|\$)/$1$1\\$2/g;
 
     # Get the filename and replace "~" by the home directory
     my $file="/".$filename;
     my @user_infos=getpwnam($authenticated_user);
-    $file =~ s|/~/|$user_infos[7]/|;  
- 
+    $file =~ s|/~/|$user_infos[7]/|;
+
     # Check file existency
     if (system("$OARDODO_CMD","test","-e","$file") != 0) {
       OAR::API::ERROR(404, "Not found", "File not found: $file");
-      last;  
+      last;
     }
-    
+
     # Check file readability
     if (system("$OARDODO_CMD","test","-w","$file") != 0) {
       OAR::API::ERROR(403, "Forbidden","File or directory is not writeable: $file" );
-      last;  
+      last;
     }
 
     # Delete the file
@@ -2401,12 +2401,12 @@ SWITCH: for ($q) {
     last;
   };
   #}}}
-  
+
   ###########################################
   # SQL queries
   ###########################################
-  # 
-  #{{{ GET /select_all?query=<query>) : Allows select SQL queries into the OAR database (ro) 
+  #
+  #{{{ GET /select_all?query=<query>) : Allows select SQL queries into the OAR database (ro)
   #
   $URI = OAR::API::uri_regex_html_json_yaml('select_all(.*?)');
   OAR::API::GET( $_, $URI ) && do {
@@ -2419,8 +2419,8 @@ SWITCH: for ($q) {
     if ( not $authenticated_user =~ /(\w+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before looking at jobs" );
-      last;                                     
-    }                                     
+      last;
+    }
     $authenticated_user = $1;
     $ENV{OARDO_USER} = $authenticated_user;
 
@@ -2445,10 +2445,10 @@ SWITCH: for ($q) {
     if (defined($q->param('offset'))) {
         $offset = $q->param('offset');
     }
-   
+
     # Do the query
     # The query should not contain the "SELECT <something> part". Example:
-    #  query="FROM events,jobs WHERE ..." 
+    #  query="FROM events,jobs WHERE ..."
     my $dbh = OAR::IO::connect_ro() or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
@@ -2456,7 +2456,7 @@ SWITCH: for ($q) {
     my $count = OAR::IO::sql_count($dbh,$query) or OAR::IO::disconnect($dbh), OAR::API::ERROR(500,
                                                 "SQL error",
                                                 "SQL error" # <- add here the sql error output
-                                                 ); 
+                                                 );
     my $result = OAR::IO::sql_select($dbh,$query,$limit,$offset) or OAR::IO::disconnect($dbh), OAR::API::ERROR(500,
                                                 "SQL error",
                                                 "SQL error" # <- add here the sql error output
@@ -2484,14 +2484,14 @@ SWITCH: for ($q) {
     $_->path_info =~ m/$URI/;
     my $jobid = $1;
     my $ext=OAR::API::set_ext($q,undef);
-    
+
     if ( not $ext eq "tgz" ) {
       OAR::API::ERROR( 400, "Bad format",
         "Colmet data is only available in compressed JSON , as application/x-gzip" );
-    }    
+    }
 
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET");
-    
+
     # Must be authenticated
     if ( not $authenticated_user =~ /(\w+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
@@ -2501,19 +2501,19 @@ SWITCH: for ($q) {
     $authenticated_user = $1;
     $ENV{OARDO_USER} = $authenticated_user;
 
-    OAR::Stat::open_db_connection or OAR::API::ERROR(500, 
+    OAR::Stat::open_db_connection or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
                                                  );
     my $job = OAR::Stat::get_specific_jobs([$jobid]);
     if (@$job == 0 ) {
-      OAR::Stat::close_db_connection; 
+      OAR::Stat::close_db_connection;
       OAR::API::ERROR( 404, "Job not found",
         "Job not found" );
       last;
     }
 
-    OAR::Stat::close_db_connection; 
+    OAR::Stat::close_db_connection;
 
     my $COLMET_EXTRACT_PATH="/usr/lib/oar/colmet_extract.py";
     if (is_conf("API_COLMET_EXTRACT_PATH")){ $COLMET_EXTRACT_PATH = get_conf("API_COLMET_EXTRACT_PATH"); }
@@ -2526,7 +2526,7 @@ SWITCH: for ($q) {
     }
 
     my $stop_time=$job->[0]->{'stop_time'};
-    if ($stop_time==0) { 
+    if ($stop_time==0) {
         my $dbh = OAR::IO::connect() or OAR::API::ERROR(500,
                                                 "Cannot connect to the database",
                                                 "Cannot connect to the database"
@@ -2549,10 +2549,10 @@ SWITCH: for ($q) {
     }
     my $metrics="ac_etime,cpu_run_real_total,coremem,read_bytes,write_bytes";
     if (defined($q->param('metrics'))) {
-      $metrics=$q->param('metrics'); 
+      $metrics=$q->param('metrics');
     }
     my $cmd="$COLMET_EXTRACT_PATH $COLMET_HDF5_PATH_PREFIX $jobid $start_time $stop_time $metrics";
-    my $cmdRes = OAR::API::send_cmd($cmd,"Oar");    
+    my $cmdRes = OAR::API::send_cmd($cmd,"Oar");
 
     print $header;
     print $cmdRes;
@@ -2631,7 +2631,7 @@ SWITCH: for ($q) {
   };
   #}}}
   #
-  
+
   ###########################################
   # Misc
   ###########################################
