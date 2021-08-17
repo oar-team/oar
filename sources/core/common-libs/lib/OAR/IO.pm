@@ -1712,19 +1712,24 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
              ");
     unlock_table($dbh);
 
-    if (!defined($stdout) or ($stdout eq "")){
-        $stdout = "OAR";
-        $stdout .= ".$job_name" if (defined($job_name));
-        $stdout .= '.%jobid%.stdout';
-    }else{
-        $stdout =~ s/%jobname%/$job_name/g;
-    }
-    if (!defined($stderr) or ($stderr eq "")){
-        $stderr = "OAR";
-        $stderr .= ".$job_name" if (defined($job_name));
-        $stderr .= '.%jobid%.stderr';
-    }else{
-        $stderr =~ s/%jobname%/$job_name/g;
+    if ($jobType eq "INTERACTIVE") {
+            $stdout = "<interactive shell>";
+            $stderr = "<interactive shell>";
+    } else {
+        if (!defined($stdout) or ($stdout eq "")){
+            $stdout = "OAR";
+            $stdout .= ".$job_name" if (defined($job_name));
+            $stdout .= '.%jobid%.stdout';
+        }else{
+            $stdout =~ s/%jobname%/$job_name/g;
+        }
+        if (!defined($stderr) or ($stderr eq "")){
+            $stderr = "OAR";
+            $stderr .= ".$job_name" if (defined($job_name));
+            $stderr .= '.%jobid%.stderr';
+        }else{
+            $stderr =~ s/%jobname%/$job_name/g;
+        }
     }
 
     $stdout = $dbh->quote($stdout);
