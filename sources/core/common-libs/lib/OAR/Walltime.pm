@@ -171,7 +171,10 @@ sub request($$$$$$) {
         return (1, 400, "bad request", "walltime change is null");
     }
 
-    if ($new_walltime_delta_seconds < 0 and uc($Walltime_reduction_disallowed) ne "NO") {
+    # Admins (root and oar users) are allowed to perform walltime reduction, even if
+    # disallowed in configuration
+    if ($new_walltime_delta_seconds < 0 and (uc($Walltime_reduction_disallowed) ne "NO"
+            and !grep(/^$lusr$/,('root','oar')))) {
         return (1, 400, "bad request", "walltime reduction is not allowed");
     }
 
