@@ -237,6 +237,12 @@ PINGCHECKER_SENTINELLE_SCRIPT_COMMAND="%%OARDIR%%/sentinelle.pl -t 30 -w 20"
 #MAIL_SENDER="oar@domain.com"
 # Configuration for module: server
 
+# E-mail's subject sent to users contains by default the (short) hostname of
+# the OAR server. It can not be enough to identify correctly which server was
+# the notification's source. The instance name can be used to change that.
+#INSTANCE_NAME="My OAR instance"
+# Configuration for module: server
+
 ###############################################################################
 
 ###########

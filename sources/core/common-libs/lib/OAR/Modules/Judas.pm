@@ -5,7 +5,7 @@ require Exporter;
 
 use strict;
 use Data::Dumper;
-use OAR::Conf qw(init_conf get_conf is_conf);
+use OAR::Conf qw(init_conf get_conf get_conf_with_default_param is_conf);
 use Net::SMTP;
 use Sys::Hostname;
 use POSIX qw(strftime);
@@ -44,6 +44,8 @@ else{
 
 
 my $mail_recipient = get_conf("MAIL_RECIPIENT");
+
+my $Instance_name = get_conf_with_default_param("INSTANCE_NAME", hostname());
 
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($Openssh_cmd));
@@ -246,8 +248,7 @@ sub notify_user($$$$$$$$){
 
     if ($method =~ m/^.*mail\s*:(.+)$/m){
         OAR::IO::add_new_event($base,"USER_MAIL_NOTIFICATION",$job_id,"[Judas] Send a mail to $1 --> $tag");
-        my $server_hostname = hostname();
-        send_mail($1,"*OAR* [$tag]: $job_id ($job_name) on $server_hostname",$comments,$job_id);
+        send_mail($1,"*OAR* [$tag]: $job_id ($job_name) on $Instance_name",$comments,$job_id);
     }elsif($method =~ m/^.*exec\s*:([a-zA-Z0-9_.\/ -]+)$/m){
         my $cmd = "$Openssh_cmd -x -T $host OARDO_BECOME_USER=$user oardodo $1 $job_id $job_name $tag \\\"$comments\\\" > /dev/null 2>&1";
         $SIG{PIPE} = 'IGNORE';
