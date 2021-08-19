@@ -1,3 +1,17 @@
+oar (2.5.10~g5k9-1) unstable; urgency=low
+
+  * 4fb20a5c [changelog] update CHANGELOG
+  * aa336aec [judas] allow a custom instance name in notification mail subjects
+  * e9b72a68 [IO.pm] do not specify a file name for stderr/stdout for interactive jobs
+  * 195517cd [oarapi] add a environment variable to configure the max cycle of cgi
+  * b2a2aae2 [oarwalltime] always allow admins to perform walltime reduction
+  * c5f2238e [oarwalltime] remove trailing whitespaces
+  * 0fccc4fc [oarapi] remove vim foldings in source code
+  * a260d1e0 [oarapi] remove trailing whitespaces
+  * cd01c1e5 [oar.conf] annotate configuration lines with modules it is used for.
+
+ -- Samir Noir <samir.noir@inria.fr>  Thu, 19 Aug 2021 10:16:30 +0200
+
 oar (2.5.10~g5k8-1) unstable; urgency=low
 
   * acc1e540 [oarnodes] return valid parseable format in each cases
