@@ -53,6 +53,11 @@ version 2.5.10:
   - [oarnodes] fix machine parseables output by returning an empty set
   - [oarnodes] fix uninitialized value with -r option
   - [oarnodes] fix issue when using non existing nodes in arguments
+  - [oar.conf] annotate configuration lines with modules it is used for
+  - [oarwalltime] always allow admins to perform walltime reduction
+  - [oarapi] add a environment variable to configure the max cycle of cgi
+  - [IO.pm] do not specify a file name for stderr/stdout for interactive jobs
+  - [judas] allow a custom instance name in notification mail subjects
 
 version 2.5.9:
 --------------

@@ -19,7 +19,7 @@ Usage:
   $0 [options] <job_id> [<[+/-]new walltime>]
 
 Manage walltime change requests for a job.
-- If no new walltime is given, the command shows the current walltime change 
+- If no new walltime is given, the command shows the current walltime change
   status for the job.
 - If a new walltime is given, the command requests a change of the walltime of the
   job, or update a previous request.
@@ -95,7 +95,7 @@ if (not defined($new_walltime)) {
     }
     OAR::IO::disconnect($dbh);
     exit 0;
-} 
+}
 
 # Request
 my $lusr=$ENV{OARDO_USER};
