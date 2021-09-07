@@ -10,10 +10,10 @@ clean: clean_shared
 
 build:  build_shared
 	# Nothing to do
-	
+
 install: install_shared
 	# Nothing to do
-	
+
 uninstall: uninstall_shared
 	# Nothing to do
 

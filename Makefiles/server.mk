@@ -16,12 +16,12 @@ OARDIR_BINFILES = $(SRCDIR)/modules/scheduler/oar_meta_sched \
 OAR_PERLLIB = $(SRCDIR)/server/lib
 OARDIR_DATAFILES = $(SRCDIR)/modules/runner/oarexec
 
-	  
+
 OARSCHEDULER_BINFILES = $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing \
 		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing \
 		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas \
 		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_placeholder \
-		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder  
+		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder
 OARCONFDIR_BINFILES = $(SRCDIR)/tools/oar_phoenix.pl
 
 MANDIR_FILES = $(SRCDIR)/man/man1/Almighty.1 \
@@ -52,6 +52,8 @@ DEFAULTDIR_FILES = setup/default/oar-server.in
 
 INITDIR_FILES = setup/init.d/oar-server.in
 
+SYSTEMDDIR_FILES = setup/systemd/oar-server.service.in
+
 CRONDIR_FILES = setup/cron.d/oar-server.in
 
 include Makefiles/shared/shared.mk
@@ -67,8 +69,8 @@ clean: clean_shared
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oar_resources_add CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_add
-	$(OARDO_CLEAN) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix	
-	
+	$(OARDO_CLEAN) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix
+
 
 build: build_shared
 	$(MAKE) -f Makefiles/man.mk build
@@ -81,21 +83,21 @@ build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oar_resources_add CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_add
-	$(OARDO_BUILD) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix	
-	
+	$(OARDO_BUILD) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix
+
 install: build install_shared
 	install -d $(DESTDIR)$(OARDIR)/schedulers
-	install -m 0755 $(OARSCHEDULER_BINFILES) $(DESTDIR)$(OARDIR)/schedulers 
-	
+	install -m 0755 $(OARSCHEDULER_BINFILES) $(DESTDIR)$(OARDIR)/schedulers
+
 	install -d $(DESTDIR)$(OARCONFDIR)
 	install -m 0750 $(OARCONFDIR_BINFILES) $(DESTDIR)$(OARCONFDIR)
-	
+
 	install -m 0755 $(SRCDIR)/modules/almighty.pl $(DESTDIR)$(OARDIR)/Almighty
 	install -m 0755 $(SRCDIR)/modules/leon.pl $(DESTDIR)$(OARDIR)/Leon
 	install -m 0755 $(SRCDIR)/modules/sarko.pl $(DESTDIR)$(OARDIR)/sarko
 	install -m 0755 $(SRCDIR)/modules/finaud.pl $(DESTDIR)$(OARDIR)/finaud
 	install -m 0755 $(SRCDIR)/modules/node_change_state.pl $(DESTDIR)$(OARDIR)/NodeChangeState
-	
+
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/Almighty CMD_TARGET=$(DESTDIR)$(SBINDIR)/Almighty
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarnotify CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnotify
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarremoveresource CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarremoveresource
@@ -115,9 +117,9 @@ uninstall: uninstall_shared
 	rm -f $(DESTDIR)$(OARDIR)/sarko
 	rm -f $(DESTDIR)$(OARDIR)/finaud
 	rm -f $(DESTDIR)$(OARDIR)/NodeChangeState
-	
+
 	rm -rf $(DESTDIR)$(EXAMPLEDIR)
-	
+
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/Almighty CMD_TARGET=$(DESTDIR)$(SBINDIR)/Almighty
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnotify CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnotify
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarremoveresource CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarremoveresource
@@ -127,6 +129,6 @@ uninstall: uninstall_shared
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarmonitor CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarmonitor
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oar_resources_init CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_init
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oar_resources_add CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_resources_add
-	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix	
+	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARCONFDIR)/oar_phoenix.pl CMD_TARGET=$(DESTDIR)$(SBINDIR)/oar_phoenix
 
 .PHONY: install setup uninstall build clean

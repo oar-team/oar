@@ -356,33 +356,34 @@ if ($ARGV[0] eq "init"){
                 }
             }
             # Other GPU
-            @devices_deny = ();
-            opendir($dh, "/dev/dri") or exit_myself(5,"Failed to open /dev/dri directory for Enable_devices_cg feature");
-            @files = grep { /renderD/ } readdir($dh);
-            foreach (@files){
-                if ($_ =~ /renderD(\d+)/){
-                    push (@devices_deny, $1-128);
-                }
-            }
-            closedir($dh);
-            if ($#devices_deny > -1){
-                # now remove from denied devices our reserved devices
-                foreach my $r (@{$Cpuset->{'resources'}}){
-                    if (($r->{type} eq "default") and
-                        ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
-                        ($r->{'gpudevice'} ne '')
-                       ){
-                        @devices_deny = grep { $_ !=  $r->{'gpudevice'} } @devices_deny;
+            if (opendir($dh, "/dev/dri")) {
+                @devices_deny = ();
+                @files = grep { /renderD/ } readdir($dh);
+                foreach (@files){
+                    if ($_ =~ /renderD(\d+)/){
+                        push (@devices_deny, $1-128);
                     }
                 }
-                print_log(3,"Deny other GPUs: @devices_deny");
-                my $devices_cgroup = $Cgroup_directory_collection_links."/devices/".$Cpuset_path_job."/devices.deny";
-                foreach my $dev (@devices_deny){
-                    system_with_log("oardodo /bin/echo 'c 226:$dev rwm' > $devices_cgroup")
-                    and exit_myself(5,"Failed to set the devices.deny to c 226:$dev rwm");
-                    my $renderdev = $dev + 128;
-                    system_with_log("oardodo /bin/echo 'c 226:$renderdev rwm' > $devices_cgroup")
-                    and exit_myself(5,"Failed to set the devices.deny to c 226:$renderdev rwm");
+                closedir($dh);
+                if ($#devices_deny > -1){
+                    # now remove from denied devices our reserved devices
+                    foreach my $r (@{$Cpuset->{'resources'}}){
+                        if (($r->{type} eq "default") and
+                            ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
+                            ($r->{'gpudevice'} ne '')
+                           ){
+                            @devices_deny = grep { $_ !=  $r->{'gpudevice'} } @devices_deny;
+                        }
+                    }
+                    print_log(3,"Deny other GPUs: @devices_deny");
+                    my $devices_cgroup = $Cgroup_directory_collection_links."/devices/".$Cpuset_path_job."/devices.deny";
+                    foreach my $dev (@devices_deny){
+                        system_with_log("oardodo /bin/echo 'c 226:$dev rwm' > $devices_cgroup")
+                        and exit_myself(5,"Failed to set the devices.deny to c 226:$dev rwm");
+                        my $renderdev = $dev + 128;
+                        system_with_log("oardodo /bin/echo 'c 226:$renderdev rwm' > $devices_cgroup")
+                        and exit_myself(5,"Failed to set the devices.deny to c 226:$renderdev rwm");
+                    }
                 }
             }
         }

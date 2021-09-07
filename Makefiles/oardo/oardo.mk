@@ -50,9 +50,9 @@ ifeq "$(CMD_TARGET)" ""
 	echo "no CMD_TARGET given. Fail !"
 	exit 1
 endif
-	
+
 	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -o $(CMD_BUILDTARGET) "$(CMD_BUILDTARGET).c"
-	
+
 
 install: $(CMD_TARGET)
 

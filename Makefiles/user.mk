@@ -43,7 +43,7 @@ build: build_shared
 install: install_shared
 	install -d $(DESTDIR)$(BINDIR)
 	install -m 0755 $(SRCDIR)/tools/oarmonitor_graph_gen.pl $(DESTDIR)$(BINDIR)/oarmonitor_graph_gen
-	
+
 	# Install wrappers
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarnodes CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
@@ -54,8 +54,8 @@ install: install_shared
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarresume CMD_TARGET=$(DESTDIR)$(BINDIR)/oarresume
 
 uninstall: uninstall_shared
-	rm -f $(DESTDIR)$(BINDIR)/oarmonitor_graph_gen	
-	
+	rm -f $(DESTDIR)$(BINDIR)/oarmonitor_graph_gen
+
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarnodes CMD_TARGET=$(DESTDIR)$(BINDIR)/oarnodes
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oardel CMD_TARGET=$(DESTDIR)$(BINDIR)/oardel
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarstat CMD_TARGET=$(DESTDIR)$(BINDIR)/oarstat
