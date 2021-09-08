@@ -1,0 +1,2 @@
+rm_conffile /etc/init.d/oar-node 2.5.10~g5k10-2 oar-node
+rm_conffile /etc/default/oar-node 2.5.10~g5k10-2 oar-node
