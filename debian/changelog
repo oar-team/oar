@@ -1,3 +1,13 @@
+oar (2.5.10~g5k10-1) unstable; urgency=low
+
+  * 184e8e50 [Makefiles] Add support for systemd
+  * 3cb02e6b [setup] Add systemd services unit for oar-node and oar-server
+  * 62f34f6d [core/scripts] add oar-node start/stop scripts to launch with systemd
+  * ac52bb6a [Makefiles] remove trailing whitespaces
+  * 8640d350 [job_resource_manager] backport the latest changes from G5K for AMD gpus.
+
+ -- Samir Noir <samir.noir@inria.fr>  Wed, 08 Sep 2021 14:21:45 +0200
+
 oar (2.5.10~g5k9-1) unstable; urgency=low
 
   * 4fb20a5c [changelog] update CHANGELOG
