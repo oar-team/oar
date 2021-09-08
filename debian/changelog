@@ -1,3 +1,9 @@
+oar (2.5.10~g5k10-2) unstable; urgency=low
+
+  * 3dcef41e [debian] Better systemd migration in maintainerscripts
+
+ -- Samir Noir <samir.noir@inria.fr>  Wed, 08 Sep 2021 18:27:56 +0200
+
 oar (2.5.10~g5k10-1) unstable; urgency=low
 
   * 184e8e50 [Makefiles] Add support for systemd
