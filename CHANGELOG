@@ -58,6 +58,11 @@ version 2.5.10:
   - [oarapi] add a environment variable to configure the max cycle of cgi
   - [IO.pm] do not specify a file name for stderr/stdout for interactive jobs
   - [judas] allow a custom instance name in notification mail subjects
+  - [job_resource_manager] backport the latest changes from G5K for AMD gpus
+  - Remove deprecated option in sshd config
+  - [core/scripts] add oar-node start/stop scripts to launch with systemd
+  - [setup] Add systemd services unit for oar-node and oar-server
+  - [Makefiles] Add support for systemd
 
 version 2.5.9:
 --------------
