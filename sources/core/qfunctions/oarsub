@@ -12,6 +12,7 @@ use Sys::Hostname;
 use Getopt::Long;
 use File::Basename;
 use File::Temp qw/ tempfile /;
+use Cwd;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 use OAR::Sub;
 
@@ -81,7 +82,7 @@ my $job_name;
 my $job_env;
 my $job_hold;
 my $Directory;
-my $Directory_default = $ENV{PWD};
+my $Directory_default = getcwd();
 my @Type;
 my @Anterior_job;
 my $Checkpoint_signal;
