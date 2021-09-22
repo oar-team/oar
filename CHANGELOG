@@ -63,6 +63,8 @@ version 2.5.10:
   - [core/scripts] add oar-node start/stop scripts to launch with systemd
   - [setup] Add systemd services unit for oar-node and oar-server
   - [Makefiles] Add support for systemd
+  - [oar-databese] Add option to skip the installation of the default admission
+    rules when creating a new OAR database
 
 version 2.5.9:
 --------------
