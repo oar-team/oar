@@ -6,7 +6,9 @@ package OAR::Monika::OARJob;
 
 use strict;
 #use warnings;
-use OAR::Monika::monikaCGI;
+use Encode qw(decode);
+use utf8::all;
+use OAR::Monika::monikaCGI qw(-utf8);
 use File::Basename;
 use Data::Dumper;
 
@@ -47,7 +49,7 @@ sub set {
   #defined $value or die "which value for $key ?";
   #unless (exists $self->{$key}) {
     #$self->{$key} = [];
-    $self->{$key} = $value;
+    $self->{$key} = decode('utf8',$value);
   #}
   #push @{$self->{$key}},$value;
 

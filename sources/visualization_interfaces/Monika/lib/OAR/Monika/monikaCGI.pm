@@ -7,6 +7,7 @@ use Sort::Naturally;
 #use warnings;
 use base qw(CGI);
 use Data::Dumper;
+use utf8::all;
 
 ## class constructor
 sub new {
@@ -238,11 +239,12 @@ sub page_head {
   my $title = shift;
   my $output = "";
 
-  $output .= $self->header();
+  $output .= $self->header(-type => 'text/html', -charset => 'utf-8');
   $output .= $self->start_html(-title => $title,
                    -link => "black",
                    -vlink => "black",
                    -alink => "darkblue",
+                   -encoding => 'utf-8'
                   );
 }
 

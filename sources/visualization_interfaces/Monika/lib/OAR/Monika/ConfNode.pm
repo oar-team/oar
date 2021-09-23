@@ -3,7 +3,8 @@ package OAR::Monika::ConfNode;
 
 use strict;
 use warnings;
-use OAR::Monika::monikaCGI;
+use utf8::all;
+use OAR::Monika::monikaCGI qw(-uft8);
 
 ## class constructor
 sub new {

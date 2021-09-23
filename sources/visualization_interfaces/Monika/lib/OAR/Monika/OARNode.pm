@@ -6,7 +6,8 @@ package OAR::Monika::OARNode;
 
 use strict;
 use warnings;
-use OAR::Monika::monikaCGI;
+use utf8::all;
+use OAR::Monika::monikaCGI qw(-utf8);
 use OAR::Monika::Conf;
 use Data::Dumper;
 use Time::Local;
