@@ -28,16 +28,16 @@ sub dbConnection($$$$$$){
     my $user = shift;
     my $pwd = shift;
     if($dbtype eq "psql"){
-    	$dbtype = "Pg";
+        $dbtype = "Pg";
     }
     $Db_type = $dbtype;
     $nodes_synonym = OAR::Monika::Conf::myself->nodes_synonym;
     my $connection_string;
     if($port eq "" || !($port>1 && $port<65535)){
-    	$connection_string = "DBI:$dbtype:database=$dbname;host=$host";
+        $connection_string = "DBI:$dbtype:database=$dbname;host=$host";
     }
     else{
-    	$connection_string = "DBI:$dbtype:database=$dbname;host=$host;port=$port";
+        $connection_string = "DBI:$dbtype:database=$dbname;host=$host;port=$port";
     }
     my $dbh= DBI->connect($connection_string, $user, $pwd, {AutoCommit => 1, RaiseError => 1});
     return $dbh;
@@ -77,7 +77,7 @@ sub get_properties_values($$) {
         $current_value = $ref->{'column_name'};
       }
       else{
-      	$current_value = $ref->{'Field'};
+          $current_value = $ref->{'Field'};
       }
       unless (defined($excluded->{$current_value})){
         push(@result, $current_value);

@@ -82,18 +82,18 @@ sub colorTd {
   my $txt2;
   if ($href) {
     $txt2 = $self->a({-href => $href,
-		      -title => $title
-		     },
-		     $self->b($txt)
-		    );
+              -title => $title
+             },
+             $self->b($txt)
+            );
   } else {
     $txt2 = $self->b($txt);
   }
   return $self->td({
-		    -bgcolor => $self->getColor($txt),
-		    -width => $width,
-		    -align => "center"
-		   }, $txt2);
+            -bgcolor => $self->getColor($txt),
+            -width => $width,
+            -align => "center"
+           }, $txt2);
 }
 
 # print a HTML <TD> with a background color corresponding to the text
@@ -129,27 +129,27 @@ sub colorjavascriptTd {
   my $txt2;
   if ($href) {
     $txt2 = $self->a({-href => $href,
-		      -title => $title,
-		     },
-		     $self->b($txt)
-		    );
+              -title => $title,
+             },
+             $self->b($txt)
+            );
   } else {
     $txt2 = $self->b($txt);
   }
   if ($javascript) {
       return $self->td({-class => "fixed_td",
-		   -bgcolor => $self->getColor($txt),
-		    -width => $width,
-		    -align => "center",
+           -bgcolor => $self->getColor($txt),
+            -width => $width,
+            -align => "center",
             -onmouseout => "return nd()",
             -onmouseover => "return overlib('$javascript')"
-		   }, $txt2);
+           }, $txt2);
   } else {   
       return $self->td({
-		    -bgcolor => $self->getColor($txt),
-		    -width => $width,
-		    -align => "center"
-		   }, $txt2);
+            -bgcolor => $self->getColor($txt),
+            -width => $width,
+            -align => "center"
+           }, $txt2);
   }
  }
 
@@ -191,26 +191,26 @@ sub nodeReservationTable {
   #@names = sort {$a <=> $b or $a cmp $b} @names or $is_sorted = 0;
   @names = sort {$a <=> $b or Sort::Naturally::ncmp($a,$b)} @names or $is_sorted = 0;
   $output .= $self->start_table({-border=>"1",
-				 -align => "center"
-				});
+                 -align => "center"
+                });
   $output .= $self->start_Tr();
   my $i=1;
   ## each nodes get printed in the right order
   foreach my $name (@names) {
 #    $output .= $self->start_td({-align => "center",});
-#	$output .= $self->start_form({ action => "input_button.htm"});
-#	$output .= $self->start_form();
-#	$output .= $self->input({
-#							type => "button",
-#							name => "lien",
-#							value => "$name",
-#							onclick => "self.location.href = '".$self->self_url(-query=>0)."?node=".$name."'"
-#							});
-#	$output .= $self->end_form();
-#	$output .= $self->end_td({-align => "center",});
+#    $output .= $self->start_form({ action => "input_button.htm"});
+#    $output .= $self->start_form();
+#    $output .= $self->input({
+#                            type => "button",
+#                            name => "lien",
+#                            value => "$name",
+#                            onclick => "self.location.href = '".$self->self_url(-query=>0)."?node=".$name."'"
+#                            });
+#    $output .= $self->end_form();
+#    $output .= $self->end_td({-align => "center",});
 
     $output .= $self->start_td({-align => "center",
-			       });
+                   });
     #$output .= $self->b($self->small($self->small($self->a({ -href => $self->self_url(-query=>0)."?node=".$name,
     my $cgiName = File::Basename::basename($self->self_url(-query=>0));
     $output .= $self->b($self->small($self->small($self->a({ -href => $cgiName."?node=".$name, -title => "click to see node details" },$$nodes{$name}->displayHTMLname()))));
@@ -240,10 +240,10 @@ sub page_head {
 
   $output .= $self->header();
   $output .= $self->start_html(-title => $title,
-			       -link => "black",
-			       -vlink => "black",
-			       -alink => "darkblue"
-			      );
+                   -link => "black",
+                   -vlink => "black",
+                   -alink => "darkblue",
+                  );
 }
 
 

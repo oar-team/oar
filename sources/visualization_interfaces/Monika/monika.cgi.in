@@ -69,35 +69,35 @@ print $cgi->page_head($conf->clustername." - Monika");
 my $css_path = OAR::Monika::Conf::myself->css_path;
 print "<link rel=\"stylesheet\" type=\"text/css\" href=\"$css_path\">";
 print $cgi->h1({-align => "center"},
-	       $conf->clustername()." "." nodes");
+         $conf->clustername()." "." nodes");
 
 ## if node param is present, show detailed view of the pointed node
 if (defined $cgi->param('node') and defined $nodes{$cgi->param('node')}) {
   my $node = $cgi->param('node');
   print $cgi->h2({-align => "center"},
-		 "Node ".$node." detailed status:");
+     "Node ".$node." detailed status:");
   print $nodes{$node}->htmlStatusTable($cgi);
   print $cgi->h3({ -align => "center" },
-		 $cgi->a({ -href => $cgi->url(-absolute=>1,-query=>0)},
-		"back to main page"
-	      ));
+     $cgi->a({ -href => $cgi->url(-absolute=>1,-query=>0)},
+    "back to main page"
+        ));
 ## if job param is present, show detailed view of the pointed job
 } 
 elsif (defined $cgi->param('job')) { # and defined $oar->alljobs()->{$cgi->param('job')}
   my $job = $cgi->param('job');
   print $cgi->h2({-align => "center"},
-		 "Job ".$job." detailed status:");
-	if(exists($oar->alljobs()->{$job})){
-	  print $oar->alljobs()->{$job}->htmlStatusTable($cgi);
-	}
+     "Job ".$job." detailed status:");
+  if(exists($oar->alljobs()->{$job})){
+    print $oar->alljobs()->{$job}->htmlStatusTable($cgi);
+  }
   else{
     my $jobInfos = $oar->getJobProperties($job, $cgi);
     print $jobInfos->htmlStatusTable($cgi);
   }
   print $cgi->h3({ -align => "center" },
-		 $cgi->a({ -href => $cgi->url(-absolute=>1,-query=>0)},
-		"back to main page"
-	      ));
+     $cgi->a({ -href => $cgi->url(-absolute=>1,-query=>0)},
+    "back to main page"
+        ));
 ## else show the main page
 } else {
   ## print oar status summary
@@ -121,7 +121,7 @@ elsif (defined $cgi->param('job')) { # and defined $oar->alljobs()->{$cgi->param
   ## print oar job status
   print $cgi->br();
   print $cgi->h2({-align => "center"},
-		 "Job details:");
+     "Job details:");
   print $oar->htmlJobTable($cgi);
 }
 #open VERSION, "<./monika/VERSION";
@@ -132,12 +132,12 @@ elsif (defined $cgi->param('job')) { # and defined $oar->alljobs()->{$cgi->param
 #close VERSION;
 ## print © stuff
 print $cgi->h6({ -align => "center",
-		 onmouseover => "popup('Link description here','yellow')",
-		 onmouseout => "kill()"
-	       },
-	       "- ".
-	       $cgi->a({ -href => 'http://oar.imag.fr'},
-		       "Monika - OAR").
-	       " -"
-	      );
+     onmouseover => "popup('Link description here','yellow')",
+     onmouseout => "kill()"
+         },
+         "- ".
+         $cgi->a({ -href => 'http://oar.imag.fr'},
+           "Monika - OAR").
+         " -"
+        );
 print $cgi->end_html();
