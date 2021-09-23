@@ -166,6 +166,8 @@ sub htmlStatusTable {
     $output .= $cgi->td({-valign => "top", bgcolor=> "#c0c0c0"}, $cgi->i($key));
     my $list = $self->getList($key);
     my $val = join $cgi->br(),$list;
+    my $job_id = $self->get('job_id');
+    $val =~ s/%jobid%/$job_id/;
     #$val =~ s/([+,]\s*)/\1<BR>/g;
     $output .= $cgi->td($val);
     $output .= $cgi->end_Tr();
