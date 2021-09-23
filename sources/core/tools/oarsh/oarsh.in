@@ -1,6 +1,6 @@
 #!/bin/bash
 # $Id$
-# In sshd_config you must have this line :
+# In sshd_config you must have this line:
 #     AcceptEnv OAR_CPUSET OAR_JOB_USER
 
 OLDUMASK=$(umask)
@@ -10,7 +10,7 @@ umask 0022
 # Default variable definitions.
 # If you want to change them then make it in the configuration file (oar.conf)
 #
-#echo "OAR configuration file : $OARCONFFILE"
+#echo "OAR configuration file: $OARCONFFILE"
 
 OARSH_OARSTAT_CMD=
 OPENSSH_CMD=/usr/bin/ssh

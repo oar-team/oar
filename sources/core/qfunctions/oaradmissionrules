@@ -210,7 +210,7 @@ GetOptions(
             "priority|P=i" => \$priority,
             "enabled|Y" => sub { $enabled = 1; },
             "disabled|N" => sub { $enabled = 0; },
-            "version|V" => sub { print("OAR version : ".OAR::Version::get_version()."\n"); exit(0) },
+            "version|V" => sub { print("OAR version: ".OAR::Version::get_version()."\n"); exit(0) },
             "help|h"   => sub { print usage(); exit(0); }
           ) or die "\n".usage();
 

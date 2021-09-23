@@ -492,7 +492,7 @@ sub get_job_state($) {
 		##$job_info->{'command'} = '' if (!defined($job_info->{'command'}));
 		#$job_info->{job_name} = '' if (!defined($job_info->{job_name}));
 		
-		#print ("\nDEBUG : ".$job_info->{'job_id'}.
+		#print ("\nDEBUG: ".$job_info->{'job_id'}.
 			#"\n".$job_info->{'job_name'}.
 			#"\n".$job_info->{'job_user'}.
 			#"\n".$job_info->{'submission_time'}.

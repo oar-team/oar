@@ -30,8 +30,8 @@ sub name {
 }
 
 ## return node's ressource state
-# parameters : node, resource id
-# return value : state of the given ressource
+# parameters: node, resource id
+# return value: state of the given ressource
 sub ressourceState($$){
   my $self = shift;
   my $ressource= shift;
@@ -39,8 +39,8 @@ sub ressourceState($$){
 }
 
 ## return node's state
-# parameters : node
-# return value : hash table containing (ressource, state) couples
+# parameters: node
+# return value: hash table containing (ressource, state) couples
 sub state($){
   my $self = shift;
   my %hashResult;
@@ -52,8 +52,8 @@ sub state($){
 }
 
 ## return this node's ressource cores count
-# parameters : node, resource id
-# return value : number of cores of the given ressource
+# parameters: node, resource id
+# return value: number of cores of the given ressource
 #sub ressourceCores($$) {
 #  my $self = shift;
 #  my $ressource= shift;

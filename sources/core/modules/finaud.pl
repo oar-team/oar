@@ -49,7 +49,7 @@ foreach my $i (@node_list_tmp){
 }
 
 my @Nodes_to_check = keys(%Nodes_hash);
-oar_debug("[finaud] Testing resource(s) on : @Nodes_to_check\n");
+oar_debug("[finaud] Testing resource(s) on: @Nodes_to_check\n");
 
 # Call the right program to test each nodes
 my %bad_node_hash;
@@ -77,6 +77,6 @@ foreach my $i (values(%Nodes_hash)){
 
 OAR::IO::disconnect($base);
 
-oar_debug("[finaud] Finaud ended : $return_value\n");
+oar_debug("[finaud] Finaud ended: $return_value\n");
 
 exit($return_value);

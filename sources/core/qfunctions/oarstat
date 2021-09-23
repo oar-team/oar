@@ -516,7 +516,7 @@ sub dump_data($) {
 }
 
 sub print_oar_version {
-    print "OAR version : ".OAR::Stat::get_oar_version()."\n";
+    print "OAR version: ".OAR::Stat::get_oar_version()."\n";
 }
 
 sub print_properties {
@@ -609,11 +609,11 @@ sub show_accounting {
                 $asked=$Consumptions->{$project}->{ASKED}->{$user} if (defined($Consumptions->{$project}->{ASKED}->{$user}));
                 $used = 0;
                 $used=$Consumptions->{$project}->{USED}->{$user} if (defined($Consumptions->{$project}->{USED}->{$user}));
-                printf ("%-28s %s ( %s)\n","    Asked :",$asked,OAR::Stat::get_duration($asked));
-                printf ("%-28s %s ( %s)\n","    Used :",$used,OAR::Stat::get_duration($used));
+                printf ("%-28s %s ( %s)\n","    Asked:",$asked,OAR::Stat::get_duration($asked));
+                printf ("%-28s %s ( %s)\n","    Used:",$used,OAR::Stat::get_duration($used));
                 if (my @last_karma=OAR::Stat::get_last_project_karma($user,$project,OAR::Stat::sql_to_local($date2))) {
                     if ($last_karma[0] =~ m/.*Karma\s*\=\s*(\d+\.\d+)/m){
-                        printf ("%-28s %s\n","    Last Karma :",$1);
+                        printf ("%-28s %s\n","    Last Karma:",$1);
                     }
                 }
             }

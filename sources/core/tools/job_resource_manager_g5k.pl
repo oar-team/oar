@@ -1,4 +1,4 @@
-# INSTALLED BY PUPPET : DO NOT EDIT
+# INSTALLED BY PUPPET: DO NOT EDIT
 #
 # The job_resource_manager_cgroups script is a perl script that oar server
 # deploys on nodes to manage cpusets, users, job keys, ...
@@ -44,9 +44,9 @@
 # Usage:
 # This script is deployed from the server and executed as oar on the nodes
 # ARGV[0] can have two different values:
-#     - "init"  : then this script must create the right cpuset and assign
+#     - "init": then this script must create the right cpuset and assign
 #                 corresponding cpus
-#     - "clean" : then this script must kill all processes in the cpuset and
+#     - "clean": then this script must kill all processes in the cpuset and
 #                 clean the cpuset structure
 
 # TAKTUK_HOSTNAME environment variable must be defined and must be a key
@@ -715,7 +715,7 @@ EOF
     # This code clean any tap device created by the user (bug #5489)
 
     # This file contains all known interfaces (including down inderfaces)
-    # Cf man netdevice /NOTES : "The names of interfaces with no addresses or that don't have the IFF_RUNNING flag set can be found via /proc/net/dev."
+    # Cf man netdevice /NOTES: "The names of interfaces with no addresses or that don't have the IFF_RUNNING flag set can be found via /proc/net/dev."
     my $if_file = '/proc/net/dev';
     if (open(FILE, $if_file)){
         # Storing all known interfaces and their data in a table

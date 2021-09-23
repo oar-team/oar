@@ -1318,8 +1318,8 @@ sub get_key($$$) {
 
 # add_pagination
 # add pagination to a set of record
-# parameters : record,total size,uri path_info,uri query_string,extension,max_items,offset,structure
-# return value : /
+# parameters: record,total size,uri path_info,uri query_string,extension,max_items,offset,structure
+# return value: /
 sub add_pagination($$$$$$$$) {
 	my $record = shift;
 	my $total = shift;
@@ -1567,9 +1567,9 @@ sub sign_in($$$$$) {
 
 # Stop if the user is not authenticated
 # Args: 
-# - #1 : the user as identified by the api
-# - #2 : an informative message
-# - #3 : "undef" or "oar". If "oar", then, it means that the user must be admin
+# - #1: the user as identified by the api
+# - #2: an informative message
+# - #3: "undef" or "oar". If "oar", then, it means that the user must be admin
 sub authenticate_user($$$) {
     my $authenticated_user = shift;
     my $msg = shift;

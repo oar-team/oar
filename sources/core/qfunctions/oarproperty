@@ -40,7 +40,7 @@ GetOptions( "help|h"   => \$Help,
           ) or exit(1);
 
 if (defined($Version)){
-    print("OAR version : ".OAR::Version::get_version()."\n");
+    print("OAR version: ".OAR::Version::get_version()."\n");
     exit(0);
 }
 
@@ -108,7 +108,7 @@ foreach my $p (@Rename_property){
         my $sth = $base->prepare("  SHOW FIELDS
                                     FROM resources
                                  ");
-        $sth->execute() or die("DB error : ".$base->errstr."\n");
+        $sth->execute() or die("DB error: ".$base->errstr."\n");
         my $type;
         my $field = "";
         while (($field ne $old_prop) and (my @ref = $sth->fetchrow_array())){
