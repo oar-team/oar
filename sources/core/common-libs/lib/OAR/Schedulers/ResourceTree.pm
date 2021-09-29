@@ -48,7 +48,7 @@ sub delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($$);
 ###############################################################################
 
 # Create a tree
-# arg : number of needed children
+# arg: number of needed children
 # return the ref of the created tree
 sub new(){
     my $tree_ref;
@@ -57,7 +57,7 @@ sub new(){
     $tree_ref->[2] = undef ;                    # name of the resource
     $tree_ref->[3] = undef ;                    # value of this resource
     $tree_ref->[4] = 0 ;                        # level indicator
-    $tree_ref->[5] = 0 ;                        # needed children number :
+    $tree_ref->[5] = 0 ;                        # needed children number:
                                                 #   -1 means ALL (Alive + Absent + Suspected resources)
                                                 #   -2 means BEST (Alive resources at the time)
     $tree_ref->[6] = 0 ;                        # maximum available children
@@ -73,7 +73,7 @@ sub new(){
 
 # Destroy data structure and tell Perl that the corresponding memory can be
 # reused
-# arg : ROOT tree ref
+# arg: ROOT tree ref
 sub destroy($){
     my $tree_ref = shift;
 
@@ -88,7 +88,7 @@ sub destroy($){
 }
 
 # clone the tree
-# arg : tree ref
+# arg: tree ref
 # return a copy of the tree ref
 sub clone($){
   my $tree_ref = shift;
@@ -110,7 +110,7 @@ sub is_node_a_leaf($){
 
 # add a child to the given tree ref (if child resource name is undef it seems
 # that this child is a leaf of the tree)
-# arg : tree ref, resource name, resource value, tree root ref
+# arg: tree ref, resource name, resource value, tree root ref
 # return the ref of the child
 sub add_child($$$$){
     my $tree_ref = shift;
@@ -204,7 +204,7 @@ sub get_last_child($){
 
 
 # Get the ref of the father tree
-# arg : tree ref
+# arg: tree ref
 # return a tree ref
 sub get_father($){
     my $tree_ref = shift;
@@ -218,7 +218,7 @@ sub get_father($){
 
 
 # Get the current resource name
-# arg : tree ref
+# arg: tree ref
 # return the resource name
 sub get_current_resource_name($){
     my $tree_ref = shift;
@@ -232,7 +232,7 @@ sub get_current_resource_name($){
 
 
 # Get the current resource value
-# arg : tree ref
+# arg: tree ref
 # return the resource value
 sub get_current_resource_value($){
     my $tree_ref = shift;
@@ -246,7 +246,7 @@ sub get_current_resource_value($){
 
 
 # Get the current children number
-# arg : tree ref
+# arg: tree ref
 # return the resource value
 sub get_current_children_number($){
     my $tree_ref = shift;
@@ -260,7 +260,7 @@ sub get_current_children_number($){
 
 
 # Get the current level indicator
-# arg : tree ref
+# arg: tree ref
 # return the level indicator
 sub get_current_level($){
     my $tree_ref = shift;
@@ -275,7 +275,7 @@ sub get_current_level($){
 
 # Get the maximum available number of children
 # (just after the creation of the tree)
-# arg : tree ref
+# arg: tree ref
 # return an integer >= 0
 sub get_max_available_children($){
     my $tree_ref = shift;
@@ -289,7 +289,7 @@ sub get_max_available_children($){
 
 
 # Get the number of needed children
-# arg : tree ref
+# arg: tree ref
 # return the number of needed children
 sub get_needed_children_number($){
     my $tree_ref = shift;
@@ -303,7 +303,7 @@ sub get_needed_children_number($){
 
 
 # Delete a subtree
-# arg : tree ref to delete
+# arg: tree ref to delete
 # return father tree ref
 sub delete_subtree($){
     my $tree_ref = shift;
@@ -344,7 +344,7 @@ sub delete_subtree($){
 # delete_tree_nodes_with_not_enough_resources
 # Delete subtrees that do not fit wanted resources
 # args: tree ref
-# side effect : modify tree data structure
+# side effect: modify tree data structure
 sub delete_tree_nodes_with_not_enough_resources($){
     my $tree_ref = shift;
 
@@ -361,7 +361,7 @@ sub delete_tree_nodes_with_not_enough_resources($){
             # Treate leaf
             while(defined($current_node) and (!defined(get_next_brother($current_node)))){
                 # Step up
-                #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
+                #print("Go to FATHER: ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
                 if ((get_needed_children_number($current_node) > get_current_children_number($current_node))
                     or ((get_needed_children_number($current_node) == -1)                # ALL
                         and (get_max_available_children($current_node) > get_current_children_number($current_node)))
@@ -390,7 +390,7 @@ sub delete_tree_nodes_with_not_enough_resources($){
                     delete_subtree($current_node);
                 }
                 $current_node = get_next_brother($current_node);
-                #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
+                #print("Go to BROTHER: ".get_current_resource_value($current_node)."\n");
             }
         }
     }while(defined($current_node));
@@ -431,12 +431,12 @@ sub get_tree_leafs($){
             while(defined($current_node) and (!defined(get_next_brother($current_node)))){
                 # Step up
                 $current_node = get_father($current_node);
-                #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
+                #print("Go to FATHER: ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
             }
             if (defined(get_next_brother($current_node))){
                 # Treate brother
                 $current_node = get_next_brother($current_node);
-                #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
+                #print("Go to BROTHER: ".get_current_resource_value($current_node)."\n");
             }
         }
     }while(defined($current_node));
@@ -473,12 +473,12 @@ sub get_tree_leafs_vec($){
             while($current_node and (!get_next_brother($current_node))){
                 # Step up
                 $current_node = get_father($current_node);
-                #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
+                #print("Go to FATHER: ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
             }
             if (get_next_brother($current_node)){
                 # Treate brother
                 $current_node = get_next_brother($current_node);
-                #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
+                #print("Go to BROTHER: ".get_current_resource_value($current_node)."\n");
             }
         }
     }while($current_node);
@@ -489,7 +489,7 @@ sub get_tree_leafs_vec($){
 # delete_unnecessary_subtrees
 # Delete subtrees that are not necessary (watch needed_children_number)
 # args: tree ref
-# side effect : modify tree data structure
+# side effect: modify tree data structure
 sub delete_unnecessary_subtrees($){
     my $tree_ref = shift;
 
@@ -512,12 +512,12 @@ sub delete_unnecessary_subtrees($){
                 while(defined($current_node) and (!defined(get_next_brother($current_node)))){
                     # Step up
                     $current_node = get_father($current_node);
-                    #print("Go to FATHER : ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
+                    #print("Go to FATHER: ".get_current_resource_value($current_node)."\n") if (defined(get_current_resource_value($current_node)));
                 }
                 if (defined(get_next_brother($current_node))){
                     # Treate brother
                     $current_node = get_next_brother($current_node);
-                    #print("Go to BROTHER : ".get_current_resource_value($current_node)."\n");
+                    #print("Go to BROTHER: ".get_current_resource_value($current_node)."\n");
                 }
             }
         }
@@ -529,7 +529,7 @@ sub delete_unnecessary_subtrees($){
 # delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees
 # Delete subtrees that do not fit wanted resources and unnecessary one
 # args: tree ref, bit vector with authorized leafs (resource_id)
-# side effect : modify tree data structure
+# side effect: modify tree data structure
 sub delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($$){
     my $tree_ref = shift;
     my $authorized_leafs_vec = shift;   # if undef then all resources are authorized
@@ -546,7 +546,7 @@ sub delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($$){
             # Go to child
             $nb_children_validated{$current_node} = 0;
             $current_node = get_last_child($current_node);
-#            print("Go to CHILD : ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
+#            print("Go to CHILD: ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
         }else{
             # Treate leaf
             if (defined($authorized_leafs_vec)
@@ -555,7 +555,7 @@ sub delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($$){
                 and (get_current_resource_name($current_node) eq "resource_id")
                 and (!vec($authorized_leafs_vec, get_current_resource_value($current_node), 1))
                ){
-#                    print("DELETE LEAF : ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
+#                    print("DELETE LEAF: ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
                     # This leaf is not available
                     my $tmp_prev = get_previous_brother($current_node);
                     $current_node = delete_subtree($current_node);
@@ -576,14 +576,14 @@ sub delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($$){
                        ){
                         # we want to delete the root
                         return(undef) if ($tree_ref == $current_node);
-#                       print("DELETE 2 : ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
+#                       print("DELETE 2: ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
                         # Delete sub tree that does not fit with wanted resources 
                         $current_node = delete_subtree($current_node);
                     }else{
                         # Step up
                         $current_node = get_father($current_node);
                         $nb_children_validated{$current_node}++ if ($current_node);
-#                       print("Go to FATHER : ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)." ($nb_children_validated{$current_node}/".get_needed_children_number($current_node).")\n") if (defined(get_current_resource_value($current_node)));
+#                       print("Go to FATHER: ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)." ($nb_children_validated{$current_node}/".get_needed_children_number($current_node).")\n") if (defined(get_current_resource_value($current_node)));
                     }
                 }
     
@@ -597,7 +597,7 @@ sub delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($$){
                         # We have enough nodes at this stage
                         $current_node->[7] = undef;  # purge the rest of brothers
                         #$tmp_father->[10] = $nb_children_validated{$tmp_father} + 1;
-#                       print("PURGE BROTHERS : ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."($tmp_father->[10])\n");
+#                       print("PURGE BROTHERS: ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."($tmp_father->[10])\n");
                     }
                 }
     
@@ -610,7 +610,7 @@ sub delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($$){
                             and (get_current_children_number($current_node) <= 0))
                         or (get_needed_children_number($current_node) == 0)                  # For stupid requests with 0 item wanted
                        ){
-#                       print("DELETE 3 : ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
+#                       print("DELETE 3: ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
                         # Delete sub tree that does not fit with wanted resources 
                         delete_subtree($current_node);
                     }elsif ($tree_ref != $current_node){
@@ -618,7 +618,7 @@ sub delete_tree_nodes_with_not_enough_resources_and_unnecessary_subtrees($$){
                     }
                     $current_node = get_previous_brother($current_node) ;
                     $nb_children_validated{$current_node} = 0;
-#                   print("Go to BROTHER : ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
+#                   print("Go to BROTHER: ".get_current_resource_name($current_node)."=".get_current_resource_value($current_node)."\n");
                 }
             }
         }

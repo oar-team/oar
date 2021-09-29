@@ -12,6 +12,7 @@ use Sys::Hostname;
 use Getopt::Long;
 use File::Basename;
 use File::Temp qw/ tempfile /;
+use Cwd;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 use OAR::Sub;
 
@@ -81,7 +82,7 @@ my $job_name;
 my $job_env;
 my $job_hold;
 my $Directory;
-my $Directory_default = $ENV{PWD};
+my $Directory_default = getcwd();
 my @Type;
 my @Anterior_job;
 my $Checkpoint_signal;
@@ -225,8 +226,8 @@ sub connect_job($$$){
         }else{
             $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
         }
-        #print("oarsub launchs command : @cmd\n");
-        #essential : you become oar instead of the user
+        #print("oarsub launchs command: @cmd\n");
+        #essential: you become oar instead of the user
         #UID=EUID
         $< = $>;
         print("Connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
@@ -525,7 +526,7 @@ sub parse_resource_descriptions($){
                     $tmp = $Nodes_resources if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -2 });
                 }else{
-                    die("/!\\ Cannot recognize the resource description : $l\n");
+                    die("/!\\ Cannot recognize the resource description: $l\n");
                 }
             }
             $tmp_result{resources} = \@resources_list;
@@ -729,7 +730,7 @@ GetOptions ("resource|l=s" => \@resource,
 
 
 if (defined($Version)){
-    print("OAR version : ".OAR::Sub::get_oar_version()."\n");
+    print("OAR version: ".OAR::Sub::get_oar_version()."\n");
     exit(0);
 }
 
@@ -829,12 +830,12 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         if (defined($scan_result{queue}) && !defined($Queue_name)){
             $Queue_name = $scan_result{queue}
         }elsif(defined($scan_result{queue}) && defined($Queue_name)){
-            warn("/!\\ Ignore script value for queue parameter : $scan_result{queue}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for queue parameter: $scan_result{queue}; another value was given on the command line.\n");
         }
         if (defined($scan_result{property}) && ($Job_sql_properties eq "")){
             $Job_sql_properties = $scan_result{property};
         }elsif(defined($scan_result{property}) && ($Job_sql_properties ne "")){
-            warn("/!\\ Ignore script value for property parameter : $scan_result{property}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for property parameter: $scan_result{property}; another value was given on the command line.\n");
         }
         if (defined($scan_result{resources})){
             push(@resource, @{$scan_result{resources}});
@@ -848,12 +849,12 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         if (defined($scan_result{checkpoint}) && ($Checkpoint == 0)){
             $Checkpoint = $scan_result{checkpoint};
         }elsif(defined($scan_result{checkpoint}) && ($Checkpoint != 0)){
-            warn("/!\\ Ignore script value for checkpoint parameter : $scan_result{checkpoint}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for checkpoint parameter: $scan_result{checkpoint}; another value was given on the command line.\n");
         }
         if (defined($scan_result{notify}) && (!defined($notify))){
             $notify = $scan_result{notify};
         }elsif(defined($scan_result{notify}) && (defined($notify))){
-            warn("/!\\ Ignore script value for notify parameter : $scan_result{notify}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for notify parameter: $scan_result{notify}; another value was given on the command line.\n");
         }
         if (defined($scan_result{directory})){
             $Directory = $scan_result{directory};
@@ -861,37 +862,37 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         if (defined($scan_result{directory}) && (!defined($Directory))){
             $Directory = $scan_result{directory};
         }elsif(defined($scan_result{directory}) && (defined($Directory))){
-            warn("/!\\ Ignore script value for name parameter : $scan_result{directory}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for name parameter: $scan_result{directory}; another value was given on the command line.\n");
         }
         if (defined($scan_result{name}) && (!defined($job_name))){
             $job_name = $scan_result{name};
         }elsif(defined($scan_result{name}) && (defined($job_name))){
-            warn("/!\\ Ignore script value for name parameter : $scan_result{name}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for name parameter: $scan_result{name}; another value was given on the command line.\n");
         }
         if (defined($scan_result{project}) && (!defined($Project))){
             $Project = $scan_result{project};
         }elsif(defined($scan_result{project}) && (defined($Project))){
-            warn("/!\\ Ignore script value for name parameter : $scan_result{project}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for name parameter: $scan_result{project}; another value was given on the command line.\n");
         }
         if (defined($scan_result{hold}) && (!defined($job_hold))){
             $job_hold = $scan_result{hold};
         }elsif(defined($scan_result{hold}) && (defined($job_hold))){
-            warn("/!\\ Ignore script value for hold parameter : $scan_result{hold}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for hold parameter: $scan_result{hold}; another value was given on the command line.\n");
         }
         if (defined($scan_result{signal}) && (!defined($Checkpoint_signal))){
             $Checkpoint_signal = $scan_result{signal};
         }elsif(defined($scan_result{signal}) && (defined($Checkpoint_signal))){
-            warn("/!\\ Ignore script value for hold parameter : $scan_result{signal}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for hold parameter: $scan_result{signal}; another value was given on the command line.\n");
         }
         if (defined($scan_result{stdout}) && (!defined($Stdout_file))){
             $Stdout_file = $scan_result{stdout};
         }elsif(defined($scan_result{stdout}) && (defined($Stdout_file))){
-            warn("/!\\ Ignore script value for stdout parameter : $scan_result{stdout}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for stdout parameter: $scan_result{stdout}; another value was given on the command line.\n");
         }
         if (defined($scan_result{stderr}) && (!defined($Stderr_file))){
             $Stderr_file = $scan_result{stderr};
         }elsif(defined($scan_result{stderr}) && (defined($Stderr_file))){
-            warn("/!\\ Ignore script value for stderr parameter : $scan_result{stderr}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for stderr parameter: $scan_result{stderr}; another value was given on the command line.\n");
         }
         if (defined($scan_result{usejobkey})){
             $use_job_key = 1;
@@ -899,37 +900,37 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         if (defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline eq "")){
             $import_job_key_inline = $scan_result{importjobkeyinlinepriv};
         }elsif(defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline ne "")){
-            warn("/!\\ Ignore script value for import-job-key-inline-priv parameter : $scan_result{importjobkeyinlinepriv}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for import-job-key-inline-priv parameter: $scan_result{importjobkeyinlinepriv}; another value was given on the command line.\n");
         }
         if (defined($scan_result{importjobkeyfromfile}) && ($import_job_key_file eq "")){
             $import_job_key_file = $scan_result{importjobkeyfromfile};
         }elsif(defined($scan_result{importjobkeyfromfile}) && ($import_job_key_file ne "")){
-            warn("/!\\ Ignore script value for import-job-key-from-file parameter : $scan_result{importjobkeyfromfile}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for import-job-key-from-file parameter: $scan_result{importjobkeyfromfile}; another value was given on the command line.\n");
         }
         if (defined($scan_result{exportjobkeytofile}) && ($export_job_key_file eq "")){
             $export_job_key_file = $scan_result{exportjobkeytofile};
         }elsif(defined($scan_result{exportjobkeytofile}) && ($export_job_key_file ne "")){
-            warn("/!\\ Ignore script value for export-job-key-to-file parameter : $scan_result{exportjobkeytofile}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for export-job-key-to-file parameter: $scan_result{exportjobkeytofile}; another value was given on the command line.\n");
         }
         if (defined($scan_result{stagein}) && (!defined($stagein))){
             $stagein = $scan_result{stagein};
         }elsif (defined($scan_result{stagein}) && (defined($stagein))){
-            warn("/!\\ Ignore script value for stagein parameter : $scan_result{stagein}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for stagein parameter: $scan_result{stagein}; another value was given on the command line.\n");
         }
         if (defined($scan_result{stageinmd5sum}) && (!defined($md5sum))){
             $md5sum = $scan_result{stageinmd5sum};
         }elsif(defined($scan_result{stageinmd5sum}) && (defined($md5sum))){
-            warn("/!\\ Ignore script value for stagein-md5sum parameter : $scan_result{stageinmd5sum}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for stagein-md5sum parameter: $scan_result{stageinmd5sum}; another value was given on the command line.\n");
         }
         if (defined($scan_result{array}) && (!defined($array_job_nb))){
             $array_job_nb = $scan_result{array};
         }elsif(defined($scan_result{array}) && (defined($array_job_nb))){
-            warn("/!\\ Ignore script value for array parameter : $scan_result{array}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for array parameter: $scan_result{array}; another value was given on the command line.\n");
         }
         if (defined($scan_result{arrayparamfile}) && (!defined($array_param_file))){
             $array_param_file = $scan_result{arrayparamfile};
         }elsif(defined($scan_result{arrayparamfile}) && (defined($array_param_file))){
-            warn("/!\\ Ignore script value for array-param-file parameter : $scan_result{arrayparamfile}; another value was given on the command line.\n");
+            warn("/!\\ Ignore script value for array-param-file parameter: $scan_result{arrayparamfile}; another value was given on the command line.\n");
         }
     }
 

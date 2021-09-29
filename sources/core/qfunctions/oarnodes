@@ -80,7 +80,7 @@ EOS
 }
 
 sub print_oar_version(){
-    print "OAR version : ".OAR::Nodes::get_oar_version()."\n";
+    print "OAR version: ".OAR::Nodes::get_oar_version()."\n";
 }
 
 sub print_events($$){
@@ -142,7 +142,7 @@ sub print_resources_states_for_hosts($){
         foreach my $current_host (sort keys %{$result} ) {
             print "$current_host\n";
             foreach my $k (sort keys %{$result->{$current_host}} ) {
-                print "    $k : $result->{$current_host}{$k}\n";
+                print "    $k: $result->{$current_host}{$k}\n";
             }
         }
     }
@@ -158,7 +158,7 @@ sub print_resources_states($){
         }
         else {
       while ( my ($k,$v) = each %$resources_states ){
-        print "$k : $v\n";
+        print "$k: $v\n";
       }
         }
 }
@@ -188,12 +188,12 @@ sub print_resources_flat_way($){
     my $resources_info = shift;
     foreach my $id ( sort keys %$resources_info ){
         my $info = $resources_info->{$id};
-        print "network_address : $info->{network_address}\n";
-        print "resource_id : $info->{resource_id}\n";
+        print "network_address: $info->{network_address}\n";
+        print "resource_id: $info->{resource_id}\n";
         if ($info->{state} eq "Absent" && $info->{available_upto} >= time()) {
         $info->{state} .= " (standby)";
         }
-        print "state : $info->{state}\n";
+        print "state: $info->{state}\n";
         if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
         my $properties_to_display='';
         while ( my ($k,$v) = each %$info ){
@@ -207,7 +207,7 @@ sub print_resources_flat_way($){
         }
         chop($properties_to_display); # remove last space
         chop($properties_to_display); # remove last ,
-        print "properties : $properties_to_display\n\n";
+        print "properties: $properties_to_display\n\n";
     }
 }
 

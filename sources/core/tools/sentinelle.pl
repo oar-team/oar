@@ -2,10 +2,10 @@
 # $Id$
 # sentinelle, version in Perl
 #
-# Description : execute a commande on several nodes with a connector like ssh or
+# Description: execute a commande on several nodes with a connector like ssh or
 #               rsh in parrallel. There is a window which limits the number of
 #               processus at the same time; usefull in a cluster
-# Author      : nicolas.capit@imag.fr
+# Author    : nicolas.capit@imag.fr
 #
 
 use Getopt::Long;
@@ -36,7 +36,7 @@ Usage sentinelle.pl -h | [-m node] [-f node_file] [-c connector] [-w window_size
     -p programm to run (default is "true")
     -v verbose mode
 
-    The command returns for each node the tag BAD or GOOD with 3 numbers : exit code, signal number and core dump. If these 3 numbers are equal to 0 then the return tag is GOOD.
+    The command returns for each node the tag BAD or GOOD with 3 numbers: exit code, signal number and core dump. If these 3 numbers are equal to 0 then the return tag is GOOD.
 EOU
                                     
 }
@@ -126,7 +126,7 @@ sub register_wait_results($$){
     if ($pid > 0){
         if (defined($running_processes{$pid})){
             $processDuration{$running_processes{$pid}}->{"end"} = [gettimeofday()] if ($useTime == 1);
-            print(STDERR "[VERBOSE] Child process $pid ended : exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n") if ($verbose);
+            print(STDERR "[VERBOSE] Child process $pid ended: exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n") if ($verbose);
             $finished_processes{$running_processes{$pid}} = [$exit_value,$signal_num,$dumped_core];
             delete($running_processes{$pid});
             $nb_running_processes--;
@@ -153,7 +153,7 @@ while (($index <= $#nodes) or ($#timeout >= 0)){
             if ($pid == 0){
                 #In the child
 	    	my $cmd = "$connector $nodes[$index] $command";
-                print(STDERR "[VERBOSE] Execute command : $cmd\n") if ($verbose);
+                print(STDERR "[VERBOSE] Execute command: $cmd\n") if ($verbose);
                 exec($cmd);
             }
         }else{
@@ -189,7 +189,7 @@ foreach my $i (keys(%finished_processes)){
     }else{
         $exit_code = 1;
     }
-    print(STDERR "$nodes[$i] : $verdict ($finished_processes{$i}->[0],$finished_processes{$i}->[1],$finished_processes{$i}->[2]) ");
+    print(STDERR "$nodes[$i]: $verdict ($finished_processes{$i}->[0],$finished_processes{$i}->[1],$finished_processes{$i}->[2]) ");
 
     if ($useTime == 1){
         my $duration = tv_interval($processDuration{$i}->{"start"}, $processDuration{$i}->{"end"});
@@ -200,14 +200,14 @@ foreach my $i (keys(%finished_processes)){
 }
 
 foreach my $i (keys(%running_processes)){
-    print(STDERR "$nodes[$running_processes{$i}] : BAD (-1,-1,-1) -1 s process disappeared\n");
+    print(STDERR "$nodes[$running_processes{$i}]: BAD (-1,-1,-1) -1 s process disappeared\n");
     $exit_code = 1;
 }
 
 # Print global duration
 if ($useTime == 1){
     $timeEnd = [gettimeofday()];
-    printf(STDERR "Total duration : %.3f s (%d nodes)\n", tv_interval($timeStart, $timeEnd), $nbNodes);
+    printf(STDERR "Total duration: %.3f s (%d nodes)\n", tv_interval($timeStart, $timeEnd), $nbNodes);
 }
 
 

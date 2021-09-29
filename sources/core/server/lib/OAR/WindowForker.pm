@@ -45,7 +45,7 @@ sub register_wait_results($$$$$$$){
     if ($pid > 0){
         if (defined($running_processes->{$pid})){
             $process_duration->{$running_processes->{$pid}}->{"end"} = [gettimeofday()] if ($USE_TIME == 1);
-            warn("[VERBOSE] Child process $pid ended : exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n") if ($verbose);
+            warn("[VERBOSE] Child process $pid ended: exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n") if ($verbose);
             $finished_processes->{$running_processes->{$pid}} = [$exit_value,$signal_num,$dumped_core];
             delete($running_processes->{$pid});
             $$nb_running_processes--;
@@ -61,7 +61,7 @@ sub register_wait_results($$$$$$$){
 # - window time (scalar)
 # - timeout (scalar)
 # - verbose (0 or 1)
-# - type of task (ref on a hash). Default is : %hash = ("type" => "default")
+# - type of task (ref on a hash). Default is: %hash = ("type" => "default")
 
 sub launch($$$$$$){
     my ($commands,
@@ -127,8 +127,8 @@ sub launch($$$$$$){
       %forker_type = ("type" => "default");
     }
 
-    warn("[VERBOSE] Window size : $window_size\n") if ($verbose);
-    warn("[VERBOSE] Timeout for each command : $timeout\n") if ($verbose);
+    warn("[VERBOSE] Window size: $window_size\n") if ($verbose);
+    warn("[VERBOSE] Timeout for each command: $timeout\n") if ($verbose);
     # Start to launch subprocesses with the window limitation
     my @timeout;
     my $pid;
@@ -147,7 +147,7 @@ sub launch($$$$$$){
             if (defined($pid)){
                 if ($pid == 0){
                     #In the child
-                    warn("[VERBOSE] ".time." | $pid Execute command : $commands->[$index]\n") if ($verbose);
+                    warn("[VERBOSE] ".time." | $pid Execute command: $commands->[$index]\n") if ($verbose);
                     if($forker_type{"type"} eq "Hulot"){
                       # If Hulot request
                       my $command_to_exec="";

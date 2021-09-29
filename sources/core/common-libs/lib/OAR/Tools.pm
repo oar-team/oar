@@ -251,7 +251,7 @@ sub set_default_oarexec_directory($){
 }
 
 # Get the name of the file which contains the pid of oarexec
-# arg : job id
+# arg: job id
 sub get_oar_pid_file_name($){
     my $job_id = shift;
 
@@ -259,7 +259,7 @@ sub get_oar_pid_file_name($){
 }
 
 # Get the name of the file which contains the signal given by the user
-# arg : job id
+# arg: job id
 sub get_oar_user_signal_file_name($){
     my $job_id = shift;
 
@@ -267,7 +267,7 @@ sub get_oar_user_signal_file_name($){
 }
 
 # Get the name of the file which contains parent pids of oarsub connections
-# arg : job id
+# arg: job id
 sub get_oarsub_connections_file_name($){
     my $job_id = shift;
 
@@ -285,7 +285,7 @@ sub replace_jobid_tag_in_string($$){
 }
 
 # Send the given signal to the right oarexec process
-# args : host name, job id, signal, wait or not (0 or 1), 
+# args: host name, job id, signal, wait or not (0 or 1), 
 # DB ref (to close it in the child process), ssh cmd, user defined signal 
 # for oardel -s (null by default if not used)
 # return an array with exit values
@@ -368,7 +368,7 @@ sub signal_oarexec($$$$$$$){
 
 
 # exec a command and do not wait its end
-# arg : command, DB ref (to close in the child)
+# arg: command, DB ref (to close in the child)
 sub fork_no_wait($$){
     my $cmd = shift;
     my $base = shift;
@@ -394,7 +394,7 @@ sub fork_no_wait($$){
 
 
 # exec a command and feed its STDIN
-# arg : command, data to send, DB ref (to close it in the child)
+# arg: command, data to send, DB ref (to close it in the child)
 sub fork_and_feed_stdin($$$){
     my $cmd = shift;
     my $timeout = shift;
@@ -425,7 +425,7 @@ sub fork_and_feed_stdin($$$){
 
 
 # exec a command, wait its end and return exit codes
-# arg : command
+# arg: command
 sub launch_command($){
     my $command = shift;
 
@@ -440,7 +440,7 @@ sub launch_command($){
 
 
 # Create the perl script used to execute right command for the user
-# The resulting script can be launched with : perl -e 'script'
+# The resulting script can be launched with: perl -e 'script'
 sub get_oarexecuser_perl_script_for_oarexec($$$$$$$$$$$$$$$@){
     my ($node_file,
         $job_id,
@@ -553,7 +553,7 @@ exit(0);
 
 
 # Create the shell script used to execute right command for the user
-# The resulting script can be launched with : bash -c 'script'
+# The resulting script can be launched with: bash -c 'script'
 sub get_oarexecuser_script_for_oarsub($$$$$$$$$$$$$){
     my ($node_file,
         $job_id,
@@ -629,9 +629,9 @@ sub get_bipbip_oarexec_rendez_vous(){
     return($Ssh_rendez_vous);
 }
 
-# Execute comands with a specified timeout and a maximum number in the same time : window.
+# Execute comands with a specified timeout and a maximum number in the same time: window.
 # Aavoid to overload the computer.
-# args : window size, timeout, command to execute
+# args: window size, timeout, command to execute
 sub sentinelle($$$$$){
     my $window = shift;
     my $timeout = shift;
@@ -751,7 +751,7 @@ sub check_resource_system_property($){
 
 
 # Manage commands on several nodes like cpuset or suspend job
-# args : array of host to connect to, hashtable to transfer, name of the file containing the perl script, action to perform (start or stop), SSH command to use, taktuk cmd or undef, database ref
+# args: array of host to connect to, hashtable to transfer, name of the file containing the perl script, action to perform (start or stop), SSH command to use, taktuk cmd or undef, database ref
 sub manage_remote_commands($$$$$$$){
     my $connect_hosts = shift;
     my $data_hash = shift;

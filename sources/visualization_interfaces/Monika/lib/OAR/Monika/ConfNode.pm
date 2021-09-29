@@ -3,7 +3,8 @@ package OAR::Monika::ConfNode;
 
 use strict;
 use warnings;
-use OAR::Monika::monikaCGI;
+use utf8::all;
+use OAR::Monika::monikaCGI qw(-uft8);
 
 ## class constructor
 sub new {
@@ -42,10 +43,10 @@ sub htmlTable {
   my $cgi = shift;
   my $output = "";
   $output .= $cgi->start_table({-border => "1",
-				-cellspacing => "0",
-				-cellpadding => "0",
-				-width => "100%"
-			       });
+                -cellspacing => "0",
+                -cellpadding => "0",
+                -width => "100%"
+                   });
   $output .= $cgi->start_Tr({-align => "center"});
   $output .= $cgi->colorTd($self->state());
   $output .= $cgi->end_Tr();
@@ -58,8 +59,8 @@ sub htmlStatusTable {
   my $cgi = shift;
   my $output = "";
   $output .= $cgi->start_table({-border=>"1",
-				 -align => "center"
-				});
+                 -align => "center"
+                });
   $output .= $cgi->start_Tr();
 
   $output .= $cgi->th({-align => "left", bgcolor => "#c0c0c0"}, $cgi->i("Nodename"));

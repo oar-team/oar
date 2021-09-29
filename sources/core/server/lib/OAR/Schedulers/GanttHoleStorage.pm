@@ -10,9 +10,9 @@ use Storable qw(store_fd fd_retrieve dclone);
 use warnings;
 use strict;
 
-# Note : All dates are in seconds
+# Note: All dates are in seconds
 # Resources are integer so we store them in bit vectors
-# Warning : this gantt cannot manage overlaping time slots
+# Warning: this gantt cannot manage overlaping time slots
 
 # 2^32 is infinity in 32 bits stored time
 my $Infinity = 4294967296;
@@ -41,10 +41,10 @@ sub pretty_print($){
     my @bits = split(//, unpack("b*", $gantt->[0]->[2]));
     print("@bits\n");
     foreach my $g (@{$gantt}){
-        print("BEGIN : $g->[0](".strftime("%F %T",localtime($g->[0])).")\n");
+        print("BEGIN: $g->[0](".strftime("%F %T",localtime($g->[0])).")\n");
         foreach my $h (@{$g->[1]}){
             @bits = split(//, unpack("b*", $h->[1]));
-            print("    $h->[0](".strftime("%F %T",localtime($h->[0])).") : @bits\n");
+            print("    $h->[0](".strftime("%F %T",localtime($h->[0]))."): @bits\n");
         }
         print("\n");
     }
@@ -52,7 +52,7 @@ sub pretty_print($){
 }
 
 # Creates an empty Gantt
-# arg : number of the max resource id
+# arg: number of the max resource id
 sub new($$){
     my $max_resource_number = shift;
     my $minimum_hole_duration = shift;
@@ -83,7 +83,7 @@ sub new($$){
 
 
 # Creates a Gantt with 1 hole
-# arg : number of the max resource id
+# arg: number of the max resource id
 sub new_with_1_hole($$$$$$){
     my $max_resource_number = shift;
     my $minimum_hole_duration = shift;
@@ -114,7 +114,7 @@ sub new_with_1_hole($$$$$$){
 # (1) First convert the gantts to stripes defined by the start and end times of all jobs
 #     The 2 striped gantts are then easy merged: for every jobs, gantt_stripe(t) |= stripe(job, t)
 # (2) Then convert the striped gantt back to the original gantt structure
-# arg : gantt ref1, gantt ref2
+# arg: gantt ref1, gantt ref2
 sub merge_clone($$) {
     my ($gantt1,$gantt2) = @_;
     #pretty_print($gantt1);
@@ -329,7 +329,7 @@ sub fill_gantts($$$$$$$$$$) {
 }
 
 # Adds and initializes new resources in the gantt
-# args : gantt ref, bit vector of resources
+# args: gantt ref, bit vector of resources
 sub add_new_resources($$) {
     my ($gantt, $resources_vec) = @_;
 
@@ -358,7 +358,7 @@ sub add_new_resources($$) {
 
 
 # Inserts in the gantt new resource occupations
-# args : gantt ref, start slot date, slot duration, resources bit vector
+# args: gantt ref, start slot date, slot duration, resources bit vector
 sub set_occupation($$$$){
     my ($gantt, $date, $duration, $resources_vec) = @_;
 
@@ -535,7 +535,7 @@ sub get_free_resources($$$){
 
 
 # Take a list of resource trees and find a hole that fit
-# args : gantt ref, initial time from which the search will begin, job duration, list of resource trees
+# args: gantt ref, initial time from which the search will begin, job duration, list of resource trees
 sub find_first_hole($$$$$){
     my ($gantt, $initial_time, $duration, $tree_description_list, $timeout) = @_;
 
@@ -585,7 +585,7 @@ sub find_first_hole($$$$$){
             @result_tree_list = ();
             $end_loop = 1;
         }else{
-            #print("Treate hole $current_hole_index, $h : $gantt->[$current_hole_index]->[0] --> $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
+            #print("Treate hole $current_hole_index, $h: $gantt->[$current_hole_index]->[0] --> $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
             $current_time = $gantt->[$current_hole_index]->[0] if ($initial_time < $gantt->[$current_hole_index]->[0]);
             #Check all trees
             my $tree_clone;
@@ -656,7 +656,7 @@ sub find_first_hole($$$$$){
 }
 
 # Take a list of resource trees and find a hole that fit
-# args : gantt ref, initial time from which the search will begin, job duration, list of resource trees
+# args: gantt ref, initial time from which the search will begin, job duration, list of resource trees
 sub find_first_hole_parallel($$$$$$){
     my ($gantt, $initial_time, $duration, $tree_description_list, $timeout, $max_children) = @_;
 
@@ -723,8 +723,8 @@ sub find_first_hole_parallel($$$$$$){
                 if ($pid == 0){
                     #Child
                     close($P1);
-                    #print "PID $$ : $process_index ($current_hole_index)\n";
-                    #print("Treate hole $current_hole_index, $h : $gantt->[$current_hole_index]->[0] --> $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
+                    #print "PID $$: $process_index ($current_hole_index)\n";
+                    #print("Treate hole $current_hole_index, $h: $gantt->[$current_hole_index]->[0] --> $gantt->[$current_hole_index]->[1]->[$h]->[0]\n");
                     $current_time = $gantt->[$current_hole_index]->[0] if ($initial_time < $gantt->[$current_hole_index]->[0]);
                     #Check all trees
                     my $tree_clone;
@@ -759,7 +759,7 @@ sub find_first_hole_parallel($$$$$$){
                         current_hole_index => $current_hole_index
                     );
                     if (defined($tree_clone)){
-                        #print "PID $$; INDEX $process_index : I found a hole\n";
+                        #print "PID $$; INDEX $process_index: I found a hole\n";
                         $result{result_tree_list} = $tree_list;
                     }else{
                         $result{result_tree_list} = undef;

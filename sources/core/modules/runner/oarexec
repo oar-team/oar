@@ -1,25 +1,25 @@
 # $Id$
 #script executed on the first reserved node
 # Exit codes are:
-#     - 0 : everything worked normally
-#     - 1 : prologue error (exit value not equal to 0 or timeout exceeded)
-#     - 2 : epilogue error (exit value not equal to 0 or timeout exceeded)
-#     - 3 : this script was killed by Leon normally
-#     - 4 : this script was killed by Leon normally and epilogue was in error (like for 2)
-#     - 5 : this script was not able to create the node file
-#     - 6 : this script was not able to create the pid file
-#     - 7 : cannot get the shell value for the user
-#     - 8 : this script was not able to create tmp directory
-#     - 12 : cannot go into the launching directory of the job and epilogue was in error
-#     - 10 : cannot go into the launching directory of the job
-#     - 20 : cannot create STDOUT and STDERR files
-#     - 22 : cannot create STDOUT and STDERR files and epilogue was in error
-#     - 30 : timeout of the bipbip hashtable send
-#     - 33 : oarexec was stopped normally via USR1 signal but there was an epilogue error
-#     - 34 : all worked normally and this is the result of an USR1 signal
-#     - 40 : all worked normally and the user process received the checkpoint signal
-#     - 41 : oarexec has sent the checkpoint signal but there was an epilogue error
-#     - 42 : oarexec has sent the user defined signal (oardel -s)
+#     - 0: everything worked normally
+#     - 1: prologue error (exit value not equal to 0 or timeout exceeded)
+#     - 2: epilogue error (exit value not equal to 0 or timeout exceeded)
+#     - 3: this script was killed by Leon normally
+#     - 4: this script was killed by Leon normally and epilogue was in error (like for 2)
+#     - 5: this script was not able to create the node file
+#     - 6: this script was not able to create the pid file
+#     - 7: cannot get the shell value for the user
+#     - 8: this script was not able to create tmp directory
+#     - 12: cannot go into the launching directory of the job and epilogue was in error
+#     - 10: cannot go into the launching directory of the job
+#     - 20: cannot create STDOUT and STDERR files
+#     - 22: cannot create STDOUT and STDERR files and epilogue was in error
+#     - 30: timeout of the bipbip hashtable send
+#     - 33: oarexec was stopped normally via USR1 signal but there was an epilogue error
+#     - 34: all worked normally and this is the result of an USR1 signal
+#     - 40: all worked normally and the user process received the checkpoint signal
+#     - 41: oarexec has sent the checkpoint signal but there was an epilogue error
+#     - 42: oarexec has sent the user defined signal (oardel -s)
 #
 # The exit code is sent to the Almighty via its TCP socket
 #
@@ -430,7 +430,7 @@ if ($Job->{mode} eq "PASSIVE"){
     pipe(pipe_stdin_read,pipe_stdin_write);
     autoflush pipe_stdin_write 1;
     autoflush pipe_stdin_read 1;
-    #print("[oarexec $Job_id] Launch the command : $cmd\n");
+    #print("[oarexec $Job_id] Launch the command: $cmd\n");
     $pid = fork;
     if($pid == 0){
         #CHILD
@@ -527,7 +527,7 @@ while (($line_read != $pid) and ($Stop_signal == 0) and ($stop_loop == 0)){
         }
     }elsif (vec($rin_tmp, fileno(pipe_kill_read), 1)){
         ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_kill_read,1);
-        print("[oarexec $Job_id] pipe kill signal : $res_read,$line_read\n");
+        print("[oarexec $Job_id] pipe kill signal: $res_read,$line_read\n");
         if ($line_read eq "KILL"){
             print("[oarexec $Job_id] kill children\n");
             if ($Job->{mode} eq "INTERACTIVE"){

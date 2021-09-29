@@ -86,13 +86,13 @@ while (1){
     while (($i <= $#ARGV) and ($end_test_cmds == 0)){
         # user command to launch
         my $cmd = $ARGV[$i];
-        print("[".strftime("%F %T", localtime)."] Launch command : $cmd\n");
+        print("[".strftime("%F %T", localtime)."] Launch command: $cmd\n");
 
         my $exit_status = 0;
             
         $cmd_pid = fork();
         if (!defined($cmd_pid)){
-            warn("[SYSTEM-ERROR] Cannot fork a process to launch the command : $cmd. So we close the socket.\n");
+            warn("[SYSTEM-ERROR] Cannot fork a process to launch the command: $cmd. So we close the socket.\n");
             $end_test_cmds = 1;
             close_socket();
         }elsif ($cmd_pid == 0){

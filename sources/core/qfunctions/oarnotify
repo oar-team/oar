@@ -72,7 +72,7 @@ if (defined($sos)){
 }
 
 if (defined($Version)){
-    print("OAR version : ".OAR::Version::get_version()."\n");
+    print("OAR version: ".OAR::Version::get_version()."\n");
     exit(0);
 }
 

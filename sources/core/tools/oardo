@@ -74,6 +74,6 @@ $ENV{HOME} = $tmp[7];
 $ENV{OARUSER} = $tmp[0];
 
 exec($Cmd_wrapper,@clean_argv);
-warn("$Cmd_wrapper: Cannot execute with oar privileges : @clean_argv\n");
+warn("$Cmd_wrapper: Cannot execute with oar privileges '@clean_argv'\n");
 exit(1);
 

@@ -31,7 +31,7 @@ function add_process_to_cpuset() {
     [ "$1" = "undef" ] && return
     CPUSETNAME=$1
     if [ ! -w /dev/cpuset/$CPUSETNAME/tasks ]; then
-        echo "oarsh: Cannot find cpuset file : /dev/cpuset/$CPUSETNAME/tasks" 1>&2
+        echo "oarsh: Cannot find cpuset file /dev/cpuset/$CPUSETNAME/tasks" 1>&2
         exit 61
     fi
     shift

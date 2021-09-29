@@ -6,9 +6,9 @@
 # Usage:
 # This script is deployed from the server and executed as oar on the nodes
 # ARGV[0] can have two different values:
-#     - "init"  : then this script must create the right cpuset and assign
+#     - "init": then this script must create the right cpuset and assign
 #                 corresponding cpus
-#     - "clean" : then this script must kill all processes in the cpuset and
+#     - "clean": then this script must kill all processes in the cpuset and
 #                 clean the cpuset structure
 
 # TAKTUK_HOSTNAME environment variable must be defined and must be a name
