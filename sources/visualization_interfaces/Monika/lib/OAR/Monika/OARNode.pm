@@ -6,7 +6,8 @@ package OAR::Monika::OARNode;
 
 use strict;
 use warnings;
-use OAR::Monika::monikaCGI;
+use utf8::all;
+use OAR::Monika::monikaCGI qw(-utf8);
 use OAR::Monika::Conf;
 use Data::Dumper;
 use Time::Local;
@@ -153,10 +154,10 @@ sub htmlTable {
   my $output = "";
 
   $output .= $cgi->start_table({-border => "1",
-				-cellspacing => "0",
-				-cellpadding => "0",
-				-width => "100%"
-			       });
+                -cellspacing => "0",
+                -cellpadding => "0",
+                -width => "100%"
+                   });
   $output .= $cgi->start_Tr({-align => "center"});
 
   my $cgiName = File::Basename::basename($cgi->self_url(-query=>0));
@@ -176,12 +177,12 @@ sub htmlTable {
       $output .= $cgi->start_td();
       $output .= $cgi->start_table({-border => "1", -cellspacing => "0", -cellpadding => "0", -width => "100%"});
       foreach my $curr_job (@jobs){
-      	$output .= $cgi->start_Tr({-align => "center"});
-      	$output .= $cgi->colorTd($curr_job, 100/$self->cpus."%",$cgiName."?job=$curr_job");
-      	$output .= $cgi->end_Tr();
+        $output .= $cgi->start_Tr({-align => "center"});
+        $output .= $cgi->colorTd($curr_job, 100/$self->cpus."%",$cgiName."?job=$curr_job");
+        $output .= $cgi->end_Tr();
       }
       $output .= $cgi->end_table();
-			$output .= $cgi->end_td();
+      $output .= $cgi->end_td();
     }
     elsif ($ressourceState eq "Alive" && $self->isRessourceWorking($currentRessource) eq '0'){
       my $drain = $self->{Ressources}->{$currentRessource}->{infos}->{drain};

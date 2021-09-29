@@ -6,7 +6,9 @@ package OAR::Monika::OARJob;
 
 use strict;
 #use warnings;
-use OAR::Monika::monikaCGI;
+use Encode qw(decode);
+use utf8::all;
+use OAR::Monika::monikaCGI qw(-utf8);
 use File::Basename;
 use Data::Dumper;
 
@@ -47,7 +49,7 @@ sub set {
   #defined $value or die "which value for $key ?";
   #unless (exists $self->{$key}) {
     #$self->{$key} = [];
-    $self->{$key} = $value;
+    $self->{$key} = decode('utf8',$value);
   #}
   #push @{$self->{$key}},$value;
 
@@ -90,10 +92,10 @@ sub htmlTableRow {
   $output .= $cgi->colorTd($self->jobId(),undef,$cgiName."?job=".$self->jobId(), "click to see job details");
   if (OAR::Monika::Conf::myself()->server_do_mail()) {
     $output .= $cgi->td({-align => "center"},
-			$cgi->a({
-				 -href => "mailto:".$self->get("job_user"),
-				 -title => "click to send mail"
-				}, $self->owner()));
+            $cgi->a({
+                 -href => "mailto:".$self->get("job_user"),
+                 -title => "click to send mail"
+                }, $self->owner()));
   } elsif (OAR::Monika::Conf::myself()->user_infos() ne "") {
     $output .= $cgi->td({-align => "center"},
                         $cgi->a({
@@ -119,13 +121,13 @@ sub htmlTableRow {
   my $initial_request = $self->get("initial_request");
   
   if($initial_request =~ / -t container/){
-  	$type.=" - container";
+      $type.=" - container";
   }
   elsif($initial_request =~ / -t inner=(\d+)/){
-  	$type.=" - inner job (container=$1)";
+      $type.=" - inner job (container=$1)";
   }
   elsif($initial_request =~ / -t timesharing/){
-  	$type.=" - timesharing";
+      $type.=" - timesharing";
   }
 
   $output .= $cgi->td({-align => "center"},$state);
@@ -148,8 +150,8 @@ sub htmlStatusTable {
   my $cgi = shift;
   my $output = "";
   $output .= $cgi->start_table({-border=>"1",
-				 -align => "center"
-				});
+                 -align => "center"
+                });
   $output .= $cgi->start_Tr();
   $output .= $cgi->th({-align => "left", bgcolor => "#c0c0c0"}, $cgi->i("Job Id"));
   $output .= $cgi->th({-align => "left"}, $self->jobId());
@@ -164,6 +166,8 @@ sub htmlStatusTable {
     $output .= $cgi->td({-valign => "top", bgcolor=> "#c0c0c0"}, $cgi->i($key));
     my $list = $self->getList($key);
     my $val = join $cgi->br(),$list;
+    my $job_id = $self->get('job_id');
+    $val =~ s/%jobid%/$job_id/;
     #$val =~ s/([+,]\s*)/\1<BR>/g;
     $output .= $cgi->td($val);
     $output .= $cgi->end_Tr();

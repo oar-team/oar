@@ -257,7 +257,7 @@ $patterns = array();
 // print debug info to the web server error logs
 function debug($d, $str) {
   global $CONF, $display;
-  if ($display != "mobule_ruler_only" and array_key_exists('debug', $CONF) and $CONF['debug'] >= $d) {
+  if ($display != "module_ruler_only" and array_key_exists('debug', $CONF) and $CONF['debug'] >= $d) {
     error_log($str);
   }
 }
@@ -352,7 +352,13 @@ class Db {
     if ($this->backend == "mysql") {
       return mysql_fetch_array($this->result, MYSQL_ASSOC);
     } elseif ($this->backend == "pg") {
-      return pg_fetch_array($this->result, NULL, PGSQL_ASSOC);
+      $line = pg_fetch_array($this->result, NULL, PGSQL_ASSOC);
+      if (is_array($line)) {
+        foreach($line as $k => $v) {
+          $line[$k] = utf8_decode($v);
+        }
+      }
+      return $line;
     } else {
       die ("Unknown database backend: " . $this->backend . " (must be 'mysql' or 'pg'");
     }
@@ -1214,7 +1220,7 @@ $page_width = $gantt_left_align + $gantt_width + $CONF['right_margin'];
 $output_labels = "";
 // SVG headers + script + defs
 $output_headers = <<<EOT
-<?xml version="1.0" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg width="{$page_width}px" height="{$page_height}px" viewBox="0 0 {$page_width} {$page_height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" xml:space="preserve" zoomAndPan="magnify" onload="init(evt)" color-rendering="optimizeSpeed" image-rendering="optimizeSpeed" text-rendering="optimizeSpeed" shape-rendering="optimizeSpeed" onmousedown="rootMouseDown(evt)" onmouseup="rootMouseUp(evt)" onmousemove="rootMouseMove(evt)" onclick="rootClick(evt)" >
 
 <script type="text/ecmascript"><![CDATA[
