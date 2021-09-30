@@ -196,7 +196,8 @@ Depends: ${misc:Depends},
          libsort-naturally-perl,
          libutf8-all-perl,
          php,
-         php-mysql | php-pgsql
+         php-mysql | php-pgsql,
+	 php-xml
 Suggests: oar-doc
 Description: OAR batch scheduler visualization tool package
  OAR is a versatile resource and task manager (also called a batch scheduler)
