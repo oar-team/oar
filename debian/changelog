@@ -1,3 +1,9 @@
+oar (2.5.10~g5k11-2) unstable; urgency=medium
+
+  * 3e85ad01 [deb] add missing php-xml package, required to use utf-8 in drawgantt
+
+ --  <samir.noir@inria.fr>  Thu, 30 Sep 2021 07:32:58 +0000
+
 oar (2.5.10~g5k11-1) unstable; urgency=low
 
   * 2298096c [drawgantt-svg] handle utf8
