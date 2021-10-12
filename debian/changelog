@@ -1,3 +1,13 @@
+oar (2.5.10~g5k12-1) unstable; urgency=medium
+
+  * 273ae464 Revert "[deb] add missing php-xml package, required to use utf-8 in drawgantt" (utf8_decode call removed)
+  * 6d1af720 Revert "[drawgantt-svg] handle utf8" - just keep the encoding header + small fix in debug fct.
+  * 9264aaf2 [finaud][hulot] Make finaud aware of state changes in its back - Fix race condition between hulot and finaud
+  * 63386c28 [schedulers] better message when jobs cannot be scheduler because of job timeout.
+  * c1fcbf3d [oar_meta_sched] minor fix on oarwalltime
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 12 Oct 2021 10:23:35 +0200
+
 oar (2.5.10~g5k11-2) unstable; urgency=medium
 
   * 3e85ad01 [deb] add missing php-xml package, required to use utf-8 in drawgantt
