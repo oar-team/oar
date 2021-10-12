@@ -65,6 +65,8 @@ version 2.5.10:
   - [Makefiles] Add support for systemd
   - [oar-databese] Add option to skip the installation of the default admission
     rules when creating a new OAR database
+  - [finaud/hulot] fix a race condition resulting in nodes being suspected when
+    put in standby by hulot while finaud is running
 
 version 2.5.9:
 --------------
