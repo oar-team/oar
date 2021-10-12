@@ -130,6 +130,8 @@ sub set_resources_state($$$$);
 sub get_resources_change_state($);
 sub set_resource_nextState($$$);
 sub set_node_nextState($$$);
+sub set_node_nextState_if_necessary($$$);
+sub set_node_nextState_if_condition($$$$);
 sub set_node_expiryDate($$$);
 sub set_resources_property($$$$);
 sub get_resources_absent_suspected_dead_from_range($$$);
@@ -5847,6 +5849,22 @@ sub set_node_nextState_if_necessary($$$) {
     return($result);
 }
 
+# set_node_nextState_if_condition
+sub set_node_nextState_if_condition($$$$) {
+    my $dbh = shift;
+    my $hostname = shift;
+    my $next_state = shift;
+    my $condition = shift;
+
+    my $result = $dbh->do(" UPDATE resources
+                            SET next_state = \'$next_state\', next_finaud_decision = \'NO\'
+                            WHERE
+                                network_address = \'$hostname\'
+                                AND state != \'$next_state\'
+                                AND ($condition)
+                          ");
+    return($result);
+}
 
 # update_resource_nextFinaudDecision
 # update nextFinaudDecision field
