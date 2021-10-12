@@ -352,13 +352,7 @@ class Db {
     if ($this->backend == "mysql") {
       return mysql_fetch_array($this->result, MYSQL_ASSOC);
     } elseif ($this->backend == "pg") {
-      $line = pg_fetch_array($this->result, NULL, PGSQL_ASSOC);
-      if (is_array($line)) {
-        foreach($line as $k => $v) {
-          $line[$k] = utf8_decode($v);
-        }
-      }
-      return $line;
+      return pg_fetch_array($this->result, NULL, PGSQL_ASSOC);
     } else {
       die ("Unknown database backend: " . $this->backend . " (must be 'mysql' or 'pg'");
     }
