@@ -151,6 +151,30 @@ sub get_queued_jobs($) {
     return @res;
 }
 
+# get_job_events
+# returns the events of the given job
+# parameters: base, job_id
+# return value: list of events
+# side effects: /
+sub get_job_events($$) {
+    my $dbh = shift;
+    my $job= shift;
+    my $events = [];
+
+    my $sth = $dbh->prepare("   SELECT date, type, description
+                                FROM event_logs
+                                WHERE
+                                    job_id = $job
+                            ");
+    $sth->execute();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push (@$events, $ref)
+    }
+    $sth->finish();
+
+    return $events;
+}
+
 # get_job_stat_infos
 # returns the information about the given job
 # parameters: base, job_id
