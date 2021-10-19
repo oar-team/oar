@@ -1,3 +1,13 @@
+oar (2.5.10~g5k13-1) unstable; urgency=medium
+
+  * 08353b4c [monika] fix display of nodes by properties
+  * f17e3db7 [MetaSched] fix typo
+  * e3d37231 [MetaSched] Fix a typo (reseration -> reservation)
+  * 1a9f5f93 [monika] add nodes filtering
+  * 77999e42 [Monika] show job events in job stats
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 19 Oct 2021 17:09:20 +0200
+
 oar (2.5.10~g5k12-1) unstable; urgency=medium
 
   * 273ae464 Revert "[deb] add missing php-xml package, required to use utf-8 in drawgantt" (utf8_decode call removed)
