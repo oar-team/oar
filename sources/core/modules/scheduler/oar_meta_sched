@@ -237,7 +237,7 @@ my ($Absent_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"
 my ($Suspected_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
 my ($Dead_resource_id_vec, @Dead_resource_ids) = OAR::IO::get_resource_ids_in_state($base,"Dead");
 
-oar_debug("[MetaSched] Retrieve information for already scheduler reservations from database before flush (keep assign resources)\n");
+oar_debug("[MetaSched] Retrieve information for already scheduled reservations from database before flush (keep assign resources)\n");
 my $reservation_already_there = OAR::IO::get_waiting_reservations_already_scheduled($base);
 OAR::IO::gantt_flush_tables($base, $reservation_already_there, $Log_scheduling);
 OAR::IO::set_gantt_date($base,$current_time_sec);
