@@ -251,9 +251,9 @@ OAR::Schedulers::GanttHoleStorage::add_new_resources($Gantt->{0}->{""}->{""}->{"
 
 oar_debug("[MetaSched] Begin processing of already scheduled reservations (accepted with resources assigned)\n");
 # Add already scheduled reservations into the gantt
-my @reseration_already_there_list = keys(%{$reservation_already_there});
-while (@reseration_already_there_list) {
-    my $i = shift(@reseration_already_there_list);
+my @reservation_already_there_list = keys(%{$reservation_already_there});
+while (@reservation_already_there_list) {
+    my $i = shift(@reservation_already_there_list);
     my $container_id = 0;
     my $inner_id = 0;
     my $placeholder_name = "";
@@ -267,10 +267,10 @@ while (@reseration_already_there_list) {
         if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
             oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
         }else{
-            if (grep(/^$inner_id$/, @reseration_already_there_list)) {
+            if (grep(/^$inner_id$/, @reservation_already_there_list)) {
                 # The container job is later in the list, postpone inner job
                 oar_debug("[MetaSched] [$i] inner job: container $inner_id is not known yet, postponing job.\n");
-                push @reseration_already_there_list, $i;
+                push @reservation_already_there_list, $i;
                 next;
             } else {
                 oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is already scheduled, use container 0.\n");

@@ -537,7 +537,7 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # Default is "", i.e. only root and the oar user are allowed
 #WALLTIME_ALLOWED_USERS_TO_FORCE=""
 
-# List users (* for all) for which walltime change can delay the next batch jobs (i.e. only advance reserations cannot be moved)
+# List users (* for all) for which walltime change can delay the next batch jobs (i.e. only advance reservations cannot be moved)
 # Default is "", i.e. only root and the oar user are allowed
 #WALLTIME_ALLOWED_USERS_TO_DELAY_JOBS=""
 
