@@ -218,8 +218,7 @@ sub nodelistByProperty {
                   if($prop eq $property){
                     unless (defined($alreadyCounted{$node})){
                       $alreadyCounted{$node}= 1;
-                      push @nodesSelected, $node->name;
-                      #push @nodesSelected, $node->displayHTMLname;
+                      push @nodesSelected, $node->displayname;
                     }
                   }
           }
