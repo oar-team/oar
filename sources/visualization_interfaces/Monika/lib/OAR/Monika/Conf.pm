@@ -73,6 +73,10 @@ sub parse {
           {
            DEFAULT => "resource_id"
           });
+  $config->define("nodes_filter",
+          {
+           DEFAULT => ""
+          });
   $config->define("dbtype",
           {
            DEFAULT => ""
@@ -147,6 +151,7 @@ sub parse {
   $self->{HOSTNAME} = $config->hostname();
   $self->{DBPORT} = $config->dbport();
   $self->{NODES_SYNONYM} = $config->nodes_synonym();
+  $self->{NODES_FILTER} = $config->nodes_filter();
   $self->{DBTYPE} = $config->dbtype();
   $self->{DBNAME} = $config->dbname();
   $self->{USERNAME} = $config->username();
@@ -234,6 +239,12 @@ sub dbport {
 sub nodes_synonym {
   my $self = shift;
   return $self->{NODES_SYNONYM};
+}
+
+## return the nodes_synonym
+sub nodes_filter {
+  my $self = shift;
+  return $self->{NODES_FILTER};
 }
 
 ## return the dbtype

@@ -45,6 +45,12 @@ password = oar_ro
 ##############################################################################
 nodes_synonym = network_address
 
+##############################################################################
+## nodes_filter: filters nodes to display
+## - ex: nodes_filter = cluster in ('clusterA', 'clusterB')
+## - default is ""
+##############################################################################
+nodes_filter = ""
 
 ##############################################################################
 ## Summary Display: specify how to display the summary status. For each type 

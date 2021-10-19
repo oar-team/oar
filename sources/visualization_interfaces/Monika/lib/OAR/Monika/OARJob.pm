@@ -45,20 +45,14 @@ sub set {
   my $value = shift;
   # for best effort jobs
   my $cgi = shift;
-  # for best effort jobs
-  #defined $value or die "which value for $key ?";
-  #unless (exists $self->{$key}) {
-    #$self->{$key} = [];
+  if ($key eq "events") {
+    $self->{$key} = $value;
+  } else {
     $self->{$key} = decode('utf8',$value);
-  #}
-  #push @{$self->{$key}},$value;
-
-  # for best effort jobs
-  if ($self->get("queue_name") eq "besteffort"){
+  }
+  if ($key eq "queue_name" and $value eq "besteffort"){
     $cgi->setColor($self->jobId(),$bestEffortColor);
   }
-  # for best effort jobs
-
   return 1;
 }
 
@@ -67,7 +61,6 @@ sub get {
   my $key = shift;
   defined $key or die "which key ?";
   if (exists $self->{$key}) {
-    #return $self->{$key}->[0];
     return $self->{$key};
   } else {
     return undef;
@@ -162,6 +155,9 @@ sub htmlStatusTable {
     #if(($key eq "job_id") or ($key eq "initial_request")){
       next;
     }
+    if(($key eq "events")){
+        next;
+    }
     $output .= $cgi->start_Tr();
     $output .= $cgi->td({-valign => "top", bgcolor=> "#c0c0c0"}, $cgi->i($key));
     my $list = $self->getList($key);
@@ -172,6 +168,14 @@ sub htmlStatusTable {
     $output .= $cgi->td($val);
     $output .= $cgi->end_Tr();
   }
+  $output .= $cgi->start_Tr();
+  $output .= $cgi->td({-valign => "top", bgcolor=> "#c0c0c0"}, $cgi->i("events"));
+  my $events = "";
+  foreach my $e (sort {$a->{date} >= $b->{date}} @{$self->get('events')}) {
+      $events .= OAR::Monika::db_io::local_to_sql($e->{date})."> ".$e->{type}.": ".$e->{description}."<br/>";
+  }
+  $output .= $cgi->td($events);
+  $output .= $cgi->end_Tr();
   $output .= $cgi->end_table();
   return $output;
 }
