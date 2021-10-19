@@ -14,6 +14,7 @@ sub get_database_type(){
     return($Db_type);
 }
 my $nodes_synonym;
+my $nodes_filter;
 
 ###########################################################################################
 ## Methods for Monika exclusively:                                                        #
@@ -32,6 +33,7 @@ sub dbConnection($$$$$$){
     }
     $Db_type = $dbtype;
     $nodes_synonym = OAR::Monika::Conf::myself->nodes_synonym;
+    $nodes_filter = OAR::Monika::Conf::myself->nodes_filter;
     my $connection_string;
     if($port eq "" || !($port>1 && $port<65535)){
         $connection_string = "DBI:$dbtype:database=$dbname;host=$host";
@@ -90,7 +92,7 @@ sub get_properties_values($$) {
       $str = $str.$_.", ";
     }
     $str  = substr $str, 0, length($str) - 2;
-    $str = $str." FROM resources;";
+    $str = $str." FROM resources".((defined($nodes_filter) and $nodes_filter ne "")?" WHERE $nodes_filter":"");
     my $sth2 = $dbh->prepare($str);
     $sth2->execute();
     my $ref;
@@ -118,8 +120,9 @@ sub get_all_resources_on_node($$) {
         return(@{$Resources_on_nodes{$hostname}});
     }else{
         my $sth = $dbh->prepare("   SELECT resources.resource_id as resource, resources.$nodes_synonym as node
-                                    FROM resources
-                            ");
+                                    FROM resources"
+                                . ((defined($nodes_filter) and $nodes_filter ne "")?" WHERE $nodes_filter":"")
+                               );
         $sth->execute();
         my @result;
         while (my $ref = $sth->fetchrow_hashref()){
@@ -149,6 +152,30 @@ sub get_queued_jobs($) {
         push(@res, $ref->{'job_id'});
     }
     return @res;
+}
+
+# get_job_events
+# returns the events of the given job
+# parameters: base, job_id
+# return value: list of events
+# side effects: /
+sub get_job_events($$) {
+    my $dbh = shift;
+    my $job= shift;
+    my $events = [];
+
+    my $sth = $dbh->prepare("   SELECT date, type, description
+                                FROM event_logs
+                                WHERE
+                                    job_id = $job
+                            ");
+    $sth->execute();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push (@$events, $ref)
+    }
+    $sth->finish();
+
+    return $events;
 }
 
 # get_job_stat_infos
@@ -257,10 +284,9 @@ sub get_resource_job($$) {
 sub list_nodes($) {
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("   SELECT distinct($nodes_synonym)
-                                FROM resources
-                                ORDER BY $nodes_synonym ASC
-                            ");
+    my $sth = $dbh->prepare("SELECT distinct($nodes_synonym) FROM resources"
+                            . ((defined($nodes_filter) and $nodes_filter ne "")?" WHERE $nodes_filter":"")
+                            . " ORDER BY $nodes_synonym ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {

@@ -86,12 +86,13 @@ sub getJobProperties {
   my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbtype, $dbname, $username, $pwd);
   
   my $jobInfos= OAR::Monika::db_io::get_job_stat_infos($dbh, $currentJobId);
+  my $jobEvents= OAR::Monika::db_io::get_job_events($dbh, $currentJobId);
   my $job = OAR::Monika::OARJob->new($currentJobId);
   foreach my $key (keys %{$jobInfos}){
     my $value= $jobInfos->{$key};
     $job->set($key,$value,$cgi);
   }
-
+  $job->set("events", $jobEvents, $cgi);
   ## let's count the nodes and cpu used.
 
   my $structure= OAR::Monika::db_io::get_resources_data_structure_current_job($dbh, $currentJobId);
@@ -143,11 +144,13 @@ sub qstat {
   my @jobIds= OAR::Monika::db_io::get_queued_jobs($dbh);
   foreach my $currentJobId (@jobIds){
     my $jobInfos= OAR::Monika::db_io::get_job_stat_infos($dbh, $currentJobId);
+    my $jobEvents= OAR::Monika::db_io::get_job_events($dbh, $currentJobId);
     my $job = OAR::Monika::OARJob->new($currentJobId);
     foreach my $key (keys %{$jobInfos}){
       my $value= $jobInfos->{$key};
       $job->set($key,$value,$cgi);
     }
+    $job->set("events", $jobEvents, $cgi);
 
     ## let's count the nodes and cpu used.
 
