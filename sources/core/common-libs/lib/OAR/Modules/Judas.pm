@@ -16,7 +16,7 @@ use OAR::Tools;
 require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(oar_warn oar_debug oar_error send_log_by_email set_current_log_category);
+@EXPORT_OK = qw(oar_warn oar_info oar_debug oar_error send_log_by_email set_current_log_category);
 
 $| = 1;
 my $CURRENT_LOG_CAT;
@@ -81,7 +81,7 @@ sub redirect_everything(){
 sub get_log_level(){
     return($log_level);
 }
- 
+
 # this function must be called by each module that has something to say in
 # the logs with his proper category name.
 sub set_current_log_category($){
@@ -114,39 +114,65 @@ sub send_log_by_email($$){
     send_mail($mail_recipient, $subject,$body,0);
 }
 
-sub oar_debug($){
+sub oar_warn($$$;$) {
+    my $module_name = shift;
     my $string = shift;
+    my $session_id = shift;
+    my $job_id = shift;
 
-    if ($log_level >= 3){
-        my ($seconds, $microseconds) = gettimeofday();
-        $microseconds = int($microseconds / 1000);
-        $microseconds = sprintf("%03d",$microseconds);
-        $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
-        write_log("[debug] $string");
+    if ($log_level >= 1) {
+        oar_log("W", $module_name, $string, $session_id, $job_id);
     }
 }
 
-sub oar_warn($){
+sub oar_info($$$;$) {
+    my $module_name = shift;
     my $string = shift;
+    my $session_id = shift;
+    my $job_id = shift;
 
-    if ($log_level >= 2){
-        my ($seconds, $microseconds) = gettimeofday();
-        $microseconds = int($microseconds / 1000);
-        $microseconds = sprintf("%03d",$microseconds);
-        $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
-        write_log("[info] $string");
+    if ($log_level >= 2) {
+        oar_log("I", $module_name, $string, $session_id, $job_id);
     }
 }
 
-sub oar_error($){
+sub oar_debug($$$;$) {
+    my $module_name = shift;
     my $string = shift;
+    my $session_id = shift;
+    my $job_id = shift;
 
-    #send_log_by_email(undef,"[error] $string");
+    if ($log_level >= 3) {
+        oar_log("D", $module_name, $string, $session_id, $job_id);
+    }
+}
+
+sub oar_error($$$;$){
+    my $module_name = shift;
+    my $string = shift;
+    my $session_id = shift;
+    my $job_id = shift;
+
+    oar_log("E", $module_name, $string, $session_id, $job_id);
+}
+
+sub oar_log($$$$;$) {
+    my $level = shift;
+    my $module_name = shift;
+    my $string = shift;
+    my $session_id = shift;
+    my $job_id = shift;
+
     my ($seconds, $microseconds) = gettimeofday();
     $microseconds = int($microseconds / 1000);
-    $microseconds = sprintf("%03d",$microseconds);
-    $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
-    write_log("[error] $string");
+    $microseconds = sprintf("%03d", $microseconds);
+
+    if (defined($job_id)) {
+        $string = "%$job_id " . $string;
+    }
+
+    $string = strftime("%FT%T", localtime($seconds)) . ".$microseconds $module_name $session_id $string";
+    write_log("$level $string");
 }
 
 # Must be only used in the fork of the send_mail function to store errors in OAR DB
