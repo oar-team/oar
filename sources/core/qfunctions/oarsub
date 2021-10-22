@@ -165,6 +165,7 @@ sub connect_job($$$){
         OAR::Sub::close_db_connection();
         my @passinfo = getpwnam($lusr) or die("Cannot retreive system information for user $lusr\n");
         my $shell=$passinfo[8];
+        my $uid=$passinfo[2];
         unless ((defined($xauth_path)) and (-x $xauth_path) and ($ENV{DISPLAY} =~ /^[\w.-]*:\d+(?:\.\d+)?$/)) {
             $ENV{DISPLAY}="";
         }
@@ -222,10 +223,18 @@ sub connect_job($$$){
         if (defined($interactive_job_hook_file)) {
             $interactive_job_hook_cmd = "if test -x $interactive_job_hook_file; then oardodo $interactive_job_hook_file \$\$,\$PPID:$lusr:$job_id:$job->{name}:$job->{project}:$moldable->{moldable_walltime}; else true; fi && ";
         }
+
+        my $oardodo_cmd;
+        if (defined($types->{cosystem}) or defined($types->{deploy}) or ($#hosts < 0)){
+            $oardodo_cmd = "oardodo systemd-run -q --uid=$uid --pty --wait --collect --service-type=exec --slice=user-$uid.slice --unit=oar-$job_id /bin/bash --noprofile --norc -c '$str'";
+        } else {
+            $oardodo_cmd = "OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";
+        }
+
         if ($ENV{DISPLAY} ne ""){
-            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$lusr oardodo $xauth_path merge -) && [ \"$lusr\" != \"$job_user\" ] && OARDO_BECOME_USER=$lusr oardodo bash --noprofile --norc -c \"chmod 660 \\\$HOME/.Xauthority\" ;TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$lusr oardodo $xauth_path merge -) && [ \"$lusr\" != \"$job_user\" ] && OARDO_BECOME_USER=$lusr oardodo bash --noprofile --norc -c \"chmod 660 \\\$HOME/.Xauthority\" ;TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && $oardodo_cmd";$i++;
         }else{
-            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && $oardodo_cmd";$i++;
         }
 
         #essential: you become oar instead of the user
