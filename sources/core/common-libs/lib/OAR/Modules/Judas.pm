@@ -42,6 +42,8 @@ else{
   $log_categories{"all"} = 1;
 }
 
+my $Module_name = "Judas";
+my $Session_id = $$;
 
 my $mail_recipient = get_conf("MAIL_RECIPIENT");
 
@@ -190,7 +192,7 @@ sub treate_mail_error($$$$$$$){
     #OAR::IO::add_new_event($base,"MAIL_NOTIFICATION_ERROR",$job_id,"$error --> SMTP server used: $smtpServer, sender: $mailSenderAddress, recipients: $mailRecipientAddress, object: $object, body: $body");
     #
     #OAR::IO::disconnect($base);
-    oar_debug("[Judas] Mail ERROR: $job_id $error --> SMTP server used: $smtpServer, sender: $mailSenderAddress, recipients: $mailRecipientAddress, object: $object, body: $body\n");
+    oar_info($Module_name, "Mail ERROR: $job_id $error --> SMTP server used: $smtpServer, sender: $mailSenderAddress, recipients: $mailRecipientAddress, object: $object, body: $body\n", $Session_id);
     exit(1);
 }
 
@@ -206,7 +208,7 @@ sub send_mail($$$$){
     my $smtp_server = get_conf("MAIL_SMTP_SERVER");
     my $mail_sender_address = get_conf("MAIL_SENDER");
     if (!defined($smtp_server) || !defined($mail_sender_address) || !defined($mail_recipient_address)){
-        oar_debug("[Judas] Mail is not configured\n");
+        oar_info($Module_name, "Mail is not configured\n", $Session_id);
         return();
     }
 
@@ -314,25 +316,25 @@ sub notify_user($$$$$$$$){
                         kill(9,@{$children});
                     }
                     my $dbh = OAR::IO::connect();
-                    my $str = "[Judas] User notification failed: ssh timeout, on node $host (cmd: $cmd)";
-                    oar_error("$str\n");
+                    my $str = "User notification failed: ssh timeout, on node $host (cmd: $cmd)";
+                    oar_error($Module_name, "$str\n", $Session_id);
                     OAR::IO::add_new_event($dbh,"USER_EXEC_NOTIFICATION_ERROR",$job_id,"$str");
                     OAR::IO::disconnect($dbh);
                 }
             }else{
                 my $dbh = OAR::IO::connect();
-                my $str = "[Judas] Launched user notification command: $cmd; exit value = $exit_value, signal num = $signal_num, dumped core = $dumped_core";
-                oar_debug("$str\n");
+                my $str = "Launched user notification command: $cmd; exit value = $exit_value, signal num = $signal_num, dumped core = $dumped_core";
+                oar_debug($Module_name, "$str\n", $Session_id);
                 OAR::IO::add_new_event($dbh,"USER_EXEC_NOTIFICATION",$job_id,"$str");
                 OAR::IO::disconnect($dbh);
             }
             # Exit from child
             exit(0);
         }elsif (!defined($pid)){
-            oar_error("[Judas] Error when forking process to execute notify user command: $cmd\n");
+            oar_error($Module_name, "Error when forking process to execute notify user command: $cmd\n", $Session_id);
         }
     }else{
-        oar_debug("[Judas] No correct notification method found ($method) for the job $job_id\n");
+        oar_debug($Module_name, "No correct notification method found ($method) for the job $job_id\n", $Session_id);
     }
 }
 

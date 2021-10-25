@@ -10,6 +10,9 @@ use IPC::SysV qw(IPC_NOWAIT);
 use Data::Dumper;
 use OAR::IO;
 
+my $Module_name = "WindowForker";
+my $Session_id = $$;
+
 # Log category
 set_current_log_category('WindowForker');
 
@@ -123,7 +126,7 @@ sub launch($$$$$$){
     my %forker_type = %$type;
     # Check type
     if (keys(%forker_type)<=0){
-      oar_error("[WindowForker] No type specified. Set to default type\n");
+      oar_error($Module_name, "No type specified. Set to default type\n", $Session_id);
       %forker_type = ("type" => "default");
     }
 
@@ -164,7 +167,7 @@ sub launch($$$$$$){
                       OAR::IO::disconnect($base);
                       system($command_to_exec);
                       if (!msgsnd($forker_type{"id_msg"}, pack($forker_type{"template"}, 1, "$node:$cmd:".$?), IPC_NOWAIT)){
-                        oar_error("[WindowForker] Failed to send message to Hulot by msgsnd(): $!\n");
+                        oar_error($Module_name, "Failed to send message to Hulot by msgsnd(): $!\n", $Session_id);
                       }
                       exit 0;
                     }else{
@@ -215,7 +218,7 @@ sub launch($$$$$$){
     if ($NOTIFY_HULOT == 1){
         ## Here, send "CHECK signal" to Hulot by the named pipe ?
         unless (open(FIFO, "> $FIFO")) {
-          oar_error("[WindowForker] Could not open the fifo $FIFO!\n");
+          oar_error($Module_name, "Could not open the fifo $FIFO!\n", $Session_id);
           return 1;
         }
         print FIFO "CHECK";
