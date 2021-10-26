@@ -18,7 +18,7 @@ select(STDOUT); $| = 1;
 
 # Log category
 set_current_log_category('scheduler');
-my $scheduler_name = "oar_sched_gantt_with_timesharing_and_fairsharing_and_quotas";
+my $scheduler_name = "SchedFSTSQ";
 my $Quota_file = "/etc/oar/scheduler_quotas.conf";
 my $Session_id = $$;
 

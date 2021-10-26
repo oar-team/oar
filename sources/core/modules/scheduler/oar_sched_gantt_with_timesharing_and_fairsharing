@@ -14,7 +14,7 @@ use Time::HiRes qw(gettimeofday);
 
 # Log category
 set_current_log_category('scheduler');
-my $scheduler_name = "oar_sched_gantt_with_timesharing_and_fairsharing";
+my $scheduler_name = "SchedFSTS";
 my $Session_id = $$;
 
 init_conf($ENV{OARCONFFILE});
