@@ -324,7 +324,7 @@ sub notify_user($$$$$$$$){
             }else{
                 my $dbh = OAR::IO::connect();
                 my $str = "Launched user notification command: $cmd; exit value = $exit_value, signal num = $signal_num, dumped core = $dumped_core";
-                oar_debug($Module_name, "$str\n", $Session_id);
+                oar_info($Module_name, "$str\n", $Session_id);
                 OAR::IO::add_new_event($dbh,"USER_EXEC_NOTIFICATION",$job_id,"$str");
                 OAR::IO::disconnect($dbh);
             }

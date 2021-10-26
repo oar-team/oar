@@ -25,7 +25,7 @@ use Time::HiRes qw(gettimeofday);
 use OAR::IO;
 use OAR::Tools;
 use OAR::Modules::Judas
-  qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
+  qw(oar_debug oar_warn oar_info oar_error send_log_by_email set_current_log_category);
 use OAR::WindowForker;
 use IPC::SysV qw(IPC_PRIVATE IPC_RMID IPC_CREAT S_IRUSR S_IWUSR IPC_NOWAIT);
 
@@ -76,7 +76,7 @@ sub add_to_hash($$) {
 sub change_node_state($$$) {
     my ( $base, $node, $state ) = @_;
 
-    #oar_debug($Module_name, "Changing state of node '$node' to '$state'\n", $Session_id);
+    #oar_info($Module_name, "Changing state of node '$node' to '$state'\n", $Session_id);
     OAR::IO::set_node_nextState( $base, $node, $state );
     OAR::Tools::notify_tcp_socket( $remote_host, $remote_port, "ChState" );
 }
@@ -106,13 +106,13 @@ sub check_reminded_list($$$) {
         if ( $tmp_nodeFinded == 0 ) {
 
             # move this node from reminded list to list to process
-#            oar_debug(
+#            oar_info(
 #"[Hulot] Adding '$rmd_node=>$$tmp_list_to_remind{$rmd_node}' to list to process\n"
 #            );
             $$tmp_list_to_process{$rmd_node} =
               { 'command' => $$tmp_list_to_remind{$rmd_node}, 'timeout' => -1 };
 
-#            oar_debug(
+#            oar_info(
 #                "[Hulot] Removing node '$rmd_node' from list to remember\n");
             remove_from_hash( $tmp_list_to_remind, $rmd_node );
         }
@@ -132,7 +132,7 @@ sub check_returned_cmd($$$$$) {
 
     ( my $tmp_node, my $tmp_cmd, my $tmp_return ) =
       split( /:/, $tmp_message, 3 );
-      oar_debug($Module_name,
+      oar_info($Module_name,
           "[Hulot] Received from WindowForker: Node=$tmp_node ; Action=$tmp_cmd ; ReturnCode=$tmp_return\n",
           $Session_id
       );
@@ -149,7 +149,7 @@ sub check_returned_cmd($$$$$) {
         my $log_str = "Node $tmp_node was suspected because an error occurred with a command launched by Hulot";
         my $str = "[Hulot] $log_str";
         OAR::IO::add_new_event_with_host($base, "LOG_SUSPECTED", 0, $str, [$tmp_node]);
-        oar_debug($Module_name, "$log_str\n", $Session_id);
+        oar_info($Module_name, "$log_str\n", $Session_id);
     }
 }
 
@@ -245,7 +245,7 @@ sub start_energy_loop() {
                        "ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT",
                        $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT));
 
-    oar_debug($Module_name, "Starting Hulot, the energy saving module\n", $Session_id);
+    oar_info($Module_name, "Starting Hulot, the energy saving module\n", $Session_id);
 
     # Load state if exists
     if (-s "$runtime_directory/hulot_status.dump") {
@@ -253,7 +253,7 @@ sub start_energy_loop() {
       if ($ref) {
         if (defined($ref->[0]) && defined($ref->[1]) &&
             ref($ref->[0]) eq "HASH" && ref($ref->[1]) eq "HASH") {
-          oar_debug($Module_name, "State file found, loading it\n", $Session_id);
+          oar_info($Module_name, "State file found, loading it\n", $Session_id);
           %nodes_list_running = %{$ref->[0]};
           %nodes_list_to_remind = %{$ref->[1]};
         }
@@ -277,7 +277,7 @@ sub start_energy_loop() {
                                 "type='default':0"
                               );
     if (not $keepalive_string =~ /.+:\d+,*/) {
-      oar_debug($Module_name, "Syntax error into ENERGY_SAVING_NODES_KEEPALIVE!\n", $Session_id);
+      oar_info($Module_name, "Syntax error into ENERGY_SAVING_NODES_KEEPALIVE!\n", $Session_id);
       exit(3);
     }else{
       my @keepalive_items=split(/\s*\&\s*/,$keepalive_string);
@@ -290,7 +290,7 @@ sub start_energy_loop() {
         $keepalive{$properties}=();
         $keepalive{$properties}{"nodes"}=[];
         $keepalive{$properties}{"min"}=$nodes_number;
-        oar_debug($Module_name, "Keepalive(". $properties .") => ". $nodes_number ."\n", $Session_id);
+        oar_info($Module_name, "Keepalive(". $properties .") => ". $nodes_number ."\n", $Session_id);
       }
     }
 
@@ -354,10 +354,10 @@ sub start_energy_loop() {
             my @nodes = split(/ /, $nodes );
 
             if ( $cmd eq "CHECK" ) {
-                oar_debug($Module_name, "Got request '$cmd'\n", $Session_id);
+                oar_info($Module_name, "Got request '$cmd'\n", $Session_id);
             }
             else {
-                oar_debug($Module_name, "Got request '$cmd' for nodes: $nodes\n", $Session_id);
+                oar_info($Module_name, "Got request '$cmd' for nodes: $nodes\n", $Session_id);
             }
 
             #print DUMP "point 2:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`;
@@ -380,7 +380,7 @@ sub start_energy_loop() {
                   push(@idle_nodes,$alive_node);
                 }
               }
-              #oar_debug("[Hulot] cur_idle($properties) => "
+              #oar_info("[Hulot] cur_idle($properties) => "
               #     .$keepalive{$properties}{"cur_idle"}."\n");
 
               #print DUMP "point 3:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`;
@@ -403,10 +403,10 @@ sub start_energy_loop() {
                       if (not defined($nodes_list_running{$node})) {
                         $nodes_list_to_process{$node} =
                           { 'command' => "WAKEUP", 'timeout' => -1 };
-                        oar_debug($Module_name, "Waking up $node to satisfy '$properties' keepalive (ok_nodes=$ok_nodes, wakeable_nodes=$wakeable_nodes)\n", $Session_id);
+                        oar_info($Module_name, "Waking up $node to satisfy '$properties' keepalive (ok_nodes=$ok_nodes, wakeable_nodes=$wakeable_nodes)\n", $Session_id);
                       }else{
                          if ($nodes_list_running{$node}->{'command'} ne "WAKEUP") {
-                         oar_debug($Module_name, "Wanted to wake up $node to satisfy '$properties' keepalive, but a command is already running on this node. So doing nothing and waiting for the next cycles to converge.\n", $Session_id);
+                         oar_info($Module_name, "Wanted to wake up $node to satisfy '$properties' keepalive, but a command is already running on this node. So doing nothing and waiting for the next cycles to converge.\n", $Session_id);
                          }
                       }
                     }
@@ -425,7 +425,7 @@ sub start_energy_loop() {
             foreach $key ( keys(%nodes_list_running) ) {
                 if ( $nodes_list_running{$key}->{'command'} eq "WAKEUP" ) {
                     if (grep(/^$key$/,@nodes_alive)) {
-                        oar_debug($Module_name,
+                        oar_info($Module_name,
                             "Booting node '$key' seems now up, so removing it from running list.\n",
                             $Session_id
                         );
@@ -437,7 +437,7 @@ sub start_energy_loop() {
                         change_node_state( $base, $key, "Suspected" );
                         my $log_str = "Node $key was suspected because it did not wake up before the end of the timeout\n";
                         my $str = "[Hulot] $log_str";
-                        oar_debug($Module_name, $log_str, $Session_id);
+                        oar_info($Module_name, $log_str, $Session_id);
                         OAR::IO::add_new_event_with_host($base, "LOG_SUSPECTED", 0, $str, [$key]);
 
                         # Remove suspected node from the list running nodes
@@ -473,7 +473,7 @@ sub start_energy_loop() {
                                 $nodeToRemind = 1;
                             }
                             else {
-                                oar_debug($Module_name,
+                                oar_info($Module_name,
                                     "Command '$nodes_list_running{$key}->{'command'}' is already running on node '$node' (timeout in ".($nodes_list_running{$key}->{'timeout'} - time)."s)\n",
                                     $Session_id
                                 );
@@ -491,7 +491,7 @@ sub start_energy_loop() {
                 if ( $nodeToAdd == 1 ) {
 
                     # Adding couple node/command to the list to process
-#                    oar_debug(
+#                    oar_info(
 #                        "[Hulot] Adding '$node=>$cmd' to list to process\n");
                     $nodes_list_to_process{$node} =
                       { 'command' => $cmd, 'timeout' => -1 };
@@ -500,7 +500,7 @@ sub start_energy_loop() {
                 if ( $nodeToRemind == 1 ) {
 
                     # Adding couple node/command to the list to remind
-#                    oar_debug(
+#                    oar_info(
 #                        "[Hulot] Adding '$node=>$cmd' to list to remember\n");
                     $nodes_list_to_remind{$node} = $cmd;
                 }
@@ -534,7 +534,7 @@ sub start_energy_loop() {
                           if (@nodes>0 && grep(/$key/,@nodes)) {
                             if ($keepalive{$properties}{"cur_idle"}
                                  <= $keepalive{$properties}{"min"}) {
-                                 oar_debug($Module_name,
+                                 oar_info($Module_name,
                                      "[Hulot] Not halting '$key' because I need to keep alive ".
                                      $keepalive{$properties}{"min"} ." nodes having '$properties'\n",
                                      $Session_id
@@ -557,7 +557,7 @@ sub start_energy_loop() {
                           }
                           # Change state node to "Absent" and halt it
                           change_node_state( $base, $key, "Absent" );
-                          oar_debug($Module_name,
+                          oar_info($Module_name,
                               "[Hulot] Hulot module put node '$key' in energy saving mode (state~Absent)\n",
                               $Session_id
                           );
@@ -582,7 +582,7 @@ sub start_energy_loop() {
                     );
                 if (get_conf_with_default_param("ENERGY_SAVING_WINDOW_FORKER_BYPASS", "no") eq "yes") {
                     #Bypassing OAR::WindowForker
-                    oar_debug($Module_name, "Launching commands to nodes\n", $Session_id);
+                    oar_info($Module_name, "Launching commands to nodes\n", $Session_id);
 
                     #Strings that will be passed to wakeup and shutdown commands
                     my @nodesToWakeUp = ();
@@ -607,7 +607,7 @@ sub start_energy_loop() {
                 }
                 else {
                     # Use the window forker to execute commands in parallel
-                    oar_debug($Module_name,
+                    oar_info($Module_name,
                         "[Hulot] Launching commands to nodes by using WindowForker\n",
                         $Session_id
                     );
@@ -716,7 +716,7 @@ sub register_wait_results($$) {
     my $dumped_core = $return_code & 128;
     if ( $pid > 0 ) {
 
-#oar_debug($Module_name, "Child process $pid ended: exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n", $Session_id);
+#oar_info($Module_name, "Child process $pid ended: exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n", $Session_id);
     }
 }
 
@@ -775,7 +775,7 @@ sub get_timeout($$) {
         $timeout = @$timeouts{$tmp};
     }
 
-    oar_debug($Module_name, "Waking up $nb_nodes nodes: chosen timeout is ".$timeout."s\n", $Session_id);
+    oar_info($Module_name, "Waking up $nb_nodes nodes: chosen timeout is ".$timeout."s\n", $Session_id);
     return $timeout;
 }
 

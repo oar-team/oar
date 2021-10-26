@@ -5,7 +5,7 @@
 use OAR::IO;
 use Sys::Hostname;
 use OAR::Conf qw(init_conf dump_conf get_conf get_conf_with_default_param is_conf);
-use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
+use OAR::Modules::Judas qw(oar_debug oar_warn oar_info oar_error send_log_by_email set_current_log_category);
 use OAR::PingChecker;
 use OAR::Tools;
 use Data::Dumper;
@@ -177,7 +177,7 @@ if ((defined($Oarexec_reattach_exit_value)) and
      ($job->{state} eq "Resuming")
     )
    ){
-    oar_debug($Module_name, "OAREXEC end: $Oarexec_reattach_exit_value $Oarexec_reattach_script_exit_value\n", $Session_id, $Job_id);
+    oar_info($Module_name, "OAREXEC end: $Oarexec_reattach_exit_value $Oarexec_reattach_script_exit_value\n", $Session_id, $Job_id);
     if ($Oarexec_reattach_exit_value =~ m/\d+/m){
         if ($Oarexec_challenge eq $job_challenge){
             OAR::IO::check_end_of_job($base, $Job_id, $Oarexec_reattach_script_exit_value, $Oarexec_reattach_exit_value, \@hosts, $Remote_host, $Remote_port,$job->{job_user},$job->{launching_directory},$Server_epilogue, $Session_id);
@@ -214,13 +214,13 @@ my $types = OAR::IO::get_job_types_hash($base,$Job_id);
 if (defined($types->{noop})){
     OAR::IO::set_job_state($base,$Job_id,"Running");
     OAR::IO::disconnect($base);
-    oar_debug($Module_name, "User: $job->{job_user}; Set NOOP job to Running\n", $Session_id, $Job_id);
+    oar_info($Module_name, "User: $job->{job_user}; Set NOOP job to Running\n", $Session_id, $Job_id);
     call_server_prologue();
     exit(0);
 }
 
 # HERE we must launch oarexec on the first node
-oar_debug($Module_name, "User: $job->{job_user}; Command: $job->{command} ==> hosts: [@hosts]\n", $Session_id, $Job_id);
+oar_info($Module_name, "User: $job->{job_user}; Command: $job->{command} ==> hosts: [@hosts]\n", $Session_id, $Job_id);
 
 if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
     my ($addr,$port) = split(/:/,$job->{info_type});
@@ -326,7 +326,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     #if (($#bad < 0) and (!defined($cpuset_nodes))){
     if ($#bad < 0){
         # CHECK nodes
-        oar_debug($Module_name, "Check nodes: @hosts\n", $Session_id, $Job_id);
+        oar_info($Module_name, "Check nodes: @hosts\n", $Session_id, $Job_id);
         $event_type = "PING_CHECKER_NODE_SUSPECTED";
         @bad = OAR::PingChecker::test_hosts(@hosts);
     }
@@ -368,7 +368,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
             exit(2);
         }
     }else{
-        oar_debug($Module_name, "No (enough) bad node\n", $Session_id, $Job_id);
+        oar_info($Module_name, "No (enough) bad node\n", $Session_id, $Job_id);
     }
     # end CHECK
 }
@@ -410,7 +410,7 @@ if ((defined($types->{cosystem})) or ($#hosts < 0)){
     $host_to_connect_via_ssh = $Deploy_hostname;
 }
 
-oar_debug($Module_name, "execute oarexec on node $host_to_connect_via_ssh\n", $Session_id, $Job_id);
+oar_info($Module_name, "execute oarexec on node $host_to_connect_via_ssh\n", $Session_id, $Job_id);
 
 my $oarexec_cpuset_path;
 if ((defined($Cpuset_full_path) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
@@ -487,7 +487,7 @@ eval {
     close(WRITE);
 
     while(<READ>){
-        oar_debug($Module_name, "$_", $Session_id, $Job_id);
+        oar_info($Module_name, "$_", $Session_id, $Job_id);
         if (($init_done == 0) and ($_ eq OAR::Tools::get_bipbip_oarexec_rendez_vous())){
             $init_done = 1;
             if ($Detach_oarexec == 0){
@@ -496,7 +496,7 @@ eval {
             OAR::IO::set_job_state($base,$Job_id,"Running");
             # Notify interactive oarsub
             if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
-                oar_debug($Module_name, "Interactive request ;Answer to the client Qsub -I\n", $Session_id, $Job_id);
+                oar_info($Module_name, "Interactive request ;Answer to the client Qsub -I\n", $Session_id, $Job_id);
                 my ($addr,$port) = split(/:/,$job->{info_type});
                 if (defined(OAR::Tools::notify_tcp_socket($addr,$port,"GOOD JOB"))){
                     oar_error($Module_name, "Frag job $Job_id because oarsub cannot be notified by the server on host: $addr:$port. Check your network and firewall configuration\n", $Session_id, $Job_id);
@@ -521,7 +521,7 @@ eval {
     alarm(0);
 };
 if (($Detach_oarexec == 1) and ($error == 0)){
-    oar_debug($Module_name, "Exit from bipbip normally\n", $Session_id, $Job_id);
+    oar_info($Module_name, "Exit from bipbip normally\n", $Session_id, $Job_id);
 }else{
     if ($init_done == 0){
         if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){

@@ -5,7 +5,7 @@
 use English;
 use OAR::IO;
 use Data::Dumper;
-use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
+use OAR::Modules::Judas qw(oar_debug oar_warn oar_info oar_error send_log_by_email set_current_log_category);
 use IO::Socket::INET;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 use strict;
@@ -33,7 +33,7 @@ OAR::IO::lock_table($base,["resources","assigned_resources","jobs","job_state_lo
 # Check event logs
 my @events_to_check = OAR::IO::get_to_check_events($base);
 foreach my $i (@events_to_check){
-    oar_debug($Module_name, "Check events for the job $i->{job_id} with type $i->{type}\n", $Session_id);
+    oar_info($Module_name, "Check events for the job $i->{job_id} with type $i->{type}\n", $Session_id);
     my $job = OAR::IO::get_job($base,$i->{job_id});
     my $jobtypes = OAR::IO::get_job_types_hash($base, $i->{job_id});
 
@@ -157,7 +157,7 @@ foreach my $i (@events_to_check){
                  ($i->{type} eq "EXIT_VALUE_OAREXEC")) &&
                 (defined($jobtypes->{deploy}) or defined($jobtypes->{cosystem}))
                ){
-            oar_debug($Module_name, "Not suspecting any nodes because error is on the deploy or cosystem frontend\n", $Session_id);
+            oar_info($Module_name, "Not suspecting any nodes because error is on the deploy or cosystem frontend\n", $Session_id);
         }else{
             @hosts = OAR::IO::get_job_host_log($base,$job->{assigned_moldable_job});
             if (($i->{type} ne "EXTERMINATE_JOB") &&
@@ -252,7 +252,7 @@ foreach my $i (@events_to_check){
         }elsif (($i->{type} eq "HOLD_RUNNING_JOB") and ($job->{state} eq "Running")){
             if (defined($jobtypes->{noop})){
                 OAR::IO::suspend_job_action($base,$job->{job_id},$job->{assigned_moldable_job});
-                oar_debug($Module_name, "[$job->{job_id}] suspend job of type noop\n", $Session_id);
+                oar_info($Module_name, "[$job->{job_id}] suspend job of type noop\n", $Session_id);
                 OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"Term");
             }else{
                 # Launch suspend command on all nodes
@@ -296,7 +296,7 @@ foreach my $i (@events_to_check){
                                     eval {
                                         $SIG{ALRM} = sub { die "alarm\n" };
                                         alarm($timeout);
-                                        oar_debug($Module_name, "Launching post suspend script: $suspend_script $i->{job_id}\n", $Session_id, $i->{job_id});
+                                        oar_info($Module_name, "Launching post suspend script: $suspend_script $i->{job_id}\n", $Session_id, $i->{job_id});
                                         $script_error = system("$suspend_script $i->{job_id}");
                                         alarm(0);
                                     };

@@ -5,7 +5,7 @@ use strict;
 use DBI();
 use Data::Dumper;
 use OAR::IO;
-use OAR::Modules::Judas qw(oar_debug oar_warn oar_error set_current_log_category);
+use OAR::Modules::Judas qw(oar_debug oar_warn oar_info oar_error set_current_log_category);
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 use OAR::Tools;
 
@@ -54,7 +54,7 @@ if (is_conf("OAR_RUNTIME_DIRECTORY")){
     OAR::Tools::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
 }
 
-oar_debug($Module_name, "JOBDEL_SOFTWALLTIME = $Leon_soft_walltime; JOBDEL_WALLTIME = $Leon_walltime\n", $Session_id);
+oar_info($Module_name, "JOBDEL_SOFTWALLTIME = $Leon_soft_walltime; JOBDEL_WALLTIME = $Leon_walltime\n", $Session_id);
 
 # get script args
 my $base = OAR::IO::connect();
@@ -63,7 +63,7 @@ if (!defined($base)){
     exit(1);
 }
 
-oar_debug($Module_name, "Hello, identity control !!!\n", $Session_id);
+oar_info($Module_name, "Hello, identity control !!!\n", $Session_id);
 
 my $guilty_found=0;
 my $current = OAR::IO::get_date($base);
@@ -73,23 +73,23 @@ my $current = OAR::IO::get_date($base);
 foreach my $j (OAR::IO::get_timered_job($base)){
     my $job_ref = OAR::IO::get_job($base,$j->{job_id});
     if (($job_ref->{state} eq "Terminated") || ($job_ref->{state} eq "Error") || ($job_ref->{state} eq "Finishing")){
-        oar_debug($Module_name, "Set to FRAGGED job $j->{job_id}\n", $Session_id);
+        oar_info($Module_name, "Set to FRAGGED job $j->{job_id}\n", $Session_id);
         OAR::IO::job_fragged($base,$j->{job_id});
         # Frag again inner jobs: handle a possible race condition if new inner jobs after frag_job was called
         OAR::IO::frag_inner_jobs($base, $j->{job_id}, "Frag any remaining inner jobs of container job $j->{job_id}\n", $Module_name, $Session_id);
     }else{
         my $frag_date = OAR::IO::get_frag_date($base,$j->{job_id});
-        oar_debug($Module_name, "frag date for job $j->{job_id}: $frag_date\n", $Session_id);
+        oar_info($Module_name, "frag date for job $j->{job_id}: $frag_date\n", $Session_id);
         if (($current > $frag_date+$Leon_soft_walltime) && ($current <= $frag_date+$Leon_walltime)){
-            oar_debug($Module_name, "Leon will RE-FRAG bipbip of job $j->{job_id}\n", $Session_id);
+            oar_info($Module_name, "Leon will RE-FRAG bipbip of job $j->{job_id}\n", $Session_id);
             OAR::IO::job_refrag($base,$j->{job_id});
             $guilty_found=1;
         }elsif ($current > $frag_date+$Leon_walltime){
-            oar_debug($Module_name, "Leon will EXTERMINATE bipbip of job $j->{job_id}\n", $Session_id);
+            oar_info($Module_name, "Leon will EXTERMINATE bipbip of job $j->{job_id}\n", $Session_id);
             OAR::IO::job_leon_exterminate($base,$j->{job_id});
             $guilty_found=1;
         }else{
-            oar_debug($Module_name, "The leon timer is not yet expired for the job $j->{job_id}; I do nothing\n", $Session_id);
+            oar_info($Module_name, "The leon timer is not yet expired for the job $j->{job_id}; I do nothing\n", $Session_id);
         }
     }
 }
@@ -110,9 +110,9 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")){
         $max += OAR::IO::get_job_suspended_sum_duration($base,$job->{job_id},$current);
     }
 
-    oar_debug($Module_name, "From $start with $max; current time=$current\n", $Session_id, $job->{job_id});
+    oar_info($Module_name, "From $start with $max; current time=$current\n", $Session_id, $job->{job_id});
     if ($current > $start+$max){
-        oar_debug($Module_name, "--> (Elapsed)\n", $Session_id);
+        oar_info($Module_name, "--> (Elapsed)\n", $Session_id);
         $guilty_found=1;
         OAR::IO::lock_table($base,["frag_jobs","event_logs","jobs"]);
         OAR::IO::frag_job($base, $job->{job_id});
@@ -120,7 +120,7 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")){
         OAR::IO::add_new_event($base,"WALLTIME",$job->{job_id},"[sarko] Job [$job->{job_id}] from $start with $max; current time=$current (Elapsed)");
     }elsif (($job->{checkpoint} > 0) && ($current >= ($start+$max-$job->{checkpoint}))){
         # OAR must notify the job to checkpoint itself
-        oar_debug($Module_name, "Send checkpoint signal to the job $job->{job_id}\n", $Session_id);
+        oar_info($Module_name, "Send checkpoint signal to the job $job->{job_id}\n", $Session_id);
         # Retrieve node names used by the job
         my @hosts = OAR::IO::get_job_current_hostnames($base,$job->{job_id});
         my $types = OAR::IO::get_job_types_hash($base,$job->{job_id});
@@ -153,7 +153,7 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")){
         }else{
             if ($exit_codes[0] == 0){
                 $str_comment = "[sarko] The job $job->{job_id} was notified to checkpoint itself on the node $host_to_connect";
-                oar_debug($Module_name, "$str_comment\n", $Session_id);
+                oar_info($Module_name, "$str_comment\n", $Session_id);
                 OAR::IO::add_new_event($base,"CHECKPOINT_SUCCESSFULL",$job->{job_id},$str_comment);
             }else{
                 $str_comment = "[sarko] The kill command return a bad exit code (@exit_codes) for the job $job->{job_id} on the node $host_to_connect";
@@ -193,7 +193,7 @@ if ($dead_switch_time > 0){
     foreach my $r (OAR::IO::get_absent_suspected_resources_for_a_timeout($base,$dead_switch_time)){
         OAR::IO::set_resource_nextState($base,$r,"Dead");
         OAR::IO::update_resource_nextFinaudDecision($base,$r,"YES");
-        oar_debug($Module_name, "Set the next state of $r to Dead\n", $Session_id);
+        oar_info($Module_name, "Set the next state of $r to Dead\n", $Session_id);
         $notify = 1;
     }
     if ($notify > 0){

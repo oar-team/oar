@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use POSIX ":sys_wait_h";
 use OAR::Conf qw(init_conf get_conf is_conf get_conf_with_default_param);
-use OAR::Modules::Judas qw(oar_debug oar_warn oar_error set_current_log_category);
+use OAR::Modules::Judas qw(oar_debug oar_warn oar_info oar_error set_current_log_category);
 use IPC::SysV qw(IPC_NOWAIT);
 use Data::Dumper;
 use OAR::IO;

@@ -3,7 +3,7 @@
 use strict;
 use Data::Dumper;
 use IO::Socket::INET;
-use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
+use OAR::Modules::Judas qw(oar_debug oar_info oar_warn oar_error send_log_by_email set_current_log_category);
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf get_conf_with_default_param);
 use OAR::Tools;
 use OAR::Modules::Hulot;
@@ -138,7 +138,7 @@ my $energy_pid;
 # launch the command line passed in parameter
 sub launch_command($){
         my $command = shift;
-        oar_debug($Module_name, "Launching command: [$command]\n", $Session_id);
+        oar_info($Module_name, "Launching command: [$command]\n", $Session_id);
         #$ENV{PATH}="/bin:/usr/bin:/usr/local/bin";
 ####### THE LINE BELOW SHOULD NOT BE COMMENTED IN NORMAL USE #####
         $SIG{CHLD} = 'DEFAULT';
@@ -162,7 +162,7 @@ sub launch_command($){
         my $exit_value  = $? >> 8;
         my $signal_num  = $? & 127;
         my $dumped_core = $? & 128;
-        oar_debug($Module_name, "$command terminated with exit value: $exit_value ; signal num: $signal_num ; core dumped: $dumped_core\n", $Session_id);
+        oar_info($Module_name, "$command terminated with exit value: $exit_value ; signal num: $signal_num ; core dumped: $dumped_core\n", $Session_id);
         if ($signal_num || $dumped_core){
             oar_error($Module_name, "Something wrong occured (signal or core dumped) when trying to call [$command] command\n", $Session_id);
             $finishTag = 1;
@@ -179,7 +179,7 @@ sub qget_appendice(){
         my $res;
         my $carac;
         my $client=$server->accept();
-        oar_debug($Module_name, "Appendice received a connection\n", $Session_id);
+        oar_info($Module_name, "Appendice received a connection\n", $Session_id);
         if (!defined($client)){
             oar_error($Module_name, "End of appendice listening: the socket disappeared\n", $Session_id);
             exit(16);
@@ -236,7 +236,7 @@ sub comportement_appendice(){
     $bipbip_launcher_pid=fork();
     if ($bipbip_launcher_pid==0){
         #CHILD
-        oar_debug($Module_name, "Start bipbip handler process\n", $Session_id);
+        oar_info($Module_name, "Start bipbip handler process\n", $Session_id);
         close(pipe_bipbip_write);
         $SIG{USR1} = 'IGNORE';
         $SIG{INT}  = 'IGNORE';
@@ -273,7 +273,7 @@ sub comportement_appendice(){
                 my ($res_read,$line_read) = OAR::Tools::read_socket_line(\*pipe_bipbip_children_read,1);
                 if ($line_read =~ m/(\d+) (\d+)/m){
                     my $process_duration = $current_time -  $bipbip_current_processing_jobs{$bipbip_children{$1}}->[1];
-                    oar_debug($Module_name, "Process $1 for the job $bipbip_children{$1} ends with exit_code=$2, duration=${process_duration}s\n", $Session_id);
+                    oar_info($Module_name, "Process $1 for the job $bipbip_children{$1} ends with exit_code=$2, duration=${process_duration}s\n", $Session_id);
                     delete($bipbip_current_processing_jobs{$bipbip_children{$1}});
                     delete($bipbip_children{$1});
                 }else{
@@ -288,7 +288,7 @@ sub comportement_appendice(){
                         ($line_read =~ m/$OARRUNJOB_REGEXP/m) or
                         ($line_read =~ m/$LEONEXTERMINATE_REGEXP/m)){
                     if (!grep(/^$line_read$/,@bipbip_processes_to_run)){
-                        oar_debug($Module_name, "Read on pipe: $line_read\n", $Session_id);
+                        oar_info($Module_name, "Read on pipe: $line_read\n", $Session_id);
                         push(@bipbip_processes_to_run, $line_read);
                     }
                 }else{
@@ -313,7 +313,7 @@ sub comportement_appendice(){
                 if ($bipbip_job_id > 0){
                     if (defined($bipbip_current_processing_jobs{$bipbip_job_id})){
                         if (!grep(/^$str$/,@bipbip_processes_to_run)){
-                            oar_debug($Module_name, "A process is already running for the job $bipbip_job_id. We requeue: $str\n", $Session_id);
+                            oar_info($Module_name, "A process is already running for the job $bipbip_job_id. We requeue: $str\n", $Session_id);
                             push(@bipbip_processes_to_requeue, $str);
                         }
                     }else{
@@ -338,19 +338,19 @@ sub comportement_appendice(){
                         }
                         $bipbip_current_processing_jobs{$bipbip_job_id} = [$pid, $current_time];
                         $bipbip_children{$pid} = $bipbip_job_id;
-                        oar_debug($Module_name, "Run process: $cmd_to_run\n", $Session_id);
+                        oar_info($Module_name, "Run process: $cmd_to_run\n", $Session_id);
                     }
                 }else{
                     oar_warn($Module_name, "Bad string read in the bipbip queue: $str\n", $Session_id);
                 }
             }
             push(@bipbip_processes_to_run, @bipbip_processes_to_requeue);
-            oar_debug($Module_name, "Nb running bipbip: ".keys(%bipbip_children)."/$Max_bipbip_processes; Waiting processes(".($#bipbip_processes_to_run + 1)."): @bipbip_processes_to_run\n", $Session_id);
+            oar_info($Module_name, "Nb running bipbip: ".keys(%bipbip_children)."/$Max_bipbip_processes; Waiting processes(".($#bipbip_processes_to_run + 1)."): @bipbip_processes_to_run\n", $Session_id);
             # Check if some bipbip processes are blocked; this must never happen
             if ($Detach_oarexec != 0){
                 foreach my $b (keys(%bipbip_current_processing_jobs)){
                     my $process_duration = $current_time -  $bipbip_current_processing_jobs{$b}->[1];
-                    oar_debug($Module_name, "Check bipbip process duration: job=$b, pid=$bipbip_current_processing_jobs{$b}->[0], time=$bipbip_current_processing_jobs{$b}->[1], current_time=$current_time, duration=${process_duration}s\n", $Session_id);
+                    oar_info($Module_name, "Check bipbip process duration: job=$b, pid=$bipbip_current_processing_jobs{$b}->[0], time=$bipbip_current_processing_jobs{$b}->[1], current_time=$current_time, duration=${process_duration}s\n", $Session_id);
                     if ($bipbip_current_processing_jobs{$b}->[1] < ($current_time - $Max_bipbip_process_duration)){
                         oar_warn($Module_name, "Max duration for the bipbip process $bipbip_current_processing_jobs{$b}->[0] reached (${Max_bipbip_process_duration}s); job $b\n", $Session_id);
                         kill(9, $bipbip_current_processing_jobs{$b}->[0]);
@@ -365,7 +365,7 @@ sub comportement_appendice(){
     close(pipe_bipbip_read);
     while (1){
         my $answer = qget_appendice();
-        oar_debug($Module_name, "Appendice has read on the socket: $answer\n", $Session_id);
+        oar_info($Module_name, "Appendice has read on the socket: $answer\n", $Session_id);
         if (($answer =~ m/$OAREXEC_REGEXP/m) or
             ($answer =~ m/$OARRUNJOB_REGEXP/m) or
             ($answer =~ m/$LEONEXTERMINATE_REGEXP/m)){
@@ -378,7 +378,7 @@ sub comportement_appendice(){
             print WRITE "$answer\n";
             flush WRITE;
         }else{
-            oar_debug($Module_name, "A connection was opened but nothing was written in the socket\n", $Session_id);
+            oar_info($Module_name, "A connection was opened but nothing was written in the socket\n", $Session_id);
             #sleep(1);
         }
     }
@@ -416,7 +416,7 @@ sub ipc_clean(){
         my @ipcs=split;
           if ($ipcs[7] eq $oar[2]) {
             my $ipc=$ipcs[1];
-            oar_debug($Module_name, "cleaning ipc $ipc\n", $Session_id);
+            oar_info($Module_name, "cleaning ipc $ipc\n", $Session_id);
             `/usr/bin/ipcrm -q $ipc`;
           }
         }
@@ -472,7 +472,7 @@ sub init(){
     $lastvillains= 0;
     $lastchecknodes= 0;
     @internal_command_file = ();
-    oar_debug($Module_name, "Init done\n", $Session_id);
+    oar_info($Module_name, "Init done\n", $Session_id);
 }
 
 # function used by the main automaton to get notifications pending
@@ -498,7 +498,7 @@ sub qget($){
         }
     }elsif ($res < 0){
         if ($finishTag == 1){
-            oar_debug($Module_name, "Premature end of select cmd. res = $res. It is normal, Almighty is stopping\n", $Session_id);
+            oar_info($Module_name, "Premature end of select cmd. res = $res. It is normal, Almighty is stopping\n", $Session_id);
             $answer = "Time";
         }else{
             oar_error($Module_name, "Error while reading in pipe: I guess Appendice has died, the result code of select = $res\n", $Session_id);
@@ -536,7 +536,7 @@ sub read_commands($){
         $command = qget($timeout);
         add_command($command);
         $remaining--;
-        oar_debug($Module_name, "Got command $command, $remaining remaining\n", $Session_id);
+        oar_info($Module_name, "Got command $command, $remaining remaining\n", $Session_id);
     }
     
     # The special case of the Time command
@@ -554,22 +554,22 @@ sub scheduler(){
 sub time_update(){
     my $current = time;
 
-    oar_debug($Module_name, "Timeouts check: $current\n", $Session_id);
+    oar_info($Module_name, "Timeouts check: $current\n", $Session_id);
     # check timeout for scheduler
     if (($current>=($lastscheduler+$schedulertimeout))
         or (($scheduler_wanted >= 1) and ($current>=($lastscheduler+$scheduler_min_time_between_2_calls)))
        ){
-        oar_debug($Module_name, "Scheduling timeout\n", $Session_id);
+        oar_info($Module_name, "Scheduling timeout\n", $Session_id);
         #$lastscheduler = $current + $schedulertimeout;
         add_command("Scheduling");
     }
     if ($current>=($lastvillains+$villainstimeout)){
-        oar_debug($Module_name, "Villains check timeout\n", $Session_id);
+        oar_info($Module_name, "Villains check timeout\n", $Session_id);
         #$lastvillains = $current + $villainstimeout;
         add_command("Villains");
     }
     if (($current>=($lastchecknodes+$checknodestimeout)) and ($checknodestimeout > 0)){
-        oar_debug($Module_name, "Node check timeout\n", $Session_id);
+        oar_info($Module_name, "Node check timeout\n", $Session_id);
         #$lastchecknodes = $current + $checknodestimeout;
         add_command("Finaud");
     }
@@ -599,14 +599,14 @@ my $node;
 my $pid;
 
 while (1){
-    oar_debug($Module_name, "Current state [$state]\n", $Session_id);
+    oar_info($Module_name, "Current state [$state]\n", $Session_id);
     #We stop Almighty and its child
     if ($finishTag == 1){
         if (defined($energy_pid)) {
-          oar_debug($Module_name, "kill child process $energy_pid\n", $Session_id);
+          oar_info($Module_name, "kill child process $energy_pid\n", $Session_id);
           kill(9,$energy_pid);
         }
-        oar_debug($Module_name, "kill child process $appendice_pid\n", $Session_id);
+        oar_info($Module_name, "kill child process $appendice_pid\n", $Session_id);
         kill(9,$appendice_pid);
         kill(9,$Redirect_STD_process) if ($Redirect_STD_process > 0);
         ipc_clean();
@@ -637,11 +637,11 @@ while (1){
             read_commands($read_commands_timeout);
         }
 
-        oar_debug($Module_name, "Command queue: @internal_command_file\n", $Session_id);
+        oar_info($Module_name, "Command queue: @internal_command_file\n", $Session_id);
         my $current_command = shift(@internal_command_file);
         my ($command,$arg1,$arg2,$arg3) = split(/ /,$current_command);
 
-        oar_debug($Module_name, "Qtype = [$command]\n", $Session_id);
+        oar_info($Module_name, "Qtype = [$command]\n", $Session_id);
         if (($command eq "Qsub") ||
         ($command eq "Term") ||
         ($command eq "BipBip") ||
@@ -661,7 +661,7 @@ while (1){
         }elsif ($command eq "ChState"){
             $state="Change node state";
         }else{
-            oar_debug($Module_name, "Unknown command found in queue: $command\n", $Session_id);
+            oar_info($Module_name, "Unknown command found in queue: $command\n", $Session_id);
         }
     }
 
@@ -706,7 +706,7 @@ while (1){
         }else{
             $scheduler_wanted = 1;
             $state="Time update";
-            oar_debug($Module_name, "Scheduler call too early, waiting... ($current_time >= ($lastscheduler + $scheduler_min_time_between_2_calls)\n", $Session_id);
+            oar_info($Module_name, "Scheduler call too early, waiting... ($current_time >= ($lastscheduler + $scheduler_min_time_between_2_calls)\n", $Session_id);
         }
     }
 

@@ -15,7 +15,7 @@ use DBI;
 use OAR::Conf qw(init_conf get_conf get_conf_with_default_param is_conf reset_conf);
 use Data::Dumper;
 use Time::Local;
-use OAR::Modules::Judas qw(oar_debug oar_warn oar_error send_log_by_email set_current_log_category);
+use OAR::Modules::Judas qw(oar_debug oar_warn oar_info oar_error send_log_by_email set_current_log_category);
 use strict;
 use Fcntl;
 use OAR::Schedulers::ResourceTree;
@@ -1206,7 +1206,7 @@ sub get_possible_wanted_resources($$$$$$$){
 
     # Search if this was already seen
     if (defined($TREE_CACHE_HASH->{$resource_tree_cache_key}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector})){
-        #oar_debug($Module_name, "Use tree cache to get ressource structure.\n", $Session_id);
+        #oar_info($Module_name, "Use tree cache to get ressource structure.\n", $Session_id);
         return(OAR::Schedulers::ResourceTree::clone($TREE_CACHE_HASH->{$resource_tree_cache_key}->{$sql_where_string}->{$sql_in_string}->{$order_part}->{$possible_resources_vector}->{$impossible_resources_vector}));
     }
     my $sth = $dbh->prepare("SELECT $resource_string
@@ -3033,7 +3033,7 @@ sub frag_inner_jobs($$$;$$) {
         my $date = get_date($dbh);
         if ($dbh->do("SELECT job_id FROM job_types WHERE job_id = $container_job_id AND type = 'container'") > 0) {
             if (defined($message)) {
-                oar_debug($module_name, $message, $session_id, $container_job_id);
+                oar_info($module_name, $message, $session_id, $container_job_id);
             }
             $dbh->do("INSERT INTO frag_jobs (frag_id_job, frag_date) SELECT job_id,\'$date\' FROM job_types WHERE type = \'inner=$container_job_id\' AND NOT EXISTS (SELECT * FROM frag_jobs WHERE frag_id_job = job_id)
                      ");
@@ -3089,7 +3089,7 @@ sub ask_signal_job($$$){
             #$dbh->do("LOCK TABLE event_log WRITE");
             add_new_event($dbh,"SIGNAL_$signal",$job_id,"User $lusr requested the signal $signal on the job $job_id");
             #$dbh->do("UNLOCK TABLES");
-	    #oar_debug($Module_name, "added an event of type SIGNAL_$signal for job $job_id\n", $Session_id);
+	    #oar_info($Module_name, "added an event of type SIGNAL_$signal for job $job_id\n", $Session_id);
             return(0);
         }else{
             return(2);
@@ -4251,7 +4251,7 @@ sub add_resource_job_pairs($$$) {
     foreach my $r (@{$resources}){
       $query .= "($moldable,$r,\'CURRENT\'),";
     }
-    #oar_debug($Module_name, "add_resource_job_pairs $query\n", $Session_id);
+    #oar_info($Module_name, "add_resource_job_pairs $query\n", $Session_id);
     chop($query);
     $dbh->do($query);
 }
@@ -5647,7 +5647,7 @@ sub set_node_state($$$$$) {
                 ") <= 0){
             # OAR wants to turn the node into Suspected state but it is not in
             # the Alive state --> so we do nothing
-            OAR::Modules::Judas::oar_debug("NodeChangeState", "Try to turn the node $hostname into Suspected but it is not into the Alive state SO we do nothing\n", $session_id);
+            OAR::Modules::Judas::oar_info("NodeChangeState", "Try to turn the node $hostname into Suspected but it is not into the Alive state SO we do nothing\n", $session_id);
             return();
         }
     }else{
@@ -5789,7 +5789,7 @@ sub set_resources_state($$$$$) {
                 ($resources_to_change->{$resource_id} eq 'Absent')) {
                 my @jobs = OAR::IO::get_resource_job_to_frag($dbh, $resource_id);
                 foreach my $j (@jobs) {
-                    oar_debug("NodeChangeState", "$resources_info->{$resource_id}->{network_address}: " .
+                    oar_info("NodeChangeState", "$resources_info->{$resource_id}->{network_address}: " .
                               "must kill job $j.\n", $session_id, $j);
                     # A Leon must be run
                     $exit_code = 2;
@@ -5797,7 +5797,7 @@ sub set_resources_state($$$$$) {
                 push(@jobs_to_frag, @jobs);
             }
         } else {
-            oar_debug("NodeChangeState", "($resources_info->{$resource_id}->{network_address}) " .
+            oar_info("NodeChangeState", "($resources_info->{$resource_id}->{network_address}) " .
                       "$resource_id is already in the $resources_to_change->{$resource_id} state\n",
                       $session_id);
         }
@@ -7534,7 +7534,7 @@ sub register_monitoring_values($$$$){
         }
         chop($create_str);
         $create_str .= ")";
-        oar_debug($Module_name, "$create_str\n", $Session_id);
+        oar_info($Module_name, "$create_str\n", $Session_id);
         if ($dbh->do($create_str)){
             if (! insert_monitoring_row($dbh,$table,$fields,$values)){
                 return(2);
@@ -8451,14 +8451,14 @@ sub check_end_of_job($$$$$$$$$$$){
     lock_table($base,["jobs","job_state_logs","assigned_resources"]);
     my $refJob = get_job($base,$job_id);
     if (($refJob->{'state'} eq "Running") or ($refJob->{'state'} eq "Launching") or ($refJob->{'state'} eq "Suspended") or ($refJob->{'state'} eq "Resuming")){
-        OAR::Modules::Judas::oar_debug("Bipbip", "Job $job_id is ended\n", $session_id, $job_id);
+        OAR::Modules::Judas::oar_info("Bipbip", "Job $job_id is ended\n", $session_id, $job_id);
         set_finish_date($base,$job_id);
         set_job_state($base,$job_id,"Finishing");
         set_job_exit_code($base,$job_id,$exit_script_value) if ($exit_script_value =~ /^\d+$/);
         unlock_table($base);
         my @events;
         if($error == 0){
-            OAR::Modules::Judas::oar_debug("Bipbip", "User Launch completed OK\n", $session_id, $job_id);
+            OAR::Modules::Judas::oar_info("Bipbip", "User Launch completed OK\n", $session_id, $job_id);
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events,$session_id);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
@@ -8477,7 +8477,7 @@ sub check_end_of_job($$$$$$$$$$$){
             push(@events, {type => "SWITCH_INTO_ERROR_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             my $log_strWARN = "the job $job_id was killed by Leon";
             my $strWARN = "[bipbip $job_id] $log_strWARN";
-            OAR::Modules::Judas::oar_debug("Bipbip", "$log_strWARN\n", $session_id, $job_id);
+            OAR::Modules::Judas::oar_info("Bipbip", "$log_strWARN\n", $session_id, $job_id);
             my $types = OAR::IO::get_job_types_hash($base,$job_id);
             if ((defined($types->{besteffort})) and (defined($types->{idempotent}))){
                 if (OAR::IO::is_an_event_exists($base,$job_id,"BESTEFFORT_KILL") > 0){
@@ -8573,7 +8573,7 @@ sub check_end_of_job($$$$$$$$$$$){
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             my $log_strWARN = "oarexec received a SIGUSR1 signal; so INTERACTIVE job is ended";
             my $strWARN = "[bipbip $job_id] $log_strWARN";
-            OAR::Modules::Judas::oar_debug("Bipbip", "$log_strWARN\n", $session_id, $job_id);
+            OAR::Modules::Judas::oar_info("Bipbip", "$log_strWARN\n", $session_id, $job_id);
             #add_new_event($base,"STOP_SIGNAL_RECEIVED",$job_id,"$strWARN");
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events,$session_id);
             OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"Term");
@@ -8586,7 +8586,7 @@ sub check_end_of_job($$$$$$$$$$$){
             #oarexec received a SIGUSR2 signal
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             my $strWARN = "oarexec received a SIGUSR2 signal; so user process has received a checkpoint signal";
-            OAR::Modules::Judas::oar_debug("Bipbip", "$strWARN\n", $session_id, $job_id);
+            OAR::Modules::Judas::oar_info("Bipbip", "$strWARN\n", $session_id, $job_id);
 #            my $types = OAR::IO::get_job_types_hash($base,$job_id);
 #            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
 #                if ($exit_script_value == 0){
@@ -8604,7 +8604,7 @@ sub check_end_of_job($$$$$$$$$$$){
             #oarexec received a user signal
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             my $strWARN = "oarexec received a SIGURG signal; so user process has received the user defined signal";
-            OAR::Modules::Judas::oar_debug("Bipbip", "$strWARN\n", $session_id, $job_id);
+            OAR::Modules::Judas::oar_info("Bipbip", "$strWARN\n", $session_id, $job_id);
 #            my $types = OAR::IO::get_job_types_hash($base,$job_id);
 #            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
 #                if ($exit_script_value == 0){
@@ -8623,7 +8623,7 @@ sub check_end_of_job($$$$$$$$$$$){
             push(@events, {type => "SWITCH_INTO_TERMINATE_STATE", string => "[bipbip $job_id] Ask to change the job state"});
             my $log_strWARN = "oarexec received a SIGUSR2 signal and there was an epilogue error; so user process has received a checkpoint signal";
             my $strWARN = "[bipbip $job_id] $log_strWARN";
-            OAR::Modules::Judas::oar_debug("Bipbip", "$log_strWARN\n", $session_id, $job_id);
+            OAR::Modules::Judas::oar_info("Bipbip", "$log_strWARN\n", $session_id, $job_id);
 #            my $types = OAR::IO::get_job_types_hash($base,$job_id);
 #            if ((defined($types->{idempotent})) and ($exit_script_value =~ /^\d+$/)){
 #                if ($exit_script_value == 0){
@@ -8644,7 +8644,7 @@ sub check_end_of_job($$$$$$$$$$$){
             job_finishing_sequence($base,$server_epilogue_script,$remote_host,$remote_port,$job_id,\@events,$session_id);
         }
     }else{
-        OAR::Modules::Judas::oar_debug("Bipbip", "I was previously killed or Terminated but I did not know that!!\n", $session_id, $job_id);
+        OAR::Modules::Judas::oar_info("Bipbip", "I was previously killed or Terminated but I did not know that!!\n", $session_id, $job_id);
         unlock_table($base);
     }
 
@@ -8664,7 +8664,7 @@ sub job_finishing_sequence($$$$$$$){
     if (defined($epilogue_script)){
         # launch server epilogue
         my $cmd = "$epilogue_script $job_id";
-        OAR::Modules::Judas::oar_debug("JobFinishingSequence", "Launching command: $cmd\n", $session_id, $job_id);
+        OAR::Modules::Judas::oar_info("JobFinishingSequence", "Launching command: $cmd\n", $session_id, $job_id);
         my $pid;
         my $exit_value;
         my $signal_num;
@@ -8738,7 +8738,7 @@ sub job_finishing_sequence($$$$$$$){
             my $job = get_job($dbh, $job_id);
             my $cpuset_nodes = OAR::IO::get_cpuset_values_for_a_moldable_job($dbh,$cpuset_field,$job->{assigned_moldable_job});
             if (defined($cpuset_nodes) and (keys(%{$cpuset_nodes}) > 0)){
-                OAR::Modules::Judas::oar_debug("JobFinishingSequence", "CPUSET Clean cpuset on each nodes\n", $session_id, $job_id);
+                OAR::Modules::Judas::oar_info("JobFinishingSequence", "CPUSET Clean cpuset on each nodes\n", $session_id, $job_id);
                 my $taktuk_cmd = get_conf("TAKTUK_CMD");
                 my $job_user = $job->{job_user};
                 my ($job_challenge,$ssh_private_key,$ssh_public_key) = OAR::IO::get_job_challenge($dbh,$job_id);
@@ -8797,7 +8797,7 @@ sub job_finishing_sequence($$$$$$$){
     # Execute PING_CHECKER if asked
     if ((is_conf("ACTIVATE_PINGCHECKER_AT_JOB_END")) and (lc(get_conf("ACTIVATE_PINGCHECKER_AT_JOB_END")) eq "yes") and (!defined($types->{deploy})) and (!defined($types->{noop}))){
         my @hosts = OAR::IO::get_job_current_hostnames($dbh,$job_id);
-        oar_debug("JobFinishingSequence", "Run pingchecker to test nodes at the end of the job on nodes: @hosts\n", $session_id);
+        oar_info("JobFinishingSequence", "Run pingchecker to test nodes at the end of the job on nodes: @hosts\n", $session_id);
         my @bad_pingchecker = OAR::PingChecker::test_hosts(@hosts);
         if ($#bad_pingchecker >= 0){
             oar_error("JobFinishingSequence", "PING_CHECKER_NODE_SUSPECTED_END_JOB OAR suspects nodes for the job $job_id: @bad_pingchecker\n", $session_id, $job_id);
@@ -8807,7 +8807,7 @@ sub job_finishing_sequence($$$$$$$){
     #
 
     foreach my $e (@{$events}){
-        OAR::Modules::Judas::oar_debug("JobFinishingSequence", "$e->{string}\n", $session_id);
+        OAR::Modules::Judas::oar_info("JobFinishingSequence", "$e->{string}\n", $session_id);
         if (defined($e->{hosts})){
             add_new_event_with_host($dbh,$e->{type},$job_id,$e->{string},$e->{hosts});
         }else{

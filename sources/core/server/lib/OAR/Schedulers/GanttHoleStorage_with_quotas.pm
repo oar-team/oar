@@ -3,7 +3,7 @@ package OAR::Schedulers::GanttHoleStorage_with_quotas;
 require Exporter;
 use OAR::Schedulers::ResourceTree;
 use OAR::Schedulers::QuotaStorage;
-use OAR::Modules::Judas qw(oar_debug oar_warn oar_error set_current_log_category);
+use OAR::Modules::Judas qw(oar_debug oar_warn oar_info oar_error set_current_log_category);
 use Data::Dumper;
 use POSIX ":sys_wait_h";
 use POSIX qw(strftime);
@@ -236,10 +236,10 @@ sub manage_gantt_for_timesharing_and_placeholder($$$$$$$$) {
     my $timesharing_name = "";
     if (defined($types->{placeholder})){ # A placeholder job cannot be allowed or timesharing. 
         $placeholder_name = $types->{placeholder};
-        oar_debug($module_name, "job is ($inner_id,$placeholder_name,,)\n", $session_id, $job_id);
+        oar_info($module_name, "job is ($inner_id,$placeholder_name,,)\n", $session_id, $job_id);
         if (not defined_gantt($Gantt,$inner_id,$placeholder_name,"","")){
             $Gantt->{$inner_id}->{$placeholder_name}->{""}->{""} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-            oar_debug($module_name, "placeholder job: cloned gantt ($inner_id,$placeholder_name,,) from ($inner_id,,,)\n", $session_id, $job_id);
+            oar_info($module_name, "placeholder job: cloned gantt ($inner_id,$placeholder_name,,) from ($inner_id,,,)\n", $session_id, $job_id);
         }
     } else {
         if (defined($types->{allowed})){
@@ -256,42 +256,42 @@ sub manage_gantt_for_timesharing_and_placeholder($$$$$$$$) {
                         if (defined($job_name) and $job_name ne "") {
                             $timesharing_name = $job_name;
                         } else {
-                            oar_debug($module_name, "timesharing on name but no job name defined, using *\n", $session_id, $job_id);
+                            oar_info($module_name, "timesharing on name but no job name defined, using *\n", $session_id, $job_id);
                         }
                     }
                 }
             }
         }
-        oar_debug($module_name, "job is ($inner_id,$allowed_name,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
+        oar_info($module_name, "job is ($inner_id,$allowed_name,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
         if (not defined_gantt($Gantt,$inner_id,$allowed_name,$timesharing_user,$timesharing_name)) {
             if (not defined_gantt($Gantt,$inner_id,$allowed_name,"","") and not defined_gantt($Gantt,$inner_id,"",$timesharing_user,$timesharing_name)) {
                 $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                oar_debug($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n", $session_id, $job_id);
+                oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n", $session_id, $job_id);
                 if ($allowed_name ne "") {
                     $Gantt->{$inner_id}->{$allowed_name}->{""}->{""} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                    oar_debug($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n", $session_id, $job_id);
+                    oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n", $session_id, $job_id);
                 }
                 if ($timesharing_user ne "" or $timesharing_name ne "") {
                     $Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                    oar_debug($module_name, "allowed/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n", $session_id, $job_id);
+                    oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n", $session_id, $job_id);
                 }
             } elsif (not defined_gantt($Gantt,$inner_id,$allowed_name,"","")) { #G($i,,$u,$n) is defined
                 $Gantt->{$inner_id}->{$allowed_name}->{""}->{""} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                oar_debug($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n", $session_id, $job_id);
+                oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n", $session_id, $job_id);
                 if ($timesharing_user ne "" and $timesharing_name ne "") {
                     $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name});
-                    oar_debug($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
+                    oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
                 }
             } elsif (not defined_gantt($Gantt,$inner_id,"",$timesharing_user,$timesharing_name)) { # G($i,$p,,) is defined
                 $Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                oar_debug($module_name, "allowed/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n", $session_id, $job_id);
+                oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n", $session_id, $job_id);
                 if ($allowed_name ne "") {
                     $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{$allowed_name}->{""}->{""});
-                    oar_debug($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,)\n", $session_id, $job_id);
+                    oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,)\n", $session_id, $job_id);
                 }
             } else { # Both G($i,$p,,) and G($i,,$u,$n) are defined. We need to merge them to create G($i,$p,$u,$n) 
                 $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = merge_clone($Gantt->{$inner_id}->{$allowed_name}->{""}->{""},$Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name});
-                oar_debug($module_name, "allowed/timesharing job: merged gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,) and ($inner_id,,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
+                oar_info($module_name, "allowed/timesharing job: merged gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,) and ($inner_id,,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
             }
         }
     }
@@ -324,7 +324,7 @@ sub fill_gantts($$$$$$$$$$$$) {
         foreach my $u (keys(%{$Gantt->{$inner_id}->{$p}})){
             foreach my $n (keys(%{$Gantt->{$inner_id}->{$p}->{$u}})){
                 if (not (($p ne "" and $p eq $placeholder_name) or ($u ne "" and $u eq $timesharing_user and $n ne "" and $n eq $timesharing_name))){
-                    oar_debug($module_name, "add job occupation in gantt ($inner_id,$p,$u,$n)\n", $session_id, $job_id);
+                    oar_info($module_name, "add job occupation in gantt ($inner_id,$p,$u,$n)\n", $session_id, $job_id);
                     OAR::Schedulers::GanttHoleStorage_with_quotas::set_occupation( $Gantt->{$inner_id}->{$p}->{$u}->{$n},
                                                         $date,
                                                         $duration,
@@ -332,9 +332,9 @@ sub fill_gantts($$$$$$$$$$$$) {
                                                       );
                 } else {
                     if ($placeholder_name ne "") {
-                        oar_debug($module_name, "skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,s:$placeholder_name,,)\n", $session_id, $job_id);
+                        oar_info($module_name, "skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,s:$placeholder_name,,)\n", $session_id, $job_id);
                     } else {
-                        oar_debug($module_name, "skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,u:$allowed_name,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
+                        oar_info($module_name, "skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,u:$allowed_name,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
                     }
                 }
             }
