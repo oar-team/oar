@@ -103,6 +103,7 @@ my $import_job_key_file = "";
 my $import_job_key_inline = "";
 my $export_job_key_file = "";
 my $Initial_request_string = "oarsub @ARGV";
+my $Verbose_level;
 
 # a non array-job is an array-job with 1 subjob
 my $array_job_nb;
@@ -170,7 +171,9 @@ sub connect_job($$$){
             $ENV{DISPLAY}="";
         }
         if ($ENV{DISPLAY} ne ""){
-            print("Initialize X11 forwarding...\n");
+            if ($Verbose_level >= 1) {
+                print("Initialize X11 forwarding...\n");
+            }
             # first, get rid of remaining unused .Xautority.{pid} files...
             system({"bash"} "bash","-c",'for f in $HOME/.Xauthority.*; do [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f; done');
             my $new_xauthority = $ENV{HOME}."/.Xauthority.$$";
@@ -230,7 +233,9 @@ sub connect_job($$$){
         #essential: you become oar instead of the user
         #UID=EUID
         $< = $>;
-        print("Connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
+        if ($Verbose_level >= 1) {
+            print("Connect to OAR job $job_id via the node $host_to_connect_via_ssh\n");
+        }
         system({$cmd[0]} @cmd);
         my $exit_value = $? >> 8;
         if ($exit_value == 2){
@@ -353,6 +358,10 @@ Options are:
  -J, --json                    Print result in JSON format.
  -h, --help                    Print this help message.
  -V, --version                 Print OAR version number.
+ -v,                           Verbose mode, oarsub and admissions rules (if
+                               compatible) will print more information on
+                               stdout. Multiple -v can be used to increase
+                               the level of verbosity (max: 2).
 EOS
 }
 
@@ -693,6 +702,8 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
 
 Getopt::Long::Configure ("gnu_getopt");
 my $Version;
+my @Verbose;
+
 GetOptions ("resource|l=s" => \@resource,
             "queue|q=s"   => \$Queue_name,
             "interactive|I"  => \$Interactive,
@@ -725,9 +736,14 @@ GetOptions ("resource|l=s" => \@resource,
             "import-job-key-inline-priv=s" => \$import_job_key_inline,
             "import-job-key-from-file|i=s" => \$import_job_key_file,
             "export-job-key-to-file|e=s" => \$export_job_key_file,
-            "version|V" => \$Version
+            "version|V" => \$Version,
+            "v" => \@Verbose
            ) or exit(1);
 
+$Verbose_level = scalar @Verbose;
+if ($Verbose_level > 2) {
+    $Verbose_level = 2;
+}
 
 if (defined($Version)){
     print("OAR version: ".OAR::Sub::get_oar_version()."\n");
@@ -756,12 +772,16 @@ if (defined($ENV{OAR_JOB_KEY_FILE})){
 OAR::Sub::open_db_connection();
 
 if (defined($Resubmit)){
-    print("Resubmitting job $Resubmit...");
+    if ($Verbose_level >= 1) {
+        print("Resubmitting job $Resubmit...");
+    }
     my $err = OAR::Sub::resubmit_job($Resubmit);
     OAR::Sub::close_db_connection();
     if ($err > 0){
         $Job_id = $err;
-        print("DONE\n");
+        if ($Verbose_level >= 1) {
+            print("DONE\n");
+        }
         print("OAR_JOB_ID=$Job_id\n");
         if (defined(OAR::Sub::signal_almighty($remote_host,$remote_port,"Qsub"))){
             warn("[ERROR] Cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
@@ -1005,7 +1025,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         print "Stagein completed.\n";
     }
 
-     $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
+     $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref, $Verbose_level);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -1034,7 +1054,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
 
     ($Server, my $server_port) = parse_reservation(1, \@resource_list);
 
-    $Job_id_list_ref = OAR::Sub::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
+    $Job_id_list_ref = OAR::Sub::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref, $Verbose_level);
 }
 
 if ((!defined($Job_id_list_ref)) or (ref($Job_id_list_ref) ne "ARRAY")){

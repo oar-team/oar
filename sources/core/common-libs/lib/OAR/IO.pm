@@ -56,7 +56,7 @@ sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub get_possible_wanted_resources($$$$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_job_state($$);
 sub get_current_moldable_job($$);
@@ -1318,8 +1318,8 @@ sub estimate_job_nb_resources($$$){
 # read job key file if import from file
 # generate a job key if no import.
 # function returns with $job_key_priv and $job_key_pub set if $use_job_key is set.
-sub job_key_management($$$$) {
-    my ($use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file) = @_;
+sub job_key_management($$$$$) {
+    my ($use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$verbose_level) = @_;
 
     my $job_key_priv = '';
     my $job_key_pub = '';
@@ -1341,7 +1341,9 @@ sub job_key_management($$$$) {
             # job key is imported
             if ($import_job_key_inline ne "") {
                 # inline import
-                print ("Import job key inline.\n");
+                if ($verbose_level >= 1) {
+                    print ("Import job key inline.\n");
+                }
                 unless (sysopen(FH,"$tmp_job_key_file",O_CREAT|O_WRONLY,0600)) {
                     warn("Error: Cannot open tmp file for writing: $tmp_job_key_file\n");
                     return(-14,'','');
@@ -1351,7 +1353,9 @@ sub job_key_management($$$$) {
                 close(F);
             } else {
                 # file import
-                print ("Import job key from file: $import_job_key_file\n");
+                if ($verbose_level >= 1) {
+                    print ("Import job key from file: $import_job_key_file\n");
+                }
                 my $lusr= $ENV{OARDO_USER};
                 # read key files: oardodo su - user needed in order to be able to read the file for sure
                 # safer way to do a `cmd`, see perl cookbook
@@ -1390,7 +1394,9 @@ sub job_key_management($$$$) {
             }
         } else {
             # we must generate the key
-            print("Generate a job key...\n");
+            if ($verbose_level >= 1) {
+                print("Generate a job key...\n");
+            }
             # ssh-keygen: no passphrase, smallest key (1024 bits), ssh2 rsa faster than dsa.
             system({"bash"} "bash","-c",'ssh-keygen -b 1024 -N "" -t rsa -f "'.$tmp_job_key_file.'" > /dev/null');
             if ($? != 0) {
@@ -1457,8 +1463,8 @@ sub job_key_management($$$$) {
 
 #TODO: moldable and array job, mysql LOAD INFILE, pg COPY or test limit
 
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
-   my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$initial_request_string, $array_job_nb,$array_params_ref) = @_;
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
+   my ($dbh, $dbh_ro, $jobType, $ref_resource_list, $command, $infoType, $queue_name, $jobproperties, $startTimeReservation, $idFile, $checkpoint, $checkpoint_signal, $notify, $job_name,$job_env,$type_list,$launching_directory,$anterior_ref,$stdout,$stderr,$job_hold,$project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$initial_request_string, $array_job_nb,$array_params_ref, $verbose_level) = @_;
 
     my $array_id = 0;
 
@@ -1551,7 +1557,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     } else {
       # single job to submit and when job key is used with array job
       foreach my $command (@array_job_commands){
-      my ($err,$ssh_priv_key,$ssh_pub_key) = job_key_management($use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file);
+      my ($err,$ssh_priv_key,$ssh_pub_key) = job_key_management($use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$verbose_level);
         if ($err != 0){
           push(@Job_id_list, $err);
           return(\@Job_id_list);
@@ -1594,7 +1600,10 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
                   return(@Job_id_list);
               }
           }
-          print "Export job key to file: ".$export_job_key_file_tmp."\n";
+
+          if ($verbose_level >= 1) {
+              print "Export job key to file: ".$export_job_key_file_tmp."\n";
+          }
         }
       }
    }
