@@ -693,6 +693,8 @@ if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
 
 Getopt::Long::Configure ("gnu_getopt");
 my $Version;
+my @Verbose;
+
 GetOptions ("resource|l=s" => \@resource,
             "queue|q=s"   => \$Queue_name,
             "interactive|I"  => \$Interactive,
@@ -725,9 +727,11 @@ GetOptions ("resource|l=s" => \@resource,
             "import-job-key-inline-priv=s" => \$import_job_key_inline,
             "import-job-key-from-file|i=s" => \$import_job_key_file,
             "export-job-key-to-file|e=s" => \$export_job_key_file,
-            "version|V" => \$Version
+            "version|V" => \$Version,
+            "v" => \@Verbose
            ) or exit(1);
 
+my $Verbose_level = scalar @Verbose;
 
 if (defined($Version)){
     print("OAR version: ".OAR::Sub::get_oar_version()."\n");
@@ -1005,7 +1009,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         print "Stagein completed.\n";
     }
 
-     $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
+     $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref, $Verbose_level);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
@@ -1034,7 +1038,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
 
     ($Server, my $server_port) = parse_reservation(1, \@resource_list);
 
-    $Job_id_list_ref = OAR::Sub::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref);
+    $Job_id_list_ref = OAR::Sub::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref, $Verbose_level);
 }
 
 if ((!defined($Job_id_list_ref)) or (ref($Job_id_list_ref) ne "ARRAY")){
