@@ -71,10 +71,7 @@ my @resource;
 my $Queue_name;
 my $Job_sql_properties = "";
 my $Cmd_executor;
-my $stagein = undef;
 my $idFile = undef;
-my $md5sum = undef;
-my $stageindir;
 my $sos;
 my $Checkpoint=0;
 my $notify;
@@ -350,8 +347,6 @@ Options are:
      --hold                    Set the job state into Hold instead of Waiting,
                                so that it is not scheduled (you must run
                                "oarresume" to turn it into the Waiting state).
- -s, --stagein=<dir|tgz>       Set the stagein directory or archive.
-     --stagein-md5sum=<md5sum> Set the stagein file md5sum.
  -D, --dumper                  Print result in DUMPER format.
  -X, --xml                     Print result in XML format.
  -Y, --yaml                    Print result in YAML format.
@@ -653,7 +648,6 @@ sub run_advance_reservation_validation_hook($$) {
 init_conf($ENV{OARCONFFILE});
 $remote_host = get_conf("SERVER_HOSTNAME");
 $remote_port = get_conf("SERVER_PORT");
-$stageindir = get_conf("STAGEIN_DIR");
 
 $Default_resources = get_conf("OARSUB_DEFAULT_RESOURCES");
 if (!defined($Default_resources)){
@@ -710,8 +704,6 @@ GetOptions ("resource|l=s" => \@resource,
             "property|p=s" => \$Job_sql_properties,
             "reservation|r=s" => \$Reservation,
             "connect|C=i" => \$connect_job,
-            "stagein|s=s" => \$stagein,
-            "stagein-md5sum=s" => \$md5sum,
             "checkpoint=i" => \$Checkpoint,
             "help|h" => \$sos,
             "notify=s" => \$notify,
@@ -815,11 +807,6 @@ if (($Interactive == 1) and ($Reservation ne "0")){
     OAR::Sub::close_db_connection(); exit(7);
 }
 
-if (($Interactive == 1) and (grep(/^desktop_computing$/, @Type))){
-    warn("[ERROR] A desktop computing job cannot be interactive.\n");
-    usage();
-    OAR::Sub::close_db_connection(); exit(17);
-}
 if (($Interactive == 1) and grep(/^noop(?:=standby)?$/, @Type)){
     warn("[ERROR] A noop job cannot be interactive.\n");
     OAR::Sub::close_db_connection(); exit(17);
@@ -932,16 +919,6 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
         }elsif(defined($scan_result{exportjobkeytofile}) && ($export_job_key_file ne "")){
             warn("/!\\ Ignore script value for export-job-key-to-file parameter: $scan_result{exportjobkeytofile}; another value was given on the command line.\n");
         }
-        if (defined($scan_result{stagein}) && (!defined($stagein))){
-            $stagein = $scan_result{stagein};
-        }elsif (defined($scan_result{stagein}) && (defined($stagein))){
-            warn("/!\\ Ignore script value for stagein parameter: $scan_result{stagein}; another value was given on the command line.\n");
-        }
-        if (defined($scan_result{stageinmd5sum}) && (!defined($md5sum))){
-            $md5sum = $scan_result{stageinmd5sum};
-        }elsif(defined($scan_result{stageinmd5sum}) && (defined($md5sum))){
-            warn("/!\\ Ignore script value for stagein-md5sum parameter: $scan_result{stageinmd5sum}; another value was given on the command line.\n");
-        }
         if (defined($scan_result{array}) && (!defined($array_job_nb))){
             $array_job_nb = $scan_result{array};
         }elsif(defined($scan_result{array}) && (defined($array_job_nb))){
@@ -977,55 +954,7 @@ if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type
 
     ($Server, my $server_port) = parse_reservation(0, \@resource_list);
 
-    # TODO: put in lib
-    # stagein machinery
-    if ((defined $stagein) and (grep(/^desktop_computing$/, @Type))) {
-        #my $tempfile_to_delete;
-        print "Setting up stagein...\n";
-        if (-d $stagein) {
-            print "Archiving the content of the directory \"$stagein\" for the job stagein...\n";
-            my  (undef, $filename) = tempfile (SUFFIX=>".oar-stagein.tgz",OPEN => 0);
-            system "tar cfz $filename $stagein" and die "Failed to archive the directory: $?\n";
-            print "Stagein archive = $filename\n";
-            print "(You may save this file if you plan to submit other jobs later with the same stagein)\n";
-            $stagein = $filename;
-            #$tempfile_to_delete = $filename;
-            $md5sum = undef;
-        }
-        ( -r $stagein ) or die "Stagein file not found: $stagein\n";
-        unless (defined $md5sum) {
-            print "Computing stagein md5sum...\n";
-            ($md5sum) = split(" ",`md5sum $stagein`);
-            print "md5sum = $md5sum\n";
-            print "(You may use the stagein-md5sum option with this md5sum for other job submitions with the same stagein)\n";
-        }
-        OAR::Sub::get_lock($md5sum,3600) or die "Failed to lock stagein\n";
-        $idFile = OAR::Sub::get_stagein_id($md5sum);
-        if (defined $idFile) {
-            print "This stagein is already stored on the server.\n";
-        } else {
-            my $location = "$stageindir/$md5sum";
-            my $method = "FILE";
-            my $compression = "tar.gz";
-            print "Uploading stagein...\n";
-            system "scp $stagein $location" and die "Stagein upload failed\n";
-            my @stats = stat $stagein;
-            my %params = (
-                "md5sum" => $md5sum,
-                "location" => $location,
-                "method" => $method,
-                "compression" => $compression,
-                "size" => $stats[7]
-            );
-            $idFile=OAR::Sub::set_stagein(\%params);
-            defined $idFile or die "Failed to setup stagein\n";
-        }
-        OAR::Sub::release_lock($md5sum) or die "Failed to unlock stagein\n";
-        #unlink($tempfile_to_delete) if (defined($tempfile_to_delete));
-        print "Stagein completed.\n";
-    }
-
-     $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref, $Verbose_level);
+    $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref, $Verbose_level);
 }else{
     if ($ARGV[0] ne ""){
         warn("/!\\ You asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
