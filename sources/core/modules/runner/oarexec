@@ -305,6 +305,13 @@ if ( $Job->{mode} eq "PASSIVE" ){
     my $str;
     ($str, $stdin_script_to_send) = OAR::Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job->{array_id},$Job->{array_index},$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{walltime},$Job->{walltime_seconds},$Job->{job_env},$Job->{command});
     @cmd = ("oardodo","perl","-e",$str);
+    if ((defined($Job->{types}->{deploy}) or defined($Job->{types}->{cosystem})) and defined($Job->{deploy_cosystem_job_exec_system})) {
+        if ($Job->{deploy_cosystem_job_exec_system} eq "systemd-run") {
+            @cmd = ("oardodo","systemd-run","perl","-e",$str);
+        } elsif ($Job->{deploy_cosystem_job_exec_system} eq "machinectl") {
+            @cmd = ("oardodo","machinectl","perl","-e",$str);
+        }
+    }
 }
 
 #resolve terminal type problems
