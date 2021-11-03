@@ -87,6 +87,17 @@ DEPLOY_HOSTNAME="127.0.0.1"
 COSYSTEM_HOSTNAME="127.0.0.1"
 # Configuration for module: server, user, api
 
+# Specify what system to use for the execution on the deploy and cosystem frontends
+# Possible values are:
+#   none: just run in a bash shell (default)
+#   systemd-run: use systemd-run
+#   machinectl: use machinectl
+# systemd-run and machinectl place the job processes in systemd's slices, which
+# allows for setting limits for instance. machinectl may not be available on
+# some systems while systemd-run comes by default with systemd.
+#DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM="systemd-run"
+# Configuration for module: server, user, api
+
 # Specify the database field to use to fill the file on the first node of the
 # job in $OAR_NODE_FILE (default is 'network_address'). Only resources with
 # type=default are displayed in this file.
