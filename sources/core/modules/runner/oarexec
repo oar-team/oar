@@ -298,18 +298,22 @@ if (!defined($shell)){
     print("[oarexec $Job_id] error: user $Job->{job_user} does not exist on this node, $host\n");
     exit(7);
 }
+my $uid = $pass_info[2];
 
 my @cmd;
 my $stdin_script_to_send;
+my $oardo_become_user = $Job->{job_user};
 if ( $Job->{mode} eq "PASSIVE" ){
     my $str;
     ($str, $stdin_script_to_send) = OAR::Tools::get_oarexecuser_perl_script_for_oarexec($Node_file,$Job_id,$Job->{array_id},$Job->{array_index},$Job->{user},$shell,$Job->{launching_directory},$Job->{stdout_file},$Job->{stderr_file},$Res_file,$Job->{name},$Job->{project},$Job->{walltime},$Job->{walltime_seconds},$Job->{job_env},$Job->{command});
     @cmd = ("oardodo","perl","-e",$str);
     if ((defined($Job->{types}->{deploy}) or defined($Job->{types}->{cosystem})) and defined($Job->{deploy_cosystem_job_exec_system})) {
         if ($Job->{deploy_cosystem_job_exec_system} eq "systemd-run") {
-            @cmd = ("oardodo","systemd-run","perl","-e",$str);
+            $oardo_become_user = "";
+            @cmd = ("oardodo","systemd-run","-q","--uid=$uid","--pty","--wait","--collect","--service-type=exec","--slice=user-$uid.slice","perl","-e",$str);
         } elsif ($Job->{deploy_cosystem_job_exec_system} eq "machinectl") {
-            @cmd = ("oardodo","machinectl","perl","-e",$str);
+            $oardo_become_user = "";
+            @cmd = ("oardodo","machinectl","-q","--uid=$uid","shell",".host","perl","-e",$str);
         }
     }
 }
@@ -470,7 +474,7 @@ if ($Job->{mode} eq "PASSIVE"){
         close(STDIN);
         open(STDIN, "<& pipe_stdin_read");
 
-        $ENV{OARDO_BECOME_USER} = $Job->{job_user};
+        $ENV{OARDO_BECOME_USER} = $oardo_become_user;
         umask(oct($Old_umask));
         exec(@cmd);
         warn("[ERROR] Cannot find @cmd\n");
