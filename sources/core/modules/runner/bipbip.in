@@ -382,10 +382,13 @@ my $epilogue_exec_file;
 if (is_conf("EPILOGUE_EXEC_FILE")){
    $epilogue_exec_file = get_conf("EPILOGUE_EXEC_FILE"); 
 }
-
 my $passive_job_hook_exec_file;
 if (is_conf("PASSIVE_JOB_HOOK_EXEC_FILE")){
    $passive_job_hook_exec_file = get_conf("PASSIVE_JOB_HOOK_EXEC_FILE"); 
+}
+my $deploy_cosystem_job_exec_system;
+if (is_conf("DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM")){
+   $deploy_cosystem_job_exec_system = get_conf("DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM"); 
 }
 my @oarexec_files = ($OAR_Tools_module_filepath,"$ENV{OARDIR}/oarexec");
 
@@ -436,6 +439,7 @@ my %data_to_transfer = (
         prologue            => $prologue_exec_file,
         epilogue            => $epilogue_exec_file,
         passive_job_hook    => $passive_job_hook_exec_file,
+        deploy_cosystem_job_exec_system => $deploy_cosystem_job_exec_system,
         tmp_directory       => OAR::Tools::get_default_oarexec_directory,
         detach_oarexec      => $Detach_oarexec,
         cpuset_full_path    => $oarexec_cpuset_path
