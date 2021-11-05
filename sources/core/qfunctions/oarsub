@@ -52,6 +52,7 @@ my $remote_host;
 my $remote_port;
 my $Deploy_hostname;
 my $Cosystem_hostname;
+my $Deploy_cosystem_job_exec_system;
 my $Cpuset_field;
 my $Cpuset_path;
 my $Host = hostname ;
@@ -225,11 +226,10 @@ sub connect_job($$$){
         }
 
         my $oardodo_cmd = "OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";
-        my $deploy_cosystem_job_exec_system = get_conf("DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM");
-        if ((defined($types->{cosystem}) or defined($types->{deploy}) or ($#hosts < 0)) and defined($deploy_cosystem_job_exec_system)) {
-            if ($deploy_cosystem_job_exec_system eq "systemd-run") {
+        if (defined($types->{cosystem}) or defined($types->{deploy}) or ($#hosts < 0)) {
+            if ($Deploy_cosystem_job_exec_system eq "systemd-run") {
                 $oardodo_cmd = "oardodo systemd-run -q --uid=$uid --pty --wait --collect --service-type=exec --slice=user-$uid.slice /bin/bash --noprofile --norc -c '$str'";
-            } elsif ($deploy_cosystem_job_exec_system eq "none") {
+            } elsif ($Deploy_cosystem_job_exec_system eq "none") {
                 # Use regular command by default
             }
         }
@@ -563,6 +563,14 @@ if (!defined($Deploy_hostname)){
 $Cosystem_hostname = get_conf("COSYSTEM_HOSTNAME");
 if (!defined($Cosystem_hostname)){
     $Cosystem_hostname = $remote_host;
+}
+
+$Deploy_cosystem_job_exec_system = get_conf("DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM");
+if (!defined($Deploy_cosystem_job_exec_system)) {
+     $Deploy_cosystem_job_exec_system = "none";
+}
+if (($Deploy_cosystem_job_exec_system ne "none") and ($Deploy_cosystem_job_exec_system ne "systemd-run")) {
+    die("[ERROR] Bad configuration for DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM: '$Deploy_cosystem_job_exec_system' is unsupported\n");
 }
 
 $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");

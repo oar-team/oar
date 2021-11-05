@@ -388,7 +388,11 @@ if (is_conf("PASSIVE_JOB_HOOK_EXEC_FILE")){
 }
 my $deploy_cosystem_job_exec_system;
 if (is_conf("DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM")){
-   $deploy_cosystem_job_exec_system = get_conf("DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM"); 
+   $deploy_cosystem_job_exec_system = get_conf("DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM");
+   if (($deploy_cosystem_job_exec_system ne "none") and ($deploy_cosystem_job_exec_system ne "systemd-run")) {
+      oar_error("[bipbip $Job_id] Invalid configuration for DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM: '$deploy_cosystem_job_exec_system' is unsupported\n");
+      # Don't exit, because it causes the job to be stuck in 'Launching' state...
+   }
 }
 my @oarexec_files = ($OAR_Tools_module_filepath,"$ENV{OARDIR}/oarexec");
 
