@@ -310,10 +310,9 @@ if ( $Job->{mode} eq "PASSIVE" ){
     if ((defined($Job->{types}->{deploy}) or defined($Job->{types}->{cosystem})) and defined($Job->{deploy_cosystem_job_exec_system})) {
         if ($Job->{deploy_cosystem_job_exec_system} eq "systemd-run") {
             $oardo_become_user = "";
-            @cmd = ("oardodo","systemd-run","-q","--uid=$uid","--pty","--wait","--collect","--service-type=exec","--slice=user-$uid.slice","perl","-e",$str);
-        } elsif ($Job->{deploy_cosystem_job_exec_system} eq "machinectl") {
-            $oardo_become_user = "";
-            @cmd = ("oardodo","machinectl","-q","--uid=$uid","shell",".host","perl","-e",$str);
+            @cmd = ("oardodo","systemd-run","-q","--uid=$uid","--pipe","--wait","--collect","--service-type=exec","--slice=user-$uid.slice","perl","-e",$str);
+        } elsif ($Job->{deploy_cosystem_job_exec_system} eq "none") {
+            # Use regular command by default
         }
     }
 }

@@ -91,10 +91,8 @@ COSYSTEM_HOSTNAME="127.0.0.1"
 # Possible values are:
 #   none: just run in a bash shell (default)
 #   systemd-run: use systemd-run
-#   machinectl: use machinectl
-# systemd-run and machinectl place the job processes in systemd's slices, which
-# allows for setting limits for instance. machinectl may not be available on
-# some systems while systemd-run comes by default with systemd.
+# systemd-run executes the job processes in user slices managed by systemd, which
+# could easily allow to set resource limits through cgroups.
 #DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM="systemd-run"
 # Configuration for module: server, user, api
 

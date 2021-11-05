@@ -229,8 +229,8 @@ sub connect_job($$$){
         if ((defined($types->{cosystem}) or defined($types->{deploy}) or ($#hosts < 0)) and defined($deploy_cosystem_job_exec_system)) {
             if ($deploy_cosystem_job_exec_system eq "systemd-run") {
                 $oardodo_cmd = "oardodo systemd-run -q --uid=$uid --pty --wait --collect --service-type=exec --slice=user-$uid.slice /bin/bash --noprofile --norc -c '$str'";
-            } elsif ($deploy_cosystem_job_exec_system eq "machinectl") {
-                $oardodo_cmd = "oardodo machinectl -q --uid=$uid shell .host /bin/bash --noprofile --norc -c '$str'";
+            } elsif ($deploy_cosystem_job_exec_system eq "none") {
+                # Use regular command by default
             }
         }
 
