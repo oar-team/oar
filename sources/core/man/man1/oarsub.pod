@@ -221,6 +221,10 @@ Print this help message.
 
 Print the version of OAR.
 
+=item B<-v>
+
+Verbose mode, oarsub and admissions rules (if compatible) will print more information on terminal. Multiple -v can be used to increase the level of verbosity (max: 2).
+
 =back
 
 =head1 ENVIRONMENT

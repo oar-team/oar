@@ -356,7 +356,7 @@ Options are:
  -V, --version                 Print OAR version number.
  -v,                           Verbose mode, oarsub and admissions rules (if
                                compatible) will print more information on
-                               stdout. Multiple -v can be used to increase
+                               terminal. Multiple -v can be used to increase
                                the level of verbosity (max: 2).
 EOS
 }
