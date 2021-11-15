@@ -109,19 +109,20 @@ my $array_params_ref;
 
 
 #to catch ^C signal
-$SIG{INT} = \&qdel;
-$SIG{HUP} = \&qdel;
-$SIG{PIPE} = \&qdel;
+$SIG{INT} = \&signal_handler;
+$SIG{HUP} = \&signal_handler;
+$SIG{PIPE} = \&signal_handler;
 
 # to address ^C in interactive submission
-sub qdel($) {
-    my $Al_dead = shift;
+sub signal_handler($) {
+    my $signal = shift;
     if (defined($Job_id_list_ref)) {
-        if ($Al_dead eq "INT" ) {
+        if ($signal eq "INT" ) {
             print(STDERR "\n\n# Caught Interrupt (^C), ");
         }
         OAR::Sub::delete_jobs($Job_id_list_ref, $remote_host, $remote_port);
-        OAR::Sub::close_db_connection(); exit(1);
+        OAR::Sub::close_db_connection();
+        exit(1);
     }
 }
 
