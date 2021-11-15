@@ -51,7 +51,7 @@ if (is_conf("OAR_RUNTIME_DIRECTORY")){
 if (defined($ARGV[0])){
     my $job_id = $ARGV[0];
     if ($job_id !~ m/^\d+$/m){
-        oar_error($Module_name, "Exterminator was called, but $job_id is not a correct\n", $Session_id, $job_id);
+        oar_error($Module_name, "Leon was called to kill job, but $job_id is not valid\n", $Session_id, $job_id);
     }
     my $base = OAR::IO::connect();
     my $frag_state = OAR::IO::get_job_frag_state($base, $job_id);
@@ -62,12 +62,12 @@ if (defined($ARGV[0])){
         $SIG{TERM} = 'IGNORE';
         my $str = "[Leon] Exterminate job $job_id";
         my @events; push(@events, {type => "EXTERMINATE_JOB", string => $str});
-        oar_info($Module_name, "Exterminator was called on job\n", $Session_id, $job_id);
+        oar_info($Module_name, "Leon was called on job\n", $Session_id, $job_id);
         OAR::IO::job_arm_leon_timer($base,$job_id);
         OAR::IO::job_finishing_sequence($base, $Server_epilogue, $Server_hostname, $Server_port, $job_id, \@events, $Session_id);
         OAR::Tools::notify_tcp_socket($Server_hostname, $Server_port, "ChState");
     }else{
-        oar_error($Module_name, "Exterminator was called on job but its frag_state is not LEON_EXTERMINATE\n", $Session_id, $job_id);
+        oar_error($Module_name, "Leon was called on job but its frag_state is not LEON_EXTERMINATE\n", $Session_id, $job_id);
     }
     OAR::IO::disconnect($base);
     exit(0);
