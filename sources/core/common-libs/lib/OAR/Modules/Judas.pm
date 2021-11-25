@@ -41,6 +41,8 @@ if (is_conf("LOG_CATEGORIES")){
 else{
   $log_categories{"all"} = 1;
 }
+# Default format is "type|timestamp|module/session|jobid|message"
+my $log_format = get_conf_with_default_param("LOG_FORMAT","%s|%s|%s/%s|%s|%s");
 
 my $Module_name = "Judas";
 my $Session_id = $$;
@@ -93,7 +95,7 @@ sub set_current_log_category($){
 # this function writes both on the stdout and in the log file
 sub write_log($){
     my $str = shift;
-	$CURRENT_LOG_CAT = "all" if !defined $CURRENT_LOG_CAT;
+    $CURRENT_LOG_CAT = "all" if !defined $CURRENT_LOG_CAT;
     if(exists($log_categories{$CURRENT_LOG_CAT}) || exists($log_categories{"all"})){
       if (open(LOG,">>$log_file")){
           print(LOG "$str");
@@ -166,15 +168,10 @@ sub oar_log($$$$;$) {
     my $job_id = shift;
 
     my ($seconds, $microseconds) = gettimeofday();
-    $microseconds = int($microseconds / 1000);
-    $microseconds = sprintf("%03d", $microseconds);
+    $microseconds = sprintf("%03d", int($microseconds) / 1000);
 
-    if (defined($job_id)) {
-        $string = "%$job_id " . $string;
-    }
-
-    $string = strftime("%FT%T", localtime($seconds)) . ".$microseconds $module_name $session_id $string";
-    write_log("$level $string");
+    $string = sprintf($log_format, $level, strftime("%FT%T", localtime($seconds)).".$microseconds", $module_name, $session_id, defined($job_id)?$job_id:"", $string);
+    write_log($string);
 }
 
 # Must be only used in the fork of the send_mail function to store errors in OAR DB
