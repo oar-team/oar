@@ -52,6 +52,7 @@ my $remote_host;
 my $remote_port;
 my $Deploy_hostname;
 my $Cosystem_hostname;
+my $Deploy_cosystem_job_exec_system;
 my $Cpuset_field;
 my $Cpuset_path;
 my $Host = hostname ;
@@ -165,6 +166,7 @@ sub connect_job($$$){
         OAR::Sub::close_db_connection();
         my @passinfo = getpwnam($lusr) or die("Cannot retreive system information for user $lusr\n");
         my $shell=$passinfo[8];
+        my $uid=$passinfo[2];
         unless ((defined($xauth_path)) and (-x $xauth_path) and ($ENV{DISPLAY} =~ /^[\w.-]*:\d+(?:\.\d+)?$/)) {
             $ENV{DISPLAY}="";
         }
@@ -222,10 +224,20 @@ sub connect_job($$$){
         if (defined($interactive_job_hook_file)) {
             $interactive_job_hook_cmd = "if test -x $interactive_job_hook_file; then oardodo $interactive_job_hook_file \$\$,\$PPID:$lusr:$job_id:$job->{name}:$job->{project}:$moldable->{moldable_walltime}; else true; fi && ";
         }
+
+        my $oardodo_cmd = "OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";
+        if (defined($types->{cosystem}) or defined($types->{deploy}) or ($#hosts < 0)) {
+            if ($Deploy_cosystem_job_exec_system eq "systemd-run") {
+                $oardodo_cmd = "oardodo systemd-run -q --uid=$uid --pty --wait --collect --service-type=exec --slice=user-$uid.slice /bin/bash --noprofile --norc -c '$str'";
+            } elsif ($Deploy_cosystem_job_exec_system eq "none") {
+                # Use regular command by default
+            }
+        }
+
         if ($ENV{DISPLAY} ne ""){
-            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$lusr oardodo $xauth_path merge -) && [ \"$lusr\" != \"$job_user\" ] && OARDO_BECOME_USER=$lusr oardodo bash --noprofile --norc -c \"chmod 660 \\\$HOME/.Xauthority\" ;TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$lusr oardodo $xauth_path merge -) && [ \"$lusr\" != \"$job_user\" ] && OARDO_BECOME_USER=$lusr oardodo bash --noprofile --norc -c \"chmod 660 \\\$HOME/.Xauthority\" ;TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && $oardodo_cmd";$i++;
         }else{
-            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";$i++;
+            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && $oardodo_cmd";$i++;
         }
 
         #essential: you become oar instead of the user
@@ -551,6 +563,14 @@ if (!defined($Deploy_hostname)){
 $Cosystem_hostname = get_conf("COSYSTEM_HOSTNAME");
 if (!defined($Cosystem_hostname)){
     $Cosystem_hostname = $remote_host;
+}
+
+$Deploy_cosystem_job_exec_system = get_conf("DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM");
+if (!defined($Deploy_cosystem_job_exec_system)) {
+     $Deploy_cosystem_job_exec_system = "none";
+}
+if (($Deploy_cosystem_job_exec_system ne "none") and ($Deploy_cosystem_job_exec_system ne "systemd-run")) {
+    die("[ERROR] Bad configuration for DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM: '$Deploy_cosystem_job_exec_system' is unsupported\n");
 }
 
 $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
