@@ -77,10 +77,6 @@ if (is_conf("API_RESOURCES_LIST_GENERATION_CMD")){ $API_RESOURCES_LIST_GENERATIO
 # OAR server
 my $remote_host = get_conf("SERVER_HOSTNAME");
 my $remote_port = get_conf("SERVER_PORT");
-my $stageout_dir = get_conf("STAGEOUT_DIR");
-my $stagein_dir = get_conf("STAGEIN_DIR");
-my $allow_create_node = get_conf("DESKTOP_COMPUTING_ALLOW_CREATE_NODE");
-my $expiry = get_conf("DESKTOP_COMPUTING_EXPIRY");
 
 # Enable this if you are ok with a simple pidentd "authentication"
 # Not very secure, but useful for testing (no need for login/password)
@@ -989,46 +985,6 @@ SWITCH: for ($q) {
   };
 
   #
-  # GET /jobs/stagein and stageout (desktop computing)
-  #
-  $URI = OAR::API::uri_regex_tgz('jobs/(\d+)/stagein');
-  OAR::API::GET( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
-    my $ext = OAR::API::set_ext($q,$2);
-    (my $header, my $type)=OAR::API::set_output_format($ext);
-    OAR::API::jobStageIn($1);
-
-    last;
-  };
-
-  $URI = OAR::API::uri_regex_tgz('jobs/(\d+)/stageinhead');
-  OAR::API::HEAD( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
-    my $ext = OAR::API::set_ext($q,$2);
-    (my $header, my $type)=OAR::API::set_output_format($ext);
-    OAR::API::jobStageInHead($1);
-    last;
-  };
-
-  $URI = OAR::API::uri_regex_tgz('jobs/(\d+)/stageout');
-  OAR::API::POST( $_, $URI ) && do {
-    $_->path_info =~ m/$URI/;
-    my $ext = OAR::API::set_ext($q,$2);
-    (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
-    my $fh = $q->upload('myfile');
-    if (defined $fh) {
-        my $io_handle = $fh->handle;
-        my $buffer;
-        open (OUTFILE, '>>', "$stageout_dir/$1.tgz");
-        while (my $bytesread = $io_handle->read($buffer, 1024)) {
-          print OUTFILE $buffer;
-        }
-    }
-    print $q->header( -status => 200, -type => "application/x-tar" );
-    last;
-  };
-
-  #
   # POST /jobs/<id>/state: changes the state of a job
   #
   $URI = OAR::API::uri_regex_html_json_yaml('jobs/(\d+)/state');
@@ -1225,16 +1181,7 @@ SWITCH: for ($q) {
 
     # a "?state=" filter is possible, but prevent Terminated and Error state
     # because this result is not paginated and output may be too big
-    if (defined($q->param('state')) && $q->param('state') eq "toKill"){
-      # This "toKill" state is virtual and implemented for the desktop
-      # computing agent purpose.
-      $job_array=OAR::Nodes::get_jobs_running_on_node($1);
-
-      foreach my $job_id (@$job_array) {
-        push(@$jobs,{id =>int($job_id)}) if OAR::Nodes::is_job_tokill($job_id);
-      }
-    }
-    elsif (defined($q->param('state')) && $q->param('state') ne "Terminated"
+    if (defined($q->param('state')) && $q->param('state') ne "Terminated"
                                     && $q->param('state') ne "Error" ) {
       $job_array=OAR::Nodes::get_jobs_on_node($1,$q->param('state'));
 
@@ -2055,40 +2002,6 @@ SWITCH: for ($q) {
       $result={"status" => "created"};
     }
     print OAR::API::export($result,$ext);
-    last;
-  };
-
-
-  ###########################################
-  # Desktop computing specific
-  ###########################################
-  #
-  # GET /desktop/agents: Desktop computing agent sign in
-  #
-  $URI = OAR::API::uri_regex_html_json_yaml('desktop/agents');
-  OAR::API::GET( $_, $URI ) && do {
-
-    my $db = OAR::IO::connect() or die "cannot connect to the data base\n";
-
-    OAR::IO::lock_table($db,["event_logs"]);
-    my $result = OAR::IO::get_last_event_from_type($db, "NEW_VIRTUAL_HOSTNAME");
-    if ($result) {
-      $result = $result->{'description'};
-      $result++;
-      OAR::API::sign_in($result,$remote_host,$remote_port,$expiry,$allow_create_node);
-      OAR::IO::add_new_event($db,"NEW_VIRTUAL_HOSTNAME",0,$result);
-      $result = {'hostname' => $result};
-    } else {
-      OAR::API::sign_in('vnode1',$remote_host,$remote_port,$expiry,$allow_create_node);
-      OAR::IO::add_new_event($db,"NEW_VIRTUAL_HOSTNAME",0,'vnode1');
-      $result = {'hostname' => 'vnode1'};
-    }
-
-    OAR::IO::unlock_table($db);
-    # TODO: reject if DESKTOP_COMPUTING_ALLOW_CREATE_NODE="0"
-    print $q->header( -status => 200, -type => "application/json" );
-    print OAR::API::export($result,'json');
-
     last;
   };
 
