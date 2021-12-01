@@ -1,3 +1,22 @@
+oar (2.5.10~g5k14-1) unstable; urgency=medium
+
+  * 0332e167 Check for validity of DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM
+  * 4d948e26 Remove support for machinectl (does not work for non-interactive execution in oarexec)
+  * 12e11581 Add missing machinectl/systemd-run commands
+  * b2d42200 [oarsub] enable the use of systemd-run or machinectl for running interactive deploy/cosystem jobs
+  * 2ce05337 [oarexec] enable the use of systemd-run or machinectl for running deploy/cosystem jobs
+  * 03e4a33e [bipbip] pass the DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM option to oarexec
+  * 85b4df9e [oar.conf] add DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM option
+  * 2fc926ad [oarsub] Use systemd-run when running processes on the frontend for deploy/cosystem jobs
+  * 7401a1cd [oarsub] add missing -v option to man page
+  * e42287ce [oarsub] rename qdel() to signal_handler() which is more relevant
+  * 5762af1d [oarsub] add # before each outputed string, except the job ids
+  * f2f145ff [misc] remove desktop_computing possibility in oarsub and API
+  * f6ce8925 [oarsub] add a -v switch (usable multiple times) to select verbosity
+  * ed447b3e [CHANGELOG] Fix a typo (databese -> database)
+
+ --  Samir Noir <samir.noir@inria.fr>  Wed, 01 Dec 2021 11:01:23 +0100
+
 oar (2.5.10~g5k13-1) unstable; urgency=medium
 
   * 08353b4c [monika] fix display of nodes by properties
