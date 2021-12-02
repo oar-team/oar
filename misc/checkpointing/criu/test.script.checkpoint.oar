@@ -8,6 +8,9 @@
 #OAR --checkpoint 240
 #OAR --notify mail:Bruno.Bzeznik@univ-grenoble-alpes.fr
 
+# Timeout to adapt: 600 is a good value for bigger jobs
+RESUME_TIMEOUT=90
+
 # Handler for checkpointing signal sent by OAR
 handler() { echo "Caught checkpoint signal at: `date`"
             echo "Checkpointing..."
@@ -22,12 +25,21 @@ source /applis/site/nix.sh
 if [ -e checkpoint_ok ]
 then
   rm -f checkpoint/pidfile
+  sleep 30
   echo -e "$(pwd)" > /var/lib/checkpoints/$OAR_JOB_ID.resume
   # Wait for the restore (for pidfile to be created)
-  while [ \! -e checkpoint/pidfile ]
+  declare -i c=1
+  while [ \! -e checkpoint/pidfile -a $c -le $RESUME_TIMEOUT ]
   do
-    sleep 5
+    sleep 1
+    let c++
   done
+  if [ $c -eq $RESUME_TIMEOUT ]
+  then
+     echo "ERROR: Timeout on resume!" >&2
+     exit 3
+  fi
+  sleep 5
   PROG_PID=$(cat checkpoint/pidfile)
 
 # No checkpoint, starting the program
