@@ -14,6 +14,7 @@ sub get_database_type(){
     return($Db_type);
 }
 my $nodes_synonym;
+my $nodes_filter;
 
 ###########################################################################################
 ## Methods for Monika exclusively:                                                        #
@@ -28,16 +29,17 @@ sub dbConnection($$$$$$){
     my $user = shift;
     my $pwd = shift;
     if($dbtype eq "psql"){
-    	$dbtype = "Pg";
+        $dbtype = "Pg";
     }
     $Db_type = $dbtype;
     $nodes_synonym = OAR::Monika::Conf::myself->nodes_synonym;
+    $nodes_filter = OAR::Monika::Conf::myself->nodes_filter;
     my $connection_string;
     if($port eq "" || !($port>1 && $port<65535)){
-    	$connection_string = "DBI:$dbtype:database=$dbname;host=$host";
+        $connection_string = "DBI:$dbtype:database=$dbname;host=$host";
     }
     else{
-    	$connection_string = "DBI:$dbtype:database=$dbname;host=$host;port=$port";
+        $connection_string = "DBI:$dbtype:database=$dbname;host=$host;port=$port";
     }
     my $dbh= DBI->connect($connection_string, $user, $pwd, {AutoCommit => 1, RaiseError => 1});
     return $dbh;
@@ -52,9 +54,9 @@ sub dbDisconnect($) {
 # get_properties_values
 # returns the list of the fields of the job table and their values
 # usefull for the 'properties' section in Monika 
-# parameters : base, list of excluded fields
-# return value : list of fields end values
-# side effects : /
+# parameters: base, list of excluded fields
+# return value: list of fields end values
+# side effects: /
 sub get_properties_values($$) {
     my $dbh = shift;
     my $excluded = shift;
@@ -77,7 +79,7 @@ sub get_properties_values($$) {
         $current_value = $ref->{'column_name'};
       }
       else{
-      	$current_value = $ref->{'Field'};
+          $current_value = $ref->{'Field'};
       }
       unless (defined($excluded->{$current_value})){
         push(@result, $current_value);
@@ -90,7 +92,7 @@ sub get_properties_values($$) {
       $str = $str.$_.", ";
     }
     $str  = substr $str, 0, length($str) - 2;
-    $str = $str." FROM resources;";
+    $str = $str." FROM resources".((defined($nodes_filter) and $nodes_filter ne "")?" WHERE $nodes_filter":"");
     my $sth2 = $dbh->prepare($str);
     $sth2->execute();
     my $ref;
@@ -106,9 +108,9 @@ sub get_properties_values($$) {
 
 # get_all_resources_on_node
 # returns the current resources on node whose hostname is passed in parameter
-# parameters : base, hostname
-# return value : weight
-# side effects : /
+# parameters: base, hostname
+# return value: weight
+# side effects: /
 my %Resources_on_nodes;
 sub get_all_resources_on_node($$) {
     my $dbh = shift;
@@ -118,8 +120,9 @@ sub get_all_resources_on_node($$) {
         return(@{$Resources_on_nodes{$hostname}});
     }else{
         my $sth = $dbh->prepare("   SELECT resources.resource_id as resource, resources.$nodes_synonym as node
-                                    FROM resources
-                            ");
+                                    FROM resources"
+                                . ((defined($nodes_filter) and $nodes_filter ne "")?" WHERE $nodes_filter":"")
+                               );
         $sth->execute();
         my @result;
         while (my $ref = $sth->fetchrow_hashref()){
@@ -133,9 +136,9 @@ sub get_all_resources_on_node($$) {
 
 # get_queued_jobs
 # returns the list of queued jobs: running, waiting...
-# parameters : base
-# return value : list of jobid
-# side effects : /
+# parameters: base
+# return value: list of jobid
+# side effects: /
 sub get_queued_jobs($) {
     my $dbh = shift;
     my $sth = $dbh->prepare("   SELECT jobs.job_id
@@ -151,11 +154,35 @@ sub get_queued_jobs($) {
     return @res;
 }
 
+# get_job_events
+# returns the events of the given job
+# parameters: base, job_id
+# return value: list of events
+# side effects: /
+sub get_job_events($$) {
+    my $dbh = shift;
+    my $job= shift;
+    my $events = [];
+
+    my $sth = $dbh->prepare("   SELECT date, type, description
+                                FROM event_logs
+                                WHERE
+                                    job_id = $job
+                            ");
+    $sth->execute();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push (@$events, $ref)
+    }
+    $sth->finish();
+
+    return $events;
+}
+
 # get_job_stat_infos
 # returns the information about the given job
-# parameters : base, job_id
-# return value : list of information
-# side effects : /
+# parameters: base, job_id
+# return value: list of information
+# side effects: /
 my %Job_stat_infos;
 sub get_job_stat_infos($$) {
     my $dbh = shift;
@@ -180,9 +207,9 @@ sub get_job_stat_infos($$) {
 
 # get_job_cores
 # returns the list of cores used by the given job
-# parameters : base, job
-# return value : list of cores ressources
-# side effects : /
+# parameters: base, job
+# return value: list of cores ressources
+# side effects: /
 #sub get_job_cores($$) {
 #    my $dbh = shift;
 #    my $job = shift;
@@ -209,9 +236,9 @@ sub get_job_stat_infos($$) {
 
 # get_resource_job
 # returns the list of jobs associated to the resource passed in parameter
-# parameters : base, resource
-# return value : list of jobid
-# side effects : /
+# parameters: base, resource
+# return value: list of jobid
+# side effects: /
 my %Resource_job;
 my $Resource_job_init = 0;
 sub get_resource_job($$) {
@@ -251,16 +278,15 @@ sub get_resource_job($$) {
 
 # list_nodes
 # gets the list of all nodes.
-# parameters : base
-# return value : list of hostnames
-# side effects : /
+# parameters: base
+# return value: list of hostnames
+# side effects: /
 sub list_nodes($) {
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("   SELECT distinct($nodes_synonym)
-                                FROM resources
-                                ORDER BY $nodes_synonym ASC
-                            ");
+    my $sth = $dbh->prepare("SELECT distinct($nodes_synonym) FROM resources"
+                            . ((defined($nodes_filter) and $nodes_filter ne "")?" WHERE $nodes_filter":"")
+                            . " ORDER BY $nodes_synonym ASC");
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -272,9 +298,9 @@ sub list_nodes($) {
 
 # get_resource_info
 # returns a ref to some hash containing data for the nodes of the resource passed in parameter
-# parameters : base, resource id
-# return value : ref
-# side effects : /
+# parameters: base, resource id
+# return value: ref
+# side effects: /
 my %Resource_info;
 sub get_resource_info($$) {
     my $dbh = shift;
@@ -296,7 +322,7 @@ sub get_resource_info($$) {
 }
 
 # Get start_time for a given job
-# args : base, job id
+# args: base, job id
 my %Gantt_job_start_time;
 my $Gantt_job_start_time_init = 0;
 sub get_gantt_job_start_time($$){
@@ -335,9 +361,9 @@ sub get_gantt_job_start_time($$){
 # local_to_sql
 # converts a date specified in an integer local time format to the format used
 # by the sql database
-# parameters : date integer
-# return value : date string
-# side effects : /
+# parameters: date integer
+# return value: date string
+# side effects: /
 sub local_to_sql($) {
     my $local=shift;
     #my ($year,$mon,$mday,$hour,$min,$sec)=local_to_ymdhms($local);
@@ -347,7 +373,7 @@ sub local_to_sql($) {
 }
 
 # Return a data structure with the resource description of the given job
-# arg : database ref, job id
+# arg: database ref, job id
 # return a data structure (an array of moldable jobs):
 # example for the first moldable job of the list:
 # $result = [

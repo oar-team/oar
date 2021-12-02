@@ -36,7 +36,7 @@ then
     if (( $? != 0 ))
     then
         # we are sure that this user $2 has no other reservation active on this node
-        echo "We can frag everything owned by user $2 : sudo -u $2 kill -9 -1 "
+        echo "We can frag everything owned by user $2: sudo -u $2 kill -9 -1 "
     fi
 fi
 

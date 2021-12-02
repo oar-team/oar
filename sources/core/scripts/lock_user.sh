@@ -5,8 +5,8 @@ MAXBLOCKTIME=120
 SLEEPTIME=1
 
 # take the lock
-# $1 : job ID for the reservation
-# $2 : user login
+# $1: job ID for the reservation
+# $2: user login
 #return 1 if the lock times out
 lock_file () {
     SPECIFICLOCKFILE=$LOCKFILE"_"$2
@@ -32,8 +32,8 @@ lock_file () {
 }
 
 #release semaphore
-# $1 : job ID for the reservation
-# $2 : user login
+# $1: job ID for the reservation
+# $2: user login
 # return 1 if lock file is not right
 unlock_file () {
     SPECIFICLOCKFILE=$LOCKFILE"_"$2

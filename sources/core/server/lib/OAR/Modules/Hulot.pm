@@ -88,7 +88,7 @@ sub check() {
 
 ##check_reminded_list
 # Checks if some nodes in list_to_remind can be processed
-# parameters: ref to hash : running list, reminded list and list to process
+# parameters: ref to hash: running list, reminded list and list to process
 # return value: /
 # side effects: move nodes from reminded list to list to process if it's possible.
 sub check_reminded_list($$$) {
@@ -118,7 +118,7 @@ sub check_reminded_list($$$) {
 
 ## check_returned_cmd
 # Checks received messages from WindowForker module
-# parameters: base, received messages and ref to hash : running list, reminded list and list to process
+# parameters: base, received messages and ref to hash: running list, reminded list and list to process
 # return value: /
 # side effects: - Removes halted node from the running list ;
 #               - Suspects node if an error is returned by WindowForker module.
@@ -130,7 +130,7 @@ sub check_returned_cmd($$$$$) {
     ( my $tmp_node, my $tmp_cmd, my $tmp_return ) =
       split( /:/, $tmp_message, 3 );
     oar_debug(
-"[Hulot] Received from WindowForker : Node=$tmp_node ; Action=$tmp_cmd ; ReturnCode : $tmp_return\n"
+"[Hulot] Received from WindowForker: Node=$tmp_node ; Action=$tmp_cmd ; ReturnCode=$tmp_return\n"
     );
     if ( $tmp_return == 0 ) {
         if ( $tmp_cmd eq "HALT" ) {
@@ -305,7 +305,7 @@ sub start_energy_loop() {
     # Create message queue for Inter Processus Communication
     $id_msg_hulot = msgget( IPC_PRIVATE, IPC_CREAT | S_IRUSR | S_IWUSR );
     if ( !defined $id_msg_hulot ) {
-        oar_error("[Hulot] Cannot create message queue : msgget failed\n");
+        oar_error("[Hulot] Cannot create message queue: msgget failed\n");
         exit(1);
     }
 
@@ -353,7 +353,7 @@ sub start_energy_loop() {
                 oar_debug("[Hulot] Got request '$cmd'\n");
             }
             else {
-                oar_debug("[Hulot] Got request '$cmd' for nodes : $nodes\n");
+                oar_debug("[Hulot] Got request '$cmd' for nodes: $nodes\n");
             }
 
             #print DUMP "point 2:"; print `ps -p $pid -o rss h >> /tmp/hulot_dump`; 
@@ -468,7 +468,7 @@ sub start_energy_loop() {
                             }
                             else {
                                 oar_debug(
-"[Hulot] Command '$nodes_list_running{$key}->{'command'}' is already running on node '$node'\n"
+"[Hulot] Command '$nodes_list_running{$key}->{'command'}' is already running on node '$node' (timeout in ".($nodes_list_running{$key}->{'timeout'} - time)."s)\n"
                                 );
                             }
                         }
@@ -706,7 +706,7 @@ sub register_wait_results($$) {
     my $dumped_core = $return_code & 128;
     if ( $pid > 0 ) {
 
-#oar_debug("[DEBUG-HULOT] Child process $pid ended : exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n");
+#oar_debug("[DEBUG-HULOT] Child process $pid ended: exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n");
     }
 }
 
@@ -738,7 +738,7 @@ sub fill_timeouts ($) {
                 $timeouts{$vals[0]} =  $vals[1];
             }
             else {
-                oar_warning("[Hulot] \"$couple\" is not a valid couple for a timeout\n");
+                oar_warn("[Hulot] \"$couple\" is not a valid couple for a timeout\n");
             }
         }
     }
@@ -746,7 +746,7 @@ sub fill_timeouts ($) {
     #If no good value has been found, use the default one
     if ( keys( %timeouts ) == 0) {
         $timeouts{1} = $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT;
-        oar_warning("[Hulot] Timeout not properly defined, using default value: 
+        oar_warn("[Hulot] Timeout not properly defined, using default value: 
                      $ENERGY_SAVING_NODE_MANAGER_WAKEUP_TIMEOUT\n");
     }
     
@@ -765,6 +765,7 @@ sub get_timeout($$) {
         $timeout = @$timeouts{$tmp};
     }
     
+    oar_debug("[Hulot] Waking up $nb_nodes nodes: chosen timeout is ".$timeout."s\n");
     return $timeout;
 }
 

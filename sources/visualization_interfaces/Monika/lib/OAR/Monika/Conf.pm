@@ -36,107 +36,111 @@ sub parse {
     $self->{FILE} = "/etc/oar/monika.conf";
   }
   my $config = AppConfig->new({
-				  GLOBAL => {
-					     DEFAULT  => "<unset>",
-					     ARGCOUNT => ARGCOUNT_ONE,
-					    }
-				 });
+                  GLOBAL => {
+                         DEFAULT  => "<unset>",
+                         ARGCOUNT => ARGCOUNT_ONE,
+                        }
+                 });
   $config->define("clustername",
-		  {
-		   DEFAULT => "Cluster"
-		  });
+          {
+           DEFAULT => "Cluster"
+          });
   $config->define("max_cores_per_line",
-		  {
-		   DEFAULT => "16"
-		  });
-	$config->define("css_path",
-		  {
-		   DEFAULT => "/monika.css"
-		  });
+          {
+           DEFAULT => "16"
+          });
+    $config->define("css_path",
+          {
+           DEFAULT => "/monika.css"
+          });
   $config->define("gridname",
-		  {
-		   DEFAULT => "Grid"
-		  });
+          {
+           DEFAULT => "Grid"
+          });
   $config->define("summary_display",
-		  {
-		   DEFAULT => "default"
-		  });
+          {
+           DEFAULT => "default"
+          });
   $config->define("hostname",
-		  {
-		   DEFAULT => ""
-		  });
-	$config->define("dbport",
-		  {
-		   DEFAULT => ""
-		  });
+          {
+           DEFAULT => ""
+          });
+    $config->define("dbport",
+          {
+           DEFAULT => ""
+          });
   $config->define("nodes_synonym",
-		  {
-		   DEFAULT => "resource_id"
-		  });
+          {
+           DEFAULT => "resource_id"
+          });
+  $config->define("nodes_filter",
+          {
+           DEFAULT => ""
+          });
   $config->define("dbtype",
-		  {
-		   DEFAULT => ""
-		  });
+          {
+           DEFAULT => ""
+          });
   $config->define("dbname",
-		  {
-		   DEFAULT => ""
-		  });
+          {
+           DEFAULT => ""
+          });
   $config->define("username",
-		  {
-		   DEFAULT => ""
-		  });
+          {
+           DEFAULT => ""
+          });
   $config->define("password",
-		  {
-		   DEFAULT => ""
-		  });
+          {
+           DEFAULT => ""
+          });
   $config->define("nodes_per_line",
-		  {
-		   DEFAULT => 10
-		  });
+          {
+           DEFAULT => 10
+          });
   $config->define("nodename_regex",
-		  {
-		   DEFAULT => '(.*)'
-		  });
+          {
+           DEFAULT => '(.*)'
+          });
   $config->define("nodename_regex_display",
-		  {
-		   DEFAULT => '(.*)'
-		  });
+          {
+           DEFAULT => '(.*)'
+          });
   $config->define("loadimgpath",
       {
        DEFAULT => "/tmp/"
       });
   $config->define("oargridstat",
-		  {
-		   DEFAULT => "oargridstat --monitor"
-		  });
+          {
+           DEFAULT => "oargridstat --monitor"
+          });
   $config->define("server_do_mail",
-		  {
-		   DEFAULT => "no",
-		  });
+          {
+           DEFAULT => "no",
+          });
   $config->define("user_infos",
                   {
                    DEFAULT => "",
                   });
   $config->define("node_group",
-		  {
-		   ARGCOUNT => ARGCOUNT_HASH
-		  });
+          {
+           ARGCOUNT => ARGCOUNT_HASH
+          });
   $config->define("default_state",
-		  {
-		   ARGCOUNT => ARGCOUNT_HASH
-		  });
+          {
+           ARGCOUNT => ARGCOUNT_HASH
+          });
   $config->define("set_color",
-		  {
-		   ARGCOUNT => ARGCOUNT_HASH
-		  });
+          {
+           ARGCOUNT => ARGCOUNT_HASH
+          });
   $config->define("color_pool",
-		  {
-		   ARGCOUNT => ARGCOUNT_LIST
-		  });
+          {
+           ARGCOUNT => ARGCOUNT_LIST
+          });
   $config->define("hidden_property",
-		  {
-		   ARGCOUNT => ARGCOUNT_LIST
-		  });
+          {
+           ARGCOUNT => ARGCOUNT_LIST
+          });
   $config->file($self->{FILE});
 
   $self->{CLUSTERNAME} = $config->clustername();
@@ -147,6 +151,7 @@ sub parse {
   $self->{HOSTNAME} = $config->hostname();
   $self->{DBPORT} = $config->dbport();
   $self->{NODES_SYNONYM} = $config->nodes_synonym();
+  $self->{NODES_FILTER} = $config->nodes_filter();
   $self->{DBTYPE} = $config->dbtype();
   $self->{DBNAME} = $config->dbname();
   $self->{USERNAME} = $config->username();
@@ -178,11 +183,11 @@ sub parse {
     my @nodes = split /\s+/,$self->{NODE_GROUP}->{$nodeType};
     foreach (@nodes) {
       if (/^(\d+)-(\d+)$/) {
-	foreach ($1..$2) {
-	  $allnodes->{$_} = OAR::Monika::ConfNode->new($_,$state);
-	}
+    foreach ($1..$2) {
+      $allnodes->{$_} = OAR::Monika::ConfNode->new($_,$state);
+    }
       } else {
-	$allnodes->{$_} = OAR::Monika::ConfNode->new($_,$state);
+    $allnodes->{$_} = OAR::Monika::ConfNode->new($_,$state);
       }
     }
   }
@@ -234,6 +239,12 @@ sub dbport {
 sub nodes_synonym {
   my $self = shift;
   return $self->{NODES_SYNONYM};
+}
+
+## return the nodes_synonym
+sub nodes_filter {
+  my $self = shift;
+  return $self->{NODES_FILTER};
 }
 
 ## return the dbtype
@@ -312,8 +323,8 @@ sub colorPool {
 
 ## return the list of properties not to be shown in the property chooser
 sub hiddenProperties {
-	my $self = shift;
-	return @{$self->{HIDDEN_PROPERTIES}};
+    my $self = shift;
+    return @{$self->{HIDDEN_PROPERTIES}};
 }
 
 ## return a hash containing all node descriptions got from the config file

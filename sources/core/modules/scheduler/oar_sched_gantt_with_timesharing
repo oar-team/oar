@@ -502,7 +502,8 @@ while (@jobs and ((time() - $initial_time) < $timeout)){
         OAR::IO::set_job_message($base,$j->{job_id},"FIFO scheduling OK");
         OAR::IO::set_job_scheduler_info($base,$j->{job_id},"FIFO scheduling OK");
     }else{
-        my $message = "cannot find enough resources for job $j->{job_id}";
+        oar_debug("[$scheduler_name] [$j->{job_id}] job couldn't be scheduled yet\n");
+        my $message = "cannot find enough resources for job $j->{job_id} yet";
         OAR::IO::set_job_message($base,$j->{job_id}, ucfirst($message));
         #OAR::IO::set_job_scheduler_info($base,$j->{job_id},$message);
         oar_debug("[$scheduler_name] [$j->{job_id}] $message\n");

@@ -47,7 +47,7 @@ if (defined($Help)){
 }
 
 if (defined($Version)){
-    print("OAR version : ".OAR::Version::get_version()."\n");
+    print("OAR version: ".OAR::Version::get_version()."\n");
     exit(0);
 }
 
@@ -122,7 +122,7 @@ foreach my $j (@job_ids){
         my $err = OAR::IO::hold_job($base,$j,$Suspend_running);
 
         if ($err != 0) {
-            my $str = "/!\\ Cannot hold $j :";
+            my $str = "/!\\ Cannot hold $j:";
             if ($err == -1){
                 warn("$str this job does not exist.\n");
             }elsif ($err == -2){

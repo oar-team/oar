@@ -6,7 +6,9 @@ package OAR::Monika::OARJob;
 
 use strict;
 #use warnings;
-use OAR::Monika::monikaCGI;
+use Encode qw(decode);
+use utf8::all;
+use OAR::Monika::monikaCGI qw(-utf8);
 use File::Basename;
 use Data::Dumper;
 
@@ -43,20 +45,14 @@ sub set {
   my $value = shift;
   # for best effort jobs
   my $cgi = shift;
-  # for best effort jobs
-  #defined $value or die "which value for $key ?";
-  #unless (exists $self->{$key}) {
-    #$self->{$key} = [];
+  if ($key eq "events") {
     $self->{$key} = $value;
-  #}
-  #push @{$self->{$key}},$value;
-
-  # for best effort jobs
-  if ($self->get("queue_name") eq "besteffort"){
+  } else {
+    $self->{$key} = decode('utf8',$value);
+  }
+  if ($key eq "queue_name" and $value eq "besteffort"){
     $cgi->setColor($self->jobId(),$bestEffortColor);
   }
-  # for best effort jobs
-
   return 1;
 }
 
@@ -65,7 +61,6 @@ sub get {
   my $key = shift;
   defined $key or die "which key ?";
   if (exists $self->{$key}) {
-    #return $self->{$key}->[0];
     return $self->{$key};
   } else {
     return undef;
@@ -90,10 +85,10 @@ sub htmlTableRow {
   $output .= $cgi->colorTd($self->jobId(),undef,$cgiName."?job=".$self->jobId(), "click to see job details");
   if (OAR::Monika::Conf::myself()->server_do_mail()) {
     $output .= $cgi->td({-align => "center"},
-			$cgi->a({
-				 -href => "mailto:".$self->get("job_user"),
-				 -title => "click to send mail"
-				}, $self->owner()));
+            $cgi->a({
+                 -href => "mailto:".$self->get("job_user"),
+                 -title => "click to send mail"
+                }, $self->owner()));
   } elsif (OAR::Monika::Conf::myself()->user_infos() ne "") {
     $output .= $cgi->td({-align => "center"},
                         $cgi->a({
@@ -119,13 +114,13 @@ sub htmlTableRow {
   my $initial_request = $self->get("initial_request");
   
   if($initial_request =~ / -t container/){
-  	$type.=" - container";
+      $type.=" - container";
   }
   elsif($initial_request =~ / -t inner=(\d+)/){
-  	$type.=" - inner job (container=$1)";
+      $type.=" - inner job (container=$1)";
   }
   elsif($initial_request =~ / -t timesharing/){
-  	$type.=" - timesharing";
+      $type.=" - timesharing";
   }
 
   $output .= $cgi->td({-align => "center"},$state);
@@ -148,8 +143,8 @@ sub htmlStatusTable {
   my $cgi = shift;
   my $output = "";
   $output .= $cgi->start_table({-border=>"1",
-				 -align => "center"
-				});
+                 -align => "center"
+                });
   $output .= $cgi->start_Tr();
   $output .= $cgi->th({-align => "left", bgcolor => "#c0c0c0"}, $cgi->i("Job Id"));
   $output .= $cgi->th({-align => "left"}, $self->jobId());
@@ -160,14 +155,27 @@ sub htmlStatusTable {
     #if(($key eq "job_id") or ($key eq "initial_request")){
       next;
     }
+    if(($key eq "events")){
+        next;
+    }
     $output .= $cgi->start_Tr();
     $output .= $cgi->td({-valign => "top", bgcolor=> "#c0c0c0"}, $cgi->i($key));
     my $list = $self->getList($key);
     my $val = join $cgi->br(),$list;
+    my $job_id = $self->get('job_id');
+    $val =~ s/%jobid%/$job_id/;
     #$val =~ s/([+,]\s*)/\1<BR>/g;
     $output .= $cgi->td($val);
     $output .= $cgi->end_Tr();
   }
+  $output .= $cgi->start_Tr();
+  $output .= $cgi->td({-valign => "top", bgcolor=> "#c0c0c0"}, $cgi->i("events"));
+  my $events = "";
+  foreach my $e (sort {$a->{date} >= $b->{date}} @{$self->get('events')}) {
+      $events .= OAR::Monika::db_io::local_to_sql($e->{date})."> ".$e->{type}.": ".$e->{description}."<br/>";
+  }
+  $output .= $cgi->td($events);
+  $output .= $cgi->end_Tr();
   $output .= $cgi->end_table();
   return $output;
 }

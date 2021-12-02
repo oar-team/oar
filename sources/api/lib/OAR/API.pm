@@ -653,7 +653,7 @@ sub struct_resource_list($$$) {
   struct_resource_list_fix_ints($resources);
   if ($structure eq 'simple') {
     if (scalar @$resources == 1 && $compact == 1) {
-      return @$resources[0];
+      return $resources->[0];
     }
     else { return $resources ; }
   }
@@ -816,12 +816,6 @@ sub uri_regex_html_json_yaml($) {
   return uri_regex_no_tail($r.'(?:\.(html|json|yaml))?');
 }
 
-# Create a URI regex ending by tar.gz or tgz
-sub uri_regex_tgz($) {
-  my $r=shift;
-  return uri_regex_no_tail($r.'(?:\.(tar.gz|tgz))?');
-}
-
 # Return the extension (second parameter) if defined, or the
 # corresponding one if the content_type if set.
 sub set_ext($$) {
@@ -963,7 +957,7 @@ sub check_job($$) {
                       "property",    "script",
                       "script_path", "type",
                       "reservation", "directory",
-                      "project", "stagein",
+                      "project",
                       "connect", "resources",
                       "array", "array-param-file",
                       "queue", "checkpoint",
@@ -973,7 +967,6 @@ sub check_job($$) {
                       "import-job-key-inline",
                       "export-job-key-to-file",
                       "stdout", "stderr",
-                      "stagein", "stagein-md5sum",
                       "command", "script"
                      ) { parameter_option($job,$option) }
 
@@ -1318,8 +1311,8 @@ sub get_key($$$) {
 
 # add_pagination
 # add pagination to a set of record
-# parameters : record,total size,uri path_info,uri query_string,extension,max_items,offset,structure
-# return value : /
+# parameters: record,total size,uri path_info,uri query_string,extension,max_items,offset,structure
+# return value: /
 sub add_pagination($$$$$$$$) {
 	my $record = shift;
 	my $total = shift;
@@ -1462,47 +1455,6 @@ sub resources_commit_button($) {
   print "</FORM><p>";
 }
 
-
-
-
-#### Functions for desktop computing (Thiago Presa)
-
-sub message($) {
-    my $msg = shift;
-    warn $msg;
-}
-
-sub jobStageIn($) {
-    my $jobid = shift;
-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    my $stagein = OAR::IO::get_job_stagein($base,$jobid);
-    OAR::IO::disconnect($base);
-    if ($stagein->{'method'} eq "FILE") {
-        open F,"< ".$stagein->{'location'} or die "Can't open stagein ".$stagein->{'location'}.": $!";
-        print $q->header( -status => 200, -type => "application/x-gzip" );
-        print <F>;
-        close F;
-    } else {
-        print $q->header( -status => 404, -type => "application/json" );
-        die "Stagein method ".$stagein->{'method'}." not yet implemented.\n";
-    } 
-}
-
-sub jobStageInHead($) {
-    my $jobid = shift;
-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    my $stagein = OAR::IO::get_job_stagein($base,$jobid);
-    OAR::IO::disconnect($base);
-    if ($stagein->{'method'} eq "FILE") {
-        open F,"< ".$stagein->{'location'} or die "Can't open stagein ".$stagein->{'location'}.": $!";
-        print $q->header( -status => 200, -type => "application/x-gzip" );
-        close F;
-    } else {
-        print $q->header( -status => 404, -type => "application/json" );
-        die "Stagein method ".$stagein->{'method'}." not yet implemented.\n";
-    } 
-}
-
 sub terminateJob($) {
     my $jobid = shift;
     my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
@@ -1534,42 +1486,11 @@ sub errorJob($) {
     OAR::IO::disconnect($base);
 }
 
-sub sign_in($$$$$) {
-    my $hostname = shift;
-    my $remote_host = shift;
-    my $remote_port = shift;
-    my $expiry = shift;
-    my $allow_create_node = shift;
-    my $do_notify;
-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    my $is_desktop_computing = OAR::IO::is_node_desktop_computing($base,$hostname);
-    if (defined $is_desktop_computing and $is_desktop_computing eq 'YES'){
-	    OAR::IO::lock_table($base,["resources"]);
-	    if (OAR::IO::set_node_nextState_if_necessary($base,$hostname,"Alive") > 0){
-		$do_notify=1;
-	    }
-	    OAR::IO::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
-	    OAR::IO::unlock_table($base);
-    }
-    elsif ($allow_create_node) {
-        my $resource = OAR::IO::add_resource($base, $hostname, "Alive");
-        OAR::IO::set_resources_property($base,{resources => [$resource]},"desktop_computing","YES");
-        OAR::IO::set_resource_nextState($base,$resource,"Alive");
-        OAR::IO::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
-        $do_notify=1;        
-    } 
-    if ($do_notify) {
-        OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-    }
-
-    OAR::IO::disconnect($base);
-}
-
 # Stop if the user is not authenticated
 # Args: 
-# - #1 : the user as identified by the api
-# - #2 : an informative message
-# - #3 : "undef" or "oar". If "oar", then, it means that the user must be admin
+# - #1: the user as identified by the api
+# - #2: an informative message
+# - #3: "undef" or "oar". If "oar", then, it means that the user must be admin
 sub authenticate_user($$$) {
     my $authenticated_user = shift;
     my $msg = shift;

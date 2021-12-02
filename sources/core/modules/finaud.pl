@@ -49,7 +49,7 @@ foreach my $i (@node_list_tmp){
 }
 
 my @Nodes_to_check = keys(%Nodes_hash);
-oar_debug("[finaud] Testing resource(s) on : @Nodes_to_check\n");
+oar_debug("[finaud] Testing resource(s) on: @Nodes_to_check\n");
 
 # Call the right program to test each nodes
 my %bad_node_hash;
@@ -61,22 +61,26 @@ foreach my $i (test_hosts(@Nodes_to_check)){
 my $return_value = 0;
 foreach my $i (values(%Nodes_hash)){
     if (defined($bad_node_hash{$i->{network_address}}) and ($i->{state} eq "Alive")){
-        OAR::IO::set_node_nextState($base,$i->{network_address},"Suspected");
-        OAR::IO::update_node_nextFinaudDecision($base,$i->{network_address},"YES");
-        OAR::IO::add_new_event_with_host($base, "FINAUD_ERROR", 0, "Finaud has detected an error on the node", [$i->{network_address}]);
-        $return_value = 1;
-        oar_debug("[finaud] Set the next state of $i->{network_address} to Suspected\n");
+        my $rows = OAR::IO::set_node_nextState_if_condition($base,$i->{network_address},"Suspected","(state = \'Alive\' OR (state = \'Suspected\' AND finaud_decision = \'YES\')) AND next_state = \'UnChanged\'");
+        if ($rows > 0) {
+            OAR::IO::update_node_nextFinaudDecision($base,$i->{network_address},"YES");
+            OAR::IO::add_new_event_with_host($base, "FINAUD_ERROR", 0, "Finaud has detected an error on the node", [$i->{network_address}]);
+            oar_debug("[finaud] Detected an error on $i->{network_address}, set next state to Suspected\n");
+            $return_value = 1;
+        } else {
+            oar_debug("[finaud] Detected an error on $i->{network_address}, but do nothing because some changes happened in our back\n");
+        }
     }elsif (!defined($bad_node_hash{$i->{network_address}}) and $i->{state} eq "Suspected" and $disable_suspected_nodes_repair eq 'no'){
         OAR::IO::set_node_nextState($base,$i->{network_address},"Alive");
         OAR::IO::update_node_nextFinaudDecision($base,$i->{network_address},"YES");
         OAR::IO::add_new_event_with_host($base, "FINAUD_RECOVER", 0, "Finaud has detected that the node comes back", [$i->{network_address}]);
-        $return_value = 1;
         oar_debug("[finaud] Set the next state of $i->{network_address} to Alive\n");
+        $return_value = 1;
     }
 }
 
 OAR::IO::disconnect($base);
 
-oar_debug("[finaud] Finaud ended : $return_value\n");
+oar_debug("[finaud] Finaud ended: $return_value\n");
 
 exit($return_value);

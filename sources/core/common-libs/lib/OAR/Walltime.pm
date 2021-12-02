@@ -12,7 +12,7 @@ sub get_conf($$$$) {
     my $walltime = shift; #use undef if no percentage expansion is wanted
     my $value = shift; #default value
     if (defined($conf)) { #if not, keep default value
-        # See if the configuration line is a hash of per queue configurations 
+        # See if the configuration line is a hash of per queue configurations
         my $eval = eval($conf);
         if (ref($eval) eq "HASH") {
             if (defined($queue) and exists($eval->{$queue})) {
@@ -132,12 +132,12 @@ sub request($$$$$$) {
     }
 
     # Job user must be lusr or root or oar
-    if ($job->{job_user} ne $lusr and not grep(/^$lusr$/,('root','oar'))) { 
+    if ($job->{job_user} ne $lusr and not grep(/^$lusr$/,('root','oar'))) {
         return (3, 403, "forbidden", "job $jobid does not belong to you");
     }
-    
+
     # Job must be running
-    if ($job->{state} ne "Running") { 
+    if ($job->{state} ne "Running") {
         return (3, 403, "forbidden", "job $jobid is not running");
     }
 
@@ -171,7 +171,10 @@ sub request($$$$$$) {
         return (1, 400, "bad request", "walltime change is null");
     }
 
-    if ($new_walltime_delta_seconds < 0 and uc($Walltime_reduction_disallowed) ne "NO") {
+    # Admins (root and oar users) are allowed to perform walltime reduction, even if
+    # disallowed in configuration
+    if ($new_walltime_delta_seconds < 0 and (uc($Walltime_reduction_disallowed) ne "NO"
+            and !grep(/^$lusr$/,('root','oar')))) {
         return (1, 400, "bad request", "walltime reduction is not allowed");
     }
 
@@ -179,7 +182,7 @@ sub request($$$$$$) {
     if (not defined($lusr)) {
         return (1, 400, "bad request", "anonymous request is not allowed");
     }
-    
+
     # If $force != YES then undef
     if (defined($force) and uc($force) ne "YES") {
         $force = undef;
@@ -188,7 +191,7 @@ sub request($$$$$$) {
     if (defined($force) and $Walltime_allowed_users_to_force ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$Walltime_allowed_users_to_force)))) {
         return (3, 403, "forbidden", "walltime change for this job is not allowed to be forced");
     }
-    
+
     # If $delay_next_jobs != YES then undef
     if (defined($delay_next_jobs) and uc($delay_next_jobs) ne "YES") {
         $delay_next_jobs = undef;
@@ -197,31 +200,31 @@ sub request($$$$$$) {
     if (defined($delay_next_jobs) and $Walltime_allowed_users_to_delay_jobs ne "*" and not grep(/^$lusr$/,('root','oar',split(/[,\s]+/,$Walltime_allowed_users_to_delay_jobs)))) {
         return (3, 403, "forbidden", "walltime change for this job is not allowed to delay other jobs");
     }
-    
+
     # Is job walltime big enough to allow extra time ?
     if ($moldable->{moldable_walltime} < $Walltime_min_for_change) {
         return (3, 403, "forbidden", "walltime change is not allowed for a job with walltime < $Walltime_min_for_change_hms");
     }
-    
+
     my $now = OAR::IO::get_date($dbh);
     my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
 
     my $jobtypes = OAR::IO::get_job_types_hash($dbh, $jobid);
-    # Arbitrary refuse to reduce container jobs, because we don't want to handle inner jobs which could possibly cross the new boundaries of their container, or should be reduced as well. 
+    # Arbitrary refuse to reduce container jobs, because we don't want to handle inner jobs which could possibly cross the new boundaries of their container, or should be reduced as well.
     if (exists($jobtypes->{container}) and $new_walltime_delta_seconds < 0) {
         return (3, 403, "forbidden", "reducing the walltime of a container job is not allowed");
     }
 
     # For negative extratime, do not allow end time before now
     my $job_remaining_time = $job->{start_time} + $moldable->{moldable_walltime} + $suspended - $now;
-    if ($job_remaining_time < - $new_walltime_delta_seconds) { 
+    if ($job_remaining_time < - $new_walltime_delta_seconds) {
         $new_walltime_delta_seconds = - $job_remaining_time;
     }
 
     OAR::IO::lock_table($dbh,['walltime_change']);
     my $current_walltime_change = OAR::IO::get_walltime_change_for_job($dbh, $job->{job_id}); # locked here
     if (defined($current_walltime_change)) { # Update a request
-        if ($Walltime_max_increase != -1 and $current_walltime_change->{granted} + $new_walltime_delta_seconds > $Walltime_max_increase and not grep(/^$lusr$/,('root','oar'))) { 
+        if ($Walltime_max_increase != -1 and $current_walltime_change->{granted} + $new_walltime_delta_seconds > $Walltime_max_increase and not grep(/^$lusr$/,('root','oar'))) {
             @result = (3, 403, "forbidden", "request cannot be updated because the walltime cannot increase by more than ".$Walltime_max_increase_hms);
         } else {
             OAR::IO::update_walltime_change_request(

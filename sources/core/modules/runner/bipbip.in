@@ -138,7 +138,7 @@ sub call_server_prologue {
                     my ($children,$cmd_name) = OAR::Tools::get_one_process_children($pid);
                     kill(9,@{$children});
                 }
-                my $str = "[bipbip $Job_id] Server prologue timeouted (cmd : $cmd)";
+                my $str = "[bipbip $Job_id] Server prologue timeouted (cmd: $cmd)";
                 oar_error("$str\n");
                 OAR::IO::add_new_event($base,"SERVER_PROLOGUE_TIMEOUT",$Job_id,"$str");
                 OAR::IO::disconnect($base);
@@ -150,7 +150,7 @@ sub call_server_prologue {
                 exit(2);
             }
         }elsif ($exit_value != 0){
-            my $str = "[bipbip $Job_id] Server prologue exit code $exit_value (!=0) (cmd : $cmd)";
+            my $str = "[bipbip $Job_id] Server prologue exit code $exit_value (!=0) (cmd: $cmd)";
             oar_error("$str\n");
             OAR::IO::add_new_event($base,"SERVER_PROLOGUE_EXIT_CODE_ERROR",$Job_id,"$str");
             OAR::IO::disconnect($base);
@@ -185,7 +185,7 @@ if ((defined($Oarexec_reattach_exit_value)) and
             exit(2);
         }
     }else{
-        oar_error("[bipbip $Job_id] Bad argument for bipbip : $Oarexec_reattach_exit_value\n");
+        oar_error("[bipbip $Job_id] Bad argument for bipbip: $Oarexec_reattach_exit_value\n");
         OAR::IO::disconnect($base);
         exit(2);
     }
@@ -215,7 +215,7 @@ if (defined($types->{noop})){
 }
 
 # HERE we must launch oarexec on the first node
-oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts :[@hosts]\n");
+oar_debug("[bipbip $Job_id] JOB: $Job_id; User: $job->{job_user}; Command: $job->{command} ==> hosts: [@hosts]\n");
 
 if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
     my ($addr,$port) = split(/:/,$job->{info_type});
@@ -273,7 +273,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
         my $taktuk_cmd = get_conf("TAKTUK_CMD");
         my ($tag,@bad_tmp) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$Cpuset_file,"init",$Openssh_cmd,$taktuk_cmd,$base);
         if ($tag == 0){
-            my $str = "[bipbip $Job_id] [CPUSET] Bad cpuset file : $Cpuset_file\n";
+            my $str = "[bipbip $Job_id] [CPUSET] Bad cpuset file: $Cpuset_file\n";
             OAR::Modules::Judas::oar_error($str);
             OAR::IO::add_new_event($base, "CPUSET_MANAGER_FILE", $Job_id, $str);
         }else{
@@ -296,7 +296,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
                     }
                     OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","frag_jobs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions","event_logs","event_log_hostnames"]);
                     OAR::IO::set_job_message($base,$Job_id,"One or several nodes are not responding correctly(CPUSET_ERROR)");
-                    OAR::IO::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR cpuset suspects nodes for the job $Job_id : @bad",\@bad);
+                    OAR::IO::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR cpuset suspects nodes for the job $Job_id: @bad",\@bad);
                     OAR::IO::archive_some_moldable_job_nodes($base,$job->{assigned_moldable_job},\@bad);
                     OAR::IO::unlock_table($base);
                     OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
@@ -320,7 +320,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
     #if (($#bad < 0) and (!defined($cpuset_nodes))){
     if ($#bad < 0){
         # CHECK nodes
-        oar_debug("[bipbip $Job_id] Check nodes : @hosts\n");
+        oar_debug("[bipbip $Job_id] Check nodes: @hosts\n");
         $event_type = "PING_CHECKER_NODE_SUSPECTED";
         @bad = OAR::PingChecker::test_hosts(@hosts);
     }
@@ -354,7 +354,7 @@ if ((!defined($types->{deploy})) and (!(defined($types->{cosystem})) and ($#host
             }
         }
         #OAR::IO::set_job_state($base,$Job_id,"Error");
-        OAR::IO::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR suspects nodes for the job $Job_id : @bad",\@bad);
+        OAR::IO::add_new_event_with_host($base,"$event_type",$Job_id,"[bipbip] OAR suspects nodes for the job $Job_id: @bad",\@bad);
         OAR::IO::unlock_table($base);
         OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
         if ($exit_bipbip == 1){

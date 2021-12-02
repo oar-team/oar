@@ -548,8 +548,8 @@ while (@jobs and ((time() - $initial_time) < $timeout)){
             print("SCHEDRUN JOB_ID=$j->{job_id} MOLDABLE_JOB_ID=$moldable_results[$index_to_choose]->{moldable_id} RESOURCES=".join(',', @{$moldable_results[$index_to_choose]->{resources}})."\n");
         }
     }else{
-        oar_debug("[$scheduler_name] [$i] job couldn't be scheduled\n");
-        my $message = "cannot find enough resources for job $i";
+        oar_debug("[$scheduler_name] [$i] job couldn't be scheduled yet\n");
+        my $message = "cannot find enough resources for job $i yet";
         OAR::IO::set_job_message($base,$i, ucfirst($message));
         OAR::IO::set_job_scheduler_info($base,$i,$message);
         oar_debug("[$scheduler_name] [$i] $message\n");

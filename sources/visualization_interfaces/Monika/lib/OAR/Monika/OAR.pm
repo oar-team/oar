@@ -53,7 +53,7 @@ sub oarnodes {
   my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbtype, $dbname, $username, $pwd);
   my @nodeNames= OAR::Monika::db_io::list_nodes($dbh);
   foreach my $currentNode (@nodeNames){
-	next unless $currentNode;
+    next unless $currentNode;
     my @currentNodeRessources= OAR::Monika::db_io::get_all_resources_on_node($dbh, $currentNode);
     my %hashInfoCurrentNodeRessources;
     foreach my $currentRessource (@currentNodeRessources){
@@ -86,12 +86,13 @@ sub getJobProperties {
   my $dbh = OAR::Monika::db_io::dbConnection($hostname, $port, $dbtype, $dbname, $username, $pwd);
   
   my $jobInfos= OAR::Monika::db_io::get_job_stat_infos($dbh, $currentJobId);
+  my $jobEvents= OAR::Monika::db_io::get_job_events($dbh, $currentJobId);
   my $job = OAR::Monika::OARJob->new($currentJobId);
   foreach my $key (keys %{$jobInfos}){
     my $value= $jobInfos->{$key};
     $job->set($key,$value,$cgi);
   }
-
+  $job->set("events", $jobEvents, $cgi);
   ## let's count the nodes and cpu used.
 
   my $structure= OAR::Monika::db_io::get_resources_data_structure_current_job($dbh, $currentJobId);
@@ -143,11 +144,13 @@ sub qstat {
   my @jobIds= OAR::Monika::db_io::get_queued_jobs($dbh);
   foreach my $currentJobId (@jobIds){
     my $jobInfos= OAR::Monika::db_io::get_job_stat_infos($dbh, $currentJobId);
+    my $jobEvents= OAR::Monika::db_io::get_job_events($dbh, $currentJobId);
     my $job = OAR::Monika::OARJob->new($currentJobId);
     foreach my $key (keys %{$jobInfos}){
       my $value= $jobInfos->{$key};
       $job->set($key,$value,$cgi);
     }
+    $job->set("events", $jobEvents, $cgi);
 
     ## let's count the nodes and cpu used.
 
@@ -215,8 +218,7 @@ sub nodelistByProperty {
                   if($prop eq $property){
                     unless (defined($alreadyCounted{$node})){
                       $alreadyCounted{$node}= 1;
-                      push @nodesSelected, $node->name;
-                      #push @nodesSelected, $node->displayHTMLname;
+                      push @nodesSelected, $node->displayname;
                     }
                   }
           }
@@ -269,16 +271,16 @@ sub htmlSummaryTable {
     }
   }
   $output .= $cgi->start_table({-border=>"1",
-		     -align =>"center"
-		    });
-	$output .= $cgi->start_Tr({-align => "center"});
+             -align =>"center"
+            });
+    $output .= $cgi->start_Tr({-align => "center"});
   my $pt_resources = $self->getResources();
   foreach my $type_res (keys %hash_display){
-  	$output .= $cgi->td();
+      $output .= $cgi->td();
     $output .= $cgi->start_table({-border=>"1",-align =>"center"});
-		$output .= $cgi->start_Tr({-align => "center"});
-	  $output .= $cgi->td($cgi->i($cgi->u($type_res." summary")));
-	  $output .= $cgi->end_Tr();
+        $output .= $cgi->start_Tr({-align => "center"});
+      $output .= $cgi->td($cgi->i($cgi->u($type_res." summary")));
+      $output .= $cgi->end_Tr();
     $output .= $cgi->start_Tr({-align=>"center"});
     $output .= $cgi->td($cgi->i(""));
     $output .= $cgi->td($cgi->b("Free"));
@@ -416,8 +418,8 @@ sub htmlPropertyChooser {
   my $self = shift;
   my $cgi = shift;
   my $output = "";
-	# do not show hidden properties...
-	my @checkboxes = ();
+    # do not show hidden properties...
+    my @checkboxes = ();
   my @hiddenProperties = OAR::Monika::Conf::myself()->hiddenProperties();
   my @nodes = values %{$self->allnodes};
   #my %alreadyCounted;  
@@ -470,11 +472,11 @@ sub htmlPropertyChooser {
     $output .= $cgi->start_form({ -method => "get" });
     $output .= $cgi->b("OAR properties:");
     $output .= $cgi->checkbox_group({
-				    -name=> 'props',
-				    -values=> \@sortedCheckboxes,
-				    -columns => 5,
-				     -title => "click to select property"
-				    });
+                    -name=> 'props',
+                    -values=> \@sortedCheckboxes,
+                    -columns => 5,
+                     -title => "click to select property"
+                    });
     $output .= $cgi->submit("Action","Display nodes for these properties");
     $output .= $cgi->end_div();
     $output .= $cgi->end_form();

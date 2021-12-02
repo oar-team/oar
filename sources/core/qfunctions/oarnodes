@@ -40,6 +40,7 @@ my $stateMode;
 my $usage;
 my $listall;
 my $sql_property;
+my $sql_property_resource_lookup;
 my $XML_mode;
 my $YAML_mode;
 my $JSON_mode;
@@ -79,7 +80,7 @@ EOS
 }
 
 sub print_oar_version(){
-    print "OAR version : ".OAR::Nodes::get_oar_version()."\n";
+    print "OAR version: ".OAR::Nodes::get_oar_version()."\n";
 }
 
 sub print_events($$){
@@ -114,6 +115,11 @@ sub add_sql_resources($){
 
 sub format_result($){
     my $result = shift;
+
+    if (!defined($result) || !%$result) {
+        $result = {};
+    }
+
     if (defined($DUMPER_mode)){
         print(Dumper($result)."\n");
     }elsif(defined($XML_mode)){
@@ -136,7 +142,7 @@ sub print_resources_states_for_hosts($){
         foreach my $current_host (sort keys %{$result} ) {
             print "$current_host\n";
             foreach my $k (sort keys %{$result->{$current_host}} ) {
-                print "    $k : $result->{$current_host}{$k}\n";
+                print "    $k: $result->{$current_host}{$k}\n";
             }
         }
     }
@@ -152,7 +158,7 @@ sub print_resources_states($){
         }
         else {
       while ( my ($k,$v) = each %$resources_states ){
-        print "$k : $v\n";
+        print "$k: $v\n";
       }
         }
 }
@@ -168,10 +174,10 @@ sub print_hosts_infos($){
     my $nodes = shift;
     my $infos = OAR::Nodes::get_resources_for_hosts($nodes);
 
-    if (%$infos == 0) {
-        print("\/!\\ No nodes to display...\n");
-    } elsif (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
         format_result($infos);
+    } elsif (!defined($infos) || %$infos == 0) {
+        print("\/!\\ No nodes to display...\n");
     } else {
         print_resources_flat_way($infos);
     }
@@ -182,12 +188,12 @@ sub print_resources_flat_way($){
     my $resources_info = shift;
     foreach my $id ( sort keys %$resources_info ){
         my $info = $resources_info->{$id};
-        print "network_address : $info->{network_address}\n";
-        print "resource_id : $info->{resource_id}\n";
+        print "network_address: $info->{network_address}\n";
+        print "resource_id: $info->{resource_id}\n";
         if ($info->{state} eq "Absent" && $info->{available_upto} >= time()) {
         $info->{state} .= " (standby)";
         }
-        print "state : $info->{state}\n";
+        print "state: $info->{state}\n";
         if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
         my $properties_to_display='';
         while ( my ($k,$v) = each %$info ){
@@ -201,7 +207,7 @@ sub print_resources_flat_way($){
         }
         chop($properties_to_display); # remove last space
         chop($properties_to_display); # remove last ,
-        print "properties : $properties_to_display\n\n";
+        print "properties: $properties_to_display\n\n";
     }
 }
 
@@ -244,6 +250,7 @@ if($ARGV[0]){
 # SQL where handling, add resources that match sql clause to @resources
 if (defined($sql_property)) {
     add_sql_resources($sql_property);
+    $sql_property_resource_lookup = 1;
 }
 
 if (defined($events)) {
@@ -260,7 +267,7 @@ elsif ($stateMode){
 elsif ($listall){
     print_all_hostnames();
 }
-elsif ($#resources >= 0){ # -r or --sql where called
+elsif ($#resources >= 0 || defined($sql_property_resource_lookup)) { # -r or --sql where called
     my $res_infos = OAR::Nodes::get_resources_info(\@resources);
     if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
         format_result($res_infos);

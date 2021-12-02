@@ -15,7 +15,7 @@ intended to be started periodically from cron.
 
 =head1 EXAMPLES
 
-You can add into the crontab :
+You can add into the crontab:
 
  */10 * * * *       root %%SBINDIR%%/oar_phoenix
 

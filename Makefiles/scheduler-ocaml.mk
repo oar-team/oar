@@ -9,10 +9,10 @@ clean: clean_shared
 	$(MAKE) -C $(SRCDIR)/simple_cbf_mb_h_ct_oar clean
 	rm -rf  \
 	    $(SRCDIR)/simple_cbf_mb_h_ct_oar/._d \
-	    $(SRCDIR)/simple_cbf_mb_h_ct_oar/common 
+	    $(SRCDIR)/simple_cbf_mb_h_ct_oar/common
 
 build: build_shared
-	$(MAKE) -C $(SRCDIR)/simple_cbf_mb_h_ct_oar 
+	$(MAKE) -C $(SRCDIR)/simple_cbf_mb_h_ct_oar
 
 install: install_shared
 	install -d $(DESTDIR)$(OARDIR)/schedulers

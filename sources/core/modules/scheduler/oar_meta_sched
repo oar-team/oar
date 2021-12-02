@@ -82,7 +82,7 @@ if (is_conf("SCHEDULER_GANTT_HOLE_MINIMUM_TIME")){
 # waiting time when a reservation has not all of its nodes
 my $Reservation_waiting_timeout = 300;
 
-# global variables : initialized in init_scheduler function
+# global variables: initialized in init_scheduler function
 my %besteffort_resource_occupation;
 
 # stock the job ids that where already send to almighty
@@ -115,8 +115,11 @@ sub process_walltime_change_requests($) {
         if ($fit > 0) {
             my $apply_time = OAR::Walltime::get_conf($Walltime_change_apply_time, $job->{queue_name}, $job->{walltime} - $job->{granted}, 0);
             my $increment = OAR::Walltime::get_conf($Walltime_increment, $job->{queue_name}, $job->{walltime} - $job->{granted}, 0);
+            if (not defined($job->{force})) {
+                $job->{force} = "NO";
+            }
             oar_debug("[MetaSched] [$jobid] walltime change: pending=".$fit."s delay_next_jobs=".$job->{delay_next_jobs}." force=".$job->{force}." apply_time=${apply_time}s increment=${increment}s\n");
-            if (not defined($job->{force}) or $job->{force} ne "YES") {
+            if ($job->{force} ne "YES") {
                 my $delay = $job->{start_time} + $job->{walltime} + $suspended - $apply_time - $now;
                 if ($apply_time > 0 and $delay > 0) {
                     oar_debug("[MetaSched] [$jobid] walltime change could apply in ${delay}s\n");
@@ -216,12 +219,12 @@ if ($current_time_sec < $previous_ref_time_sec){
     # The system is very fast!!!
     my $tmp_delta = $previous_ref_time_sec - $current_time_sec;
     if ($tmp_delta > 60){
-        oar_error("[OAR::Schedulers::Scheduler] init_scheduler : The previous scheduler step was performed $tmp_delta seconds in the future. It is bad, maybe the system clock of the DB server has changed. This can results in bad scheduling decisions.\n");
+        oar_error("[OAR::Schedulers::Scheduler] init_scheduler: The previous scheduler step was performed $tmp_delta seconds in the future. It is bad, maybe the system clock of the DB server has changed. This can results in bad scheduling decisions.\n");
     }else{
         $current_time_sec = $previous_ref_time_sec;
         if ($tmp_delta > 1){
             # Avoid race condition that could increment too much the current time indefinitely
-            oar_debug("[OAR::Schedulers::Scheduler] init_scheduler : The previous scheduler step was performed $tmp_delta seconds in the future. So we have to wait or the scheduling decisions will be bad\n");
+            oar_debug("[OAR::Schedulers::Scheduler] init_scheduler: The previous scheduler step was performed $tmp_delta seconds in the future. So we have to wait or the scheduling decisions will be bad\n");
             sleep($tmp_delta);
         }
     }
@@ -234,7 +237,7 @@ my ($Absent_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"
 my ($Suspected_resource_id_vec, undef) = OAR::IO::get_resource_ids_in_state($base,"Suspected");
 my ($Dead_resource_id_vec, @Dead_resource_ids) = OAR::IO::get_resource_ids_in_state($base,"Dead");
 
-oar_debug("[MetaSched] Retrieve information for already scheduler reservations from database before flush (keep assign resources)\n");
+oar_debug("[MetaSched] Retrieve information for already scheduled reservations from database before flush (keep assign resources)\n");
 my $reservation_already_there = OAR::IO::get_waiting_reservations_already_scheduled($base);
 OAR::IO::gantt_flush_tables($base, $reservation_already_there, $Log_scheduling);
 OAR::IO::set_gantt_date($base,$current_time_sec);
@@ -248,9 +251,9 @@ OAR::Schedulers::GanttHoleStorage::add_new_resources($Gantt->{0}->{""}->{""}->{"
 
 oar_debug("[MetaSched] Begin processing of already scheduled reservations (accepted with resources assigned)\n");
 # Add already scheduled reservations into the gantt
-my @reseration_already_there_list = keys(%{$reservation_already_there});
-while (@reseration_already_there_list) {
-    my $i = shift(@reseration_already_there_list);
+my @reservation_already_there_list = keys(%{$reservation_already_there});
+while (@reservation_already_there_list) {
+    my $i = shift(@reservation_already_there_list);
     my $container_id = 0;
     my $inner_id = 0;
     my $placeholder_name = "";
@@ -264,10 +267,10 @@ while (@reseration_already_there_list) {
         if (defined($Gantt->{$inner_id}->{""}->{""}->{""})){
             oar_debug("[MetaSched] [$i] inner job: using container $inner_id\n");
         }else{
-            if (grep(/^$inner_id$/, @reseration_already_there_list)) {
+            if (grep(/^$inner_id$/, @reservation_already_there_list)) {
                 # The container job is later in the list, postpone inner job
                 oar_debug("[MetaSched] [$i] inner job: container $inner_id is not known yet, postponing job.\n");
-                push @reseration_already_there_list, $i;
+                push @reservation_already_there_list, $i;
                 next;
             } else {
                 oar_debug("[MetaSched] [$i] inner job: container $inner_id does not exist but job is already scheduled, use container 0.\n");
@@ -505,7 +508,7 @@ oar_debug("[MetaSched] End processing of the accepted reservations without assig
 ###########################################################################################################
 
 # launch right reservation jobs
-# arg : queue name
+# arg: queue name
 # return 1 if there is at least a job to treate, 2 if besteffort jobs must die
 sub treate_waiting_reservation_jobs($){
     my $queue_name = shift;
@@ -581,7 +584,7 @@ sub treate_waiting_reservation_jobs($){
 
 
 # check for jobs with reservation
-# arg : queue name
+# arg: queue name
 # return 1 if there is at least a job to treate else 0
 sub check_reservation_jobs($){
     my $queue_name = shift;
@@ -904,7 +907,7 @@ sub notify_to_run_job($$){
 
     if (!defined($To_launch_jobs_already_treated{$job_id})){
         if (OAR::IO::is_job_desktop_computing($base, $job_id)){
-            oar_debug("[MetaSched] $job_id : Desktop computing job, I don't handle it!\n");
+            oar_debug("[MetaSched] $job_id: Desktop computing job, I don't handle it!\n");
         }else{
             my $err = OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"OARRUNJOB_$job_id");
             if (!defined($err)){
@@ -1063,7 +1066,7 @@ my $flagHulot=0;
 if (is_conf("SCHEDULER_TIMEOUT")){
     $timeout_cmd = get_conf("SCHEDULER_TIMEOUT");
 }
-if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD") 
+if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD")
           or (get_conf("ENERGY_SAVING_INTERNAL") eq "yes" and is_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD")))
           and is_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME") and is_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME")){
 
@@ -1071,19 +1074,17 @@ if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD")
     my $idle_duration = get_conf("SCHEDULER_NODE_MANAGER_IDLE_TIME");
     my $sleep_duration = get_conf("SCHEDULER_NODE_MANAGER_SLEEP_TIME");
 
-    my %nodes = OAR::IO::search_idle_nodes($base, $current_time_sec);
     my $tmp_time = $current_time_sec - $idle_duration;
     my @node_halt;
-    foreach my $n (keys(%nodes)){
-        if ($nodes{$n} < $tmp_time){
-            # Search if the node has enough time to sleep
-            my $tmp = OAR::IO::get_next_job_date_on_node($base,$n);
-            if (!defined($tmp) or ($tmp - $sleep_duration > $current_time_sec)){
-                # Search if node has not been woken up recently
-                my $wakeup_date = OAR::IO::get_last_wake_up_date_of_node($base,$n);
-                if (!defined($wakeup_date) or ($wakeup_date < $tmp_time)){
-                    push(@node_halt, $n);
-                }
+    my @nodes = OAR::IO::get_nodes_to_halt($base, $current_time_sec, $sleep_duration);
+    my @wakeup_dates = OAR::IO::get_last_wake_up_date_of_nodes($base, \@nodes);
+
+    foreach my $last_wakeup (@wakeup_dates) {
+        # Search if node has not been woken up recently
+        if ($last_wakeup->{'date'} < $tmp_time) {
+            my $wakeup_date = $last_wakeup->{'date'};
+            if (!defined($wakeup_date) or ($wakeup_date < $tmp_time)) {
+                push(@node_halt, $last_wakeup->{'hostname'});
             }
         }
     }
@@ -1143,7 +1144,7 @@ if(!$flagHulot and (get_conf_with_default_param("ENERGY_SAVING_INTERNAL", "no") 
 # Search jobs to resume
 foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")){
     my @other_jobs = OAR::IO::get_jobs_on_resuming_job_resources($base,$j->{job_id});
-    # TODO : look for timesharing other jobs. What do we do?????
+    # TODO: look for timesharing other jobs. What do we do?????
     if ($#other_jobs < 0){
         # We can resume the job
         oar_debug("[MetaSched] [$j->{job_id}] Resuming job\n");
