@@ -38,6 +38,8 @@
 #                 = "YES";' in the following code.
 #     - [perf_event] You can ENABLE this feature by putting
 #                 'my $Enable_perf_event_cg = "YES";' in the following code.
+#     - [max_uptime] You can set '$max_uptime = <seconds>' to automaticaly
+#                 reboot the node at the end of the last job past this uptime
 #
 # Usage:
 # This script is deployed from the server and executed as oar on the nodes
@@ -86,6 +88,8 @@ my $Cgroup_mount_point = "/dev/oar_cgroups";
 # Directory where the cgroup mount points are linked to. Useful to have each
 # cgroups in the same place with the same hierarchy.
 my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
+# Max uptime for automatic reboot (disabled if 0)
+my $max_uptime = 259200;
 ###############################################################################
 # Script configuration end
 ###############################################################################
@@ -130,6 +134,13 @@ my $Cpuset;
 #               project => job project name,
 #               log_level => debug level number,
 #           }
+
+# Compute uptime
+my $uptime = 0;
+open UPTIME, "/proc/uptime" or die "Couldn't open /proc/uptime!";
+($uptime, my $junk)=split(/\./, <UPTIME>);
+close UPTIME;
+
 my $tmp = "";
 while (<STDIN>){
     $tmp .= $_;
@@ -582,14 +593,30 @@ EOF
 
             # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
             my @cpusets = ();
+            my @other_cpusets = ();
             if (opendir(DIR, $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/')) {
                 @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
                 closedir DIR;
             } else {
                 exit_myself(18,"Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}");
             }
+            if (opendir(DIR, $Cgroup_directory_collection_links.'/cpuset/'.$Cpuset->{cpuset_path}.'/')) {
+                @other_cpusets = grep { /^.*_\d+$/ } readdir(DIR);
+                closedir DIR;
+            } else {
+                exit_myself(18,"Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}");
+            }
+
             if ($#cpusets < 0) {
                 # No other jobs on this node at this time
+
+                # Reboot if uptime > max_uptime
+                if ( $#other_cpusets < 0 and $uptime > $max_uptime and $max_uptime > 0 and not -e "/etc/oar/dont_reboot") {
+                  print_log(3,"Max uptime reached, rebooting node.");
+                  system("/usr/lib/oar/oardodo/oardodo /sbin/reboot");
+                  exit(0);
+                }
+
                 my $useruid=getpwnam($Cpuset->{user});
                 if (not defined($useruid)){
                     print_log(3,"Cannot get information from user '$Cpuset->{user}' job #'$Cpuset->{job_id}' (line 481)");
