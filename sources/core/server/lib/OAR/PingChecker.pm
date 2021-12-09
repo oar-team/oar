@@ -131,7 +131,7 @@ sub taktuk_hosts(@){
                     delete($check_test_nodes{$1}) if (defined($check_test_nodes{$1}));
                 }
             }else{
-                oar_info($Module_name, "OUTPUT] $_", $Session_id);
+                oar_info($Module_name, "[TAKTUK OUTPUT] $_", $Session_id);
             }
         }
         close(ERROR);
