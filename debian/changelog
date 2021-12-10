@@ -1,3 +1,17 @@
+oar (2.5.10~g5k15-1) unstable; urgency=medium
+
+  * ff0d501b [PingChecker] fix log line prefix when it's a taktuk output
+  * 991c06e6 [judas] Rework the log format, use '|' but allow changing in the oar.conf
+  * 22106a5b [leon] improve some log messages
+  * 45869d11 [schedulers] change $scheduler_name to shorten the log lines
+  * 8db84e2a [all] replace all oar_debug with oar_info
+  * 07e819e3 [all] use new log subroutine prototype in each module
+  * ea9e6b3e [judas] change the log format and add the warn level
+  * 9d801b9f [oarapi] replace workdir by directory in OAR's rest API
+  * 86ac8f33 [criu checkpoint] added a timeout to exit when the resume fails
+
+ --  Samir Noir <samir.noir@inria.fr>  Fri, 10 Dec 2021 14:04:33 +0100
+
 oar (2.5.10~g5k14-1) unstable; urgency=medium
 
   * 0332e167 Check for validity of DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM
