@@ -3,19 +3,22 @@
 # This program aims to change node state automatically when they are inaccesible or they become alive
 
 use OAR::IO;
-use OAR::Modules::Judas qw(oar_debug oar_warn oar_error set_current_log_category);
+use OAR::Modules::Judas qw(oar_debug oar_warn oar_info oar_error set_current_log_category);
 use OAR::PingChecker qw(test_hosts);
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 use Data::Dumper;
 use strict;
 use IO::Socket::INET;
 
+my $Module_name = "Finaud";
+my $Session_id = $$;
+
 # Log category
 set_current_log_category('main');
 
-oar_debug("[finaud] Finaud started\n");
+oar_info($Module_name, "Finaud started\n", $Session_id);
 
-oar_debug("[finaud] Check Alive and Suspected nodes\n");
+oar_info($Module_name, "Check Alive and Suspected nodes\n", $Session_id);
 my $base = OAR::IO::connect();
 
 my @node_list_tmp = OAR::IO::get_finaud_nodes($base);
@@ -49,7 +52,7 @@ foreach my $i (@node_list_tmp){
 }
 
 my @Nodes_to_check = keys(%Nodes_hash);
-oar_debug("[finaud] Testing resource(s) on: @Nodes_to_check\n");
+oar_info($Module_name, "Testing resource(s) on: @Nodes_to_check\n", $Session_id);
 
 # Call the right program to test each nodes
 my %bad_node_hash;
@@ -65,22 +68,22 @@ foreach my $i (values(%Nodes_hash)){
         if ($rows > 0) {
             OAR::IO::update_node_nextFinaudDecision($base,$i->{network_address},"YES");
             OAR::IO::add_new_event_with_host($base, "FINAUD_ERROR", 0, "Finaud has detected an error on the node", [$i->{network_address}]);
-            oar_debug("[finaud] Detected an error on $i->{network_address}, set next state to Suspected\n");
+            oar_info($Module_name, "Detected an error on $i->{network_address}, set next state to Suspected\n", $Session_id);
             $return_value = 1;
         } else {
-            oar_debug("[finaud] Detected an error on $i->{network_address}, but do nothing because some changes happened in our back\n");
+            oar_info($Module_name, "Detected an error on $i->{network_address}, but do nothing because some changes happened in our back\n", $Session_id);
         }
     }elsif (!defined($bad_node_hash{$i->{network_address}}) and $i->{state} eq "Suspected" and $disable_suspected_nodes_repair eq 'no'){
         OAR::IO::set_node_nextState($base,$i->{network_address},"Alive");
         OAR::IO::update_node_nextFinaudDecision($base,$i->{network_address},"YES");
         OAR::IO::add_new_event_with_host($base, "FINAUD_RECOVER", 0, "Finaud has detected that the node comes back", [$i->{network_address}]);
-        oar_debug("[finaud] Set the next state of $i->{network_address} to Alive\n");
+        oar_info($Module_name, "Set the next state of $i->{network_address} to Alive\n", $Session_id);
         $return_value = 1;
     }
 }
 
 OAR::IO::disconnect($base);
 
-oar_debug("[finaud] Finaud ended: $return_value\n");
+oar_info($Module_name, "Finaud ended: $return_value\n", $Session_id);
 
 exit($return_value);

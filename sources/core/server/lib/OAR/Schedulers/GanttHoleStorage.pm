@@ -2,7 +2,7 @@
 package OAR::Schedulers::GanttHoleStorage;
 require Exporter;
 use OAR::Schedulers::ResourceTree;
-use OAR::Modules::Judas qw(oar_debug oar_warn oar_error set_current_log_category);
+use OAR::Modules::Judas qw(oar_debug oar_warn oar_info oar_error set_current_log_category);
 use Data::Dumper;
 use POSIX ":sys_wait_h";
 use POSIX qw(strftime);
@@ -36,7 +36,7 @@ sub get_infinity_value(){
 
 sub pretty_print($){
     my $gantt = shift;
-   
+
     print("--------------------------------------------------------------------\n");
     my @bits = split(//, unpack("b*", $gantt->[0]->[2]));
     print("@bits\n");
@@ -61,7 +61,7 @@ sub new($$){
 
     my $empty_vec = '';
     vec($empty_vec, $max_resource_number, 1) = 0;
-    
+
     my $result =[                               # Gantt structure: a Gantt is defined as the list of the biggest holes
                     [                           # (rectange shapes) where a job could be placed (holes obviously can overlap)
                         0,                      # Each item of this subarray is a set of holes beginning a same time: t_start
@@ -77,7 +77,7 @@ sub new($$){
                         [$Infinity,$Infinity]   # - [t_start,t_end] of the last hole inpected in the previous find_first_hole
                     ]                           #   calls, if a timeout was triggered.
                 ];
-    
+
     return($result);
 }
 
@@ -96,7 +96,7 @@ sub new_with_1_hole($$$$$$){
 
     # initiate the first hole with a fake date (ensure to keep it intact with all the configuration)
     $gantt->[0]->[1]->[0]->[0] = 86400;
-   
+
     # Init the whole resource list directly
     $gantt->[0]->[2] = $all_resources_vec;
     # Feed vector with enough 0
@@ -110,7 +110,7 @@ sub new_with_1_hole($$$$$$){
 }
 
 # Build a new gantt from the merger of two existing gantts
-# Algo: 
+# Algo:
 # (1) First convert the gantts to stripes defined by the start and end times of all jobs
 #     The 2 striped gantts are then easy merged: for every jobs, gantt_stripe(t) |= stripe(job, t)
 # (2) Then convert the striped gantt back to the original gantt structure
@@ -158,7 +158,7 @@ sub merge_clone($$) {
     #foreach my $l (sort keys(%$stripes)) {
     #    print("t=".$t++." l=".strftime("%F_%T",localtime($l)).": ".unpack("b*", $stripes->{$l})."\n");
     #}
-    
+
     # Convert the striped gantt back to the original structure
     my $merged_gantt = [];
     my @times=sort keys(%$stripes);
@@ -220,23 +220,26 @@ sub defined_gantt($$$$$) {
 # Manage the different gantts used in the schedulers handling container, timesharing and placeholder
 # See oar_sched_gantt_with_timesharing_and_placeholder
 # This allows to factorize code since this function is called in the 2 phases (running jobs, and to schedule jobs)
-sub manage_gantt_for_timesharing_and_placeholder($$$$$$) {
+sub manage_gantt_for_timesharing_and_placeholder($$$$$$$$) {
     my $Gantt = shift;
     my $job_user = shift;
     my $job_name = shift;
     my $types = shift;
     my $inner_id = shift;
-    my $log_prefix = shift;
+    my $module_name = shift;
+    my $session_id = shift;
+    my $job_id = shift;
     my $placeholder_name = "";
     my $allowed_name = "";
     my $timesharing_user = "";
     my $timesharing_name = "";
-    if (defined($types->{placeholder})){ # A placeholder job cannot be allowed or timesharing. 
+
+    if (defined($types->{placeholder})){ # A placeholder job cannot be allowed or timesharing.
         $placeholder_name = $types->{placeholder};
-        oar_debug("$log_prefix job is ($inner_id,$placeholder_name,,)\n");
+        oar_info($module_name, "job is ($inner_id,$placeholder_name,,)\n", $session_id, $job_id);
         if (not defined_gantt($Gantt,$inner_id,$placeholder_name,"","")){
             $Gantt->{$inner_id}->{$placeholder_name}->{""}->{""} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-            oar_debug("$log_prefix placeholder job: cloned gantt ($inner_id,$placeholder_name,,) from ($inner_id,,,)\n");
+            oar_info($module_name, "placeholder job: cloned gantt ($inner_id,$placeholder_name,,) from ($inner_id,,,)\n", $session_id, $job_id);
         }
     } else {
         if (defined($types->{allowed})){
@@ -253,42 +256,42 @@ sub manage_gantt_for_timesharing_and_placeholder($$$$$$) {
                         if (defined($job_name) and $job_name ne "") {
                             $timesharing_name = $job_name;
                         } else {
-                            oar_debug("$log_prefix timesharing on name but no job name defined, using *\n");
+                            oar_info($module_name, "timesharing on name but no job name defined, using *\n", $session_id, $job_id);
                         }
                     }
                 }
             }
         }
-        oar_debug("$log_prefix job is ($inner_id,$allowed_name,$timesharing_user,$timesharing_name)\n");
+        oar_info($module_name, "job is ($inner_id,$allowed_name,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
         if (not defined_gantt($Gantt,$inner_id,$allowed_name,$timesharing_user,$timesharing_name)) {
             if (not defined_gantt($Gantt,$inner_id,$allowed_name,"","") and not defined_gantt($Gantt,$inner_id,"",$timesharing_user,$timesharing_name)) {
                 $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n");
+                oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n", $session_id, $job_id);
                 if ($allowed_name ne "") {
                     $Gantt->{$inner_id}->{$allowed_name}->{""}->{""} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                    oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n");
+                    oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n", $session_id, $job_id);
                 }
                 if ($timesharing_user ne "" or $timesharing_name ne "") {
                     $Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                    oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n");
+                    oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n", $session_id, $job_id);
                 }
             } elsif (not defined_gantt($Gantt,$inner_id,$allowed_name,"","")) { #G($i,,$u,$n) is defined
                 $Gantt->{$inner_id}->{$allowed_name}->{""}->{""} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n");
+                oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,,) from ($inner_id,,,)\n", $session_id, $job_id);
                 if ($timesharing_user ne "" and $timesharing_name ne "") {
                     $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name});
-                    oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,$timesharing_user,$timesharing_name)\n");
+                    oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
                 }
             } elsif (not defined_gantt($Gantt,$inner_id,"",$timesharing_user,$timesharing_name)) { # G($i,$p,,) is defined
                 $Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{""}->{""}->{""});
-                oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n");
+                oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,,$timesharing_user,$timesharing_name) from ($inner_id,,,)\n", $session_id, $job_id);
                 if ($allowed_name ne "") {
                     $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = dclone($Gantt->{$inner_id}->{$allowed_name}->{""}->{""});
-                    oar_debug("$log_prefix allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,)\n");
+                    oar_info($module_name, "allowed/timesharing job: cloned gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,)\n", $session_id, $job_id);
                 }
-            } else { # Both G($i,$p,,) and G($i,,$u,$n) are defined. We need to merge them to create G($i,$p,$u,$n) 
+            } else { # Both G($i,$p,,) and G($i,,$u,$n) are defined. We need to merge them to create G($i,$p,$u,$n)
                 $Gantt->{$inner_id}->{$allowed_name}->{$timesharing_user}->{$timesharing_name} = merge_clone($Gantt->{$inner_id}->{$allowed_name}->{""}->{""},$Gantt->{$inner_id}->{""}->{$timesharing_user}->{$timesharing_name});
-                oar_debug("$log_prefix allowed/timesharing job: merged gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,) and ($inner_id,,$timesharing_user,$timesharing_name)\n");
+                oar_info($module_name, "allowed/timesharing job: merged gantt ($inner_id,$allowed_name,$timesharing_user,$timesharing_name) from ($inner_id,$allowed_name,,) and ($inner_id,,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
             }
         }
     }
@@ -298,7 +301,7 @@ sub manage_gantt_for_timesharing_and_placeholder($$$$$$) {
 # Fill the gantts different gantts used in the schedulers handling container, timesharing and placeholder
 # See oar_sched_gantt_with_timesharing_and_placeholder
 # This allows to factorize code since this function is called in the 2 phases (running jobs, and to schedule jobs)
-sub fill_gantts($$$$$$$$$$) {
+sub fill_gantts($$$$$$$$$$$$) {
     my $Gantt = shift;
     my $date = shift;
     my $duration = shift;
@@ -308,19 +311,21 @@ sub fill_gantts($$$$$$$$$$) {
     my $allowed_name = shift;
     my $timesharing_user = shift;
     my $timesharing_name = shift;
-    my $log_prefix = shift;
-    
+    my $module_name = shift;
+    my $session_id = shift;
+    my $job_id = shift;
+
     foreach my $p (keys(%{$Gantt->{$inner_id}})){
         foreach my $u (keys(%{$Gantt->{$inner_id}->{$p}})){
             foreach my $n (keys(%{$Gantt->{$inner_id}->{$p}->{$u}})){
                 if (not (($p ne "" and $p eq $placeholder_name) or ($u ne "" and $u eq $timesharing_user and $n ne "" and $n eq $timesharing_name))){
-                    oar_debug("$log_prefix add job occupation in gantt ($inner_id,$p,$u,$n)\n");
+                    oar_info($module_name, "add job occupation in gantt ($inner_id,$p,$u,$n)\n", $session_id, $job_id);
                     set_occupation( $Gantt->{$inner_id}->{$p}->{$u}->{$n}, $date, $duration, $resources_vec);
                 } else {
                     if ($placeholder_name ne "") {
-                        oar_debug("$log_prefix skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,$placeholder_name,,)\n");
+                        oar_info($module_name, "skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,$placeholder_name,,)\n", $session_id, $job_id);
                     } else {
-                        oar_debug("$log_prefix skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,$allowed_name,$timesharing_user,$timesharing_name)\n");
+                        oar_info($module_name, "skip job occupation in gantt ($inner_id,$p,$u,$n) because job is ($inner_id,$allowed_name,$timesharing_user,$timesharing_name)\n", $session_id, $job_id);
                     }
                 }
             }
@@ -334,11 +339,11 @@ sub add_new_resources($$) {
     my ($gantt, $resources_vec) = @_;
 
     # Feed vector with enough 0
-    $resources_vec |= $gantt->[0]->[3]; 
-    
+    $resources_vec |= $gantt->[0]->[3];
+
     # Verify which resources are not already inserted
     my $resources_to_add_vec = $resources_vec & (~ $gantt->[0]->[2]);
-   
+
     if (unpack("%32b*",$resources_to_add_vec) > 0){
         # We need to insert new resources on all hole
         my $g = 0;
@@ -372,7 +377,7 @@ sub set_occupation($$$$){
                         $date + $duration + 1,
                         []
                     ];
-    
+
     my $g = 0;
     while (($g <= $#{$gantt}) and ($gantt->[$g]->[0] <= $new_hole->[0])){
         my $slot_deleted = 0;
@@ -386,9 +391,9 @@ sub set_occupation($$$$){
                 $slot_date_here = 1 if ($gantt->[$g]->[1]->[$h]->[0] == $date);
                 if ($gantt->[$g]->[1]->[$h]->[0] > $date){
                     # This slot ends after $date
-                    
+
                     #print("-->[1]\n ".($date - $gantt->[$g]->[0])." -- $gantt->[0]->[4]\n<--[1]\n");
-                    
+
                     if (($gantt->[$g]->[0] < $date) and ($slot_date_here == 0) and ($date - $gantt->[$g]->[0] > $gantt->[0]->[4])){
                         # We must create a smaller slot (hole start time < $date)
                         splice(@{$gantt->[$g]->[1]}, $h, 0, [ $date , $gantt->[$g]->[1]->[$h]->[1] ]);
@@ -417,18 +422,18 @@ sub set_occupation($$$$){
                         }elsif ($new_hole->[0] < $gantt->[$g]->[1]->[$h]->[0]){
                             # There is no slot so we create one
                             push(@{$new_hole->[1]}, [ $gantt->[$g]->[1]->[$h]->[0], $gantt->[$g]->[1]->[$h]->[1] ]);
-                            
+
                             #print("-->[3]\n Add new hole $new_hole->[0]: $gantt->[$g]->[1]->[$h]->[0]:\n".Dumper($new_hole)."\n -->[3]\n");
-                        
+
                         }
                     }
                     # Remove new occupied resources from the current slot
                     $gantt->[$g]->[1]->[$h]->[1] &= (~ $resources_vec) ;
                     if (unpack("%32b*",$gantt->[$g]->[1]->[$h]->[1]) == 0){
                         # There is no free resource on this slot so we delete it
-                        
+
                         #print("-->[4]\n Delete slot: $gantt->[$g]->[0],$gantt->[$g]->[1]->[$h]->[0] \n<--[4]\n");
-                        
+
                         splice(@{$gantt->[$g]->[1]}, $h, 1);
                         $h--;
                         $slot_deleted = 1;
@@ -458,7 +463,7 @@ sub set_occupation($$$$){
 
             #print("-->[6]\n ");pretty_print($gantt);print("<--[6]\n");
             #print("-->[7]\nG-1=$gantt->[$g - 1]->[0]       G=$gantt->[$g]->[0] \n<--[7]\n");
-            
+
             if ($#{$gantt->[$g - 1]->[1]} != $#{$gantt->[$g]->[1]}){
                 $different = 1;
             }
@@ -475,9 +480,9 @@ sub set_occupation($$$$){
                 $tmp_h++;
             }
             if ($different == 0){
-                
+
                 #print("-->[8]\n Delete Hole: $gantt->[$g]->[0] \n-->[8]\n");
-                
+
                 splice(@{$gantt}, $g, 1);
                 $g--;
             }
@@ -485,9 +490,9 @@ sub set_occupation($$$$){
         # Go to the next hole
         $g++;
     }
-    
+
     #print("-->[9]\n "); pretty_print($gantt); print("<--[9]\n");
-    
+
     if ($#{$new_hole->[1]} >= 0){
         # Add the new hole
         if (($g > 0) and ($g - 1 <= $#{$gantt}) and ($gantt->[$g - 1]->[0] == $new_hole->[0])){
@@ -515,17 +520,17 @@ sub find_hole($$$){
 # Returns the vector of the maximum free resources at the given date for the given duration
 sub get_free_resources($$$){
     my ($gantt, $begin_date, $duration) = @_;
-    
+
     my $end_date = $begin_date + $duration;
     my $hole_index = 0;
     # search the nearest hole
     while (($hole_index <= $#{$gantt}) and ($gantt->[$hole_index]->[0] < $begin_date) and
-            (($gantt->[$hole_index]->[1]->[$#{$gantt->[$hole_index]->[1]}]->[0] < $end_date) or 
+            (($gantt->[$hole_index]->[1]->[$#{$gantt->[$hole_index]->[1]}]->[0] < $end_date) or
                 (($hole_index + 1 <= $#{$gantt}) and $gantt->[$hole_index + 1]->[0] < $begin_date))){
         $hole_index++;
     }
     return($gantt->[0]->[4]) if ($hole_index > $#{$gantt});
-    
+
     my $h = 0;
     while (($h <= $#{$gantt->[$hole_index]->[1]}) and ($gantt->[$hole_index]->[1]->[$h]->[0] < $end_date)){
         $h++;
@@ -591,7 +596,7 @@ sub find_first_hole($$$$$){
             my $tree_clone;
             my $i = 0;
             # Initiate already used resources with the empty vector
-            my $already_occupied_resources_vec = $gantt->[0]->[3]; 
+            my $already_occupied_resources_vec = $gantt->[0]->[3];
             do{
                 foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
                     vec($already_occupied_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
@@ -609,7 +614,7 @@ sub find_first_hole($$$$$){
                 #print(Dumper($tree_clone));
                 $tree_clone = OAR::Schedulers::ResourceTree::delete_tree_nodes_with_not_enough_resources($tree_clone);
                 $tree_clone = OAR::Schedulers::ResourceTree::delete_unnecessary_subtrees($tree_clone);
-                
+
 #$Data::Dumper::Purity = 0;
 #$Data::Dumper::Terse = 0;
 #$Data::Dumper::Indent = 1;
@@ -731,7 +736,7 @@ sub find_first_hole_parallel($$$$$$){
                     my $tree_list;
                     my $i = 0;
                     # Initiate already used resources with the empty vector
-                    my $already_occupied_resources_vec = $gantt->[0]->[3]; 
+                    my $already_occupied_resources_vec = $gantt->[0]->[3];
                     do{
                         foreach my $l (OAR::Schedulers::ResourceTree::get_tree_leafs($tree_clone)){
                             vec($already_occupied_resources_vec, OAR::Schedulers::ResourceTree::get_current_resource_value($l), 1) = 1;
@@ -819,7 +824,7 @@ sub find_first_hole_parallel($$$$$$){
             while ($kid > 0){
                 $kid = waitpid(-1, WNOHANG);
             }
-        
+
             # Check timeout
             #print "CURRENT HOLE: $current_process_hole_index\n";
             if (($end_loop == 0) and ($current_process_hole_index <= $#{$gantt}) and

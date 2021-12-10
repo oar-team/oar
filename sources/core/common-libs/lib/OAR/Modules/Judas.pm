@@ -16,7 +16,7 @@ use OAR::Tools;
 require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(oar_warn oar_debug oar_error send_log_by_email set_current_log_category);
+@EXPORT_OK = qw(oar_warn oar_info oar_debug oar_error send_log_by_email set_current_log_category);
 
 $| = 1;
 my $CURRENT_LOG_CAT;
@@ -41,7 +41,11 @@ if (is_conf("LOG_CATEGORIES")){
 else{
   $log_categories{"all"} = 1;
 }
+# Default format is "type|timestamp|module/session|jobid|message"
+my $log_format = get_conf_with_default_param("LOG_FORMAT","%s|%s|%s/%s|%s|%s");
 
+my $Module_name = "Judas";
+my $Session_id = $$;
 
 my $mail_recipient = get_conf("MAIL_RECIPIENT");
 
@@ -81,7 +85,7 @@ sub redirect_everything(){
 sub get_log_level(){
     return($log_level);
 }
- 
+
 # this function must be called by each module that has something to say in
 # the logs with his proper category name.
 sub set_current_log_category($){
@@ -91,7 +95,7 @@ sub set_current_log_category($){
 # this function writes both on the stdout and in the log file
 sub write_log($){
     my $str = shift;
-	$CURRENT_LOG_CAT = "all" if !defined $CURRENT_LOG_CAT;
+    $CURRENT_LOG_CAT = "all" if !defined $CURRENT_LOG_CAT;
     if(exists($log_categories{$CURRENT_LOG_CAT}) || exists($log_categories{"all"})){
       if (open(LOG,">>$log_file")){
           print(LOG "$str");
@@ -114,39 +118,60 @@ sub send_log_by_email($$){
     send_mail($mail_recipient, $subject,$body,0);
 }
 
-sub oar_debug($){
+sub oar_warn($$$;$) {
+    my $module_name = shift;
     my $string = shift;
+    my $session_id = shift;
+    my $job_id = shift;
 
-    if ($log_level >= 3){
-        my ($seconds, $microseconds) = gettimeofday();
-        $microseconds = int($microseconds / 1000);
-        $microseconds = sprintf("%03d",$microseconds);
-        $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
-        write_log("[debug] $string");
+    if ($log_level >= 1) {
+        oar_log("W", $module_name, $string, $session_id, $job_id);
     }
 }
 
-sub oar_warn($){
+sub oar_info($$$;$) {
+    my $module_name = shift;
     my $string = shift;
+    my $session_id = shift;
+    my $job_id = shift;
 
-    if ($log_level >= 2){
-        my ($seconds, $microseconds) = gettimeofday();
-        $microseconds = int($microseconds / 1000);
-        $microseconds = sprintf("%03d",$microseconds);
-        $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
-        write_log("[info] $string");
+    if ($log_level >= 2) {
+        oar_log("I", $module_name, $string, $session_id, $job_id);
     }
 }
 
-sub oar_error($){
+sub oar_debug($$$;$) {
+    my $module_name = shift;
     my $string = shift;
+    my $session_id = shift;
+    my $job_id = shift;
 
-    #send_log_by_email(undef,"[error] $string");
+    if ($log_level >= 3) {
+        oar_log("D", $module_name, $string, $session_id, $job_id);
+    }
+}
+
+sub oar_error($$$;$){
+    my $module_name = shift;
+    my $string = shift;
+    my $session_id = shift;
+    my $job_id = shift;
+
+    oar_log("E", $module_name, $string, $session_id, $job_id);
+}
+
+sub oar_log($$$$;$) {
+    my $level = shift;
+    my $module_name = shift;
+    my $string = shift;
+    my $session_id = shift;
+    my $job_id = shift;
+
     my ($seconds, $microseconds) = gettimeofday();
-    $microseconds = int($microseconds / 1000);
-    $microseconds = sprintf("%03d",$microseconds);
-    $string = "[".strftime("%F %T",localtime($seconds)).".$microseconds] $string";
-    write_log("[error] $string");
+    $microseconds = sprintf("%03d", int($microseconds) / 1000);
+
+    $string = sprintf($log_format, $level, strftime("%FT%T", localtime($seconds)).".$microseconds", $module_name, $session_id, defined($job_id)?$job_id:"", $string);
+    write_log($string);
 }
 
 # Must be only used in the fork of the send_mail function to store errors in OAR DB
@@ -164,7 +189,7 @@ sub treate_mail_error($$$$$$$){
     #OAR::IO::add_new_event($base,"MAIL_NOTIFICATION_ERROR",$job_id,"$error --> SMTP server used: $smtpServer, sender: $mailSenderAddress, recipients: $mailRecipientAddress, object: $object, body: $body");
     #
     #OAR::IO::disconnect($base);
-    oar_debug("[Judas] Mail ERROR: $job_id $error --> SMTP server used: $smtpServer, sender: $mailSenderAddress, recipients: $mailRecipientAddress, object: $object, body: $body\n");
+    oar_info($Module_name, "Mail ERROR: $job_id $error --> SMTP server used: $smtpServer, sender: $mailSenderAddress, recipients: $mailRecipientAddress, object: $object, body: $body\n", $Session_id);
     exit(1);
 }
 
@@ -180,7 +205,7 @@ sub send_mail($$$$){
     my $smtp_server = get_conf("MAIL_SMTP_SERVER");
     my $mail_sender_address = get_conf("MAIL_SENDER");
     if (!defined($smtp_server) || !defined($mail_sender_address) || !defined($mail_recipient_address)){
-        oar_debug("[Judas] Mail is not configured\n");
+        oar_info($Module_name, "Mail is not configured\n", $Session_id);
         return();
     }
 
@@ -288,25 +313,25 @@ sub notify_user($$$$$$$$){
                         kill(9,@{$children});
                     }
                     my $dbh = OAR::IO::connect();
-                    my $str = "[Judas] User notification failed: ssh timeout, on node $host (cmd: $cmd)";
-                    oar_error("$str\n");
+                    my $str = "User notification failed: ssh timeout, on node $host (cmd: $cmd)";
+                    oar_error($Module_name, "$str\n", $Session_id);
                     OAR::IO::add_new_event($dbh,"USER_EXEC_NOTIFICATION_ERROR",$job_id,"$str");
                     OAR::IO::disconnect($dbh);
                 }
             }else{
                 my $dbh = OAR::IO::connect();
-                my $str = "[Judas] Launched user notification command: $cmd; exit value = $exit_value, signal num = $signal_num, dumped core = $dumped_core";
-                oar_debug("$str\n");
+                my $str = "Launched user notification command: $cmd; exit value = $exit_value, signal num = $signal_num, dumped core = $dumped_core";
+                oar_info($Module_name, "$str\n", $Session_id);
                 OAR::IO::add_new_event($dbh,"USER_EXEC_NOTIFICATION",$job_id,"$str");
                 OAR::IO::disconnect($dbh);
             }
             # Exit from child
             exit(0);
         }elsif (!defined($pid)){
-            oar_error("[Judas] Error when forking process to execute notify user command: $cmd\n");
+            oar_error($Module_name, "Error when forking process to execute notify user command: $cmd\n", $Session_id);
         }
     }else{
-        oar_debug("[Judas] No correct notification method found ($method) for the job $job_id\n");
+        oar_debug($Module_name, "No correct notification method found ($method) for the job $job_id\n", $Session_id);
     }
 }
 

@@ -66,6 +66,19 @@ LOG_LEVEL="2"
 LOG_CATEGORIES="all"
 # Configuration for module: server
 
+# Log format to use in the log file.
+# E.g. "type|timestamp|module/session|jobid|message" where:
+# - type is 'E' for error, 'W' for warning, 'I' for info, 'D' for debug
+# - timestamp is yyyy-mm-ddThh:mm:ss.ms
+# - module is the name of the OAR module that writes the log line
+# - session is the pid of the OAR module that write the log line (= session id)
+# - jobid is the job id of the job which the log line is about, or "" if no job id is relevant for the log line
+# - message is the log message
+# The log format string must be composed of 6 '%s', but can use any characters around them
+# Default is "%s|%s|%s/%s|%s|%s" 
+#LOG_FORMAT="%s|%s|%s/%s|%s|%s"
+# Configuration for module: server
+
 # If you want to debug oarexec on nodes then affect 1 (only effective if DETACH_JOB_FROM_SERVER = 1)
 OAREXEC_DEBUG_MODE="0"
 # Configuration for module: server
