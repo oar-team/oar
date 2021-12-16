@@ -752,7 +752,7 @@ sub check_resource_system_property($){
 
 # Manage commands on several nodes like cpuset or suspend job
 # args: array of host to connect to, hashtable to transfer, name of the file containing the perl script, action to perform (start or stop), SSH command to use, taktuk cmd or undef, database ref
-sub manage_remote_commands($$$$$$$$$) {
+sub manage_remote_commands($$$$$$$){
     my $connect_hosts = shift;
     my $data_hash = shift;
     my $manage_file = shift;
@@ -760,8 +760,6 @@ sub manage_remote_commands($$$$$$$$$) {
     my $ssh_cmd = shift;
     my $taktuk_cmd = shift;
     my $base = shift;
-    my $module_name = shift;
-    my $session_id = shift;
     
     my @bad;
     $ssh_cmd = $Default_openssh_cmd if (!defined($ssh_cmd));
@@ -851,7 +849,7 @@ sub manage_remote_commands($$$$$$$$$) {
                         delete($tmp_node_hash{$1}) if (defined($tmp_node_hash{$1}));
                     }
                 }else{
-                    oar_info($module_name, "[TAKTUK OUTPUT] $_", $session_id);
+                    print("[TAKTUK OUTPUT] $_");
                 }
             }
             close(tak_stdout_read);

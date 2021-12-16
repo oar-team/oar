@@ -8778,7 +8778,7 @@ sub job_finishing_sequence($$$$$$$){
                     project             => $job->{project},
                     log_level => OAR::Modules::Judas::get_log_level()
                 };
-                my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh,"JobFinishingSequence",$session_id);
+                my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
                 if ($tag == 0){
                     my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file: $cpuset_file\n";
                     oar_error("JobFinishingSequence", "Bad cpuset file: $cpuset_file\n", $session_id, $job_id);
