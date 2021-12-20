@@ -1,3 +1,10 @@
+oar (2.5.10~g5k16-1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * e8eafd2b [oarexec] Fix systemd-run execution mode for passive jobs
+
+ -- Baptiste Jonglez <baptiste.jonglez@inria.fr>  Mon, 20 Dec 2021 10:59:38 +0100
+
 oar (2.5.10~g5k15-1) unstable; urgency=medium
 
   * ff0d501b [PingChecker] fix log line prefix when it's a taktuk output
