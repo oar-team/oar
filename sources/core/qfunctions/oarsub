@@ -468,7 +468,7 @@ sub parse_reservation($$) {
     my $resource_list = shift;
     my $server_port;
     my $date_format_regex = qr/^\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}):?(\d{1,2})?:?(\d{1,2})?\s*$/;
-    my $time_format_regex = qr/^\s*(\d{1,2}):?(\d{1,2})?:?(\d{1,2})?\s*$/;
+    my $time_format_regex = qr/^\s*(\d{1,2})(?::(\d{1,2})(?::(\d{1,2}))?)?\s*$/;
 
     if ($Reservation ne "0"){
         #Split the Reservation into the start and end time, then test if the syntax is right
