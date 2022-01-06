@@ -133,7 +133,7 @@ sub check_returned_cmd($$$$$) {
     ( my $tmp_node, my $tmp_cmd, my $tmp_return ) =
       split( /:/, $tmp_message, 3 );
       oar_info($Module_name,
-          "[Hulot] Received from WindowForker: Node=$tmp_node ; Action=$tmp_cmd ; ReturnCode=$tmp_return\n",
+          "Received from WindowForker: Node=$tmp_node ; Action=$tmp_cmd ; ReturnCode=$tmp_return\n",
           $Session_id
       );
     if ( $tmp_return == 0 ) {
@@ -335,8 +335,12 @@ sub start_energy_loop() {
             my $nodeToRemind = 0;
             my $rcvd;
             my $type_rcvd;
-            my $base = OAR::IO::connect()
-              or die("[Hulot] Cannot connect to the database\n");
+            my $base = OAR::IO::connect();
+
+            if (!$base) {
+                oar_error($Module_name, "Cannot connect to the database\n", $Session_id);
+                exit(1);
+            }
 
             if ( msgrcv( $id_msg_hulot, $rcvd, 600, 0, IPC_NOWAIT ) ) {
                 ( $type_rcvd, $rcvd ) = unpack( $pack_template, $rcvd );
@@ -535,7 +539,7 @@ sub start_energy_loop() {
                             if ($keepalive{$properties}{"cur_idle"}
                                  <= $keepalive{$properties}{"min"}) {
                                  oar_info($Module_name,
-                                     "[Hulot] Not halting '$key' because I need to keep alive ".
+                                     "Not halting '$key' because I need to keep alive ".
                                      $keepalive{$properties}{"min"} ." nodes having '$properties'\n",
                                      $Session_id
                                  );
@@ -558,7 +562,7 @@ sub start_energy_loop() {
                           # Change state node to "Absent" and halt it
                           change_node_state( $base, $key, "Absent" );
                           oar_info($Module_name,
-                              "[Hulot] Hulot module put node '$key' in energy saving mode (state~Absent)\n",
+                              "Hulot module put node '$key' in energy saving mode (state~Absent)\n",
                               $Session_id
                           );
                           push( @commandToLaunch, "HALT:$key" );
@@ -608,7 +612,7 @@ sub start_energy_loop() {
                 else {
                     # Use the window forker to execute commands in parallel
                     oar_info($Module_name,
-                        "[Hulot] Launching commands to nodes by using WindowForker\n",
+                        "Launching commands to nodes by using WindowForker\n",
                         $Session_id
                     );
 
