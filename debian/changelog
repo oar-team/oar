@@ -1,3 +1,12 @@
+oar (2.5.10~g5k17-1) unstable; urgency=medium
+
+  * f124c791 [oarsub] better verification of advance reservations input
+  * 66e79fd0 [oarsub] fix advance reservation regex used to simplify time expression
+  * 16e7c50a [oarsub] add missing '#' in messages printed by micheline subroutines
+  * 272bb049 [Hulot] remove old prefix in log messages
+
+ -- Samir Noir <samir.noir@inria.fr>  Wed, 12 Jan 2022 11:02:43 +0100
+
 oar (2.5.10~g5k16-1) unstable; urgency=medium
 
   * Non-maintainer upload.
