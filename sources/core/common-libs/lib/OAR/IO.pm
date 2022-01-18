@@ -221,6 +221,9 @@ sub sql_count($$);
 sub sql_select($$$$);
 sub inserts_from_file($$$);
 
+# REMOTE EXECUTION FUNCTIONS
+sub manage_remote_commands($$$$$$$$$);
+
 # PERL HELPER FUNCTIONS
 sub array_minus(\@@);
 
@@ -8778,7 +8781,7 @@ sub job_finishing_sequence($$$$$$$){
                     project             => $job->{project},
                     log_level => OAR::Modules::Judas::get_log_level()
                 };
-                my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh);
+                my ($tag,@bad) = manage_remote_commands([keys(%{$cpuset_nodes})],$cpuset_data_hash,$cpuset_file,"clean",$openssh_cmd,$taktuk_cmd,$dbh,$Module_name,$Session_id);
                 if ($tag == 0){
                     my $str = "[JOB FINISHING SEQUENCE] [CPUSET] [$job_id] Bad cpuset file: $cpuset_file\n";
                     oar_error("JobFinishingSequence", "Bad cpuset file: $cpuset_file\n", $session_id, $job_id);
@@ -8889,6 +8892,128 @@ sub array_minus(\@@) {
     my @b = @_;
     my %e = map{ $_ => undef } @b;
     return grep( ! exists( $e{$_} ), @$a );
+}
+
+# Manage commands on several nodes like cpuset or suspend job
+# args: array of host to connect to, hashtable to transfer, name of the file containing the perl script, action to perform (start or stop), SSH command to use, taktuk cmd or undef, database ref
+sub manage_remote_commands($$$$$$$$$){
+    my $connect_hosts = shift;
+    my $data_hash = shift;
+    my $manage_file = shift;
+    my $action = shift;
+    my $ssh_cmd = shift;
+    my $taktuk_cmd = shift;
+    my $base = shift;
+    my $module_name = shift;
+    my $session_id = shift;
+
+    my @bad;
+    $ssh_cmd = OAR::Tools::get_default_openssh_cmd() if (!defined($ssh_cmd));
+    # Prepare commands to run on each node
+    my $string_to_transfer;
+    open(FILE, $manage_file) or return(0,undef);
+    while(<FILE>){
+        $string_to_transfer .= $_;
+    }
+    close(FILE);
+    $string_to_transfer .= "__END__\n";
+    # suitable Data::Dumper configuration for serialization
+    $Data::Dumper::Purity = 1;
+    $Data::Dumper::Terse = 1;
+    $Data::Dumper::Indent = 0;
+    $Data::Dumper::Deepcopy = 1;
+
+    $string_to_transfer .= Dumper($data_hash);
+
+    if (!defined($taktuk_cmd)){
+        # Dispatch via sentinelle
+        my @node_commands;
+        my @node_corresponding;
+        foreach my $n (@{$connect_hosts}){
+            my $cmd = "$ssh_cmd -x -T $n TAKTUK_HOSTNAME=$n perl - $action";
+            push(@node_commands, $cmd);
+            push(@node_corresponding, $n);
+        }
+        my @bad_tmp = sentinelle(10,get_ssh_timeout(), \@node_commands, $string_to_transfer,$base);
+        foreach my $b (@bad_tmp){
+            push(@bad, $node_corresponding[$b]);
+        }
+    }else{
+        # Dispatch via taktuk
+        my %tmp_node_hash;
+
+        pipe(tak_node_read,tak_node_write);
+        pipe(tak_stdin_read,tak_stdin_write);
+        pipe(tak_stdout_read,tak_stdout_write);
+        my $pid = fork;
+        if($pid == 0){
+            #CHILD
+            $SIG{CHLD} = 'DEFAULT';
+            $SIG{TERM} = 'DEFAULT';
+            $SIG{INT}  = 'DEFAULT';
+            $SIG{QUIT} = 'DEFAULT';
+            $SIG{USR1} = 'DEFAULT';
+            $SIG{USR2} = 'DEFAULT';
+            my $cmd = "$taktuk_cmd -c '$ssh_cmd' ".'-o status=\'"STATUS $host $line\n"\''." -f '<&=".fileno(tak_node_read)."' broadcast exec [ perl - $action ], broadcast input file [ - ], broadcast input close";
+            fcntl(tak_node_read, F_SETFD, 0);
+            close(tak_node_write);
+            close(tak_stdout_read);
+            close(STDOUT);
+            # Redirect taktuk output into the pipe
+            open(STDOUT, ">& tak_stdout_write");
+        
+            # Use the child STDIN to send the user command
+            close(tak_stdin_write);
+            close(STDIN);
+            open(STDIN, "<& tak_stdin_read");
+
+            exec($cmd);
+            warn("[ERROR] Cannot execute $cmd.\n");
+            exit(-1);
+        }
+        close(tak_node_read);
+        close(tak_stdin_read);
+        close(tak_stdout_write);
+
+        # Send node list
+        foreach my $n (@{$connect_hosts}){
+            $tmp_node_hash{$n} = 1;
+            print(tak_node_write "$n\n");
+        }
+        close(tak_node_write);
+       
+        eval{
+            $SIG{ALRM} = sub { kill(19,$pid); die "alarm\n" };
+            alarm(OAR::Tools::get_taktuk_timeout());     
+            # Send data structure to all nodes
+            print(tak_stdin_write $string_to_transfer);
+            close(tak_stdin_write);
+            # Check good nodes from the stdout taktuk
+            while(<tak_stdout_read>){
+                if ($_ =~ /^STATUS ([\w\.\-\d]+) (\d+)$/){
+                    if ($2 == 0){
+                        delete($tmp_node_hash{$1}) if (defined($tmp_node_hash{$1}));
+                    }
+                }else{
+                    #print("[TAKTUK OUTPUT] $_");
+                    oar_info($module_name, "[TAKTUK OUTPUT] $_", $session_id);
+                }
+            }
+            close(tak_stdout_read);
+            waitpid($pid,0);
+            alarm(0);
+        };
+        if ($@){
+            if (defined($pid)){
+                # Kill all taktuk children
+                my ($children,$cmd_name) = get_one_process_children($pid);
+                kill(9,@{$children});
+            }
+        }
+        @bad = keys(%tmp_node_hash);
+    }
+
+    return(1,@bad);
 }
 
 # END OF THE MODULE
