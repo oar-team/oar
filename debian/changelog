@@ -1,3 +1,9 @@
+oar (2.5.10~g5k18-1) unstable; urgency=medium
+
+  * 4aa85773 [IO.pm] get manage_remote_commands() from Tools.pm for better logging
+
+ -- Samir Noir <samir.noir@inria.fr>  Wed, 26 Jan 2022 17:43:32 +0100
+
 oar (2.5.10~g5k17-1) unstable; urgency=medium
 
   * f124c791 [oarsub] better verification of advance reservations input
