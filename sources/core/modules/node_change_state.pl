@@ -277,7 +277,7 @@ foreach my $i (@events_to_check){
                         my $suspend_file = get_conf("SUSPEND_RESUME_FILE");
                         $suspend_file = OAR::Tools::get_default_suspend_resume_file() if (!defined($suspend_file));
                         $suspend_file = "$ENV{OARDIR}/$suspend_file" if ($suspend_file !~ /^\//);
-                        my ($tag,@bad) = OAR::Tools::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_file,"suspend",$openssh_cmd,$taktuk_cmd,$base);
+                        my ($tag,@bad) = OAR::IO::manage_remote_commands([keys(%{$cpuset_nodes})],$suspend_data_hash,$suspend_file,"suspend",$openssh_cmd,$taktuk_cmd,$base,$Module_name,$Session_id);
                         if ($tag == 0){
                             my $log_str = "[SUSPEND_RESUME] [$i->{job_id}] bad suspend/resume file: $suspend_file\n";
                             my $str = "[NodeChangeState] $log_str";
