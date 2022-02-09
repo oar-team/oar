@@ -222,6 +222,14 @@ sub get_gantt {
   if ($gantt_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*/m)
     {
         my $hist = get_history( "$1 $2", "$3 $4" );
+        my @job_ids = keys %{ $hist->{jobs} };
+        my $events = OAR::Stat::get_events(\@job_ids);
+
+        foreach my $event (@{$events}) {
+            $hist->{jobs}->{$event->{job_id}}->{events} = [];
+            push @{$hist->{jobs}->{$event->{job_id}}->{events}}, $event;
+        }
+
         return $hist;
     }else{
       return undef;
