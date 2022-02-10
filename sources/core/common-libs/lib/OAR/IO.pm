@@ -77,7 +77,7 @@ sub job_leon_exterminate($$);
 sub get_waiting_reservation_jobs($);
 sub get_waiting_reservation_jobs_specific_queue($$);
 sub get_waiting_toSchedule_reservation_jobs_specific_queue($$);
-sub parse_jobs_from_range($);
+sub parse_jobs_from_range($$);
 sub get_jobs_past_and_current_from_range($$$);
 sub get_jobs_future_from_range($$$);
 sub get_jobs_for_user_query;
@@ -226,6 +226,7 @@ sub manage_remote_commands($$$$$$$$$);
 
 # PERL HELPER FUNCTIONS
 sub array_minus(\@@);
+sub uniq;
 
 # END OF PROTOTYPES
 
@@ -4280,8 +4281,9 @@ sub add_resource_job_pairs_from_file($$$) {
 # - get_jobs_past_and_current_from_range
 # - get_jobs_future_from_range
 # args: db query result handle
-sub parse_jobs_from_range($) {
+sub parse_jobs_from_range($$) {
     my $sth = shift;
+    my $dbh = shift;
     my $jobs = {};
     while (my @ref = $sth->fetchrow_array()) {
         if (! exists($jobs->{$ref[0]})) {
@@ -4302,6 +4304,13 @@ sub parse_jobs_from_range($) {
                 'stop_time' => $ref[13],
                 'resource_id' => [],
                 'network_address' => [],
+                'array_id' => $ref[17],
+                'array_index' => $ref[18],
+                'stderr_file' => $ref[19],
+                'stdout_file' => $ref[20],
+                'reservation' => $ref[21],
+                'resubmit_job_id' => $ref[22],
+                'message' => $ref[23]
             }
         }
         push(@{$jobs->{$ref[0]}->{'resource_id'}}, $ref[14]);
@@ -4311,7 +4320,26 @@ sub parse_jobs_from_range($) {
         if (defined($ref[16])){
             push(@{$jobs->{$ref[0]}->{'types'}}, $ref[16]);
         }
+        if (defined(get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD"))) {
+            my $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $ref[0]);
+            $jobs->{$ref[0]}->{'cpuset_name'} = $cpuset_name;
+        }
+        my @job_dependencies = OAR::IO::get_current_job_dependencies($dbh, $ref[0]);
+        push(@{$jobs->{$ref[0]}->{'dependencies'}}, @job_dependencies);
     }
+
+    foreach my $job (keys %{$jobs}) {
+        if (defined($jobs->{$job}->{types})) {
+            @{$jobs->{$job}->{types}} = uniq(@{$jobs->{$job}->{types}});
+        }
+        if (defined($jobs->{$job}->{network_address})) {
+            @{$jobs->{$job}->{network_address}} = uniq(@{$jobs->{$job}->{network_address}});
+        }
+        if (defined($jobs->{$job}->{resource_id})) {
+            @{$jobs->{$job}->{resource_id}} = uniq(@{$jobs->{$job}->{resource_id}});
+        }
+    }
+
     return $jobs;
 }
 
@@ -4341,7 +4369,14 @@ SELECT
     jobs.stop_time,
     assigned_resources.resource_id,
     resources.network_address,
-    job_types.type
+    job_types.type,
+    jobs.array_id,
+    jobs.array_index,
+    jobs.stderr_file,
+    jobs.stdout_file,
+    jobs.reservation,
+    jobs.resubmit_job_id,
+    jobs.message
 FROM
     (jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)),
     assigned_resources,
@@ -4366,7 +4401,7 @@ ORDER BY
 EOT
     my $sth = $dbh->prepare($req);
     $sth->execute();
-    my $jobs = parse_jobs_from_range($sth);
+    my $jobs = parse_jobs_from_range($sth, $dbh);
     $sth->finish();
 
     return $jobs
@@ -4399,7 +4434,14 @@ SELECT
     (gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),
     gantt_jobs_resources_visu.resource_id,
     resources.network_address,
-    job_types.type
+    job_types.type,
+    jobs.array_id,
+    jobs.array_index,
+    jobs.stderr_file,
+    jobs.stdout_file,
+    jobs.reservation,
+    jobs.resubmit_job_id,
+    jobs.message
 FROM
     (jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)),
     moldable_job_descriptions,
@@ -4419,7 +4461,7 @@ ORDER BY
 EOT
     my $sth = $dbh->prepare($req);
     $sth->execute();
-    my $jobs = parse_jobs_from_range($sth);
+    my $jobs = parse_jobs_from_range($sth, $dbh);
     $sth->finish();
 
     return $jobs
@@ -8892,6 +8934,12 @@ sub array_minus(\@@) {
     my @b = @_;
     my %e = map{ $_ => undef } @b;
     return grep( ! exists( $e{$_} ), @$a );
+}
+
+# Return an array without the duplicates
+sub uniq {
+    my %seen;
+    grep !$seen{$_}++, @_;
 }
 
 # Manage commands on several nodes like cpuset or suspend job
