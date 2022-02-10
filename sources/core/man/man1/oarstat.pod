@@ -24,7 +24,7 @@ This command is used to show information of jobs in OAR batch scheduler.
 
 =item B<-f, --full>
 
-Very detailed display.
+Very detailed display. Note that this option does nothing with machine parseable outputs (like B<-J>), which contain all the available data.
 
 =item B<-j, --job> job_id
 

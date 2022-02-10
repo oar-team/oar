@@ -149,6 +149,10 @@ if (defined($properties_query) && defined($sql_property)) {
     exit(1);
 }
 
+if ((defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode) || defined($DUMPER_mode))) {
+    $full_view = 1;
+}
+
 OAR::Stat::open_db_connection() or die "DB connection error, exiting.\n";
 
 if (defined ($gantt_query)) {
