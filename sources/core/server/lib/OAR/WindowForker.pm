@@ -165,7 +165,13 @@ sub launch($$$$$$){
                         OAR::IO::add_new_event_with_host($base,"HALT_NODE",0,"Node $node halt request",[$node] );
                       }
                       OAR::IO::disconnect($base);
-                      system($command_to_exec);
+
+                      my $cmd_pid = open(my $cmd_output, "-|", $command_to_exec);
+                      while(<$cmd_output>) {
+                          oar_info($Module_name, $_, $Session_id);
+                      }
+                      waitpid($cmd_pid, 0);
+
                       if (!msgsnd($forker_type{"id_msg"}, pack($forker_type{"template"}, 1, "$node:$cmd:".$?), IPC_NOWAIT)){
                         oar_error($Module_name, "Failed to send message to Hulot by msgsnd(): $!\n", $Session_id);
                       }
