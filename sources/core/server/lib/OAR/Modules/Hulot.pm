@@ -691,11 +691,16 @@ sub execute_action($$$$) {
     my %forker_type = %$type;
     if ($#{$nodes} >= 0) {
         my $command_to_exec = "echo \"" . join(" ", @{$nodes}) . "\" | " . $command;
-        print $command_to_exec . " \n";
+        oar_info($Module_name, "$command_to_exec\n", $Session_id);
         my $forker_pid = fork();
         if ( defined($forker_pid) ) {
             if ( $forker_pid == 0 ) {
-                system($command_to_exec);
+                my $cmd_pid = open(my $cmd_output, "-|", $command_to_exec);
+                while(<$cmd_output>) {
+                    oar_info($Module_name, $_, $Session_id);
+                }
+                waitpid($cmd_pid, 0);
+
                 foreach my $node ( @{$nodes} ) {
                     if (!msgsnd($forker_type{"id_msg"}, pack($forker_type{"template"}, 1, "$node:$cmd:".$?), IPC_NOWAIT)){
                         oar_error($Module_name, "Failed to send message by msgsnd(): $!\n", $Session_id);
