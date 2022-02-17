@@ -248,7 +248,7 @@ sub print_events {
 }
 
 sub print_gantt {
-  my $hist = OAR::Stat::get_gantt($gantt_query);
+  my $hist = OAR::Stat::get_gantt($gantt_query, $text_format);
   if (defined($hist)){
     if (dump_data($hist) == 0) {
         $Data::Dumper::Purity   = 1;
@@ -290,7 +290,7 @@ sub print_job_data($){
     my $data;
     if (defined($DUMPER_mode) or defined($XML_mode) or defined($YAML_mode) or defined($JSON_mode) or defined($full_view)){
         foreach my $j (@{$job_array}){
-            $data->{ $j->{job_id} } = OAR::Stat::get_job_data($j,$full_view);
+            $data->{ $j->{job_id} } = OAR::Stat::get_job_data($j,$full_view,$text_format);
         }
     }
 
@@ -313,10 +313,22 @@ sub print_job_data($){
 
         foreach my $job_info (@{$job_array}){
             if (defined($full_view)){
-                print("Job_Id: $job_info->{job_id}\n");
+                if ($text_format eq "3") {
+                    print("id: $job_info->{job_id}\n");
+                } else {
+                    print("Job_Id: $job_info->{job_id}\n");
+                }
                 $job_info->{job_name} = '' if (!defined($job_info->{job_name}));
-                print("    job_array_id = $job_info->{array_id}\n");
-                print("    job_array_index = $job_info->{array_index}\n");
+                if ($text_format eq "3") {
+                    print("    array_id = $job_info->{array_id}\n");
+                } else {
+                    print("    job_array_id = $job_info->{array_id}\n");
+                }
+                if ($text_format eq "3") {
+                    print("    array_index = $job_info->{array_index}\n");
+                } else {
+                    print("    job_array_index = $job_info->{array_index}\n");
+                }
                 print("    name = $job_info->{job_name}\n");
                 print("    project = $job_info->{project}\n");
                 print("    owner = $job_info->{job_user}\n");
@@ -335,10 +347,18 @@ sub print_job_data($){
                     my $exit_core = $job_info->{exit_code} & 128;
                     print("    exit_code = $job_info->{exit_code} ($exit_code,$exit_num,$exit_core)\n");
                 }
-                print("    launchingDirectory = $job_info->{launching_directory}\n");
+                if ($text_format eq "3") {
+                    print("    launching_directory = $job_info->{launching_directory}\n");
+                } else {
+                    print("    launchingDirectory = $job_info->{launching_directory}\n");
+                }
                 print("    stdout_file = $data->{$job_info->{job_id}}->{stdout_file}\n") ;
                 print("    stderr_file = $data->{$job_info->{job_id}}->{stderr_file}\n");
-                print("    jobType = $job_info->{job_type}\n");
+                if ($text_format eq "3") {
+                    print("    type = $job_info->{job_type}\n");
+                } else {
+                    print("    jobType = $job_info->{job_type}\n");
+                }
                 print("    properties = $job_info->{properties}\n");
                 print("    reservation = $job_info->{reservation}\n");
                 if (defined $data->{$job_info->{job_id}}->{'reserved_resources'}) {
@@ -370,9 +390,15 @@ sub print_job_data($){
                     $data->{$job_info->{job_id}}->{walltime} = OAR::Stat::duration_to_sql($data->{$job_info->{job_id}}->{walltime});
                 }
                 print("    walltime = $data->{$job_info->{job_id}}->{walltime}\n");
-                print("    submissionTime = ".OAR::Stat::local_to_sql($job_info->{submission_time})."\n");
-                print("    startTime = ".OAR::Stat::local_to_sql($job_info->{start_time})."\n") if ($job_info->{start_time} > 0);
-                print("    stopTime = ".OAR::Stat::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
+                if ($text_format eq "3") {
+                    print("    submission_time = ".OAR::Stat::local_to_sql($job_info->{submission_time})."\n");
+                    print("    start_time = ".OAR::Stat::local_to_sql($job_info->{start_time})."\n") if ($job_info->{start_time} > 0);
+                    print("    stop_time = ".OAR::Stat::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
+                } else {
+                    print("    submissionTime = ".OAR::Stat::local_to_sql($job_info->{submission_time})."\n");
+                    print("    startTime = ".OAR::Stat::local_to_sql($job_info->{start_time})."\n") if ($job_info->{start_time} > 0);
+                    print("    stopTime = ".OAR::Stat::local_to_sql($job_info->{stop_time})."\n") if ($job_info->{stop_time} > 0);
+                }
                 if (defined($data->{$job_info->{job_id}}->{cpuset_name})){
                     print("    cpuset_name = $data->{$job_info->{job_id}}->{cpuset_name}\n");
                 }
@@ -392,7 +418,11 @@ sub print_job_data($){
                 }else{
                     $data->{$job_info->{job_id}}->{scheduledStart} = OAR::Stat::local_to_sql($data->{$job_info->{job_id}}->{scheduledStart});
                 }
-                print("    scheduledStart = $data->{$job_info->{job_id}}->{scheduledStart}\n");
+                if ($text_format eq "3") {
+                    print("    scheduled_start = $data->{$job_info->{job_id}}->{scheduledStart}\n");
+                } else {
+                    print("    scheduledStart = $data->{$job_info->{job_id}}->{scheduledStart}\n");
+                }
                 print("    resubmit_job_id = $job_info->{resubmit_job_id}\n");
                 print("    events = \n");
                 foreach my $e (@{$data->{$job_info->{job_id}}->{events}}){

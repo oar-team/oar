@@ -10,6 +10,18 @@ use OAR::Walltime qw(get);
 
 my $base;
 my $current_date = -1;
+my %Conversion_fields_format_3 = (
+    Job_Id => "id",
+    job_id => "id",
+    launchingDirectory => "launching_directory",
+    jobType => "type",
+    job_type => "type",
+    submissionTime => "submission_time",
+    startTime => "start_time",
+    stopTime => "stop_time",
+    scheduledStart => "scheduled_start",
+    job_name => "name"
+);
 
 # Read config
 init_conf($ENV{OARCONFFILE});
@@ -205,6 +217,31 @@ sub get_duration($){
     return $duration;
 }
 
+sub convert_job_format_3($) {
+    my $job = shift;
+    my %job_format_3;
+
+    foreach my $key (keys %$job) {
+        if (exists($Conversion_fields_format_3{$key})) {
+            $job_format_3{$Conversion_fields_format_3{$key}} = $job->{$key};
+        } else {
+            $job_format_3{$key} = $job->{$key};
+        }
+    }
+
+    if (!defined($job_format_3{owner}) && defined($job_format_3{job_user})) {
+        $job_format_3{owner} = $job_format_3{job_user};
+    }
+    if (!defined($job_format_3{owner}) && defined($job_format_3{user})) {
+        $job_format_3{owner} = $job_format_3{user};
+    }
+
+    delete $job_format_3{job_user};
+    delete $job_format_3{user};
+
+    return(%job_format_3);
+}
+
 sub get_events {
     my $job_ids = shift;
     my @return;
@@ -219,9 +256,10 @@ sub get_events {
 
 sub get_gantt {
   my $gantt_query = shift;
+  my $format = shift;
   if ($gantt_query =~ m/\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*,\s*(\d{4}\-\d{1,2}\-\d{1,2})\s+(\d{1,2}:\d{1,2}:\d{1,2})\s*/m)
     {
-        my $hist = get_history( "$1 $2", "$3 $4" );
+        my $hist = get_history("$1 $2", "$3 $4", $format);
         my @job_ids = keys %{ $hist->{jobs} };
         my $events = OAR::Stat::get_events(\@job_ids);
 
@@ -236,8 +274,8 @@ sub get_gantt {
     }
 }
 
-sub get_history($$){
-    my ($date_start,$date_stop) = @_;
+sub get_history($$$){
+    my ($date_start,$date_stop,$format) = @_;
 
     $date_start = sql_to_local($date_start);
     $date_stop = sql_to_local($date_stop);
@@ -258,6 +296,13 @@ sub get_history($$){
         }
         $hash_dumper_result{jobs}->{$k} = $v;
     }
+
+    if ($format eq "3") {
+        foreach my $job (keys %{$hash_dumper_result{jobs}}) {
+            %{$hash_dumper_result{jobs}->{$job}} = convert_job_format_3($hash_dumper_result{jobs}->{$job});
+        }
+    }
+
     #Retrieve Dead and Suspected resources
     my %dead_resource_dates = OAR::IO::get_resources_absent_suspected_dead_from_range($base,$date_start,$date_stop);
     $hash_dumper_result{dead_resources} = \%dead_resource_dates;
@@ -328,9 +373,10 @@ sub get_job_resources($) {
          };
 }
 
-sub get_job_data($$){
+sub get_job_data($$;$){
     my $job_info = shift;
     my $full_view = shift;
+    my $format = shift;
     
     my $dbh = $base;
     my @nodes;
@@ -469,7 +515,13 @@ sub get_job_data($$){
         $data_to_display{'reserved_resources'}=$reserved_resources;
     }
 
-    return(\%data_to_display);
+    if ($format eq "3") {
+        my %data_to_display_format_3 = convert_job_format_3(\%data_to_display);
+
+        return(\%data_to_display_format_3);
+    } else {
+        return(\%data_to_display);
+    }
 }
 
 sub get_job_resources_properties($) {
