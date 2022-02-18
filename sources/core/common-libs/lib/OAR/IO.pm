@@ -195,7 +195,7 @@ sub get_to_check_events($);
 sub get_hostname_event($$);
 sub get_job_events($$);
 sub get_events_for_hostname($$$);
-sub get_last_event_from_type($$);
+sub get_last_event_from_type($$$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
@@ -8164,16 +8164,18 @@ sub get_all_events($$){
 }
 
 
-# Get the last event for the given type
-# args: database ref, event type
+# Get the last event for the given type and job_id
+# args: database ref, event type, job id
 # returns: the requested event
-sub get_last_event_from_type($$){
+sub get_last_event_from_type($$$){
     my $dbh = shift;
     my $type = shift;
+    my $job_id = shift;
     my $sth = $dbh->prepare("SELECT *
                               FROM event_logs
                               WHERE
-                                  type = '$type'
+                                  type = '$type' AND
+                                  job_id = $job_id
                               ORDER BY event_id DESC
                               LIMIT 1");
 

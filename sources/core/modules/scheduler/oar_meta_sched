@@ -115,6 +115,7 @@ sub process_walltime_change_requests($) {
         my $job = $jobs->{$jobid};
         my $suspended = OAR::IO::get_job_suspended_sum_duration($dbh, $jobid, $now);
         my $fit = $job->{pending};
+
         if ($fit > 0) {
             my $apply_time = OAR::Walltime::get_conf($Walltime_change_apply_time, $job->{queue_name}, $job->{walltime} - $job->{granted}, 0);
             my $increment = OAR::Walltime::get_conf($Walltime_increment, $job->{queue_name}, $job->{walltime} - $job->{granted}, 0);

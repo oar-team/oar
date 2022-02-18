@@ -28,6 +28,8 @@ The new walltime is to be passed in the format [+-]h:m:s. If no sign is used,
 The value is a new walltime absolute value (like passed to oarsub). If prefixed
 by +, the request is an increase of the walltime by the passed value. If
 prefixed by -, it is a decrease request.
+A walltime change request that has not been yet accepted by the scheduler can be
+cancelled by passing the '+0' value.
 
 The job must be running to request a walltime change.
 

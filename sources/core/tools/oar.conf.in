@@ -571,6 +571,7 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # - Allow any user to force the walltime change of a job in all but the besteffort queue:
 #WALLTIME_ALLOWED_USERS_TO_FORCE="{_ => '*', besteffort => ''}"
 
+
 ###########################################################################
 # ENERGY SAVING                                                           #
 # (Management of automatic wake-up and shut-down of the nodes when they   #

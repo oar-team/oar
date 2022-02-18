@@ -167,10 +167,6 @@ sub request($$$$$$) {
         $new_walltime_delta_seconds = $new_walltime_delta_seconds - $moldable->{moldable_walltime};
     }
 
-    if ($new_walltime_delta_seconds == 0) {
-        return (1, 400, "bad request", "walltime change is null");
-    }
-
     # Admins (root and oar users) are allowed to perform walltime reduction, even if
     # disallowed in configuration
     if ($new_walltime_delta_seconds < 0 and (uc($Walltime_reduction_disallowed) ne "NO"
@@ -223,6 +219,7 @@ sub request($$$$$$) {
 
     OAR::IO::lock_table($dbh,['walltime_change']);
     my $current_walltime_change = OAR::IO::get_walltime_change_for_job($dbh, $job->{job_id}); # locked here
+    my $event_message;
     if (defined($current_walltime_change)) { # Update a request
         if ($Walltime_max_increase != -1 and $current_walltime_change->{granted} + $new_walltime_delta_seconds > $Walltime_max_increase and not grep(/^$lusr$/,('root','oar'))) {
             @result = (3, 403, "forbidden", "request cannot be updated because the walltime cannot increase by more than ".$Walltime_max_increase_hms);
@@ -238,6 +235,7 @@ sub request($$$$$$) {
                 undef
                 );
             @result = (0, 202, "accepted", "walltime change request updated for job ".$job->{job_id}.", it will be handled shortly");
+            $event_message = "Walltime change request updated for job $job->{job_id}" . " (". OAR::IO::duration_to_sql_signed($new_walltime_delta_seconds) .")";
         }
     } else { # New request
         if ($Walltime_max_increase != -1 and $new_walltime_delta_seconds > $Walltime_max_increase and not grep(/^$lusr$/,('root','oar'))) {
@@ -251,8 +249,14 @@ sub request($$$$$$) {
                 ((defined($delay_next_jobs) and $new_walltime_delta_seconds > 0)?'YES':'NO')
                 );
             @result = (0, 202, "accepted", "walltime change request accepted for job ".$job->{job_id}.", it will be handled shortly");
+            $event_message = "Walltime change request created for job $job->{job_id}";
         }
     }
+
+    if ($event_message ne "") {
+        OAR::IO::add_new_event($dbh, "WALLTIME_REQUEST", $job->{job_id}, $event_message);
+    }
+
     OAR::IO::unlock_table($dbh);
 
     if ($result[0] == 0) {
