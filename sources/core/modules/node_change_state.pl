@@ -202,8 +202,8 @@ foreach my $i (@events_to_check){
         ($i->{type} eq "SERVER_EPILOGUE_TIMEOUT") ||
         ($i->{type} eq "SERVER_EPILOGUE_EXIT_CODE_ERROR")
        ){
-        oar_warn($Module_name, "Server admin script error, stopping all scheduler queues: $i->{type}\n", $Session_id);
-        send_log_by_email("Stop all scheduling queues","[NodeChangeState] Server admin script error, stopping all scheduler queues: $i->{type}. Fix errors and run `oarnotify -E' to re-enable them.\n");
+        oar_error($Module_name, "Server admin script error ($i->{type}), stopping all scheduler queues\n", $Session_id, $i->{job_id});
+        send_log_by_email("Stop all scheduling queues","[NodeChangeState] Server admin script error (job $i->{job_id}), stopping all scheduler queues: $i->{type}. Fix errors and run `oarnotify -E' to re-enable them.\n");
         OAR::IO::stop_all_queues($base);
         OAR::IO::set_job_state($base,$i->{job_id},"Error");
     }
