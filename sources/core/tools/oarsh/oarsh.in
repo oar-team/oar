@@ -162,12 +162,12 @@ fi
 if [ "$OARSH_BYPASS_WHOLE_SECURITY" != "0" ]; then
     export OAR_CPUSET="undef"
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
-    echo "oarsh: Failed to connect using cpuset environement" 1>&2
+    echo "oarsh: Failed to connect using cpuset environment" 1>&2
     exit 5
 fi
 
 # -1- try connection using a user provided job key file for a job using the job key mechanism
-if [ -n "$OAR_JOB_KEY_FILE" ] 
+if [ -n "$OAR_JOB_KEY_FILE" ]
 then
     # first, get rid of remaining unused jobkey files if any...
     for f in $OAR_RUNTIME_DIRECTORY/oarsh.jobkey.*; do
@@ -191,8 +191,8 @@ then
 fi
 
 
-# -2- try connection using a job key pushed by OAR for a job using the job key mechanism. 
-# (oarsh is run from one of the node of the job) 
+# -2- try connection using a job key pushed by OAR for a job using the job key mechanism.
+# (oarsh is run from one of the node of the job)
 TMP_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OARDO_USER.jobkey"
 if [ -r $TMP_JOB_KEY_FILE ]; then
     umask $OLDUMASK
@@ -221,7 +221,7 @@ if [ "$CPUSET_PATH" != "" ]; then
             export OAR_JOB_USER=$OARDO_USER
             umask $OLDUMASK
             exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
-            echo "oarsh: Failed to connect using cpuset environement" 1>&2
+            echo "oarsh: Failed to connect using cpuset environment" 1>&2
             exit 5
         fi
     fi
@@ -272,7 +272,7 @@ if [ -n "$OAR_JOB_ID" ]; then
     export OAR_CPUSET
     umask $OLDUMASK
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
-    echo "oarsh: Failed to connect using cpuset environement" 1>&2
+    echo "oarsh: Failed to connect using cpuset environment" 1>&2
     exit 5
 fi
 

@@ -151,7 +151,7 @@ sub process_walltime_change_requests($) {
                 my $deadline = OAR::IO::sql_to_local($types->{deadline});
                 if ($deadline < $to) {
                     $to = $deadline;
-                    oar_info($Module_name, "walltime change for job limited by its dealdine to ".($to - $from)."s\n", $Session_id, "$jobid");
+                    oar_info($Module_name, "walltime change for job limited by its deadline to ".($to - $from)."s\n", $Session_id, "$jobid");
                 }
             }
             $fit = OAR::IO::get_possible_job_end_time_in_interval($dbh, $from, $to, $job->{resources}, $Security_time_overhead, $job->{delay_next_jobs}, $types, $job->{job_user}, $job->{job_name}) - $from;
