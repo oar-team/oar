@@ -1,3 +1,12 @@
+oar (2.5.10~g5k19-1) unstable; urgency=medium
+
+  * 0003180b [NodeChangeState] add job_id to server admin script error log line
+  * af10749b [oar_meta_sched] fix typo: dealdine -> deadline
+  * 5fb24698 [Hulot] use OAR logging system for energy saving commands outputs
+  * e71d3b2b [oarsh] fix typos (s/environement/environment/)
+
+ -- Samir Noir <samir.noir@inria.fr>  Mon, 21 Feb 2022 10:38:15 +0100
+
 oar (2.5.10~g5k18-1) unstable; urgency=medium
 
   * 4aa85773 [IO.pm] get manage_remote_commands() from Tools.pm for better logging
