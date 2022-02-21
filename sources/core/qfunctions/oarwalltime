@@ -36,6 +36,8 @@ The job must be running to request a walltime change.
 Options:
       --force            request walltime increase to be trialed or applied
                          without delay
+      --whole            request walltime increase to be trialed or applied
+                         at once
       --delay-next-jobs  allow an extra time request to succeed even if it
                          must delay other jobs, including other users' jobs
   -V, --version          print OAR version
@@ -53,9 +55,11 @@ sub version {
 Getopt::Long::Configure("gnu_getopt", "pass_through");
 my $force = undef;
 my $delay_next_jobs = undef;
+my $whole = undef;
 GetOptions (
             "force" => \$force,
             "delay-next-jobs" => \$delay_next_jobs,
+            "whole" => \$whole,
             "help|h" => sub { print(usage()); exit(0); },
             "version|V" => sub { print("OAR version: ".OAR::Version::get_version()."\n"); exit(0); },
            ) or exit(1);
@@ -63,7 +67,7 @@ GetOptions (
 my $jobid = shift;
 my $new_walltime = shift;
 my $more_args = shift;
-if (not defined($jobid) or $jobid !~ /^\d+$/ or (not defined($new_walltime) and (defined($delay_next_jobs) or defined($force))) or (defined($new_walltime) and $new_walltime !~ /^[-+]?\d+(?::\d+(?::\d+)?)?$/) or defined($more_args)) {
+if (not defined($jobid) or $jobid !~ /^\d+$/ or (not defined($new_walltime) and (defined($delay_next_jobs) or defined($force) or defined($whole))) or (defined($new_walltime) and $new_walltime !~ /^[-+]?\d+(?::\d+(?::\d+)?)?$/) or defined($more_args)) {
     print("Syntax error.\n\n");
     print(usage());
     exit(4);
@@ -80,14 +84,16 @@ if (not defined($new_walltime)) {
     if (not exists($walltime_change->{walltime})) {
         print("Walltime change status for job $jobid (job is not running yet):\n  N/A\n");
     } else {
-        my @granted_with = grep(!/: 0:0:0$/,("forced: ".$walltime_change->{granted_with_force}, "delaying next jobs: ".$walltime_change->{granted_with_delay_next_jobs}));
+        my @granted_with = grep(!/: 0:0:0$/,("forced: ".$walltime_change->{granted_with_force}, "delaying next jobs: ".$walltime_change->{granted_with_delay_next_jobs}, "whole: ".$walltime_change->{granted_with_whole}));
         if ($state eq "Running") {
             print("Walltime change status for job $jobid (job is running):\n");
             printf("  Current walltime: %11s\n",$walltime_change->{walltime});
             printf("  Possible increase: %10s\n",$walltime_change->{possible});
             printf("  Already granted: %12s",$walltime_change->{granted});
             print ((@granted_with)?" (".join(", ",@granted_with).")\n":"\n");
-            printf("  Pending/unsatisfied: %8s%s\n",$walltime_change->{pending},(defined($walltime_change->{delay_next_jobs}) and $walltime_change->{delay_next_jobs} eq "YES")?" (will possibly delay next jobs)":"");
+            printf("  Pending/unsatisfied: %8s%s%s\n",$walltime_change->{pending},
+                (($walltime_change->{pending} ne "0:0:0") and ($walltime_change->{whole} eq "YES"))? " (Whole: yes)": "",
+                (defined($walltime_change->{delay_next_jobs}) and $walltime_change->{delay_next_jobs} eq "YES")?" (will possibly delay next jobs)":"");
         } else {
             print("Walltime change status for job $jobid (job is not running):\n");
             printf("  Walltime: %11s\n",$walltime_change->{walltime});
@@ -102,7 +108,7 @@ if (not defined($new_walltime)) {
 
 # Request
 my $lusr=$ENV{OARDO_USER};
-my ($error, undef, $status, $message) = OAR::Walltime::request($dbh, $jobid, $lusr, $new_walltime, defined($force)?"YES":"NO", defined($delay_next_jobs)?"YES":"NO");
+my ($error, undef, $status, $message) = OAR::Walltime::request($dbh, $jobid, $lusr, $new_walltime, defined($force)?"YES":"NO", defined($delay_next_jobs)?"YES":"NO", defined($whole)?"YES":"NO");
 OAR::IO::disconnect($dbh);
 print(ucfirst("$status: $message.\n"));
 exit($error);
