@@ -49,7 +49,7 @@ I<Read your site's documentation or ask your administrator to know the configure
 
 =item B<--force>
 
-Request walltime increase to be applied at once: immediately and not incrementally.
+Request walltime increase to be trialed or applied applied immediately regardless of any otherwise configured delay.
 
 =item B<--delay-next-jobs>
 
@@ -72,7 +72,7 @@ All changes are logged. Changes using the force or delay-next-jobs options are a
 
 I<Please mind the walltime of the job and do not rely too much on that functionality.>
 
-The shell environment variables of the job are not updated (OAR_JOB_WALLTIME, OAR_JOB_WALLTIME_SECONDS). 
+The shell environment variables of the job are not updated (OAR_JOB_WALLTIME, OAR_JOB_WALLTIME_SECONDS).
 
 Walltime change events for a job are listed in the I<oarstat> output.
 

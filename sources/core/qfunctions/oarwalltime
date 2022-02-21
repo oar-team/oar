@@ -34,7 +34,8 @@ cancelled by passing the '+0' value.
 The job must be running to request a walltime change.
 
 Options:
-      --force            request the change to apply at once
+      --force            request walltime increase to be trialed or applied
+                         without delay
       --delay-next-jobs  allow an extra time request to succeed even if it
                          must delay other jobs, including other users' jobs
   -V, --version          print OAR version
