@@ -49,7 +49,7 @@ I<Read your site's documentation or ask your administrator to know the configure
 
 =item B<--force>
 
-Request walltime increase to be trialed or applied applied immediately regardless of any otherwise configured delay.
+Request walltime increase to be trialed or applied immediately regardless of any otherwise configured delay.
 
 =item B<--whole>
 
@@ -58,6 +58,10 @@ Request walltime increase to be trialed or applied at once.
 =item B<--delay-next-jobs>
 
 Request walltime increase to possibly delay next batch jobs (but not advance reservations), if required to fit in the resources allocation. Warning: this implies delaying any other batch jobs, including the ones from other users. Using this option may be prohibited.
+
+=item B<--timeout>
+
+Specify a timeout after which the walltime change request will be aborted if not already accepted by the scheduler. By default, there is no timeout unless a default timeout is set by the administrator.
 
 =item B<-h, --help>
 

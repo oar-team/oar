@@ -571,6 +571,11 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # - Allow any user to force the walltime change of a job in all but the besteffort queue:
 #WALLTIME_ALLOWED_USERS_TO_FORCE="{_ => '*', besteffort => ''}"
 
+# Configure the default timeout if not specified by the user using the --timeout option,
+# after which a walltime change request that is not yet accepted by the scheduler will be cancelled.
+# Setting a value of 0 disables the default timeout.
+# Default is 3600 (1h)
+# WALLTIME_CHANGE_TIMEOUT="3600"
 
 ###########################################################################
 # ENERGY SAVING                                                           #

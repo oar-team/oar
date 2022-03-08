@@ -10,6 +10,10 @@ sub get_default_increment {
     return OAR::Conf::get_conf_with_default_param("WALLTIME_INCREMENT", 0);
 }
 
+sub get_default_timeout {
+    return OAR::Conf::get_conf_with_default_param("WALLTIME_CHANGE_TIMEOUT", 3600);
+}
+
 sub get_conf($$$$) {
     my $conf = shift; #simple value or hash with value per queue
     my $queue = shift; #use undef is no queue
@@ -107,6 +111,7 @@ sub get($$) {
         $walltime_change->{granted_with_force} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_force});
         $walltime_change->{granted_with_delay_next_jobs} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_delay_next_jobs});
         $walltime_change->{granted_with_whole} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_whole});
+        $walltime_change->{timeout} = OAR::IO::duration_to_sql($walltime_change->{timeout});
     } else {
         # job is not running yet, walltime may not be known yet, in case of a moldable job
         delete $walltime_change->{walltime};
@@ -119,7 +124,7 @@ sub get($$) {
     return ($walltime_change, $job->{state});
 }
 
-sub request($$$$$$$) {
+sub request($$$$$$$$) {
     my $dbh = shift;
     my $jobid = shift;
     my $lusr = shift;
@@ -127,6 +132,8 @@ sub request($$$$$$$) {
     my $force = shift;
     my $delay_next_jobs = shift;
     my $whole = shift;
+    my $requested_timeout = shift;
+    my $timeout;
     my $job;
     my $moldable;
     my @result;
@@ -236,6 +243,13 @@ sub request($$$$$$$) {
         $new_walltime_delta_seconds = - $job_remaining_time;
     }
 
+    # We take the default value for walltime change requests timeout
+    if (defined($requested_timeout)) {
+        $timeout = $requested_timeout;
+    } else {
+        $timeout = get_default_timeout();
+    }
+
     OAR::IO::lock_table($dbh,['walltime_change']);
     my $current_walltime_change = OAR::IO::get_walltime_change_for_job($dbh, $job->{job_id}); # locked here
     my $event_message;
@@ -253,10 +267,11 @@ sub request($$$$$$$) {
                 undef,
                 undef,
                 undef,
-                undef
+                undef,
+                (defined($requested_timeout)?$requested_timeout:undef)
                 );
             @result = (0, 202, "accepted", "walltime change request updated for job ".$job->{job_id}.", it will be handled shortly");
-            $event_message = "Walltime change request updated for job $job->{job_id}" . " (". OAR::IO::duration_to_sql_signed($new_walltime_delta_seconds) .")";
+            $event_message = "Walltime change request updated for job $job->{job_id}" . " (". OAR::IO::duration_to_sql_signed($new_walltime_delta_seconds) . (defined($requested_timeout)?", timeout: " . OAR::IO::duration_to_sql_signed($requested_timeout):"") .")";
         }
     } else { # New request
         if ($Walltime_max_increase != -1 and $new_walltime_delta_seconds > $Walltime_max_increase and not grep(/^$lusr$/,('root','oar'))) {
@@ -268,10 +283,11 @@ sub request($$$$$$$) {
                 $new_walltime_delta_seconds,
                 ((defined($force) and $new_walltime_delta_seconds > 0)?'YES':'NO'),
                 ((defined($delay_next_jobs) and $new_walltime_delta_seconds > 0)?'YES':'NO'),
-                ((defined($whole) and $new_walltime_delta_seconds > 0)?'YES':'NO')
+                ((defined($whole) and $new_walltime_delta_seconds > 0)?'YES':'NO'),
+                $timeout
                 );
             @result = (0, 202, "accepted", "walltime change request accepted for job ".$job->{job_id}.", it will be handled shortly");
-            $event_message = "Walltime change request created for job $job->{job_id}";
+            $event_message = "Walltime change request created for job $job->{job_id} (timeout: ". OAR::IO::duration_to_sql($timeout) . ")";
         }
     }
 
