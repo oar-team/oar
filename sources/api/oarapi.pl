@@ -649,7 +649,7 @@ SWITCH: for ($q) {
   };
 
   #
-  # POST /jobs/<id>: Update of a job (delete, checkpoint, ...)
+  # POST /jobs/<id>: Update of a job (delete, checkpoint, oarwalltime, ...)
   # Should not be used unless for delete from an http browser
   # (better to use the URI above)
   #
@@ -725,7 +725,8 @@ SWITCH: for ($q) {
                                                  );
       my $error;
       ($error, $http_status, $status, $message) =
-        OAR::Walltime::request($dbh, $jobid, $authenticated_user, $job->{walltime}, $job->{force}, $job->{'delay_next_jobs'});
+        OAR::Walltime::request($dbh, $jobid, $authenticated_user, $job->{walltime},
+            $job->{force}, $job->{'delay_next_jobs'}, $job->{whole}, $job->{timeout});
       OAR::IO::disconnect($dbh);
 
       if ($error > 0) {
