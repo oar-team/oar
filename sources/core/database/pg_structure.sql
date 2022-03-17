@@ -218,7 +218,7 @@ CREATE TABLE jobs (
   start_time integer NOT NULL default '0',
   stop_time integer NOT NULL default '0',
   file_id integer default NULL,
-  accounted varchar(3) check (accounted in ('YES','NO')) NOT NULL default 'NO',
+  accounted varchar(3) check (accounted in ('YES','NO','NA')) NOT NULL default 'NO',
   notify varchar(255) default NULL,
   assigned_moldable_job integer default '0',
   checkpoint integer NOT NULL default '0',
