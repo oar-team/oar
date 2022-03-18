@@ -141,7 +141,7 @@ sub call_server_prologue {
                     my ($children,$cmd_name) = OAR::Tools::get_one_process_children($pid);
                     kill(9,@{$children});
                 }
-                my $log_str = "Server prologue timeouted (cmd: $cmd)";
+                my $log_str = "Server prologue timed out (cmd: $cmd)";
                 my $str = "[bipbip $Job_id] $log_str";
                 oar_error($Module_name, "$log_str\n", $Session_id, $Job_id);
                 OAR::IO::add_new_event($base,"SERVER_PROLOGUE_TIMEOUT",$Job_id,"$str");
@@ -149,7 +149,7 @@ sub call_server_prologue {
                 OAR::Tools::notify_tcp_socket($Remote_host,$Remote_port,"ChState");
                 if (($job->{job_type} eq "INTERACTIVE") and ($job->{reservation} eq "None")){
                     my ($addr,$port) = split(/:/,$job->{info_type});
-                    OAR::Tools::notify_tcp_socket($addr,$port,"ERROR: SERVER PROLOGUE timeouted");
+                    OAR::Tools::notify_tcp_socket($addr,$port,"ERROR: SERVER PROLOGUE timed out");
                 }
                 exit(2);
             }

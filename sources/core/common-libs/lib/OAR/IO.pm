@@ -8745,8 +8745,8 @@ sub job_finishing_sequence($$$$$$$){
                     my ($children,$cmd_name) = OAR::Tools::get_one_process_children($pid);
                     kill(9,@{$children});
                 }
-                my $str = "[JOB FINISHING SEQUENCE] Server epilogue timeouted (cmd: $cmd)";
-                oar_error("JobFinishingSequence", "Server epilogue timeouted (cmd: $cmd)\n", $session_id);
+                my $str = "[JOB FINISHING SEQUENCE] Server epilogue timed out (cmd: $cmd)";
+                oar_error("JobFinishingSequence", "Server epilogue timed out (cmd: $cmd)\n", $session_id);
                 push(@{$events}, {type => "SERVER_EPILOGUE_TIMEOUT", string => $str});
             }
         }elsif ($exit_value != 0){

@@ -856,7 +856,7 @@ sub check_jobs_to_kill(){
                                 };
                                 if ($@){
                                     if ($@ eq "alarm\n"){
-                                        $str_log = "Cannot contact $host_to_connect, operation timouted (".OAR::Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $besteffort_resource_occupation{$r}->{job_id}";
+                                        $str_log = "Cannot contact $host_to_connect, operation timed out (".OAR::Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $besteffort_resource_occupation{$r}->{job_id}";
                                         $str_comment = "[$Module_name] $str_log";
                                         oar_warn($Module_name, "$str_log\n", $Session_id, $besteffort_resource_occupation{$r}->{job_id});
                                         OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$besteffort_resource_occupation{$r}->{job_id},$str_comment);
@@ -1111,7 +1111,7 @@ if ((is_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD")
         else {
             my $cmd = get_conf("SCHEDULER_NODE_MANAGER_SLEEP_CMD");
             if (! defined(OAR::Tools::fork_and_feed_stdin($cmd, $timeout_cmd, \@node_halt))){
-                oar_error($Module_name, "Error: command $cmd timeouted (${timeout_cmd}s) while trying to poweroff some nodes\n", $Session_id);
+                oar_error($Module_name, "Error: command $cmd timed out (${timeout_cmd}s) while trying to poweroff some nodes\n", $Session_id);
             }
         }
     }
@@ -1135,7 +1135,7 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or (get_conf("ENERGY_SAVING_IN
         else {
             my $cmd = get_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD");
             if (! defined(OAR::Tools::fork_and_feed_stdin($cmd, $timeout_cmd, \@nodes))){
-                oar_error($Module_name, "Error: command $cmd timeouted (${timeout_cmd}s) while trying to wake-up some nodes\n", $Session_id);
+                oar_error($Module_name, "Error: command $cmd timed out (${timeout_cmd}s) while trying to wake-up some nodes\n", $Session_id);
             }
         }
     } else {

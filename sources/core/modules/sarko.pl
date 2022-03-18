@@ -142,7 +142,7 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")){
         };
         if ($@){
             if ($@ eq "alarm\n"){
-                $str_comment = "[sarko] Cannot contact $hosts[0], operation timouted (".OAR::Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $job->{job_id} on $host_to_connect";
+                $str_comment = "[sarko] Cannot contact $hosts[0], operation timed out (".OAR::Tools::get_ssh_timeout()." s). So I cannot send checkpoint signal to the job $job->{job_id} on $host_to_connect";
                 oar_warn($Module_name, "$str_comment\n", $Session_id);
                 OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$job->{job_id},$str_comment);
             }else{

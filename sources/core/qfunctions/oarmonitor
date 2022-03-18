@@ -244,7 +244,7 @@ if ($stop > 0){
 
 my @bads = keys(%{$tmp_hosts_hash});
 if ($#bads >= 0){
-    warn("Some nodes timeouted: @bads\n");
+    warn("Some nodes timed out: @bads\n");
     exit(5);
 }
 
