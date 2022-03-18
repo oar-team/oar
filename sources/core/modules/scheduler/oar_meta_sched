@@ -346,7 +346,7 @@ while (@initial_jobs) {
     }else{
         $date = $job->{start_time};
     }
-    oar_info($Module_name, "add job in database\n", $Session_id, "$i");
+    oar_debug($Module_name, "add job in database\n", $Session_id, "$i");
     OAR::IO::add_gantt_scheduled_jobs($base,$job->{assigned_moldable_job},$date,\@resource_list);
 
     # Ignore besteffort jobs (only handled in the besteffort queue => adv. resa cannot be bestfeffort)
@@ -488,7 +488,7 @@ while (@Rjobs){
 
         # Update database
         push(@resources, @Resources_to_always_add);
-        oar_info($Module_name, "add job in database\n", $Session_id, "$i");
+        oar_debug($Module_name, "add job in database\n", $Session_id, "$i");
         oar_warn($Module_name, "resources for reservation were lost, got them back\n", $Session_id, "$i");
         OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
         OAR::IO::add_new_event($base,"GET_RESOURCES_BACK_FOR_RESERVATION",$job->{job_id},"Resources for reservation were lost, got them back");
@@ -778,7 +778,7 @@ sub check_reservation_jobs($){
 
                     # Update database
                     push(@resources, @Resources_to_always_add);
-                    oar_info($Module_name, "add job in database\n", $Session_id, "$i");
+                    oar_debug($Module_name, "add job in database\n", $Session_id, "$i");
                     OAR::IO::add_gantt_scheduled_jobs($base,$moldable->[2],$job->{start_time},\@resources);
                     OAR::IO::set_job_state($base, $job->{job_id}, "toAckReservation");
                 }else{
