@@ -48,6 +48,7 @@ my $Version;
 my $events;
 my @resources;
 my @nodes;
+my $jobs;
 ### END Variables declaration ###
 
 
@@ -57,13 +58,14 @@ sub print_usage(){
     print <<EOS;
 Display information on nodes
 Usage:
-  oarnodes [ -r <resource id> | --sql <sql_properties> | -s | -l | -h | -V ] [ -X | -Y | -D] [list of nodes] [ -e [<date>] ]
+  oarnodes [ -r <resource id> | --sql <sql_properties> | -s | -j | -l | -h | -V ] [ -X | -Y | -D] [list of nodes] [ -e [<date>] ]
 or
-  oarnodes [ -r <resource id> | --sql <sql_properties> | -s | -l | -h | -V ] [ -X | -Y | -D] [ -e [<date>] ] -- [list of nodes]
+  oarnodes [ -r <resource id> | --sql <sql_properties> | -s | -j | -l | -h | -V ] [ -X | -Y | -D] [ -e [<date>] ] -- [list of nodes]
 Options:
  -r, --resource     show the properties of the resource whose id is given as
                     parameter
  -s, --state        show the states of the nodes
+ -j, --jobs         show the job load on nodes
  -l, --list         show the nodes list
  -e, --events       show the events recorded for a node either since the date
                     given as parameter or the last 20
@@ -144,6 +146,29 @@ sub print_resources_states_for_hosts($){
     }
 }
 
+sub print_jobs($){
+    my $nodes = shift;
+
+    my $result = OAR::Nodes::get_nodes_load($nodes);
+    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+        format_result($result);
+    } else {
+        foreach my $current_host (sort keys %{$result} ) {
+            print "$current_host:\n";
+            foreach my $job_id (sort keys %{$result->{$current_host}}) {
+                print "    $job_id:\n";
+                foreach my $k (sort keys %{$result->{$current_host}->{$job_id}} ) {
+                    my $v = $result->{$current_host}->{$job_id}->{$k};
+                    if (not defined($v)) {
+                        $v = "";
+                    } elsif (ref($v) eq 'ARRAY') {
+                        $v = join(", ",@$v);
+                    }
+                    print "        $k: $v\n";
+                }
+            }
+        }
+    }
 }
 
 sub print_resources_states($){
@@ -216,6 +241,7 @@ sub print_resources_flat_way($){
 GetOptions ("state|s" => \$stateMode,
             "help|h"  => \$usage,
             "list|l"  => \$listall,
+            "jobs|j"  => \$jobs,
             "events|e:s"  => \$events,
             "resource|r=i" => \@resources,
             "sql=s" => \$sql_property,
@@ -255,6 +281,8 @@ if ($#resources >=0 or defined($sql_property)) {
         die "Error: cannot use -e with -r or --sql\n";
     } elsif (defined($stateMode)) {
         print_resources_states(\@resources);
+    } elsif ($jobs) {
+        die "Error: Cannot use -j with -r or --sql\n";
     } elsif ($listall){
         die "Error: cannot use -l with -r or --sql\n";
     } else {
@@ -270,6 +298,8 @@ if ($#resources >=0 or defined($sql_property)) {
         print_events($events, \@nodes);
     } elsif (defined($stateMode)) {
         print_resources_states_for_hosts(\@nodes);
+    } elsif ($jobs){
+        print_jobs(\@nodes);
     } elsif ($listall){
         print_all_nodes();
     } else {

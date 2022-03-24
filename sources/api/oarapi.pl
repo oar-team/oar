@@ -1214,6 +1214,35 @@ SWITCH: for ($q) {
   };
 
   #
+  # GET /resources/nodes/<node>/jobs/details: Detailed job occupation on a node
+  #
+  $URI = OAR::API::uri_regex_html_json_yaml('resources/nodes/([\w.-]+)/jobs/details');
+  OAR::API::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = OAR::API::set_ext($q,$2);
+    (my $header, my $type)=OAR::API::set_output_format($ext);
+    OAR::Nodes::open_db_connection or OAR::API::ERROR(500,
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $jobs;
+    my $load = OAR::Nodes::get_nodes_load([$1]);
+
+    foreach my $job_id (keys %{$load->{$1}}) {
+      my $job = $load->{$1}->{$job_id};
+      $job->{id} = int($job_id);
+      push(@$jobs,$job);
+    }
+    OAR::API::add_jobs_on_resource_uris($jobs,$ext);
+    OAR::Nodes::close_db_connection;
+    $jobs = OAR::API::add_pagination($jobs,@$jobs,$q->path_info,undef,$ext,0,0,$STRUCTURE);
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export($jobs,$ext);
+    last;
+  };
+
+  #
   # GET /resources/<property>/jobs: List jobs running on resources, by property
   #
   $URI = OAR::API::uri_regex_html_json_yaml('resources/([\w-]+)/jobs');

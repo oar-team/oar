@@ -107,6 +107,7 @@ sub get_resource_job($$);
 sub get_resources_jobs($);
 sub get_resource_job_to_frag($$);
 sub get_node_job($$);
+sub get_nodes_load($$);
 sub get_node_job_to_frag($$);
 sub get_resources_in_state($$);
 sub add_resource_job_pair($$$);
@@ -3937,6 +3938,53 @@ sub get_node_job($$) {
         push(@res, $ref->{'job_id'});
     }
     return @res;
+}
+
+# get_nodes_load
+# returns a set of information about jobs running some nodes
+# parameters: base, nodes
+# return value: hash of job information
+# side effects: /
+sub get_nodes_load($$) {
+    my $dbh = shift;
+    my $nodes = shift;
+    my $sth = $dbh->prepare("   SELECT
+                                    r.network_address as network_address,
+                                    j.job_id as job_id,
+                                    array_agg(distinct jr.resource_id) as assigned_resources,
+                                    count(distinct jr.resource_id) as resources_count,
+                                    count(distinct r.resource_id) as resources_total,
+                                    j.job_user as owner,
+                                    j.project as projet,
+                                    j.job_name as name,
+                                    j.queue_name as queue,
+                                    j.state as state,
+                                    array_agg(distinct t.type) as types
+                                FROM resources r
+                                INNER JOIN resources jr ON (r.network_address = jr.network_address)
+                                INNER JOIN assigned_resources a ON (a.resource_id = jr.resource_id)
+                                INNER JOIN jobs j ON (
+                                    j.assigned_moldable_job = a.moldable_job_id
+                                    AND j.stop_time = '0'
+                                    AND j.state IN (" . join(",", map {"'$_'"} @Starting_to_finishing_job_states) . ")
+                                    )
+                                LEFT OUTER JOIN job_types t ON (j.job_id = t.job_id)
+                                WHERE
+                                    jr.type='default'
+                                    " . (($#$nodes >=0)?"AND r.network_address IN (" . join(",", map {"'$_'"} @$nodes) . ")":"") . "
+                                GROUP BY j.job_id, r.network_address;
+                            ");
+    $sth->execute();
+    my $res = {};
+    while (my $ref = $sth->fetchrow_hashref()) {
+        my $network_address = $ref->{'network_address'};
+        my $job_id = $ref->{'job_id'};
+        $res->{$network_address}->{$job_id} = $ref;
+        $res->{$network_address}->{$job_id}->{types} = [grep {defined($_)} @{$res->{$network_address}->{$job_id}->{types}}];
+        delete($res->{$network_address}->{$job_id}->{network_address});
+        delete($res->{$network_address}->{$job_id}->{job_id});
+    }
+    return $res;
 }
 
 # get_alive_nodes_with_jobs
