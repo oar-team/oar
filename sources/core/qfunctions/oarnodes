@@ -40,7 +40,6 @@ my $stateMode;
 my $usage;
 my $listall;
 my $sql_property;
-my $sql_property_resource_lookup;
 my $XML_mode;
 my $YAML_mode;
 my $JSON_mode;
@@ -85,17 +84,17 @@ sub print_oar_version(){
 
 sub print_events($$){
     my $date_from = shift;
-    my $hostnames = shift;
+    my $nodes = shift;
 
-    my $dump_mode=0;
-    my $result = OAR::Nodes::get_events($hostnames, $date_from);
-    $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
-
-    if (!$dump_mode) {
-        foreach my $current_hostname (sort keys %{$result}){
-            foreach my $current_event (@{$result->{$current_hostname}}) {
-                printf("%s| %s| %s: %s\n",
+    my $result = OAR::Nodes::get_events($nodes, $date_from);
+    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+        format_result(\%$result);
+    } else {
+        foreach my $current_node (sort keys %{$result}){
+            foreach my $current_event (@{$result->{$current_node}}) {
+                printf("%s|%s|%s| %s: %s\n",
                     OAR::Nodes::format_date($current_event->{'date'}),
+                    $current_node,
                     $current_event->{'job_id'},
                     $current_event->{'type'},
                     $current_event->{'description'}
@@ -103,8 +102,6 @@ sub print_events($$){
             }
         }
     }
-
-    format_result(\%$result) if $dump_mode;
 }
 
 sub add_sql_resources($){
@@ -133,21 +130,20 @@ sub format_result($){
 
 sub print_resources_states_for_hosts($){
     my $nodes = shift;
+
     my $result = OAR::Nodes::get_resources_states_for_hosts($nodes);
-
-    my $dump_mode = 0;
-    $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
-
-    if (!$dump_mode) {
+    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+        format_result($result);
+    } else {
         foreach my $current_host (sort keys %{$result} ) {
-            print "$current_host\n";
+            print "$current_host:\n";
             foreach my $k (sort keys %{$result->{$current_host}} ) {
                 print "    $k: $result->{$current_host}{$k}\n";
             }
         }
     }
+}
 
-    format_result($result) if $dump_mode;
 }
 
 sub print_resources_states($){
@@ -163,11 +159,11 @@ sub print_resources_states($){
         }
 }
 
-sub print_all_hostnames(){
+sub print_all_nodes(){
       my $nodes_to_print = OAR::Nodes::get_all_hosts();
-    foreach my $current_node (@$nodes_to_print) {
-        print "$current_node\n";
-    }
+      foreach my $current_node (@$nodes_to_print) {
+          print "$current_node\n";
+      }
 }
 
 sub print_hosts_infos($){
@@ -247,37 +243,38 @@ if($ARGV[0]){
     @nodes = ();
 }
 
-# SQL where handling, add resources that match sql clause to @resources
-if (defined($sql_property)) {
-    add_sql_resources($sql_property);
-    $sql_property_resource_lookup = 1;
-}
-
-if (defined($events)) {
-    print_events($events, \@nodes);
-}
-elsif ($stateMode){
-    if ($#resources >= 0){
+if ($#resources >=0 or defined($sql_property)) {
+    if ($#nodes >= 0) {
+        die "Error: Cannot use -r or --sql and provide nodes at a same time\n";
+    }
+    if (defined($sql_property)) {
+        add_sql_resources($sql_property);
+    }
+    # We are working at the resource level, not nodes
+    if (defined($events)) {
+        die "Error: cannot use -e with -r or --sql\n";
+    } elsif (defined($stateMode)) {
         print_resources_states(\@resources);
+    } elsif ($listall){
+        die "Error: cannot use -l with -r or --sql\n";
+    } else {
+        my $res_infos = OAR::Nodes::get_resources_info(\@resources);
+        if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
+            format_result($res_infos);
+        } else {
+            print_resources_flat_way($res_infos);
+        }
     }
-    else{
+} else {
+    if (defined($events)) {
+        print_events($events, \@nodes);
+    } elsif (defined($stateMode)) {
         print_resources_states_for_hosts(\@nodes);
+    } elsif ($listall){
+        print_all_nodes();
+    } else {
+        print_hosts_infos(\@nodes);
     }
-}
-elsif ($listall){
-    print_all_hostnames();
-}
-elsif ($#resources >= 0 || defined($sql_property_resource_lookup)) { # -r or --sql where called
-    my $res_infos = OAR::Nodes::get_resources_info(\@resources);
-    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
-        format_result($res_infos);
-    }
-    else{
-        print_resources_flat_way($res_infos);
-    }
-}
-elsif (not defined($sql_property)) {
-    print_hosts_infos(\@nodes);
 }
 
 OAR::Nodes::close_db_connection();
