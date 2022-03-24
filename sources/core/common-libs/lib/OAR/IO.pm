@@ -271,7 +271,8 @@ my @Job_states = ('Waiting', 'Hold', 'toLaunch', 'toError', 'toAckReservation',
 my @Not_ended_job_states            = array_minus(@Job_states, 'Error', 'Terminated');
 my @Ended_job_states                = array_minus(@Job_states, @Not_ended_job_states);
 my @Waiting_to_running_job_states   = array_minus(@Job_states, ('Error', 'Terminated', 'Finishing'));
-my @Waiting_to_finishing_job_states = array_minus(@Job_states, ('Error', 'toError', 'Terminated'));
+my @Starting_to_running_job_states   = array_minus(@Job_states, ('Waiting', 'Error', 'Terminated', 'Finishing'));
+my @Starting_to_finishing_job_states = array_minus(@Job_states, ('Waiting', 'Error', 'toError', 'Terminated'));
 
 # connect_db
 # Connects to database and returns the base identifier
@@ -3817,7 +3818,7 @@ sub get_resource_job($$) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                        (" . join(",", map {"'$_'"} @Waiting_to_finishing_job_states) . ")
+                                        (" . join(",", map {"'$_'"} @Starting_to_finishing_job_states) . ")
                             ");
     $sth->execute();
     my @res = ();
@@ -3869,7 +3870,7 @@ sub get_resources_jobs($) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                        (" . join(",", map {"'$_'"} @Waiting_to_finishing_job_states) . ")
+                                        (" . join(",", map {"'$_'"} @Starting_to_finishing_job_states) . ")
                             ");
   $sth->execute();
   my %res;
@@ -3954,7 +3955,7 @@ sub get_alive_nodes_with_jobs($) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                                (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
+                                                (" . join(",", map {"'$_'"} @Starting_to_running_job_states) . ")
                                     AND (resources.state = 'Alive' or resources.next_state='Alive')
                             ");
     }else{
@@ -3968,7 +3969,7 @@ sub get_alive_nodes_with_jobs($) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                                (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
+                                                (" . join(",", map {"'$_'"} @Starting_to_running_job_states) . ")
                             ");
     }
 
