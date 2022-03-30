@@ -66,7 +66,7 @@ my $Reservation_start;
 my $Reservation_end;
 my $Default_resources;
 my $Nodes_resources;
-my $connect_job ;
+my $connect_job;
 my $Scan_script;
 my @resource;
 my $Queue_name;
@@ -102,6 +102,7 @@ my $import_job_key_inline = "";
 my $export_job_key_file = "";
 my $Initial_request_string = "oarsub @ARGV";
 my $Verbose_level;
+my $lusr = $ENV{OARDO_USER};
 
 # a non array-job is an array-job with 1 subjob
 my $array_job_nb;
@@ -135,7 +136,6 @@ sub connect_job($$$){
    
     my $xauth_path = $ENV{OARXAUTHLOCATION};
     OAR::Sub::open_ro_db_connection();
-    my $lusr= $ENV{OARDO_USER};
     my $job = OAR::Sub::get_job($job_id);
 
     if ((($lusr eq $job->{job_user}) or ($lusr eq "oar")) && ($job->{state} eq "Running")) {
@@ -282,11 +282,12 @@ sub connect_job($$$){
 #Print help message
 sub usage() {
     print <<EOS;
-Usage: $0 [options] [-I|-C <job id>|-r <start date>[, <end date>]|<script>]
+Usage: $0 [options] [-I|-C [<job id>]|-r <start date>[, <end date>]|<script>]
 Submit a job the OAR batch scheduler
 Options are:
  -I, --interactive             Request an interactive job.
- -C, --connect=<job id>        Connect to a running job.
+ -C, --connect[=<job id>]      Connect to a running job. Job id may be omitted
+                               if only one job is running.
  -l, --resource=<description>[,<walltime>]
                                Set the description of the requested resources
                                for the job and a walltime which specifies an
@@ -608,7 +609,7 @@ GetOptions ("resource|l=s" => \@resource,
             "interactive|I"  => \$Interactive,
             "property|p=s" => \$Job_sql_properties,
             "reservation|r=s" => \$Reservation,
-            "connect|C=i" => \$connect_job,
+            "connect|C:i" => \$connect_job,
             "checkpoint=i" => \$Checkpoint,
             "help|h" => \$sos,
             "notify=s" => \$notify,
@@ -729,6 +730,24 @@ if (defined($notify) && $notify =~ m/^.*exec\s*:.+$/m){
 
 # Connect to a reservation
 if (defined($connect_job)){
+    if ($connect_job eq 0) {
+        my @running_jobs = OAR::Sub::get_running_jobs_for_user($lusr);
+
+        if ($#running_jobs < 0) {
+            print("No running jobs\n");
+            exit (0);
+        } elsif ($#running_jobs eq 0) {
+            $connect_job = $running_jobs[0]->{job_id};
+        } else {
+            my $running_jobs_str = join(", ",
+                map {"$_->{job_id}" . (defined($_->{job_name}) ? " (".$_->{job_name}.")" : "") }
+                @running_jobs);
+            print("You have several running jobs. Please provide a job id.\n");
+            print("Running jobs are: $running_jobs_str\n");
+            exit (0);
+        }
+    }
+
     # Do not kill the job if the user close the window
     $SIG{HUP} = 'DEFAULT';
     OAR::Sub::close_db_connection(); exit(connect_job($connect_job,0,$Openssh_cmd));

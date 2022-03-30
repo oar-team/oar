@@ -10,7 +10,7 @@ B<oarsub> [OPTIONS] -I
 
 B<oarsub> [OPTIONS] -r "<START DATE|now>[, <END DATE>]" [<command>]
 
-B<oarsub> [OPTIONS] -C <JOB ID>
+B<oarsub> [OPTIONS] -C [<JOB ID>]
 
 =head1 DESCRIPTION
 
@@ -38,9 +38,9 @@ Calling B<oarsub> with the I<-r> option creates an advance reservation job inste
 
 Request an interactive job.
 
-=item B<-C, --connect> <JOB ID>
+=item B<-C, --connect> [<JOB ID>]
 
-Connect to a running job.
+Connect to a running job. Job id may be omitted if only one job is running.
 
 =item B<-l, --resource> <DESCRIPTION>[,<WALLTIME>]
 
