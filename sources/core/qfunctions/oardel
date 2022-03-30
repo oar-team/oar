@@ -184,7 +184,7 @@ if (defined($Checkpoint)){
                 print("ERROR.\n");
                 if ($@ eq "alarm\n"){
                     $exitValue = 3;
-                    $strComment = "Cannot contact $host_to_connect, operation timouted ($timeoutSSH s).";
+                    $strComment = "Cannot contact $host_to_connect, operation timed out ($timeoutSSH s).";
                     warn("$strComment\n");
                     OAR::IO::add_new_event($base,"CHECKPOINT_ERROR",$idJob,$strComment);
                 }else{
@@ -241,7 +241,7 @@ if (defined($Checkpoint)){
                 print("ERROR.\n");
                 if ($@ eq "alarm\n"){
                     $exitValue = 3;
-                    $strComment = "Cannot contact $host_to_connect, operation timouted ($timeoutSSH s).";
+                    $strComment = "Cannot contact $host_to_connect, operation timed out ($timeoutSSH s).";
                     warn("$strComment\n");
                     OAR::IO::add_new_event($base,"SIG_ERROR",$idJob,$strComment);
                 }else{

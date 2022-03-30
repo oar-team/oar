@@ -205,7 +205,7 @@ sub send_mail($$$$){
     my $smtp_server = get_conf("MAIL_SMTP_SERVER");
     my $mail_sender_address = get_conf("MAIL_SENDER");
     if (!defined($smtp_server) || !defined($mail_sender_address) || !defined($mail_recipient_address)){
-        oar_info($Module_name, "Mail is not configured\n", $Session_id);
+        oar_debug($Module_name, "Mail is not configured\n", $Session_id);
         return();
     }
 
