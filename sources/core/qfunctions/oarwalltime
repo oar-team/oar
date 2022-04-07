@@ -99,16 +99,17 @@ if (not defined($new_walltime)) {
             printf("  Possible increase: %10s\n",$walltime_change->{possible});
             printf("  Already granted: %12s",$walltime_change->{granted});
             print ((@granted_with)?" (".join(", ",@granted_with).")\n":"\n");
-            printf("  Pending/unsatisfied: %8s%s%s\n", $walltime_change->{pending},
-                (($walltime_change->{timeout} ne "0:0:0") and ($walltime_change->{pending} ne "0:0:0"))? " (Timeout: $walltime_change->{timeout})" : "",
-                (($walltime_change->{pending} ne "0:0:0") and ($walltime_change->{whole} eq "YES"))? " (Whole: yes)": "",
-                (defined($walltime_change->{delay_next_jobs}) and $walltime_change->{delay_next_jobs} eq "YES")?" (will possibly delay next jobs)":"");
+            printf("  Pending/unsatisfied: %8s%s%s%s\n", $walltime_change->{pending},
+                (($walltime_change->{timeout} ne "0:0:0") and ($walltime_change->{pending} ne "0:0:0"))? " (timeout: $walltime_change->{timeout})" : "",
+                (($walltime_change->{pending} ne "0:0:0") and ($walltime_change->{whole} eq "YES"))? " (whole: yes)": "",
+                (defined($walltime_change->{delay_next_jobs}) and $walltime_change->{delay_next_jobs} eq "YES")?" (will possibly delay next jobs)":""
+                );
         } else {
             print("Walltime change status for job $jobid (job is not running):\n");
             printf("  Walltime: %11s\n",$walltime_change->{walltime});
             printf("  Granted: %12s",$walltime_change->{granted});
             print ((@granted_with)?" (".join(", ",@granted_with).")\n":"\n");
-            printf("  Unsatisfied: %8s%s\n",$walltime_change->{pending},(defined($walltime_change->{delay_next_jobs}) and $walltime_change->{delay_next_jobs} eq "YES")?" (will possibly delay next jobs)":"");
+            printf("  Unsatisfied: %8s%s\n",$walltime_change->{pending},(defined($walltime_change->{delay_next_jobs}) and $walltime_change->{delay_next_jobs} eq "YES")?" (would possibly have delayed next jobs)":"");
         }
     }
     OAR::IO::disconnect($dbh);
