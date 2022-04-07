@@ -37,10 +37,10 @@ The job must be running to request a walltime change.
 
 Options:
       --force            request walltime increase to be trialed or applied
-                         applied immediately regardless of any otherwise
-                         configured delay.
+                         immediately regardless of any otherwise configured
+                         delay.
       --whole            request walltime increase to be trialed or applied
-                         at once
+                         wholly at once, or not applied otherwise
       --delay-next-jobs  allow an extra time request to succeed even if it
                          must delay other jobs, including other users' jobs
       --timeout          specify a timeout after which the walltime change

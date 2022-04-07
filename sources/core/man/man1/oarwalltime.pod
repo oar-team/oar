@@ -53,7 +53,7 @@ Request walltime increase to be trialed or applied immediately regardless of any
 
 =item B<--whole>
 
-Request walltime increase to be trialed or applied at once.
+Request walltime increase to be trialed or applied wholly at once, or not applied otherwise.
 
 =item B<--delay-next-jobs>
 
