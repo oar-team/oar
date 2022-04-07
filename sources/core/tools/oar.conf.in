@@ -574,8 +574,8 @@ SCHEDULER_FAIRSHARING_MAX_JOB_PER_USER=30
 # Configure the default timeout if not specified by the user using the --timeout option,
 # after which a walltime change request that is not yet accepted by the scheduler will be cancelled.
 # Setting a value of 0 disables the default timeout.
-# Default is 3600 (1h)
-# WALLTIME_CHANGE_TIMEOUT="3600"
+# Default is 0 (disabled)
+#WALLTIME_CHANGE_TIMEOUT="0"
 
 ###########################################################################
 # ENERGY SAVING                                                           #

@@ -11,7 +11,7 @@ sub get_default_increment {
 }
 
 sub get_default_timeout {
-    return OAR::Conf::get_conf_with_default_param("WALLTIME_CHANGE_TIMEOUT", 3600);
+    return OAR::Conf::get_conf_with_default_param("WALLTIME_CHANGE_TIMEOUT", 0);
 }
 
 sub get_conf($$$$) {
