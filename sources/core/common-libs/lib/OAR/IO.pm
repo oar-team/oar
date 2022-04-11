@@ -195,7 +195,7 @@ sub get_to_check_events($);
 sub get_hostname_event($$);
 sub get_job_events($$);
 sub get_events_for_hostname($$$);
-sub get_last_event_from_type($$);
+sub get_last_event_from_type($$$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
@@ -205,8 +205,8 @@ sub get_accounting_summary_byproject($$$$$$);
 sub get_last_project_karma($$$$);
 
 # WALLTIME CHANGE
-sub add_walltime_change_request($$$$$);
-sub update_walltime_change_request($$$$$$$$);
+sub add_walltime_change_request($$$$$$$);
+sub update_walltime_change_request($$$$$$$$$$$);
 sub get_walltime_change_for_job($$);
 sub get_jobs_with_walltime_change($);
 sub get_possible_job_end_time_in_interval($$$$$$$$$);
@@ -8164,16 +8164,18 @@ sub get_all_events($$){
 }
 
 
-# Get the last event for the given type
-# args: database ref, event type
+# Get the last event for the given type and job_id
+# args: database ref, event type, job id
 # returns: the requested event
-sub get_last_event_from_type($$){
+sub get_last_event_from_type($$$){
     my $dbh = shift;
     my $type = shift;
+    my $job_id = shift;
     my $sth = $dbh->prepare("SELECT *
                               FROM event_logs
                               WHERE
-                                  type = '$type'
+                                  type = '$type' AND
+                                  job_id = $job_id
                               ORDER BY event_id DESC
                               LIMIT 1");
 
@@ -8230,31 +8232,39 @@ sub is_an_event_exists($$$){
 
 # Add an extra time request to the database:
 # add 1 line to the walltime_change table
-sub add_walltime_change_request($$$$$) {
+sub add_walltime_change_request($$$$$$$) {
     my $dbh = shift;
     my $job_id = shift;
     my $pending = shift;
     my $force = shift;
     my $delay_next_jobs = shift;
-    $dbh->do("INSERT INTO walltime_change (job_id,pending,force,delay_next_jobs) VALUES ($job_id,$pending,'$force','$delay_next_jobs')");
+    my $whole = shift;
+    my $timeout = shift;
+    $dbh->do("INSERT INTO walltime_change (job_id,pending,force,delay_next_jobs,whole,timeout) VALUES ($job_id,$pending,'$force','$delay_next_jobs','$whole','$timeout')");
 }
 
 # Update an walltime change request after processing
-sub update_walltime_change_request($$$$$$$$) {
+sub update_walltime_change_request($$$$$$$$$$$) {
     my $dbh = shift;
     my $job_id = shift;
     my $pending = shift;
     my $force = shift;
     my $delay_next_jobs = shift;
+    my $whole = shift;
     my $granted = shift;
     my $granted_with_force = shift;
     my $granted_with_delay_next_jobs = shift;
+    my $granted_with_whole = shift;
+    my $timeout = shift;
     $dbh->do("UPDATE walltime_change SET pending=$pending".
         ((defined($force))?",force='$force'":"").
         ((defined($delay_next_jobs))?",delay_next_jobs='$delay_next_jobs'":"").
+        ((defined($whole))?",whole='$whole'":"").
+        ((defined($timeout))?",timeout='$timeout'":"").
         ((defined($granted))?",granted=$granted":"").
         ((defined($granted_with_force))?",granted_with_force=$granted_with_force":"").
         ((defined($granted_with_delay_next_jobs))?",granted_with_delay_next_jobs=$granted_with_delay_next_jobs":"").
+        ((defined($granted_with_whole))?",granted_with_whole=$granted_with_whole":"").
         " WHERE job_id = $job_id");
 }
 
@@ -8262,7 +8272,7 @@ sub update_walltime_change_request($$$$$$$$) {
 sub get_walltime_change_for_job($$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $sth = $dbh->prepare("SELECT pending, force, delay_next_jobs, granted, granted_with_force, granted_with_delay_next_jobs FROM walltime_change WHERE job_id = $job_id");
+    my $sth = $dbh->prepare("SELECT pending, force, delay_next_jobs, whole, granted, granted_with_force, granted_with_delay_next_jobs, granted_with_whole, timeout FROM walltime_change WHERE job_id = $job_id");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     return $ref;
@@ -8273,7 +8283,7 @@ sub get_jobs_with_walltime_change($) {
     my $dbh = shift;
     my $req = <<EOS;
 SELECT
-  j.job_id, j.queue_name, j.start_time, j.job_user, j.job_name, m.moldable_walltime, w.pending, w.force, w.delay_next_jobs, w.granted, w.granted_with_force, w.granted_with_delay_next_jobs, a.resource_id
+  j.job_id, j.queue_name, j.start_time, j.job_user, j.job_name, m.moldable_walltime, w.pending, w.force, w.delay_next_jobs, w.whole, w.granted, w.granted_with_force, w.granted_with_delay_next_jobs, w.granted_with_whole, w.timeout, a.resource_id
 FROM
   jobs j, moldable_job_descriptions m, assigned_resources a, walltime_change w
 WHERE
@@ -8296,9 +8306,12 @@ EOS
         $jobs->{$job_id}->{pending} = $ref->{pending};
         $jobs->{$job_id}->{force} = $ref->{force};
         $jobs->{$job_id}->{delay_next_jobs} = $ref->{delay_next_jobs};
+        $jobs->{$job_id}->{whole} = $ref->{whole};
         $jobs->{$job_id}->{granted} = $ref->{granted};
         $jobs->{$job_id}->{granted_with_force} = $ref->{granted_with_force};
         $jobs->{$job_id}->{granted_with_delay_next_jobs} = $ref->{granted_with_delay_next_jobs};
+        $jobs->{$job_id}->{granted_with_whole} = $ref->{granted_with_whole};
+        $jobs->{$job_id}->{timeout} = $ref->{timeout};
         push(@{$jobs->{$job_id}->{resources}}, $ref->{resource_id});
     }
     return $jobs;
