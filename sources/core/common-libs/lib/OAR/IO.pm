@@ -107,6 +107,7 @@ sub get_resource_job($$);
 sub get_resources_jobs($);
 sub get_resource_job_to_frag($$);
 sub get_node_job($$);
+sub get_nodes_load($$);
 sub get_node_job_to_frag($$);
 sub get_resources_in_state($$);
 sub add_resource_job_pair($$$);
@@ -271,7 +272,8 @@ my @Job_states = ('Waiting', 'Hold', 'toLaunch', 'toError', 'toAckReservation',
 my @Not_ended_job_states            = array_minus(@Job_states, 'Error', 'Terminated');
 my @Ended_job_states                = array_minus(@Job_states, @Not_ended_job_states);
 my @Waiting_to_running_job_states   = array_minus(@Job_states, ('Error', 'Terminated', 'Finishing'));
-my @Waiting_to_finishing_job_states = array_minus(@Job_states, ('Error', 'toError', 'Terminated'));
+my @Starting_to_running_job_states   = array_minus(@Job_states, ('Waiting', 'Error', 'Terminated', 'Finishing'));
+my @Starting_to_finishing_job_states = array_minus(@Job_states, ('Waiting', 'Error', 'toError', 'Terminated'));
 
 # connect_db
 # Connects to database and returns the base identifier
@@ -3817,7 +3819,7 @@ sub get_resource_job($$) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                        (" . join(",", map {"'$_'"} @Waiting_to_finishing_job_states) . ")
+                                        (" . join(",", map {"'$_'"} @Starting_to_finishing_job_states) . ")
                             ");
     $sth->execute();
     my @res = ();
@@ -3869,7 +3871,7 @@ sub get_resources_jobs($) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                        (" . join(",", map {"'$_'"} @Waiting_to_finishing_job_states) . ")
+                                        (" . join(",", map {"'$_'"} @Starting_to_finishing_job_states) . ")
                             ");
   $sth->execute();
   my %res;
@@ -3938,6 +3940,53 @@ sub get_node_job($$) {
     return @res;
 }
 
+# get_nodes_load
+# returns a set of information about jobs running some nodes
+# parameters: base, nodes
+# return value: hash of job information
+# side effects: /
+sub get_nodes_load($$) {
+    my $dbh = shift;
+    my $nodes = shift;
+    my $sth = $dbh->prepare("   SELECT
+                                    r.network_address as network_address,
+                                    j.job_id as job_id,
+                                    array_agg(distinct jr.resource_id) as assigned_resources,
+                                    count(distinct jr.resource_id) as resources_count,
+                                    count(distinct r.resource_id) as resources_total,
+                                    j.job_user as owner,
+                                    j.project as projet,
+                                    j.job_name as name,
+                                    j.queue_name as queue,
+                                    j.state as state,
+                                    array_agg(distinct t.type) as types
+                                FROM resources r
+                                INNER JOIN resources jr ON (r.network_address = jr.network_address)
+                                INNER JOIN assigned_resources a ON (a.resource_id = jr.resource_id)
+                                INNER JOIN jobs j ON (
+                                    j.assigned_moldable_job = a.moldable_job_id
+                                    AND j.stop_time = '0'
+                                    AND j.state IN (" . join(",", map {"'$_'"} @Starting_to_finishing_job_states) . ")
+                                    )
+                                LEFT OUTER JOIN job_types t ON (j.job_id = t.job_id)
+                                WHERE
+                                    jr.type='default'
+                                    " . (($#$nodes >=0)?"AND r.network_address IN (" . join(",", map {"'$_'"} @$nodes) . ")":"") . "
+                                GROUP BY j.job_id, r.network_address;
+                            ");
+    $sth->execute();
+    my $res = {};
+    while (my $ref = $sth->fetchrow_hashref()) {
+        my $network_address = $ref->{'network_address'};
+        my $job_id = $ref->{'job_id'};
+        $res->{$network_address}->{$job_id} = $ref;
+        $res->{$network_address}->{$job_id}->{types} = [grep {defined($_)} @{$res->{$network_address}->{$job_id}->{types}}];
+        delete($res->{$network_address}->{$job_id}->{network_address});
+        delete($res->{$network_address}->{$job_id}->{job_id});
+    }
+    return $res;
+}
+
 # get_alive_nodes_with_jobs
 # returns the list of occupied nodes
 # parameters: base
@@ -3954,7 +4003,7 @@ sub get_alive_nodes_with_jobs($) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                                (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
+                                                (" . join(",", map {"'$_'"} @Starting_to_running_job_states) . ")
                                     AND (resources.state = 'Alive' or resources.next_state='Alive')
                             ");
     }else{
@@ -3968,7 +4017,7 @@ sub get_alive_nodes_with_jobs($) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                                (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
+                                                (" . join(",", map {"'$_'"} @Starting_to_running_job_states) . ")
                             ");
     }
 
