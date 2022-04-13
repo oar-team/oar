@@ -416,7 +416,7 @@ sub ipc_clean(){
         my @ipcs=split;
           if ($ipcs[7] eq $oar[2]) {
             my $ipc=$ipcs[1];
-            oar_info($Module_name, "cleaning ipc $ipc\n", $Session_id);
+            oar_info($Module_name, "Cleaning ipc $ipc\n", $Session_id);
             `/usr/bin/ipcrm -q $ipc`;
           }
         }
@@ -603,10 +603,10 @@ while (1){
     #We stop Almighty and its child
     if ($finishTag == 1){
         if (defined($energy_pid)) {
-          oar_info($Module_name, "kill child process $energy_pid\n", $Session_id);
+          oar_info($Module_name, "Kill child process $energy_pid\n", $Session_id);
           kill(9,$energy_pid);
         }
-        oar_info($Module_name, "kill child process $appendice_pid\n", $Session_id);
+        oar_info($Module_name, "Kill child process $appendice_pid\n", $Session_id);
         kill(9,$appendice_pid);
         kill(9,$Redirect_STD_process) if ($Redirect_STD_process > 0);
         ipc_clean();
@@ -637,11 +637,10 @@ while (1){
             read_commands($read_commands_timeout);
         }
 
-        oar_info($Module_name, "Command queue: @internal_command_file\n", $Session_id);
         my $current_command = shift(@internal_command_file);
         my ($command,$arg1,$arg2,$arg3) = split(/ /,$current_command);
 
-        oar_info($Module_name, "Qtype = [$command]\n", $Session_id);
+        oar_info($Module_name, "Command queue: @internal_command_file ; Qtype = [$command]\n", $Session_id);
         if (($command eq "Qsub") ||
         ($command eq "Term") ||
         ($command eq "BipBip") ||

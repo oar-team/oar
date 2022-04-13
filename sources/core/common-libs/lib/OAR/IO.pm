@@ -77,7 +77,7 @@ sub job_leon_exterminate($$);
 sub get_waiting_reservation_jobs($);
 sub get_waiting_reservation_jobs_specific_queue($$);
 sub get_waiting_toSchedule_reservation_jobs_specific_queue($$);
-sub parse_jobs_from_range($);
+sub parse_jobs_from_range($$);
 sub get_jobs_past_and_current_from_range($$$);
 sub get_jobs_future_from_range($$$);
 sub get_jobs_for_user_query;
@@ -107,6 +107,7 @@ sub get_resource_job($$);
 sub get_resources_jobs($);
 sub get_resource_job_to_frag($$);
 sub get_node_job($$);
+sub get_nodes_load($$);
 sub get_node_job_to_frag($$);
 sub get_resources_in_state($$);
 sub add_resource_job_pair($$$);
@@ -195,7 +196,7 @@ sub get_to_check_events($);
 sub get_hostname_event($$);
 sub get_job_events($$);
 sub get_events_for_hostname($$$);
-sub get_last_event_from_type($$);
+sub get_last_event_from_type($$$);
 
 # ACCOUNTING
 sub check_accounting_update($$);
@@ -205,8 +206,8 @@ sub get_accounting_summary_byproject($$$$$$);
 sub get_last_project_karma($$$$);
 
 # WALLTIME CHANGE
-sub add_walltime_change_request($$$$$);
-sub update_walltime_change_request($$$$$$$$);
+sub add_walltime_change_request($$$$$$$);
+sub update_walltime_change_request($$$$$$$$$$$);
 sub get_walltime_change_for_job($$);
 sub get_jobs_with_walltime_change($);
 sub get_possible_job_end_time_in_interval($$$$$$$$$);
@@ -226,6 +227,7 @@ sub manage_remote_commands($$$$$$$$$);
 
 # PERL HELPER FUNCTIONS
 sub array_minus(\@@);
+sub uniq;
 
 # END OF PROTOTYPES
 
@@ -270,7 +272,8 @@ my @Job_states = ('Waiting', 'Hold', 'toLaunch', 'toError', 'toAckReservation',
 my @Not_ended_job_states            = array_minus(@Job_states, 'Error', 'Terminated');
 my @Ended_job_states                = array_minus(@Job_states, @Not_ended_job_states);
 my @Waiting_to_running_job_states   = array_minus(@Job_states, ('Error', 'Terminated', 'Finishing'));
-my @Waiting_to_finishing_job_states = array_minus(@Job_states, ('Error', 'toError', 'Terminated'));
+my @Starting_to_running_job_states   = array_minus(@Job_states, ('Waiting', 'Error', 'Terminated', 'Finishing'));
+my @Starting_to_finishing_job_states = array_minus(@Job_states, ('Waiting', 'Error', 'toError', 'Terminated'));
 
 # connect_db
 # Connects to database and returns the base identifier
@@ -3816,7 +3819,7 @@ sub get_resource_job($$) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                        (" . join(",", map {"'$_'"} @Waiting_to_finishing_job_states) . ")
+                                        (" . join(",", map {"'$_'"} @Starting_to_finishing_job_states) . ")
                             ");
     $sth->execute();
     my @res = ();
@@ -3868,7 +3871,7 @@ sub get_resources_jobs($) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                        (" . join(",", map {"'$_'"} @Waiting_to_finishing_job_states) . ")
+                                        (" . join(",", map {"'$_'"} @Starting_to_finishing_job_states) . ")
                             ");
   $sth->execute();
   my %res;
@@ -3937,6 +3940,53 @@ sub get_node_job($$) {
     return @res;
 }
 
+# get_nodes_load
+# returns a set of information about jobs running some nodes
+# parameters: base, nodes
+# return value: hash of job information
+# side effects: /
+sub get_nodes_load($$) {
+    my $dbh = shift;
+    my $nodes = shift;
+    my $sth = $dbh->prepare("   SELECT
+                                    r.network_address as network_address,
+                                    j.job_id as job_id,
+                                    array_agg(distinct jr.resource_id) as assigned_resources,
+                                    count(distinct jr.resource_id) as resources_count,
+                                    count(distinct r.resource_id) as resources_total,
+                                    j.job_user as owner,
+                                    j.project as projet,
+                                    j.job_name as name,
+                                    j.queue_name as queue,
+                                    j.state as state,
+                                    array_agg(distinct t.type) as types
+                                FROM resources r
+                                INNER JOIN resources jr ON (r.network_address = jr.network_address)
+                                INNER JOIN assigned_resources a ON (a.resource_id = jr.resource_id)
+                                INNER JOIN jobs j ON (
+                                    j.assigned_moldable_job = a.moldable_job_id
+                                    AND j.stop_time = '0'
+                                    AND j.state IN (" . join(",", map {"'$_'"} @Starting_to_finishing_job_states) . ")
+                                    )
+                                LEFT OUTER JOIN job_types t ON (j.job_id = t.job_id)
+                                WHERE
+                                    jr.type='default'
+                                    " . (($#$nodes >=0)?"AND r.network_address IN (" . join(",", map {"'$_'"} @$nodes) . ")":"") . "
+                                GROUP BY j.job_id, r.network_address;
+                            ");
+    $sth->execute();
+    my $res = {};
+    while (my $ref = $sth->fetchrow_hashref()) {
+        my $network_address = $ref->{'network_address'};
+        my $job_id = $ref->{'job_id'};
+        $res->{$network_address}->{$job_id} = $ref;
+        $res->{$network_address}->{$job_id}->{types} = [grep {defined($_)} @{$res->{$network_address}->{$job_id}->{types}}];
+        delete($res->{$network_address}->{$job_id}->{network_address});
+        delete($res->{$network_address}->{$job_id}->{job_id});
+    }
+    return $res;
+}
+
 # get_alive_nodes_with_jobs
 # returns the list of occupied nodes
 # parameters: base
@@ -3953,7 +4003,7 @@ sub get_alive_nodes_with_jobs($) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                                (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
+                                                (" . join(",", map {"'$_'"} @Starting_to_running_job_states) . ")
                                     AND (resources.state = 'Alive' or resources.next_state='Alive')
                             ");
     }else{
@@ -3967,7 +4017,7 @@ sub get_alive_nodes_with_jobs($) {
                                     AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
                                     AND moldable_job_descriptions.moldable_job_id = jobs.job_id
                                     AND jobs.state IN
-                                                (" . join(",", map {"'$_'"} @Waiting_to_running_job_states) . ")
+                                                (" . join(",", map {"'$_'"} @Starting_to_running_job_states) . ")
                             ");
     }
 
@@ -4280,8 +4330,9 @@ sub add_resource_job_pairs_from_file($$$) {
 # - get_jobs_past_and_current_from_range
 # - get_jobs_future_from_range
 # args: db query result handle
-sub parse_jobs_from_range($) {
+sub parse_jobs_from_range($$) {
     my $sth = shift;
+    my $dbh = shift;
     my $jobs = {};
     while (my @ref = $sth->fetchrow_array()) {
         if (! exists($jobs->{$ref[0]})) {
@@ -4302,6 +4353,13 @@ sub parse_jobs_from_range($) {
                 'stop_time' => $ref[13],
                 'resource_id' => [],
                 'network_address' => [],
+                'array_id' => $ref[17],
+                'array_index' => $ref[18],
+                'stderr_file' => $ref[19],
+                'stdout_file' => $ref[20],
+                'reservation' => $ref[21],
+                'resubmit_job_id' => $ref[22],
+                'message' => $ref[23]
             }
         }
         push(@{$jobs->{$ref[0]}->{'resource_id'}}, $ref[14]);
@@ -4311,7 +4369,26 @@ sub parse_jobs_from_range($) {
         if (defined($ref[16])){
             push(@{$jobs->{$ref[0]}->{'types'}}, $ref[16]);
         }
+        if (defined(get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD"))) {
+            my $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $ref[0]);
+            $jobs->{$ref[0]}->{'cpuset_name'} = $cpuset_name;
+        }
+        my @job_dependencies = OAR::IO::get_current_job_dependencies($dbh, $ref[0]);
+        push(@{$jobs->{$ref[0]}->{'dependencies'}}, @job_dependencies);
     }
+
+    foreach my $job (keys %{$jobs}) {
+        if (defined($jobs->{$job}->{types})) {
+            @{$jobs->{$job}->{types}} = uniq(@{$jobs->{$job}->{types}});
+        }
+        if (defined($jobs->{$job}->{network_address})) {
+            @{$jobs->{$job}->{network_address}} = uniq(@{$jobs->{$job}->{network_address}});
+        }
+        if (defined($jobs->{$job}->{resource_id})) {
+            @{$jobs->{$job}->{resource_id}} = uniq(@{$jobs->{$job}->{resource_id}});
+        }
+    }
+
     return $jobs;
 }
 
@@ -4341,7 +4418,14 @@ SELECT
     jobs.stop_time,
     assigned_resources.resource_id,
     resources.network_address,
-    job_types.type
+    job_types.type,
+    jobs.array_id,
+    jobs.array_index,
+    jobs.stderr_file,
+    jobs.stdout_file,
+    jobs.reservation,
+    jobs.resubmit_job_id,
+    jobs.message
 FROM
     (jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)),
     assigned_resources,
@@ -4366,7 +4450,7 @@ ORDER BY
 EOT
     my $sth = $dbh->prepare($req);
     $sth->execute();
-    my $jobs = parse_jobs_from_range($sth);
+    my $jobs = parse_jobs_from_range($sth, $dbh);
     $sth->finish();
 
     return $jobs
@@ -4399,7 +4483,14 @@ SELECT
     (gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),
     gantt_jobs_resources_visu.resource_id,
     resources.network_address,
-    job_types.type
+    job_types.type,
+    jobs.array_id,
+    jobs.array_index,
+    jobs.stderr_file,
+    jobs.stdout_file,
+    jobs.reservation,
+    jobs.resubmit_job_id,
+    jobs.message
 FROM
     (jobs LEFT JOIN job_types ON (job_types.job_id = jobs.job_id)),
     moldable_job_descriptions,
@@ -4419,7 +4510,7 @@ ORDER BY
 EOT
     my $sth = $dbh->prepare($req);
     $sth->execute();
-    my $jobs = parse_jobs_from_range($sth);
+    my $jobs = parse_jobs_from_range($sth, $dbh);
     $sth->finish();
 
     return $jobs
@@ -8122,16 +8213,18 @@ sub get_all_events($$){
 }
 
 
-# Get the last event for the given type
-# args: database ref, event type
+# Get the last event for the given type and job_id
+# args: database ref, event type, job id
 # returns: the requested event
-sub get_last_event_from_type($$){
+sub get_last_event_from_type($$$){
     my $dbh = shift;
     my $type = shift;
+    my $job_id = shift;
     my $sth = $dbh->prepare("SELECT *
                               FROM event_logs
                               WHERE
-                                  type = '$type'
+                                  type = '$type' AND
+                                  job_id = $job_id
                               ORDER BY event_id DESC
                               LIMIT 1");
 
@@ -8188,31 +8281,39 @@ sub is_an_event_exists($$$){
 
 # Add an extra time request to the database:
 # add 1 line to the walltime_change table
-sub add_walltime_change_request($$$$$) {
+sub add_walltime_change_request($$$$$$$) {
     my $dbh = shift;
     my $job_id = shift;
     my $pending = shift;
     my $force = shift;
     my $delay_next_jobs = shift;
-    $dbh->do("INSERT INTO walltime_change (job_id,pending,force,delay_next_jobs) VALUES ($job_id,$pending,'$force','$delay_next_jobs')");
+    my $whole = shift;
+    my $timeout = shift;
+    $dbh->do("INSERT INTO walltime_change (job_id,pending,force,delay_next_jobs,whole,timeout) VALUES ($job_id,$pending,'$force','$delay_next_jobs','$whole','$timeout')");
 }
 
 # Update an walltime change request after processing
-sub update_walltime_change_request($$$$$$$$) {
+sub update_walltime_change_request($$$$$$$$$$$) {
     my $dbh = shift;
     my $job_id = shift;
     my $pending = shift;
     my $force = shift;
     my $delay_next_jobs = shift;
+    my $whole = shift;
     my $granted = shift;
     my $granted_with_force = shift;
     my $granted_with_delay_next_jobs = shift;
+    my $granted_with_whole = shift;
+    my $timeout = shift;
     $dbh->do("UPDATE walltime_change SET pending=$pending".
         ((defined($force))?",force='$force'":"").
         ((defined($delay_next_jobs))?",delay_next_jobs='$delay_next_jobs'":"").
+        ((defined($whole))?",whole='$whole'":"").
+        ((defined($timeout))?",timeout='$timeout'":"").
         ((defined($granted))?",granted=$granted":"").
         ((defined($granted_with_force))?",granted_with_force=$granted_with_force":"").
         ((defined($granted_with_delay_next_jobs))?",granted_with_delay_next_jobs=$granted_with_delay_next_jobs":"").
+        ((defined($granted_with_whole))?",granted_with_whole=$granted_with_whole":"").
         " WHERE job_id = $job_id");
 }
 
@@ -8220,7 +8321,7 @@ sub update_walltime_change_request($$$$$$$$) {
 sub get_walltime_change_for_job($$) {
     my $dbh = shift;
     my $job_id = shift;
-    my $sth = $dbh->prepare("SELECT pending, force, delay_next_jobs, granted, granted_with_force, granted_with_delay_next_jobs FROM walltime_change WHERE job_id = $job_id");
+    my $sth = $dbh->prepare("SELECT pending, force, delay_next_jobs, whole, granted, granted_with_force, granted_with_delay_next_jobs, granted_with_whole, timeout FROM walltime_change WHERE job_id = $job_id");
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     return $ref;
@@ -8231,7 +8332,7 @@ sub get_jobs_with_walltime_change($) {
     my $dbh = shift;
     my $req = <<EOS;
 SELECT
-  j.job_id, j.queue_name, j.start_time, j.job_user, j.job_name, m.moldable_walltime, w.pending, w.force, w.delay_next_jobs, w.granted, w.granted_with_force, w.granted_with_delay_next_jobs, a.resource_id
+  j.job_id, j.queue_name, j.start_time, j.job_user, j.job_name, m.moldable_walltime, w.pending, w.force, w.delay_next_jobs, w.whole, w.granted, w.granted_with_force, w.granted_with_delay_next_jobs, w.granted_with_whole, w.timeout, a.resource_id
 FROM
   jobs j, moldable_job_descriptions m, assigned_resources a, walltime_change w
 WHERE
@@ -8254,9 +8355,12 @@ EOS
         $jobs->{$job_id}->{pending} = $ref->{pending};
         $jobs->{$job_id}->{force} = $ref->{force};
         $jobs->{$job_id}->{delay_next_jobs} = $ref->{delay_next_jobs};
+        $jobs->{$job_id}->{whole} = $ref->{whole};
         $jobs->{$job_id}->{granted} = $ref->{granted};
         $jobs->{$job_id}->{granted_with_force} = $ref->{granted_with_force};
         $jobs->{$job_id}->{granted_with_delay_next_jobs} = $ref->{granted_with_delay_next_jobs};
+        $jobs->{$job_id}->{granted_with_whole} = $ref->{granted_with_whole};
+        $jobs->{$job_id}->{timeout} = $ref->{timeout};
         push(@{$jobs->{$job_id}->{resources}}, $ref->{resource_id});
     }
     return $jobs;
@@ -8703,8 +8807,8 @@ sub job_finishing_sequence($$$$$$$){
                     my ($children,$cmd_name) = OAR::Tools::get_one_process_children($pid);
                     kill(9,@{$children});
                 }
-                my $str = "[JOB FINISHING SEQUENCE] Server epilogue timeouted (cmd: $cmd)";
-                oar_error("JobFinishingSequence", "Server epilogue timeouted (cmd: $cmd)\n", $session_id);
+                my $str = "[JOB FINISHING SEQUENCE] Server epilogue timed out (cmd: $cmd)";
+                oar_error("JobFinishingSequence", "Server epilogue timed out (cmd: $cmd)\n", $session_id);
                 push(@{$events}, {type => "SERVER_EPILOGUE_TIMEOUT", string => $str});
             }
         }elsif ($exit_value != 0){
@@ -8892,6 +8996,12 @@ sub array_minus(\@@) {
     my @b = @_;
     my %e = map{ $_ => undef } @b;
     return grep( ! exists( $e{$_} ), @$a );
+}
+
+# Return an array without the duplicates
+sub uniq {
+    my %seen;
+    grep !$seen{$_}++, @_;
 }
 
 # Manage commands on several nodes like cpuset or suspend job

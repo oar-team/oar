@@ -18,13 +18,13 @@ Ask OAR to not schedule jobs until oarresume command will be executed.
 
 Manage not only Waiting jobs but also Running one (can suspend the job)
 
-=item B<--array> 
- 
+=item B<--array>
+
 Hold array job(s) passed as parameter (all the sub-jobs of the given array job(s))
- 
+
 =item B<--sql>
 
-Hold jobs which repond to the SQL where clause on the table jobs (ex: "project = 'p1'")
+Hold jobs which respond to the SQL where clause on the table jobs (ex: "project = 'p1'")
 
 =item B<-V, --version>
 

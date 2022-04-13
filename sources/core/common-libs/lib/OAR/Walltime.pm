@@ -6,6 +6,14 @@ use DBI();
 use OAR::IO;
 use OAR::Conf;
 
+sub get_default_increment {
+    return OAR::Conf::get_conf_with_default_param("WALLTIME_INCREMENT", 0);
+}
+
+sub get_default_timeout {
+    return OAR::Conf::get_conf_with_default_param("WALLTIME_CHANGE_TIMEOUT", 0);
+}
+
 sub get_conf($$$$) {
     my $conf = shift; #simple value or hash with value per queue
     my $queue = shift; #use undef is no queue
@@ -64,6 +72,9 @@ sub get($$) {
     if (not defined($walltime_change->{granted_with_delay_next_jobs})) {
         $walltime_change->{granted_with_delay_next_jobs} = 0;
     }
+    if (not defined($walltime_change->{granted_with_whole})) {
+        $walltime_change->{granted_with_whole} = 0;
+    }
 
     OAR::Conf::init_conf($ENV{OARCONFFILE});
     my $Walltime_max_increase = get_conf(OAR::Conf::get_conf_with_default_param("WALLTIME_MAX_INCREASE",0), $job->{queue_name}, $walltime_change->{walltime} - $walltime_change->{granted}, 0);
@@ -99,6 +110,8 @@ sub get($$) {
         $walltime_change->{granted} = OAR::IO::duration_to_sql_signed($walltime_change->{granted});
         $walltime_change->{granted_with_force} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_force});
         $walltime_change->{granted_with_delay_next_jobs} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_delay_next_jobs});
+        $walltime_change->{granted_with_whole} = OAR::IO::duration_to_sql_signed($walltime_change->{granted_with_whole});
+        $walltime_change->{timeout} = OAR::IO::duration_to_sql($walltime_change->{timeout});
     } else {
         # job is not running yet, walltime may not be known yet, in case of a moldable job
         delete $walltime_change->{walltime};
@@ -106,17 +119,21 @@ sub get($$) {
         delete $walltime_change->{granted};
         delete $walltime_change->{granted_with_force};
         delete $walltime_change->{granted_with_delay_next_jobs};
+        delete $walltime_change->{granted_with_whole};
     }
     return ($walltime_change, $job->{state});
 }
 
-sub request($$$$$$) {
+sub request($$$$$$$$) {
     my $dbh = shift;
     my $jobid = shift;
     my $lusr = shift;
     my $new_walltime = shift;
     my $force = shift;
     my $delay_next_jobs = shift;
+    my $whole = shift;
+    my $requested_timeout = shift;
+    my $timeout;
     my $job;
     my $moldable;
     my @result;
@@ -167,8 +184,8 @@ sub request($$$$$$) {
         $new_walltime_delta_seconds = $new_walltime_delta_seconds - $moldable->{moldable_walltime};
     }
 
-    if ($new_walltime_delta_seconds == 0) {
-        return (1, 400, "bad request", "walltime change is null");
+    if (uc($whole) eq "YES" and (get_default_increment() != 0)) {
+        return (1, 400, "bad request", "OAR is configured to place walltime changes incrementally, disallowing usage of oarwalltime 'whole' option");
     }
 
     # Admins (root and oar users) are allowed to perform walltime reduction, even if
@@ -201,6 +218,11 @@ sub request($$$$$$) {
         return (3, 403, "forbidden", "walltime change for this job is not allowed to delay other jobs");
     }
 
+    # If $whole != YES then undef
+    if (defined($whole) and uc($whole) ne "YES") {
+        $whole = undef;
+    }
+
     # Is job walltime big enough to allow extra time ?
     if ($moldable->{moldable_walltime} < $Walltime_min_for_change) {
         return (3, 403, "forbidden", "walltime change is not allowed for a job with walltime < $Walltime_min_for_change_hms");
@@ -221,8 +243,16 @@ sub request($$$$$$) {
         $new_walltime_delta_seconds = - $job_remaining_time;
     }
 
+    # We take the default value for walltime change requests timeout
+    if (defined($requested_timeout)) {
+        $timeout = $requested_timeout;
+    } else {
+        $timeout = get_default_timeout();
+    }
+
     OAR::IO::lock_table($dbh,['walltime_change']);
     my $current_walltime_change = OAR::IO::get_walltime_change_for_job($dbh, $job->{job_id}); # locked here
+    my $event_message;
     if (defined($current_walltime_change)) { # Update a request
         if ($Walltime_max_increase != -1 and $current_walltime_change->{granted} + $new_walltime_delta_seconds > $Walltime_max_increase and not grep(/^$lusr$/,('root','oar'))) {
             @result = (3, 403, "forbidden", "request cannot be updated because the walltime cannot increase by more than ".$Walltime_max_increase_hms);
@@ -233,11 +263,15 @@ sub request($$$$$$) {
                 $new_walltime_delta_seconds,
                 ((defined($force) and $new_walltime_delta_seconds > 0)?'YES':'NO'),
                 ((defined($delay_next_jobs) and $new_walltime_delta_seconds > 0)?'YES':'NO'),
+                ((defined($whole) and $new_walltime_delta_seconds > 0)?'YES':'NO'),
                 undef,
                 undef,
-                undef
+                undef,
+                undef,
+                (defined($requested_timeout)?$requested_timeout:undef)
                 );
             @result = (0, 202, "accepted", "walltime change request updated for job ".$job->{job_id}.", it will be handled shortly");
+            $event_message = "Walltime change request updated for job $job->{job_id}" . " (". OAR::IO::duration_to_sql_signed($new_walltime_delta_seconds) . (defined($requested_timeout)?", timeout: " . OAR::IO::duration_to_sql_signed($requested_timeout):"") .")";
         }
     } else { # New request
         if ($Walltime_max_increase != -1 and $new_walltime_delta_seconds > $Walltime_max_increase and not grep(/^$lusr$/,('root','oar'))) {
@@ -248,11 +282,19 @@ sub request($$$$$$) {
                 $job->{job_id},
                 $new_walltime_delta_seconds,
                 ((defined($force) and $new_walltime_delta_seconds > 0)?'YES':'NO'),
-                ((defined($delay_next_jobs) and $new_walltime_delta_seconds > 0)?'YES':'NO')
+                ((defined($delay_next_jobs) and $new_walltime_delta_seconds > 0)?'YES':'NO'),
+                ((defined($whole) and $new_walltime_delta_seconds > 0)?'YES':'NO'),
+                $timeout
                 );
             @result = (0, 202, "accepted", "walltime change request accepted for job ".$job->{job_id}.", it will be handled shortly");
+            $event_message = "Walltime change request created for job $job->{job_id} (timeout: ". OAR::IO::duration_to_sql($timeout) . ")";
         }
     }
+
+    if ($event_message ne "") {
+        OAR::IO::add_new_event($dbh, "WALLTIME_REQUEST", $job->{job_id}, $event_message);
+    }
+
     OAR::IO::unlock_table($dbh);
 
     if ($result[0] == 0) {

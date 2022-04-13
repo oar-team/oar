@@ -343,9 +343,12 @@ job_id INT UNSIGNED NOT NULL ,
 pending INT NOT NULL DEFAULT 0,
 force ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 delay_next_jobs ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
+whole ENUM('YES','NO') DEFAULT 'NO' NOT NULL ,
 granted INT NOT NULL DEFAULT 0,
 granted_with_force INT NOT NULL DEFAULT 0,
 granted_with_delay_next_jobs INT NOT NULL DEFAULT 0,
+granted_with_whole INT NOT NULL DEFAULT 0,
+timeout INT UNSIGNED NOT NULL DEFAULT 0,
 INDEX id (job_id),
 PRIMARY KEY (job_id)
 );

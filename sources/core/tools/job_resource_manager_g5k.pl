@@ -449,26 +449,26 @@ if ($ARGV[0] eq "init"){
             $job_name = $Cpuset->{job_name} if defined($Cpuset->{job_name});
             my $filecontent = <<"EOF";
 export OAR_JOBID='$Cpuset->{job_id}'
+export OAR_JOB_ID='$Cpuset->{job_id}'
 export OAR_ARRAYID='$Cpuset->{array_id}'
+export OAR_ARRAY_ID='$Cpuset->{array_id}'
 export OAR_ARRAYINDEX='$Cpuset->{array_index}'
+export OAR_ARRAY_INDEX='$Cpuset->{array_index}'
 export OAR_USER='$Cpuset->{user}'
 export OAR_WORKDIR='$Cpuset->{launching_directory}'
+export OAR_O_WORKDIR='$Cpuset->{launching_directory}'
+export OAR_WORKING_DIRECTORY='$Cpuset->{launching_directory}'
 export OAR_JOB_NAME='$job_name'
 export OAR_PROJECT_NAME='$Cpuset->{project}'
 export OAR_STDOUT='$Cpuset->{stdout_file}'
 export OAR_STDERR='$Cpuset->{stderr_file}'
 export OAR_FILE_NODES='$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}'
+export OAR_NODEFILE='$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}'
+export OAR_NODE_FILE='$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}'
 export OAR_RESOURCE_PROPERTIES_FILE='$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources'
+export OAR_RESOURCE_FILE='$Cpuset->{oar_tmp_directory}/$Cpuset->{job_id}_resources'
 export OAR_JOB_WALLTIME='$Cpuset->{walltime}'
 export OAR_JOB_WALLTIME_SECONDS='$Cpuset->{walltime_seconds}'
-export OAR_NODEFILE=\$OAR_FILE_NODES
-export OAR_NODE_FILE=\$OAR_FILE_NODES
-export OAR_RESOURCE_FILE=\$OAR_RESOURCE_PROPERTIES_FILE
-export OAR_O_WORKDIR=\$OAR_WORKDIR
-export OAR_WORKING_DIRECTORY=\$OAR_WORKDIR
-export OAR_JOB_ID=\$OAR_JOBID
-export OAR_ARRAY_ID=\$OAR_ARRAYID
-export OAR_ARRAY_INDEX=\$OAR_ARRAYINDEX
 EOF
             print(ENVFILE "$filecontent") or exit_myself(19,"Failed to write in file ");
         }else{

@@ -649,7 +649,7 @@ SWITCH: for ($q) {
   };
 
   #
-  # POST /jobs/<id>: Update of a job (delete, checkpoint, ...)
+  # POST /jobs/<id>: Update of a job (delete, checkpoint, oarwalltime, ...)
   # Should not be used unless for delete from an http browser
   # (better to use the URI above)
   #
@@ -725,7 +725,8 @@ SWITCH: for ($q) {
                                                  );
       my $error;
       ($error, $http_status, $status, $message) =
-        OAR::Walltime::request($dbh, $jobid, $authenticated_user, $job->{walltime}, $job->{force}, $job->{'delay_next_jobs'});
+        OAR::Walltime::request($dbh, $jobid, $authenticated_user, $job->{walltime},
+            $job->{force}, $job->{'delay_next_jobs'}, $job->{whole}, $job->{timeout});
       OAR::IO::disconnect($dbh);
 
       if ($error > 0) {
@@ -1202,6 +1203,35 @@ SWITCH: for ($q) {
       foreach my $job_id (@$job_array) {
         push(@$jobs,{id =>int($job_id)});
       }
+    }
+    OAR::API::add_jobs_on_resource_uris($jobs,$ext);
+    OAR::Nodes::close_db_connection;
+    $jobs = OAR::API::add_pagination($jobs,@$jobs,$q->path_info,undef,$ext,0,0,$STRUCTURE);
+    print $header;
+    print $HTML_HEADER if ($ext eq "html");
+    print OAR::API::export($jobs,$ext);
+    last;
+  };
+
+  #
+  # GET /resources/nodes/<node>/jobs/details: Detailed job occupation on a node
+  #
+  $URI = OAR::API::uri_regex_html_json_yaml('resources/nodes/([\w.-]+)/jobs/details');
+  OAR::API::GET( $_, $URI ) && do {
+    $_->path_info =~ m/$URI/;
+    my $ext = OAR::API::set_ext($q,$2);
+    (my $header, my $type)=OAR::API::set_output_format($ext);
+    OAR::Nodes::open_db_connection or OAR::API::ERROR(500,
+                                                "Cannot connect to the database",
+                                                "Cannot connect to the database"
+                                                 );
+    my $jobs;
+    my $load = OAR::Nodes::get_nodes_load([$1]);
+
+    foreach my $job_id (keys %{$load->{$1}}) {
+      my $job = $load->{$1}->{$job_id};
+      $job->{id} = int($job_id);
+      push(@$jobs,$job);
     }
     OAR::API::add_jobs_on_resource_uris($jobs,$ext);
     OAR::Nodes::close_db_connection;

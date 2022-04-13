@@ -238,6 +238,12 @@ sub get_jobs_running_on_resource($){
     return \@jobs;
 }
 
+sub get_nodes_load($){
+    my $nodes = shift;
+    my $load = OAR::IO::get_nodes_load($base, $nodes);
+    return $load;
+}
+
 sub get_jobs_running_on_node($){
         my $node = shift;
         my @node_info = OAR::IO::get_node_info($base, $node);
