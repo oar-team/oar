@@ -1,3 +1,29 @@
+oar (2.5.10~g5k20-1) unstable; urgency=medium
+
+  * 7fa665c3 [oarnodes/API] add functionality to provide the detailed jobs occupation on nodes
+  * 49aafc2e [IO] exclude Waiting from Starting to Running job states
+  * 6c4eb525 [oarnodes] rework the oarnodes command options
+  * 4145076e [database] fix database SQL files after oarwalltime changes
+  * 9ffc56c2 [oarwalltime] Set default timeout to 0 (disabled)
+  * ed387b79 [oarwalltime] fix printf
+  * 46031f62 [oarwalltime] fix man/usage of oarwalltime --whole and --force
+  * e7f3d578 [oarapi] handle oarwalltime timeout and whole options
+  * ac1304df [oarwalltime] add a timeout for walltime change requests
+  * 2c658908 [oarwalltime] add --whole option
+  * 01474fa9 [oarwalltime] be more specific in man page and help about --force
+  * 8d84df0d [oarwalltime] allow request cancellation
+  * ecdcf0f8 [all] change log level and improve some messages
+  * 6d25b2b9 [all] fix grammar for "timed out"
+  * 1828457d [job_resource_manager] write env file without variable references
+  * e2f0745f [database] add missing "NA" possible value for jobs.accounted
+  * d50ec27d [oarstat] add a new output format '3' fixing several field names
+  * 0370c736 [oarstat] add missing fields and uniq some when calling with --gantt
+  * 8efdaa61 [oarstat] make machine parseable output detailed view without using -f
+  * 71f7aac0 [oarstat] add jobs events to the gantt output (--gantt/-g)
+  * 3705c646 [oarhold] fix a typo in man page (repond -> respond)
+
+ -- Samir Noir <samir.noir@inria.fr>  Wed, 13 Apr 2022 15:13:58 +0200
+
 oar (2.5.10~g5k19-1) unstable; urgency=medium
 
   * 0003180b [NodeChangeState] add job_id to server admin script error log line
