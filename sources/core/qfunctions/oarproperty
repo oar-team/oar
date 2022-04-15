@@ -105,9 +105,7 @@ foreach my $p (@Rename_property){
         $base->do(" ALTER TABLE resources RENAME $old_prop TO $new_prop")
             or die("DB error: " . $base->errstr."\n");
     }else{
-        my $sth = $base->prepare("  SHOW FIELDS
-                                    FROM resources
-                                 ");
+        my $sth = $base->prepare("SHOW FIELDS FROM resources");
         $sth->execute() or die("DB error: ".$base->errstr."\n");
         my $type;
         my $field = "";
@@ -120,17 +118,21 @@ foreach my $p (@Rename_property){
         $base->do(" ALTER TABLE resources CHANGE $old_prop $new_prop $type");
     }
 
-    $base->do(" UPDATE resource_logs
-                SET attribute = \'$new_prop\'
-                WHERE
-                    attribute = \'$old_prop\'")
-        or die("DB error: " . $base->errstr."\n");
+    $base->do(<<EOS
+UPDATE resource_logs
+SET attribute = \'$new_prop\'
+WHERE
+    attribute = \'$old_prop\'
+EOS
+    ) or die("DB error: " . $base->errstr."\n");
 
-    $base->do(" UPDATE job_resource_descriptions
-                SET res_job_resource_type = \'$new_prop\'
-                WHERE
-                    res_job_resource_type = \'$old_prop\'")
-        or die("DB error: " . $base->errstr."\n");
+    $base->do(<<EOS
+UPDATE job_resource_descriptions
+SET res_job_resource_type = \'$new_prop\'
+WHERE
+res_job_resource_type = \'$old_prop\'
+EOS
+    ) or die("DB error: " . $base->errstr."\n");
 
     if (! $Quiet) {
         print("Rename property $old_prop into $new_prop\n");

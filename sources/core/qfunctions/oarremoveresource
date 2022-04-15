@@ -34,12 +34,15 @@ OAR::IO::lock_table($base,["resources","resource_logs","assigned_resources","job
 
 my $resource_ref = OAR::IO::get_resource_info($base,$Resource);
 if (defined($resource_ref->{state}) && ($resource_ref->{state} eq "Dead")){
-    my $sth = $base->prepare("  SELECT jobs.job_id, jobs.assigned_moldable_job
-                                FROM assigned_resources, jobs
-                                WHERE
-                                    assigned_resources.resource_id = $Resource
-                                    AND assigned_resources.moldable_job_id = jobs.assigned_moldable_job
-                             ");
+    my $req = <<EOS;
+SELECT jobs.job_id, jobs.assigned_moldable_job
+FROM assigned_resources, jobs
+WHERE
+    assigned_resources.resource_id = $Resource
+    AND assigned_resources.moldable_job_id = jobs.assigned_moldable_job
+EOS
+
+    my $sth = $base->prepare($req);
     $sth->execute();
     my @jobList;
     while (my @ref = $sth->fetchrow_array()) {

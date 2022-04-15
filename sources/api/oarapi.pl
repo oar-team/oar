@@ -1461,12 +1461,14 @@ SWITCH: for ($q) {
     # !!! This is a dirty cut/paste of oarremoveresource code !!!
     my $resource_ref = OAR::IO::get_resource_info($base,$Resource);
     if (defined($resource_ref->{state}) && ($resource_ref->{state} eq "Dead")){
-      my $sth = $base->prepare("  SELECT jobs.job_id, jobs.assigned_moldable_job
-                                  FROM assigned_resources, jobs
-                                  WHERE
-                                      assigned_resources.resource_id = $Resource
-                                      AND assigned_resources.moldable_job_id = jobs.assigned_moldable_job
-                               ");
+      my $sth = $base->prepare(<<EOS
+SELECT jobs.job_id, jobs.assigned_moldable_job
+FROM assigned_resources, jobs
+WHERE
+    assigned_resources.resource_id = $Resource
+    AND assigned_resources.moldable_job_id = jobs.assigned_moldable_job
+EOS
+                               );
       $sth->execute();
       my @jobList;
       while (my @ref = $sth->fetchrow_array()) {

@@ -119,10 +119,12 @@ sub get_all_resources_on_node($$) {
     if (defined($Resources_on_nodes{$hostname})){
         return(@{$Resources_on_nodes{$hostname}});
     }else{
-        my $sth = $dbh->prepare("   SELECT resources.resource_id as resource, resources.$nodes_synonym as node
-                                    FROM resources"
-                                . ((defined($nodes_filter) and $nodes_filter ne "")?" WHERE $nodes_filter":"")
-                               );
+        my $req = <<EOS;
+SELECT resources.resource_id as resource, resources.$nodes_synonym as node
+FROM resources
+@{[((defined($nodes_filter) and $nodes_filter ne "")?" WHERE $nodes_filter":"")]}
+EOS
+        my $sth = $dbh->prepare($req);
         $sth->execute();
         my @result;
         while (my $ref = $sth->fetchrow_hashref()){
@@ -141,11 +143,14 @@ sub get_all_resources_on_node($$) {
 # side effects: /
 sub get_queued_jobs($) {
     my $dbh = shift;
-    my $sth = $dbh->prepare("   SELECT jobs.job_id
-                                FROM (jobs INNER JOIN moldable_job_descriptions ON jobs.job_id = moldable_job_descriptions.moldable_job_id) LEFT JOIN assigned_resources ON assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_job_id
-                                WHERE
-                                    jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
-                            ");
+    my $req = <<EOS;
+SELECT jobs.job_id
+FROM (jobs INNER JOIN moldable_job_descriptions ON jobs.job_id = moldable_job_descriptions.moldable_job_id) LEFT JOIN assigned_resources ON assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_job_id
+WHERE
+    jobs.state IN (\'Waiting\',\'Hold\',\'toLaunch\',\'toError\',\'toAckReservation\',\'Launching\',\'Running\',\'Suspended\',\'Resuming\')
+EOS
+
+    my $sth = $dbh->prepare($req);
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -164,11 +169,14 @@ sub get_job_events($$) {
     my $job= shift;
     my $events = [];
 
-    my $sth = $dbh->prepare("   SELECT date, type, description
-                                FROM event_logs
-                                WHERE
-                                    job_id = $job
-                            ");
+    my $req = <<EOS;
+SELECT date, type, description
+FROM event_logs
+WHERE
+    job_id = $job
+EOS
+
+    my $sth = $dbh->prepare($req);
     $sth->execute();
     while (my $ref = $sth->fetchrow_hashref()) {
         push (@$events, $ref)
@@ -191,11 +199,14 @@ sub get_job_stat_infos($$) {
     if (defined($Job_stat_infos{$job})){
         return($Job_stat_infos{$job});
     }else{
-        my $sth = $dbh->prepare("   SELECT *
-                                    FROM jobs
-                                    WHERE
-                                        jobs.job_id = $job
-                                ");
+        my $req = <<EOS;
+SELECT *
+FROM jobs
+WHERE
+    jobs.job_id = $job
+EOS
+
+        my $sth = $dbh->prepare($req);
         $sth->execute();
         my $ref = $sth->fetchrow_hashref();
         $sth->finish();
@@ -252,16 +263,19 @@ sub get_resource_job($$) {
             return(());
         }
     }else{
-        my $sth = $dbh->prepare("   SELECT assigned_resources.resource_id, jobs.job_id
-                                    FROM assigned_resources, moldable_job_descriptions, jobs
-                                    WHERE
-                                        assigned_resources.assigned_resource_index = \'CURRENT\'
-                                        AND moldable_job_descriptions.moldable_index = \'CURRENT\'
-                                        AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
-                                        AND moldable_job_descriptions.moldable_job_id = jobs.job_id
-                                        AND jobs.state != \'Terminated\'
-                                        AND jobs.state != \'Error\'
-                            ");
+        my $req = <<EOS;
+SELECT assigned_resources.resource_id, jobs.job_id
+FROM assigned_resources, moldable_job_descriptions, jobs
+WHERE
+    assigned_resources.assigned_resource_index = \'CURRENT\'
+    AND moldable_job_descriptions.moldable_index = \'CURRENT\'
+    AND assigned_resources.moldable_job_id = moldable_job_descriptions.moldable_id
+    AND moldable_job_descriptions.moldable_job_id = jobs.job_id
+    AND jobs.state != \'Terminated\'
+    AND jobs.state != \'Error\'
+EOS
+
+        my $sth = $dbh->prepare($req);
         $sth->execute();
         my @res = ();
         $Resource_job_init++;
@@ -284,9 +298,13 @@ sub get_resource_job($$) {
 sub list_nodes($) {
     my $dbh = shift;
 
-    my $sth = $dbh->prepare("SELECT distinct($nodes_synonym) FROM resources"
-                            . ((defined($nodes_filter) and $nodes_filter ne "")?" WHERE $nodes_filter":"")
-                            . " ORDER BY $nodes_synonym ASC");
+    my $req = <<EOS;
+SELECT distinct($nodes_synonym) FROM resources
+@{[((defined($nodes_filter) and $nodes_filter ne "")?" WHERE $nodes_filter":"")]}
+ORDER BY $nodes_synonym ASC
+EOS
+
+    my $sth = $dbh->prepare($req);
     $sth->execute();
     my @res = ();
     while (my $ref = $sth->fetchrow_hashref()) {
@@ -309,9 +327,7 @@ sub get_resource_info($$) {
     if (defined($Resource_info{$resource})){
         return($Resource_info{$resource});
     }else{
-        my $sth = $dbh->prepare("   SELECT *
-                                    FROM resources
-                            ");
+        my $sth = $dbh->prepare("SELECT * FROM resources");
         $sth->execute();
         while (my $ref = $sth->fetchrow_hashref()) {
             $Resource_info{$ref->{resource_id}} = $ref;
@@ -337,13 +353,16 @@ sub get_gantt_job_start_time($$){
         }
     }else{
         $Gantt_job_start_time_init = 1;
-        my $sth = $dbh->prepare("SELECT gantt_jobs_predictions_visu.start_time, moldable_job_descriptions.moldable_job_id
-                                 FROM gantt_jobs_predictions_visu,moldable_job_descriptions
-                                 WHERE
-                                     moldable_job_descriptions.moldable_index = \'CURRENT\'
-                                     AND moldable_job_descriptions.moldable_id = gantt_jobs_predictions_visu.moldable_job_id
-                                 GROUP BY gantt_jobs_predictions_visu.start_time, moldable_job_descriptions.moldable_job_id
-                                ");
+        my $req = <<EOS;
+SELECT gantt_jobs_predictions_visu.start_time, moldable_job_descriptions.moldable_job_id
+FROM gantt_jobs_predictions_visu,moldable_job_descriptions
+WHERE
+    moldable_job_descriptions.moldable_index = \'CURRENT\'
+    AND moldable_job_descriptions.moldable_id = gantt_jobs_predictions_visu.moldable_job_id
+GROUP BY gantt_jobs_predictions_visu.start_time, moldable_job_descriptions.moldable_job_id
+EOS
+
+        my $sth = $dbh->prepare($req);
         $sth->execute();
         while (my @res = $sth->fetchrow_array()){
             $Gantt_job_start_time{$res[1]} = $res[0];
@@ -412,15 +431,18 @@ sub get_resources_data_structure_current_job($$){
     if (defined($Resources_data_structure_current_job{$job_id})){
         return($Resources_data_structure_current_job{$job_id});
     }else{
-        my $sth = $dbh->prepare("   SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value
-                                    FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
-                                    WHERE
-                                        jobs.job_id = $job_id
-                                        AND jobs.job_id = moldable_job_descriptions.moldable_job_id
-                                        AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
-                                        AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
-                                    ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC
-                                ");
+        my $req = <<EOS;
+SELECT moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, moldable_job_descriptions.moldable_walltime, job_resource_groups.res_group_property, job_resource_descriptions.res_job_resource_type, job_resource_descriptions.res_job_value
+FROM moldable_job_descriptions, job_resource_groups, job_resource_descriptions, jobs
+WHERE
+    jobs.job_id = $job_id
+    AND jobs.job_id = moldable_job_descriptions.moldable_job_id
+    AND job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id
+    AND job_resource_descriptions.res_job_group_id = job_resource_groups.res_group_id
+ORDER BY moldable_job_descriptions.moldable_id, job_resource_groups.res_group_id, job_resource_descriptions.res_job_order ASC
+EOS
+
+        my $sth = $dbh->prepare($req);
         $sth->execute();
         my $result;
         my $group_index = -1;
