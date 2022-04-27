@@ -244,14 +244,13 @@ sub convert_job_format_3($) {
 
 sub get_events {
     my $job_ids = shift;
-    my @return;
+    my $events;
+
     if ( $#$job_ids >= 0 ) {
-      foreach my $j (@$job_ids) {
-          my @events = OAR::IO::get_job_events($base,$j);
-          push @return, @events;
-      }
+        $events = OAR::IO::get_jobs_events($base, $job_ids);
     }
-    return \@return;
+
+    return ($events);
 }
 
 sub get_gantt {
@@ -264,7 +263,9 @@ sub get_gantt {
         my $events = OAR::Stat::get_events(\@job_ids);
 
         foreach my $event (@{$events}) {
-            $hist->{jobs}->{$event->{job_id}}->{events} = [];
+            if (!exists($hist->{jobs}->{$event->{job_id}}->{events})) {
+                $hist->{jobs}->{$event->{job_id}}->{events} = [];
+            }
             push @{$hist->{jobs}->{$event->{job_id}}->{events}}, $event;
         }
 

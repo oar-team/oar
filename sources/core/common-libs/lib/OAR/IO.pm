@@ -195,6 +195,7 @@ sub check_event($$$);
 sub get_to_check_events($);
 sub get_hostname_event($$);
 sub get_job_events($$);
+sub get_jobs_events($$);
 sub get_events_for_hostname($$$);
 sub get_last_event_from_type($$$);
 
@@ -513,6 +514,30 @@ sub get_job_cpuset_name($$){
     my @res = $sth->fetchrow_array();
     my $cpuset = $res[0]."_".$job_id;
     return($cpuset);
+}
+
+
+# Get the cpuset names for the given jobs
+# args: database ref, job ids array ref
+sub get_jobs_cpuset_names($$){
+    my $dbh = shift;
+    my $job_ids = shift;
+    my %cpuset_names;
+
+    my $req = <<EOS;
+SELECT job_id, job_user
+FROM jobs
+WHERE
+    job_id IN (@{[join(",", map {"$_"} @{$job_ids})]})
+EOS
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+    while (my @res = $sth->fetchrow_array()) {
+        $cpuset_names{$res[0]} = $res[1]."_".$res[0];
+    }
+
+    return (\%cpuset_names);
 }
 
 
@@ -3636,6 +3661,36 @@ sub get_current_job_dependencies($$){
 }
 
 
+# get_current_jobs_dependencies
+# return a hash of array with all dependencies for the given jobs list
+sub get_current_jobs_dependencies($$) {
+    my $dbh = shift;
+    my $job_ids = shift;
+    my %res;
+
+    my $req = <<EOS;
+SELECT job_id, job_id_required
+FROM job_dependencies
+WHERE
+    job_dependency_index = \'CURRENT\'
+    AND job_id IN (@{[join(",", map {"$_"} @{$job_ids})]})
+EOS
+
+    foreach my $job (@{$job_ids}) {
+            $res{$job} = [];
+    }
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@{$res{$ref->{job_id}}}, $ref->{job_id_required});
+    }
+    $sth->finish();
+
+    return(\%res);
+}
+
+
 # get_job_dependencies
 # return an array table with all dependencies for the given job ID
 sub get_job_dependencies($$){
@@ -4334,6 +4389,9 @@ sub parse_jobs_from_range($$) {
     my $sth = shift;
     my $dbh = shift;
     my $jobs = {};
+    my $cpuset_names;
+    my $current_jobs_dependencies;
+
     while (my @ref = $sth->fetchrow_array()) {
         if (! exists($jobs->{$ref[0]})) {
             $jobs->{$ref[0]} = {
@@ -4369,15 +4427,19 @@ sub parse_jobs_from_range($$) {
         if (defined($ref[16])){
             push(@{$jobs->{$ref[0]}->{'types'}}, $ref[16]);
         }
-        if (defined(get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD"))) {
-            my $cpuset_name = OAR::IO::get_job_cpuset_name($dbh, $ref[0]);
-            $jobs->{$ref[0]}->{'cpuset_name'} = $cpuset_name;
-        }
-        my @job_dependencies = OAR::IO::get_current_job_dependencies($dbh, $ref[0]);
-        push(@{$jobs->{$ref[0]}->{'dependencies'}}, @job_dependencies);
     }
 
-    foreach my $job (keys %{$jobs}) {
+    my @job_ids = keys %{$jobs};
+
+    if ((@job_ids > 0) && defined(get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD"))) {
+        $cpuset_names = OAR::IO::get_jobs_cpuset_names($dbh, \@job_ids);
+        $current_jobs_dependencies = OAR::IO::get_current_jobs_dependencies($dbh, \@job_ids);
+    }
+    foreach my $job (@job_ids) {
+        push(@{$jobs->{$job}->{'dependencies'}}, @{$current_jobs_dependencies->{$job}});
+        if (defined(get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD"))) {
+            $jobs->{$job}->{'cpuset_name'} = $cpuset_names->{$job};
+        }
         if (defined($jobs->{$job}->{types})) {
             @{$jobs->{$job}->{types}} = uniq(@{$jobs->{$job}->{types}});
         }
@@ -8255,6 +8317,31 @@ sub get_job_events($$){
     $sth->finish();
 
     return(@results);
+}
+
+# Get events for the specified (multiple) jobs
+# args: database ref, job ids array ref
+sub get_jobs_events($$) {
+    my $dbh = shift;
+    my $job_ids = shift;
+
+    my $req = <<EOS;
+SELECT *
+FROM event_logs
+WHERE
+    job_id IN (@{[join(",", map {"$_"} @{$job_ids})]})
+EOS
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+
+    my @results;
+    while (my $ref = $sth->fetchrow_hashref()) {
+        push(@results, $ref);
+    }
+    $sth->finish();
+
+    return(\@results);
 }
 
 
