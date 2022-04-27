@@ -1,3 +1,10 @@
+oar (2.5.10~g5k21-1) unstable; urgency=medium
+
+  * 6ff4d68e [oarstat] factorize fetching of data with --gantt option
+  * f67996a9 [oarstat] fix events array content in --gantt output
+
+ -- Samir Noir <samir.noir@inria.fr>  Wed, 27 Apr 2022 16:26:33 +0200
+
 oar (2.5.10~g5k20-1) unstable; urgency=medium
 
   * 7fa665c3 [oarnodes/API] add functionality to provide the detailed jobs occupation on nodes
