@@ -264,7 +264,9 @@ sub get_gantt {
         my $events = OAR::Stat::get_events(\@job_ids);
 
         foreach my $event (@{$events}) {
-            $hist->{jobs}->{$event->{job_id}}->{events} = [];
+            if (!exists($hist->{jobs}->{$event->{job_id}}->{events})) {
+                $hist->{jobs}->{$event->{job_id}}->{events} = [];
+            }
             push @{$hist->{jobs}->{$event->{job_id}}->{events}}, $event;
         }
 
