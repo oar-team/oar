@@ -70,6 +70,10 @@ my $OARRESUME_CMD  = "oarresume";
 my $OARNODES_CMD = "oarnodes";
 my $OARDODO_CMD = "$ENV{OARDIR}/oardodo/oardodo";
 
+# We set OAR_IN_API environment variable to let identify in admission rules that oar
+# commands (e.g. oarsub) are called by the API.
+$ENV{OAR_IN_API} = 1;
+
 # Oar admin command (for new list of resources generation)
 my $API_RESOURCES_LIST_GENERATION_CMD = "";
 if (is_conf("API_RESOURCES_LIST_GENERATION_CMD")){ $API_RESOURCES_LIST_GENERATION_CMD = get_conf("API_RESOURCES_LIST_GENERATION_CMD"); }
@@ -612,7 +616,7 @@ SWITCH: for ($q) {
         OAR::API::ERROR(
           500,
           "Oar server error",
-          "Oarsub command exited with status $err: $cmdRes\nCmd:\n$cmd"
+          $cmdRes
         );
       }
       elsif ( $cmdRes =~ m/.*JOB_ID\s*=\s*(\d+).*/m ) {
@@ -630,7 +634,7 @@ SWITCH: for ($q) {
                       } , $ext );
       }else {
         OAR::API::ERROR( 500, "Parse error",
-          "Job submitted but the id could not be parsed.\nCmd:\n$cmd" );
+          "Job submitted but its id could not be parsed" );
       }
 
     # Other cases
@@ -923,11 +927,11 @@ SWITCH: for ($q) {
       # Error codes corresponding to an error into the user's request
       if ( $err == 6 || $err == 4 || $err == 5 || $err == 7
             || $err == 17 || $err == 16 || $err == 6
-            || $err == 8 || $err == 10 ) {
+            || $err == 8 || $err == 10 || $err == 254 ) {
         OAR::API::ERROR(
           400,
           "Bad query",
-          "Oarsub command exited with status $err: $cmdRes\nCmd:\n$oarcmd"
+          $cmdRes
         );
       }elsif( $err == 52) {
         OAR::API::ERROR(
@@ -939,7 +943,7 @@ SWITCH: for ($q) {
         OAR::API::ERROR(
           500,
           "Oar server error",
-          "Oarsub command exited with status $err: $cmdRes\nCmd:\n$oarcmd"
+          $cmdRes
         );
       }
     }
@@ -957,7 +961,7 @@ SWITCH: for ($q) {
     }
     else {
       OAR::API::ERROR( 500, "Parse error",
-        "Job submitted but the id could not be parsed.\nCmd:\n$oarcmd" );
+        "Job submitted but its id could not be parsed" );
     }
     last;
   };
