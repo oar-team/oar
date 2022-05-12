@@ -679,7 +679,9 @@ if (defined($Resubmit)){
         if ($Verbose_level >= 1) {
             print("# DONE\n");
         }
-        print("OAR_JOB_ID=$Job_id\n");
+        if ($Job_id > 0 or $Verbose_level >= 1) {
+            print("OAR_JOB_ID=$Job_id\n");
+        }
         if (defined(OAR::Sub::signal_almighty($remote_host,$remote_port,"Qsub"))){
             warn("# Error: cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
             exit(3);
@@ -897,11 +899,15 @@ if ((!defined($Job_id_list_ref)) or (ref($Job_id_list_ref) ne "ARRAY")){
 
 if(@{$Job_id_list_ref} > 1){
     for my $j (@{$Job_id_list_ref}){
-        print("OAR_JOB_ID=".$j."\n");
+        if ($j > 0 or $Verbose_level >= 1) {
+            print("OAR_JOB_ID=".$j."\n");
+        }
     }
     print ("OAR_ARRAY_ID=".OAR::Sub::get_job_array_id($Job_id_list_ref->[0])."\n");
 }else{
-    print("OAR_JOB_ID=".$Job_id_list_ref->[0]."\n");
+    if ($Job_id_list_ref->[0] > 0 or $Verbose_level >= 1) {
+        print("OAR_JOB_ID=".$Job_id_list_ref->[0]."\n");
+    }
 }
 
 if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode) or ($JSON_mode))){
@@ -938,7 +944,7 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode) or ($JSON_mod
 OAR::Sub::close_db_connection();
 
 if ((@{$Job_id_list_ref} < 1) or ($Job_id_list_ref->[-1] <= 0)){
-    warn("# Error: oarsub failed, please verify your request syntax.\n");
+    warn("# Error: please verify your job submission syntax.\n");
     exit(8);
 }
 
