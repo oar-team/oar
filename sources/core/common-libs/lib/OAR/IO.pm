@@ -1758,7 +1758,6 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
     $dbh->do("INSERT INTO challenges (job_id,challenge,ssh_private_key,ssh_public_key)
               VALUES ($job_id,\'$random_number\',$ssh_priv_key,$ssh_pub_key)
              ");
-    unlock_table($dbh);
 
     if ($jobType eq "INTERACTIVE") {
             $stdout = "<interactive shell>";
@@ -1850,7 +1849,7 @@ sub add_micheline_subjob($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$){
                   VALUES ($job_id,\'Hold\',$date)
                  ");
     }
-    #$dbh->do("UNLOCK TABLES");
+    unlock_table($dbh);
 
     return($job_id);
 }
