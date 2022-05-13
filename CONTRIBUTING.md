@@ -30,3 +30,20 @@ You will need Perltidy installed, with at least the version 20211029.
 To install the git pre-commit hook:
 
     ln -s ../../misc/dev/pre-commit-tidy-hook .git/hooks/pre-commit
+
+## Ignore revisions when using `git blame`
+
+Big bulk changes, like the application of Perltidy to OAR's code, can make
+`git blame` useless.
+From git 2.23, it is now possible to provide a list of revisions to ignore.
+We keep one in the file `misc/dev/git-blame-ignore-revs`.
+
+This list can be used by adding `--ignore-revs-file misc/dev/git-blame-ignore-revs`
+to the command line:
+
+    git blame --ignore-revs-file misc/dev/git-blame-ignore-revs sources/core/…
+
+Or by configuring `blame.ignoreRevsFile` with `git config` to avoid extra
+typing each time:
+
+    git config blame.ignoreRevsFile misc/dev/git-blame-ignore-revs
