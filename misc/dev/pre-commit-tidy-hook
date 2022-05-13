@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo "--------- Testing coding style conformity with Perltidy ---------"
+perltidy -opath=/tmp/ -ast -nolq -se -vt=1 -sct -vtc=1 -sct -bar -nsfs -baao -l=100 \
+	-pt=2 -ce $(find sources/core/qfunctions/ -maxdepth 0 -type f) \
+	$(find sources/ -regex '.*\.\(pm\|pl\)')
