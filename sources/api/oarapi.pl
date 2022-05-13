@@ -344,7 +344,7 @@ SWITCH: for ($q) {
     }
 
     # Get the id of the user as more details may be obtained for her jobs
-    if ( $authenticated_user =~ /(\w+)/ ) {
+    if ( $authenticated_user =~ /([-\w]+)/ ) {
       $authenticated_user = $1;
       $ENV{OARDO_USER} = $authenticated_user;
     }else{
@@ -470,7 +470,7 @@ SWITCH: for ($q) {
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, PUT, DELETE");
 
     # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before looking at jobs" );
       last;
@@ -556,7 +556,7 @@ SWITCH: for ($q) {
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
 
      # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before modifying jobs" );
       last;
@@ -660,7 +660,7 @@ SWITCH: for ($q) {
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, PUT, DELETE");
 
      # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before modifying jobs" );
       last;
@@ -761,7 +761,7 @@ SWITCH: for ($q) {
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
 
      # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before modifying jobs" );
       last;
@@ -793,7 +793,7 @@ SWITCH: for ($q) {
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST");
 
     # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before posting jobs" );
       last;
@@ -964,7 +964,7 @@ SWITCH: for ($q) {
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET, POST, DELETE");
 
     # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
        "A suitable authentication must be done before deleting jobs" );
       last;
@@ -1262,7 +1262,7 @@ SWITCH: for ($q) {
     (my $header)=OAR::API::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before creating new resources" );
       last;
@@ -1322,7 +1322,7 @@ SWITCH: for ($q) {
     (my $header)=OAR::API::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before creating new resources" );
       last;
@@ -1379,7 +1379,7 @@ SWITCH: for ($q) {
     (my $header)=OAR::API::set_output_format($ext);
 
     # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before deleting new resources" );
       last;
@@ -1463,7 +1463,7 @@ SWITCH: for ($q) {
     (my $header) = OAR::API::set_output_format($ext,"GET, POST");
 
     # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before generating resources" );
       last;
@@ -1924,7 +1924,7 @@ SWITCH: for ($q) {
     (my $header, my $type) = OAR::API::set_output_format($ext);
 
     # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before getting configuration parameters" );
       last;
@@ -1968,7 +1968,7 @@ SWITCH: for ($q) {
     print $HTML_HEADER if ($ext eq "html");
 
     # Must be administrator (oar user)
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before changing configuration parameters" );
       last;
@@ -2020,7 +2020,7 @@ SWITCH: for ($q) {
     (my $header, my $type) = OAR::API::set_output_format($ext);
 
     # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before getting files" );
       last;
@@ -2073,7 +2073,7 @@ SWITCH: for ($q) {
     my $filename=$1;
 
     # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before getting files" );
       last;
@@ -2126,7 +2126,7 @@ SWITCH: for ($q) {
     my $filename = $1;
 
      # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before deleting an admission rule" );
       last;
@@ -2182,7 +2182,7 @@ SWITCH: for ($q) {
     (my $header, my $type) = OAR::API::set_output_format($ext);
 
     #Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before getting files" );
       last;
@@ -2277,7 +2277,7 @@ SWITCH: for ($q) {
     my $filename=$1;
 
     # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before getting files" );
       last;
@@ -2326,7 +2326,7 @@ SWITCH: for ($q) {
     ($header, $type)=OAR::API::set_output_format($ext,"GET");
 
     # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before looking at jobs" );
       last;
@@ -2403,7 +2403,7 @@ SWITCH: for ($q) {
     (my $header, my $type)=OAR::API::set_output_format($ext,"GET");
 
     # Must be authenticated
-    if ( not $authenticated_user =~ /(\w+)/ ) {
+    if ( not $authenticated_user =~ /([-\w]+)/ ) {
       OAR::API::ERROR( 401, "Permission denied",
         "A suitable authentication must be done before looking at jobs" );
       last;
