@@ -11,51 +11,49 @@ use Data::Dumper;
 use OAR::IO;
 
 my $Module_name = "WindowForker";
-my $Session_id = $$;
+my $Session_id  = $$;
 
 # Log category
 set_current_log_category('WindowForker');
 
 # Declaration of the named pipe used by Hulot module
-my $FIFO="/tmp/oar_hulot_pipe";
+my $FIFO         = "/tmp/oar_hulot_pipe";
 my $NOTIFY_HULOT = 1;
 
 my $USE_TIME = 1;
-unless (eval "use Time::HiRes qw(gettimeofday tv_interval);1"){
+unless (eval "use Time::HiRes qw(gettimeofday tv_interval);1") {
     $USE_TIME = 0;
 }
 
 my $DEFAULT_WINDOW_SIZE = 5;
-my $DEFAULT_TIMEOUT = 30;
+my $DEFAULT_TIMEOUT     = 30;
 
 select STDOUT;
 $| = 1;
 
-
 # Treate finished processes
-sub register_wait_results($$$$$$$){
-    my ($pid,
-        $return_code,
-        $running_processes,
-        $process_duration,
-        $finished_processes,
-        $nb_running_processes,
-        $verbose) = @_;
-    
-    my $exit_value = $return_code >> 8;
+sub register_wait_results($$$$$$$) {
+    my ($pid, $return_code, $running_processes, $process_duration, $finished_processes,
+        $nb_running_processes, $verbose)
+      = @_;
+
+    my $exit_value  = $return_code >> 8;
     my $signal_num  = $return_code & 127;
     my $dumped_core = $return_code & 128;
-    if ($pid > 0){
-        if (defined($running_processes->{$pid})){
-            $process_duration->{$running_processes->{$pid}}->{"end"} = [gettimeofday()] if ($USE_TIME == 1);
-            warn("[VERBOSE] Child process $pid ended: exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n") if ($verbose);
-            $finished_processes->{$running_processes->{$pid}} = [$exit_value,$signal_num,$dumped_core];
+    if ($pid > 0) {
+        if (defined($running_processes->{$pid})) {
+            $process_duration->{ $running_processes->{$pid} }->{"end"} = [ gettimeofday() ]
+              if ($USE_TIME == 1);
+            warn(
+                "[VERBOSE] Child process $pid ended: exit_value = $exit_value, signal_num = $signal_num, dumped_core = $dumped_core \n"
+            ) if ($verbose);
+            $finished_processes->{ $running_processes->{$pid} } =
+              [ $exit_value, $signal_num, $dumped_core ];
             delete($running_processes->{$pid});
             $$nb_running_processes--;
         }
-    }  
+    }
 }
-
 
 ## launch
 # Input parameters:
@@ -66,173 +64,200 @@ sub register_wait_results($$$$$$$){
 # - verbose (0 or 1)
 # - type of task (ref on a hash). Default is: %hash = ("type" => "default")
 
-sub launch($$$$$$){
-    my ($commands,
-        $window_size,
-        $window_time,
-        $timeout,
-        $verbose,
-        $type) = @_;
+sub launch($$$$$$) {
+    my ($commands, $window_size, $window_time, $timeout, $verbose, $type) = @_;
 
     my $index = 0;
     my %running_processes;
     my $nb_running_processes = 0;
     my %finished_processes;
     my %process_duration;
-    
-    my $nextWindowTime = 0 ;
-    my $nb_launching_processes_in_window = 0 ;
-	
+
+    my $nextWindowTime                   = 0;
+    my $nb_launching_processes_in_window = 0;
+
     # Check if there is at least one command to connect to
-    if ($#{$commands} < 0){
+    if ($#{$commands} < 0) {
         warn("/!\\ No command specified\n");
-        return(\%finished_processes, \%process_duration);
+        return (\%finished_processes, \%process_duration);
     }
 
     # Check window size integrity
-    if (!defined($window_size)){
+    if (!defined($window_size)) {
         $window_size = $DEFAULT_WINDOW_SIZE;
-    }elsif ($window_size < 1){
+    } elsif ($window_size < 1) {
         warn("/!\\ Window size $window_size too small; minimum is 1!\n");
-        return(\%finished_processes, \%process_duration);
+        return (\%finished_processes, \%process_duration);
     }
 
     # Check timeout
-    if (!defined($timeout)){
+    if (!defined($timeout)) {
         $timeout = $DEFAULT_TIMEOUT;
-    }elsif ($timeout <= 0){
+    } elsif ($timeout <= 0) {
         warn("/!\\ Timeout cannot be negative; $timeout\n");
-        return(\%finished_processes, \%process_duration);
+        return (\%finished_processes, \%process_duration);
     }
-    
+
     # Check Window time (in seconds)
-    if (!defined($window_time)){
+    if (!defined($window_time)) {
         $window_time = 0;
-    }elsif ($window_time < 0){
-        warn("/!\\ Time between each window cannot be negative; $window_time.\nMinimum is 0 for no limit between each window");
-        return(\%finished_processes, \%process_duration);
+    } elsif ($window_time < 0) {
+        warn(
+            "/!\\ Time between each window cannot be negative; $window_time.\nMinimum is 0 for no limit between each window"
+        );
+        return (\%finished_processes, \%process_duration);
     }
-    
+
     # Check window time integrity with timeout
-    if ($window_time >= $timeout){
-      warn("/!\\ Time between each window ($window_time sec) must be smaller than timeout ($timeout sec)");
-      return(\%finished_processes, \%process_duration);
+    if ($window_time >= $timeout) {
+        warn(
+            "/!\\ Time between each window ($window_time sec) must be smaller than timeout ($timeout sec)"
+        );
+        return (\%finished_processes, \%process_duration);
     }
-    
-    if (!defined($type)){
-        $type = {"type" => "default"};
+
+    if (!defined($type)) {
+        $type         = { "type" => "default" };
         $NOTIFY_HULOT = 0;
     }
     my %forker_type = %$type;
+
     # Check type
-    if (keys(%forker_type)<=0){
-      oar_error($Module_name, "No type specified. Set to default type\n", $Session_id);
-      %forker_type = ("type" => "default");
+    if (keys(%forker_type) <= 0) {
+        oar_error($Module_name, "No type specified. Set to default type\n", $Session_id);
+        %forker_type = ("type" => "default");
     }
 
-    warn("[VERBOSE] Window size: $window_size\n") if ($verbose);
+    warn("[VERBOSE] Window size: $window_size\n")          if ($verbose);
     warn("[VERBOSE] Timeout for each command: $timeout\n") if ($verbose);
+
     # Start to launch subprocesses with the window limitation
     my @timeout;
     my $pid;
-    while (($index <= $#{$commands}) or ($#timeout >= 0)){
-		warn("[VERBOSE] ".time." | $index / $#{$commands}\n") if ($verbose);
+    while (($index <= $#{$commands}) or ($#timeout >= 0)) {
+        warn("[VERBOSE] " . time . " | $index / $#{$commands}\n") if ($verbose);
+
         # Check if window is full or not
-        while((($nb_running_processes) < $window_size) and ($index <= $#{$commands})){
-          
-          # Check if previous window time is finished
-          if((time() >= $nextWindowTime) and ($nb_launching_processes_in_window < $window_size)){
-            warn("[VERBOSE] ".time." | fork process: $commands->[$index]\n") if ($verbose);
-            $process_duration{$index}->{"start"} = [gettimeofday()] if ($USE_TIME == 1);
-        
-            $pid = fork();
-            warn("[VERBOSE] ".time." | $pid pid = $pid\n") if ($verbose);
-            if (defined($pid)){
-                if ($pid == 0){
-                    #In the child
-                    warn("[VERBOSE] ".time." | $pid Execute command: $commands->[$index]\n") if ($verbose);
-                    if($forker_type{"type"} eq "Hulot"){
-                      # If Hulot request
-                      my $command_to_exec="";
-                      (my $cmd, my $node)=split(/:/,$commands->[$index],2);
-                      my $base = OAR::IO::connect()
-                         or die("[Hulot] Cannot connect to the database\n");
-                      if ($cmd eq "WAKEUP"){
-                        $command_to_exec = "echo \"$node\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD");
-                        OAR::IO::add_new_event_with_host($base,"WAKEUP_NODE",0,"Node $node wake-up request",[$node] );
-                      }elsif ($cmd eq "HALT"){
-                        $command_to_exec = "echo \"$node\" | ".get_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD");
-                        OAR::IO::add_new_event_with_host($base,"HALT_NODE",0,"Node $node halt request",[$node] );
-                      }
-                      OAR::IO::disconnect($base);
+        while ((($nb_running_processes) < $window_size) and ($index <= $#{$commands})) {
 
-                      my $cmd_pid = open(my $cmd_output, "-|", $command_to_exec);
-                      while(<$cmd_output>) {
-                          oar_info($Module_name, $_, $Session_id);
-                      }
-                      waitpid($cmd_pid, 0);
+            # Check if previous window time is finished
+            if ((time() >= $nextWindowTime) and ($nb_launching_processes_in_window < $window_size))
+            {
+                warn("[VERBOSE] " . time . " | fork process: $commands->[$index]\n") if ($verbose);
+                $process_duration{$index}->{"start"} = [ gettimeofday() ] if ($USE_TIME == 1);
 
-                      if (!msgsnd($forker_type{"id_msg"}, pack($forker_type{"template"}, 1, "$node:$cmd:".$?), IPC_NOWAIT)){
-                        oar_error($Module_name, "Failed to send message to Hulot by msgsnd(): $!\n", $Session_id);
-                      }
-                      exit 0;
-                    }else{
-                      exec($commands->[$index]);
+                $pid = fork();
+                warn("[VERBOSE] " . time . " | $pid pid = $pid\n") if ($verbose);
+                if (defined($pid)) {
+                    if ($pid == 0) {
+
+                        #In the child
+                        warn("[VERBOSE] " . time . " | $pid Execute command: $commands->[$index]\n")
+                          if ($verbose);
+                        if ($forker_type{"type"} eq "Hulot") {
+
+                            # If Hulot request
+                            my $command_to_exec = "";
+                            (my $cmd, my $node) = split(/:/, $commands->[$index], 2);
+                            my $base = OAR::IO::connect() or
+                              die("[Hulot] Cannot connect to the database\n");
+                            if ($cmd eq "WAKEUP") {
+                                $command_to_exec = "echo \"$node\" | " .
+                                  get_conf("ENERGY_SAVING_NODE_MANAGER_WAKE_UP_CMD");
+                                OAR::IO::add_new_event_with_host($base, "WAKEUP_NODE", 0,
+                                    "Node $node wake-up request", [$node]);
+                            } elsif ($cmd eq "HALT") {
+                                $command_to_exec = "echo \"$node\" | " .
+                                  get_conf("ENERGY_SAVING_NODE_MANAGER_SLEEP_CMD");
+                                OAR::IO::add_new_event_with_host($base, "HALT_NODE", 0,
+                                    "Node $node halt request", [$node]);
+                            }
+                            OAR::IO::disconnect($base);
+
+                            my $cmd_pid = open(my $cmd_output, "-|", $command_to_exec);
+                            while (<$cmd_output>) {
+                                oar_info($Module_name, $_, $Session_id);
+                            }
+                            waitpid($cmd_pid, 0);
+
+                            if (
+                                !msgsnd(
+                                    $forker_type{"id_msg"},
+                                    pack($forker_type{"template"}, 1, "$node:$cmd:" . $?),
+                                    IPC_NOWAIT)
+                            ) {
+                                oar_error($Module_name,
+                                    "Failed to send message to Hulot by msgsnd(): $!\n",
+                                    $Session_id);
+                            }
+                            exit 0;
+                        } else {
+                            exec($commands->[$index]);
+                        }
+                    } else {
+                        $running_processes{$pid} = $index;
+                        $nb_running_processes++;
+                        push(@timeout, [ $pid, time() + $timeout ]);
+                        $nb_launching_processes_in_window++;
+                        if ($nb_launching_processes_in_window >= $window_size) {
+
+# This window is full and we will be ready to start a new window once the current window will finish
+                            warn("[DEBUG WINDFORKER] [" .
+                                  time .
+                                  "] [$pid] (NB launching = $nb_launching_processes_in_window) This window is full and we will be ready to start a new window once the current window will finish\n"
+                            ) if ($verbose);
+                            $nb_launching_processes_in_window = 0;
+                            $nextWindowTime                   = time() + $window_time;
+                            warn("[DEBUG WINDFORKER] [" .
+                                  time .
+                                  "] [$pid] (NB launching = $nb_launching_processes_in_window) Set new nextWindowTime at $nextWindowTime)\n"
+                            ) if ($verbose);
+                        }
                     }
+                } else {
+                    warn("/!\\ fork system call failed for command:  $commands->[$index]\n");
                 }
-                else{
-                  $running_processes{$pid} = $index;
-                  $nb_running_processes++;
-                  push(@timeout, [$pid,time()+$timeout]);
-                  $nb_launching_processes_in_window++;
-                  if ($nb_launching_processes_in_window >= $window_size){
-                    # This window is full and we will be ready to start a new window once the current window will finish
-                    warn("[DEBUG WINDFORKER] [".time."] [$pid] (NB launching = $nb_launching_processes_in_window) This window is full and we will be ready to start a new window once the current window will finish\n") if ($verbose);
-                    $nb_launching_processes_in_window=0;
-                    $nextWindowTime = time()+$window_time;
-                    warn("[DEBUG WINDFORKER] [".time."] [$pid] (NB launching = $nb_launching_processes_in_window) Set new nextWindowTime at $nextWindowTime)\n") if ($verbose);
-                  }
-                }
-            }else{
-                warn("/!\\ fork system call failed for command:  $commands->[$index]\n");
+                $index++;
             }
-            $index++;
-          }
         }
+
         # Check child endings
-        warn("[VERBOSE] ".time." | $pid Check child endings\n") if ($verbose);
-        while(($pid = waitpid(-1, WNOHANG)) > 0) {
-            register_wait_results($pid, $?, \%running_processes, \%process_duration, \%finished_processes, \$nb_running_processes, $verbose);
+        warn("[VERBOSE] " . time . " | $pid Check child endings\n") if ($verbose);
+        while (($pid = waitpid(-1, WNOHANG)) > 0) {
+            register_wait_results($pid, $?, \%running_processes, \%process_duration,
+                \%finished_processes, \$nb_running_processes, $verbose);
         }
 
         # Check timeouts (at least every 0.1s)
-        warn("[VERBOSE] ".time." | $pid Check timeouts\n") if ($verbose);
+        warn("[VERBOSE] " . time . " | $pid Check timeouts\n") if ($verbose);
         my $t = 0;
-        while(defined($timeout[$t]) and (($timeout[$t]->[1] < time()) or (!defined($running_processes{$timeout[$t]->[0]})))){
-            if (!defined($running_processes{$timeout[$t]->[0]})){
-               splice(@timeout,$t,1);
-            }else{
-                if ($timeout[$t]->[1] <= time()){
-                    kill(9,$timeout[$t]->[0]);
+        while (
+            defined($timeout[$t]) and
+            (($timeout[$t]->[1] < time()) or (!defined($running_processes{ $timeout[$t]->[0] })))
+        ) {
+            if (!defined($running_processes{ $timeout[$t]->[0] })) {
+                splice(@timeout, $t, 1);
+            } else {
+                if ($timeout[$t]->[1] <= time()) {
+                    kill(9, $timeout[$t]->[0]);
                 }
             }
             $t++;
         }
-        select(undef,undef,undef,0.1) if ($t == 0);
+        select(undef, undef, undef, 0.1) if ($t == 0);
     }
-    
-    if ($NOTIFY_HULOT == 1){
+
+    if ($NOTIFY_HULOT == 1) {
         ## Here, send "CHECK signal" to Hulot by the named pipe ?
         unless (open(FIFO, "> $FIFO")) {
-          oar_error($Module_name, "Could not open the fifo $FIFO!\n", $Session_id);
-          return 1;
+            oar_error($Module_name, "Could not open the fifo $FIFO!\n", $Session_id);
+            return 1;
         }
         print FIFO "CHECK";
         close(FIFO);
     }
-    
-    
-    return(\%finished_processes, \%process_duration);
+
+    return (\%finished_processes, \%process_duration);
 }
 
 return 1;

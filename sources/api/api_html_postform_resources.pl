@@ -1,4 +1,4 @@
-$POSTFORM="
+$POSTFORM = "
 <FORM METHOD=post ACTION=$apiuri/resources/generate.html>
 <TABLE>
 <CAPTION>Resources generation</CAPTION>
