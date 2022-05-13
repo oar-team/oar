@@ -346,6 +346,12 @@ sub delete_jobs($$$){
 	signal_almighty($remote_host,$remote_port,"Qdel");
 }
 
+sub get_running_jobs_for_user($) {
+    my $user = shift;
+
+    return (OAR::IO::get_jobs_in_state_for_user($base, "Running", $user));
+}
+
 
 1;
 
