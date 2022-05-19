@@ -1,3 +1,13 @@
+oar (2.5.10~g5k22-1) unstable; urgency=medium
+
+  * 0a5d8e41 [all] apply perltidy with custom arguments to OAR's code
+  * 53d9c348 [all] convert SQL strings to heredoc
+  * 95833325 [oarsub] enhance -C option to be more user friendly
+  * daf064c0 [IO] make job creation with add_micheline_subjob() more consistent
+  * 0e9fa7d3 [api] better returned messages and add an OAR_API env variable
+
+ -- Samir Noir <samir.noir@inria.fr>  Thu, 19 May 2022 10:04:41 +0200
+
 oar (2.5.10~g5k21-1) unstable; urgency=medium
 
   * 6ff4d68e [oarstat] factorize fetching of data with --gantt option
