@@ -15,7 +15,7 @@ use Getopt::Long;
 use OAR::Version;
 use OAR::Tools;
 
-my $Old_umask = sprintf("%lo",umask());
+my $Old_umask = sprintf("%lo", umask());
 umask(oct("022"));
 
 # The functions are appended at the end of this file
@@ -24,27 +24,34 @@ sub check_property_name($);
 
 Getopt::Long::Configure("gnu_getopt");
 
-my ($Help,  $List_properties, $Quiet, $Varchar);
+my ($Help, $List_properties, $Quiet, $Varchar);
 my @Add_property;
 my @Delete_property;
 my @Rename_property;
 my $Version;
-GetOptions( "help|h"   => \$Help,
-            "add|a=s"    => \@Add_property,
-            "delete|d=s" => \@Delete_property,
-            "rename|r=s" => \@Rename_property,
-            "list|l"   => \$List_properties,
-            "quiet|q"  => \$Quiet,
-            "varchar|c"  => \$Varchar,
-            "version|V" => \$Version
-          ) or exit(1);
+GetOptions(
+    "help|h"     => \$Help,
+    "add|a=s"    => \@Add_property,
+    "delete|d=s" => \@Delete_property,
+    "rename|r=s" => \@Rename_property,
+    "list|l"     => \$List_properties,
+    "quiet|q"    => \$Quiet,
+    "varchar|c"  => \$Varchar,
+    "version|V"  => \$Version
+  ) or
+  exit(1);
 
-if (defined($Version)){
-    print("OAR version: ".OAR::Version::get_version()."\n");
+if (defined($Version)) {
+    print("OAR version: " . OAR::Version::get_version() . "\n");
     exit(0);
 }
 
-if ($Help || (($#Add_property < 0) and ($#Delete_property < 0)  and ($#Rename_property < 0)  and (! defined($List_properties)))) {
+if ($Help ||
+    (($#Add_property < 0) and
+        ($#Delete_property < 0) and
+        ($#Rename_property < 0) and
+        (!defined($List_properties)))
+) {
     print_usage();
     exit(1);
 }
@@ -55,92 +62,95 @@ my $query;
 
 if (defined($List_properties)) {
     my %list = OAR::IO::list_resource_properties_fields($base);
-    foreach my $l (keys(%list)){
-        unless  (OAR::Tools::check_resource_property($l) == 1){
+    foreach my $l (keys(%list)) {
+        unless (OAR::Tools::check_resource_property($l) == 1) {
             print("$l\n");
         }
     }
 }
 
-foreach my $r (@Delete_property){
+foreach my $r (@Delete_property) {
     check_property_name($r);
 
-    $base->do("ALTER TABLE resources DROP COLUMN $r")
-        or die("DB error: " . $base->errstr."\n");
+    $base->do("ALTER TABLE resources DROP COLUMN $r") or
+      die("DB error: " . $base->errstr . "\n");
 
-    if (! $Quiet) {
+    if (!$Quiet) {
         print("Removed property: $r\n");
     }
 }
 
-foreach my $a (@Add_property){
+foreach my $a (@Add_property) {
     check_property_name($a);
 
     my $req;
-    if ($Varchar){
+    if ($Varchar) {
         $req = "ALTER TABLE resources ADD COLUMN $a VARCHAR(255)";
-    }else{
+    } else {
         $req = "ALTER TABLE resources ADD COLUMN $a INT";
     }
-    $base->do($req)
-        or die("DB error: " . $base->errstr."\n");
+    $base->do($req) or
+      die("DB error: " . $base->errstr . "\n");
 
-    if (! $Quiet) {
+    if (!$Quiet) {
         print("Added property: $a\n");
     }
 }
 
-foreach my $p (@Rename_property){
-    my ($old_prop,$new_prop);
-    if ($p !~ m/^\s*([a-z0-9_]+)\s*,\s*([a-z0-9_]+)\s*$/m){
+foreach my $p (@Rename_property) {
+    my ($old_prop, $new_prop);
+    if ($p !~ m/^\s*([a-z0-9_]+)\s*,\s*([a-z0-9_]+)\s*$/m) {
         print_usage();
         exit(1);
     }
     $old_prop = $1;
     $new_prop = $2;
-    
+
     check_property_name($old_prop);
     check_property_name($new_prop);
-    if (OAR::IO::get_database_type() eq "Pg"){
-        $base->do(" ALTER TABLE resources RENAME $old_prop TO $new_prop")
-            or die("DB error: " . $base->errstr."\n");
-    }else{
-        my $sth = $base->prepare("  SHOW FIELDS
-                                    FROM resources
-                                 ");
-        $sth->execute() or die("DB error: ".$base->errstr."\n");
+    if (OAR::IO::get_database_type() eq "Pg") {
+        $base->do(" ALTER TABLE resources RENAME $old_prop TO $new_prop") or
+          die("DB error: " . $base->errstr . "\n");
+    } else {
+        my $sth = $base->prepare("SHOW FIELDS FROM resources");
+        $sth->execute() or die("DB error: " . $base->errstr . "\n");
         my $type;
         my $field = "";
-        while (($field ne $old_prop) and (my @ref = $sth->fetchrow_array())){
+        while (($field ne $old_prop) and (my @ref = $sth->fetchrow_array())) {
             $field = $ref[0];
-            $type = $ref[1];
+            $type  = $ref[1];
         }
         $sth->finish();
         die("Unknown field $old_prop\n") if ($field ne $old_prop);
         $base->do(" ALTER TABLE resources CHANGE $old_prop $new_prop $type");
     }
 
-    $base->do(" UPDATE resource_logs
-                SET attribute = \'$new_prop\'
-                WHERE
-                    attribute = \'$old_prop\'")
-        or die("DB error: " . $base->errstr."\n");
+    $base->do(
+        <<EOS
+UPDATE resource_logs
+SET attribute = \'$new_prop\'
+WHERE
+    attribute = \'$old_prop\'
+EOS
+    ) or die("DB error: " . $base->errstr . "\n");
 
-    $base->do(" UPDATE job_resource_descriptions
-                SET res_job_resource_type = \'$new_prop\'
-                WHERE
-                    res_job_resource_type = \'$old_prop\'")
-        or die("DB error: " . $base->errstr."\n");
+    $base->do(
+        <<EOS
+UPDATE job_resource_descriptions
+SET res_job_resource_type = \'$new_prop\'
+WHERE
+res_job_resource_type = \'$old_prop\'
+EOS
+    ) or die("DB error: " . $base->errstr . "\n");
 
-    if (! $Quiet) {
+    if (!$Quiet) {
         print("Rename property $old_prop into $new_prop\n");
     }
 }
 
 OAR::IO::disconnect($base);
-	
-exit(0);
 
+exit(0);
 
 #############################################################################
 # FUNCTIONS
@@ -170,7 +180,7 @@ sub check_property_name($) {
     if (not $propertyname =~ /^\w+$/) {
         die("Error: '$propertyname' is not a valid property name");
     }
-    if (OAR::Tools::check_resource_property($propertyname) == 1){
+    if (OAR::Tools::check_resource_property($propertyname) == 1) {
         warn("Error: '$propertyname' is a OAR system property and may not be altered\n");
         exit(1);
     }

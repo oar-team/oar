@@ -67,6 +67,32 @@ version 2.5.10:
     rules when creating a new OAR database
   - [finaud/hulot] fix a race condition resulting in nodes being suspected when
     put in standby by hulot while finaud is running
+  - [monika] show job events in job stats
+  - [monika] add nodes filtering
+  - [oarsub] add a -v switch (usable multiple times) to select verbosity
+  - [misc] remove desktop_computing possibility in oarsub and API
+  - [oarsub] add # before each outputed string (except the job ids) and better
+    format of information and error messages
+  - [oar.conf/bipbip] add DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM option
+  - [oarsub] Use systemd-run when running processes on the frontend for
+    deploy/cosystem jobs
+  - [criu checkpoint] added a timeout to exit when the resume fails
+  - [oarapi] replace workdir by directory in OAR's rest API
+  - [all] change the log format and make it configurable and various logs
+    messages improvements
+  - [oarsub] better verification of advance reservations input dates
+  - [oarstat] add jobs events to the gantt output (--gantt/-g)
+  - [oarstat] make machine parseable output detailed view without using -f
+  - [oarstat] add missing fields and uniq some when calling with --gantt
+  - [oarstat] add a new output format '3' fixing several field names
+  - [job_resource_manager] write env file without variable references
+  - [oarwalltime] allow request cancellation
+  - [oarwalltime] add --whole option
+  - [oarwalltime] add a timeout for walltime change requests
+  - [oarnodes/API] add functionality to provide the detailed jobs occupation on nodes
+  - [api] better returned messages and add an OAR_IN_API env variable
+  - [IO] make job creation with add_micheline_subjob() more consistent
+  - [oarsub] enhance -C option to be more user friendly
 
 version 2.5.9:
 --------------

@@ -4,6 +4,7 @@ package oarsub;
 require Exporter;
 
 use strict;
+
 #use warnings;
 use POSIX qw(strftime);
 use Fcntl;
@@ -16,7 +17,7 @@ use Cwd;
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 use OAR::Sub;
 
-my $Old_umask = sprintf("%lo",umask());
+my $Old_umask = sprintf("%lo", umask());
 umask(oct("022"));
 
 select(STDOUT);
@@ -24,28 +25,27 @@ $| = 1;
 
 #Try to load XML module
 my $XML_enabled = 1;
-unless (eval "use XML::Dumper qw(pl2xml);1"){
+unless (eval "use XML::Dumper qw(pl2xml);1") {
     $XML_enabled = 0;
 }
 
 #Try to load YAML module
 my $YAML_enabled = 1;
-unless (eval "use YAML;1"){
+unless (eval "use YAML;1") {
     $YAML_enabled = 0;
 }
 
 #Try to load JSON module
 my $JSON_enabled = 1;
-unless (eval "use JSON;1"){
+unless (eval "use JSON;1") {
     $JSON_enabled = 0;
 }
 
 # suitable Data::Dumper configuration for serialization
-$Data::Dumper::Purity = 1;
-$Data::Dumper::Terse = 1;
-$Data::Dumper::Indent = 0;
+$Data::Dumper::Purity   = 1;
+$Data::Dumper::Terse    = 1;
+$Data::Dumper::Indent   = 0;
 $Data::Dumper::Deepcopy = 1;
-
 
 #For interactive
 my $remote_host;
@@ -55,7 +55,7 @@ my $Cosystem_hostname;
 my $Deploy_cosystem_job_exec_system;
 my $Cpuset_field;
 my $Cpuset_path;
-my $Host = hostname ;
+my $Host = hostname;
 
 my $Server;
 my $Job_id;
@@ -66,7 +66,7 @@ my $Reservation_start;
 my $Reservation_end;
 my $Default_resources;
 my $Nodes_resources;
-my $connect_job ;
+my $connect_job;
 my $Scan_script;
 my @resource;
 my $Queue_name;
@@ -74,7 +74,7 @@ my $Job_sql_properties = "";
 my $Cmd_executor;
 my $idFile = undef;
 my $sos;
-my $Checkpoint=0;
+my $Checkpoint = 0;
 my $notify;
 my $job_name;
 my $job_env;
@@ -84,7 +84,7 @@ my $Directory_default = getcwd();
 my @Type;
 my @Anterior_job;
 my $Checkpoint_signal;
-my $Checkpoint_signal_default = 12; # SIGUSR2
+my $Checkpoint_signal_default = 12;    # SIGUSR2
 my $Stdout_file;
 my $Stderr_file;
 my $Resubmit;
@@ -95,30 +95,30 @@ my $YAML_mode;
 my $JSON_mode;
 my $DUMPER_mode;
 my $use_job_key;
-my $job_key_priv = "";
-my $job_key_pub = "";
-my $import_job_key_file = "";
-my $import_job_key_inline = "";
-my $export_job_key_file = "";
+my $job_key_priv           = "";
+my $job_key_pub            = "";
+my $import_job_key_file    = "";
+my $import_job_key_inline  = "";
+my $export_job_key_file    = "";
 my $Initial_request_string = "oarsub @ARGV";
 my $Verbose_level;
+my $lusr = $ENV{OARDO_USER};
 
 # a non array-job is an array-job with 1 subjob
 my $array_job_nb;
 my $array_param_file;
 my $array_params_ref;
 
-
 #to catch ^C signal
-$SIG{INT} = \&signal_handler;
-$SIG{HUP} = \&signal_handler;
+$SIG{INT}  = \&signal_handler;
+$SIG{HUP}  = \&signal_handler;
 $SIG{PIPE} = \&signal_handler;
 
 # to address ^C in interactive submission
 sub signal_handler($) {
     my $signal = shift;
     if (defined($Job_id_list_ref)) {
-        if ($signal eq "INT" ) {
+        if ($signal eq "INT") {
             print(STDERR "\n\n# Caught Interrupt (^C), ");
         }
         OAR::Sub::delete_jobs($Job_id_list_ref, $remote_host, $remote_port);
@@ -128,116 +128,150 @@ sub signal_handler($) {
 }
 
 # Connect to a job and give the shell of the user on the remote host
-sub connect_job($$$){
-    my $job_id = shift;
+sub connect_job($$$) {
+    my $job_id       = shift;
     my $stop_oarexec = shift;
-    my $openssh_cmd = shift;
-   
+    my $openssh_cmd  = shift;
+
     my $xauth_path = $ENV{OARXAUTHLOCATION};
     OAR::Sub::open_ro_db_connection();
-    my $lusr= $ENV{OARDO_USER};
     my $job = OAR::Sub::get_job($job_id);
 
     if ((($lusr eq $job->{job_user}) or ($lusr eq "oar")) && ($job->{state} eq "Running")) {
         my $types = OAR::Sub::get_current_job_types($job_id);
+
         #noop
-        if (defined($types->{noop})){
+        if (defined($types->{noop})) {
             warn("# Error: it is not possible to connect to a NOOP job.\n");
             OAR::Sub::close_db_connection();
             exit(17);
         }
-        my $hosts_tmp = OAR::Sub::get_job_current_hostnames($job_id);
-        my @hosts = @$hosts_tmp;
+        my $hosts_tmp               = OAR::Sub::get_job_current_hostnames($job_id);
+        my @hosts                   = @$hosts_tmp;
         my $host_to_connect_via_ssh = $hosts[0];
+
         #deploy, cosystem and no host part
-        if ((defined($types->{cosystem})) or ($#hosts < 0)){
+        if ((defined($types->{cosystem})) or ($#hosts < 0)) {
             $host_to_connect_via_ssh = $Cosystem_hostname;
-        }elsif (defined($types->{deploy})){
+        } elsif (defined($types->{deploy})) {
             $host_to_connect_via_ssh = $Deploy_hostname;
         }
+
         #cpuset part
-        if ((defined($Cpuset_field) and defined($Cpuset_path) and (!defined($types->{cosystem})) and (!defined($types->{deploy})) and ($#hosts >= 0))){
-            $ENV{OAR_CPUSET} = $Cpuset_path.'/'.OAR::Sub::get_job_cpuset_name($job_id);
-        }else{
+        if (
+            (   defined($Cpuset_field)         and
+                defined($Cpuset_path)          and
+                (!defined($types->{cosystem})) and
+                (!defined($types->{deploy}))   and
+                ($#hosts >= 0))
+        ) {
+            $ENV{OAR_CPUSET} = $Cpuset_path . '/' . OAR::Sub::get_job_cpuset_name($job_id);
+        } else {
             $ENV{OAR_CPUSET} = "";
         }
         my $moldable = OAR::Sub::get_current_moldable_job($job->{assigned_moldable_job});
         my $job_user = $job->{job_user};
         OAR::Sub::close_db_connection();
-        my @passinfo = getpwnam($lusr) or die("Cannot retreive system information for user $lusr\n");
-        my $shell=$passinfo[8];
-        my $uid=$passinfo[2];
-        unless ((defined($xauth_path)) and (-x $xauth_path) and ($ENV{DISPLAY} =~ /^[\w.-]*:\d+(?:\.\d+)?$/)) {
-            $ENV{DISPLAY}="";
+        my @passinfo = getpwnam($lusr) or
+          die("Cannot retreive system information for user $lusr\n");
+        my $shell = $passinfo[8];
+        my $uid   = $passinfo[2];
+        unless ((defined($xauth_path)) and
+            (-x $xauth_path) and
+            ($ENV{DISPLAY} =~ /^[\w.-]*:\d+(?:\.\d+)?$/)) {
+            $ENV{DISPLAY} = "";
         }
-        if ($ENV{DISPLAY} ne ""){
+        if ($ENV{DISPLAY} ne "") {
             if ($Verbose_level >= 1) {
                 print("# Initialize X11 forwarding...\n");
             }
+
             # first, get rid of remaining unused .Xautority.{pid} files...
-            system({"bash"} "bash","-c",'for f in $HOME/.Xauthority.*; do [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f; done');
-            my $new_xauthority = $ENV{HOME}."/.Xauthority.$$";
-            system({"bash"} "bash","-c",'[ -x "'.$xauth_path.'" ] && OARDO_BECOME_USER='.$lusr.' oardodo bash --noprofile --norc -c "'.$xauth_path.' extract - ${DISPLAY/#localhost:/:}" | XAUTHORITY='.$new_xauthority.' '.$xauth_path.' -q merge - 2>/dev/null');
+            system(
+                {"bash"} "bash",
+                "-c",
+                'for f in $HOME/.Xauthority.*; do [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f; done'
+            );
+            my $new_xauthority = $ENV{HOME} . "/.Xauthority.$$";
+            system(
+                {"bash"} "bash",
+                "-c",
+                '[ -x "' . $xauth_path .
+                  '" ] && OARDO_BECOME_USER=' . $lusr . ' oardodo bash --noprofile --norc -c "' .
+                  $xauth_path . ' extract - ${DISPLAY/#localhost:/:}" | XAUTHORITY=' .
+                  $new_xauthority . ' ' . $xauth_path . ' -q merge - 2>/dev/null');
             $ENV{XAUTHORITY} = $new_xauthority;
         }
-        my $node_file = OAR::Sub::get_default_oarexec_directory()."/$job_id";
-        my $res_file = OAR::Sub::get_default_oarexec_directory()."/$job_id"."_resources";
+        my $node_file   = OAR::Sub::get_default_oarexec_directory() . "/$job_id";
+        my $res_file    = OAR::Sub::get_default_oarexec_directory() . "/$job_id" . "_resources";
         my $oarsub_pids = OAR::Sub::get_oarsub_connections_file_name($job_id);
-        my %params = (
-            "node_file" => $node_file,
-            "job_id" => $job_id,
-            "array_id" => $job->{array_id},
-            "array_index" => $job->{array_index},
-            "user" => $lusr,
-            "shell" => $shell,
+        my %params      = (
+            "node_file"           => $node_file,
+            "job_id"              => $job_id,
+            "array_id"            => $job->{array_id},
+            "array_index"         => $job->{array_index},
+            "user"                => $lusr,
+            "shell"               => $shell,
             "launching_directory" => $job->{launching_directory},
-            "resource_file" => $res_file,
-            "job_name" => $job->{job_name},
-            "job_project" => $job->{project},
-            "job_walltime" => OAR::Sub::duration_to_sql($moldable->{moldable_walltime}),
-            "job_walltime_sec" => $moldable->{moldable_walltime},
-            "job_env" => $job->{job_env}
-        );
+            "resource_file"       => $res_file,
+            "job_name"            => $job->{job_name},
+            "job_project"         => $job->{project},
+            "job_walltime"        => OAR::Sub::duration_to_sql($moldable->{moldable_walltime}),
+            "job_walltime_sec"    => $moldable->{moldable_walltime},
+            "job_env"             => $job->{job_env});
         my $str = OAR::Sub::get_oarexecuser_script_for_oarsub(\%params);
-        my ($cmd_name,@cmd_opts) = split(" ",$openssh_cmd);
+        my ($cmd_name, @cmd_opts) = split(" ", $openssh_cmd);
         my @cmd;
         my $i = 0;
-        $cmd[$i] = $cmd_name;$i++;
-        foreach my $p (@cmd_opts){
-            $cmd[$i] = $p;$i++;
+        $cmd[$i] = $cmd_name;
+        $i++;
+
+        foreach my $p (@cmd_opts) {
+            $cmd[$i] = $p;
+            $i++;
         }
-        if ($ENV{OAR_CPUSET} ne ""){
+        if ($ENV{OAR_CPUSET} ne "") {
             $cmd[$i] = "-oSendEnv=OAR_CPUSET";
             $i++;
         }
-        if ($ENV{DISPLAY} ne ""){
+        if ($ENV{DISPLAY} ne "") {
             $cmd[$i] = "-X";
-        }else{
+        } else {
             $cmd[$i] = "-x";
         }
         $i++;
-        $cmd[$i] = "-t";$i++;
-        $cmd[$i] = $host_to_connect_via_ssh;$i++;
-        $str =~ s/\n//g;      
+        $cmd[$i] = "-t";
+        $i++;
+        $cmd[$i] = $host_to_connect_via_ssh;
+        $i++;
+        $str =~ s/\n//g;
         my $interactive_job_hook_file = get_conf("INTERACTIVE_JOB_HOOK_EXEC_FILE");
         my $interactive_job_hook_cmd;
+
         if (defined($interactive_job_hook_file)) {
-            $interactive_job_hook_cmd = "if test -x $interactive_job_hook_file; then oardodo $interactive_job_hook_file \$\$,\$PPID:$lusr:$job_id:$job->{name}:$job->{project}:$moldable->{moldable_walltime}; else true; fi && ";
+            $interactive_job_hook_cmd =
+              "if test -x $interactive_job_hook_file; then oardodo $interactive_job_hook_file \$\$,\$PPID:$lusr:$job_id:$job->{name}:$job->{project}:$moldable->{moldable_walltime}; else true; fi && ";
         }
 
         my $oardodo_cmd = "OARDO_BECOME_USER=$job_user oardodo bash --noprofile --norc -c '$str'";
         if (defined($types->{cosystem}) or defined($types->{deploy}) or ($#hosts < 0)) {
             if ($Deploy_cosystem_job_exec_system eq "systemd-run") {
-                $oardodo_cmd = "oardodo systemd-run -q --uid=$uid --pty --wait --collect --service-type=exec --slice=user-$uid.slice /bin/bash --noprofile --norc -c '$str'";
+                $oardodo_cmd =
+                  "oardodo systemd-run -q --uid=$uid --pty --wait --collect --service-type=exec --slice=user-$uid.slice /bin/bash --noprofile --norc -c '$str'";
             } elsif ($Deploy_cosystem_job_exec_system eq "none") {
+
                 # Use regular command by default
             }
         }
 
-        if ($ENV{DISPLAY} ne ""){
-            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$lusr oardodo $xauth_path merge -) && [ \"$lusr\" != \"$job_user\" ] && OARDO_BECOME_USER=$lusr oardodo bash --noprofile --norc -c \"chmod 660 \\\$HOME/.Xauthority\" ;TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && $oardodo_cmd";$i++;
-        }else{
-            $cmd[$i] = "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && $oardodo_cmd";$i++;
+        if ($ENV{DISPLAY} ne "") {
+            $cmd[$i] =
+              "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && ($xauth_path -q extract - \${DISPLAY/#localhost:/:} | OARDO_BECOME_USER=$lusr oardodo $xauth_path merge -) && [ \"$lusr\" != \"$job_user\" ] && OARDO_BECOME_USER=$lusr oardodo bash --noprofile --norc -c \"chmod 660 \\\$HOME/.Xauthority\" ;TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && $oardodo_cmd";
+            $i++;
+        } else {
+            $cmd[$i] =
+              "bash -c '${interactive_job_hook_cmd}echo \$PPID >> $oarsub_pids && TTY=\$(tty) && test -e \$TTY && oardodo chown $job_user:oar \$TTY && oardodo chmod 660 \$TTY' && $oardodo_cmd";
+            $i++;
         }
 
         #essential: you become oar instead of the user
@@ -246,47 +280,49 @@ sub connect_job($$$){
         if ($Verbose_level >= 1) {
             print("# Connect to OAR job $job_id via node $host_to_connect_via_ssh\n");
         }
-        system({$cmd[0]} @cmd);
+        system({ $cmd[0] } @cmd);
         my $exit_value = $? >> 8;
-        if ($exit_value == 2){
+        if ($exit_value == 2) {
             warn("# Error: cannot go into working directory: $job->{launching_directory}.\n");
-        }elsif($exit_value == 255){
+        } elsif ($exit_value == 255) {
             warn("# Error: job was terminated.\n");
-        }elsif($exit_value != 0){
+        } elsif ($exit_value != 0) {
             warn("# Error: an unknown error occured ($?).\n");
         }
-        if ($stop_oarexec > 0){
+        if ($stop_oarexec > 0) {
             my %params = (
-                "host" => $host_to_connect_via_ssh,
-                "job_id" => $job_id,
-                "signal" => "USR1",
+                "host"         => $host_to_connect_via_ssh,
+                "job_id"       => $job_id,
+                "signal"       => "USR1",
                 "time_to_wait" => 0,
-                "ssh_cmd" => $openssh_cmd
-            );
+                "ssh_cmd"      => $openssh_cmd);
             OAR::Sub::signal_oarexec(\%params);
         }
         print("Disconnected from OAR job $job_id.\n");
-    }else{
-        if ($job->{state} ne "Running"){
+    } else {
+        if ($job->{state} ne "Running") {
             warn("# Error: job $job_id is not running. Its current state is $job->{state}.\n");
         }
-        if (($lusr ne $job->{job_user}) and ($lusr ne "oar")){
-            warn("# Error: you are not the right user for job $job_id. This job is owned by $job->{job_user}.\n");
+        if (($lusr ne $job->{job_user}) and ($lusr ne "oar")) {
+            warn(
+                "# Error: you are not the right user for job $job_id. This job is owned by $job->{job_user}.\n"
+            );
         }
         OAR::Sub::close_db_connection();
-        return(20);
+        return (20);
     }
-    return(0);
+    return (0);
 }
 
 #Print help message
 sub usage() {
     print <<EOS;
-Usage: $0 [options] [-I|-C <job id>|-r <start date>[, <end date>]|<script>]
+Usage: $0 [options] [-I|-C [<job id>]|-r <start date>[, <end date>]|<script>]
 Submit a job the OAR batch scheduler
 Options are:
  -I, --interactive             Request an interactive job.
- -C, --connect=<job id>        Connect to a running job.
+ -C, --connect[=<job id>]      Connect to a running job. Job id may be omitted
+                               if only one job is running.
  -l, --resource=<description>[,<walltime>]
                                Set the description of the requested resources
                                for the job and a walltime which specifies an
@@ -374,122 +410,128 @@ EOS
 }
 
 # Parse -l options and return an array of hashtables with resources for a moldable job
-sub parse_resource_descriptions($){
+sub parse_resource_descriptions($) {
     my $resource_ref = shift;
-    
-    my @resource= @{$resource_ref};
-    if ($#resource < 0){
-        push(@resource,$Default_resources);
+
+    my @resource = @{$resource_ref};
+    if ($#resource < 0) {
+        push(@resource, $Default_resources);
     }
-    
+
     #print "--@resource--\n";
 
     my @result;
-    foreach my $r (@resource){
+    foreach my $r (@resource) {
         my @resource_groups;
         my $end_loop = 0;
-        while ($end_loop == 0){
+        while ($end_loop == 0) {
             my $initial_resource = $r;
             my %tmp_result;
-            if ($r =~ /^\s*(\++|\,+|\s*)\s*\{(.+?)}(.*)$/){
+            if ($r =~ /^\s*(\++|\,+|\s*)\s*\{(.+?)}(.*)$/) {
+
                 # $1 = property string
                 $tmp_result{property} = $2;
                 $r = $3;
             }
-            
+
             my $resources_to_parse;
-            if (($r =~ /^\s*(\++|\,+|\s*)\s*[\/]*([^\,\+]+)\s*(.*)$/) and ($2 !~ /^\s*walltime/)){
+            if (($r =~ /^\s*(\++|\,+|\s*)\s*[\/]*([^\,\+]+)\s*(.*)$/) and ($2 !~ /^\s*walltime/)) {
                 $resources_to_parse = $2;
-                $r = $3;
-            }else{
+                $r                  = $3;
+            } else {
                 $Default_resources =~ /^\s*[\/]*(.+)$/;
+
                 # Remove first /
                 $resources_to_parse = $1;
             }
             my @slash_split = split('\/', $resources_to_parse);
             my @resources_list;
-            foreach my $l (@slash_split){
-                if ($l =~ /^\s*(\w+)\s*=\s*(\d+)\s*$/){
+            foreach my $l (@slash_split) {
+                if ($l =~ /^\s*(\w+)\s*=\s*(\d+)\s*$/) {
                     my $tmp = $1;
                     $tmp = $Nodes_resources if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => $2 });
-                }elsif ($l =~ /^\s*(\w+)\s*=\s*ALL\s*$/){
+                } elsif ($l =~ /^\s*(\w+)\s*=\s*ALL\s*$/) {
                     my $tmp = $1;
                     $tmp = $Nodes_resources if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -1 });
-                }elsif ($l =~ /^\s*(\w+)\s*=\s*BESTHALF\s*$/){
+                } elsif ($l =~ /^\s*(\w+)\s*=\s*BESTHALF\s*$/) {
                     my $tmp = $1;
                     $tmp = $Nodes_resources if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -3 });
-                }elsif ($l =~ /^\s*(\w+)\s*=\s*BEST\s*$/){
+                } elsif ($l =~ /^\s*(\w+)\s*=\s*BEST\s*$/) {
                     my $tmp = $1;
                     $tmp = $Nodes_resources if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -2 });
-                }else{
+                } else {
                     die("# Error: cannot recognize the resource description: $l\n");
                 }
             }
             $tmp_result{resources} = \@resources_list;
-            
-            if ($r =~ /^[\s\,]*walltime\s*=\s*([\d|:]+)\s*$/){
+
+            if ($r =~ /^[\s\,]*walltime\s*=\s*([\d|:]+)\s*$/) {
+
                 #walltime part
-                my ($w_h,$w_mn,$w_sec) = split(':',$1);
-                if (defined($w_h)){
-                    if (not defined($w_mn)){
+                my ($w_h, $w_mn, $w_sec) = split(':', $1);
+                if (defined($w_h)) {
+                    if (not defined($w_mn)) {
                         $resource_groups[1] = "$w_h:00:00";
-                    }elsif (not defined($w_sec)){
+                    } elsif (not defined($w_sec)) {
                         $resource_groups[1] = "$w_h:$w_mn:00";
-                    }else{
+                    } else {
                         $resource_groups[1] = "$w_h:$w_mn:$w_sec";
                     }
                     $resource_groups[1] = OAR::Sub::sql_to_duration("$resource_groups[1]");
-                }else{
+                } else {
                     die("# Error: cannot recognize walltime resource value\n");
                 }
                 $r = $2;
             }
-            if ($r eq $initial_resource){
+            if ($r eq $initial_resource) {
                 die("# Error: cannot recognize -- $r -- resource\n");
             }
-            push(@{$resource_groups[0]}, \%tmp_result);
+            push(@{ $resource_groups[0] }, \%tmp_result);
 
-            if ($r =~ /^\s*$/){
+            if ($r =~ /^\s*$/) {
                 $end_loop = 1;
             }
         }
         push(@result, \@resource_groups);
     }
 
-    return(@result);
+    return (@result);
 }
 
 sub parse_reservation($$) {
-    my $interactive = shift;
+    my $interactive   = shift;
     my $resource_list = shift;
     my $server_port;
     my $time_format = "(0?[0-9]|1[0-9]|2[0-3])(?::(0?[0-9]|[1-5][0-9])(?::(0?[0-9]|[1-5][0-9]))?)?";
     my $time_format_regex = qr/^\s*$time_format\s*$/;
-    my $date_format_regex = qr/^\s*(\d{4}\-(?:0?[0-9]|1[0-2])\-(?:0?[1-9]|[1-2][0-9]|3[0-1]))\s+$time_format\s*$/;
+    my $date_format_regex =
+      qr/^\s*(\d{4}\-(?:0?[0-9]|1[0-2])\-(?:0?[1-9]|[1-2][0-9]|3[0-1]))\s+$time_format\s*$/;
 
-    if ($Reservation ne "0"){
+    if ($Reservation ne "0") {
+
         #Split the Reservation into the start and end time, then test if the syntax is right
         ($Reservation_start, $Reservation_end) = split(/\s*,\s*/, $Reservation);
         chomp($Reservation_start);
         if ($Reservation_start =~ m/$date_format_regex/m) {
             $Reservation_start = OAR::Sub::sql_to_local("$1 $2 $3 $4");
         } elsif ($Reservation_start =~ m/$time_format_regex/m) {
-            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
-                                            localtime(time);
-            my $res_str = OAR::Sub::ymdhms_to_sql($year,$mon,$mday,$1,$2,$3);
+            my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime(time);
+            my $res_str = OAR::Sub::ymdhms_to_sql($year, $mon, $mday, $1, $2, $3);
             $Reservation_start = OAR::Sub::sql_to_local("$res_str");
         } elsif ($Reservation_start eq "now") {
-            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
-                                            localtime(time);
-            my $now_str = OAR::Sub::ymdhms_to_sql($year,$mon,$mday,$hour,$min,$sec);
+            my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime(time);
+            my $now_str = OAR::Sub::ymdhms_to_sql($year, $mon, $mday, $hour, $min, $sec);
             $Reservation_start = OAR::Sub::sql_to_local("$now_str");
         } else {
-            warn("# Error: syntax error in <start date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n");
-            OAR::Sub::close_db_connection; exit(7);
+            warn(
+                "# Error: syntax error in <start date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n"
+            );
+            OAR::Sub::close_db_connection;
+            exit(7);
         }
 
         if ($interactive eq 0) {
@@ -498,17 +540,20 @@ sub parse_reservation($$) {
     }
 
     if ($Reservation_end ne undef) {
+
         #Test if this job has a reservation end and the syntax is right
         if ($Reservation_end =~ m/$date_format_regex/m) {
             $Reservation_end = OAR::Sub::sql_to_local("$1 $2 $3 $4");
         } elsif ($Reservation_end =~ m/$time_format_regex/m) {
-            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
-                                            localtime(time);
-            my $res_str = OAR::Sub::ymdhms_to_sql($year,$mon,$mday,$1,$2,$3);
+            my ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime(time);
+            my $res_str = OAR::Sub::ymdhms_to_sql($year, $mon, $mday, $1, $2, $3);
             $Reservation_end = OAR::Sub::sql_to_local("$res_str");
         } else {
-            warn("# Error: syntax error in <end date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n");
-            OAR::Sub::close_db_connection(); exit(7);
+            warn(
+                "# Error: syntax error in <end date> for the -r or --reservation option. It takes a date as argument with the format: \"YYYY-MM-DD hh:mm:ss\".\n"
+            );
+            OAR::Sub::close_db_connection();
+            exit(7);
         }
 
         my $reservation_walltime = $Reservation_end - $Reservation_start;
@@ -524,13 +569,13 @@ sub parse_reservation($$) {
         ($Server, $server_port) = OAR::Sub::init_tcp_server();
     }
 
-    return($Server, $server_port);
+    return ($Server, $server_port);
 }
 
 sub run_advance_reservation_validation_hook($$) {
-    my $hook = shift;
+    my $hook   = shift;
     my $status = shift;
-    my $ret = system("$hook $Job_id_list_ref->[0] $status");
+    my $ret    = system("$hook $Job_id_list_ref->[0] $status");
 
     if ($ret != 0) {
         warn("# Error: an error occured in the advance reservation validation hook\n");
@@ -547,388 +592,505 @@ $remote_host = get_conf("SERVER_HOSTNAME");
 $remote_port = get_conf("SERVER_PORT");
 
 $Default_resources = get_conf("OARSUB_DEFAULT_RESOURCES");
-if (!defined($Default_resources)){
+if (!defined($Default_resources)) {
     $Default_resources = "/resource_id=1";
 }
 
 $Nodes_resources = get_conf("OARSUB_NODES_RESOURCES");
-if (!defined($Nodes_resources)){
+if (!defined($Nodes_resources)) {
     $Nodes_resources = "resource_id";
 }
 
 $Deploy_hostname = get_conf("DEPLOY_HOSTNAME");
-if (!defined($Deploy_hostname)){
+if (!defined($Deploy_hostname)) {
     $Deploy_hostname = $remote_host;
 }
 
 $Cosystem_hostname = get_conf("COSYSTEM_HOSTNAME");
-if (!defined($Cosystem_hostname)){
+if (!defined($Cosystem_hostname)) {
     $Cosystem_hostname = $remote_host;
 }
 
 $Deploy_cosystem_job_exec_system = get_conf("DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM");
 if (!defined($Deploy_cosystem_job_exec_system)) {
-     $Deploy_cosystem_job_exec_system = "none";
+    $Deploy_cosystem_job_exec_system = "none";
 }
-if (($Deploy_cosystem_job_exec_system ne "none") and ($Deploy_cosystem_job_exec_system ne "systemd-run")) {
-    die("[ERROR] Bad configuration for DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM: '$Deploy_cosystem_job_exec_system' is unsupported\n");
+if (($Deploy_cosystem_job_exec_system ne "none") and
+    ($Deploy_cosystem_job_exec_system ne "systemd-run")) {
+    die("[ERROR] Bad configuration for DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM: '$Deploy_cosystem_job_exec_system' is unsupported\n"
+    );
 }
 
 $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
-$Cpuset_path = get_conf("CPUSET_PATH");
+$Cpuset_path  = get_conf("CPUSET_PATH");
 
-if (is_conf("OAR_RUNTIME_DIRECTORY")){
+if (is_conf("OAR_RUNTIME_DIRECTORY")) {
     OAR::Sub::set_default_oarexec_directory(get_conf("OAR_RUNTIME_DIRECTORY"));
 }
 my $default_oar_dir = OAR::Sub::get_default_oarexec_directory();
-if (!(((-d $default_oar_dir) and (-O $default_oar_dir)) or (mkdir($default_oar_dir)))){
+if (!(((-d $default_oar_dir) and (-O $default_oar_dir)) or (mkdir($default_oar_dir)))) {
     die("# Error: cannot create the OAR directory $default_oar_dir or bad permissions.\n");
 }
 
 my $binpath;
-if (defined($ENV{OARDIR})){
-    $binpath = $ENV{OARDIR}."/";
-}else{
+if (defined($ENV{OARDIR})) {
+    $binpath = $ENV{OARDIR} . "/";
+} else {
     die("# Error: OARDIR env variable must be defined.\n");
 }
 
 my $Openssh_cmd = get_conf("OPENSSH_CMD");
 $Openssh_cmd = OAR::Sub::get_default_openssh_cmd() if (!defined($Openssh_cmd));
 
-if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")){
+if (is_conf("OAR_SSH_CONNECTION_TIMEOUT")) {
     OAR::Sub::set_ssh_timeout(get_conf("OAR_SSH_CONNECTION_TIMEOUT"));
 }
 
-Getopt::Long::Configure ("gnu_getopt");
+Getopt::Long::Configure("gnu_getopt");
 my $Version;
 my @Verbose;
 
-GetOptions ("resource|l=s" => \@resource,
-            "queue|q=s"   => \$Queue_name,
-            "interactive|I"  => \$Interactive,
-            "property|p=s" => \$Job_sql_properties,
-            "reservation|r=s" => \$Reservation,
-            "connect|C=i" => \$connect_job,
-            "checkpoint=i" => \$Checkpoint,
-            "help|h" => \$sos,
-            "notify=s" => \$notify,
-            "type|t=s" => \@Type,
-            "directory|d=s" => \$Directory,
-            "name|n=s" => \$job_name,
-            "project=s" => \$Project,
-            "hold" => \$job_hold,
-            "array=i" => \$array_job_nb,
-            "array-param-file=s" => \$array_param_file,
-            "anterior|a=i" => \@Anterior_job,
-            "signal=i" => \$Checkpoint_signal,
-            "stdout|O=s" => \$Stdout_file,
-            "stderr|E=s" => \$Stderr_file,
-            "resubmit=i" => \$Resubmit,
-            "scanscript|S" => \$Scan_script,
-            "xml|X" => \$XML_mode,
-            "yaml|Y" => \$YAML_mode,
-            "json|J" => \$JSON_mode,
-            "dumper|D" => \$DUMPER_mode,
-            "use-job-key|k" => \$use_job_key,
-            "import-job-key-inline-priv=s" => \$import_job_key_inline,
-            "import-job-key-from-file|i=s" => \$import_job_key_file,
-            "export-job-key-to-file|e=s" => \$export_job_key_file,
-            "version|V" => \$Version,
-            "v" => \@Verbose
-           ) or exit(1);
+GetOptions(
+    "resource|l=s"                 => \@resource,
+    "queue|q=s"                    => \$Queue_name,
+    "interactive|I"                => \$Interactive,
+    "property|p=s"                 => \$Job_sql_properties,
+    "reservation|r=s"              => \$Reservation,
+    "connect|C:i"                  => \$connect_job,
+    "checkpoint=i"                 => \$Checkpoint,
+    "help|h"                       => \$sos,
+    "notify=s"                     => \$notify,
+    "type|t=s"                     => \@Type,
+    "directory|d=s"                => \$Directory,
+    "name|n=s"                     => \$job_name,
+    "project=s"                    => \$Project,
+    "hold"                         => \$job_hold,
+    "array=i"                      => \$array_job_nb,
+    "array-param-file=s"           => \$array_param_file,
+    "anterior|a=i"                 => \@Anterior_job,
+    "signal=i"                     => \$Checkpoint_signal,
+    "stdout|O=s"                   => \$Stdout_file,
+    "stderr|E=s"                   => \$Stderr_file,
+    "resubmit=i"                   => \$Resubmit,
+    "scanscript|S"                 => \$Scan_script,
+    "xml|X"                        => \$XML_mode,
+    "yaml|Y"                       => \$YAML_mode,
+    "json|J"                       => \$JSON_mode,
+    "dumper|D"                     => \$DUMPER_mode,
+    "use-job-key|k"                => \$use_job_key,
+    "import-job-key-inline-priv=s" => \$import_job_key_inline,
+    "import-job-key-from-file|i=s" => \$import_job_key_file,
+    "export-job-key-to-file|e=s"   => \$export_job_key_file,
+    "version|V"                    => \$Version,
+    "v"                            => \@Verbose
+  ) or
+  exit(1);
 
 $Verbose_level = scalar @Verbose;
 if ($Verbose_level > 2) {
     $Verbose_level = 2;
 }
 
-if (defined($Version)){
-    print("OAR version: ".OAR::Sub::get_oar_version()."\n");
+if (defined($Version)) {
+    print("OAR version: " . OAR::Sub::get_oar_version() . "\n");
     exit(0);
 }
 
-if (defined($sos)){
+if (defined($sos)) {
     usage();
     exit(0);
 }
 
 # Check the default name of the key if we have to generate it
-if (is_conf("OARSUB_FORCE_JOB_KEY")){
-    if (lc(get_conf("OARSUB_FORCE_JOB_KEY")) eq "yes"){
+if (is_conf("OARSUB_FORCE_JOB_KEY")) {
+    if (lc(get_conf("OARSUB_FORCE_JOB_KEY")) eq "yes") {
         $use_job_key = 1;
     }
 }
 
-# If OAR_JOB_KEY_FILE is set in the shell environment, then imply use_job_key 
+# If OAR_JOB_KEY_FILE is set in the shell environment, then imply use_job_key
 # because oarsh will use OAR_JOB_KEY_FILE as well and fail if the job is
-# setup without a job_key 
-if (defined($ENV{OAR_JOB_KEY_FILE})){
+# setup without a job_key
+if (defined($ENV{OAR_JOB_KEY_FILE})) {
     $use_job_key = 1;
 }
 
 OAR::Sub::open_db_connection();
 
-if (defined($Resubmit)){
+if (defined($Resubmit)) {
     if ($Verbose_level >= 1) {
         print("# Resubmitting job $Resubmit...");
     }
     my $err = OAR::Sub::resubmit_job($Resubmit);
     OAR::Sub::close_db_connection();
-    if ($err > 0){
+    if ($err > 0) {
         $Job_id = $err;
         if ($Verbose_level >= 1) {
             print("# DONE\n");
         }
-        print("OAR_JOB_ID=$Job_id\n");
-        if (defined(OAR::Sub::signal_almighty($remote_host,$remote_port,"Qsub"))){
-            warn("# Error: cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
+        if ($Job_id > 0 or $Verbose_level >= 1) {
+            print("OAR_JOB_ID=$Job_id\n");
+        }
+        if (defined(OAR::Sub::signal_almighty($remote_host, $remote_port, "Qsub"))) {
+            warn(
+                "# Error: cannot connect to executor $remote_host:$remote_port. Is OAR started?\n");
             exit(3);
         }
         exit(0);
-    }else{
-        if ($err == -1){
+    } else {
+        if ($err == -1) {
             warn("# Error: an interactive job or a reservation cannot be resubmitted.\n");
-        }elsif ($err == -2){
+        } elsif ($err == -2) {
             warn("# Error: the job must be in Error or Terminated state.\n");
-        }elsif ($err == -3){
+        } elsif ($err == -3) {
             warn("# Error: you are not the right user.\n");
-        }elsif ($err == -4){
+        } elsif ($err == -4) {
             warn("# Error: another active job is using the same ssh keys.\n");
-        }else{
+        } else {
             warn("# Error: unknown error ($err).\n");
         }
         exit(4);
     }
 }
 
-if ((@ARGV != 1) && ($Interactive == 0) && ($Reservation eq "0") && !defined($connect_job) && !grep(/^noop(?:=standby)?$/, @Type)){
+if ((@ARGV != 1) &&
+    ($Interactive == 0)    &&
+    ($Reservation eq "0")  &&
+    !defined($connect_job) &&
+    !grep(/^noop(?:=standby)?$/, @Type)) {
     usage();
-    OAR::Sub::close_db_connection(); exit(5);
+    OAR::Sub::close_db_connection();
+    exit(5);
 }
 
-if (($Interactive == 1) and ($Reservation ne "0")){
+if (($Interactive == 1) and ($Reservation ne "0")) {
     warn("# Error: a reservation cannot be interactive.\n");
     usage();
-    OAR::Sub::close_db_connection(); exit(7);
+    OAR::Sub::close_db_connection();
+    exit(7);
 }
 
-if (($Interactive == 1) and grep(/^noop(?:=standby)?$/, @Type)){
+if (($Interactive == 1) and grep(/^noop(?:=standby)?$/, @Type)) {
     warn("# Error: a noop job cannot be interactive.\n");
-    OAR::Sub::close_db_connection(); exit(17);
+    OAR::Sub::close_db_connection();
+    exit(17);
 }
 
-if (defined($notify) && $notify =~ m/^.*exec\s*:.+$/m){
+if (defined($notify) && $notify =~ m/^.*exec\s*:.+$/m) {
     my $notify_exec_regexp = '[a-zA-Z0-9_.\/ -]+';
-    unless ($notify =~ m/.*exec\s*:($notify_exec_regexp)$/m){
-      warn("# Error: insecure characters found in notification method (the allowed regexp is: $notify_exec_regexp).\n");
-      OAR::Sub::close_db_connection(); exit(16);
+    unless ($notify =~ m/.*exec\s*:($notify_exec_regexp)$/m) {
+        warn(
+            "# Error: insecure characters found in notification method (the allowed regexp is: $notify_exec_regexp).\n"
+        );
+        OAR::Sub::close_db_connection();
+        exit(16);
     }
 }
 
 # Connect to a reservation
-if (defined($connect_job)){
+if (defined($connect_job)) {
+    if ($connect_job eq 0) {
+        my @running_jobs = OAR::Sub::get_running_jobs_for_user($lusr);
+
+        if ($#running_jobs < 0) {
+            print("No running jobs\n");
+            exit(0);
+        } elsif ($#running_jobs eq 0) {
+            $connect_job = $running_jobs[0]->{job_id};
+        } else {
+            my $running_jobs_str = join(
+                ", ",
+                map {
+                    "$_->{job_id}" . (defined($_->{job_name}) ? " (" . $_->{job_name} . ")" : "")
+                } @running_jobs);
+            print("You have several running jobs. Please provide a job id.\n");
+            print("Running jobs are: $running_jobs_str\n");
+            exit(0);
+        }
+    }
+
     # Do not kill the job if the user close the window
     $SIG{HUP} = 'DEFAULT';
-    OAR::Sub::close_db_connection(); exit(connect_job($connect_job,0,$Openssh_cmd));
+    OAR::Sub::close_db_connection();
+    exit(connect_job($connect_job, 0, $Openssh_cmd));
 }
+
 # End connection to a reservation
 
-if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type))){
+if (($Interactive == 0) and ($ARGV[0] ne "" or grep(/^noop(?:=standby)?$/, @Type))) {
     my $exec = $ARGV[0];
-    if (defined($Scan_script)){
-        my $scan_result_tmp = OAR::Sub::scan_script($exec, $Initial_request_string) if ($exec ne "");
+    if (defined($Scan_script)) {
+        my $scan_result_tmp = OAR::Sub::scan_script($exec, $Initial_request_string)
+          if ($exec ne "");
         my %scan_result = %$scan_result_tmp;
         $Initial_request_string = $scan_result{initial_request};
-        if (defined($scan_result{queue}) && !defined($Queue_name)){
-            $Queue_name = $scan_result{queue}
-        }elsif(defined($scan_result{queue}) && defined($Queue_name)){
-            warn("# Warning: ignore script value for queue parameter: $scan_result{queue}; another value was given on the command line.\n");
+        if (defined($scan_result{queue}) && !defined($Queue_name)) {
+            $Queue_name = $scan_result{queue};
+        } elsif (defined($scan_result{queue}) && defined($Queue_name)) {
+            warn(
+                "# Warning: ignore script value for queue parameter: $scan_result{queue}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{property}) && ($Job_sql_properties eq "")){
+        if (defined($scan_result{property}) && ($Job_sql_properties eq "")) {
             $Job_sql_properties = $scan_result{property};
-        }elsif(defined($scan_result{property}) && ($Job_sql_properties ne "")){
-            warn("# Warning: ignore script value for property parameter: $scan_result{property}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{property}) && ($Job_sql_properties ne "")) {
+            warn(
+                "# Warning: ignore script value for property parameter: $scan_result{property}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{resources})){
-            push(@resource, @{$scan_result{resources}});
+        if (defined($scan_result{resources})) {
+            push(@resource, @{ $scan_result{resources} });
         }
-        if (defined($scan_result{types})){
-            push(@Type, @{$scan_result{types}});
+        if (defined($scan_result{types})) {
+            push(@Type, @{ $scan_result{types} });
         }
-        if (defined($scan_result{anterior})){
-            push(@Anterior_job, @{$scan_result{anterior}});
+        if (defined($scan_result{anterior})) {
+            push(@Anterior_job, @{ $scan_result{anterior} });
         }
-        if (defined($scan_result{checkpoint}) && ($Checkpoint == 0)){
+        if (defined($scan_result{checkpoint}) && ($Checkpoint == 0)) {
             $Checkpoint = $scan_result{checkpoint};
-        }elsif(defined($scan_result{checkpoint}) && ($Checkpoint != 0)){
-            warn("# Warning: ignore script value for checkpoint parameter: $scan_result{checkpoint}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{checkpoint}) && ($Checkpoint != 0)) {
+            warn(
+                "# Warning: ignore script value for checkpoint parameter: $scan_result{checkpoint}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{notify}) && (!defined($notify))){
+        if (defined($scan_result{notify}) && (!defined($notify))) {
             $notify = $scan_result{notify};
-        }elsif(defined($scan_result{notify}) && (defined($notify))){
-            warn("# Warning: ignore script value for notify parameter: $scan_result{notify}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{notify}) && (defined($notify))) {
+            warn(
+                "# Warning: ignore script value for notify parameter: $scan_result{notify}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{directory})){
+        if (defined($scan_result{directory})) {
             $Directory = $scan_result{directory};
         }
-        if (defined($scan_result{directory}) && (!defined($Directory))){
+        if (defined($scan_result{directory}) && (!defined($Directory))) {
             $Directory = $scan_result{directory};
-        }elsif(defined($scan_result{directory}) && (defined($Directory))){
-            warn("# Warning: ignore script value for name parameter: $scan_result{directory}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{directory}) && (defined($Directory))) {
+            warn(
+                "# Warning: ignore script value for name parameter: $scan_result{directory}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{name}) && (!defined($job_name))){
+        if (defined($scan_result{name}) && (!defined($job_name))) {
             $job_name = $scan_result{name};
-        }elsif(defined($scan_result{name}) && (defined($job_name))){
-            warn("# Warning: ignore script value for name parameter: $scan_result{name}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{name}) && (defined($job_name))) {
+            warn(
+                "# Warning: ignore script value for name parameter: $scan_result{name}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{project}) && (!defined($Project))){
+        if (defined($scan_result{project}) && (!defined($Project))) {
             $Project = $scan_result{project};
-        }elsif(defined($scan_result{project}) && (defined($Project))){
-            warn("# Warning: ignore script value for name parameter: $scan_result{project}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{project}) && (defined($Project))) {
+            warn(
+                "# Warning: ignore script value for name parameter: $scan_result{project}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{hold}) && (!defined($job_hold))){
+        if (defined($scan_result{hold}) && (!defined($job_hold))) {
             $job_hold = $scan_result{hold};
-        }elsif(defined($scan_result{hold}) && (defined($job_hold))){
-            warn("# Warning: ignore script value for hold parameter: $scan_result{hold}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{hold}) && (defined($job_hold))) {
+            warn(
+                "# Warning: ignore script value for hold parameter: $scan_result{hold}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{signal}) && (!defined($Checkpoint_signal))){
+        if (defined($scan_result{signal}) && (!defined($Checkpoint_signal))) {
             $Checkpoint_signal = $scan_result{signal};
-        }elsif(defined($scan_result{signal}) && (defined($Checkpoint_signal))){
-            warn("# Warning: ignore script value for hold parameter: $scan_result{signal}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{signal}) && (defined($Checkpoint_signal))) {
+            warn(
+                "# Warning: ignore script value for hold parameter: $scan_result{signal}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{stdout}) && (!defined($Stdout_file))){
+        if (defined($scan_result{stdout}) && (!defined($Stdout_file))) {
             $Stdout_file = $scan_result{stdout};
-        }elsif(defined($scan_result{stdout}) && (defined($Stdout_file))){
-            warn("# Warning: ignore script value for stdout parameter: $scan_result{stdout}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{stdout}) && (defined($Stdout_file))) {
+            warn(
+                "# Warning: ignore script value for stdout parameter: $scan_result{stdout}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{stderr}) && (!defined($Stderr_file))){
+        if (defined($scan_result{stderr}) && (!defined($Stderr_file))) {
             $Stderr_file = $scan_result{stderr};
-        }elsif(defined($scan_result{stderr}) && (defined($Stderr_file))){
-            warn("# Warning: ignore script value for stderr parameter: $scan_result{stderr}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{stderr}) && (defined($Stderr_file))) {
+            warn(
+                "# Warning: ignore script value for stderr parameter: $scan_result{stderr}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{usejobkey})){
+        if (defined($scan_result{usejobkey})) {
             $use_job_key = 1;
         }
-        if (defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline eq "")){
+        if (defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline eq "")) {
             $import_job_key_inline = $scan_result{importjobkeyinlinepriv};
-        }elsif(defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline ne "")){
-            warn("# Warning: ignore script value for import-job-key-inline-priv parameter: $scan_result{importjobkeyinlinepriv}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{importjobkeyinlinepriv}) && ($import_job_key_inline ne "")) {
+            warn(
+                "# Warning: ignore script value for import-job-key-inline-priv parameter: $scan_result{importjobkeyinlinepriv}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{importjobkeyfromfile}) && ($import_job_key_file eq "")){
+        if (defined($scan_result{importjobkeyfromfile}) && ($import_job_key_file eq "")) {
             $import_job_key_file = $scan_result{importjobkeyfromfile};
-        }elsif(defined($scan_result{importjobkeyfromfile}) && ($import_job_key_file ne "")){
-            warn("# Warning: ignore script value for import-job-key-from-file parameter: $scan_result{importjobkeyfromfile}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{importjobkeyfromfile}) && ($import_job_key_file ne "")) {
+            warn(
+                "# Warning: ignore script value for import-job-key-from-file parameter: $scan_result{importjobkeyfromfile}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{exportjobkeytofile}) && ($export_job_key_file eq "")){
+        if (defined($scan_result{exportjobkeytofile}) && ($export_job_key_file eq "")) {
             $export_job_key_file = $scan_result{exportjobkeytofile};
-        }elsif(defined($scan_result{exportjobkeytofile}) && ($export_job_key_file ne "")){
-            warn("# Warning: ignore script value for export-job-key-to-file parameter: $scan_result{exportjobkeytofile}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{exportjobkeytofile}) && ($export_job_key_file ne "")) {
+            warn(
+                "# Warning: ignore script value for export-job-key-to-file parameter: $scan_result{exportjobkeytofile}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{array}) && (!defined($array_job_nb))){
+        if (defined($scan_result{array}) && (!defined($array_job_nb))) {
             $array_job_nb = $scan_result{array};
-        }elsif(defined($scan_result{array}) && (defined($array_job_nb))){
-            warn("# Warning: ignore script value for array parameter: $scan_result{array}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{array}) && (defined($array_job_nb))) {
+            warn(
+                "# Warning: ignore script value for array parameter: $scan_result{array}; another value was given on the command line.\n"
+            );
         }
-        if (defined($scan_result{arrayparamfile}) && (!defined($array_param_file))){
+        if (defined($scan_result{arrayparamfile}) && (!defined($array_param_file))) {
             $array_param_file = $scan_result{arrayparamfile};
-        }elsif(defined($scan_result{arrayparamfile}) && (defined($array_param_file))){
-            warn("# Warning: ignore script value for array-param-file parameter: $scan_result{arrayparamfile}; another value was given on the command line.\n");
+        } elsif (defined($scan_result{arrayparamfile}) && (defined($array_param_file))) {
+            warn(
+                "# Warning: ignore script value for array-param-file parameter: $scan_result{arrayparamfile}; another value was given on the command line.\n"
+            );
         }
     }
 
     my @resource_list = parse_resource_descriptions(\@resource);
 
-    $Project = $Project_default if (!defined($Project));
+    $Project           = $Project_default           if (!defined($Project));
     $Checkpoint_signal = $Checkpoint_signal_default if (!defined($Checkpoint_signal));
-    $Directory = $Directory_default if (!defined($Directory));
+    $Directory         = $Directory_default         if (!defined($Directory));
 
-    # array_ids are assigned automatically 
-    if(defined($array_param_file)){
+    # array_ids are assigned automatically
+    if (defined($array_param_file)) {
         $array_params_ref = OAR::Sub::read_array_param_file($array_param_file);
-        $array_job_nb = scalar @{$array_params_ref};
+        $array_job_nb     = scalar @{$array_params_ref};
     }
 
     $array_job_nb = 1 if (!defined($array_job_nb));
-    if($array_job_nb <= 0){
+    if ($array_job_nb <= 0) {
         warn("# Error: an array job must have a positive number of sub-jobs.\n");
         usage();
-        OAR::Sub::close_db_connection(); exit(6);
+        OAR::Sub::close_db_connection();
+        exit(6);
     }
 
     $Cmd_executor = "Qsub";
 
     ($Server, my $server_port) = parse_reservation(0, \@resource_list);
 
-    $Job_id_list_ref = OAR::Sub::add_micheline_job("PASSIVE", \@resource_list, $exec, "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref, $Verbose_level);
-}else{
-    if ($ARGV[0] ne ""){
-        warn("# Warning: you asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n");
+    $Job_id_list_ref = OAR::Sub::add_micheline_job(
+        "PASSIVE",               \@resource_list,
+        $exec,                   "$Host:$server_port",
+        $Queue_name,             $Job_sql_properties,
+        $Reservation_start,      defined($idFile) ? $idFile : "NULL",
+        $Checkpoint,             $Checkpoint_signal,
+        $notify,                 $job_name,
+        $job_env,                \@Type,
+        $Directory,              \@Anterior_job,
+        $Stdout_file,            $Stderr_file,
+        $job_hold,               $Project,
+        $use_job_key,            $import_job_key_inline,
+        $import_job_key_file,    $export_job_key_file,
+        $Initial_request_string, $array_job_nb,
+        $array_params_ref,       $Verbose_level);
+} else {
+    if ($ARGV[0] ne "") {
+        warn(
+            "# Warning: you asked for an Interactive job SO I will ignore arguments: $ARGV[0] ; Is your syntax right?\n"
+        );
     }
     $Cmd_executor = "Qsub -I";
 
     my @resource_list = parse_resource_descriptions(\@resource);
 
-    if (defined($array_param_file)){
+    if (defined($array_param_file)) {
         warn("# Error: a parameter file-based array job cannot be interactive.\n");
-# user defined array_ids, 0 if interactive and/or non-array job 
+
+        # user defined array_ids, 0 if interactive and/or non-array job
         usage();
-        OAR::Sub::close_db_connection(); exit(9);
+        OAR::Sub::close_db_connection();
+        exit(9);
     }
-    
-    $Project = $Project_default if (!defined($Project));
+
+    $Project           = $Project_default           if (!defined($Project));
     $Checkpoint_signal = $Checkpoint_signal_default if (!defined($Checkpoint_signal));
-    $Directory = $Directory_default if (!defined($Directory));
+    $Directory         = $Directory_default         if (!defined($Directory));
 
     $array_job_nb = 1 if (!defined($array_job_nb));
-    if ($array_job_nb != 1){
+    if ($array_job_nb != 1) {
         warn("# Error: an array job cannot be interactive.\n");
         usage();
-        OAR::Sub::close_db_connection(); exit(8);
+        OAR::Sub::close_db_connection();
+        exit(8);
     }
 
     ($Server, my $server_port) = parse_reservation(1, \@resource_list);
 
-    $Job_id_list_ref = OAR::Sub::add_micheline_job("INTERACTIVE", \@resource_list, "", "$Host:$server_port", $Queue_name, $Job_sql_properties, $Reservation_start, defined ($idFile)?$idFile:"NULL", $Checkpoint, $Checkpoint_signal, $notify, $job_name,$job_env,\@Type, $Directory,\@Anterior_job,$Stdout_file,$Stderr_file,$job_hold,$Project,$use_job_key,$import_job_key_inline,$import_job_key_file,$export_job_key_file,$Initial_request_string,$array_job_nb,$array_params_ref, $Verbose_level);
+    $Job_id_list_ref = OAR::Sub::add_micheline_job(
+        "INTERACTIVE",           \@resource_list,
+        "",                      "$Host:$server_port",
+        $Queue_name,             $Job_sql_properties,
+        $Reservation_start,      defined($idFile) ? $idFile : "NULL",
+        $Checkpoint,             $Checkpoint_signal,
+        $notify,                 $job_name,
+        $job_env,                \@Type,
+        $Directory,              \@Anterior_job,
+        $Stdout_file,            $Stderr_file,
+        $job_hold,               $Project,
+        $use_job_key,            $import_job_key_inline,
+        $import_job_key_file,    $export_job_key_file,
+        $Initial_request_string, $array_job_nb,
+        $array_params_ref,       $Verbose_level);
 }
 
-if ((!defined($Job_id_list_ref)) or (ref($Job_id_list_ref) ne "ARRAY")){
-    OAR::Sub::close_db_connection(); exit($Job_id_list_ref);
+if ((!defined($Job_id_list_ref)) or (ref($Job_id_list_ref) ne "ARRAY")) {
+    OAR::Sub::close_db_connection();
+    exit($Job_id_list_ref);
 }
 
-if(@{$Job_id_list_ref} > 1){
-    for my $j (@{$Job_id_list_ref}){
-        print("OAR_JOB_ID=".$j."\n");
+if (@{$Job_id_list_ref} > 1) {
+    for my $j (@{$Job_id_list_ref}) {
+        if ($j > 0 or $Verbose_level >= 1) {
+            print("OAR_JOB_ID=" . $j . "\n");
+        }
     }
-    print ("OAR_ARRAY_ID=".OAR::Sub::get_job_array_id($Job_id_list_ref->[0])."\n");
-}else{
-    print("OAR_JOB_ID=".$Job_id_list_ref->[0]."\n");
+    print("OAR_ARRAY_ID=" . OAR::Sub::get_job_array_id($Job_id_list_ref->[0]) . "\n");
+} else {
+    if ($Job_id_list_ref->[0] > 0 or $Verbose_level >= 1) {
+        print("OAR_JOB_ID=" . $Job_id_list_ref->[0] . "\n");
+    }
 }
 
-if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode) or ($JSON_mode))){
+if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode) or ($JSON_mode))) {
     print("\n##########\n");
-    foreach my $Job_id  (@{$Job_id_list_ref}){
+    foreach my $Job_id (@{$Job_id_list_ref}) {
         my $tmp = { job_id => $Job_id };
-        if (defined($DUMPER_mode)){
+        if (defined($DUMPER_mode)) {
             print(Dumper($tmp));
-        }elsif(defined($XML_mode)){
-            if ($XML_enabled == 1){
+        } elsif (defined($XML_mode)) {
+            if ($XML_enabled == 1) {
                 my $dump = new XML::Dumper;
                 $dump->dtd;
                 print($dump->pl2xml($tmp));
-            }else{
-                warn("XML module not available on the system. Ask your administrator to install it if needed.\n");
+            } else {
+                warn(
+                    "XML module not available on the system. Ask your administrator to install it if needed.\n"
+                );
             }
-        }elsif(defined($YAML_mode)){
-            if ($YAML_enabled == 1){
+        } elsif (defined($YAML_mode)) {
+            if ($YAML_enabled == 1) {
                 print(YAML::Dump($tmp));
-            }else{
-                warn("YAML module not available on the system. Ask your administrator to install it if needed.\n");
+            } else {
+                warn(
+                    "YAML module not available on the system. Ask your administrator to install it if needed.\n"
+                );
             }
-        }elsif(defined($JSON_mode)){
-            if ($JSON_enabled == 1){
+        } elsif (defined($JSON_mode)) {
+            if ($JSON_enabled == 1) {
                 print(JSON->new->pretty(1)->encode($tmp));
-            }else{
-                warn("JSON module not available on the system. Ask your administrator to install it if needed.\n");
+            } else {
+                warn(
+                    "JSON module not available on the system. Ask your administrator to install it if needed.\n"
+                );
             }
         }
     }
@@ -937,27 +1099,30 @@ if ((defined($DUMPER_mode)) or (defined($YAML_mode) or ($XML_mode) or ($JSON_mod
 
 OAR::Sub::close_db_connection();
 
-if ((@{$Job_id_list_ref} < 1) or ($Job_id_list_ref->[-1] <= 0)){
-    warn("# Error: oarsub failed, please verify your request syntax.\n");
+if ((@{$Job_id_list_ref} < 1) or ($Job_id_list_ref->[-1] <= 0)) {
+    warn("# Error: please verify your job submission syntax.\n");
     exit(8);
 }
 
 #Signal Almigthy
-if (defined(OAR::Sub::signal_almighty($remote_host,$remote_port,"$Cmd_executor"))){
+if (defined(OAR::Sub::signal_almighty($remote_host, $remote_port, "$Cmd_executor"))) {
+
     #qdel(1);
     warn("# Error: cannot connect to executor $remote_host:$remote_port. Job is killed.\n");
     exit(9);
 }
 
 my $answer;
-if ($Reservation ne "0"){
+if ($Reservation ne "0") {
+
     #Reservation mode
     print("# Advance reservation request: waiting for validation...\n");
     my $client = $Server->accept();
-    my $advance_reservation_validation_hook = get_conf("ADVANCE_RESERVATION_VALIDATION_HOOK_EXEC_FILE");
+    my $advance_reservation_validation_hook =
+      get_conf("ADVANCE_RESERVATION_VALIDATION_HOOK_EXEC_FILE");
     $answer = <$client>;
     chop($answer);
-    if ($answer eq "GOOD RESERVATION"){
+    if ($answer eq "GOOD RESERVATION") {
         print("# Reservation valid --> OK\n");
         if (defined($advance_reservation_validation_hook)) {
             run_advance_reservation_validation_hook($advance_reservation_validation_hook, 1);
@@ -969,26 +1134,30 @@ if ($Reservation ne "0"){
         }
         exit(10);
     }
-}elsif ($Interactive==1) {
+} elsif ($Interactive == 1) {
+
     #Interactive mode
     print("# Interactive mode: waiting...\n");
     my $prev_str = "";
-    do{
+    do {
         my $client = $Server->accept();
         $answer = <$client>;
         chomp($answer);
-        if ($answer =~ /\](.*)$/){
-            if ($1 ne $prev_str){
+        if ($answer =~ /\](.*)$/) {
+            if ($1 ne $prev_str) {
                 print("# $answer\n");
                 $prev_str = $1;
             }
-        }elsif ($answer ne "GOOD JOB"){
+        } elsif ($answer ne "GOOD JOB") {
             print("# $answer\n");
         }
-    }while (($answer ne "GOOD JOB") and ($answer ne "BAD JOB") and ($answer ne "JOB KILLED") and ($answer !~ /^ERROR/));
-    if ($answer eq "GOOD JOB"){
-        exit(connect_job($Job_id_list_ref->[0],1,$Openssh_cmd));
-    }else{
+      } while (($answer ne "GOOD JOB") and
+        ($answer ne "BAD JOB")    and
+        ($answer ne "JOB KILLED") and
+        ($answer !~ /^ERROR/));
+    if ($answer eq "GOOD JOB") {
+        exit(connect_job($Job_id_list_ref->[0], 1, $Openssh_cmd));
+    } else {
         exit(11);
     }
 }
