@@ -7919,14 +7919,23 @@ WHERE
     AND gp.start_time <= $date
     AND j.state = \'Waiting\'
     AND r.resource_id = gr.resource_id
-    AND NOT EXISTS ( SELECT 1
-                     FROM job_types t, jobs jc
-                     WHERE
-                         m.moldable_job_id = t.job_id
-                         AND t.type LIKE \'inner=%\'
-                         AND $match_container_job_against_inner_job_type
-                         AND jc.state != \'Running\'
-                   )
+    AND (
+         (
+          SELECT 'inner' <> ANY(array_agg(REGEXP_REPLACE(type, '([^=])=.*', '\1')))
+          FROM job_types t
+          WHERE  m.moldable_job_id = t.job_id
+         )
+        OR
+        EXISTS (
+            SELECT 1
+            FROM job_types t, jobs jc
+            WHERE
+                (m.moldable_job_id = t.job_id
+                 AND t.type LIKE 'inner=%'
+                 AND $match_container_job_against_inner_job_type
+                 AND jc.state = \'Running\')
+            )
+    )
     AND CASE
         WHEN (
             EXISTS (
