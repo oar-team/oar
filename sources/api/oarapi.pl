@@ -70,10 +70,6 @@ my $OARRESUME_CMD = "oarresume";
 my $OARNODES_CMD  = "oarnodes";
 my $OARDODO_CMD   = "$ENV{OARDIR}/oardodo/oardodo";
 
-# We set OAR_IN_API environment variable to let identify in admission rules that oar
-# commands (e.g. oarsub) are called by the API.
-$ENV{OAR_IN_API} = 1;
-
 # Oar admin command (for new list of resources generation)
 my $API_RESOURCES_LIST_GENERATION_CMD = "";
 if (is_conf("API_RESOURCES_LIST_GENERATION_CMD")) {
@@ -134,6 +130,12 @@ if (defined($ENV{OAR_FCGI_MAX_CYCLE_COUNT})) {
 }
 
 FCGI: while ($q = new CGI::Fast) {
+
+    # We set OAR_IN_API environment variable to let identify in admission rules that oar
+    # commands (e.g. oarsub) are called by the API.
+    # The variable has to be setted in the FCGI while loop, indeed in some runtime
+    # environments it wasn't available when setted outside the loop.
+    $ENV{OAR_IN_API} = 1;
 
     $fcgi_cycle_count++;
 
