@@ -1,3 +1,9 @@
+oar (2.5.10~g5k23-1) unstable; urgency=medium
+
+  * 070c21e9 [oarapi] set OAR_IN_API env variable inside the FCGI loop
+
+ -- Samir Noir <samir.noir@inria.fr>  Mon, 30 May 2022 10:40:49 +0200
+
 oar (2.5.10~g5k22-1) unstable; urgency=medium
 
   * 0a5d8e41 [all] apply perltidy with custom arguments to OAR's code
