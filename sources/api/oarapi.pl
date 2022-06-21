@@ -38,8 +38,6 @@ use File::Basename;
 use CGI::Fast qw/ standard /;
 use File::Listing qw(parse_dir);
 
-#use Data::Dumper;
-
 my $VERSION = "1.0.2";
 
 ##############################################################################
