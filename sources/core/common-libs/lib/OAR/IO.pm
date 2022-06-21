@@ -8360,12 +8360,17 @@ sub hms_to_sql($$$) {
 # side effects: /
 sub duration_to_hms($) {
     my $date = shift;
-    my $sec  = $date % 60;
-    $date /= 60;
-    my $min = $date % 60;
-    $date = int($date / 60);
-    my $hour = $date;
-    return ($hour, $min, $sec);
+
+    if (!defined($date) || $date == 0) {
+        return (0, 0, 0);
+    } else {
+        my $sec = $date % 60;
+        $date /= 60;
+        my $min = $date % 60;
+        $date = int($date / 60);
+        my $hour = $date;
+        return ($hour, $min, $sec);
+    }
 }
 
 # duration_to_sql
