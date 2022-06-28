@@ -1,3 +1,12 @@
+oar (2.5.10~g5k24-1) unstable; urgency=medium
+
+  * fa005bf3 [IO.pm] handle undef or 0 cases in duration_to_hms() subroutine
+  * 2c328e37 [Stat.pm] fix get_job_data() when $format is not defined
+  * 33711a10 [oarapi] fix an error in logs due to redefined Dump() subroutine
+  * 9da14740 [IO.pm] optimize get_gantt_jobs_to_launch() SQL query
+
+ -- Samir Noir <samir.noir@inria.fr>  Tue, 28 Jun 2022 11:15:46 +0200
+
 oar (2.5.10~g5k23-1) unstable; urgency=medium
 
   * 070c21e9 [oarapi] set OAR_IN_API env variable inside the FCGI loop
