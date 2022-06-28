@@ -93,6 +93,8 @@ version 2.5.10:
   - [api] better returned messages and add an OAR_IN_API env variable
   - [IO] make job creation with add_micheline_subjob() more consistent
   - [oarsub] enhance -C option to be more user friendly
+  - [IO.pm] optimize get_gantt_jobs_to_launch() SQL query
+  - [oarapi] fix an error in logs due to redefined Dump() subroutine
 
 version 2.5.9:
 --------------
