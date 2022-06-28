@@ -7900,14 +7900,46 @@ sub get_gantt_jobs_to_launch($$) {
 
     # postgresql is quicker without the moldable_index filter
     my $moldable_index_current = "";
+    my $match_container_job_against_inner_job_type;
+    my $job_types_filter;
 
     # match the container jobid against what is given in the inner=<jobid> job type
-    my $match_container_job_against_inner_job_type =
-      "CAST(jc.job_id AS VARCHAR) = SUBSTRING(t.type FROM 7)";
-    if ($Db_type eq "mysql") {
+    if ($Db_type eq "Pg") {
+        $match_container_job_against_inner_job_type =
+          "CAST(jc.job_id AS VARCHAR) = SUBSTRING(t.type FROM 7)";
+        $job_types_filter = <<EOS;
+(
+     (
+      SELECT 'inner' <> ANY(array_agg(REGEXP_REPLACE(t.type, '([^=])=.*', '\1')))
+      FROM job_types t
+      WHERE  m.moldable_job_id = t.job_id
+     )
+    OR
+    EXISTS (
+        SELECT 1
+        FROM job_types t, jobs jc
+        WHERE
+            (m.moldable_job_id = t.job_id
+             AND t.type LIKE 'inner=%'
+             AND $match_container_job_against_inner_job_type
+             AND jc.state = \'Running\')
+        )
+)
+EOS
+    } else {
         $moldable_index_current = "m.moldable_index = \'CURRENT\' AND";
         $match_container_job_against_inner_job_type =
           "CAST(jc.job_id AS CHAR) = SUBSTRING(t.type FROM 7)";
+        $job_types_filter = <<EOS;
+NOT EXISTS ( SELECT 1
+             FROM job_types t, jobs jc
+             WHERE
+                 m.moldable_job_id = t.job_id
+                 AND t.type LIKE \'inner=%\'
+                 AND $match_container_job_against_inner_job_type
+                 AND jc.state != \'Running\'
+           )
+EOS
     }
     my $req = <<EOS;
 SELECT gp.moldable_job_id, gr.resource_id, j.job_id
@@ -7919,14 +7951,7 @@ WHERE
     AND gp.start_time <= $date
     AND j.state = \'Waiting\'
     AND r.resource_id = gr.resource_id
-    AND NOT EXISTS ( SELECT 1
-                     FROM job_types t, jobs jc
-                     WHERE
-                         m.moldable_job_id = t.job_id
-                         AND t.type LIKE \'inner=%\'
-                         AND $match_container_job_against_inner_job_type
-                         AND jc.state != \'Running\'
-                   )
+    AND $job_types_filter
     AND CASE
         WHEN (
             EXISTS (
@@ -8335,12 +8360,17 @@ sub hms_to_sql($$$) {
 # side effects: /
 sub duration_to_hms($) {
     my $date = shift;
-    my $sec  = $date % 60;
-    $date /= 60;
-    my $min = $date % 60;
-    $date = int($date / 60);
-    my $hour = $date;
-    return ($hour, $min, $sec);
+
+    if (!defined($date) || $date == 0) {
+        return (0, 0, 0);
+    } else {
+        my $sec = $date % 60;
+        $date /= 60;
+        my $min = $date % 60;
+        $date = int($date / 60);
+        my $hour = $date;
+        return ($hour, $min, $sec);
+    }
 }
 
 # duration_to_sql

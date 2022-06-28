@@ -544,7 +544,7 @@ sub get_job_data($$;$) {
         $data_to_display{'reserved_resources'} = $reserved_resources;
     }
 
-    if ($format eq "3") {
+    if (defined($format) && ($format eq "3")) {
         my %data_to_display_format_3 = convert_job_format_3(\%data_to_display);
 
         return (\%data_to_display_format_3);
