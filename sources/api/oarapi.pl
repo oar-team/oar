@@ -1017,6 +1017,7 @@ FCGI: while ($q = new CGI::Fast) {
                     $err == 7  ||
                     $err == 17 ||
                     $err == 16 ||
+                    $err == 18 ||
                     $err == 6  ||
                     $err == 8  ||
                     $err == 10 ||
