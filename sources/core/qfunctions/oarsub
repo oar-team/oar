@@ -464,7 +464,8 @@ sub parse_resource_descriptions($) {
                     $tmp = $Nodes_resources if ($tmp eq "nodes");
                     push(@resources_list, { resource => $tmp, value => -2 });
                 } else {
-                    die("# Error: cannot recognize the resource description: $l\n");
+                    warn("# Error: cannot recognize the resource description: $l\n");
+                    exit(18);
                 }
             }
             $tmp_result{resources} = \@resources_list;
@@ -483,12 +484,14 @@ sub parse_resource_descriptions($) {
                     }
                     $resource_groups[1] = OAR::Sub::sql_to_duration("$resource_groups[1]");
                 } else {
-                    die("# Error: cannot recognize walltime resource value\n");
+                    warn("# Error: cannot recognize walltime resource value\n");
+                    exit(18);
                 }
                 $r = $2;
             }
             if ($r eq $initial_resource) {
-                die("# Error: cannot recognize -- $r -- resource\n");
+                warn("# Error: cannot recognize -- $r -- resource\n");
+                exit(18);
             }
             push(@{ $resource_groups[0] }, \%tmp_result);
 
