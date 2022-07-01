@@ -7030,7 +7030,7 @@ sub update_current_scheduler_priority($$$$$) {
 
     $state = "STOP" if ($state ne "START");
 
-    my $log_scheduluer_priority_changes = (is_conf("LOG_SCHEDULER_PRIORITY_CHANGES") and
+    my $log_scheduler_priority_changes = (is_conf("LOG_SCHEDULER_PRIORITY_CHANGES") and
           lc(get_conf("LOG_SCHEDULER_PRIORITY_CHANGES")) eq "yes") ? 1 : 0;
 
     if (is_conf("SCHEDULER_PRIORITY_HIERARCHY_ORDER")) {
@@ -7079,7 +7079,7 @@ WHERE
     $f IN ($value_str)
 EOS
                 $dbh->do($req);
-                if ($log_scheduluer_priority_changes) {
+                if ($log_scheduler_priority_changes) {
                     $dbh->do(
                         "INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
                           SELECT resources.resource_id,\'scheduler_priority\',CONCAT(resources.scheduler_priority,\' ($value*$index*$coeff\@job $job_id/$f)\'),\'$date\',\'NO\'
