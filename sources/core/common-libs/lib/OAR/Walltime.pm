@@ -364,7 +364,7 @@ sub request($$$$$$$$) {
         }
     }
 
-    if ($event_message ne "") {
+    if (defined($event_message) && $event_message ne "") {
         OAR::IO::add_new_event($dbh, "WALLTIME_REQUEST", $job->{job_id}, $event_message);
     }
 

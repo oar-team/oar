@@ -1011,15 +1011,15 @@ FCGI: while ($q = new CGI::Fast) {
                 my $err = $? >> 8;
 
                 # Error codes corresponding to an error into the user's request
-                if ($err == 6 ||
-                    $err == 4  ||
+                if ($err == 4 ||
                     $err == 5  ||
-                    $err == 7  ||
-                    $err == 17 ||
-                    $err == 16 ||
                     $err == 6  ||
+                    $err == 7  ||
                     $err == 8  ||
                     $err == 10 ||
+                    $err == 16 ||
+                    $err == 17 ||
+                    $err == 18 ||
                     $err == 254) {
                     OAR::API::ERROR(400, "Bad query", $cmdRes);
                 } elsif ($err == 52) {
