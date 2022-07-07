@@ -9380,7 +9380,7 @@ sub change_walltime($$$$) {
         "UPDATE moldable_job_descriptions SET moldable_walltime=$new_walltime FROM jobs WHERE jobs.job_id = moldable_job_id AND jobs.job_id = $job_id"
     );
     $dbh->do(
-        "INSERT INTO event_logs (type,job_id,date,description,to_check) VALUES ('WALLTIME',$job_id,EXTRACT(EPOCH FROM current_timestamp),' $message','NO')"
+        "INSERT INTO event_logs (type,job_id,date,description,to_check) VALUES ('WALLTIME',$job_id,EXTRACT(EPOCH FROM current_timestamp),'$message','NO')"
     );
 }
 

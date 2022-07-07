@@ -468,7 +468,8 @@ sub print_job_data($) {
                 print("    resubmit_job_id = $job_info->{resubmit_job_id}\n");
                 print("    events = \n");
                 foreach my $e (@{ $data->{ $job_info->{job_id} }->{events} }) {
-                    print(OAR::Stat::local_to_sql($e->{date}) . "> $e->{type}:$e->{description}\n");
+                    print(
+                        OAR::Stat::local_to_sql($e->{date}) . "> $e->{type}: $e->{description}\n");
                 }
                 print("\n");
             } else {
