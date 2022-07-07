@@ -1,3 +1,14 @@
+oar (2.5.10~g5k25-1) unstable; urgency=medium
+
+  * fb4f9bbc [oarstat] add a space after ':' when printing events messages for a job
+  * 51b98f52 [oar_meta_sched] capitalize walltime changed event message
+  * ae6c86ad [all] add previous commit to `git blame` ignore revs list
+  * 2e92687c [oar_meta_sched] apply code style with perltidy
+  * d9c5b86e [oarwalltime] don't try to add event is there is no message
+  * b051cad6 [oarstat] fix scheduled_start value when using format 3 for output
+
+ -- Samir Noir <samir.noir@inria.fr>  Thu, 07 Jul 2022 12:24:02 +0200
+
 oar (2.5.10~g5k24-1) unstable; urgency=medium
 
   * fa005bf3 [IO.pm] handle undef or 0 cases in duration_to_hms() subroutine
