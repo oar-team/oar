@@ -242,7 +242,7 @@ sub process_walltime_change_requests($) {
         }
 
         my $message =
-          "walltime changed: " . OAR::IO::duration_to_sql($new_walltime) .
+          "Walltime changed: " . OAR::IO::duration_to_sql($new_walltime) .
           " (granted: " . OAR::IO::duration_to_sql_signed($fit) .
           "/pending: " . OAR::IO::duration_to_sql_signed($new_pending) .
           (($job->{force} eq 'YES') ? "/force" : "") . (($job->{whole} eq 'YES') ? "/whole" : "") .
