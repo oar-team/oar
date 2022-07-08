@@ -22,6 +22,7 @@ use Fcntl;
 use OAR::Schedulers::ResourceTree;
 use OAR::Tools;
 use POSIX qw(strftime);
+use Capture::Tiny ':all';
 
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity   = 1;
@@ -1729,8 +1730,13 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
     # resources availbale)
     my $jobproperties_applied_after_validation = "";
 
-    #Apply rules
-    eval $rules;
+    # Apply rules and store output as events, if enabled in configuration
+    my $adm_rules_stdout;
+    my $adm_rules_stderr;
+    ($adm_rules_stdout, $adm_rules_stderr) = tee {
+        eval $rules;
+    };
+
     if ($@) {
         warn("$@\n");
         return (-2);
@@ -1762,7 +1768,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
             warn("# Simple array job submission is used\n");
         }
 
-        my $simple_job_id_list_ref = add_micheline_simple_array_job_non_contiguous(
+        @Job_id_list = add_micheline_simple_array_job_non_contiguous(
             $dbh,                    $dbh_ro,
             $jobType,                $ref_resource_list,
             \@array_job_commands,    $infoType,
@@ -1778,7 +1784,6 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
             $user,                   $reservationField,
             $startTimeJob,           $array_index,
             $jobproperties_applied_after_validation);
-        return ($simple_job_id_list_ref);
     } else {
 
         # single job to submit and when job key is used with array job
@@ -1854,6 +1859,16 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
                     print("# Export job key to file: " . $export_job_key_file_tmp . "\n");
                 }
             }
+        }
+    }
+    if (lc(get_conf_with_default_param("OARSUB_STORE_ADM_RULES_OUTPUTS", "no")) eq "yes") {
+        if (defined($adm_rules_stdout) && ($adm_rules_stdout ne "")) {
+            chomp($adm_rules_stdout);
+            chomp($adm_rules_stderr);
+            add_new_event($dbh, "ADM_RULES_MSG_OUT", $Job_id_list[0], $adm_rules_stdout);
+        }
+        if (defined($adm_rules_stderr) && ($adm_rules_stderr ne "")) {
+            add_new_event($dbh, "ADM_RULES_MSG_ERR", $Job_id_list[0], $adm_rules_stderr);
         }
     }
     return (\@Job_id_list);
@@ -2685,7 +2700,7 @@ EOS
     $query_array_id = $query_array_id . ")";
     $dbh->do($query_job_state_logs);
 
-    return (\@Job_id_list);
+    return (@Job_id_list);
 }
 
 # get_job
