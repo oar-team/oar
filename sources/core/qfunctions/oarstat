@@ -233,13 +233,19 @@ sub print_events {
     if (defined($events)) {
         my $lines = "";
         foreach my $event_hashref (@$events) {
-            $lines = $lines .
-              sprintf(
-                "%s> [%s] %s: %s\n",
+            my @split_description = split("\n", $event_hashref->{description});
+            my $header_str        = sprintf("%s> [%s] %s: ",
                 OAR::Stat::local_to_sql($event_hashref->{'date'}),
                 $event_hashref->{'job_id'},
-                $event_hashref->{'type'},
-                $event_hashref->{'description'});
+                $event_hashref->{'type'});
+            for (my $i = 0; $i <= $#split_description; $i++) {
+                if ($i == 0) {
+                    $lines = $lines . $header_str . $split_description[$i] . "\n";
+                } else {
+                    $lines = $lines . " " x length($header_str) . $split_description[$i] . "\n";
+                }
+            }
+
             push @{ $events_dump{ $event_hashref->{'job_id'} } },
               { 'date'        => $event_hashref->{'date'},
                 'description' => $event_hashref->{'description'},
@@ -468,8 +474,16 @@ sub print_job_data($) {
                 print("    resubmit_job_id = $job_info->{resubmit_job_id}\n");
                 print("    events = \n");
                 foreach my $e (@{ $data->{ $job_info->{job_id} }->{events} }) {
-                    print(
-                        OAR::Stat::local_to_sql($e->{date}) . "> $e->{type}: $e->{description}\n");
+                    my $header_str        = OAR::Stat::local_to_sql($e->{date}) . "> $e->{type}: ";
+                    my @split_description = split("\n", $e->{description});
+                    for (my $i = 0; $i <= $#split_description; $i++) {
+                        if ($i == 0) {
+                            print($header_str . $split_description[$i] . "\n");
+                        } else {
+                            print " " x length($header_str);
+                            print($split_description[$i] . "\n");
+                        }
+                    }
                 }
                 print("\n");
             } else {

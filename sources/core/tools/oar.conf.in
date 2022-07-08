@@ -56,6 +56,15 @@ OARSUB_NODES_RESOURCES="network_address"
 OARSUB_FORCE_JOB_KEY="no"
 # Configuration for module: user, api
 
+# Enable storage of admission rules outputs in database, as events.
+# Two separate events will be created for STDOUT and STDERR:
+#  - ADM_RULES_MSG_OUT
+#  - ADM_RULES_MSG_ERR
+# An event will be created only if there was an output on the FD.
+# Default is no
+OARSUB_STORE_ADM_RULES_OUTPUTS="no"
+# Configuration for module: user
+
 # OAR log level: 3(debug+warnings+errors), 2(warnings+errors), 1(errors)
 LOG_LEVEL="2"
 # Configuration for module: server
