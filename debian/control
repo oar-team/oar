@@ -19,7 +19,8 @@ Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
-         libdbi-perl
+         libdbi-perl,
+         libcapture-tiny-perl
 Suggests: oar-server,
           oar-user,
           oar-node,

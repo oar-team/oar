@@ -1,3 +1,10 @@
+oar (2.5.10~g5k26-1) unstable; urgency=medium
+
+  * 217142a1 [database] change type events_logs.description from VARCHAR to TEXT
+  * 80204968 [oarsub] store admission rules output in database as events
+
+ -- Samir Noir <samir.noir@inria.fr>  Fri, 08 Jul 2022 16:10:26 +0200
+
 oar (2.5.10~g5k25-1) unstable; urgency=medium
 
   * fb4f9bbc [oarstat] add a space after ':' when printing events messages for a job
