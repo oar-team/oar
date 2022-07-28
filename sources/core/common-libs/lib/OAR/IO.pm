@@ -6607,9 +6607,10 @@ sub set_resources_state($$$$$) {
     my $need_update   = 0;
     my %debug_info;
     my @jobs_to_frag;
-
     foreach my $resource_id (keys %$resources_to_change) {
-        if ($resources_info->{$resource_id}->{state} ne $resources_to_change->{$resource_id}) {
+        if ($resources_info->{$resource_id}->{state} ne $resources_to_change->{$resource_id} or
+            $resources_info->{$resource_id}->{finaud_decision} ne
+            $resources_info->{$resource_id}->{next_finaud_decision}) {
             $need_update = 1;
             $update_values =
               $update_values . "(" . $resource_id . ", '" . $resources_to_change->{$resource_id} .
