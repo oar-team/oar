@@ -8225,7 +8225,7 @@ EOS
 # side effects: /
 sub ymdhms_to_sql($$$$$$) {
     my ($year, $mon, $mday, $hour, $min, $sec) = @_;
-    return ($year + 1900) . "-" . ($mon + 1) . "-" . $mday . " $hour:$min:$sec";
+    return ($year + 1900) . "-" . ($mon + 1) . "-" . $mday . " " . hms_to_sql($hour, $min, $sec);
 }
 
 # sql_to_ymdhms
@@ -8333,7 +8333,7 @@ sub hms_to_duration($$$) {
 # return value: date string
 # side effects: /
 sub hms_to_sql($$$) {
-    my ($hour, $min, $sec) = @_;
+    my ($hour, $min, $sec) = map { (/^$/) ? 0 : $_; } @_;
     return "$hour:$min:$sec";
 }
 
