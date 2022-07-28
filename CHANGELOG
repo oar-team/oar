@@ -4,6 +4,7 @@ OAR CHANGELOG
 version 2.5.10:
 --------------
 
+  - [oarnodesetting] Allow setting the suspected state
   - [oarstat] Allow to see other users' initial_request
   - [oarsub] ensure the inline job key is in a valid format, by adding \n
   - [oarsub] remove ssh inline keys from initial_request
