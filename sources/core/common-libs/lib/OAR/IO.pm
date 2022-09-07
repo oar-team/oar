@@ -22,7 +22,6 @@ use Fcntl;
 use OAR::Schedulers::ResourceTree;
 use OAR::Tools;
 use POSIX qw(strftime);
-use Capture::Tiny ':all';
 
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity   = 1;
@@ -58,7 +57,7 @@ sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub get_possible_wanted_resources($$$$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_job_state($$);
 sub get_current_moldable_job($$);
@@ -1655,7 +1654,7 @@ sub job_key_management($$$$$) {
 
 #TODO: moldable and array job, mysql LOAD INFILE, pg COPY or test limit
 
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
     my ($dbh,                 $dbh_ro,              $jobType,
         $ref_resource_list,   $command,             $infoType,
         $queue_name,          $jobproperties,       $startTimeReservation,
@@ -1665,7 +1664,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
         $stdout,              $stderr,              $job_hold,
         $project,             $use_job_key,         $import_job_key_inline,
         $import_job_key_file, $export_job_key_file, $initial_request_string,
-        $array_job_nb,        $array_params_ref,    $verbose_level
+        $array_job_nb,        $array_params_ref,    $verbose_level,
+        $print_func,          $warn_func,           $capture_func
     ) = @_;
 
     my $array_id = 0;
@@ -1684,17 +1684,17 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
 
     # Verify notify syntax
     if ((defined($notify)) and ($notify !~ m/^\s*(\[\s*(.+)\s*\]\s*)?(mail|exec)\s*:.+$/m)) {
-        warn("# Error: bad syntax for the notify option\n");
+        &$warn_func("# Error: bad syntax for the notify option\n");
         return (-6);
     }
 
     # Check the stdout and stderr path validity
     if ((defined($stdout)) and ($stdout !~ m/^[a-zA-Z0-9_.\/\-\%\\ ]+$/m)) {
-        warn("# Error: invalid stdout file name (bad character)\n");
+        &$warn_func("# Error: invalid stdout file name (bad character)\n");
         return (-12);
     }
     if (defined($stderr) and ($stderr !~ m/^[a-zA-Z0-9_.\/\-\%\\ ]+$/m)) {
-        warn("# Error: invalid stderr file name (bad character)\n");
+        &$warn_func("# Error: invalid stderr file name (bad character)\n");
         return (-13);
     }
 
@@ -1712,7 +1712,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
 
     # Verify the content of env variables
     if ("$job_env" !~ m/^[\w\=\s\/\.\-\"]*$/m) {
-        warn("# Error: unallowed characters in the job environnement variables, '$job_env'\n");
+        &$warn_func(
+            "# Error: unallowed characters in the job environnement variables, '$job_env'\n");
         return (-9);
     }
 
@@ -1733,9 +1734,11 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
     # Apply rules and store output as events, if enabled in configuration
     my $adm_rules_stdout;
     my $adm_rules_stderr;
-    ($adm_rules_stdout, $adm_rules_stderr) = tee {
-        eval $rules;
-    };
+
+    ($adm_rules_stdout, $adm_rules_stderr) = &$capture_func(
+        sub {
+            eval $rules;
+        });
 
     if ($@) {
         warn("$@\n");
@@ -1745,7 +1748,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
     #Test if the queue exists
     my %all_queues = get_all_queue_informations($dbh);
     if (!defined($all_queues{$queue_name})) {
-        warn("# Error: queue '$queue_name' does not exist\n");
+        &$warn_func("# Error: queue '$queue_name' does not exist\n");
         return (-8);
     }
 
@@ -1765,7 +1768,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
     if (($array_job_nb > 1) and (not defined($use_job_key)) and ($#{$ref_resource_list} == 0))
     {    #to test  add_micheline_simple_array_job
         if ($verbose_level >= 1) {
-            warn("# Simple array job submission is used\n");
+            &$warn_func("# Simple array job submission is used\n");
         }
 
         @Job_id_list = add_micheline_simple_array_job_non_contiguous(
@@ -1834,7 +1837,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
 
                 # write the private job key with the user ownership
                 unless (defined($pid = open(SAFE_CHILD, "|-"))) {
-                    warn("# Error: cannot open pipe ($?)");
+                    &$warn_func("# Error: cannot open pipe ($?)");
                     exit(-14);
                 }
                 if ($pid == 0) {
@@ -1842,21 +1845,21 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
                     $ENV{OARDO_BECOME_USER} = $lusr;
                     open(STDERR, ">/dev/null");
                     unless (exec("oardodo dd of=$export_job_key_file_tmp")) {
-                        warn("# Error: cannot exec user shell ($?)");
+                        &$warn_func("# Error: cannot exec user shell ($?)");
                         push(@Job_id_list, -14);
                         return (@Job_id_list);
                     }
                 } else {
                     print SAFE_CHILD $ssh_priv_key;
                     unless (close(SAFE_CHILD)) {
-                        warn("# Error: cannot close pipe {$?}");
+                        &$warn_func("# Error: cannot close pipe {$?}");
                         push(@Job_id_list, -14);
                         return (@Job_id_list);
                     }
                 }
 
                 if ($verbose_level >= 1) {
-                    print("# Export job key to file: " . $export_job_key_file_tmp . "\n");
+                    &$print_func("# Export job key to file: " . $export_job_key_file_tmp . "\n");
                 }
             }
         }
