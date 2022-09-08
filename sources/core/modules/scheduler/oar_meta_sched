@@ -1381,9 +1381,8 @@ sub check_jobs_to_launch() {
         "Begin processing of jobs to launch (start time <= $current_time_sql)\n", $Session_id);
     my $return_code    = 0;
     my %jobs_to_launch = OAR::IO::get_gantt_jobs_to_launch($base, $current_time_sec);
-
     foreach my $i (keys(%jobs_to_launch)) {
-        oar_info($Module_name, "Set job $i state to toLaunch at $current_time_sql\n", $Session_id);
+        oar_info($Module_name, "Set job state to toLaunch\n", $Session_id, "$i");
 
         # We must look at reservations to not go after the initial stop time
         my $mold = OAR::IO::get_current_moldable_job($base, $jobs_to_launch{$i}->[0]);
@@ -1391,14 +1390,20 @@ sub check_jobs_to_launch() {
         if (($job->{reservation} eq "Scheduled") and ($job->{start_time} < $current_time_sec)) {
             my $new_walltime =
               $mold->{moldable_walltime} - ($current_time_sec - $job->{start_time});
+            my $new_walltime_sql  = OAR::IO::duration_to_sql($new_walltime);
+            my $old_starttime_sql = = OAR::IO::local_to_sql($job->{start_time});
+            my $old_walltime_sql  = OAR::IO::duration_to_sql($mold->{moldable_walltime});
             OAR::IO::set_moldable_job_walltime($base, $jobs_to_launch{$i}->[0], $new_walltime);
             OAR::IO::set_gantt_job_startTime($base, $jobs_to_launch{$i}->[0], $current_time_sec);
-            oar_warn($Module_name,
-                "Reduce walltime of job $i to $new_walltime (was  $mold->{moldable_walltime})\n",
-                $Session_id);
+            oar_info($Module_name,
+                "Update job start time to $current_time_sql (was: $old_starttime_sql)\n",
+                $Session_id, "$i");
+            oar_info($Module_name,
+                "Reduce job walltime to $new_walltime_sql (was: $old_walltime_sql)\n",
+                $Session_id, "$i");
             OAR::IO::add_new_event($base, "REDUCE_RESERVATION_WALLTIME", $i,
-                "Change walltime from $mold->{moldable_walltime} to $new_walltime");
-            my $new_walltime_sql = OAR::IO::duration_to_sql($new_walltime);
+                "Update actual start time ($old_starttime_sql -> $current_time_sql) and walltime ($old_walltime_sql -> $new_walltime_sql)"
+            );
             if ($job->{message} =~ s/W\=\d+\:\d+\:\d+/W\=$new_walltime_sql/g) {
                 OAR::IO::set_job_message($base, $i, $job->{message});
             }
