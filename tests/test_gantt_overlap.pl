@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 # Description:
 #  Simple script to check that a gantt is correct, with regard to overlaping jobs
 # Usage:

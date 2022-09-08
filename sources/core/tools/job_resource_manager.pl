@@ -1,4 +1,3 @@
-# $Id$
 #
 # The job_resource_manager script is a perl script that oar server deploys on nodes
 # to manage cpusets, users, job keys, ...

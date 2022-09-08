@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 
 # prologue arguments
 # Script is run under uid of oar who is sudo

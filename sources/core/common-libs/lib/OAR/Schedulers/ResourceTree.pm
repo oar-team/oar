@@ -1,4 +1,3 @@
-# $Id$
 package OAR::Schedulers::ResourceTree;
 
 use warnings;

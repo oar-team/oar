@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 #-d:DProf
 #-d:NYTProf     --> nytprofhtml
 

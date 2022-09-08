@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 # This program aims to change node state automatically when they are inaccesible or they become alive
 
 use OAR::IO;

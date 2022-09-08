@@ -1,4 +1,3 @@
--- $Id$
 -- info version, change here if you have updated the db schema
 DROP TABLE schema;
 CREATE TABLE schema (

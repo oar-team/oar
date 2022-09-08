@@ -7,7 +7,6 @@
 # - the list of the return values
 # - the list of the side effects
 
-# $Id$
 package OAR::IO;
 require Exporter;
 

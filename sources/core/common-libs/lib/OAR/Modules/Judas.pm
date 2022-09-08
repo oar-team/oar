@@ -2,7 +2,6 @@ package OAR::Modules::Judas;
 require Exporter;
 
 # this module allows to log on a file and stdout with three different level
-# $Id$
 
 use strict;
 use Data::Dumper;

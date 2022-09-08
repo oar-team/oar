@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 #Almighty module which changes node state
 
 use English;

@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 # Basic example of test scenario
 
 BASENAME=${0#$PWD/}

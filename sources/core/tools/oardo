@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 # This wrapper is used to execute user commands with oar privileges.
 
 use English '-no_match_vars';

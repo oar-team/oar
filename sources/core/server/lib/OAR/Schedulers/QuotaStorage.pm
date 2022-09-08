@@ -1,4 +1,3 @@
-# $Id$
 package OAR::Schedulers::QuotaStorage;
 require Exporter;
 use POSIX qw(strftime);

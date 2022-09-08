@@ -1,6 +1,5 @@
 #!/bin/bash
 # oarnodesetting_ssh: oarnodesetting SSH wrapper
-# $Id$
 # This script is to be called from the node via SSH so that the server performs 
 # the oarnodesetting command and changes the state of the calling node.
 #

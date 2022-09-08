@@ -28,7 +28,6 @@
 ##  > print "toto = ".get_conf("toto")."\n" if is_conf("toto");
 ##
 ###############################################################################
-# $Id$
 package OAR::Conf;
 
 use strict;
