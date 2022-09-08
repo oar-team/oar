@@ -107,31 +107,32 @@ foreach my $j (OAR::IO::get_timered_job($base)) {
 
 # Look at job walltimes
 foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")) {
-    my ($start, $max);
+    my ($start, $walltime);
 
     # Get starting time
     $start = $job->{start_time};
 
-    # Get maxtime
+    # Get walltime
     my $mold_job = OAR::IO::get_current_moldable_job($base, $job->{assigned_moldable_job});
-    $max = $mold_job->{moldable_walltime};
+    $walltime = $mold_job->{moldable_walltime};
     if ($job->{suspended} eq "YES") {
 
         # This job was suspended so we must recalculate the walltime
-        $max += OAR::IO::get_job_suspended_sum_duration($base, $job->{job_id}, $current);
+        $walltime += OAR::IO::get_job_suspended_sum_duration($base, $job->{job_id}, $current);
     }
 
-    oar_info($Module_name, "From $start with $max; current time=$current\n",
+    oar_info($Module_name, "From $start with $walltime; current time=$current\n",
         $Session_id, $job->{job_id});
-    if ($current > $start + $max) {
+    if ($current > $start + $walltime) {
         oar_info($Module_name, "--> (Elapsed)\n", $Session_id);
         $guilty_found = 1;
         OAR::IO::lock_table($base, [ "frag_jobs", "event_logs", "jobs" ]);
         OAR::IO::frag_job($base, $job->{job_id});
         OAR::IO::unlock_table($base);
         OAR::IO::add_new_event($base, "WALLTIME", $job->{job_id},
-            "[sarko] Job [$job->{job_id}] from $start with $max; current time=$current (Elapsed)");
-    } elsif (($job->{checkpoint} > 0) && ($current >= ($start + $max - $job->{checkpoint}))) {
+            "[sarko] Job [$job->{job_id}] from $start with $walltime; current time=$current (Elapsed)"
+        );
+    } elsif (($job->{checkpoint} > 0) && ($current >= ($start + $walltime - $job->{checkpoint}))) {
 
         # OAR must notify the job to checkpoint itself
         oar_info($Module_name, "Send checkpoint signal to the job $job->{job_id}\n", $Session_id);

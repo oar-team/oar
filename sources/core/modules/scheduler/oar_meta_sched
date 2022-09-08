@@ -1389,16 +1389,17 @@ sub check_jobs_to_launch() {
         my $mold = OAR::IO::get_current_moldable_job($base, $jobs_to_launch{$i}->[0]);
         my $job  = OAR::IO::get_job($base, $i);
         if (($job->{reservation} eq "Scheduled") and ($job->{start_time} < $current_time_sec)) {
-            my $max_time = $mold->{moldable_walltime} - ($current_time_sec - $job->{start_time});
-            OAR::IO::set_moldable_job_max_time($base, $jobs_to_launch{$i}->[0], $max_time);
+            my $new_walltime =
+              $mold->{moldable_walltime} - ($current_time_sec - $job->{start_time});
+            OAR::IO::set_moldable_job_walltime($base, $jobs_to_launch{$i}->[0], $new_walltime);
             OAR::IO::set_gantt_job_startTime($base, $jobs_to_launch{$i}->[0], $current_time_sec);
             oar_warn($Module_name,
-                "Reduce walltime of job $i to $max_time (was  $mold->{moldable_walltime})\n",
+                "Reduce walltime of job $i to $new_walltime (was  $mold->{moldable_walltime})\n",
                 $Session_id);
             OAR::IO::add_new_event($base, "REDUCE_RESERVATION_WALLTIME", $i,
-                "Change walltime from $mold->{moldable_walltime} to $max_time");
-            my $w = OAR::IO::duration_to_sql($max_time);
-            if ($job->{message} =~ s/W\=\d+\:\d+\:\d+/W\=$w/g) {
+                "Change walltime from $mold->{moldable_walltime} to $new_walltime");
+            my $new_walltime_sql = OAR::IO::duration_to_sql($new_walltime);
+            if ($job->{message} =~ s/W\=\d+\:\d+\:\d+/W\=$new_walltime_sql/g) {
                 OAR::IO::set_job_message($base, $i, $job->{message});
             }
         }
