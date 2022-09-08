@@ -90,7 +90,7 @@ sub is_stagein_deprecated($$$);
 sub del_stagein($$);
 sub get_jobs_to_schedule($$$);
 sub get_job_types_hash($$);
-sub set_moldable_job_max_time($$$);
+sub set_moldable_job_walltime($$$);
 sub is_timesharing_for_2_jobs($$$);
 sub is_inner_job_with_container_not_ready($$);
 sub resubmit_job($$;$);
@@ -149,7 +149,6 @@ sub get_all_queue_informations($);
 
 # GANTT MANAGEMENT
 sub get_gantt_scheduled_jobs($);
-sub get_gantt_visu_scheduled_jobs($);
 sub add_gantt_scheduled_jobs($$$$);
 sub gantt_flush_tables($$$);
 sub set_gantt_date($$);
@@ -1638,8 +1637,7 @@ sub job_key_management($$$$$) {
 # add_micheline_job
 # adds a new job(or multiple in case of array-job) to the table Jobs applying
 # the admission rules from the base  parameters: base, jobtype, nbnodes,
-# weight, command, infotype, maxtime, queuename, jobproperties,
-# startTimeReservation
+# weight, command, infotype, queuename, jobproperties, startTimeReservation
 # return value: ref. of array of created jobids
 # side effects: adds an entry to the table Jobs
 #                the first jobid is found taking the maximal jobid from
@@ -4286,7 +4284,7 @@ EOS
 }
 
 # set walltime for a moldable job
-sub set_moldable_job_max_time($$$) {
+sub set_moldable_job_walltime($$$) {
     my ($dbh, $mol, $walltime) = @_;
 
     $dbh->do(
@@ -7520,37 +7518,6 @@ EOS
     $sth->finish();
 
     return (\@order, %res);
-}
-
-#get previous scheduler decisions for visu
-#args: base
-#return a hashtable: job_id --> [start_time,weight,walltime,queue_name,\@nodes]
-sub get_gantt_visu_scheduled_jobs($) {
-    my $dbh = shift;
-
-    my $req = <<EOS;
-SELECT g2.job_id, g2.start_time, j.weight, j.maxTime, g1.hostname, j.queue_name, j.state
-FROM ganttJobsNodes_visu g1, ganttJobsPrediction_visu g2, jobs j
-WHERE g1.job_id = g2.job_id
-   AND j.job_id = g1.job_id
-EOS
-
-    my $sth = $dbh->prepare($req);
-    $sth->execute();
-    my %res;
-    while (my @ref = $sth->fetchrow_array()) {
-        if (!defined($res{ $ref[0] })) {
-            $res{ $ref[0] }->[0] = $ref[1];
-            $res{ $ref[0] }->[1] = $ref[2];
-            $res{ $ref[0] }->[2] = $ref[3];
-            $res{ $ref[0] }->[3] = $ref[5];
-            $res{ $ref[0] }->[5] = $ref[6];
-        }
-        push(@{ $res{ $ref[0] }->[4] }, $ref[4]);
-    }
-    $sth->finish();
-
-    return %res;
 }
 
 #add scheduler decisions
