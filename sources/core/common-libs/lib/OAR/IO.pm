@@ -7928,7 +7928,7 @@ sub get_gantt_jobs_to_launch($$) {
         $job_types_filter = <<EOS;
 (
      (
-      SELECT 'inner' <> ANY(array_agg(REGEXP_REPLACE(t.type, '([^=])=.*', '\1')))
+      SELECT count(t.type) = 0 OR 'inner' <> ANY(array_agg(REGEXP_REPLACE(t.type, '([^=])=.*', '\1')))
       FROM job_types t
       WHERE  m.moldable_job_id = t.job_id
      )
