@@ -77,7 +77,7 @@ foreach my $j (OAR::IO::get_timered_job($base)) {
     if (($job_ref->{state} eq "Terminated") ||
         ($job_ref->{state} eq "Error") ||
         ($job_ref->{state} eq "Finishing")) {
-        oar_info($Module_name, "Set to FRAGGED job $j->{job_id}\n", $Session_id);
+        oar_info($Module_name, "Set job to FRAGGED\n", $Session_id, $job->{job_id});
         OAR::IO::job_fragged($base, $j->{job_id});
 
 # Frag again inner jobs: handle a possible race condition if new inner jobs after frag_job was called
@@ -86,21 +86,21 @@ foreach my $j (OAR::IO::get_timered_job($base)) {
             $Module_name, $Session_id);
     } else {
         my $frag_date = OAR::IO::get_frag_date($base, $j->{job_id});
-        oar_info($Module_name, "Frag date for job $j->{job_id}: $frag_date\n", $Session_id);
+        oar_info($Module_name, "Job fragged at $frag_date\n", $Session_id, $job->{job_id});
         if (($current > $frag_date + $Leon_soft_walltime) &&
             ($current <= $frag_date + $Leon_walltime)) {
-            oar_info($Module_name, "Leon will RE-FRAG bipbip of job $j->{job_id}\n", $Session_id);
+            oar_info($Module_name, "Leon will RE-FRAG bipbip of job $j->{job_id}\n",
+                $Session_id, $job->{job_id});
             OAR::IO::job_refrag($base, $j->{job_id});
             $guilty_found = 1;
         } elsif ($current > $frag_date + $Leon_walltime) {
             oar_info($Module_name, "Leon will EXTERMINATE bipbip of job $j->{job_id}\n",
-                $Session_id);
+                $Session_id, $job->{job_id});
             OAR::IO::job_leon_exterminate($base, $j->{job_id});
             $guilty_found = 1;
         } else {
-            oar_info($Module_name,
-                "The leon timer is not yet expired for the job $j->{job_id}; nothing to do\n",
-                $Session_id);
+            oar_info($Module_name, "Leon timer is not expired yet for the job, do nothing\n",
+                $Session_id, $job->{job_id});
         }
     }
 }
@@ -121,21 +121,25 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")) {
         $walltime += OAR::IO::get_job_suspended_sum_duration($base, $job->{job_id}, $current);
     }
 
-    oar_info($Module_name, "From $start with $walltime; current time=$current\n",
-        $Session_id, $job->{job_id});
+    oar_debug(
+        $Module_name,
+        "Look at job $job->{job_id}, started at $start with walltime: $walltime - current time is $current\n",
+        $Session_id,
+        $job->{job_id});
     if ($current > $start + $walltime) {
-        oar_info($Module_name, "--> (Elapsed)\n", $Session_id);
+        oar_info($Module_name, "Job reached its walltime\n", $Session_id, $job->{job_id});
         $guilty_found = 1;
         OAR::IO::lock_table($base, [ "frag_jobs", "event_logs", "jobs" ]);
         OAR::IO::frag_job($base, $job->{job_id});
         OAR::IO::unlock_table($base);
         OAR::IO::add_new_event($base, "WALLTIME", $job->{job_id},
-            "[sarko] Job [$job->{job_id}] from $start with $walltime; current time=$current (Elapsed)"
+            "Job [$job->{job_id}] reached its walltime (start: $start + walltime:$walltime > current time: $current)"
         );
     } elsif (($job->{checkpoint} > 0) && ($current >= ($start + $walltime - $job->{checkpoint}))) {
 
         # OAR must notify the job to checkpoint itself
-        oar_info($Module_name, "Send checkpoint signal to the job $job->{job_id}\n", $Session_id);
+        oar_info($Module_name, "Send checkpoint signal to job $job->{job_id}\n",
+            $Session_id, $job->{job_id});
 
         # Retrieve node names used by the job
         my @hosts           = OAR::IO::get_job_current_hostnames($base, $job->{job_id});
@@ -147,9 +151,7 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")) {
             $host_to_connect = $Deploy_hostname;
         }
         OAR::IO::add_new_event($base, "CHECKPOINT", $job->{job_id},
-            "User oar (sarko) requested a checkpoint on the job $job->{job_id} on $host_to_connect"
-        );
-        my $str_comment;
+            "Checkpoint requested on $host_to_connect");
         my $str_log;
         my @exit_codes;
 
@@ -165,33 +167,28 @@ foreach my $job (OAR::IO::get_jobs_in_state($base, "Running")) {
         if ($@) {
             if ($@ eq "alarm\n") {
                 $str_log =
-                  "[sarko] Cannot contact $hosts[0], operation timed out (" .
+                  "Cannot contact $host_to_connect, operation timed out (" .
                   OAR::Tools::get_ssh_timeout() .
-                  " s). So I cannot send checkpoint signal to the job $job->{job_id} on $host_to_connect";
-                $str_comment = "[sarko] " . $str_log;
-                oar_warn($Module_name, "$str_log\n", $Session_id);
-                OAR::IO::add_new_event($base, "CHECKPOINT_ERROR", $job->{job_id}, $str_comment);
+                  " s). Checkpoint signal cannot be sent to job $job->{job_id} on $host_to_connect";
+                oar_warn($Module_name, "$str_log\n", $Session_id, $job->{job_id});
+                OAR::IO::add_new_event($base, "CHECKPOINT_ERROR", $job->{job_id}, $str_log);
             } else {
                 $str_log =
-                  "An unknown error occured during the sending of the checkpoint signal to the job $job->{job_id} on the host $host_to_connect";
-                $str_comment = "[sarko] " . $str_log;
-                oar_warn($Module_name, "$str_comment\n", $Session_id);
-                OAR::IO::add_new_event($base, "CHECKPOINT_ERROR", $job->{job_id}, $str_comment);
+                  "An unknown error occured when triggering the checkpoint signal for job $job->{job_id} on $host_to_connect";
+                oar_warn($Module_name, "$str_log\n", $Session_id, $job->{job_id});
+                OAR::IO::add_new_event($base, "CHECKPOINT_ERROR", $job->{job_id}, $str_log);
             }
         } else {
             if ($exit_codes[0] == 0) {
                 $str_log =
-                  "The job $job->{job_id} was notified to checkpoint itself on the node $host_to_connect";
-                $str_comment = "[sarko] " . $str_log;
-                oar_info($Module_name, "$str_comment\n", $Session_id);
-                OAR::IO::add_new_event($base, "CHECKPOINT_SUCCESSFULL", $job->{job_id},
-                    $str_comment);
+                  "The job $job->{job_id} was notified to checkpoint itself on $host_to_connect";
+                oar_info($Module_name, "$str_log\n", $Session_id, $job->{job_id});
+                OAR::IO::add_new_event($base, "CHECKPOINT_SUCCESSFULL", $job->{job_id}, $str_log);
             } else {
                 $str_log =
-                  "The kill command return a bad exit code (@exit_codes) for the job $job->{job_id} on the node $host_to_connect";
-                $str_comment = "[sarko] " . $str_log;
-                oar_warn($Module_name, "$str_comment\n", $Session_id);
-                OAR::IO::add_new_event($base, "CHECKPOINT_ERROR", $job->{job_id}, $str_comment);
+                  "kill command returned a bad exit code (@exit_codes) on $host_to_connect";
+                oar_warn($Module_name, "$str_log\n", $Session_id, $job->{job_id});
+                OAR::IO::add_new_event($base, "CHECKPOINT_ERROR", $job->{job_id}, $str_log);
             }
         }
     }
