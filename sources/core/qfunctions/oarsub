@@ -566,6 +566,7 @@ sub parse_reservation($$) {
         }
 
         if ($Reservation_end ne undef) {
+
             #Test if this job has a reservation end and the syntax is right
             if ($Reservation_end =~ m/$date_format_regex/m) {
                 $Reservation_end = OAR::Sub::sql_to_local("$1 $2 $3 $4");
@@ -598,14 +599,14 @@ sub parse_reservation($$) {
                 if ($list->[1] eq undef) {
                     $list->[1] = $reservation_walltime;
                 } else {
-                    warn(
+                    oarsub_warn(
                         "# Warning: ignore reservation end date because walltime is set in resource description.\n"
                     );
                 }
             }
         }
         if (@guess and $Verbose_level >= 1) {
-            print("# Guessed reservation " . join(" ", @guess) . ".\n");
+            oarsub_print("# Guessed reservation " . join(" ", @guess) . ".\n");
         }
         if ($interactive eq 0) {
             ($Server, $server_port) = OAR::Sub::init_tcp_server();
