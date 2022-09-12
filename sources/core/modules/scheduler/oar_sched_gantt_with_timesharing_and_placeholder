@@ -229,12 +229,14 @@ if (is_conf("SCHEDULER_NODE_MANAGER_WAKE_UP_CMD") or
 ) {
     oar_info($scheduler_name, "Begin EnergySaving phase\n", $Session_id);
 
-    # Check the resources that can be waked_up or shut down
+    # Check the resources that can be woken up or shut down
     my $upto_availability = OAR::IO::get_energy_saving_resources_availability($base, $current_time);
     foreach my $t (keys(%{$upto_availability})) {
         my $vec = '';
         foreach my $r (@{ $upto_availability->{$t} }) {
+            # Add resources in state Absent when then can be woken up to the list of "Alive" resources for now.
             vec($Alive_resource_id_vec, $r, 1) = 1;
+            # Create the vector of occupation starting at availble upto date
             vec($vec,                   $r, 1) = 1;
         }
 
