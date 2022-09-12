@@ -6607,9 +6607,10 @@ sub set_resources_state($$$$$) {
     my $need_update   = 0;
     my %debug_info;
     my @jobs_to_frag;
-
     foreach my $resource_id (keys %$resources_to_change) {
-        if ($resources_info->{$resource_id}->{state} ne $resources_to_change->{$resource_id}) {
+        if ($resources_info->{$resource_id}->{state} ne $resources_to_change->{$resource_id} or
+            $resources_info->{$resource_id}->{finaud_decision} ne
+            $resources_info->{$resource_id}->{next_finaud_decision}) {
             $need_update = 1;
             $update_values =
               $update_values . "(" . $resource_id . ", '" . $resources_to_change->{$resource_id} .
@@ -10018,7 +10019,8 @@ sub job_finishing_sequence($$$$$$$) {
         (!defined($types->{noop}))) {
         my @hosts = OAR::IO::get_job_current_hostnames($dbh, $job_id);
         oar_info("JobFinishingSequence",
-            "Run pingchecker to test nodes at the end of the job on nodes: @hosts\n", $session_id);
+            "Run pingchecker to test nodes at the end of the job on nodes: @hosts\n",
+            $session_id, $job_id);
         my @bad_pingchecker = OAR::PingChecker::test_hosts(@hosts);
         if ($#bad_pingchecker >= 0) {
             oar_error(
@@ -10038,7 +10040,7 @@ sub job_finishing_sequence($$$$$$$) {
     #
 
     foreach my $e (@{$events}) {
-        OAR::Modules::Judas::oar_info("JobFinishingSequence", "$e->{string}\n", $session_id);
+        oar_info("JobFinishingSequence", "$e->{string}\n", $session_id, $job_id);
         if (defined($e->{hosts})) {
             add_new_event_with_host($dbh, $e->{type}, $job_id, $e->{string}, $e->{hosts});
         } else {

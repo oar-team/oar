@@ -17,7 +17,6 @@ set_current_log_category('main');
 
 oar_info($Module_name, "Finaud started\n", $Session_id);
 
-oar_info($Module_name, "Check Alive and Suspected nodes\n", $Session_id);
 my $base = OAR::IO::connect();
 
 my @node_list_tmp = OAR::IO::get_finaud_nodes($base);
@@ -39,6 +38,14 @@ if ($check_occupied_nodes eq 'no') {
     $Occupied_nodes = OAR::IO::get_current_assigned_nodes($base);
 }
 
+if ($check_occupied_nodes eq 'no') {
+    oar_info($Module_name,
+        "Check nodes in state Alive (excluding nodes running jobs) or Suspected.\n", $Session_id);
+} else {
+    oar_info($Module_name,
+        "Check nodes in state Alive (including nodes running jobs) or Suspected.\n", $Session_id);
+}
+
 my %Nodes_hash;
 foreach my $i (@node_list_tmp) {
     if ($check_occupied_nodes eq 'no') {
@@ -51,53 +58,57 @@ foreach my $i (@node_list_tmp) {
 }
 
 my @Nodes_to_check = keys(%Nodes_hash);
-oar_info($Module_name, "Testing resource(s) on: @Nodes_to_check\n", $Session_id);
+my $return_value   = 0;
+if (@Nodes_to_check) {
+    oar_info($Module_name, "Testing resource(s) on: @Nodes_to_check\n", $Session_id);
 
-# Call the right program to test each nodes
-my %bad_node_hash;
-foreach my $i (test_hosts(@Nodes_to_check)) {
-    $bad_node_hash{$i} = 1;
-}
+    # Call the right program to test each nodes
+    my %bad_node_hash;
+    foreach my $i (test_hosts(@Nodes_to_check)) {
+        $bad_node_hash{$i} = 1;
+    }
 
-#Make the decisions
-my $return_value = 0;
-foreach my $i (values(%Nodes_hash)) {
-    if (defined($bad_node_hash{ $i->{network_address} }) and ($i->{state} eq "Alive")) {
-        my $rows = OAR::IO::set_node_nextState_if_condition(
-            $base,
-            $i->{network_address},
-            "Suspected",
-            "(state = \'Alive\' OR (state = \'Suspected\' AND finaud_decision = \'YES\')) AND next_state = \'UnChanged\'"
-        );
-        if ($rows > 0) {
+    #Make the decisions
+    foreach my $i (values(%Nodes_hash)) {
+        if (defined($bad_node_hash{ $i->{network_address} }) and ($i->{state} eq "Alive")) {
+            my $rows = OAR::IO::set_node_nextState_if_condition(
+                $base,
+                $i->{network_address},
+                "Suspected",
+                "(state = \'Alive\' OR (state = \'Suspected\' AND finaud_decision = \'YES\')) AND next_state = \'UnChanged\'"
+            );
+            if ($rows > 0) {
+                OAR::IO::update_node_nextFinaudDecision($base, $i->{network_address}, "YES");
+                OAR::IO::add_new_event_with_host(
+                    $base, "FINAUD_ERROR", 0,
+                    "Finaud has detected an error on the node",
+                    [ $i->{network_address} ]);
+                oar_info($Module_name,
+                    "Detected an error on $i->{network_address}, set next state to Suspected\n",
+                    $Session_id);
+                $return_value = 1;
+            } else {
+                oar_info(
+                    $Module_name,
+                    "Detected an error on $i->{network_address}, but do nothing because some changes happened in our back\n",
+                    $Session_id);
+            }
+        } elsif (!defined($bad_node_hash{ $i->{network_address} }) and
+            $i->{state} eq "Suspected" and
+            $disable_suspected_nodes_repair eq 'no') {
+            OAR::IO::set_node_nextState($base, $i->{network_address}, "Alive");
             OAR::IO::update_node_nextFinaudDecision($base, $i->{network_address}, "YES");
             OAR::IO::add_new_event_with_host(
-                $base, "FINAUD_ERROR", 0,
-                "Finaud has detected an error on the node",
+                $base, "FINAUD_RECOVER", 0,
+                "Finaud has detected that the node comes back",
                 [ $i->{network_address} ]);
-            oar_info($Module_name,
-                "Detected an error on $i->{network_address}, set next state to Suspected\n",
+            oar_info($Module_name, "Set the next state of $i->{network_address} to Alive\n",
                 $Session_id);
             $return_value = 1;
-        } else {
-            oar_info(
-                $Module_name,
-                "Detected an error on $i->{network_address}, but do nothing because some changes happened in our back\n",
-                $Session_id);
         }
-    } elsif (!defined($bad_node_hash{ $i->{network_address} }) and
-        $i->{state} eq "Suspected" and
-        $disable_suspected_nodes_repair eq 'no') {
-        OAR::IO::set_node_nextState($base, $i->{network_address}, "Alive");
-        OAR::IO::update_node_nextFinaudDecision($base, $i->{network_address}, "YES");
-        OAR::IO::add_new_event_with_host(
-            $base, "FINAUD_RECOVER", 0,
-            "Finaud has detected that the node comes back",
-            [ $i->{network_address} ]);
-        oar_info($Module_name, "Set the next state of $i->{network_address} to Alive\n",
-            $Session_id);
-        $return_value = 1;
     }
+} else {
+    oar_info($Module_name, "No resource to test.\n", $Session_id);
 }
 
 OAR::IO::disconnect($base);

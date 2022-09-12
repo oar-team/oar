@@ -42,7 +42,7 @@ Add a new resource.
 
 =item B<-s, --state> STATE
 
-Set the new state of the resource. Possible states are: Alive, Absent and Dead.
+Set the new state of the resource. Possible states are: Alive, Absent, Dead and Suspected.
 
 =item B<-m, --maintenance> [on|off]
 

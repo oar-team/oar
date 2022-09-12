@@ -241,8 +241,10 @@ if (defined($Version)) {
   defined($drain)        ||
   defined($last_property_value) or
   usage();
-if (defined($state) && !(($state eq 'Alive') || ($state eq 'Absent') || ($state eq 'Dead'))) {
-    warn("/!\\ Bad state value. Possible values are: Alive | Absent | Dead \n");
+if (defined($state) &&
+    !(($state eq 'Alive') || ($state eq 'Absent') || ($state eq 'Dead') || ($state eq 'Suspected')))
+{
+    warn("/!\\ Bad state value. Possible values are: Alive | Absent | Dead | Suspected\n");
     usage();
 }
 if (defined($maintenance) && !(($maintenance eq 'on') || ($maintenance eq 'off'))) {
