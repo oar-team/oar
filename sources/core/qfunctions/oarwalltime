@@ -43,9 +43,9 @@ Options:
                          wholly at once, or not applied otherwise
       --delay-next-jobs  allow an extra time request to succeed even if it
                          must delay other jobs, including other users' jobs
-      --timeout          specify a timeout after which the walltime change
-                         request will be aborted if not already accepted by
-                         the scheduler. Default: $Walltime_change_cancellation_timeout
+      --timeout          specify a timeout (in seconds) after which the
+                         walltime change request will be aborted if not
+                         already accepted by the scheduler. Default: $Walltime_change_cancellation_timeout
   -V, --version          print OAR version
   -h, --help             print help
 

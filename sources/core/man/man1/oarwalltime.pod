@@ -61,7 +61,7 @@ Request walltime increase to possibly delay next batch jobs (but not advance res
 
 =item B<--timeout>
 
-Specify a timeout after which the walltime change request will be aborted if not already accepted by the scheduler. By default, there is no timeout unless a default timeout is set by the administrator.
+Specify a timeout (in seconds) after which the walltime change request will be aborted if not already accepted by the scheduler. By default, there is no timeout unless a default timeout is set by the administrator.
 
 =item B<-h, --help>
 
