@@ -1048,22 +1048,42 @@ EOT;
     }
   }
   $db->free();
-  if ($gantt_now < $gantt_stop_date) {
+  if ($gantt_now < $gantt_stop_date) { // show present and future
     foreach ($available_upto_lines as $line) {
+      debug(1, join(", ", $line));
       if (array_key_exists($line['resource_id'], $resource_ids)) {
         $resource_id = $resource_ids[$line['resource_id']];
+        $latest_state;
         for ($i=0; $i < count($resource_id->states); $i++) {
           $state = $resource_id->states[$i];
+          if ($latest_state->start < $state->start) {
+            $latest_state = $state;
+          }
+          debug(1, $state->value . " " . $state->real_stop . " " . $line['value']);
           if ($state->value == 'Absent') {
-            if ($gantt_now < $gantt_start_date) {
-              unset($resource_id->states[$i]);
-            } elseif ($state->real_stop == 0) {
-              if ($CONF['standby_truncate_state_to_now']) {
+            if ($line['value'] <= $gantt_now) {
+              continue; // available_upto does not mean anything in this case! resource is just absent.
+            }
+            if ($state->real_stop > 0) { // not an ongoing state, just consider it as absent
+              continue;
+            }
+            $state->value = 'Standby';
+            if ($CONF['standby_truncate_state_to_now']) {
+              if ($gantt_now < $gantt_start_date) { // only show future, do not show standby state
+                unset($resource_id->states[$i]);
+              } else {
                 $state->set_stop($gantt_now);
               }
-              $state->value = 'Standby';
+              continue;
+            }
+            if ($line['value'] < 2147483646) {
+              $state->set_stop($line['value']);
+              $resource_id->add_state('Absent', $line['value'], $gantt_stop_date);
             }
           }
+        }
+        if ($latest_state and $latest_state->real_stop < $gantt_now and $latest_state->real_stop != 0) {
+          $resource_id->add_state('Absent', $line['value'], $gantt_stop_date);
         }
       }
     }
