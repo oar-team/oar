@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 
 use strict;
 use warnings;
@@ -1173,7 +1172,8 @@ sub check_jobs_to_kill() {
                 oar_info(
                     $Module_name,
                     "Resource $r is needed for job $nodes_for_jobs_to_launch{$r}, but besteffort job $besteffort_resource_occupation{$r}->{job_id} can live, because timesharing compatible\n",
-                    $Session_id);
+                    $Session_id,
+                    $besteffort_resource_occupation{$r}->{job_id});
             } else {
                 unless (defined($fragged_jobs{ $besteffort_resource_occupation{$r}->{job_id} })) {
                     my $skip_kill = 0;
@@ -1221,7 +1221,8 @@ sub check_jobs_to_kill() {
                                 oar_info(
                                     $Module_name,
                                     "Sending checkpoint signal to the job $besteffort_resource_occupation{$r}->{job_id} on host $host_to_connect\n",
-                                    $Session_id);
+                                    $Session_id,
+                                    $besteffort_resource_occupation{$r}->{job_id});
                                 OAR::IO::add_new_event(
                                     $base,
                                     "CHECKPOINT",
@@ -1311,7 +1312,8 @@ sub check_jobs_to_kill() {
                         oar_info(
                             $Module_name,
                             "Resource $r need to be freed for job $nodes_for_jobs_to_launch{$r}: killing besteffort job $besteffort_resource_occupation{$r}->{job_id}\n",
-                            $Session_id);
+                            $Session_id,
+                            $besteffort_resource_occupation{$r}->{job_id});
                         OAR::IO::add_new_event(
                             $base,
                             "BESTEFFORT_KILL",
@@ -1338,17 +1340,17 @@ sub notify_to_run_job($$) {
 
     if (!defined($To_launch_jobs_already_treated{$job_id})) {
         if (OAR::IO::is_job_desktop_computing($base, $job_id)) {
-            oar_info($Module_name, "$job_id: Desktop computing job, I don't handle it!\n",
-                $Session_id);
+            oar_info($Module_name, "Desktop computing job, not handling it!\n",
+                $Session_id, $job_id);
         } else {
             my $err =
               OAR::Tools::notify_tcp_socket($Remote_host, $Remote_port, "OARRUNJOB_$job_id");
             if (!defined($err)) {
                 $To_launch_jobs_already_treated{$job_id} = 1;
-                oar_info($Module_name, "Notify almighty to launch the job $job_id\n", $Session_id);
+                oar_info($Module_name, "Notify almighty to launch the job\n", $Session_id, $job_id);
             } else {
-                oar_warn($Module_name,
-                    "Not able to notify almighty to launch the job $job_id ($err)\n", $Session_id);
+                oar_warn($Module_name, "Not able to notify almighty to launch the job: $err\n",
+                    $Session_id, $job_id);
             }
         }
     }
@@ -1382,24 +1384,31 @@ sub check_jobs_to_launch() {
         "Begin processing of jobs to launch (start time <= $current_time_sql)\n", $Session_id);
     my $return_code    = 0;
     my %jobs_to_launch = OAR::IO::get_gantt_jobs_to_launch($base, $current_time_sec);
-
     foreach my $i (keys(%jobs_to_launch)) {
-        oar_info($Module_name, "Set job $i state to toLaunch at $current_time_sql\n", $Session_id);
+        oar_info($Module_name, "Set job state to toLaunch\n", $Session_id, "$i");
 
         # We must look at reservations to not go after the initial stop time
         my $mold = OAR::IO::get_current_moldable_job($base, $jobs_to_launch{$i}->[0]);
         my $job  = OAR::IO::get_job($base, $i);
         if (($job->{reservation} eq "Scheduled") and ($job->{start_time} < $current_time_sec)) {
-            my $max_time = $mold->{moldable_walltime} - ($current_time_sec - $job->{start_time});
-            OAR::IO::set_moldable_job_max_time($base, $jobs_to_launch{$i}->[0], $max_time);
+            my $new_walltime =
+              $mold->{moldable_walltime} - ($current_time_sec - $job->{start_time});
+            my $new_walltime_sql  = OAR::IO::duration_to_sql($new_walltime);
+            my $old_walltime_sql  = OAR::IO::duration_to_sql($mold->{moldable_walltime});
+            my $old_starttime_sql = OAR::IO::local_to_sql($job->{start_time});
+            OAR::IO::set_moldable_job_walltime($base, $jobs_to_launch{$i}->[0], $new_walltime);
             OAR::IO::set_gantt_job_startTime($base, $jobs_to_launch{$i}->[0], $current_time_sec);
-            oar_warn($Module_name,
-                "Reduce walltime of job $i to $max_time (was  $mold->{moldable_walltime})\n",
-                $Session_id);
+            oar_info($Module_name,
+                "Update job start time to $current_time_sql (was: $old_starttime_sql)\n",
+                $Session_id, "$i");
+            oar_info($Module_name,
+                "Reduce job walltime to $new_walltime_sql (was: $old_walltime_sql)\n",
+                $Session_id, "$i");
             OAR::IO::add_new_event($base, "REDUCE_RESERVATION_WALLTIME", $i,
-                "Change walltime from $mold->{moldable_walltime} to $max_time");
-            my $w = OAR::IO::duration_to_sql($max_time);
-            if ($job->{message} =~ s/W\=\d+\:\d+\:\d+/W\=$w/g) {
+                "Set actual start time (was: $old_starttime_sql) and walltime (was: $old_walltime_sql)"
+            );
+
+            if ($job->{message} =~ s/W\=\d+\:\d+\:\d+/W\=$new_walltime_sql/g) {
                 OAR::IO::set_job_message($base, $i, $job->{message});
             }
         }
@@ -1422,9 +1431,9 @@ my %initial_time = (
 my @queues = OAR::IO::get_active_queues($base);
 my $name;
 my $policy;
-foreach my $i (@queues) {
-    $name   = $i->[0];
-    $policy = $i->[1];
+foreach my $queue (@queues) {
+    $name   = $queue->[0];
+    $policy = $queue->[1];
     my $waiting_jobs = OAR::IO::is_waiting_job_specific_queue_present($base, $name);
     if ($waiting_jobs == 1) {
         oar_info($Module_name,
@@ -1462,8 +1471,9 @@ foreach my $i (@queues) {
                             not OAR::IO::is_inner_job_with_container_not_ready(
                                 $base, $job_id_to_schedule)
                         ) {
-                            oar_info($Module_name, "Early launch the job $job_id_to_schedule\n",
-                                $Session_id);
+                            oar_info(
+                                $Module_name, "Early launch of the job\n",
+                                $Session_id,  $job_id_to_schedule);
                             my $job = OAR::IO::get_job($base, $job_id_to_schedule);
                             prepare_job_to_be_launched($base, $job_id_to_schedule,
                                 $moldable_job_id_to_schedule, $job->{submission_time},
@@ -1471,12 +1481,14 @@ foreach my $i (@queues) {
                         } else {
                             oar_info(
                                 $Module_name,
-                                "Not able to early launch $job_id_to_schedule: inner job with container not running yet\n",
-                                $Session_id);
+                                "Not able to early launch inner job with container not running yet\n",
+                                $Session_id,
+                                $job_id_to_schedule);
                         }
                     } else {
                         oar_info($Module_name,
-                            "Not able to early launch $job_id_to_schedule: $skip\n", $Session_id);
+                            "Not able to early launch $job_id_to_schedule: $skip\n",
+                            $Session_id, $job_id_to_schedule);
                     }
                 }
             }
@@ -1742,10 +1754,10 @@ foreach my $j (OAR::IO::get_gantt_waiting_interactive_prediction_date($base)) {
 }
 
 # Run the decisions
-## Treate "toError" jobs
+## Handle "toError" jobs
 foreach my $j (OAR::IO::get_jobs_in_state($base, "toError")) {
     my ($addr, $port) = split(/:/, $j->{info_type});
-    oar_info($Module_name, "Treate job $j->{job_id} in toError state\n", $Session_id);
+    oar_info($Module_name, "Handle job $j->{job_id} toError state\n", $Session_id, $j->{job_id});
     if (($j->{job_type} eq "INTERACTIVE") or
         (($j->{job_type} eq "PASSIVE") and
             ($j->{reservation} eq "Scheduled"))
@@ -1756,16 +1768,18 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "toError")) {
         if ((defined(OAR::Tools::notify_tcp_socket($addr, $port, "$j->{message}"))) or
             (defined(OAR::Tools::notify_tcp_socket($addr, $port, "BAD JOB")))) {
             oar_info($Module_name,
-                "Cannot open connection to oarsub client for job $j->{job_id} !\n", $Session_id);
+                "Cannot open connection to oarsub client for job $j->{job_id}!\n",
+                $Session_id, $j->{job_id});
         }
     }
-    oar_info($Module_name, "Set job $j->{job_id} to state Error\n", $Session_id);
+    oar_info($Module_name, "Set job $j->{job_id} to state Error\n", $Session_id, $j->{job_id});
     OAR::IO::set_job_state($base, $j->{job_id}, "Error");
 }
 ## Treate toAckReservation jobs
 foreach my $j (OAR::IO::get_jobs_in_state($base, "toAckReservation")) {
     my ($addr, $port) = split(/:/, $j->{info_type});
-    oar_info($Module_name, "Treate job $j->{job_id} in toAckReservation state\n", $Session_id);
+    oar_info($Module_name, "Handle job $j->{job_id} toAckReservation state\n",
+        $Session_id, $j->{job_id});
     my $err = OAR::Tools::notify_tcp_socket($addr, $port, "GOOD RESERVATION");
     if (defined($err)) {
         oar_warn($Module_name,

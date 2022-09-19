@@ -1,5 +1,4 @@
 #!/usr/bin/perl -w
-# $Id$
 # Simple Perl script to parse, sort and format a job resource properties file
 #
 use strict;

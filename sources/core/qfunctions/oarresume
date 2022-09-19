@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 # resume a job --> it will be rescheduled
 
 use strict;

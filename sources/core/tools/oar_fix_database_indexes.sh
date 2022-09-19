@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 # Script to fix a corrupted oar database, where old job_ids still refer to CURRENT data in various tables.
 
 OARCONFFILE=/etc/oar/oar.conf

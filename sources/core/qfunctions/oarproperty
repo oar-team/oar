@@ -1,5 +1,4 @@
 #!/usr/bin/perl -w
-# $Id$
 #
 # This script aims at managing the node properties (list, add, delete).
 # To set the properties values, use oarnodesettings.

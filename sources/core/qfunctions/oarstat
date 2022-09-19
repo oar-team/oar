@@ -1,5 +1,4 @@
 #!/usr/bin/perl -w
-# $Id$
 # print active job properties
 
 use strict;

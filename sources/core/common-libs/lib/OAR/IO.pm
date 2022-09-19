@@ -7,7 +7,6 @@
 # - the list of the return values
 # - the list of the side effects
 
-# $Id$
 package OAR::IO;
 require Exporter;
 
@@ -22,7 +21,6 @@ use Fcntl;
 use OAR::Schedulers::ResourceTree;
 use OAR::Tools;
 use POSIX qw(strftime);
-use Capture::Tiny ':all';
 
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity   = 1;
@@ -58,7 +56,7 @@ sub set_running_date_arbitrary($$$);
 sub set_assigned_moldable_job($$$);
 sub set_finish_date($$);
 sub get_possible_wanted_resources($$$$$$$);
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$);
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$);
 sub get_job($$);
 sub get_job_state($$);
 sub get_current_moldable_job($$);
@@ -92,7 +90,7 @@ sub is_stagein_deprecated($$$);
 sub del_stagein($$);
 sub get_jobs_to_schedule($$$);
 sub get_job_types_hash($$);
-sub set_moldable_job_max_time($$$);
+sub set_moldable_job_walltime($$$);
 sub is_timesharing_for_2_jobs($$$);
 sub is_inner_job_with_container_not_ready($$);
 sub resubmit_job($$;$);
@@ -151,7 +149,6 @@ sub get_all_queue_informations($);
 
 # GANTT MANAGEMENT
 sub get_gantt_scheduled_jobs($);
-sub get_gantt_visu_scheduled_jobs($);
 sub add_gantt_scheduled_jobs($$$$);
 sub gantt_flush_tables($$$);
 sub set_gantt_date($$);
@@ -1640,8 +1637,7 @@ sub job_key_management($$$$$) {
 # add_micheline_job
 # adds a new job(or multiple in case of array-job) to the table Jobs applying
 # the admission rules from the base  parameters: base, jobtype, nbnodes,
-# weight, command, infotype, maxtime, queuename, jobproperties,
-# startTimeReservation
+# weight, command, infotype, queuename, jobproperties, startTimeReservation
 # return value: ref. of array of created jobids
 # side effects: adds an entry to the table Jobs
 #                the first jobid is found taking the maximal jobid from
@@ -1655,7 +1651,7 @@ sub job_key_management($$$$$) {
 
 #TODO: moldable and array job, mysql LOAD INFILE, pg COPY or test limit
 
-sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
+sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
     my ($dbh,                 $dbh_ro,              $jobType,
         $ref_resource_list,   $command,             $infoType,
         $queue_name,          $jobproperties,       $startTimeReservation,
@@ -1665,7 +1661,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
         $stdout,              $stderr,              $job_hold,
         $project,             $use_job_key,         $import_job_key_inline,
         $import_job_key_file, $export_job_key_file, $initial_request_string,
-        $array_job_nb,        $array_params_ref,    $verbose_level
+        $array_job_nb,        $array_params_ref,    $verbose_level,
+        $print_func,          $warn_func,           $capture_func
     ) = @_;
 
     my $array_id = 0;
@@ -1684,17 +1681,17 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
 
     # Verify notify syntax
     if ((defined($notify)) and ($notify !~ m/^\s*(\[\s*(.+)\s*\]\s*)?(mail|exec)\s*:.+$/m)) {
-        warn("# Error: bad syntax for the notify option\n");
+        &$warn_func("# Error: bad syntax for the notify option\n");
         return (-6);
     }
 
     # Check the stdout and stderr path validity
     if ((defined($stdout)) and ($stdout !~ m/^[a-zA-Z0-9_.\/\-\%\\ ]+$/m)) {
-        warn("# Error: invalid stdout file name (bad character)\n");
+        &$warn_func("# Error: invalid stdout file name (bad character)\n");
         return (-12);
     }
     if (defined($stderr) and ($stderr !~ m/^[a-zA-Z0-9_.\/\-\%\\ ]+$/m)) {
-        warn("# Error: invalid stderr file name (bad character)\n");
+        &$warn_func("# Error: invalid stderr file name (bad character)\n");
         return (-13);
     }
 
@@ -1712,7 +1709,8 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
 
     # Verify the content of env variables
     if ("$job_env" !~ m/^[\w\=\s\/\.\-\"]*$/m) {
-        warn("# Error: unallowed characters in the job environnement variables, '$job_env'\n");
+        &$warn_func(
+            "# Error: unallowed characters in the job environnement variables, '$job_env'\n");
         return (-9);
     }
 
@@ -1733,9 +1731,11 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
     # Apply rules and store output as events, if enabled in configuration
     my $adm_rules_stdout;
     my $adm_rules_stderr;
-    ($adm_rules_stdout, $adm_rules_stderr) = tee {
-        eval $rules;
-    };
+
+    ($adm_rules_stdout, $adm_rules_stderr) = &$capture_func(
+        sub {
+            eval $rules;
+        });
 
     if ($@) {
         warn("$@\n");
@@ -1745,7 +1745,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
     #Test if the queue exists
     my %all_queues = get_all_queue_informations($dbh);
     if (!defined($all_queues{$queue_name})) {
-        warn("# Error: queue '$queue_name' does not exist\n");
+        &$warn_func("# Error: queue '$queue_name' does not exist\n");
         return (-8);
     }
 
@@ -1765,7 +1765,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
     if (($array_job_nb > 1) and (not defined($use_job_key)) and ($#{$ref_resource_list} == 0))
     {    #to test  add_micheline_simple_array_job
         if ($verbose_level >= 1) {
-            warn("# Simple array job submission is used\n");
+            &$warn_func("# Simple array job submission is used\n");
         }
 
         @Job_id_list = add_micheline_simple_array_job_non_contiguous(
@@ -1834,7 +1834,7 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
 
                 # write the private job key with the user ownership
                 unless (defined($pid = open(SAFE_CHILD, "|-"))) {
-                    warn("# Error: cannot open pipe ($?)");
+                    &$warn_func("# Error: cannot open pipe ($?)");
                     exit(-14);
                 }
                 if ($pid == 0) {
@@ -1842,21 +1842,21 @@ sub add_micheline_job($$$$$$$$$$$$$$$$$$$$$$$$$$$$$$) {
                     $ENV{OARDO_BECOME_USER} = $lusr;
                     open(STDERR, ">/dev/null");
                     unless (exec("oardodo dd of=$export_job_key_file_tmp")) {
-                        warn("# Error: cannot exec user shell ($?)");
+                        &$warn_func("# Error: cannot exec user shell ($?)");
                         push(@Job_id_list, -14);
                         return (@Job_id_list);
                     }
                 } else {
                     print SAFE_CHILD $ssh_priv_key;
                     unless (close(SAFE_CHILD)) {
-                        warn("# Error: cannot close pipe {$?}");
+                        &$warn_func("# Error: cannot close pipe {$?}");
                         push(@Job_id_list, -14);
                         return (@Job_id_list);
                     }
                 }
 
                 if ($verbose_level >= 1) {
-                    print("# Export job key to file: " . $export_job_key_file_tmp . "\n");
+                    &$print_func("# Export job key to file: " . $export_job_key_file_tmp . "\n");
                 }
             }
         }
@@ -4284,7 +4284,7 @@ EOS
 }
 
 # set walltime for a moldable job
-sub set_moldable_job_max_time($$$) {
+sub set_moldable_job_walltime($$$) {
     my ($dbh, $mol, $walltime) = @_;
 
     $dbh->do(
@@ -6605,9 +6605,10 @@ sub set_resources_state($$$$$) {
     my $need_update   = 0;
     my %debug_info;
     my @jobs_to_frag;
-
     foreach my $resource_id (keys %$resources_to_change) {
-        if ($resources_info->{$resource_id}->{state} ne $resources_to_change->{$resource_id}) {
+        if ($resources_info->{$resource_id}->{state} ne $resources_to_change->{$resource_id} or
+            $resources_info->{$resource_id}->{finaud_decision} ne
+            $resources_info->{$resource_id}->{next_finaud_decision}) {
             $need_update = 1;
             $update_values =
               $update_values . "(" . $resource_id . ", '" . $resources_to_change->{$resource_id} .
@@ -7519,37 +7520,6 @@ EOS
     return (\@order, %res);
 }
 
-#get previous scheduler decisions for visu
-#args: base
-#return a hashtable: job_id --> [start_time,weight,walltime,queue_name,\@nodes]
-sub get_gantt_visu_scheduled_jobs($) {
-    my $dbh = shift;
-
-    my $req = <<EOS;
-SELECT g2.job_id, g2.start_time, j.weight, j.maxTime, g1.hostname, j.queue_name, j.state
-FROM ganttJobsNodes_visu g1, ganttJobsPrediction_visu g2, jobs j
-WHERE g1.job_id = g2.job_id
-   AND j.job_id = g1.job_id
-EOS
-
-    my $sth = $dbh->prepare($req);
-    $sth->execute();
-    my %res;
-    while (my @ref = $sth->fetchrow_array()) {
-        if (!defined($res{ $ref[0] })) {
-            $res{ $ref[0] }->[0] = $ref[1];
-            $res{ $ref[0] }->[1] = $ref[2];
-            $res{ $ref[0] }->[2] = $ref[3];
-            $res{ $ref[0] }->[3] = $ref[5];
-            $res{ $ref[0] }->[5] = $ref[6];
-        }
-        push(@{ $res{ $ref[0] }->[4] }, $ref[4]);
-    }
-    $sth->finish();
-
-    return %res;
-}
-
 #add scheduler decisions
 #args: base,moldable_job_id,start_time,\@resources
 #return nothing
@@ -7925,7 +7895,7 @@ sub get_gantt_jobs_to_launch($$) {
         $job_types_filter = <<EOS;
 (
      (
-      SELECT 'inner' <> ANY(array_agg(REGEXP_REPLACE(t.type, '([^=])=.*', '\1')))
+      SELECT count(t.type) = 0 OR 'inner' <> ANY(array_agg(REGEXP_REPLACE(t.type, '([^=])=.*', '\1')))
       FROM job_types t
       WHERE  m.moldable_job_id = t.job_id
      )
@@ -8255,7 +8225,7 @@ EOS
 # side effects: /
 sub ymdhms_to_sql($$$$$$) {
     my ($year, $mon, $mday, $hour, $min, $sec) = @_;
-    return ($year + 1900) . "-" . ($mon + 1) . "-" . $mday . " $hour:$min:$sec";
+    return ($year + 1900) . "-" . ($mon + 1) . "-" . $mday . " " . hms_to_sql($hour, $min, $sec);
 }
 
 # sql_to_ymdhms
@@ -8363,7 +8333,7 @@ sub hms_to_duration($$$) {
 # return value: date string
 # side effects: /
 sub hms_to_sql($$$) {
-    my ($hour, $min, $sec) = @_;
+    my ($hour, $min, $sec) = map { (/^$/) ? 0 : $_; } @_;
     return "$hour:$min:$sec";
 }
 
@@ -10016,7 +9986,8 @@ sub job_finishing_sequence($$$$$$$) {
         (!defined($types->{noop}))) {
         my @hosts = OAR::IO::get_job_current_hostnames($dbh, $job_id);
         oar_info("JobFinishingSequence",
-            "Run pingchecker to test nodes at the end of the job on nodes: @hosts\n", $session_id);
+            "Run pingchecker to test nodes at the end of the job on nodes: @hosts\n",
+            $session_id, $job_id);
         my @bad_pingchecker = OAR::PingChecker::test_hosts(@hosts);
         if ($#bad_pingchecker >= 0) {
             oar_error(
@@ -10036,7 +10007,7 @@ sub job_finishing_sequence($$$$$$$) {
     #
 
     foreach my $e (@{$events}) {
-        OAR::Modules::Judas::oar_info("JobFinishingSequence", "$e->{string}\n", $session_id);
+        oar_info("JobFinishingSequence", "$e->{string}\n", $session_id, $job_id);
         if (defined($e->{hosts})) {
             add_new_event_with_host($dbh, $e->{type}, $job_id, $e->{string}, $e->{hosts});
         } else {

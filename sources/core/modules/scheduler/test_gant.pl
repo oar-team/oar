@@ -1,5 +1,4 @@
 #!/usr/bin/perl -I../Iolib -I../ConfLib -w
-# $Id$
 
 use strict;
 use Data::Dumper;

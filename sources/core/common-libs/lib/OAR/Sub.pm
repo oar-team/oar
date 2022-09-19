@@ -338,7 +338,8 @@ sub add_micheline_job {
         $job_hold,               $project,             $use_job_key,
         $import_job_key_inline,  $import_job_key_file, $export_job_key_file,
         $initial_request_string, $array_job_nb,        $array_params_ref,
-        $verbose_level
+        $verbose_level,          $print_func,          $warn_func,
+        $capture_func
     ) = @_;
     my $base_ro = OAR::IO::connect_ro();
 
@@ -357,7 +358,8 @@ sub add_micheline_job {
         $stdout,              $stderr,              $job_hold,
         $project,             $use_job_key,         $import_job_key_inline,
         $import_job_key_file, $export_job_key_file, $initial_request_string,
-        $array_job_nb,        $array_params_ref,    $verbose_level);
+        $array_job_nb,        $array_params_ref,    $verbose_level,
+        $print_func,          $warn_func,           $capture_func);
     OAR::IO::disconnect($base_ro);
     return ($r);
 }

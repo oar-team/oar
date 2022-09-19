@@ -1,5 +1,4 @@
 #/usr/bin/make
-# $Id$
 export SHELL=/bin/bash
 
 # Modules that can be builded

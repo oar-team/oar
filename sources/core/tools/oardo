@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 # This wrapper is used to execute user commands with oar privileges.
 
 use English '-no_match_vars';
@@ -10,70 +9,74 @@ use English '-no_match_vars';
 
 my $Cmd_wrapper = "";
 
-my $Oardir = "";
-my $Oarconffile = "/etc/oar/oar.conf";
+my $Oardir           = "";
+my $Oarconffile      = "/etc/oar/oar.conf";
 my $Oarxauthlocation = "/usr/bin/xauth";
 
 ###############################################################################
 
-$ENV{OARDO_USER} = getpwuid($UID);
-$ENV{OARDO_UID} = $UID;
-$ENV{OARDIR} = $Oardir;
-$ENV{PERL5LIB} = $Oardir;
-$ENV{RUBYLIB} = $Oardir;
-$ENV{OARCONFFILE} = $Oarconffile;
+$ENV{OARDO_USER}       = getpwuid($UID);
+$ENV{OARDO_UID}        = $UID;
+$ENV{OARDIR}           = $Oardir;
+$ENV{PERL5LIB}         = $Oardir;
+$ENV{RUBYLIB}          = $Oardir;
+$ENV{OARCONFFILE}      = $Oarconffile;
 $ENV{OARXAUTHLOCATION} = $Oarxauthlocation;
 
 my @clean_argv;
+
 # BEGIN CLEAN
 
 # Clean ARGV to prevent tainted perl behaviour
-for (my $i=0; $i <= $#ARGV; $i++){
+for (my $i = 0; $i <= $#ARGV; $i++) {
     my $str = "";
-    foreach my $l (split("\n",$ARGV[$i])){
+    foreach my $l (split("\n", $ARGV[$i])) {
         $l =~ m/(.*)/m;
-        $str .= $1."\n";
+        $str .= $1 . "\n";
     }
     chop($str);
     $clean_argv[$i] = $str;
 }
+
 #warn("@clean_argv\n");
 
 # clean PATH
 $ENV{PATH} = "/bin:/sbin:/usr/bin:/usr/sbin:$Oardir/../bin:$Oardir/../sbin:$Oardir/oardodo";
 
-delete @ENV{'IFS', 'CDPATH', 'MAIL', 'ENV','BASH_ENV','LD_LIBRARY_PATH'};
+delete @ENV{ 'IFS', 'CDPATH', 'MAIL', 'ENV', 'BASH_ENV', 'LD_LIBRARY_PATH' };
+
 # END CLEAN
 
-
 undef($ERRNO);
+
 # GID = EGID
 $GID = $EGID;
-if ($ERRNO){
+if ($ERRNO) {
     warn("$Cmd_wrapper: $ERRNO\n       Cannot set GID to '$EGID'.\n");
     exit(2);
 }
+
 # UID = EUID
 $UID = $EUID;
-if ($ERRNO){
+if ($ERRNO) {
     warn("$Cmd_wrapper: $ERRNO\n       Cannot set UID to '$EUID'.\n");
     exit(2);
 }
 
 # Get oar user info
 my @tmp = getpwuid($EUID);
-if ($#tmp < 0){
+if ($#tmp < 0) {
     warn("oardo: Cannot get information from uid $EUID.\n");
     exit(2);
 }
 
-$ENV{USER} = $tmp[0];
+$ENV{USER}    = $tmp[0];
 $ENV{LOGNAME} = $tmp[0];
-$ENV{SHELL} = $tmp[8];
-$ENV{HOME} = $tmp[7];
+$ENV{SHELL}   = $tmp[8];
+$ENV{HOME}    = $tmp[7];
 $ENV{OARUSER} = $tmp[0];
 
-exec($Cmd_wrapper,@clean_argv);
+exec($Cmd_wrapper, @clean_argv);
 warn("$Cmd_wrapper: Cannot execute with oar privileges '@clean_argv'\n");
 exit(1);
 

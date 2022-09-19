@@ -1,4 +1,3 @@
-# $Id$
 package OAR::Schedulers::GanttHoleStorage;
 require Exporter;
 use OAR::Schedulers::ResourceTree;

@@ -1,4 +1,3 @@
-# $Id$
 
 DROP TABLE IF EXISTS `schema`;
 CREATE TABLE IF NOT EXISTS `schema` (
