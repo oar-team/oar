@@ -1053,10 +1053,10 @@ EOT;
       debug(1, join(", ", $line));
       if (array_key_exists($line['resource_id'], $resource_ids)) {
         $resource_id = $resource_ids[$line['resource_id']];
-        $latest_state;
+        $latest_state = null;
         for ($i=0; $i < count($resource_id->states); $i++) {
           $state = $resource_id->states[$i];
-          if ($latest_state->start < $state->start) {
+          if ($latest_state === null or ($latest_state->start < $state->start)) {
             $latest_state = $state;
           }
           debug(1, $state->value . " " . $state->real_stop . " " . $line['value']);
@@ -1082,8 +1082,11 @@ EOT;
             }
           }
         }
-        if ($latest_state and $latest_state->real_stop < $gantt_now and $latest_state->real_stop != 0) {
-          $resource_id->add_state('Absent', $line['value'], $gantt_stop_date);
+        // if current state is Alive (no current state)
+        if ($latest_state === null or ($latest_state->real_stop < $gantt_now and $latest_state->real_stop != 0)) {
+          if ($line['value'] > $gantt_now and $line['value'] < 2147483646) {
+            $resource_id->add_state('Absent', $line['value'], $gantt_stop_date);
+          }
         }
       }
     }
