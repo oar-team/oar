@@ -1,3 +1,20 @@
+oar (2.5.10~g5k27-1) unstable; urgency=medium
+
+    * eb494b26 [oarwalltime] specify in usage and man page that timeout is in seconds
+    * 2df8b87d [oarsub] Rework reservation date management: +1j if end < start and add verbose/warning messages
+    * 537e7ea5 [IO] fix hms_to_sql & ymdhms_to_sql: set 0 if any or hms is "".
+    * 31886286 [sarko] rework log and event messages.
+    * 44285a2b [oar_meta_sched] add jobid to log lines where is was missing + some cosmetic fixes.
+    * dfcde05c [oar_meta_sched] Better job events/logs for the start of adv. resa (start time and walltime update)
+    * d8b1b340 [IO.pm] fix get_gantt_jobs_to_launch for jobs with no jobtypes
+    * d267fb00 [IO] make set_resources_state update finaud_decision even if the state itself is actually not changed
+    * d3fb70db [oarnodesetting] Allow setting the suspected state
+    * d659fbdb [Finaud] do nothing if no node to check
+    * 8ac8383c [pingchecker/jobfinishingsequence] make log display job id
+    * ff33a9f5 [oarsub] only output serialized data in machine parseable modes
+
+ -- Samir Noir <samir.noir@inria.fr>  Mon, 19 Sep 2022 16:01:53 +0200
+
 oar (2.5.10~g5k26-1) unstable; urgency=medium
 
   * 217142a1 [database] change type events_logs.description from VARCHAR to TEXT
