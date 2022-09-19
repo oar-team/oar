@@ -138,6 +138,7 @@ EOT;
 
 // Standby state display options for the part shown in the future
 $CONF['standby_truncate_state_to_now'] = 1; // default: 1
+$CONF['no_standby_upto'] = 0; // default: 0
 // Besteffort job display options for the part shown in the future
 $CONF['besteffort_truncate_job_to_now'] = 1; // default: 1
 $CONF['besteffort_pattern'] = <<<EOT
@@ -1067,24 +1068,42 @@ EOT;
             if ($state->real_stop > 0) { // not an ongoing state, just consider it as absent
               continue;
             }
-            $state->value = 'Standby';
-            if ($CONF['standby_truncate_state_to_now']) {
-              if ($gantt_now < $gantt_start_date) { // only show future, do not show standby state
-                unset($resource_id->states[$i]);
+            if ($CONF['no_standby_upto']) {
+              if ($line['value'] < 2147483646) {
+                if ($line['value'] > $gantt_now) {
+                  $state->set_stop($line['value']);
+                }
               } else {
-                $state->set_stop($gantt_now);
+                $state->value = 'Standby';
+                if ($CONF['standby_truncate_state_to_now']) {
+                  if ($gantt_now < $gantt_start_date) { // only show future, do not show standby state
+                    unset($resource_id->states[$i]);
+                  } else {
+                    $state->set_stop($gantt_now);
+                  }
+                  continue;
+                }
               }
-              continue;
-            }
-            if ($line['value'] < 2147483646) {
-              $state->set_stop($line['value']);
-              $resource_id->add_state('Absent', $line['value'], $gantt_stop_date);
+            } else {
+              $state->value = 'Standby';
+              if ($CONF['standby_truncate_state_to_now']) {
+                if ($gantt_now < $gantt_start_date) { // only show future, do not show standby state
+                  unset($resource_id->states[$i]);
+                } else {
+                  $state->set_stop($gantt_now);
+                }
+                continue;
+              }
+              if ($line['value'] < 2147483646) {
+                $state->set_stop($line['value']);
+                $resource_id->add_state('Absent', $line['value'], $gantt_stop_date);
+              }
             }
           }
         }
         // if current state is Alive (no current state)
         if ($latest_state === null or ($latest_state->real_stop < $gantt_now and $latest_state->real_stop != 0)) {
-          if ($line['value'] > $gantt_now and $line['value'] < 2147483646) {
+          if (! $CONF['no_standby_upto'] and $line['value'] > $gantt_now and $line['value'] < 2147483646) {
             $resource_id->add_state('Absent', $line['value'], $gantt_stop_date);
           }
         }
