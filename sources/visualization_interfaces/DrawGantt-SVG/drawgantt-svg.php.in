@@ -1068,36 +1068,22 @@ EOT;
             if ($state->real_stop > 0) { // not an ongoing state, just consider it as absent
               continue;
             }
-            if ($CONF['no_standby_upto']) {
-              if ($line['value'] < 2147483646) {
-                if ($line['value'] > $gantt_now) {
-                  $state->set_stop($line['value']);
-                }
+            if ($CONF['no_standby_upto'] and $line['value'] < 2147483646) {
+              $state->set_stop($line['value']);
+              continue;
+            }
+            $state->value = 'Standby';
+            if ($CONF['standby_truncate_state_to_now']) {
+              if ($gantt_now < $gantt_start_date) { // only show future, do not show standby state
+                unset($resource_id->states[$i]);
               } else {
-                $state->value = 'Standby';
-                if ($CONF['standby_truncate_state_to_now']) {
-                  if ($gantt_now < $gantt_start_date) { // only show future, do not show standby state
-                    unset($resource_id->states[$i]);
-                  } else {
-                    $state->set_stop($gantt_now);
-                  }
-                  continue;
-                }
+                $state->set_stop($gantt_now);
               }
-            } else {
-              $state->value = 'Standby';
-              if ($CONF['standby_truncate_state_to_now']) {
-                if ($gantt_now < $gantt_start_date) { // only show future, do not show standby state
-                  unset($resource_id->states[$i]);
-                } else {
-                  $state->set_stop($gantt_now);
-                }
-                continue;
-              }
-              if ($line['value'] < 2147483646) {
-                $state->set_stop($line['value']);
-                $resource_id->add_state('Absent', $line['value'], $gantt_stop_date);
-              }
+              continue;
+            }
+            if ($line['value'] < 2147483646) {
+              $state->set_stop($line['value']);
+              $resource_id->add_state('Absent', $line['value'], $gantt_stop_date);
             }
           }
         }
