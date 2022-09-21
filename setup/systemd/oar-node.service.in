@@ -6,8 +6,6 @@ Wants=network-online.target
 
 [Service]
 ExecStart=/usr/sbin/sshd -f %%OARCONFDIR%%/sshd_config
-ExecStartPost=%%OARCONFDIR%%/oar-node-service start
-ExecStopPost=%%OARCONFDIR%%/oar-node-service stop
 Type=notify
 KillMode=process
 RuntimeDirectory=sshd
@@ -15,4 +13,4 @@ RuntimeDirectoryMode=0755
 RuntimeDirectoryPreserve=yes
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=oar.target
