@@ -16,7 +16,9 @@ MANDIR_FILES = $(SRCDIR)/man/man1/oarnodechecklist.1 \
 
 INITDIR_FILES = setup/init.d/oar-node.in
 
-SYSTEMDDIR_FILES = setup/systemd/oar-node.service.in
+SYSTEMDDIR_FILES = setup/systemd/oar.target \
+	           setup/systemd/oar-node.service.in \
+	           setup/systemd/oar-node-script.service.in
 
 CRONDIR_FILES = setup/cron.d/oar-node.in
 

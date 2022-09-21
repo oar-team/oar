@@ -183,8 +183,10 @@ sub htmlStatusTable {
     $output .= $cgi->td({ -valign => "top", bgcolor => "#c0c0c0" }, $cgi->i("events"));
     my $events = "";
     foreach my $e (sort { $a->{date} >= $b->{date} } @{ $self->get('events') }) {
-        $events .= OAR::Monika::db_io::local_to_sql($e->{date}) .
-          "> " . $e->{type} . ": " . $e->{description} . "<br/>";
+        foreach my $l (split(/\n/, $e->{description})) {
+            $events .= OAR::Monika::db_io::local_to_sql($e->{date}) .
+              "> " . $e->{type} . ": " . $l . "<br/>";
+        }
     }
     $output .= $cgi->td($events);
     $output .= $cgi->end_Tr();
