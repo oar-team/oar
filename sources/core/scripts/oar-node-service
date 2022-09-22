@@ -1,11 +1,16 @@
 #!/bin/sh -eu
 
-# This script is called when oar-node service is started.
+# This script is called when oar-node-script.service is started, after oar-node.service
+# (which launch the SSH server used by OAR).
 # You can change this to use another method to switch the node into the Alive state
+# Both oar-node.service and oar-node-script.service are in a custom systemd target
+# 'oar.target'.
+# That target can be used to add more services regarding OAR, you will need to
+# use "After=" or "Before=" to play them in the required order.
 
 start_oar_node() {
     echo
-    echo " * Edit this file or override the oar-node systemd unit ExecStartPost to"
+    echo " * Edit this file or override the oar-node-script systemd unit ExecStart to"
     echo "   launch your custom script if you want to perform specific actions at start"
     echo "   (e.g. switch the node to Alive)."
 }
@@ -15,7 +20,7 @@ start_oar_node() {
 
 stop_oar_node() {
     echo
-    echo " * Edit this file or override the oar-node systemd unit ExecStopPost to"
+    echo " * Edit this file or override the oar-node-script systemd unit ExecStop to"
     echo "   launch your custom script if you want to perform specific actions at stop"
     echo "   (e.g. switch the node to Absent)."
 }
