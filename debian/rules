@@ -47,6 +47,8 @@ override_dh_auto_install:
 
 	## oar-node
 	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/systemd/oar-node.service > debian/oar-node.service
+	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/systemd/oar-node-script.service > debian/oar-node.oar-node-script.service
+	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/systemd/oar.target > debian/oar-node.oar.target
 
 	# disable the automatic installation of this cron, by default
 	#cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/cron.d/oar-node > debian/oar-node.cron.d
@@ -63,6 +65,8 @@ override_dh_auto_install:
 	rm -r $(CURDIR)/$(INSTALLDIR)/oar-doc/usr/share/doc/oar-doc/doctrees
 
 	dh_install -i
+	dh_installsystemd --name=oar
+	dh_installsystemd --name=oar-node-script
 
 override_dh_clean:
 	dh_clean
