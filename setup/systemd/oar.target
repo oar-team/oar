@@ -1,3 +1,7 @@
 [Unit]
 Description=OAR target
 After=multi-user.target
+AllowIsolate=yes
+
+[Install]
+RequiredBy=multi-user.target
