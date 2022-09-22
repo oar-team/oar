@@ -1,3 +1,10 @@
+oar (2.5.10~g5k28-1) unstable; urgency=medium
+
+    * dfeb4665 Add an OAR systemd target to launch the ssh server and oar-node script
+    * b13c40ed [monika] fix display of multiline events in job details
+
+ -- Samir Noir <samir.noir@inria.fr>  Thu, 22 Sep 2022 10:34:20 +0200
+
 oar (2.5.10~g5k27-1) unstable; urgency=medium
 
     * eb494b26 [oarwalltime] specify in usage and man page that timeout is in seconds
