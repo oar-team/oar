@@ -1,8 +1,6 @@
 [Unit]
 Description=OAR compute node
-After=network-online.target
-After=remote-fs.target
-Wants=network-online.target
+After=multi-user.target
 
 [Service]
 ExecStart=/usr/sbin/sshd -f %%OARCONFDIR%%/sshd_config
