@@ -1,3 +1,9 @@
+oar (2.5.10~g5k29-1) unstable; urgency=medium
+
+    * ec779a3b [setup] fix systemd oar.target which was not enabled
+
+ -- Samir Noir <samir.noir@inria.fr>  Wed, 28 Sep 2022 10:56:56 +0200
+
 oar (2.5.10~g5k28-1) unstable; urgency=medium
 
     * dfeb4665 Add an OAR systemd target to launch the ssh server and oar-node script
