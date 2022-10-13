@@ -2894,7 +2894,7 @@ EOS
         OAR::API::ERROR(404, "Not found", "No way to handle your request " . $q->path_info);
     }
 
-    if ($fcgi_cycle_count > $fcgi_max_cycle_count) {
+    if (($fcgi_max_cycle_count > 0) && ($fcgi_cycle_count > $fcgi_max_cycle_count)) {
         exit 0;
     }
 
