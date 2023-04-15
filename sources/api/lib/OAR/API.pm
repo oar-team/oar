@@ -2,11 +2,9 @@
 package OAR::API;
 require Exporter;
 
-my $VERSION="1.0.2";
+my $VERSION = "1.0.2";
 
 use strict;
-#use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
-use CGI qw/:standard/;
 
 our $ABSOLUTE_URIS;
 our $q;
@@ -20,26 +18,26 @@ our $HTTP_X_API_PATH_PREFIX;
 
 # Try to load XML module
 my $XMLenabled = 1;
-unless ( eval "use XML::Simple qw(XMLout);1" ) {
-  $XMLenabled = 0;
+unless (eval "use XML::Simple qw(XMLout);1") {
+    $XMLenabled = 0;
 }
 
 # Try to load YAML module
 my $YAMLenabled = 1;
-unless ( eval "use YAML;1" ) {
-  $YAMLenabled = 0;
+unless (eval "use YAML;1") {
+    $YAMLenabled = 0;
 }
 
 # Try to load JSON module
 my $JSONenabled = 1;
-unless ( eval "use JSON;1" ) {
-  $JSONenabled = 0;
+unless (eval "use JSON;1") {
+    $JSONenabled = 0;
 }
 
 # Try to load URI (LWP) module
 my $URIenabled = 1;
-unless ( eval "use URI;1" ) {
-  $URIenabled = 0;
+unless (eval "use URI;1") {
+    $URIenabled = 0;
 }
 
 # Declared later with REST functions
@@ -51,9 +49,9 @@ sub ERROR($$$);
 
 # Inserts html line breaks in a string
 sub nl2br {
-  my $t = shift or return;
-  $t =~ s/(\r\n)/<br \/>/g;
-  return $t;
+    my $t = shift or return;
+    $t =~ s/(\r\n)/<br \/>/g;
+    return $t;
 }
 
 ##############################################################################
@@ -62,125 +60,130 @@ sub nl2br {
 
 # Load YAML data into a hashref
 sub import_yaml($) {
-  my $data         = shift;
-  check_yaml();
-  # Try to load the data and exit if there's an error
-  my $hashref = eval { YAML::Load($data) };
-  if ($@) {
-    ERROR 400, 'YAML data not understood', $@;
-    exit 0;
-  }
-  return $hashref;
+    my $data = shift;
+    check_yaml();
+
+    # Try to load the data and exit if there's an error
+    my $hashref = eval { YAML::Load($data) };
+    if ($@) {
+        ERROR 400, 'YAML data not understood', $@;
+        exit 0;
+    }
+    return $hashref;
 }
 
 # Load JSON data into a hashref
 sub import_json($) {
-  my $data         = shift;
-  check_json();
-  # Try to load the data and exit if there's an error
-  my $hashref = eval { JSON::decode_json($data) };
-  if ($@) {
-    ERROR 400, 'JSON data not understood', $@;
-    exit 0;
-  }
-  return $hashref;
+    my $data = shift;
+    check_json();
+
+    # Try to load the data and exit if there's an error
+    my $hashref = eval { JSON::decode_json($data) };
+    if ($@) {
+        ERROR 400, 'JSON data not understood', $@;
+        exit 0;
+    }
+    return $hashref;
 }
 
 # Load Dumper data into a hashref
 sub import_dumper($) {
-  my $data         = shift;
-  my $hash = eval($data);
-  if ($@) {
-    ERROR 400, 'Dumper data not understood', $@ . $data;
-    exit 0;
-  }
-  return $hash;
+    my $data = shift;
+    my $hash = eval($data);
+    if ($@) {
+        ERROR 400, 'Dumper data not understood', $@ . $data;
+        exit 0;
+    }
+    return $hash;
 }
 
 # Load HTML data into a hashref
 sub import_html_form($) {
-  my $data         = shift;
-  return $data;
+    my $data = shift;
+    return $data;
 }
 
 # Load data into a hashref, using format
 sub import_data_with_format($$) {
-  (my $data, my $format) = @_;
-  if ($format eq "yaml") { import_yaml($data); }
-  elsif ($format eq "dumper") { import_dumper($data); }
-  elsif ($format eq "json") { import_json($data); }
-  else {
-    ERROR 400, "Unknown $format format", $@;
-    exit 0;
-  }
+    (my $data, my $format) = @_;
+    if    ($format eq "yaml")   { import_yaml($data); }
+    elsif ($format eq "dumper") { import_dumper($data); }
+    elsif ($format eq "json")   { import_json($data); }
+    else {
+        ERROR 400, "Unknown $format format", $@;
+        exit 0;
+    }
 }
 
 # Load data into a hashref, using content_type
 sub import_data_with_content_type($$$) {
-  my ($data, $content_type, $msg) = @_;
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
-  my $obj;
+    my ($data, $content_type, $msg) = @_;
 
-  # If the data comes in the YAML format
-  if ( $content_type eq 'text/yaml' ) {
-    $obj=import_yaml($data);
-  }
-  # If the data comes in the JSON format
-  elsif ( $content_type eq 'application/json') {
-    $obj=import_json($data);
-  }
-  # If the data comes from an html form
-  elsif ( $content_type eq 'application/x-www-form-urlencoded' ) {
-    $obj=import_html_form($data);
-  }
-  # We expect the data to be in YAML or JSON format
-  else {
-    ERROR 406, ucfirst($msg).' description must be in YAML or JSON',
-      "The correct format for a $msg request is text/yaml or application/json. ";
-    exit 0;
-  }
-  return $obj;
+    # content_type may be of the form "application/json; charset=UTF-8"
+    ($content_type) = split(/\s*;\s*/, $content_type);
+    my $obj;
+
+    # If the data comes in the YAML format
+    if ($content_type eq 'text/yaml') {
+        $obj = import_yaml($data);
+    }
+
+    # If the data comes in the JSON format
+    elsif ($content_type eq 'application/json') {
+        $obj = import_json($data);
+    }
+
+    # If the data comes from an html form
+    elsif ($content_type eq 'application/x-www-form-urlencoded') {
+        $obj = import_html_form($data);
+    }
+
+    # We expect the data to be in YAML or JSON format
+    else {
+        ERROR 406, ucfirst($msg) . ' description must be in YAML or JSON',
+          "The correct format for a $msg request is text/yaml or application/json. ";
+        exit 0;
+    }
+    return $obj;
 }
 
 # Export a hash into YAML
 sub export_yaml($) {
-  my $hashref = shift;
-  check_yaml();
-  return YAML::Dump($hashref)
-} 
-  
+    my $hashref = shift;
+    check_yaml();
+    return YAML::Dump($hashref);
+}
+
 # Export a hash into JSON
 sub export_json($) {
-  my $hashref = shift;
-  check_json();
-  return JSON->new->pretty(1)->encode($hashref);
+    my $hashref = shift;
+    check_json();
+    return JSON->new->pretty(1)->encode($hashref);
 }
 
 # Export a hash into HTML (YAML in fact, as it is human readable)
 sub export_html($) {
-  my $hashref = shift;
-  check_yaml();
-  return "<PRE>\n". YAML::Dump($hashref) ."\n</PRE>";
+    my $hashref = shift;
+    check_yaml();
+    return "<PRE>\n" . YAML::Dump($hashref) . "\n</PRE>";
 }
 
 # Export data to the specified content_type
 sub export($$) {
-  my $data         = shift;
-  my $format = shift;
-  if ( $format eq 'yaml' ) {
-    return export_yaml($data);
-  }elsif ( $format eq 'json' ) {
-    return export_json($data)."\n";
-  }elsif ( $format eq 'html' ) {
-    return export_html($data)."\n";
-  }elsif ( $format eq 'tgz' ) {
-    return export_yaml($data)."\n";
-  }else {
-    ERROR 406, "Unknown $format format",
-      "The $format format is not known.";
-    exit 0;
-  }
+    my $data   = shift;
+    my $format = shift;
+    if ($format eq 'yaml') {
+        return export_yaml($data);
+    } elsif ($format eq 'json') {
+        return export_json($data) . "\n";
+    } elsif ($format eq 'html') {
+        return export_html($data) . "\n";
+    } elsif ($format eq 'tgz') {
+        return export_yaml($data) . "\n";
+    } else {
+        ERROR 406, "Unknown $format format", "The $format format is not known.";
+        exit 0;
+    }
 }
 
 ##############################################################################
@@ -192,199 +195,204 @@ sub export($$) {
 # Return the url (absolute if the third argument is 1). The .html
 # extension is added if the second argument is equal to "html".
 sub make_uri($$$) {
-  my $path = shift;
-  my $ext = shift;
-  my $absolute = shift; # deprecated, left here for compatibility
-  if (defined($ext) && $ext eq "html") { $path.=".html"; }
-  if (our $ABSOLUTE_URIS == 1) {
-    return "$HTTP_X_API_PATH_PREFIX".$q->url(-absolute => 1)."/".$path;
-  }
-  else {
-    if ($URIenabled) {
-      my $base = URI->new($q->url().$q->path_info);
-      my $goal = URI->new($q->url()."/".$path);
-      return "$HTTP_X_API_PATH_PREFIX".$goal->rel($base);
+    my $path     = shift;
+    my $ext      = shift;
+    my $absolute = shift;    # deprecated, left here for compatibility
+    if (defined($ext) && $ext eq "html") { $path .= ".html"; }
+    if (our $ABSOLUTE_URIS == 1) {
+        return "$HTTP_X_API_PATH_PREFIX" . $q->url(-absolute => 1) . "/" . $path;
+    } else {
+        if ($URIenabled) {
+            my $base = URI->new($q->url() . $q->path_info);
+            my $goal = URI->new($q->url() . "/" . $path);
+            return "$HTTP_X_API_PATH_PREFIX" . $goal->rel($base);
+        } else {
+            ERROR(
+                500,
+                "LWP URI module not enabled",
+                "I cannot make relative uris without LWP URI module!");
+            exit 0;
+        }
     }
-    else { 
-      ERROR (500,
-             "LWP URI module not enabled",
-             "I cannot make relative uris without LWP URI module!" );
-      exit 0;
-    }
-  }
 }
 
 # Return an html href of an uri if the type is "html"
 sub htmlize_uri($$) {
-  my $uri=shift;
-  my $type=shift;
-  if ($type eq "html") {
-    return "<A HREF=$uri>$uri</A>";
-  }
-  else { return $uri; }
+    my $uri  = shift;
+    my $type = shift;
+    if ($type eq "html") {
+        return "<A HREF=$uri>$uri</A>";
+    } else {
+        return $uri;
+    }
 }
 
 # Get the api uri base in relative
 sub get_api_uri_relative_base() {
-  if ($URIenabled) {
-    my $base = $q->path_info;
-    $base =~ s/\.html$// ;
-    $base =~ s/\/$// ;
-    $base = "http://bidon".$base;
-    my $goal = "http://bidon";
-    return URI->new($goal)->rel($base);
-  }
-  else {
-    ERROR (500,
-           "LWP URI module not enabled",
-           "I cannot make uris without LWP URI module!" );
-    exit 0;
-  }
+    if ($URIenabled) {
+        my $base = $q->path_info;
+        $base =~ s/\.html$//;
+        $base =~ s/\/$//;
+        $base = "http://bidon" . $base;
+        my $goal = "http://bidon";
+        return URI->new($goal)->rel($base);
+    } else {
+        ERROR(500, "LWP URI module not enabled", "I cannot make uris without LWP URI module!");
+        exit 0;
+    }
 }
 
 # Add uri to a job
 sub add_job_uris($$) {
-  my $job = shift;
-  my $ext = shift;
-  my $self=OAR::API::make_uri("jobs/".$job->{id},$ext,0);
-  $self=OAR::API::htmlize_uri($self,$ext);
-  my $resources=OAR::API::make_uri("jobs/".$job->{id}."/resources",$ext,0);
-  $resources=OAR::API::htmlize_uri($resources,$ext);
-  my $nodes=OAR::API::make_uri("jobs/".$job->{id}."/nodes",$ext,0);
-  $nodes=OAR::API::htmlize_uri($nodes,$ext);
-  my $links;
-  push (@$links, { href => $self, rel => "self" });
-  push (@$links, { href => $resources, rel => "collection", title => "resources" });
-  push (@$links, { href => $nodes, rel => "collection", title => "nodes" });
-  $job->{links}=$links;
-  $job->{api_timestamp}=time();
-  # Don't know why this function breaks the type of the id, so:
-  $job->{"id"}=int($job->{"id"});
+    my $job  = shift;
+    my $ext  = shift;
+    my $self = OAR::API::make_uri("jobs/" . $job->{id}, $ext, 0);
+    $self = OAR::API::htmlize_uri($self, $ext);
+    my $resources = OAR::API::make_uri("jobs/" . $job->{id} . "/resources", $ext, 0);
+    $resources = OAR::API::htmlize_uri($resources, $ext);
+    my $nodes = OAR::API::make_uri("jobs/" . $job->{id} . "/nodes", $ext, 0);
+    $nodes = OAR::API::htmlize_uri($nodes, $ext);
+    my $links;
+    push(@$links, { href => $self,      rel => "self" });
+    push(@$links, { href => $resources, rel => "collection", title => "resources" });
+    push(@$links, { href => $nodes,     rel => "collection", title => "nodes" });
+    $job->{links}         = $links;
+    $job->{api_timestamp} = time();
+
+    # Don't know why this function breaks the type of the id, so:
+    $job->{"id"} = int($job->{"id"});
 }
 
 # Add uris to a oar job list
 sub add_joblist_uris($$) {
-  my $jobs = shift;
-  my $ext = shift;
+    my $jobs = shift;
+    my $ext  = shift;
     foreach my $job (@$jobs) {
-      if (defined($job->{Job_Id}) && !defined($job->{job_id})) {
-        $job->{job_id}=$job->{Job_Id};
-      }
-      add_job_uris($job,$ext);
-  }
+        if (defined($job->{Job_Id}) && !defined($job->{job_id})) {
+            $job->{job_id} = $job->{Job_Id};
+        }
+        add_job_uris($job, $ext);
+    }
 }
 
 # Add uris to a list of jobs of a resource
 sub add_jobs_on_resource_uris($$) {
-  my $jobs = shift,
-  my $ext = shift;
-  foreach my $job (@$jobs) {
-    add_job_uris($job,$ext);
-  }
+    my $jobs = shift, my $ext = shift;
+    foreach my $job (@$jobs) {
+        add_job_uris($job, $ext);
+    }
 }
 
 # Add uris to a resources list
 sub add_resources_uris($$$) {
-  my $resources = shift;
-  my $ext = shift;
-  my $prefix = shift;
-  foreach my $resource (@$resources) {
-    my $links;
-    my $node;
-    if (defined($resource->{network_address})) {
-      $node=OAR::API::make_uri($prefix."resources/nodes/".$resource->{network_address},$ext,0);
-      $node=OAR::API::htmlize_uri($node,$ext);
-      push (@$links, { href => $node, title => "node", rel => "member" });
+    my $resources = shift;
+    my $ext       = shift;
+    my $prefix    = shift;
+    foreach my $resource (@$resources) {
+        my $links;
+        my $node;
+        if (defined($resource->{network_address})) {
+            $node = OAR::API::make_uri($prefix . "resources/nodes/" . $resource->{network_address},
+                $ext, 0);
+            $node = OAR::API::htmlize_uri($node, $ext);
+            push(@$links, { href => $node, title => "node", rel => "member" });
+        }
+        my $self = OAR::API::make_uri($prefix . "resources/" . $resource->{id},           $ext, 0);
+        my $jobs = OAR::API::make_uri($prefix . "resources/" . $resource->{id} . "/jobs", $ext, 0);
+        $self = OAR::API::htmlize_uri($self, $ext);
+        $jobs = OAR::API::htmlize_uri($jobs, $ext);
+        push(@$links, { href => $self, rel => "self" });
+        push(@$links, { href => $jobs, title => "jobs", rel => "collection" });
+        $resource->{links}         = $links;
+        $resource->{api_timestamp} = time();
+        $resource->{id}            = int($resource->{id});    #why the hell do I need to do that??
     }
-    my $self=OAR::API::make_uri($prefix."resources/".$resource->{id},$ext,0);
-    my $jobs=OAR::API::make_uri($prefix."resources/".$resource->{id}."/jobs",$ext,0);
-    $self=OAR::API::htmlize_uri($self,$ext);
-    $jobs=OAR::API::htmlize_uri($jobs,$ext);
-    push (@$links, { href => $self, rel => "self" });
-    push (@$links, { href => $jobs, title => "jobs" , rel => "collection"});
-    $resource->{links}=$links;
-    $resource->{api_timestamp}=time();
-    $resource->{id}=int($resource->{id}); #why the hell do I need to do that??
-  }
 }
+
 # Add uris to a list of nodes
 sub add_nodes_uris($$$) {
-  my $nodes = shift;
-  my $ext = shift;
-  my $prefix = shift;
-  foreach my $node (@$nodes) {
-    my $links;
-    my $self=OAR::API::make_uri($prefix."resources/nodes/".$node->{network_address},$ext,0);
-    $self=OAR::API::htmlize_uri($self,$ext);
-    push (@$links, { href => $self, rel => "self" });
-    $node->{links}=$links;
-    $node->{api_timestamp}=time();
-  }
+    my $nodes  = shift;
+    my $ext    = shift;
+    my $prefix = shift;
+    foreach my $node (@$nodes) {
+        my $links;
+        my $self =
+          OAR::API::make_uri($prefix . "resources/nodes/" . $node->{network_address}, $ext, 0);
+        $self = OAR::API::htmlize_uri($self, $ext);
+        push(@$links, { href => $self, rel => "self" });
+        $node->{links}         = $links;
+        $node->{api_timestamp} = time();
+    }
 }
 
 # Add uris to resources of a job
 # OBSOLETE!
 sub add_job_resources_uris($$$) {
-  my $resources = shift;
-  my $ext = shift;
-  my $prefix = shift;
-  foreach my $assigned_resource (@{$resources->{assigned_resources}}) {
-    $assigned_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$assigned_resource->{id},$ext,0);
-    $assigned_resource->{resource_uri}=htmlize_uri($assigned_resource->{resource_uri},$ext);
-  }
-  foreach my $reserved_resource (@{$resources->{reserved_resources}}) {
-    $reserved_resource->{resource_uri}=OAR::API::make_uri($prefix."resources/".$reserved_resource->{id},$ext,0);
-    $reserved_resource->{resource_uri}=htmlize_uri($reserved_resource->{resource_uri},$ext);
-  }
-  foreach my $assigned_node (@{$resources->{assigned_nodes}}) {
-    $assigned_node->{node_uri}=OAR::API::make_uri($prefix."resources/nodes/".$assigned_node->{node},$ext,0);
-    $assigned_node->{node_uri}=htmlize_uri($assigned_node->{node_uri},$ext);
-  }
-  $resources->{job_uri}=OAR::API::make_uri($prefix."jobs/".$resources->{job_id},$ext,0);
-  $resources->{job_uri}=htmlize_uri($resources->{job_uri},$ext);
-  $resources->{api_timestamp}=time();
+    my $resources = shift;
+    my $ext       = shift;
+    my $prefix    = shift;
+    foreach my $assigned_resource (@{ $resources->{assigned_resources} }) {
+        $assigned_resource->{resource_uri} =
+          OAR::API::make_uri($prefix . "resources/" . $assigned_resource->{id}, $ext, 0);
+        $assigned_resource->{resource_uri} = htmlize_uri($assigned_resource->{resource_uri}, $ext);
+    }
+    foreach my $reserved_resource (@{ $resources->{reserved_resources} }) {
+        $reserved_resource->{resource_uri} =
+          OAR::API::make_uri($prefix . "resources/" . $reserved_resource->{id}, $ext, 0);
+        $reserved_resource->{resource_uri} = htmlize_uri($reserved_resource->{resource_uri}, $ext);
+    }
+    foreach my $assigned_node (@{ $resources->{assigned_nodes} }) {
+        $assigned_node->{node_uri} =
+          OAR::API::make_uri($prefix . "resources/nodes/" . $assigned_node->{node}, $ext, 0);
+        $assigned_node->{node_uri} = htmlize_uri($assigned_node->{node_uri}, $ext);
+    }
+    $resources->{job_uri} = OAR::API::make_uri($prefix . "jobs/" . $resources->{job_id}, $ext, 0);
+    $resources->{job_uri} = htmlize_uri($resources->{job_uri}, $ext);
+    $resources->{api_timestamp} = time();
 }
 
 # Add uris to a single admission rule
 sub add_admission_rule_uris($$) {
-  my $admission_rule = shift;
-  my $ext = shift;
-  $admission_rule->{uri} = OAR::API::make_uri("admission_rules/".$admission_rule->{id},$ext,0);
-  $admission_rule->{uri} = htmlize_uri($admission_rule->{uri},$ext);
-  $admission_rule->{api_timestamp} = time();
+    my $admission_rule = shift;
+    my $ext            = shift;
+    $admission_rule->{uri} =
+      OAR::API::make_uri("admission_rules/" . $admission_rule->{id}, $ext, 0);
+    $admission_rule->{uri}           = htmlize_uri($admission_rule->{uri}, $ext);
+    $admission_rule->{api_timestamp} = time();
 }
 
 # Add uris to an admission rules list
 sub add_admission_rules_uris($$) {
-  my $admission_rules = shift;
-  my $ext = shift;
+    my $admission_rules = shift;
+    my $ext             = shift;
 
-  foreach my $admission_rule (@$admission_rules) {
-    $admission_rule->{uri} = OAR::API::make_uri("admission_rules/".$admission_rule->{id},$ext,0);
-    $admission_rule->{uri} = htmlize_uri($admission_rule->{uri},$ext);
-    $admission_rule->{api_timestamp} = time();
-  }
+    foreach my $admission_rule (@$admission_rules) {
+        $admission_rule->{uri} =
+          OAR::API::make_uri("admission_rules/" . $admission_rule->{id}, $ext, 0);
+        $admission_rule->{uri}           = htmlize_uri($admission_rule->{uri}, $ext);
+        $admission_rule->{api_timestamp} = time();
+    }
 }
 
 # Add uris to a single config parameter
 sub add_config_parameter_uris($$) {
-  my $parameter = shift;
-  my $ext = shift;
-  $parameter->{uri} = OAR::API::make_uri("config/".$parameter->{id},$ext,0);
-  $parameter->{uri} = htmlize_uri($parameter->{uri},$ext);
-  $parameter->{api_timestamp} = time();
+    my $parameter = shift;
+    my $ext       = shift;
+    $parameter->{uri}           = OAR::API::make_uri("config/" . $parameter->{id}, $ext, 0);
+    $parameter->{uri}           = htmlize_uri($parameter->{uri}, $ext);
+    $parameter->{api_timestamp} = time();
 }
 
 # Add uris to a config parameters list
 sub add_config_parameters_uris($$) {
-  my $parameters = shift;
-  my $ext = shift;
+    my $parameters = shift;
+    my $ext        = shift;
 
-  foreach my $name (keys %$parameters) {
-    $parameters->{$name}->{uri} = OAR::API::make_uri("config/".$name,$ext,0);
-    $parameters->{$name}->{uri} = htmlize_uri($parameters->{$name}->{uri},$ext);
-    $parameters->{$name}->{api_timestamp} = time();
-  }
+    foreach my $name (keys %$parameters) {
+        $parameters->{$name}->{uri}           = OAR::API::make_uri("config/" . $name, $ext, 0);
+        $parameters->{$name}->{uri}           = htmlize_uri($parameters->{$name}->{uri}, $ext);
+        $parameters->{$name}->{api_timestamp} = time();
+    }
 }
 
 ##############################################################################
@@ -394,139 +402,138 @@ sub add_config_parameters_uris($$) {
 
 # EMPTY DATA
 sub struct_empty($) {
-  my $structure = shift;
-  if    ($structure eq 'oar')    { return {}; }
-  elsif ($structure eq 'simple') { return []; }
+    my $structure = shift;
+    if    ($structure eq 'oar')    { return {}; }
+    elsif ($structure eq 'simple') { return []; }
 }
 
 # OAR JOB
 sub fix_job_integers($) {
-  my $job = shift;
-  foreach my $key ("resubmit_job_id","Job_Id","array_index","array_id","startTime","stopTime","submissionTime","scheduledStart","exit_code") {
-    $job->{$key}=int($job->{$key}) if defined($job->{$key});
-  }
-  foreach my $event (@{$job->{"events"}}) {
-    $event->{'job_id'}=int($event->{'job_id'});
-    $event->{'event_id'}=int($event->{'event_id'});
-    $event->{'date'}=int($event->{'date'});
-  }
+    my $job = shift;
+    foreach my $key (
+        "resubmit_job_id", "Job_Id",   "array_index",    "array_id",
+        "startTime",       "stopTime", "submissionTime", "scheduledStart",
+        "exit_code"
+    ) {
+        $job->{$key} = int($job->{$key}) if defined($job->{$key});
+    }
+    foreach my $event (@{ $job->{"events"} }) {
+        $event->{'job_id'}   = int($event->{'job_id'});
+        $event->{'event_id'} = int($event->{'event_id'});
+        $event->{'date'}     = int($event->{'date'});
+    }
 }
 
 sub struct_job($$) {
-  my $job = shift;
-  my $structure = shift;
-  my $result;
-  if    ($structure eq 'oar')    { return $job; }
-  elsif ($structure eq 'simple') { 
-    if ($job->{(keys(%{$job}))[0]}  and $job->{(keys(%{$job}))[0]} eq "HASH") {
-      $job=$job->{(keys(%{$job}))[0]};
+    my $job       = shift;
+    my $structure = shift;
+    my $result;
+    if    ($structure eq 'oar') { return $job; }
+    elsif ($structure eq 'simple') {
+        if ($job->{ (keys(%{$job}))[0] } and $job->{ (keys(%{$job}))[0] } eq "HASH") {
+            $job = $job->{ (keys(%{$job}))[0] };
+        }
+        fix_job_integers($job);
+        $job->{id} = $job->{Job_Id};
+        delete $job->{Job_Id};
+        $job->{start_time} = $job->{startTime};
+        delete $job->{startTime};
+        $job->{stop_time} = $job->{stopTime};
+        delete $job->{stopTime};
+        $job->{scheduled_start} = $job->{scheduledStart};
+        delete $job->{scheduledStart};
+        $job->{submission_time} = $job->{submissionTime};
+        delete $job->{submissionTime};
+        $job->{type} = $job->{jobType};
+        delete $job->{jobType};
+        $job->{launching_directory} = $job->{launchingDirectory};
+        delete $job->{launchingDirectory};
+        delete $job->{job_user};
+        delete $job->{job_uid};
+        delete $job->{reserved_resources};
+        delete $job->{assigned_resources};
+        delete $job->{assigned_network_address};
+        return $job;
     }
-    fix_job_integers($job);
-    $job->{id}=$job->{Job_Id};
-    delete $job->{Job_Id};
-    $job->{start_time}=$job->{startTime};
-    delete $job->{startTime};
-    $job->{stop_time}=$job->{stopTime};
-    delete $job->{stopTime};
-    $job->{scheduled_start}=$job->{scheduledStart};
-    delete $job->{scheduledStart};
-    $job->{submission_time}=$job->{submissionTime};
-    delete $job->{submissionTime};
-    $job->{type}=$job->{jobType};
-    delete $job->{jobType};
-    $job->{launching_directory}=$job->{launchingDirectory};
-    delete $job->{launchingDirectory};
-    delete $job->{job_user};
-    delete $job->{job_uid};
-    delete $job->{reserved_resources};
-    delete $job->{assigned_resources};
-    delete $job->{assigned_network_address};
-    return $job;
-  }
 }
 
 sub struct_job_list_hash_to_array($) {
-  my $jobs=shift;
-  my $array=[];
-  foreach my $j ( sort { $a <=> $b } keys (%{$jobs}) ) {
-    if (defined($jobs->{$j}->{Job_Id})) {
-      $jobs->{$j}->{id}=int($jobs->{$j}->{Job_Id});
-      push (@$array,$jobs->{$j});
+    my $jobs  = shift;
+    my $array = [];
+    foreach my $j (sort { $a <=> $b } keys(%{$jobs})) {
+        if (defined($jobs->{$j}->{Job_Id})) {
+            $jobs->{$j}->{id} = int($jobs->{$j}->{Job_Id});
+            push(@$array, $jobs->{$j});
+        } else {
+            $jobs->{$j}->{Job_Id} = int($j);
+            $jobs->{$j}->{id}     = int($j);
+            push(@$array, $jobs->{$j});
+        }
     }
-    else {
-    	$jobs->{$j}->{Job_Id} = int($j);
-    	$jobs->{$j}->{id} = int($j);
-    	push (@$array,$jobs->{$j});
-    }
-  }
-  return $array;
+    return $array;
 }
 
 # OAR JOB LIST
 sub struct_job_list($$) {
-  my $jobs = shift;
-  my $structure = shift;
-  my $result;
-  foreach my $job (@$jobs) {
-    my $hashref = {
-                  id => int($job->{job_id}),
-                  state => $job->{state},
-                  owner => $job->{job_user},
-                  name => $job->{job_name},
-                  queue => $job->{queue_name},
-                  submission => $job->{submission_time},
-                  api_timestamp => int($job->{api_timestamp}),
-                  links => $job->{links}
-    };
-    if ($structure eq 'oar') {
-      $result->{$job->{job_id}} = $hashref;
+    my $jobs      = shift;
+    my $structure = shift;
+    my $result;
+    foreach my $job (@$jobs) {
+        my $hashref = {
+            id            => int($job->{job_id}),
+            state         => $job->{state},
+            owner         => $job->{job_user},
+            name          => $job->{job_name},
+            queue         => $job->{queue_name},
+            submission    => $job->{submission_time},
+            api_timestamp => int($job->{api_timestamp}),
+            links         => $job->{links} };
+        if ($structure eq 'oar') {
+            $result->{ $job->{job_id} } = $hashref;
+        } elsif ($structure eq 'simple') {
+            push(@$result, $hashref);
+        }
     }
-    elsif ($structure eq 'simple') {
-      push (@$result,$hashref);
-    } 
-  }
-  return $result;
+    return $result;
 }
-
 
 # OAR JOB LIST WITH DETAILS
 # TODO: need to append "resources" and "nodes" as /jobs/XXX/resources
 sub struct_job_list_details($$) {
-  my $jobs = shift;
-  my $structure = shift;
-  my $result;
-  if ($structure eq 'oar') {
-    foreach my $job (@$jobs) {
-      $result->{$job->{job_id}} = int($job);
+    my $jobs      = shift;
+    my $structure = shift;
+    my $result;
+    if ($structure eq 'oar') {
+        foreach my $job (@$jobs) {
+            $result->{ $job->{job_id} } = int($job);
+        }
+    } elsif ($structure eq 'simple') {
+        foreach my $job (@$jobs) {
+            $job = struct_job($job, $structure);
+            push(@$result, $job);
+        }
     }
-  }
-  elsif ($structure eq 'simple') {
-    foreach my $job (@$jobs) {
-      $job=struct_job($job,$structure);
-      push (@$result,$job);
-    }
-  } 
-  return $result;
+    return $result;
 }
-
 
 # OAR RESOURCES OF A JOB
 
 sub get_job_resources($) {
-    my $job_info=shift;
+    my $job_info = shift;
     my $data;
     my $status = "UNKNOWN";
-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    if (defined($job_info->{assigned_moldable_job}) and $job_info->{assigned_moldable_job} ne "0"){
+    my $base   = OAR::IO::connect() or die "cannot connect to the data base\n";
+    if (defined($job_info->{assigned_moldable_job}) and $job_info->{assigned_moldable_job} ne "0") {
         foreach my $resource (OAR::IO::get_job_resources_properties($base, $job_info->{job_id})) {
-            $data->{resources}->{$resource->{resource_id}} = $resource;
+            $data->{resources}->{ $resource->{resource_id} } = $resource;
         }
         $status = "assigned";
     } elsif ($job_info->{state} eq "Waiting") {
-        $data->{resources} = OAR::IO::get_gantt_visu_scheduled_job_resources($base,$job_info->{job_id}, 1);
-        if ($job_info->{reservation} eq "Scheduled") { # Advance reservation
+        $data->{resources} =
+          OAR::IO::get_gantt_visu_scheduled_job_resources($base, $job_info->{job_id}, 1);
+        if ($job_info->{reservation} eq "Scheduled") {    # Advance reservation
             $status = "reserved";
-        } elsif ($job_info->{reservation} eq "None") { # Batch job
+        } elsif ($job_info->{reservation} eq "None") {    # Batch job
             $status = "scheduled";
         } else {
             warn "Warning: could not determine resources status\n";
@@ -534,19 +541,19 @@ sub get_job_resources($) {
     } else {
         warn "Warning: could not determine resources\n";
     }
-    foreach my $r (values(%{$data->{resources}})) {
+    foreach my $r (values(%{ $data->{resources} })) {
         delete($r->{'resource_id'});
     }
     OAR::IO::disconnect($base);
     $data->{nodes} = {};
-    foreach my $r (keys(%{$data->{resources}})) {
-        $data->{resources}->{$r}->{id} = $r;
+    foreach my $r (keys(%{ $data->{resources} })) {
+        $data->{resources}->{$r}->{id}     = $r;
         $data->{resources}->{$r}->{status} = $status;
-        my $n=$data->{resources}->{$r}->{network_address};
+        my $n = $data->{resources}->{$r}->{network_address};
         if ($data->{resources}->{$r}->{type} eq 'default' and defined($n) and $n ne "") {
             if (not defined($data->{nodes}->{$n})) {
                 $data->{nodes}->{$n}->{network_address} = $n;
-                $data->{nodes}->{$n}->{status} = $status;
+                $data->{nodes}->{$n}->{status}          = $status;
             }
         }
     }
@@ -554,215 +561,210 @@ sub get_job_resources($) {
 }
 
 sub struct_job_resources($$) {
-  my $data=shift;
-  my $structure=shift;
-  my @resources = values(%{$data->{resources}});
-  return \@resources;
+    my $data      = shift;
+    my $structure = shift;
+    my @resources = values(%{ $data->{resources} });
+    return \@resources;
 }
 
 sub struct_job_nodes($$) {
-  my $data=shift;
-  my $structure=shift;
-  my @nodes = values(%{$data->{nodes}});
-  return \@nodes;
+    my $data      = shift;
+    my $structure = shift;
+    my @nodes     = values(%{ $data->{nodes} });
+    return \@nodes;
 }
-
 
 # ACCOUNTING LIST
 sub struct_accounting($) {
-  my $accounting = shift;
-  my $result;
-  foreach my $a (keys (%{$accounting})) {
-    my $hashref = {  project => $a,
-                     consumptions => $accounting->{$a}
-                  };
-    push (@$result,$hashref);
-  }
-  return $result;
+    my $accounting = shift;
+    my $result;
+    foreach my $a (keys(%{$accounting})) {
+        my $hashref = {
+            project      => $a,
+            consumptions => $accounting->{$a} };
+        push(@$result, $hashref);
+    }
+    return $result;
 }
-
 
 # OAR RESOURCES
 sub filter_resource_list($) {
-  my $resources = shift;
-  my $filtered_resources;
-  foreach my $resource (@$resources) {
-    push(@$filtered_resources,{ id => int($resource->{resource_id}),
-                                state => $resource->{state},
-                                available_upto => int($resource->{available_upto}),
-                                network_address => $resource->{network_address}
-                              });
-  }
-  return $filtered_resources;
+    my $resources = shift;
+    my $filtered_resources;
+    foreach my $resource (@$resources) {
+        push(
+            @$filtered_resources,
+            {   id              => int($resource->{resource_id}),
+                state           => $resource->{state},
+                available_upto  => int($resource->{available_upto}),
+                network_address => $resource->{network_address} });
+    }
+    return $filtered_resources;
 }
 
 sub struct_resource_list_hash_to_array($) {
-  my $resources=shift;
-  my $array=[];
-  foreach my $r ( keys (%{$resources}) ){
-    if (defined($resources->{$r}->{resource_id})) {
-      push (@$array,$resources->{$r});
-    #oarnodes -s case
-    }else{
-      foreach my $id ( keys (%{$resources->{$r}})) {
-        push (@$array,{ 'state' => $resources->{$r}->{$id},
-                        'id' => int($id),
-                        'network_address' => $r});
-      }
+    my $resources = shift;
+    my $array     = [];
+    foreach my $r (keys(%{$resources})) {
+        if (defined($resources->{$r}->{resource_id})) {
+            push(@$array, $resources->{$r});
+
+            #oarnodes -s case
+        } else {
+            foreach my $id (keys(%{ $resources->{$r} })) {
+                push(
+                    @$array,
+                    {   'state'           => $resources->{$r}->{$id},
+                        'id'              => int($id),
+                        'network_address' => $r
+                    });
+            }
+        }
     }
-  }
-  return $array;
+    return $array;
 }
 
 # Replace resource_id by id
 sub fix_resource_id($) {
-  my $resource=shift;
-  if (defined($resource->{resource_id}) && !defined($resource->{id})) {
-    $resource->{id}=int($resource->{resource_id});
-    delete $resource->{resource_id};
-  }
+    my $resource = shift;
+    if (defined($resource->{resource_id}) && !defined($resource->{id})) {
+        $resource->{id} = int($resource->{resource_id});
+        delete $resource->{resource_id};
+    }
 }
 
 # Replace resource_id by id into a resources list
 sub fix_resource_ids($) {
-  my $resources=shift;
-  foreach my $resource (@$resources) {
-    fix_resource_id($resource);
-  }
+    my $resources = shift;
+    foreach my $resource (@$resources) {
+        fix_resource_id($resource);
+    }
 }
 
 sub struct_resource_list_fix_ints($) {
-  my $resources = shift;
-  foreach my $resource (@$resources)  {
-    if (defined($resource->{resource_id})) { 
-      $resource->{id}=int($resource->{resource_id}); 
+    my $resources = shift;
+    foreach my $resource (@$resources) {
+        if (defined($resource->{resource_id})) {
+            $resource->{id} = int($resource->{resource_id});
+        }
+        if (defined($resource->{id})) {
+            $resource->{id} = int($resource->{id});
+        }
+        if (defined($resource->{available_upto})) {
+            $resource->{available_upto} = int($resource->{available_upto});
+        }
+        if (defined($resource->{cpuset})) { $resource->{cpuset} = int($resource->{cpuset}); }
     }
-    if (defined($resource->{id})) { 
-      $resource->{id}=int($resource->{id}); 
-    }
-    if (defined($resource->{available_upto})) { $resource->{available_upto}=int($resource->{available_upto}); }
-    if (defined($resource->{cpuset})) { $resource->{cpuset}=int($resource->{cpuset}); }
-  }
 }
 
 sub struct_resource_list($$$) {
-  my $resources = shift;
-  my $structure = shift;
-  my $compact = shift; # If true, replace a 1 element array by its element
-  my $result;
-  struct_resource_list_fix_ints($resources);
-  if ($structure eq 'simple') {
-    if (scalar @$resources == 1 && $compact == 1) {
-      return $resources->[0];
+    my $resources = shift;
+    my $structure = shift;
+    my $compact   = shift;    # If true, replace a 1 element array by its element
+    my $result;
+    struct_resource_list_fix_ints($resources);
+    if ($structure eq 'simple') {
+        if (scalar @$resources == 1 && $compact == 1) {
+            return $resources->[0];
+        } else {
+            return $resources;
+        }
+    } elsif ($structure eq 'oar') {
+        foreach my $resource (@$resources) {
+            $result->{ $resource->{id} } = int($resource);
+        }
+        return $result;
     }
-    else { return $resources ; }
-  }
-  elsif ($structure eq 'oar') {
-    foreach my $resource (@$resources)  {
-      $result->{$resource->{id}}=int($resource);
-    }
-    return $result; 
-  }
 }
-
 
 # SINGLE ADMISSION RULE
 sub struct_admission_rule($$) {
-  my $admission_rule = shift;
-  my $structure = shift;
-  my $result;
-  
-  my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
-  my $hashref = {
-                  priority => $admission_rule->{priority},
-                  enabled => $admission_rule->{enabled},
-                  rule => nl2br($admission_rule->{rule}),
-                  links => $current_rule_link
-    };
-  
-  if ($structure eq 'simple') { 
-  	$hashref->{id} = int($admission_rule->{id});
-    push (@$result,$hashref);
-  }
-  elsif ($structure eq 'oar') {
-  	$result->{$admission_rule ->{id}} = $hashref;
-  }
-  return $result;
-}
+    my $admission_rule = shift;
+    my $structure      = shift;
+    my $result;
 
+    my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
+    my $hashref           = {
+        priority => $admission_rule->{priority},
+        enabled  => $admission_rule->{enabled},
+        rule     => nl2br($admission_rule->{rule}),
+        links    => $current_rule_link };
+
+    if ($structure eq 'simple') {
+        $hashref->{id} = int($admission_rule->{id});
+        push(@$result, $hashref);
+    } elsif ($structure eq 'oar') {
+        $result->{ $admission_rule->{id} } = $hashref;
+    }
+    return $result;
+}
 
 # LIST OF ADMISSION RULES
 sub struct_admission_rule_list($$) {
-  my $admission_rules = shift;
-  my $structure = shift;
+    my $admission_rules = shift;
+    my $structure       = shift;
 
-  my $result;
-  foreach my $admission_rule (@$admission_rules) {
-  	my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
-    my $hashref = {
-                  priority => $admission_rule->{priority},
-                  enabled => $admission_rule->{enabled},
-                  rule => nl2br($admission_rule->{rule}),
-                  links => $current_rule_link
-    };
-    if ($structure eq 'oar') {
-      $result->{$admission_rule ->{id}} = $hashref;
+    my $result;
+    foreach my $admission_rule (@$admission_rules) {
+        my $current_rule_link = { href => $admission_rule->{uri}, rel => "self" };
+        my $hashref           = {
+            priority => $admission_rule->{priority},
+            enabled  => $admission_rule->{enabled},
+            rule     => nl2br($admission_rule->{rule}),
+            links    => $current_rule_link };
+        if ($structure eq 'oar') {
+            $result->{ $admission_rule->{id} } = $hashref;
+        } elsif ($structure eq 'simple') {
+            $hashref->{id} = $admission_rule->{id};
+            push(@$result, $hashref);
+        }
     }
-    elsif ($structure eq 'simple') {
-      $hashref->{id} = $admission_rule->{id};
-      push (@$result,$hashref);
-    } 
-  };
 
-  return $result;
+    return $result;
 }
 
 # CONFIG PARAMETERS
 sub struct_config_parameter($$) {
-  my $parameter = shift;
-  my $structure = shift;
+    my $parameter = shift;
+    my $structure = shift;
 
-  my $result;
+    my $result;
 
-  my $current_rule_link = { href => $parameter->{uri}, rel => "self" };
-  my $hashref = {
-                  id => int($parameter->{id}),
-                  value => $parameter->{value},
-                  links => $current_rule_link
-   };
-   if ($structure eq 'oar') {
-     $result->{$parameter->{id}} = $hashref;
-   }
-   elsif ($structure eq 'simple') {
-     $hashref->{id} = $parameter->{id};
-     push (@$result,$hashref);
-   } 
+    my $current_rule_link = { href => $parameter->{uri}, rel => "self" };
+    my $hashref           = {
+        id    => int($parameter->{id}),
+        value => $parameter->{value},
+        links => $current_rule_link };
+    if ($structure eq 'oar') {
+        $result->{ $parameter->{id} } = $hashref;
+    } elsif ($structure eq 'simple') {
+        $hashref->{id} = $parameter->{id};
+        push(@$result, $hashref);
+    }
 
-  return $result;
+    return $result;
 }
 
 # LIST OF CONFIG PARAMETERS
 sub struct_config_parameters_list($$) {
-  my $parameters = shift;
-  my $structure = shift;
+    my $parameters = shift;
+    my $structure  = shift;
 
-  my $result;
-  foreach my $param ( keys( %{$parameters} ) ) {
-  	my $current_rule_link = { href => $parameters->{$param}->{uri}, rel => "self" };
-  	my $hashref = {
-                  value => $parameters->{$param}->{value},
-                  links => $current_rule_link
-    };
-    if ($structure eq 'oar') {
-      $result->{$param} = $hashref;
+    my $result;
+    foreach my $param (keys(%{$parameters})) {
+        my $current_rule_link = { href => $parameters->{$param}->{uri}, rel => "self" };
+        my $hashref           = {
+            value => $parameters->{$param}->{value},
+            links => $current_rule_link };
+        if ($structure eq 'oar') {
+            $result->{$param} = $hashref;
+        } elsif ($structure eq 'simple') {
+            $hashref->{id} = $param;
+            push(@$result, $hashref);
+        }
     }
-    elsif ($structure eq 'simple') {
-      $hashref->{id} = $param;
-      push (@$result,$hashref);
-    } 
-  }
 
-  return $result;
+    return $result;
 }
 
 ##############################################################################
@@ -771,96 +773,86 @@ sub struct_config_parameters_list($$) {
 
 # Get a suitable extension depending on the content-type
 sub get_ext($) {
-  my $content_type = shift;
-  # content_type may be of the form "application/json; charset=UTF-8"
-  ($content_type)=split(/\s*;\s*/,$content_type);
-  if    ($content_type eq "text/yaml")  { return "yaml"; }
-  elsif ($content_type eq "text/html")  { return "html"; }
-  elsif ($content_type eq "application/octet-stream")  { return "yaml"; }
-  elsif ($content_type eq "multipart/form-data")  { return "html"; }
-  elsif ($content_type eq "application/json")  { return "json"; }
-  elsif ($content_type eq "application/x-gzip")  { return "tgz"; }
-  #elsif ($content_type eq "application/x-www-form-urlencoded")  { return "json"; }
-  else                                  { return "UNKNOWN_TYPE"; }
+    my $content_type = shift;
+
+    # content_type may be of the form "application/json; charset=UTF-8"
+    ($content_type) = split(/\s*;\s*/, $content_type);
+    if    ($content_type eq "text/yaml")                { return "yaml"; }
+    elsif ($content_type eq "text/html")                { return "html"; }
+    elsif ($content_type eq "application/octet-stream") { return "yaml"; }
+    elsif ($content_type eq "multipart/form-data")      { return "html"; }
+    elsif ($content_type eq "application/json")         { return "json"; }
+    elsif ($content_type eq "application/x-gzip")       { return "tgz"; }
+
+    #elsif ($content_type eq "application/x-www-form-urlencoded")  { return "json"; }
+    else { return "UNKNOWN_TYPE"; }
 }
 
 # Get a suitable content-type depending on the extension
 sub get_content_type($) {
-  my $format = shift;
-  if    ( $format eq "yaml" ) { return "text/yaml"; } 
-  elsif ( $format eq "html" ) { return "text/html"; } 
-  elsif ( $format eq "json" ) { return "application/json"; } 
-  elsif ( $format eq "tgz" || $format eq "tar.gz" ) { return "application/x-gzip"; } 
-  else                        { return "UNKNOWN_TYPE"; }
+    my $format = shift;
+    if    ($format eq "yaml")                       { return "text/yaml"; }
+    elsif ($format eq "html")                       { return "text/html"; }
+    elsif ($format eq "json")                       { return "application/json"; }
+    elsif ($format eq "tgz" || $format eq "tar.gz") { return "application/x-gzip"; }
+    else                                            { return "UNKNOWN_TYPE"; }
 }
 
 # Set oar output option and header depending on the format given
 # Also add the Allow (GET[,POST]) header variable if a second argument is given
 sub set_output_format {
-  my $format=shift;
-  my $allow=shift || "GET";
-  my $type = get_content_type($format);
-  my $header=$q->header( -status => 200, -type => "$type", -allow => "$allow" );
-  return ($header,$type);
+    my $format = shift;
+    my $allow  = shift || "GET";
+    my $type   = get_content_type($format);
+    my $header = $q->header(-status => 200, -type => "$type", -allow => "$allow");
+    return ($header, $type);
 }
 
 # Create a URI regex with no tail
 sub uri_regex_no_tail($) {
-  my $r=shift;
-  return qr{^/$r$};
+    my $r = shift;
+    return qr{^/$r$};
 }
 
 # Create a URI regex ending by yaml, json or html
 sub uri_regex_html_json_yaml($) {
-  my $r=shift;
-  return uri_regex_no_tail($r.'(?:\.(html|json|yaml))?');
-}
-
-# Create a URI regex ending by tar.gz or tgz
-sub uri_regex_tgz($) {
-  my $r=shift;
-  return uri_regex_no_tail($r.'(?:\.(tar.gz|tgz))?');
+    my $r = shift;
+    return uri_regex_no_tail($r . '(?:\.(html|json|yaml))?');
 }
 
 # Return the extension (second parameter) if defined, or the
 # corresponding one if the content_type if set.
 sub set_ext($$) {
-  my $q=shift;
-  my $ext=shift;
-  if (defined($ext) && $ext ne "") { $ext =~ s/^\.*//; return $ext; }
-  else {
-    if (defined($q->http('Accept'))) {
-      if (get_ext($q->http('Accept')) ne "UNKNOWN_TYPE") {
-         return get_ext($q->http('Accept'));
-      }
-      elsif (defined($q->content_type)) {
-        if (get_ext($q->content_type) ne "UNKNOWN_TYPE") {
-          return get_ext($q->content_type);
+    my $q   = shift;
+    my $ext = shift;
+    if (defined($ext) && $ext ne "") { $ext =~ s/^\.*//; return $ext; }
+    else {
+        if (defined($q->http('Accept'))) {
+            if (get_ext($q->http('Accept')) ne "UNKNOWN_TYPE") {
+                return get_ext($q->http('Accept'));
+            } elsif (defined($q->content_type)) {
+                if (get_ext($q->content_type) ne "UNKNOWN_TYPE") {
+                    return get_ext($q->content_type);
+                } else {
+                    ERROR 406, 'Invalid content type ',
+                      "Valid types are text/yaml, application/json or text/html";
+                }
+            } else {
+                ERROR 406, 'Invalid content type required ' . $q->http('Accept'),
+                  "Valid types are text/yaml, application/json or text/html";
+            }
+        } elsif (defined($q->content_type)) {
+            if (get_ext($q->content_type) ne "UNKNOWN_TYPE") {
+                return get_ext($q->content_type);
+            } else {
+                ERROR 406, 'Invalid content type ' . $q->content_type,
+                  "Valid types are text/yaml, application/json or text/html";
+            }
+        } else {
+            ERROR 406, 'Invalid content type ',
+              "Valid types are text/yaml, application/json or text/html";
         }
-        else {
-          ERROR 406, 'Invalid content type ',
-          "Valid types are text/yaml, application/json or text/html";
-        }
-      }
-      else {
-        ERROR 406, 'Invalid content type required ' .$q->http('Accept'),
-        "Valid types are text/yaml, application/json or text/html";
-      }
     }
-    elsif (defined($q->content_type)) {
-      if (get_ext($q->content_type) ne "UNKNOWN_TYPE") { 
-         return get_ext($q->content_type);
-      }
-      else { 
-        ERROR 406, 'Invalid content type ' .$q->content_type,
-        "Valid types are text/yaml, application/json or text/html";
-      }
-    }
-    else { 
-      ERROR 406, 'Invalid content type ',
-      "Valid types are text/yaml, application/json or text/html";
-    }
-  }
 }
 
 ##############################################################################
@@ -875,69 +867,71 @@ sub PUT($$);
 sub ERROR($$$);
 
 sub HEAD($$) {
-  ( my $q, my $path ) = @_;
-  if   ( $q->request_method eq 'HEAD' && $q->path_info =~ /$path/ ) { return 1; }
-  else                                                             { return 0; }
+    (my $q, my $path) = @_;
+    if   ($q->request_method eq 'HEAD' && $q->path_info =~ /$path/) { return 1; }
+    else                                                            { return 0; }
 }
 
 sub GET($$) {
-  ( my $q, my $path ) = @_;
-  if   ( $q->request_method eq 'GET' && $q->path_info =~ /$path/ ) { return 1; }
-  else                                                             { return 0; }
+    (my $q, my $path) = @_;
+    if   ($q->request_method eq 'GET' && $q->path_info =~ /$path/) { return 1; }
+    else                                                           { return 0; }
 }
 
 sub POST($$) {
-  my ( $q, $path ) = @_;
-  if   ( $q->request_method eq 'POST' && $q->path_info =~ $path ) { return 1; }
-  else                                                            { return 0; }
+    my ($q, $path) = @_;
+    if   ($q->request_method eq 'POST' && $q->path_info =~ $path) { return 1; }
+    else                                                          { return 0; }
 }
 
 sub DELETE($$) {
-  my ( $q, $path ) = @_;
-  if   ( $q->request_method eq 'DELETE' && $q->path_info =~ $path ) { return 1; }
-  else                                                              { return 0; }
+    my ($q, $path) = @_;
+    if   ($q->request_method eq 'DELETE' && $q->path_info =~ $path) { return 1; }
+    else                                                            { return 0; }
 }
 
 sub PUT($$) {
-  my ( $q, $path ) = @_;
-  if   ( $q->request_method eq 'PUT' && $q->path_info =~ $path ) { return 1; }
-  else                                                           { return 0; }
+    my ($q, $path) = @_;
+    if   ($q->request_method eq 'PUT' && $q->path_info =~ $path) { return 1; }
+    else                                                         { return 0; }
 }
 
 sub ERROR($$$) {
-  ( my $status, my $title, my $message ) = @_;
-  if ($DEBUG_MODE) {
-    $title  = "ERROR $status - " . $title ;
-    $status = "200";
-  }
+    (my $status, my $title, my $message) = @_;
+    if ($DEBUG_MODE) {
+        $title  = "ERROR $status - " . $title;
+        $status = "200";
+    }
 
-  # This is to prevent a loop as the export function may call ERROR!
-  if (!defined($extension) || get_content_type($extension) eq "UNKNOW_TYPE") {  
-     if ($JSONenabled) { $extension = "json" ; }
-     elsif ($YAMLenabled) { $extension = "yaml"; }
-     else { $extension = "html"; }
-  }
-  elsif($extension eq "json" && !$JSONenabled) { $extension = "html"; }
-  elsif($extension eq "yaml" && !$YAMLenabled) { $extension = "html"; }
-  elsif($extension eq "xml" && !$XMLenabled) { $extension = "html"; }
+    # This is to prevent a loop as the export function may call ERROR!
+    if (!defined($extension) || get_content_type($extension) eq "UNKNOW_TYPE") {
+        if    ($JSONenabled) { $extension = "json"; }
+        elsif ($YAMLenabled) { $extension = "yaml"; }
+        else                 { $extension = "html"; }
+    } elsif ($extension eq "json" && !$JSONenabled) {
+        $extension = "html";
+    } elsif ($extension eq "yaml" && !$YAMLenabled) {
+        $extension = "html";
+    } elsif ($extension eq "xml" && !$XMLenabled) {
+        $extension = "html";
+    }
 
-  $status=$status+0; # To convert the status to an integer
-  print $q->header( -status => $status, -type => get_content_type($extension) );
-  if ($extension eq "html") {
-    print $q->title($title) ."\n";
-    print $q->h1($title) ."\n";
-    print $q->p("<PRE>\n". $message ."\n</PRE>");
-  }
-  else {
-    my $error = { code => $status,
-                  message => $message,
-                  title => $title
-                };
+    $status = $status + 0;    # To convert the status to an integer
+    print $q->header(-status => $status, -type => get_content_type($extension));
+    if ($extension eq "html") {
+        print $q->title($title) . "\n";
+        print $q->h1($title) . "\n";
+        print $q->p("<PRE>\n" . $message . "\n</PRE>");
+    } else {
+        my $error = {
+            code    => $status,
+            message => $message,
+            title   => $title };
 
-    print export($error,$extension);
-  }
-  local $^W = 0;
-  next FCGI;
+        print export($error, $extension);
+    }
+    local $^W = 0;
+    next FCGI;
 }
 
 ##############################################################################
@@ -946,288 +940,280 @@ sub ERROR($$$) {
 
 # Check the consistency of a posted job and load it into a hashref
 sub check_job($$) {
-  my $data         = shift;
-  my $content_type = shift;
+    my $data         = shift;
+    my $content_type = shift;
 
-  my $job = import_data_with_content_type($data, $content_type, "job");
+    my $job = import_data_with_content_type($data, $content_type, "job");
 
-  # Job must have a "script" or script_path field unless there's a reservation
-  unless ( $job->{reservation} or $job->{script} or $job->{script_path} or $job->{command}) {
-    ERROR 400, 'Missing Required Field',
-      'A job must have a script, a command (script_path) or must be a reservation!';
-    exit 0;
-  }
+    # Job must have a "script" or script_path field unless there's a reservation
+    unless ($job->{reservation} or $job->{script} or $job->{script_path} or $job->{command}) {
+        ERROR 400, 'Missing Required Field',
+          'A job must have a script, a command (script_path) or must be a reservation!';
+        exit 0;
+    }
 
-  # Clean options with an empty parameter that is normaly required
-  foreach my $option ("resource",   "name",
-                      "property",    "script",
-                      "script_path", "type",
-                      "reservation", "directory",
-                      "project", "stagein",
-                      "connect", "resources",
-                      "array", "array-param-file",
-                      "queue", "checkpoint",
-                      "signal", "anterior",
-                      "notify", "resubmit",
-                      "import-job-key-from-file",
-                      "import-job-key-inline",
-                      "export-job-key-to-file",
-                      "stdout", "stderr",
-                      "stagein", "stagein-md5sum",
-                      "command", "script"
-                     ) { parameter_option($job,$option) }
+    # Clean options with an empty parameter that is normaly required
+    foreach my $option (
+        "resource",              "name",
+        "property",              "script",
+        "script_path",           "type",
+        "reservation",           "directory",
+        "project",               "connect",
+        "resources",             "array",
+        "array-param-file",      "queue",
+        "checkpoint",            "signal",
+        "anterior",              "notify",
+        "resubmit",              "import-job-key-from-file",
+        "import-job-key-inline", "export-job-key-to-file",
+        "stdout",                "stderr",
+        "command",               "script"
+    ) {
+        parameter_option($job, $option);
+    }
 
-  # Manage toggle options (no parameter)
-  toggle_option($job,"use-job-key");
-  toggle_option($job,"scanscript");
-  toggle_option($job,"hold");
+    # Manage toggle options (no parameter)
+    toggle_option($job, "use-job-key");
+    toggle_option($job, "scanscript");
+    toggle_option($job, "hold");
 
-  # Ignore some nonsense (for the API) options
-  foreach my $option ("dumper","xml","yaml","json","help","version") {
-    delete($job->{"$option"});
-  }
+    # Ignore some nonsense (for the API) options
+    foreach my $option ("dumper", "xml", "yaml", "json", "help", "version") {
+        delete($job->{"$option"});
+    }
 
-  # Return an error for some forbidden options
-  if ($job->{"interactive"}) {
-    ERROR 400, 'The API cannot manage interactive jobs',
-      'The API cannot manage interactive jobs';
-    exit 0;
-  }
+    # Return an error for some forbidden options
+    if ($job->{"interactive"}) {
+        ERROR 400, 'The API cannot manage interactive jobs',
+          'The API cannot manage interactive jobs';
+        exit 0;
+    }
 
-  return $job;
+    return $job;
 }
 
 # Check the consistency of a job update and load it into a hashref
 sub check_job_update($$) {
-  my $data         = shift;
-  my $content_type = shift;
+    my $data         = shift;
+    my $content_type = shift;
 
-  my $job = import_data_with_content_type($data, $content_type, "job");
+    my $job = import_data_with_content_type($data, $content_type, "job");
 
-  # Job must have a "method" field
-  if ( not exists ($job->{method}) ) {
-    ERROR 400, 'Missing Required Field',
-      'A job update must have a "method" field!';
-    exit 0;
-  }
-  elsif  ($job->{method} eq "walltime-change") {
-    if (not defined($job->{walltime})) {
-      ERROR(400, 'Missing Required Field', 'Walltime change request must have a walltime field');
-      exit 0;
-    } 
-  }
-  elsif  ($job->{method} eq "signal") {
-    if (not defined($job->{signal})) {
-      ERROR(400, 'Missing Required Field', 'Signal request must have a signal field');
-      exit 0;
-    } 
-    if ($job->{signal} !~ /^\d+$/ ) { 
-      ERROR(400, 'Invalid Field', 'Signal field must be an integer');
-      exit 0;
-    } 
-  }
+    # Job must have a "method" field
+    if (not exists($job->{method})) {
+        ERROR 400, 'Missing Required Field', 'A job update must have a "method" field!';
+        exit 0;
+    } elsif ($job->{method} eq "walltime-change") {
+        if (not defined($job->{walltime})) {
+            ERROR(
+                400,
+                'Missing Required Field',
+                'Walltime change request must have a walltime field');
+            exit 0;
+        }
+    } elsif ($job->{method} eq "signal") {
+        if (not defined($job->{signal})) {
+            ERROR(400, 'Missing Required Field', 'Signal request must have a signal field');
+            exit 0;
+        }
+        if ($job->{signal} !~ /^\d+$/) {
+            ERROR(400, 'Invalid Field', 'Signal field must be an integer');
+            exit 0;
+        }
+    }
 
-  return $job;
+    return $job;
 }
 
 # Check the consistency of a posted oar resource and load it into a hashref
 sub check_resources($$) {
-  my $data         = shift;
-  my $content_type = shift;
+    my $data         = shift;
+    my $content_type = shift;
 
-  my $resources = import_data_with_content_type($data, $content_type, "resources");
+    my $resources = import_data_with_content_type($data, $content_type, "resources");
 
-  # If the data comes from an html form, data is actually in yaml format
-  if ( $content_type =~ /^application\/x-www-form-urlencoded\s*;/ ) {
-    $resources=import_yaml($resources->{"yaml_array"});
-  }
-
- my $resources_array;
- if ( ref($resources) eq "HASH") {
-   $resources_array = [ $resources ] ;
- }
- elsif ( ref($resources) eq "ARRAY") {
-   $resources_array = $resources ;
- }
- else {
-   ERROR 406, 'Bad type',
-     'resource must be an array or a hash!';
-   exit 0;
- } 
- foreach my $r (@$resources_array) {
-    # Resource must have a "hostname" or "network_address" field
-    unless ( $r->{hostname} or $r->{network_address} ) {
-      ERROR 400, 'Missing Required Field',
-        'A resource must have a hosname field or a network_address property!';
-      exit 0;
+    # If the data comes from an html form, data is actually in yaml format
+    if ($content_type =~ /^application\/x-www-form-urlencoded\s*;/) {
+        $resources = import_yaml($resources->{"yaml_array"});
     }
 
-    # Fill network_address with $hostname if provided
-    if ( ! $r->{network_address} && $r->{hostname} ) {
-      $r->{network_address}=$r->{hostname};
-      delete $r->{hostname};
+    my $resources_array;
+    if (ref($resources) eq "HASH") {
+        $resources_array = [$resources];
+    } elsif (ref($resources) eq "ARRAY") {
+        $resources_array = $resources;
+    } else {
+        ERROR 406, 'Bad type', 'resource must be an array or a hash!';
+        exit 0;
     }
+    foreach my $r (@$resources_array) {
 
-    # Check for system properties
-    foreach my $property ( keys %{$r} ) {
-      if (OAR::Tools::check_resource_system_property($property) == 1){
-         ERROR 403, "Forbidden",
-           "The property \"$property\" is a system one and can't be assigned by the admin";
-         exit 0;
-      }
+        # Resource must have a "hostname" or "network_address" field
+        unless ($r->{hostname} or $r->{network_address}) {
+            ERROR 400, 'Missing Required Field',
+              'A resource must have a hosname field or a network_address property!';
+            exit 0;
+        }
+
+        # Fill network_address with $hostname if provided
+        if (!$r->{network_address} && $r->{hostname}) {
+            $r->{network_address} = $r->{hostname};
+            delete $r->{hostname};
+        }
+
+        # Check for system properties
+        foreach my $property (keys %{$r}) {
+            if (OAR::Tools::check_resource_system_property($property) == 1) {
+                ERROR 403, "Forbidden",
+                  "The property \"$property\" is a system one and can't be assigned by the admin";
+                exit 0;
+            }
+        }
     }
-  }
-  return $resources_array;
+    return $resources_array;
 }
 
 # Check the consistency of a posted oar resource change state request
 sub check_resource_state($$) {
-  my $data         = shift;
-  my $content_type = shift;
+    my $data         = shift;
+    my $content_type = shift;
 
-  my $resource = import_data_with_content_type($data, $content_type, "resource");
+    my $resource = import_data_with_content_type($data, $content_type, "resource");
 
-  # Resource must have a "state" field
-  unless ( $resource->{state} ) {
-    ERROR 400, 'Missing Required Field',
-      'A state change request must have a "state" field!';
-    exit 0;
-  }
-  
-  # State must be "Alive, Absent or Dead"
-  my $r=$resource->{state};
-  unless ( $r eq "Alive" || $r eq "Absent" || $r eq "Dead") {
-    ERROR 400, 'Bad state',
-      'State mut be Alive, Absent or Dead!';
-    exit 0;
-  }
+    # Resource must have a "state" field
+    unless ($resource->{state}) {
+        ERROR 400, 'Missing Required Field', 'A state change request must have a "state" field!';
+        exit 0;
+    }
 
-  return $resource;
+    # State must be "Alive, Absent or Dead"
+    my $r = $resource->{state};
+    unless ($r eq "Alive" || $r eq "Absent" || $r eq "Dead") {
+        ERROR 400, 'Bad state', 'State mut be Alive, Absent or Dead!';
+        exit 0;
+    }
+
+    return $resource;
 }
 
 # Check the consistency of a posted request resource generation and load it into a hashref
 sub check_resource_description($$) {
-  my $data         = shift;
-  my $content_type = shift;
+    my $data         = shift;
+    my $content_type = shift;
 
-  my $description = import_data_with_content_type($data, $content_type, "resource generation");
+    my $description = import_data_with_content_type($data, $content_type, "resource generation");
 
-  # Resource description must have a "expression" field
-  unless ( $description->{resources} ) {
-    ERROR 400, 'Missing Required Field',
-      'Resources generation description must have a resources field';
-    exit 0;
-  }
+    # Resource description must have a "expression" field
+    unless ($description->{resources}) {
+        ERROR 400, 'Missing Required Field',
+          'Resources generation description must have a resources field';
+        exit 0;
+    }
 
-  # "properties" field must be a HASH
-  #if (defined($description->{properties})) {
-  #	unless ( ref($description->{properties}) eq "HASH" ) {
-  #		ERROR 400, 'Missing Type Field',
-  #    'The field properties must be a HASH type';
-  #  exit 0;
-  #	}
-  #}
+    # "properties" field must be a HASH
+    #if (defined($description->{properties})) {
+    #	unless ( ref($description->{properties}) eq "HASH" ) {
+    #		ERROR 400, 'Missing Type Field',
+    #    'The field properties must be a HASH type';
+    #  exit 0;
+    #	}
+    #}
 
-  return $description;
+    return $description;
 }
 
 # Check the consistency of a posted oar admission rule and load it into a hashref
 sub check_admission_rule($$) {
-  my $data         = shift;
-  my $content_type = shift;
+    my $data         = shift;
+    my $content_type = shift;
 
-  my $admission_rule = import_data_with_content_type($data, $content_type, "admission rule");
+    my $admission_rule = import_data_with_content_type($data, $content_type, "admission rule");
 
-  # Admission rule must have a "priority" field
-  unless ( $admission_rule->{priority}) {
-    ERROR 400, 'Missing Required Field',
-      'An admission priority must have a priority field';
-    exit 0;
-  }
-  # Admission rule must have a "enabled" field
-  unless ( $admission_rule->{enabled}) {
-    ERROR 400, 'Missing Required Field',
-      'An admission enabled must have a enabled field';
-    exit 0;
-  }
-  # Admission rule must have a "rule" field
-  unless ( $admission_rule->{rule}) {
-    ERROR 400, 'Missing Required Field',
-      'An admission rule must have a rule field';
-    exit 0;
-  }
+    # Admission rule must have a "priority" field
+    unless ($admission_rule->{priority}) {
+        ERROR 400, 'Missing Required Field', 'An admission priority must have a priority field';
+        exit 0;
+    }
 
-  return $admission_rule;
+    # Admission rule must have a "enabled" field
+    unless ($admission_rule->{enabled}) {
+        ERROR 400, 'Missing Required Field', 'An admission enabled must have a enabled field';
+        exit 0;
+    }
+
+    # Admission rule must have a "rule" field
+    unless ($admission_rule->{rule}) {
+        ERROR 400, 'Missing Required Field', 'An admission rule must have a rule field';
+        exit 0;
+    }
+
+    return $admission_rule;
 }
 
 # Check the consistency of a posted oar admission rule for update and load it into a hashref
 sub check_admission_rule_update($$) {
-  my $data         = shift;
-  my $content_type = shift;
+    my $data         = shift;
+    my $content_type = shift;
 
-  my $admission_rule = import_data_with_content_type($data, $content_type, "admission rule");
-  
-  # Admission rule must have either a "method" or the "priority" and "enabled" and "rule" fields
-  unless ( $admission_rule->{method} or ( $admission_rule->{priorty} and $admission_rule->{enabled} and $admission_rule->{rule} ) ) {
-    ERROR 400, 'Missing Required Field',
-      'An admission rule update must have either a "method=delete" or "priority"=<priority> and "enabled"=<enabled> and "rule"=<rule> fields!';
-    exit 0;
-  }
+    my $admission_rule = import_data_with_content_type($data, $content_type, "admission rule");
 
-  return $admission_rule;
+    # Admission rule must have either a "method" or the "priority" and "enabled" and "rule" fields
+    unless ($admission_rule->{method} or
+        ($admission_rule->{priorty} and $admission_rule->{enabled} and $admission_rule->{rule})) {
+        ERROR 400, 'Missing Required Field',
+          'An admission rule update must have either a "method=delete" or "priority"=<priority> and "enabled"=<enabled> and "rule"=<rule> fields!';
+        exit 0;
+    }
+
+    return $admission_rule;
 }
 
 # Check the consistency of a posted configuration variable and load it into a hashref
 sub check_configuration_variable($$) {
-  my $data         = shift;
-  my $content_type = shift;
+    my $data         = shift;
+    my $content_type = shift;
 
-  my $parameter = import_data_with_content_type($data, $content_type, "configuration variable");
+    my $parameter = import_data_with_content_type($data, $content_type, "configuration variable");
 
-  # Parameter must have a "value" field
-  unless ( $parameter->{value}) {
-    ERROR 400, 'Missing Required Field',
-      'Configuration variable must have a value field';
-    exit 0;
-  }
+    # Parameter must have a "value" field
+    unless ($parameter->{value}) {
+        ERROR 400, 'Missing Required Field', 'Configuration variable must have a value field';
+        exit 0;
+    }
 
-  return $parameter;
+    return $parameter;
 }
 
 # Check the consistency of a posted chmod query
 sub check_chmod($$) {
-  my $data         = shift;
-  my $content_type = shift;
+    my $data         = shift;
+    my $content_type = shift;
 
-  my $parameter = import_data_with_content_type($data, $content_type, "chmod");
+    my $parameter = import_data_with_content_type($data, $content_type, "chmod");
 
-  # Parameter must have a "mode" field
-  unless ( $parameter->{mode}) {
-    ERROR 400, 'Missing Required Field',
-      'Chmod query must have a mode field';
-    exit 0;
-  }
+    # Parameter must have a "mode" field
+    unless ($parameter->{mode}) {
+        ERROR 400, 'Missing Required Field', 'Chmod query must have a mode field';
+        exit 0;
+    }
 
-  return $parameter;
+    return $parameter;
 }
 
 # Check the consistency of a posted state query
 sub check_state($$) {
-  my $data         = shift;
-  my $content_type = shift;
+    my $data         = shift;
+    my $content_type = shift;
 
-  my $state = import_data_with_content_type($data, $content_type, "state");
+    my $state = import_data_with_content_type($data, $content_type, "state");
 
-  # Parameter must have a "mode" field
-  unless ( $state->{state}) {
-    ERROR 400, 'Missing Required Field',
-      'State query must have a state field';
-    exit 0;
-  }
+    # Parameter must have a "mode" field
+    unless ($state->{state}) {
+        ERROR 400, 'Missing Required Field', 'State query must have a state field';
+        exit 0;
+    }
 
-  return $state;
+    return $state;
 }
-
 
 ##############################################################################
 # Other functions
@@ -1235,184 +1221,186 @@ sub check_state($$) {
 
 # APILIB Version
 sub get_version() {
-  return $VERSION;
+    return $VERSION;
 }
 
 # Return the cgi handler
 sub get_cgi_handler() {
-  return $q;
+    return $q;
 }
 
 # Check if YAML is enabled or exits with an error
 sub check_yaml() {
-  unless ($YAMLenabled) {
-    ERROR 400, 'YAML not enabled', 'YAML perl module not loaded!';
-    exit 0;
-  }
+    unless ($YAMLenabled) {
+        ERROR 400, 'YAML not enabled', 'YAML perl module not loaded!';
+        exit 0;
+    }
 }
 
 # Check if JSON is enabled or exits with an error
 sub check_json() {
-  unless ($JSONenabled) {
-    ERROR 400, 'JSON not enabled', 'JSON perl module not loaded!';
-    exit 0;
-  }
+    unless ($JSONenabled) {
+        ERROR 400, 'JSON not enabled', 'JSON perl module not loaded!';
+        exit 0;
+    }
 }
 
 # Clean a hash from a key having an empty value (for options with parameter)
 sub parameter_option($$) {
-  my $hash = shift;
-  my $key = shift;
-  if ((defined($hash->{"$key"}) && ($hash->{"$key"} eq "")) || not defined($hash->{"$key"})) {
-    delete($hash->{"$key"})
-  }
+    my $hash = shift;
+    my $key  = shift;
+    if ((defined($hash->{"$key"}) && ($hash->{"$key"} eq "")) || not defined($hash->{"$key"})) {
+        delete($hash->{"$key"});
+    }
 }
 
 # Remove a toggle option if value is 0
 sub toggle_option($$) {
-  my $job = shift;
-  my $option = shift;
-  if (defined($job->{$option})) {
-    if ($job->{$option} eq "0" ) {
-      delete($job->{$option});
+    my $job    = shift;
+    my $option = shift;
+    if (defined($job->{$option})) {
+        if ($job->{$option} eq "0") {
+            delete($job->{$option});
+        } else {
+            $job->{$option} = "";
+        }
     }
-    else { $job->{$option}="" ; };
-  }
 }
 
 # Send a command and returns the output or exit with an error
 sub send_cmd($$) {
-  my $cmd=shift;
-  my $error_name=shift;
-  my $cmdRes = `$cmd 2>&1`;
-  my $err    = $?;
-  if ( $err != 0 ) {
-    #$err = $err >> 8;
-    ERROR(
-      400,
-      "$error_name error",
-      "$error_name command exited with status $err: $cmdRes. (Command was: $cmd)."
-    );
-    exit 0;
-  }
-  else { return $cmdRes; }
+    my $cmd        = shift;
+    my $error_name = shift;
+    my $cmdRes     = `$cmd 2>&1`;
+    my $err        = $?;
+    if ($err != 0) {
+
+        #$err = $err >> 8;
+        ERROR(
+            400,
+            "$error_name error",
+            "$error_name command exited with status $err: $cmdRes. (Command was: $cmd).");
+        exit 0;
+    } else {
+        return $cmdRes;
+    }
 }
 
 # Get a ssh key file
 sub get_key($$$) {
-  my $file=shift;
-  my $key_type=shift;
-  my $OARDODO_CMD=shift;
-  if ($key_type ne "private") { 
-    $file = $file.".pub";
-  }
-  my $cmdRes = OAR::API::send_cmd("$OARDODO_CMD cat $file","Cat keyfile");
-  if ($key_type eq "private" && ! $cmdRes =~ m/.*BEGIN.*KEY/ ) {
-    OAR::API::ERROR( 400, "Error reading file",
-      "The keyfile is unreadable or incorrect" );
-  }
-  else {
-    return $cmdRes;
-  }
+    my $file        = shift;
+    my $key_type    = shift;
+    my $OARDODO_CMD = shift;
+    if ($key_type ne "private") {
+        $file = $file . ".pub";
+    }
+    my $cmdRes = OAR::API::send_cmd("$OARDODO_CMD cat $file", "Cat keyfile");
+    if ($key_type eq "private" && !$cmdRes =~ m/.*BEGIN.*KEY/) {
+        OAR::API::ERROR(400, "Error reading file", "The keyfile is unreadable or incorrect");
+    } else {
+        return $cmdRes;
+    }
 }
 
 # add_pagination
 # add pagination to a set of record
-# parameters : record,total size,uri path_info,uri query_string,extension,max_items,offset,structure
-# return value : /
+# parameters: record,total size,uri path_info,uri query_string,extension,max_items,offset,structure
+# return value: /
 sub add_pagination($$$$$$$$) {
-	my $record = shift;
-	my $total = shift;
-	my $path = shift;
-	my $params = shift;
-	my $ext = shift;
-	my $limit = shift;
-	my $offset = shift;
-	my $STRUCTURE = shift;
-	
-	my $offset_separation_char = "&";
+    my $record    = shift;
+    my $total     = shift;
+    my $path      = shift;
+    my $params    = shift;
+    my $ext       = shift;
+    my $limit     = shift;
+    my $offset    = shift;
+    my $STRUCTURE = shift;
 
-        # remove leading / into path if any
-        $path =~ s/^\///;
-	
-	if(defined($params) && $params ne "") {
-		# replacing all ';' char by '&' in query string
-		$params =~ s/;/&/g;
-		$params =~ s/offset=(.*?)(&|$)//g;
-		$params =~ s/&$//g;
-		# completing path with query string or separating char
-		if ($params ne "") {
-			$path .= "?".$params;
-		}
-		else {
-			$offset_separation_char = "?";
-		}
-	}
-	else {
-		# no parameters was passed, the separating char
-		# must be '?'
-		$offset_separation_char = "?";
-	}
-	
-	# current, next and previous uri
-	my $current_uri;
+    my $offset_separation_char = "&";
+
+    # remove leading / into path if any
+    $path =~ s/^\///;
+
+    if (defined($params) && $params ne "") {
+
+        # replacing all ';' char by '&' in query string
+        $params =~ s/;/&/g;
+        $params =~ s/offset=(.*?)(&|$)//g;
+        $params =~ s/&$//g;
+
+        # completing path with query string or separating char
+        if ($params ne "") {
+            $path .= "?" . $params;
+        } else {
+            $offset_separation_char = "?";
+        }
+    } else {
+
+        # no parameters was passed, the separating char
+        # must be '?'
+        $offset_separation_char = "?";
+    }
+
+    # current, next and previous uri
+    my $current_uri;
     my $next_uri;
     my $previous_uri;
-	
-	if (!defined $record || $total <= 0) {
-		# return an empty structure
-		return {
-  	           items => [],
-  	           total => 0,
-  	           offset => 0,
-  	           links => []
-                };
-    }
-    else {
-    	# setting current uri
-        if ($limit != 0) { 
-    	  $current_uri = $path.$offset_separation_char."offset=".$offset;
-        }else{
-    	  $current_uri = $path;
+
+    if (!defined $record || $total <= 0) {
+
+        # return an empty structure
+        return {
+            items  => [],
+            total  => 0,
+            offset => 0,
+            links  => [] };
+    } else {
+
+        # setting current uri
+        if ($limit != 0) {
+            $current_uri = $path . $offset_separation_char . "offset=" . $offset;
+        } else {
+            $current_uri = $path;
         }
-	
-    	# setting next uri
-    	if ($limit != 0 && ($offset + $limit < $total)) {
-        	# next items list uri
-        	$next_uri = $path.$offset_separation_char."offset=".($offset + $limit);
-    	}
-    	
-    	# setting previous uri  
-    	if ($limit != 0 && ($offset - $limit >= 0)) {
-        	# previous items list uri
-        	$previous_uri = $path.$offset_separation_char."offset=".($offset - $limit);
-    	}
-    	
-    	# uris are setting into hasmaps
-    	my $links;
-    	$current_uri = OAR::API::htmlize_uri(OAR::API::make_uri($current_uri,"",0),$ext);
-    	$current_uri = { href => $current_uri, rel => "self" };
-    	push (@$links,$current_uri);
-    	
-    	if (defined($next_uri)) {
-    		$next_uri = OAR::API::htmlize_uri(OAR::API::make_uri($next_uri,"",0),$ext);
-    		$next_uri = { href => $next_uri, rel => "next" };
-    	        push (@$links,$next_uri);
-    	}
-    	if (defined($previous_uri)) {
-    		$previous_uri = OAR::API::htmlize_uri(OAR::API::make_uri($previous_uri,"",0),$ext);
-    		$previous_uri = { href => $previous_uri , rel => "previous" };
-    	        push (@$links,$previous_uri);
-    	}
-    	
-    	my $result = {
-  	           items => $record,
-  	           total => int($total),
-  	           offset => int($offset),
-  	           links => $links,
-                   api_timestamp => time()
-    	};
-    	return $result;    	
+
+        # setting next uri
+        if ($limit != 0 && ($offset + $limit < $total)) {
+
+            # next items list uri
+            $next_uri = $path . $offset_separation_char . "offset=" . ($offset + $limit);
+        }
+
+        # setting previous uri
+        if ($limit != 0 && ($offset - $limit >= 0)) {
+
+            # previous items list uri
+            $previous_uri = $path . $offset_separation_char . "offset=" . ($offset - $limit);
+        }
+
+        # uris are setting into hasmaps
+        my $links;
+        $current_uri = OAR::API::htmlize_uri(OAR::API::make_uri($current_uri, "", 0), $ext);
+        $current_uri = { href => $current_uri, rel => "self" };
+        push(@$links, $current_uri);
+
+        if (defined($next_uri)) {
+            $next_uri = OAR::API::htmlize_uri(OAR::API::make_uri($next_uri, "", 0), $ext);
+            $next_uri = { href => $next_uri, rel => "next" };
+            push(@$links, $next_uri);
+        }
+        if (defined($previous_uri)) {
+            $previous_uri = OAR::API::htmlize_uri(OAR::API::make_uri($previous_uri, "", 0), $ext);
+            $previous_uri = { href => $previous_uri, rel => "previous" };
+            push(@$links, $previous_uri);
+        }
+
+        my $result = {
+            items         => $record,
+            total         => int($total),
+            offset        => int($offset),
+            links         => $links,
+            api_timestamp => time() };
+        return $result;
     }
 
 }
@@ -1423,173 +1411,125 @@ sub add_pagination($$$$$$$$) {
 #
 our $HTML_HEADER;
 our $apiuri;
+
 sub job_html_header($) {
-       my $job=shift;
-       my $jobid=$job->{id};
-       my $hold="holds";
-       if ($job->{state} eq "Running") { $hold="rholds";}
-       print $HTML_HEADER;
-       print "\n<TABLE>\n<TR><TD COLSPAN=4><B>Job $jobid actions:</B>\n";
-       print "</TD></TR><TR><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/deletions/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=delete>\n";
-       print "<INPUT TYPE=Submit VALUE=DELETE>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/$hold/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=hold>\n";
-       print "<INPUT TYPE=Submit VALUE=HOLD>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/resumptions/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=resume>\n";
-       print "<INPUT TYPE=Submit VALUE=RESUME>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/checkpoints/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=checkpoint>\n";
-       print "<INPUT TYPE=Submit VALUE=CHECKPOINT>\n";
-       print "</FORM></TD><TD>\n";
-       print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/resubmissions/new.html>\n";
-       print "<INPUT TYPE=Hidden NAME=method VALUE=resubmit>\n";
-       print "<INPUT TYPE=Submit VALUE=RESUBMIT>\n";
-       print "</FORM></TD>\n";
-       print "</TR></TABLE>\n";
+    my $job   = shift;
+    my $jobid = $job->{id};
+    my $hold  = "holds";
+    if ($job->{state} eq "Running") { $hold = "rholds"; }
+    print $HTML_HEADER;
+    print "\n<TABLE>\n<TR><TD COLSPAN=4><B>Job $jobid actions:</B>\n";
+    print "</TD></TR><TR><TD>\n";
+    print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/deletions/new.html>\n";
+    print "<INPUT TYPE=Hidden NAME=method VALUE=delete>\n";
+    print "<INPUT TYPE=Submit VALUE=DELETE>\n";
+    print "</FORM></TD><TD>\n";
+    print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/$hold/new.html>\n";
+    print "<INPUT TYPE=Hidden NAME=method VALUE=hold>\n";
+    print "<INPUT TYPE=Submit VALUE=HOLD>\n";
+    print "</FORM></TD><TD>\n";
+    print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/resumptions/new.html>\n";
+    print "<INPUT TYPE=Hidden NAME=method VALUE=resume>\n";
+    print "<INPUT TYPE=Submit VALUE=RESUME>\n";
+    print "</FORM></TD><TD>\n";
+    print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/checkpoints/new.html>\n";
+    print "<INPUT TYPE=Hidden NAME=method VALUE=checkpoint>\n";
+    print "<INPUT TYPE=Submit VALUE=CHECKPOINT>\n";
+    print "</FORM></TD><TD>\n";
+    print "<FORM METHOD=POST action=$apiuri/jobs/$jobid/resubmissions/new.html>\n";
+    print "<INPUT TYPE=Hidden NAME=method VALUE=resubmit>\n";
+    print "<INPUT TYPE=Submit VALUE=RESUBMIT>\n";
+    print "</FORM></TD>\n";
+    print "</TR></TABLE>\n";
 }
+
 sub resources_commit_button($) {
-  my $resources=shift;
-  my $yaml_array=OAR::API::export_yaml($resources);
-  print "<FORM METHOD=POST action=$apiuri/resources.html>\n";
-  print "<INPUT TYPE=hidden NAME=yaml_array VALUE=\"$yaml_array\">\n";
-  print "<INPUT TYPE=Submit VALUE=COMMIT>\n";
-  print "</FORM><p>";
-}
-
-
-
-
-#### Functions for desktop computing (Thiago Presa)
-
-sub message($) {
-    my $msg = shift;
-    warn $msg;
-}
-
-sub jobStageIn($) {
-    my $jobid = shift;
-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    my $stagein = OAR::IO::get_job_stagein($base,$jobid);
-    OAR::IO::disconnect($base);
-    if ($stagein->{'method'} eq "FILE") {
-        open F,"< ".$stagein->{'location'} or die "Can't open stagein ".$stagein->{'location'}.": $!";
-        print $q->header( -status => 200, -type => "application/x-gzip" );
-        print <F>;
-        close F;
-    } else {
-        print $q->header( -status => 404, -type => "application/json" );
-        die "Stagein method ".$stagein->{'method'}." not yet implemented.\n";
-    } 
-}
-
-sub jobStageInHead($) {
-    my $jobid = shift;
-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    my $stagein = OAR::IO::get_job_stagein($base,$jobid);
-    OAR::IO::disconnect($base);
-    if ($stagein->{'method'} eq "FILE") {
-        open F,"< ".$stagein->{'location'} or die "Can't open stagein ".$stagein->{'location'}.": $!";
-        print $q->header( -status => 200, -type => "application/x-gzip" );
-        close F;
-    } else {
-        print $q->header( -status => 404, -type => "application/json" );
-        die "Stagein method ".$stagein->{'method'}." not yet implemented.\n";
-    } 
+    my $resources  = shift;
+    my $yaml_array = OAR::API::export_yaml($resources);
+    print "<FORM METHOD=POST action=$apiuri/resources.html>\n";
+    print "<INPUT TYPE=hidden NAME=yaml_array VALUE=\"$yaml_array\">\n";
+    print "<INPUT TYPE=Submit VALUE=COMMIT>\n";
+    print "</FORM><p>";
 }
 
 sub terminateJob($) {
     my $jobid = shift;
-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    OAR::IO::set_job_state($base,$jobid,"Terminated");
-    
-    OAR::IO::set_finish_date($base,$jobid);
-    OAR::IO::set_job_message($base,$jobid,"ALL is GOOD");
+    my $base  = OAR::IO::connect() or die "cannot connect to the data base\n";
+    OAR::IO::lock_table(
+        $base,
+        [   "jobs",                      "job_state_logs",
+            "resources",                 "assigned_resources",
+            "event_logs",                "challenges",
+            "moldable_job_descriptions", "job_types",
+            "job_dependencies",          "job_resource_groups",
+            "job_resource_descriptions"
+        ]);
+    OAR::IO::set_job_state($base, $jobid, "Terminated");
+
+    OAR::IO::set_finish_date($base, $jobid);
+    OAR::IO::set_job_message($base, $jobid, "ALL is GOOD");
     OAR::IO::unlock_table($base);
     OAR::IO::disconnect($base);
 }
 
 sub runJob($) {
     my $jobid = shift;
-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
+    my $base  = OAR::IO::connect() or die "cannot connect to the data base\n";
+    OAR::IO::lock_table(
+        $base,
+        [   "jobs",                      "job_state_logs",
+            "resources",                 "assigned_resources",
+            "event_logs",                "challenges",
+            "moldable_job_descriptions", "job_types",
+            "job_dependencies",          "job_resource_groups",
+            "job_resource_descriptions"
+        ]);
+
     #OAR::IO::set_running_date($base,$jobid);
-    OAR::IO::set_job_state($base,$jobid,"Running");
+    OAR::IO::set_job_state($base, $jobid, "Running");
     OAR::IO::unlock_table($base);
     OAR::IO::disconnect($base);
 }
+
 sub errorJob($) {
     my $jobid = shift;
-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    OAR::IO::lock_table($base,["jobs","job_state_logs","resources","assigned_resources","event_logs","challenges","moldable_job_descriptions","job_types","job_dependencies","job_resource_groups","job_resource_descriptions"]);
-    OAR::IO::set_running_date($base,$jobid);
-    OAR::IO::set_job_state($base,$jobid,"Error");
+    my $base  = OAR::IO::connect() or die "cannot connect to the data base\n";
+    OAR::IO::lock_table(
+        $base,
+        [   "jobs",                      "job_state_logs",
+            "resources",                 "assigned_resources",
+            "event_logs",                "challenges",
+            "moldable_job_descriptions", "job_types",
+            "job_dependencies",          "job_resource_groups",
+            "job_resource_descriptions"
+        ]);
+    OAR::IO::set_running_date($base, $jobid);
+    OAR::IO::set_job_state($base, $jobid, "Error");
     OAR::IO::unlock_table($base);
-    OAR::IO::disconnect($base);
-}
-
-sub sign_in($$$$$) {
-    my $hostname = shift;
-    my $remote_host = shift;
-    my $remote_port = shift;
-    my $expiry = shift;
-    my $allow_create_node = shift;
-    my $do_notify;
-    my $base = OAR::IO::connect() or die "cannot connect to the data base\n";
-    my $is_desktop_computing = OAR::IO::is_node_desktop_computing($base,$hostname);
-    if (defined $is_desktop_computing and $is_desktop_computing eq 'YES'){
-	    OAR::IO::lock_table($base,["resources"]);
-	    if (OAR::IO::set_node_nextState_if_necessary($base,$hostname,"Alive") > 0){
-		$do_notify=1;
-	    }
-	    OAR::IO::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
-	    OAR::IO::unlock_table($base);
-    }
-    elsif ($allow_create_node) {
-        my $resource = OAR::IO::add_resource($base, $hostname, "Alive");
-        OAR::IO::set_resources_property($base,{resources => [$resource]},"desktop_computing","YES");
-        OAR::IO::set_resource_nextState($base,$resource,"Alive");
-        OAR::IO::set_node_expiryDate($base,$hostname, iolib::get_date($base) + $expiry);
-        $do_notify=1;        
-    } 
-    if ($do_notify) {
-        OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
-    }
-
     OAR::IO::disconnect($base);
 }
 
 # Stop if the user is not authenticated
-# Args: 
-# - #1 : the user as identified by the api
-# - #2 : an informative message
-# - #3 : "undef" or "oar". If "oar", then, it means that the user must be admin
+# Args:
+# - #1: the user as identified by the api
+# - #2: an informative message
+# - #3: "undef" or "oar". If "oar", then, it means that the user must be admin
 sub authenticate_user($$$) {
     my $authenticated_user = shift;
-    my $msg = shift;
-    my $user = shift;
-    if ( not $authenticated_user =~ /(\w+)/ ) {
-      OAR::API::ERROR( 401, "Permission denied",
-        "A suitable authentication must be done to $msg" );
-      return 1;
+    my $msg                = shift;
+    my $user               = shift;
+    if (not $authenticated_user =~ /(\w+)/) {
+        OAR::API::ERROR(401, "Permission denied", "A suitable authentication must be done to $msg");
+        return 1;
     }
     if (defined($user)) {
-      if ( not $authenticated_user eq "$user" ) {
-        OAR::API::ERROR( 401, "Permission denied",
-          "Only the $user user can $msg" );
-        $ENV{OARDO_BECOME_USER} = "$user";
-        return 2;
-      }
+        if (not $authenticated_user eq "$user") {
+            OAR::API::ERROR(401, "Permission denied", "Only the $user user can $msg");
+            $ENV{OARDO_BECOME_USER} = "$user";
+            return 2;
+        }
     }
     return 0;
 }
-
-
 
 return 1;

@@ -1,0 +1,24 @@
+#!/bin/sh
+FAILED=
+for f in $(git diff --name-only --staged); do
+  if file $f | grep -q -e "Perl script" -e "Perl5 module"; then
+    echo -n "# Running perltidy on $f (staged changes)... " 1>&2
+    if git show ":$f" | perltidy -opath=/tmp/ -ast -nolq -se -vt=1 -sct -vtc=1 -sct -bar -nsfs -baao -l=100 -pt=2 -ce > /dev/null; then
+      echo "[OK]" 1>&2
+    else
+      FAILED=1
+      echo 1>&2
+    fi
+  fi
+done
+if [ -n "$FAILED" ]; then
+  cat <<EOF 1>&2
+One or more files need to be fixed.
+
+The following perltidy command may be used to fix a file:
+$ perltidy -b -bext=/ -nolq -se -vt=1 -sct -vtc=1 -sct -bar -nsfs -baao -l=100 -pt=2 -ce <file>
+
+Commit aborted.
+EOF
+  exit 1
+fi

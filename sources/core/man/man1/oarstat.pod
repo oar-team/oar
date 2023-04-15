@@ -24,7 +24,7 @@ This command is used to show information of jobs in OAR batch scheduler.
 
 =item B<-f, --full>
 
-Very detailed display.
+Very detailed display. Note that this option does nothing with machine parseable outputs (like B<-J>), which contain all the available data.
 
 =item B<-j, --job> job_id
 
@@ -64,8 +64,9 @@ Restricts display with the SQL where clause on the table jobs (ex: "project = 'p
 select the text output format. Available values are:
   1: default
   2: prints system messages
+  3: like default but with better naming for fields
 
-The users can use the environment variable OAR_OARSTAT_OUTPUT_FORMAT to select the output format 1 or 2.
+The users can use the environment variable OAR_OARSTAT_OUTPUT_FORMAT to select the output format 1, 2 or 3.
 
 =item B<-D, --DUMPER>
 

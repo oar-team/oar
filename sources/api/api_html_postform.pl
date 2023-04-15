@@ -1,4 +1,4 @@
-$POSTFORM="
+$POSTFORM = "
 <FORM METHOD=post ACTION=$apiuri/jobs.html>
 <TABLE>
 <CAPTION>Job submission</CAPTION>

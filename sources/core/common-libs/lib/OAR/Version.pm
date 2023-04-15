@@ -1,11 +1,11 @@
 package OAR::Version;
 require Exporter;
 
-my $OARVersion = "2.5.10+g5k7";
-my $OARName = "Liberty hope";
+my $OARVersion = "2.5.10+rc1";
+my $OARName    = "Liberty hope";
 
-sub get_version(){
-    return $OARVersion." (".$OARName.")";
+sub get_version() {
+    return $OARVersion . " (" . $OARName . ")";
 }
 
 return 1;

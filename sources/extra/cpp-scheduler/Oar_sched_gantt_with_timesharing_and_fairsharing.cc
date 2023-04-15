@@ -1,13 +1,12 @@
 /*
   #!/usr/bin/perl
-  # $Id$
   #-d:DProf
   
   use strict;
   use DBI();
   use OAR::IO;
   use Data::Dumper;
-  use OAR::Modules::Judas qw(oar_debug oar_warn oar_error set_current_log_category);
+  use OAR::Modules::Judas qw(oar_debug oar_warn oar_info oar_error set_current_log_category);
   use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
   use Gantt_hole_storage;
   use Storable qw(dclone);

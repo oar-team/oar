@@ -10,7 +10,7 @@ B<oarsub> [OPTIONS] -I
 
 B<oarsub> [OPTIONS] -r "<START DATE|now>[, <END DATE>]" [<command>]
 
-B<oarsub> [OPTIONS] -C <JOB ID>
+B<oarsub> [OPTIONS] -C [<JOB ID>]
 
 =head1 DESCRIPTION
 
@@ -38,9 +38,9 @@ Calling B<oarsub> with the I<-r> option creates an advance reservation job inste
 
 Request an interactive job.
 
-=item B<-C, --connect> <JOB ID>
+=item B<-C, --connect> [<JOB ID>]
 
-Connect to a running job.
+Connect to a running job. Job id may be omitted if only one job is running.
 
 =item B<-l, --resource> <DESCRIPTION>[,<WALLTIME>]
 
@@ -148,12 +148,12 @@ Ex:
 Arguments are job_id, job_name, TAG, comment
 
 TAG can be:
-  - RUNNING : when the job is launched
-  - END : when the job is finished normally
-  - ERROR : when the job is finished abnormally
-  - INFO : used when oardel is called on the job
-  - SUSPENDED : when the job is suspended
-  - RESUMING : when the job is resumed
+  - RUNNING: when the job is launched
+  - END: when the job is finished normally
+  - ERROR: when the job is finished abnormally
+  - INFO: used when oardel is called on the job
+  - SUSPENDED: when the job is suspended
+  - RESUMING: when the job is resumed
 
 By default all TAGs are triggered. It is possible to specify which TAGs must be triggered.
 Ex:
@@ -220,6 +220,10 @@ Print this help message.
 =item B<-V, --version>
 
 Print the version of OAR.
+
+=item B<-v>
+
+Verbose mode, oarsub and admissions rules (if compatible) will print more information on terminal. Multiple -v can be used to increase the level of verbosity (max: 2).
 
 =back
 

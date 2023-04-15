@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 # resume a job --> it will be rescheduled
 
 use strict;
@@ -12,7 +11,7 @@ use OAR::Tools;
 use OAR::Version;
 use Getopt::Long;
 
-my $Old_umask = sprintf("%lo",umask());
+my $Old_umask = sprintf("%lo", umask());
 umask(oct("022"));
 
 sub usage {
@@ -33,24 +32,25 @@ my $Help;
 my $Sql_property;
 my $array;
 
-GetOptions (
+GetOptions(
     "version|V" => \$Version,
-    "sql=s"   => \$Sql_property,
-    "array"   => \$array,
-    "help|h" => \$Help
-           ) or exit(1);
+    "sql=s"     => \$Sql_property,
+    "array"     => \$array,
+    "help|h"    => \$Help
+  ) or
+  exit(1);
 
-if (defined($Help)){
+if (defined($Help)) {
     usage();
     exit(0);
 }
 
-if (defined($Version)){
-    print("OAR version : ".OAR::Version::get_version()."\n");
+if (defined($Version)) {
+    print("OAR version: " . OAR::Version::get_version() . "\n");
     exit(0);
 }
 
-if (($#ARGV < 0) and (!defined($Sql_property))){
+if (($#ARGV < 0) and (!defined($Sql_property))) {
     usage();
     exit(1);
 }
@@ -62,38 +62,38 @@ my $remote_port = get_conf("SERVER_PORT");
 my @job_ids;
 my $exit_code = 0;
 
-foreach my $j (@ARGV){
-    if ($j =~ m/^\d+$/m){
+foreach my $j (@ARGV) {
+    if ($j =~ m/^\d+$/m) {
+
         #if defined --array, delete all the sub-jobs
-        if(defined($array)){
-             my $db = OAR::IO::connect_ro();
-             my @tmp_jobs = OAR::IO::get_array_job_ids($db,$j);
-            if(scalar @tmp_jobs == 0){
+        if (defined($array)) {
+            my $db       = OAR::IO::connect_ro();
+            my @tmp_jobs = OAR::IO::get_array_job_ids($db, $j);
+            if (scalar @tmp_jobs == 0) {
                 warn("[ERROR] \"$j\" is not a valid array job\n");
                 $exit_code = 2;
-            }else{
-                foreach my $j (@tmp_jobs){
+            } else {
+                foreach my $j (@tmp_jobs) {
                     push(@job_ids, $j);
-                 }
+                }
             }
             OAR::IO::disconnect($db);
-        }else{
+        } else {
             push(@job_ids, $j);
         }
-    }else{
-        if(defined($array)){
+    } else {
+        if (defined($array)) {
             warn("[ERROR] \"$j\" is not a valid job array identifier\n");
-        }else{
+        } else {
             warn("[ERROR] \"$j\" is not a valid job identifier\n");
         }
         $exit_code = 2;
     }
 }
 
-
-if (defined($Sql_property)){
+if (defined($Sql_property)) {
     my $db = OAR::IO::connect_ro();
-    foreach my $j (OAR::IO::get_jobs_with_given_properties($db,$Sql_property)){
+    foreach my $j (OAR::IO::get_jobs_with_given_properties($db, $Sql_property)) {
         push(@job_ids, $j->{job_id});
     }
     OAR::IO::disconnect($db);
@@ -101,28 +101,29 @@ if (defined($Sql_property)){
 
 my $base = OAR::IO::connect();
 
-foreach my $j (@job_ids){
-    my $err = OAR::IO::resume_job($base,$j);
+foreach my $j (@job_ids) {
+    my $err = OAR::IO::resume_job($base, $j);
     if ($err != 0) {
-        my $str = "/!\\ Cannot resume $j :";
-        if ($err == -1){
+        my $str = "/!\\ Cannot resume $j:";
+        if ($err == -1) {
             warn("$str this job does not exist.\n");
-        }elsif ($err == -2){
+        } elsif ($err == -2) {
             warn("$str you are not the right user.\n");
-        }elsif ($err == -3){
+        } elsif ($err == -3) {
             warn("$str the job is not in the Hold or Suspended state.\n");
-        }elsif ($err == -4){
+        } elsif ($err == -4) {
             warn("$str only oar or root user can resume Suspended jobs.\n");
-        }else{
+        } else {
             warn("$str unknown reason.\n");
         }
         $exit_code = 1;
-    }else{
+    } else {
         print("[$j] Resume request was sent to the OAR server.\n");
     }
 }
 OAR::IO::disconnect($base);
+
 #Signal Almigthy
-OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+OAR::Tools::notify_tcp_socket($remote_host, $remote_port, "ChState");
 
 exit($exit_code);

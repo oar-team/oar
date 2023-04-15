@@ -1,7 +1,4 @@
 #!/bin/bash
-# $Id$
 # Simple wrapper to oarsub -C <jobid>
-JOBID=$1
-shift
-${0/%oarconnect/oarsub} -C $JOBID "$@"
+JOBID = $1 shift ${ 0 / %oarconnect / oarsub } -C $JOBID "$@"
 

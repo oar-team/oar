@@ -114,7 +114,7 @@ resource_filter:
 #	 Second, groups of even typed resources is order according to the order  
 #	 of parameter subsections below.  
 #
-#	 Third : two resource field properties (from oar database) can be used for 
+#	 Third: two resource field properties (from oar database) can be used for 
 #	 resources sorting and labbelling. 
 #
 #  Fourth for sorting, regular expressions must be given to extract 
