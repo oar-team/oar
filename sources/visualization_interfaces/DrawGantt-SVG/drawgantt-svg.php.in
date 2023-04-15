@@ -303,10 +303,10 @@ function state_desc($state, $date) {
 // class to compute colors for jobs
 class Shuffle {
     protected static $singleton;
-    function init($shuffle_instance) {
+    static function init($shuffle_instance) {
         self::$singleton = $shuffle_instance;
     }
-    function get_int($job) {
+    static function get_int($job) {
         if (self::$singleton === null) {
             self::init(new Shuffle());
         }
@@ -637,7 +637,7 @@ class Resource {
       if ($this->type == $CONF['resource_group_level']) {
         $first_resource_base = true;
       }
-      usort($this->children, create_function('$a,$b','return $b->cmp($a);'));
+      usort($this->children, function($a,$b) { return $b->cmp($a); });
       foreach ($this->children as $child) {
         $h += $child->svg_hierarchy($x+$CONF['hierarchy_resource_width'], $y+$h, $labels);
       }
@@ -685,7 +685,7 @@ class Resource {
       }
     }
     foreach ($states as $value => $date_weight_array) {
-      usort($date_weight_array, create_function('$a,$b','list($d1,$w1)=$a; list($d2,$w2)=$b; return ($d1 != $d2)?(($d1 < $d2)?-1:1):(($w1 != $w2)?(($w1 < $w2)?1:-1):0);'));
+      usort($date_weight_array, function($a,$b) { list($d1,$w1)=$a; list($d2,$w2)=$b; return ($d1 != $d2)?(($d1 < $d2)?-1:1):(($w1 != $w2)?(($w1 < $w2)?1:-1):0); });
       $weight = 0;
       foreach ($date_weight_array as $dwr) {
         list ($d,$w,$r) = $dwr;
