@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 #
 # This a placeholder script for OAR jobs prologue.
 # This script is to be run on the first node of a job, upon start.

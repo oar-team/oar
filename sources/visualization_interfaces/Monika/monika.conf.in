@@ -25,7 +25,7 @@ css_path = %%WWWROOTDIR%%/monika.css
 clustername = OAR Cluster
 
 ##############################################################################
-## DataBase : set the connection parameters for accessing the OAR DataBase
+## DataBase: set the connection parameters for accessing the OAR DataBase
 ##############################################################################
 hostname = 127.0.0.1
 dbport = 5432
@@ -45,6 +45,12 @@ password = oar_ro
 ##############################################################################
 nodes_synonym = network_address
 
+##############################################################################
+## nodes_filter: filters nodes to display
+## - ex: nodes_filter = cluster in ('clusterA', 'clusterB')
+## - default is ""
+##############################################################################
+nodes_filter = ""
 
 ##############################################################################
 ## Summary Display: specify how to display the summary status. For each type 
@@ -102,7 +108,7 @@ nodename_regex_display = (.*)
 #server_do_mail = "False"
 
 ##############################################################################
-## user_infos : if server_do_mail is not set then you can specify a cgi page
+## user_infos: if server_do_mail is not set then you can specify a cgi page
 ## wich can display informations about a user. It is a link on the user name.
 ## The link pints on the content of user_infos+user_name
 ##############################################################################

@@ -184,13 +184,13 @@ ScriptAlias /oarapi-public %%CGIDIR%%/oarapi/oarapi.cgi
 # For this we set up a complete virtualhost, listening on the 6669 port.
 # The API will be reachable on the following uri:
 #    "https://<your_server_name>:6669/oarapi-cigri/"
-# This configuration needs :
+# This configuration needs:
 #   - Apache version >= 2.4
 #   - Modules enabled: mod_ssl, mod_suexec, mod_fastcgi and mod_rewrite
 # You need to change at least the "Require host" and "SSLRequire" lines:
-#   - "Require host <cigri server hostname>" : to restrict the access to the
+#   - "Require host <cigri server hostname>": to restrict the access to the
 #      CiGri server.
-#   - "SSLRequire <condition>" : to set up a condition on the CiGri server's
+#   - "SSLRequire <condition>": to set up a condition on the CiGri server's
 #     certificate.
 # By this way, the CiGri server is well authenticated and can safely send
 # usernames to the API into the header variable X_REMOTE_IDENT.

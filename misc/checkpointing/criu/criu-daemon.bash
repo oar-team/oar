@@ -91,6 +91,7 @@ do
           do
 	    echo $pid >> $cpuset/tasks
 	  done
+          sleep 3
 	  rmdir $original_cpuset
           touch resume_ok
 	  chown $job_user resume_ok

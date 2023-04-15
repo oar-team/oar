@@ -19,6 +19,6 @@ uninstall: uninstall_shared
 	rm -f $(DESTDIR)$(OARDIR)/oar_mysql_db_init
 	rm -f $(DESTDIR)$(OARDIR)/oar_psql_db_init
 	rm -rf $(DESTDIR)$(OARDIR)/database
-	
+
 .PHONY: install setup uninstall build clean
 

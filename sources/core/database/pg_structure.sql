@@ -1,10 +1,9 @@
--- $Id$
 -- info version, change here if you have updated the db schema
 CREATE TABLE schema (
   version VARCHAR( 255 ) NOT NULL,
   name VARCHAR( 255 ) NOT NULL
 );
-INSERT INTO schema VALUES ('2.5.8','');
+INSERT INTO schema VALUES ('2.5.10','');
 
 CREATE TABLE accounting (
   window_start integer NOT NULL ,
@@ -218,7 +217,7 @@ CREATE TABLE jobs (
   start_time integer NOT NULL default '0',
   stop_time integer NOT NULL default '0',
   file_id integer default NULL,
-  accounted varchar(3) check (accounted in ('YES','NO')) NOT NULL default 'NO',
+  accounted varchar(3) check (accounted in ('YES','NO','NA')) NOT NULL default 'NO',
   notify varchar(255) default NULL,
   assigned_moldable_job integer default '0',
   checkpoint integer NOT NULL default '0',
@@ -317,9 +316,12 @@ CREATE TABLE walltime_change (
   pending integer NOT NULL default '0',
   force varchar(3) check (force in ('YES','NO')) NOT NULL default 'NO', 
   delay_next_jobs varchar(3) check (delay_next_jobs in ('YES','NO')) NOT NULL default 'NO', 
+  whole varchar(3) check (whole in ('YES','NO')) NOT NULL default 'NO', 
   granted integer NOT NULL default '0',
   granted_with_force integer NOT NULL default '0',
   granted_with_delay_next_jobs integer NOT NULL default '0',
+  granted_with_whole integer NOT NULL default '0',
+  timeout integer NOT NULL default '0',
   PRIMARY KEY (job_id)
 );
 CREATE INDEX walltime_change_job_id ON walltime_change (job_id);

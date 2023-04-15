@@ -4,6 +4,7 @@ OAR CHANGELOG
 version 2.5.10:
 --------------
 
+  - [oarnodesetting] Allow setting the suspected state
   - [oarstat] Allow to see other users' initial_request
   - [oarsub] ensure the inline job key is in a valid format, by adding \n
   - [oarsub] remove ssh inline keys from initial_request
@@ -25,6 +26,76 @@ version 2.5.10:
   - [man] rework oarsub man page
   - [oarsub] update usage
   - [oarnodesetting] allow for unsetting the value of resource properties
+  - [oarsub] rename OARSUB_NODE_EXEC_FILE to INTERACTIVE_JOB_HOOK_EXEC_FILE
+  - [oarexec] add PASSIVE_JOB_HOOK_EXEC_FILE
+  - [NodeChangeState] fix DB transaction error when resubmitting a job
+  - [NodeChangeState] do not resubmit jobs for deploy/cosystem and if
+    server_prologue error
+  - [NodeChangeState] on prologue/epilogue error, only set the first node to
+    suspected
+  - [NodeChangeState] Do not suspect nodes for prologue/epilogue error of
+    deploy/cosystem jobs
+  - [oarsub] add the advance reservation validation hook feature
+  - [oarnode] fix oarnode --sql if not resources to show
+  - [Hulot] Add debug info regarding timeouts
+  - [sarko] fix debug message for job frag
+  - [accounting] change the behavior of accounting to be more efficient
+  - [leon] optimize SQL query of get_to_kill_jobs subroutine
+  - [MetaSched] Optimize querying of the last wake up for a list of node
+  - [IO.pm] Add constants to store often used OAR's job states
+  - [Hulot] Fix unknown method oar_warning
+  - [job_resource_manager] add support for AMD gpus
+  - [oarsh] add support of AMD gpus
+  - [oardodo] parametrize the OOM killer setup of oardodo
+  - [NodeChangeState] factorize the resources state changing
+  - [NodeChangeState] correctly lock and make transaction with PostgreSQL
+  - [IO.pm] factorize jobs fragging made by NodeChangeState
+  - [IO.pm] Add an lock_table_exclusive subroutine, for postgresql
+  - [oarnodes] fix machine parseables output by returning an empty set
+  - [oarnodes] fix uninitialized value with -r option
+  - [oarnodes] fix issue when using non existing nodes in arguments
+  - [oar.conf] annotate configuration lines with modules it is used for
+  - [oarwalltime] always allow admins to perform walltime reduction
+  - [oarapi] add a environment variable to configure the max cycle of cgi
+  - [IO.pm] do not specify a file name for stderr/stdout for interactive jobs
+  - [judas] allow a custom instance name in notification mail subjects
+  - [job_resource_manager] backport the latest changes from G5K for AMD gpus
+  - Remove deprecated option in sshd config
+  - [core/scripts] add oar-node start/stop scripts to launch with systemd
+  - [setup] Add systemd services unit for oar-node and oar-server
+  - [Makefiles] Add support for systemd
+  - [oar-database] Add option to skip the installation of the default admission
+    rules when creating a new OAR database
+  - [finaud/hulot] fix a race condition resulting in nodes being suspected when
+    put in standby by hulot while finaud is running
+  - [monika] show job events in job stats
+  - [monika] add nodes filtering
+  - [oarsub] add a -v switch (usable multiple times) to select verbosity
+  - [misc] remove desktop_computing possibility in oarsub and API
+  - [oarsub] add # before each outputed string (except the job ids) and better
+    format of information and error messages
+  - [oar.conf/bipbip] add DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM option
+  - [oarsub] Use systemd-run when running processes on the frontend for
+    deploy/cosystem jobs
+  - [criu checkpoint] added a timeout to exit when the resume fails
+  - [oarapi] replace workdir by directory in OAR's rest API
+  - [all] change the log format and make it configurable and various logs
+    messages improvements
+  - [oarsub] better verification of advance reservations input dates
+  - [oarstat] add jobs events to the gantt output (--gantt/-g)
+  - [oarstat] make machine parseable output detailed view without using -f
+  - [oarstat] add missing fields and uniq some when calling with --gantt
+  - [oarstat] add a new output format '3' fixing several field names
+  - [job_resource_manager] write env file without variable references
+  - [oarwalltime] allow request cancellation
+  - [oarwalltime] add --whole option
+  - [oarwalltime] add a timeout for walltime change requests
+  - [oarnodes/API] add functionality to provide the detailed jobs occupation on nodes
+  - [api] better returned messages and add an OAR_IN_API env variable
+  - [IO] make job creation with add_micheline_subjob() more consistent
+  - [oarsub] enhance -C option to be more user friendly
+  - [IO.pm] optimize get_gantt_jobs_to_launch() SQL query
+  - [oarapi] fix an error in logs due to redefined Dump() subroutine
 
 version 2.5.9:
 --------------
@@ -355,7 +426,7 @@ version 2.5.2:
   - oarstat: order the output by job_id.
   - Speedup oarnodes.
   - Fix a spelling error in the oaradmin manpage.
-  - Bugfix #14122 : the oar-node init.d script wasn't executing
+  - Bugfix #14122: the oar-node init.d script wasn't executing
     start_oar_node/stop_oar_node during the 'restart' action.
   - Allow the dash  character into the --notify "exec:..." oarsub option.
   - Remove some old stuffs from the tarball:
@@ -375,7 +446,7 @@ version 2.5.1:
   - Bug 10999: memory leak into Hulot when used with postgresql. The leak has
     been minimized, but it is still there (DBD::Pg bug)
   - Almighty cleans ipcs used by oar on exit
-  - Bugfix #10641 and #10999 : Hulot is automatically and periodically restarted
+  - Bugfix #10641 and #10999: Hulot is automatically and periodically restarted
   - Feature request #10565: add the possibility to check the aliveness of the
     nodes of a job at the end of this one (pingchecker)
   - REST API heavily updated: new data structures with paginated results,
@@ -515,7 +586,7 @@ version 2.4.0:
   - New Makefile adapted to build packages as non-root user
   - add the command "oar_resources_init" to easily detect and initialize the
     whole resources of a cluster.
-  - "oaradmin version" : now retrieve the most recent database schema number
+  - "oaradmin version": now retrieve the most recent database schema number
   - Fix rights on the "schema" table in postgresql.
   - Bug #7509: fix bug in add_micheline_subjob for array jobs + jobtypes
   - Ctrl-C was not working anymore in oarsub.
@@ -579,7 +650,7 @@ version 2.3.4:
 --------------
   - add the command "oar_resources_init" to easily detect and initialize the
     whole resources of a cluster.
-  - "oaradmin version" : now retrieve the most recent database schema number
+  - "oaradmin version": now retrieve the most recent database schema number
   - Fix rights on the "schema" table in postgresql.
   - Bug #7509: fix bug in add_micheline_subjob for array jobs + jobtypes
   - Ctrl-C was not working anymore in oarsub.
@@ -601,7 +672,7 @@ version 2.3.3:
 --------------
   - Fix default admission rules: case unsensitive check for properties used in
     oarsub
-  - Add new oaradmin subcommand : oaradmin conf. Useful to edit conf files and
+  - Add new oaradmin subcommand: oaradmin conf. Useful to edit conf files and
     keep changes in a Subversion repository.
   - Kill correctly each taktuk command children in case of a timeout.
   - New feature: array jobs (option --array)  (on oarsub, oarstat oardel,
@@ -927,7 +998,7 @@ version 2.0.0:
     and to reserve them like others.
   - Now you can connect to your jobs (not only for reservations).
   - Add "cosystem" job type (execute and do nothing for these jobs).
-  - New scheduler : "oar_sched_gantt_with_timesharing". You can specify jobs
+  - New scheduler: "oar_sched_gantt_with_timesharing". You can specify jobs
     with the type "timesharing" that indicates that this scheduler can launch
     more than 1 job on a resource at a time. It is possible to restrict this
     feature with words "user and name". For example, '-t
@@ -935,7 +1006,7 @@ version 2.0.0:
     the same name can be launched in the same time than it.
   - Add PostGresSQL support. So there is a choice to make between MySQL and
     PostgresSQL.
-  - New approach for the scheduling : administrators have to insert into the
+  - New approach for the scheduling: administrators have to insert into the
     databases descriptions about resources and not nodes. Resources have a
     network address (physical node) and properties. For example, if you have
     dual-processor, then you can create 2 different resources with the same
@@ -947,36 +1018,35 @@ version 2.0.0:
     process.
   - Support '#OAR -p ...' options in user script.
   - Add in oar.conf:
-      * DB_BASE_PASSWD_RO : for security issues, it is possible to execute
+      * DB_BASE_PASSWD_RO: for security issues, it is possible to execute
         request with parts specified by users with a read only account (like
         "-p" option).
-      * OARSUB_DEFAULT_RESOURCES : when nothing is specified with the oarsub
+      * OARSUB_DEFAULT_RESOURCES: when nothing is specified with the oarsub
         command then OAR takes this default resource description.
-      * OAREXEC_DEBUG_MODE : turn on or off debug mode in oarexec (create
+      * OAREXEC_DEBUG_MODE: turn on or off debug mode in oarexec (create
         /tmp/oar/oar.log on nodes).
-      * FINAUD_FREQUENCY : indicates the frequency when OAR launchs Finaud
+      * FINAUD_FREQUENCY: indicates the frequency when OAR launchs Finaud
         (search dead nodes).
-      * SCHEDULER_TIMEOUT : indicates to the scheduler the amount of time
+      * SCHEDULER_TIMEOUT: indicates to the scheduler the amount of time
         after what it must end itself.
-      * SCHEDULER_JOB_SECURITY_TIME : time between each job.
-      * DEAD_SWITCH_TIME : after this time Absent and Suspected resources are
+      * SCHEDULER_JOB_SECURITY_TIME: time between each job.
+      * DEAD_SWITCH_TIME: after this time Absent and Suspected resources are
         turned on the Dead state.
-      * PROLOGUE_EPILOGUE_TIMEOUT : the possibility to specify a different
+      * PROLOGUE_EPILOGUE_TIMEOUT: the possibility to specify a different
         timeout for prologue and epilogue (PROLOGUE_EPILOGUE_TIMEOUT).
-      * PROLOGUE_EXEC_FILE : you can specify the path of the prologue script
+      * PROLOGUE_EXEC_FILE: you can specify the path of the prologue script
         executed on nodes.
-      * EPILOGUE_EXEC_FILE : you can specify the path of the epilogue script
+      * EPILOGUE_EXEC_FILE: you can specify the path of the epilogue script
         executed on nodes.
-      * GENERIC_COMMAND : a specific script may be used instead of ping to
+      * GENERIC_COMMAND: a specific script may be used instead of ping to
         check aliveness of nodes. The script must return bad nodes on STDERR
         (1 line for a bad node and it must have exactly the same name that
         OAR has given in argument of the command).
-      * JOBDEL_SOFTWALLTIME : time after a normal frag that the system waits
+      * JOBDEL_SOFTWALLTIME: time after a normal frag that the system waits
         to retry to frag the job.
-      * JOBDEL_WALLTIME : time after a normal frag that the system waits
+      * JOBDEL_WALLTIME: time after a normal frag that the system waits
         before to delete the job arbitrary and suspects nodes.
-      * LOG_FILE : specify the path of OAR log file (default :
-        /var/log/oar.log).
+      * LOG_FILE: specify the path of OAR log file (default: /var/log/oar.log).
 
   - Add wait() in pingchecker to avoid zombies.
   - Better code modularization.

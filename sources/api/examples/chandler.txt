@@ -1,2 +1,2 @@
 chandler.rb: sample cluster status monitor - ruby version (old)
-chandler.py + chandler.conf : sample cluster status monitor - python version (new)
+chandler.py + chandler.conf: sample cluster status monitor - python version (new)
