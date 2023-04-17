@@ -10141,8 +10141,8 @@ sub manage_remote_commands($$$$$$$$$) {
             push(@node_commands,      $cmd);
             push(@node_corresponding, $n);
         }
-        my @bad_tmp =
-          sentinelle(10, get_ssh_timeout(), \@node_commands, $string_to_transfer, $base);
+        my @bad_tmp = OAR::Tools::sentinelle(10, OAR::Tools::get_ssh_timeout(),
+            \@node_commands, $string_to_transfer, $base);
         foreach my $b (@bad_tmp) {
             push(@bad, $node_corresponding[$b]);
         }
@@ -10224,7 +10224,7 @@ sub manage_remote_commands($$$$$$$$$) {
             if (defined($pid)) {
 
                 # Kill all taktuk children
-                my ($children, $cmd_name) = get_one_process_children($pid);
+                my ($children, $cmd_name) = OAR::Tools::get_one_process_children($pid);
                 kill(9, @{$children});
             }
         }

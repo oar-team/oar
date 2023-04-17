@@ -6,6 +6,8 @@ OARDIR_BINFILES=$(SRCDIR)/tools/oarnodecheck/oarnodecheckrun.in
 BINDIR_FILES=$(SRCDIR)/tools/oarnodecheck/oarnodechecklist.in \
 	     $(SRCDIR)/tools/oarnodecheck/oarnodecheckquery.in
 
+SBINDIR_FILES=$(SRCDIR)/tools/pam_oar_adopt
+
 SHAREDIR_FILES= $(SRCDIR)/scripts/prologue \
 		$(SRCDIR)/scripts/epilogue \
 		$(SRCDIR)/tools/sshd_config.in \

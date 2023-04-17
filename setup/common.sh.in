@@ -33,7 +33,7 @@ create_oar_user() {
                 # Force the "disabled password flag to '*' instead of '!'.
                 # Required in Debian12 (adduser >= 3.130), which changes to way
                 # adduser's --disabled-(login|password) options work.
-                usermode -p '*' ${OAROWNER} || true
+                usermod -p '*' ${OAROWNER} || true
                 ;;
             *)
                 useradd --system \
