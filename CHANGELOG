@@ -59,8 +59,7 @@ version 2.5.10:
   - [oarapi] add a environment variable to configure the max cycle of cgi
   - [IO.pm] do not specify a file name for stderr/stdout for interactive jobs
   - [judas] allow a custom instance name in notification mail subjects
-  - [job_resource_manager] backport the latest changes from G5K for AMD gpus
-  - Remove deprecated option in sshd config
+  - [ssh] Remove deprecated option in sshd config
   - [core/scripts] add oar-node start/stop scripts to launch with systemd
   - [setup] Add systemd services unit for oar-node and oar-server
   - [Makefiles] Add support for systemd
@@ -81,7 +80,6 @@ version 2.5.10:
   - [oarapi] replace workdir by directory in OAR's rest API
   - [all] change the log format and make it configurable and various logs
     messages improvements
-  - [oarsub] better verification of advance reservations input dates
   - [oarstat] add jobs events to the gantt output (--gantt/-g)
   - [oarstat] make machine parseable output detailed view without using -f
   - [oarstat] add missing fields and uniq some when calling with --gantt
@@ -96,6 +94,7 @@ version 2.5.10:
   - [oarsub] enhance -C option to be more user friendly
   - [IO.pm] optimize get_gantt_jobs_to_launch() SQL query
   - [oarapi] fix an error in logs due to redefined Dump() subroutine
+  - [tools] add the pam_oar_adopt script
 
 version 2.5.9:
 --------------
