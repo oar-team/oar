@@ -1,3 +1,9 @@
+oar (2.5.10-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 10 Jul 2023 14:55:03 +0200
+
 oar (2.5.10~rc3-1) unstable; urgency=medium
 
   * Release candidate 3
