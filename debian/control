@@ -11,6 +11,7 @@ Standards-Version: 4.6.2
 Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
 Vcs-Browser: https://github.com/oar-team/oar
 Homepage: http://oar.imag.fr/
+Rules-Requires-Root: no
 
 Package: liboar-perl
 Architecture: any
