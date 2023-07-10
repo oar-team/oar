@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 # Function set to handle oar setup within tests
 
 BUILDDIR=${BUILDDIR:-build}

@@ -1,26 +1,34 @@
 =head1 NAME
 
-oarsub - OAR batch scheduler job submission command.
+oarsub - OAR job submission command.
 
 =head1 SYNOPSIS
 
-B<oarsub> [OPTIONS] <executable program>
-
-B<oarsub> [OPTIONS] <script file>
-
-B<oarsub> [OPTIONS] "<inline script>"
+B<oarsub> [OPTIONS] <command>
 
 B<oarsub> [OPTIONS] -I
 
-B<oarsub> [OPTIONS] -C <JOB ID>
+B<oarsub> [OPTIONS] -r "<START DATE|now>[, <END DATE>]" [<command>]
+
+B<oarsub> [OPTIONS] -C [<JOB ID>]
 
 =head1 DESCRIPTION
 
-One uses B<oarsub> to submit a job to the B<OAR batch scheduler> managing the resources of a B<HPC Cluster>.
-A job is defined by the description of a set of resources needed to execute a task, and a script or executable to run.
-A job may also be run interactively, and one may also use oarsub to connect to a previously submitted job.
+One uses B<oarsub> to submit a job to the B<OAR resources and jobs management system>.
+A job is defined by a command to run and optionally the description of a set of wanted resources to execute a task.
+The I<command> can be any executable program or script file, or a script command line.
 
-The scheduler is in charge of providing a set of resources which matchs the oarsub request. Once scheduled and launched, a job consists of one process executed on the first node of the resources it was attibuted, with a set of environment variables set, which describe the job. That means that the job's executable is responsible for connecting those resources and dispatching work among them.
+The OAR scheduler is in charge of providing a set of resources which matches the B<oarsub> resource request (see the I<-l> option). Once scheduled and launched, the job executes the command on the first node (machine) of the assigned resources, with some environment variables set (e.g. the assigned resources list, the job duration a.k.a walltime, ...). If many nodes (machines) are assigned to the job, it is let to the user's command to dispatch an execution on all nodes.
+
+OAR defines two kinds of jobs: I<batch jobs> and I<advance reservation jobs>.
+
+=head2 BATCH JOBS
+
+A batch job lets the OAR scheduler decide when to execute the job, depending on when the requested resources are available. If not using the I<-I> option, B<oarsub> returns immediately: the job is queued (use the B<oarstat> command to list the queued jobs). When using the B<-I> option, B<oarsub> waits until the job can start then opens a interactive shell on the first of the assigned nodes.
+
+=head2 ADVANCE RESERVATION JOBS
+
+Calling B<oarsub> with the I<-r> option creates an advance reservation job instead of a batch job. An advance reservation job lets the user decide when the job should start (and optionally end). B<oarsub> waits for a validation of the resources availability. Whether a set of resources matching the resource request of the job is available, an I<OK> or I<KO> message is returned. I<OK> means that the job will run at the requested date. I<KO> means that the job is refused.
 
 =head1 OPTIONS
 
@@ -28,29 +36,31 @@ The scheduler is in charge of providing a set of resources which matchs the oars
 
 =item B<-I, --interactive>
 
-Request an interactive job. Open a login shell on the first node of the job instead of running a script.
+Request an interactive job.
 
-=item B<-C, --connect> <JOB ID>
+=item B<-C, --connect> [<JOB ID>]
 
-Connect to a running job.
+Connect to a running job. Job id may be omitted if only one job is running.
 
-=item B<-l, --resource> <LIST>
+=item B<-l, --resource> <DESCRIPTION>[,<WALLTIME>]
 
-Set the requested resources for the job. Parameters are resource properties defined in OAR database, and a `walltime' which specifies the maximum duration of the job before its termination (the job process can terminate earlier). 
-The walltime format is [hour:mn:sec|hour:mn|hour]. Ex: nodes=4/cpu=1,walltime=2:00:00
+Set the I<description> of the requested resources for the job and a I<walltime> which specifies an estimation of the maximum duration of the job (the job process can terminate earlier). 
+The walltime format is I<hours>:I<minutes>:I<seconds> (seconds and minutes can be omitted). 
 
-Multiple -l options can be given at the same line. That defines a moldable job: a job which can take different shapes. For example, for a very flexible application, one could perform the following job submission:
+  oarsub -l /host=4/cpu=1,walltime=2:00:00
+
+Multiple I<-l> options can be given to define a moldable job: a job accepting different combination of resource definitions. Example:
 
   oarsub -l cpu=2,walltime=20:00:00 -l cpu=4,walltime=10:00:00 -l cpu=8,walltime=5:00:00 ./script.sh
 
-OAR would schedule one of the three proposed resource definitions, depending of the load of the cluster, and preferring the one with the earliest possible start.
+OAR will allocate resources to the job accordingly to one of the 3 given definitions depending of the load of the cluster, and preferring earliest possible start.
 
 One can also request different groups of resources, for example:
 
   oarsub -l "{mem > 64}/host=1+{mem < 48}/host=3",walltime=1:00:00 -I
 
-The scheduler job would have 1 host with property "mem" > 64 and 3 hosts with property "mem" < 48.
-The syntax between braces, {...}, is the same as the one used for "-p" option.
+The job requests to run on 1 host with the property "mem" > 64 and 3 hosts with property "mem" < 48.
+The syntax between braces, {...}, is the same as the one used for I<-p> option.
 
 =item B<--array> <NUMBER>
 
@@ -67,20 +77,28 @@ Parametric array jobs can neither be Interactive (-I) nor a reservation (-r).
 
 =item B<-S, --scanscript>
 
-Batch mode only: ask oarsub to scan the given script for OAR directives (#OAR -l ...)
+Request I<oarsub> to scan the script file given as the job command, for extra options to apply to the job (lines starting with #OAR)
 
 =item B<-q, --queue> <QUEUE>
 
-Set the the queue to submit the job to.
+Set the queue to submit the job to.
 
-=item B<-p, --property> "<LIST>"
+=item B<-p, --property> "<SQL WHERE CLAUSE>"
 
-Add a list of constraints on the resource properties for the job.
-The format of a contraint is the one of a WHERE clause using the SQL syntax.
+Add constraints to the wanted resource for the job, using the resources properties.
+Constraints use the SQL WHERE CLAUSE syntax.
 
-=item B<-r, --reservation>  <DATE>
+=item B<-r, --reservation> "<START DATE|now>[, <END DATE>]"
 
-Request that the job starts at a specified time. A job creation using this option is called an I<advance reservation> (as opposite to a I<submission>). 
+Request that the job starts (and optionally ends) at a specified time. Using
+this option, the job is called an I<advance reservation>.
+
+Start and end dates use the I<YYYY-MM-DD hh:mm:ss> format. If I<YYYY-MM-DD> is
+omitted, it defaults to the current day. In I<hh:mm:ss>, I<ss> and I<mm> can
+be omitted. Quotes are only required when spaces are present.  When an end date
+is provided the job I<walltime> is inferred, unless provided in the I<-l>
+resources request which prevails. The special keyword B<now> can be used as the
+start date to request an advance reservation job that starts just now.
 
 =item B<--checkpoint> <DELAY>
 
@@ -101,6 +119,8 @@ Notes:
   - a job with the B<idempotent> and B<besteffort> types but with no B<checkpoint> delay will automatically be resubmitted whenever killed by OAR before its normal termination to execute a non-besteffort jobs.
   - a job with the B<idempotent> and B<besteffort> types with a B<checkpoint> delay will be automatically resubmitted if its exit code is 99 and its duration > 60s (that is, as if only B<idempotent> was present).
   - a job with the B<noop> type does nothing except reserving the resources. It is ended at the end of it walltime or when using the oardel command.
+
+The I<-t> option can be used several times to provide different job types to the job.
 
 =item B<-d, --directory> <DIR>
 
@@ -128,12 +148,12 @@ Ex:
 Arguments are job_id, job_name, TAG, comment
 
 TAG can be:
-  - RUNNING : when the job is launched
-  - END : when the job is finished normally
-  - ERROR : when the job is finished abnormally
-  - INFO : used when oardel is called on the job
-  - SUSPENDED : when the job is suspended
-  - RESUMING : when the job is resumed
+  - RUNNING: when the job is launched
+  - END: when the job is finished normally
+  - ERROR: when the job is finished abnormally
+  - INFO: used when oardel is called on the job
+  - SUSPENDED: when the job is suspended
+  - RESUMING: when the job is resumed
 
 By default all TAGs are triggered. It is possible to specify which TAGs must be triggered.
 Ex:
@@ -201,6 +221,10 @@ Print this help message.
 
 Print the version of OAR.
 
+=item B<-v>
+
+Verbose mode, oarsub and admissions rules (if compatible) will print more information on terminal. Multiple -v can be used to increase the level of verbosity (max: 2).
+
 =back
 
 =head1 ENVIRONMENT
@@ -209,7 +233,7 @@ Print the version of OAR.
 
 =item B<OAR_FILE_NODES> or B<OAR_NODE_FILE> or B<OAR_NODEFILE>
 
-Pathname to the file containing the list of the nodes that are attributed to the job. 
+Pathname to the file containing the list of the nodes that are assigned to the job. 
 
 =item B<OAR_JOB_NAME>
 
@@ -234,7 +258,7 @@ Walltime of the job in the hh:mm:ss format and in seconds.
 
 =item B<OAR_RESOURCE_PROPERTIES_FILE>
 
-Pathname to the file containing the list of all resources attributes for the job, and their value. See I<oarprint> also.
+Pathname to the file containing the list of all resources assigned for the job, and their value. See I<oarprint> also.
 
 =item B<OAR_PROJECT_NAME>
 
@@ -256,7 +280,7 @@ Key file to use for the submission (or I<oarsh>) if using the job-key mechanism 
 
 =head1 SCRIPT
 
-When submitting a job using a script shell, that script can contain some OAR options, with lines starting with B<#OAR> and using the same options syntax as described above.
+When submitting a job using a script file, that script file can contain some extra OAR options, with lines starting with B<#OAR> and using the same option syntax as described above.
 
 =head1 EXAMPLES
 
@@ -327,5 +351,5 @@ oarprint(1), oarsh(1), oardel(1), oarstat(1), oarnodes(1), oarhold(1), oarresume
 
 =head1 COPYRIGHTS
 
- Copyright 2003-2016 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2021 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 

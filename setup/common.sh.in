@@ -1,5 +1,5 @@
 create_oar_group() {
-    if ! getent group | grep -q "^${OAROWNERGROUP}:"; then 
+    if ! getent group | grep -q "^${OAROWNERGROUP}:"; then
         echo -n "Adding group ${OAROWNERGROUP}.."
         case "$TARGET_DIST" in
             "debian")
@@ -17,7 +17,7 @@ create_oar_home() {
     test -d "${OARHOMEDIR}" || mkdir -p ${OARHOMEDIR}
 }
 
-create_oar_user() {    
+create_oar_user() {
     # Create oar user
     if ! getent passwd | grep -q "^${OAROWNER}:"; then
         echo -n "Adding system user ${OAROWNER}.."
@@ -30,6 +30,10 @@ create_oar_user() {
                         --no-create-home \
                         --disabled-password \
                         ${OAROWNER} 2>/dev/null || true
+                # Force the "disabled password flag to '*' instead of '!'.
+                # Required in Debian12 (adduser >= 3.130), which changes to way
+                # adduser's --disabled-(login|password) options work.
+                usermod -p '*' ${OAROWNER} || true
                 ;;
             *)
                 useradd --system \
@@ -63,16 +67,16 @@ create_oar_user() {
     esac
 
     # set OAR shell
-    if [ "`getent passwd ${OAROWNER} |cut -f7 -d:`" != "${OARDIR}/oarsh_shell" ]; then 
-        chsh -s ${OARDIR}/oarsh_shell ${OAROWNER} 
-    fi 
+    if [ "`getent passwd ${OAROWNER} |cut -f7 -d:`" != "${OARDIR}/oarsh_shell" ]; then
+        chsh -s ${OARDIR}/oarsh_shell ${OAROWNER}
+    fi
 
     # Fix the bash profile
     cat > ${OARHOMEDIR}/.bash_oar <<EOF
 #
 # OAR bash environnement file for the oar user
 #
-# /!\ This file is automatically created at update installation/upgrade. 
+# /!\ This file is automatically created at update installation/upgrade.
 #     Do not modify this file.
 #
 

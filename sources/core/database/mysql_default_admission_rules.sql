@@ -1,5 +1,4 @@
 # Default admission rules for OAR 2
-# $Id$
 
 # Specify the default value for queue parameter
 INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (1, 'YES', '# Set default queue is no queue is set

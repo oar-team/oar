@@ -1,4 +1,4 @@
-$POSTFORM="
+$POSTFORM = "
 <FORM METHOD=post ACTION=$apiuri/admission_rules.html>
 <TABLE>
 <CAPTION>Admission rule submission</CAPTION>

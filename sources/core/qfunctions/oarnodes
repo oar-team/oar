@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 # print OAR node properties
 #
 # EXAMPLES:
@@ -20,20 +19,19 @@ use Getopt::Long;
 use OAR::Nodes;
 use OAR::Tools;
 
-$SIG{HUP} = sub {OAR::Nodes::close_db_connection(); exit(10)};
-$SIG{PIPE} = sub {OAR::Nodes::close_db_connection(); exit(10)};
+$SIG{HUP}  = sub { OAR::Nodes::close_db_connection(); exit(10) };
+$SIG{PIPE} = sub { OAR::Nodes::close_db_connection(); exit(10) };
 
 ### CONFIG STUFF ###
-Getopt::Long::Configure ("gnu_getopt");
+Getopt::Long::Configure("gnu_getopt");
 
 # suitable Data::Dumper configuration for serialization
-$Data::Dumper::Purity = 1;
-$Data::Dumper::Terse = 1;
-$Data::Dumper::Indent = 0;
+$Data::Dumper::Purity   = 1;
+$Data::Dumper::Terse    = 1;
+$Data::Dumper::Indent   = 0;
 $Data::Dumper::Deepcopy = 1;
 
 ### END CONFIG STUFF ###
-
 
 ### Variables declaration ###
 my $stateMode;
@@ -48,20 +46,23 @@ my $Version;
 my $events;
 my @resources;
 my @nodes;
+my $jobs;
 ### END Variables declaration ###
-
 
 ### Print Methods ###
 
-sub print_usage(){
+sub print_usage() {
     print <<EOS;
-Usage: oarnodes [ -r number | --sql sql_properties | -s | -l | -h | -V ]
-[list of nodes] [ -e [date] | -X | -Y | -D]
-Display node informations
+Display information on nodes
+Usage:
+  oarnodes [ -r <resource id> | --sql <sql_properties> | -s | -j | -l | -h | -V ] [ -X | -Y | -D] [list of nodes] [ -e [<date>] ]
+or
+  oarnodes [ -r <resource id> | --sql <sql_properties> | -s | -j | -l | -h | -V ] [ -X | -Y | -D] [ -e [<date>] ] -- [list of nodes]
 Options:
  -r, --resource     show the properties of the resource whose id is given as
                     parameter
  -s, --state        show the states of the nodes
+ -j, --jobs         show the job load on nodes
  -l, --list         show the nodes list
  -e, --events       show the events recorded for a node either since the date
                     given as parameter or the last 20
@@ -76,210 +77,236 @@ Options:
 EOS
 }
 
-sub print_oar_version(){
-    print "OAR version : ".OAR::Nodes::get_oar_version()."\n";
+sub print_oar_version() {
+    print "OAR version: " . OAR::Nodes::get_oar_version() . "\n";
 }
 
-sub print_events($$){
-	my $date_from = shift;
-	my $hostnames = shift;
-        my $dump_mode=0;
-        my %result;
-        $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
+sub print_events($$) {
+    my $date_from = shift;
+    my $nodes     = shift;
 
-	foreach my $current_hostname (@$hostnames){
-          $result{$current_hostname}=OAR::Nodes::get_events($current_hostname, $date_from);
-          if (!$dump_mode) {
-	    foreach my $current_event (@{$result{$current_hostname}}) {
-		  printf("%s| %s| %s: %s\n", 
-			OAR::Nodes::format_date($current_event->{'date'}),
-			$current_event->{'job_id'},
-			$current_event->{'type'},
-			$current_event->{'description'}
-		  );
-	    }
-          }
-	}
-        format_result(\%result) if $dump_mode;
-}
-
-sub add_sql_resources($){
-	my $sql_clause = shift;
-	my $sql_resources = OAR::Nodes::get_resources_with_given_sql($sql_clause);
-	push @resources, @$sql_resources;
-}
-
-sub format_result($){
-	my $result = shift;
-    if (defined($DUMPER_mode)){
-        print(Dumper($result)."\n");
-    }elsif(defined($XML_mode)){
-        print(OAR::Nodes::encode_result($result, "XML")."\n");
-    }elsif(defined($YAML_mode)){
-        print(OAR::Nodes::encode_result($result, "YAML")."\n");
-    }elsif(defined($JSON_mode)){
-        print(OAR::Nodes::encode_result($result, "JSON")."\n");
+    my $result = OAR::Nodes::get_events($nodes, $date_from);
+    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
+        format_result(\%$result);
+    } else {
+        foreach my $current_node (sort keys %{$result}) {
+            foreach my $current_event (@{ $result->{$current_node} }) {
+                printf(
+                    "%s|%s|%s| %s: %s\n",
+                    OAR::Nodes::format_date($current_event->{'date'}),
+                    $current_node,
+                    $current_event->{'job_id'},
+                    $current_event->{'type'},
+                    $current_event->{'description'});
+            }
+        }
     }
 }
 
-sub print_resources_states_for_hosts($){
-	my $nodes = shift;
-        my %result;
-        my $dump_mode=0;
-        $dump_mode=1 if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode));
+sub add_sql_resources($) {
+    my $sql_clause    = shift;
+    my $sql_resources = OAR::Nodes::get_resources_with_given_sql($sql_clause);
+    push @resources, @$sql_resources;
+}
 
-        foreach my $current_host (@$nodes){
-          $result{$current_host}=OAR::Nodes::get_resources_states_for_host($current_host);
-          if (!$dump_mode) {
-            print "$current_host\n";
-            foreach my $k (sort keys %{$result{$current_host}} ) {
-            #while ( my ($k,$v) = each %{$result{$current_host}} ){
-	   	print "    $k : $result{$current_host}{$k}\n";
+sub format_result($) {
+    my $result = shift;
+
+    if (!defined($result) || !%$result) {
+        $result = {};
+    }
+
+    if (defined($DUMPER_mode)) {
+        print(Dumper($result) . "\n");
+    } elsif (defined($XML_mode)) {
+        print(OAR::Nodes::encode_result($result, "XML") . "\n");
+    } elsif (defined($YAML_mode)) {
+        print(OAR::Nodes::encode_result($result, "YAML") . "\n");
+    } elsif (defined($JSON_mode)) {
+        print(OAR::Nodes::encode_result($result, "JSON") . "\n");
+    }
+}
+
+sub print_resources_states_for_hosts($) {
+    my $nodes = shift;
+
+    my $result = OAR::Nodes::get_resources_states_for_hosts($nodes);
+    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
+        format_result($result);
+    } else {
+        foreach my $current_host (sort keys %{$result}) {
+            print "$current_host:\n";
+            foreach my $k (sort keys %{ $result->{$current_host} }) {
+                print "    $k: $result->{$current_host}{$k}\n";
             }
-          }
         }
-        format_result(\%result) if $dump_mode;
+    }
 }
 
-sub print_resources_states($){
-	my $resources = shift;
-	my $resources_states = OAR::Nodes::get_resources_states($resources);
-        if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
-          format_result($resources_states);
+sub print_jobs($) {
+    my $nodes = shift;
+
+    my $result = OAR::Nodes::get_nodes_load($nodes);
+    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
+        format_result($result);
+    } else {
+        foreach my $current_host (sort keys %{$result}) {
+            print "$current_host:\n";
+            foreach my $job_id (sort keys %{ $result->{$current_host} }) {
+                print "    $job_id:\n";
+                foreach my $k (sort keys %{ $result->{$current_host}->{$job_id} }) {
+                    my $v = $result->{$current_host}->{$job_id}->{$k};
+                    if (not defined($v)) {
+                        $v = "";
+                    } elsif (ref($v) eq 'ARRAY') {
+                        $v = join(", ", @$v);
+                    }
+                    print "        $k: $v\n";
+                }
+            }
         }
-        else {
-	  while ( my ($k,$v) = each %$resources_states ){
-		print "$k : $v\n";
-	  }
+    }
+}
+
+sub print_resources_states($) {
+    my $resources        = shift;
+    my $resources_states = OAR::Nodes::get_resources_states($resources);
+    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
+        format_result($resources_states);
+    } else {
+        while (my ($k, $v) = each %$resources_states) {
+            print "$k: $v\n";
         }
+    }
 }
 
-sub print_all_hostnames(){
-  	my $nodes_to_print = OAR::Nodes::get_all_hosts();
-	foreach my $current_node (@$nodes_to_print) {
-		print "$current_node\n";
-	}
+sub print_all_nodes() {
+    my $nodes_to_print = OAR::Nodes::get_all_hosts();
+    foreach my $current_node (@$nodes_to_print) {
+        print "$current_node\n";
+    }
 }
 
-sub print_hosts_infos($){
-	my $nodes = shift;
-	my $infos;
-	foreach my $current_node (@$nodes){
-		my $infos_for_host = OAR::Nodes::get_resources_infos_for_host($current_node);
-		while ( my ($id,$info) = each %$infos_for_host ){
-		    $infos->{$id} = $info; # modify here to add depth (sorted by network_address)
-		}
-	}
-	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
-	    format_result($infos);
-	}
-	else{
-	    print_resources_flat_way($infos);
-	}
-}
+sub print_hosts_infos($) {
+    my $nodes = shift;
+    my $infos = OAR::Nodes::get_resources_for_hosts($nodes);
 
-sub print_resources_infos($){
-	my $resources = shift;
-	my $res_infos = OAR::Nodes::get_resources_infos($resources);
-	if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)){
-	    format_result($res_infos);
-	}
-	else{
-	    print_resources_flat_way($res_infos);
-	}
+    if (defined($DUMPER_mode) || defined($XML_mode) || defined($YAML_mode) || defined($JSON_mode)) {
+        format_result($infos);
+    } elsif (!defined($infos) || %$infos == 0) {
+        print("\/!\\ No nodes to display...\n");
+    } else {
+        print_resources_flat_way($infos);
+    }
 }
 
 # INFO: function to change if you want to change the user std output
-sub print_resources_flat_way($){
-	my $resources_info = shift;
-	foreach my $id ( sort keys %$resources_info ){
-	    my $info = $resources_info->{$id};
-	    print "network_address : $info->{network_address}\n";
-	    print "resource_id : $info->{resource_id}\n";
-	    if ($info->{state} eq "Absent" && $info->{available_upto} >= time()) {
-		$info->{state} .= " (standby)";
-	    }
-	    print "state : $info->{state}\n";
-	    if (exists($info->{jobs})){print "jobs: $info->{jobs}\n";}
-	    my $properties_to_display='';
-	    while ( my ($k,$v) = each %$info ){
-		    if (OAR::Tools::check_resource_system_property($k) == 0){
-			    if(defined($v)){
-				    $properties_to_display .= "$k=$v, ";
-			    }else{
-				    $properties_to_display .= "$k=, ";
-			    }
-		    }
-	    }
-	    chop($properties_to_display); # remove last space
-	    chop($properties_to_display); # remove last ,
-	    print "properties : $properties_to_display\n\n";
-	}
+sub print_resources_flat_way($) {
+    my $resources_info = shift;
+    foreach my $id (sort keys %$resources_info) {
+        my $info = $resources_info->{$id};
+        print "network_address: $info->{network_address}\n";
+        print "resource_id: $info->{resource_id}\n";
+        if ($info->{state} eq "Absent" && $info->{available_upto} >= time()) {
+            $info->{state} .= " (standby)";
+        }
+        print "state: $info->{state}\n";
+        if (exists($info->{jobs})) { print "jobs: $info->{jobs}\n"; }
+        my $properties_to_display = '';
+        while (my ($k, $v) = each %$info) {
+            if (OAR::Tools::check_resource_system_property($k) == 0) {
+                if (defined($v)) {
+                    $properties_to_display .= "$k=$v, ";
+                } else {
+                    $properties_to_display .= "$k=, ";
+                }
+            }
+        }
+        chop($properties_to_display);    # remove last space
+        chop($properties_to_display);    # remove last ,
+        print "properties: $properties_to_display\n\n";
+    }
 }
 
 ### END Print Methods ###
 
-
 ### Main ###
 
 # parse command line option
-GetOptions ("state|s" => \$stateMode,
-            "help|h"  => \$usage,
-            "list|l"  => \$listall,
-            "events|e:s"  => \$events,
-            "resource|r=i" => \@resources,
-            "sql=s" => \$sql_property,
-            "xml|X" => \$XML_mode,
-            "yaml|Y" => \$YAML_mode,
-            "json|J" => \$JSON_mode,
-            "dumper|D" => \$DUMPER_mode,
-            "version|V" => \$Version
-           ) or exit(1);
+GetOptions(
+    "state|s"      => \$stateMode,
+    "help|h"       => \$usage,
+    "list|l"       => \$listall,
+    "jobs|j"       => \$jobs,
+    "events|e:s"   => \$events,
+    "resource|r=i" => \@resources,
+    "sql=s"        => \$sql_property,
+    "xml|X"        => \$XML_mode,
+    "yaml|Y"       => \$YAML_mode,
+    "json|J"       => \$JSON_mode,
+    "dumper|D"     => \$DUMPER_mode,
+    "version|V"    => \$Version
+  ) or
+  exit(1);
 
-if ($usage){
+if ($usage) {
     print_usage();
     exit(0);
 }
-if ($Version){
+if ($Version) {
     print_oar_version();
     exit(0);
 }
 
 OAR::Nodes::open_db_connection() or die "DB connection error, exiting.\n";
+
 # Nodes list handling (set @nodes to what has been requested)
-if($ARGV[0]){
+if ($ARGV[0]) {
     @nodes = @ARGV;
-}else{
-    my $nodes_tmp = OAR::Nodes::get_all_hosts();
-	@nodes = @$nodes_tmp;
-}
-# SQL where handling, add resources that match sql clause to @resources
-if (defined($sql_property)) {
-	add_sql_resources($sql_property);
+} else {
+    @nodes = ();
 }
 
-if (defined($events)) {
-    print_events($events, \@nodes);
-}
-elsif ($stateMode){
-	if ($#resources >= 0){
-		print_resources_states(\@resources);
-	}
-	else{
-		print_resources_states_for_hosts(\@nodes);
-	}
-}
-elsif ($listall){
-	print_all_hostnames();
-}
-elsif ($#resources >= 0 || defined($sql_property)){ # -r or --sql where called
-	print_resources_infos(\@resources);
-}
-elsif ($#nodes >= 0){ # a hostname was given or not (in this case all hostnames)
-	print_hosts_infos(\@nodes);
-}
-else{
-	print "\/!\\ No nodes to display...\n";
+if ($#resources >= 0 or defined($sql_property)) {
+    if ($#nodes >= 0) {
+        die "Error: Cannot use -r or --sql and provide nodes at a same time\n";
+    }
+    if (defined($sql_property)) {
+        add_sql_resources($sql_property);
+    }
+
+    # We are working at the resource level, not nodes
+    if (defined($events)) {
+        die "Error: cannot use -e with -r or --sql\n";
+    } elsif (defined($stateMode)) {
+        print_resources_states(\@resources);
+    } elsif ($jobs) {
+        die "Error: Cannot use -j with -r or --sql\n";
+    } elsif ($listall) {
+        die "Error: cannot use -l with -r or --sql\n";
+    } else {
+        my $res_infos = OAR::Nodes::get_resources_info(\@resources);
+        if (defined($DUMPER_mode) ||
+            defined($XML_mode)  ||
+            defined($YAML_mode) ||
+            defined($JSON_mode)) {
+            format_result($res_infos);
+        } else {
+            print_resources_flat_way($res_infos);
+        }
+    }
+} else {
+    if (defined($events)) {
+        print_events($events, \@nodes);
+    } elsif (defined($stateMode)) {
+        print_resources_states_for_hosts(\@nodes);
+    } elsif ($jobs) {
+        print_jobs(\@nodes);
+    } elsif ($listall) {
+        print_all_nodes();
+    } else {
+        print_hosts_infos(\@nodes);
+    }
 }
 
 OAR::Nodes::close_db_connection();

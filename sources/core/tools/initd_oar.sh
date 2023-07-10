@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 # script for mandrake
 # Source function library.
 . /etc/rc.d/init.d/functions

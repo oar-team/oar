@@ -1,4 +1,3 @@
-# $Id$
 # OAR Admission rules for big shared memory computer
 # The first rule adds the quantitative concept for the memory property
 # The second rule aims to match cpus on physical nodes to prevent

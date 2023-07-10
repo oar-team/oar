@@ -1,5 +1,4 @@
 #!/usr/bin/ruby -w
-# $Id$
 # drawgantt.cgi displays gantt chart for oar resource management system
 #
 # author: auguste@imag.fr
@@ -75,9 +74,9 @@ def base_connect
 end
 
 # Build the list of the property fields of the resource_properties table
-# parameters : dbh
-# return value : list of resource properties
-# side effects : set $resource_properties_fields
+# parameters: dbh
+# return value: list of resource properties
+# side effects: set $resource_properties_fields
 def build_resource_properties_fields_list(dbh)
   if ( $resource_properties_fields )
     return $resource_properties_fields
@@ -105,9 +104,9 @@ end
 
 # build_resources_list
 # Build the filtered list of all target resources
-# parameters : dbh
-# return value : list of resources
-# side effects : set $filtered_resources
+# parameters: dbh
+# return value: list of resources
+# side effects: set $filtered_resources
 def build_resources_list(dbh)
   if ( $filtered_resources )
     return $filtered_resources
@@ -138,7 +137,7 @@ end
 
 # get all jobs in a range of dates in future from predictions_visu tables
 # (= results from the previous scheduling pass)
-# args : dbh, start range, end range
+# args: dbh, start range, end range
 def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
 
   q = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,gantt_jobs_predictions_visu.start_time,(gantt_jobs_predictions_visu.start_time + moldable_job_descriptions.moldable_walltime),gantt_jobs_resources_visu.resource_id
@@ -182,7 +181,7 @@ def get_jobs_gantt_scheduled(dbh,date_begin,date_end)
 end
 
 # get all jobs in a range of date (from past to now)
-# args : dbh, start range, end range
+# args: dbh, start range, end range
 def get_jobs_range_dates(dbh,date_begin,date_end)
   q = "SELECT jobs.job_id,jobs.job_type,jobs.state,jobs.job_user,jobs.command,jobs.queue_name,moldable_job_descriptions.moldable_walltime,jobs.properties,jobs.launching_directory,jobs.submission_time,jobs.start_time,jobs.stop_time,assigned_resources.resource_id,(jobs.start_time + moldable_job_descriptions.moldable_walltime)
          FROM jobs, assigned_resources, moldable_job_descriptions, resources
@@ -244,7 +243,7 @@ def get_gantt_visu_date(dbh)
 end
 
 #get the range when nodes are dead between two dates
-# arg : dbh, start date, end date
+# arg: dbh, start date, end date
 def get_resource_dead_range_date(dbh,date_begin,date_end)
   q = "SELECT resource_id, date_start, date_stop, value
                FROM resource_logs
@@ -338,9 +337,9 @@ end
 
 # get_date
 # returns the current time in the format used by the sql database
-# parameters : database
-# return value : date string
-# side effects : /
+# parameters: database
+# return value: date string
+# side effects: /
 def get_date(dbh)
   db_type = $conf['DB_TYPE']
   if (db_type == "Pg")

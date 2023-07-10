@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 #Hold a job --> it will not be scheduled
 
 use strict;
@@ -12,7 +11,7 @@ use OAR::Tools;
 use Getopt::Long;
 use OAR::Version;
 
-my $Old_umask = sprintf("%lo",umask());
+my $Old_umask = sprintf("%lo", umask());
 umask(oct("022"));
 
 sub usage {
@@ -34,20 +33,22 @@ my $Version;
 my $Suspend_running;
 my $Sql_property;
 my $array;
-GetOptions ("help|h" => \$Help,
-            "version|V" => \$Version,
-            "array" => \$array,
-            "sql=s"   => \$Sql_property,
-            "running|r" => \$Suspend_running
-           ) or exit(1);
+GetOptions(
+    "help|h"    => \$Help,
+    "version|V" => \$Version,
+    "array"     => \$array,
+    "sql=s"     => \$Sql_property,
+    "running|r" => \$Suspend_running
+  ) or
+  exit(1);
 
-if (defined($Help)){
+if (defined($Help)) {
     usage();
     exit(0);
 }
 
-if (defined($Version)){
-    print("OAR version : ".OAR::Version::get_version()."\n");
+if (defined($Version)) {
+    print("OAR version: " . OAR::Version::get_version() . "\n");
     exit(0);
 }
 
@@ -57,7 +58,7 @@ my $remote_port = get_conf("SERVER_PORT");
 
 my $Cpuset_field = get_conf("JOB_RESOURCE_MANAGER_PROPERTY_DB_FIELD");
 
-if ((@ARGV < 1) and (!defined($Sql_property))){
+if ((@ARGV < 1) and (!defined($Sql_property))) {
     usage();
     exit(1);
 }
@@ -65,89 +66,87 @@ if ((@ARGV < 1) and (!defined($Sql_property))){
 my @job_ids;
 my $exit_code = 0;
 
-foreach my $j (@ARGV){
-    if ($j =~ m/^\d+$/m){
+foreach my $j (@ARGV) {
+    if ($j =~ m/^\d+$/m) {
+
         #if defined --array, delete all the sub-jobs
-        if(defined($array)){
-             my $db = OAR::IO::connect_ro();
-             my @tmp_jobs = OAR::IO::get_array_job_ids($db,$j);
-            if(scalar @tmp_jobs == 0){
+        if (defined($array)) {
+            my $db       = OAR::IO::connect_ro();
+            my @tmp_jobs = OAR::IO::get_array_job_ids($db, $j);
+            if (scalar @tmp_jobs == 0) {
                 warn("[ERROR] \"$j\" is not a valid array job\n");
                 $exit_code = 2;
-            }else{
-                foreach my $j (@tmp_jobs){
+            } else {
+                foreach my $j (@tmp_jobs) {
                     push(@job_ids, $j);
-                 }
+                }
             }
             OAR::IO::disconnect($db);
-        }else{
+        } else {
             push(@job_ids, $j);
         }
-    }else{
-        if(defined($array)){
+    } else {
+        if (defined($array)) {
             warn("[ERROR] \"$j\" is not a valid job array identifier\n");
-        }else{
+        } else {
             warn("[ERROR] \"$j\" is not a valid job identifier\n");
         }
         $exit_code = 2;
     }
 }
 
-
-if (defined($Sql_property)){
+if (defined($Sql_property)) {
     my $db = OAR::IO::connect_ro();
-    foreach my $j (OAR::IO::get_jobs_with_given_properties($db,$Sql_property)){
+    foreach my $j (OAR::IO::get_jobs_with_given_properties($db, $Sql_property)) {
         push(@job_ids, $j->{job_id});
     }
     OAR::IO::disconnect($db);
 }
 
 my $base = OAR::IO::connect();
-foreach my $j (@job_ids){
+foreach my $j (@job_ids) {
     my $err_job = 0;
-    if (defined($Suspend_running)){
-        my $types = OAR::IO::get_job_types_hash($base,$j);
-        if (!defined($Cpuset_field)){
+    if (defined($Suspend_running)) {
+        my $types = OAR::IO::get_job_types_hash($base, $j);
+        if (!defined($Cpuset_field)) {
             warn("CPUSET tag is not configured in the oar.conf.\n");
             $err_job = 2;
-        }elsif (defined($types->{cosystem})){
+        } elsif (defined($types->{cosystem})) {
             warn("This job is of the cosystem type. We cannot suspend this kind of jobs.\n");
             $err_job = 3;
-        }elsif (defined($types->{deploy})){
+        } elsif (defined($types->{deploy})) {
             warn("This job is of the deploy type. We cannot suspend this kind of jobs.\n");
             $err_job = 4;
         }
     }
-    if ($err_job == 0){
-        my $err = OAR::IO::hold_job($base,$j,$Suspend_running);
+    if ($err_job == 0) {
+        my $err = OAR::IO::hold_job($base, $j, $Suspend_running);
 
         if ($err != 0) {
-            my $str = "/!\\ Cannot hold $j :";
-            if ($err == -1){
+            my $str = "/!\\ Cannot hold $j:";
+            if ($err == -1) {
                 warn("$str this job does not exist.\n");
-            }elsif ($err == -2){
+            } elsif ($err == -2) {
                 warn("$str you are not the right user.\n");
-            }elsif ($err == -3){
+            } elsif ($err == -3) {
                 warn("$str the job is not in the right state (try '-r' option).\n");
-            }elsif ($err == -4){
+            } elsif ($err == -4) {
                 warn("$str only oar or root users can use '-r' option.\n");
-            }else{
+            } else {
                 warn("$str unknown reason.\n");
             }
             $exit_code = 1;
-        }else{
+        } else {
             print("[$j] Hold request was sent to the OAR server.\n");
         }
-    }else{
+    } else {
         $exit_code = 2;
     }
 }
 
 OAR::IO::disconnect($base);
 
-
-
 #Signal Almigthy
-OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"ChState");
+OAR::Tools::notify_tcp_socket($remote_host, $remote_port, "ChState");
 
 exit($exit_code);

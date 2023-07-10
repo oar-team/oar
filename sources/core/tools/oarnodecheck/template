@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 ###############################################################################
 # Perform a check and report to CHECKLOGFILE
 # WARNING:

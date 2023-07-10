@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 # function set to handle mysql within tests
 
 BUILDDIR=${BUILDDIR:-build}
