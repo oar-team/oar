@@ -1,3 +1,9 @@
+oar (2.5.10-1~bpo12+1) bookworm-backports; urgency=medium
+
+  * Rebuild for bookworm-backports.
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 10 Jul 2023 15:30:01 +0200
+
 oar (2.5.10-1) unstable; urgency=medium
 
   * New upstream release
