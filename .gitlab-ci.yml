@@ -99,3 +99,4 @@ push-package:
     - g5k-deploy-files --only-if-tag 'debian/*' --files 'stretch/*.deb' --directory deb/oar/stretch
     - g5k-deploy-files --only-if-tag 'debian/*' --files 'buster/*.deb' --directory deb/oar/buster
     - g5k-deploy-files --only-if-tag 'debian/*' --files 'bullseye/*.deb' --directory deb/oar/bullseye
+  allow_failure: false
