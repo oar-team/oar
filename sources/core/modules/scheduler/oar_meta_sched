@@ -104,6 +104,7 @@ my $resa_admin_waiting_timeout = get_conf("RESERVATION_WAITING_RESOURCES_TIMEOUT
 my $Walltime_change_enabled = uc(get_conf_with_default_param("WALLTIME_CHANGE_ENABLED", "NO"));
 
 oar_info($Module_name, "Starting Meta Scheduler\n", $Session_id);
+my @stats_start = OAR::IO::get_stats($base);
 
 ###########################################################################################################
 # Handle walltime change requests                                                                              #
@@ -714,6 +715,10 @@ while (@Rjobs) {
 }
 oar_info($Module_name, "End processing of the accepted reservations without assigned resources\n",
     $Session_id);
+
+my @stats_end1p = OAR::IO::get_stats($base);
+my $stats_end1p_str = OAR::IO::format_stats(@stats_start, @stats_end1p);
+oar_info($Module_name, "End of first phase (Gantt initialization) ($stats_end1p_str)\n", $Session_id);
 
 ###########################################################################################################
 # End init scheduler                                                                                      #
@@ -1436,6 +1441,7 @@ foreach my $queue (@queues) {
     $policy = $queue->[1];
     my $waiting_jobs = OAR::IO::is_waiting_job_specific_queue_present($base, $name);
     if ($waiting_jobs == 1) {
+        my @stats_queue_start = OAR::IO::get_stats($base);
         oar_info($Module_name,
             "Queue $name: Launching scheduler $policy at time $initial_time{sql}\n", $Session_id);
         my ($sched_exit_code, $sched_signal_num, $sched_dumped_core) = (-1, -1, -1);
@@ -1517,6 +1523,11 @@ foreach my $queue (@queues) {
         }
         treate_waiting_reservation_jobs($name);
         check_reservation_jobs($name);
+
+        my @stats_queue_end = OAR::IO::get_stats($base);
+        my $stats_queue_str = OAR::IO::format_stats(@stats_queue_start, @stats_queue_end);
+        oar_info($Module_name, "End of processing for Queue $name ($stats_queue_str)\n", $Session_id);
+
     } else {
         oar_info($Module_name, "Queue $name: No job\n", $Session_id);
     }
@@ -1807,7 +1818,9 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "toLaunch")) {
     notify_to_run_job($base, $j->{job_id});
 }
 
+my @stats_end = OAR::IO::get_stats($base);
+my $stats_end_str = OAR::IO::format_stats(@stats_start, @stats_end);
 OAR::IO::disconnect($base);
-oar_info($Module_name, "End of Meta Scheduler\n", $Session_id);
+oar_info($Module_name, "End of Meta Scheduler ($stats_end_str)\n", $Session_id);
 
 exit($exit_code);
