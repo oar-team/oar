@@ -1155,7 +1155,7 @@ sub check_reservation_jobs($) {
 # Detect if there are besteffort jobs to kill
 # return 1 if there is at least 1 job to frag otherwise 0
 sub check_jobs_to_kill() {
-    oar_info($Module_name, "Begin precessing of besteffort jobs to kill\n", $Session_id);
+    oar_info($Module_name, "Begin processing of besteffort jobs to kill\n", $Session_id);
     my $return = 0;
 
     # Delete besteffort jobs in advance to let enough time to get back the nodes

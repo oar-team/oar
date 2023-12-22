@@ -2543,7 +2543,7 @@ EOS
     chop($query_jobs);
     $dbh->do($query_jobs);
 
-    #retreive job_ids thanks to array_id value
+    #retrieve job_ids thanks to array_id value
     my $query_job_ids =
       $dbh->prepare("SELECT job_id FROM jobs WHERE array_id = $array_id ORDER BY job_id ASC");
     $query_job_ids->execute();
