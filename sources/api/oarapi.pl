@@ -118,14 +118,6 @@ close(FILE);
 # FastCGI loop starting
 ##############################################################################
 my $q;
-my $fcgi_cycle_count = 0;
-my $fcgi_max_cycle_count;
-
-if (defined($ENV{OAR_FCGI_MAX_CYCLE_COUNT})) {
-    $fcgi_max_cycle_count = $ENV{OAR_FCGI_MAX_CYCLE_COUNT};
-} else {
-    $fcgi_max_cycle_count = 200;
-}
 
 FCGI: while ($q = new CGI::Fast) {
 
@@ -134,8 +126,6 @@ FCGI: while ($q = new CGI::Fast) {
     # The variable has to be setted in the FCGI while loop, indeed in some runtime
     # environments it wasn't available when setted outside the loop.
     $ENV{OAR_IN_API} = 1;
-
-    $fcgi_cycle_count++;
 
     # Sets the cgi handler of the OAR::API (global variable)
     $OAR::API::q = $q;
@@ -2892,10 +2882,6 @@ EOS
         ###########################################
         #
         OAR::API::ERROR(404, "Not found", "No way to handle your request " . $q->path_info);
-    }
-
-    if ($fcgi_cycle_count > $fcgi_max_cycle_count) {
-        exit 0;
     }
 
 }    # End of fastcgi loop
