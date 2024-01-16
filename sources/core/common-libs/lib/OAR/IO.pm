@@ -6600,6 +6600,7 @@ sub set_resources_state($$$$$) {
     my $session_id          = shift;
 
     my $update_values = '';
+    my $resources_to_actually_update  = '';
     my $insert_values = '';
     my $date          = get_date($dbh);
     my $exit_code     = 1;
@@ -6615,6 +6616,7 @@ sub set_resources_state($$$$$) {
               $update_values . "(" . $resource_id . ", '" . $resources_to_change->{$resource_id} .
               "', " . $State_to_num{ $resources_to_change->{$resource_id} } .
               ", '" . $resources_info->{$resource_id}{next_finaud_decision} . "'),";
+	    $resources_to_actually_update = $resources_to_actually_update . $resource_id . ", ";
             $insert_values =
               $insert_values .
               "(" . $resource_id . ", " . "'state', '" . $resources_to_change->{$resource_id} .
@@ -6657,6 +6659,7 @@ sub set_resources_state($$$$$) {
     }
 
     chop($update_values);
+    chop($resources_to_actually_update);
     chop($insert_values);
 
     if ($need_update eq 1) {
@@ -6674,7 +6677,7 @@ sub set_resources_state($$$$$) {
                     WHERE
                         date_stop = 0
                         AND attribute = \'state\'
-                        AND resource_id IN " . "(" . join(", ", keys(%$resources_to_change)) . ")");
+                        AND resource_id IN " . "(" . $resources_to_actually_update  . ")");
         $dbh->do(
             "  INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
                     VALUES " . $insert_values . "
