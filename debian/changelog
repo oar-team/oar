@@ -1,3 +1,21 @@
+oar (2.5.10~g5k30-1) unstable; urgency=medium
+
+    * 6a288775 [oarapi] Removed cycle limits in oarapi.pl. (Bug 13742)
+    * 043c68d2 [IO] Selectively close state logs on ressources. Bug 15137
+    * 6577b0c1 [meta_sched] displaying more timing statistics
+    * 5093fb6d [IO] new functions to get more detailed statistics during scheduling
+    * d46d8b4f [CI] add 'allow_failure: true' for manual jobs
+    * 729cb2b8 [CHANGELOG] Fix duplicate in old changelog (2.2)
+    * 37db5384 [changelog] Remove unrelevant lines
+    * b8df9145 [tools] Add the pam_oar_adopt script
+    * 368734cd [IO] Fix undefined OAR::Tools functions: get_ssh_timeout, sentinelle, and get_one_preocess_children
+    * 28ed8b5a [setup] Fix usermod
+    * 2081210c [setup] Fix the oar user creation with Debian12 (adduser > 3.130) + cosmetic
+    * a1c69dd0 [drawgantt-svg] Fixes for PHP 8
+    * 0a0a4d1b [oarsh] Fix workaround for oardocker to find the job cgroup
+
+ -- Luke Bertot <luke.bertot@inria.fr> Web, 17 Jan 2024 10:10:00 +0100
+
 oar (2.5.10~g5k29-1) unstable; urgency=medium
 
     * ec779a3b [setup] fix systemd oar.target which was not enabled
