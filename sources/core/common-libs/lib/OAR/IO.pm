@@ -21,6 +21,7 @@ use Fcntl;
 use OAR::Schedulers::ResourceTree;
 use OAR::Tools;
 use POSIX qw(strftime);
+use POSIX qw(sysconf);
 
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity   = 1;
@@ -2542,7 +2543,7 @@ EOS
     chop($query_jobs);
     $dbh->do($query_jobs);
 
-    #retreive job_ids thanks to array_id value
+    #retrieve job_ids thanks to array_id value
     my $query_job_ids =
       $dbh->prepare("SELECT job_id FROM jobs WHERE array_id = $array_id ORDER BY job_id ASC");
     $query_job_ids->execute();
@@ -6599,6 +6600,7 @@ sub set_resources_state($$$$$) {
     my $session_id          = shift;
 
     my $update_values = '';
+    my $resources_to_actually_update  = '';
     my $insert_values = '';
     my $date          = get_date($dbh);
     my $exit_code     = 1;
@@ -6614,6 +6616,7 @@ sub set_resources_state($$$$$) {
               $update_values . "(" . $resource_id . ", '" . $resources_to_change->{$resource_id} .
               "', " . $State_to_num{ $resources_to_change->{$resource_id} } .
               ", '" . $resources_info->{$resource_id}{next_finaud_decision} . "'),";
+	    $resources_to_actually_update = $resources_to_actually_update . $resource_id . ", ";
             $insert_values =
               $insert_values .
               "(" . $resource_id . ", " . "'state', '" . $resources_to_change->{$resource_id} .
@@ -6656,6 +6659,7 @@ sub set_resources_state($$$$$) {
     }
 
     chop($update_values);
+    chop($resources_to_actually_update);
     chop($insert_values);
 
     if ($need_update eq 1) {
@@ -6673,7 +6677,7 @@ sub set_resources_state($$$$$) {
                     WHERE
                         date_stop = 0
                         AND attribute = \'state\'
-                        AND resource_id IN " . "(" . join(", ", keys(%$resources_to_change)) . ")");
+                        AND resource_id IN " . "(" . $resources_to_actually_update  . ")");
         $dbh->do(
             "  INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
                     VALUES " . $insert_values . "
@@ -10083,6 +10087,55 @@ sub inserts_from_file($$$) {
     $dbh->do($query);
 }
 
+sub get_stats($) {
+    my $dbh      = shift;
+
+    my $pid = $$;  # Current process ID
+
+    # Read the contents of /proc/pid/stat
+    open my $stat_fh, '<', "/proc/$pid/stat" or die "Cannot open /proc/$pid/stat: $!";
+    my $stat_line = <$stat_fh>;
+    close $stat_fh;
+
+    # Extract cutime and cstime from the stat line
+    my ($utime, $stime, $cutime, $cstime) = (split ' ', $stat_line)[13, 14, 15, 16];
+
+    # Convert clock ticks to seconds
+    my $clock_ticks_per_second = sysconf( &POSIX::_SC_CLK_TCK );
+    my $user_seconds = $utime / $clock_ticks_per_second;
+    my $system_seconds = $stime / $clock_ticks_per_second;
+    my $cumulative_user_seconds = $cutime / $clock_ticks_per_second;
+    my $cumulative_system_seconds = $cstime / $clock_ticks_per_second;
+
+
+    my $transactions;
+    if ($Db_type eq "mysql") {
+        $transactions = 0; # unsupported AFAIK
+    } else {
+        my $dbname = get_conf("DB_BASE_NAME");
+        my $query = "SELECT xact_commit FROM pg_stat_database WHERE datname = '$dbname'";
+        my $sth = $dbh->prepare($query);
+        $sth->execute();
+        my $result = $sth->fetchrow_hashref;
+        $transactions = $result->{xact_commit};
+    }
+    return (time(), $user_seconds, $system_seconds, $cumulative_user_seconds, $cumulative_system_seconds, $transactions);
+}
+
+sub format_stats(\@\@) {
+   my @start = shift;
+   my @end = shift;
+   my ($time, $usec, $ssec, $cusec, $cssec, $trans) = array_substract(@end, @start);
+   return "elapsed:${time}s user:${usec}s sys:${ssec}s child_user:${cusec}s child_sys:${cssec}s ; approx ${trans} DB transactions";
+}
+
+sub array_substract (\@\@) {
+   my $a_ref = shift; my $b_ref = shift;
+   my @a = @{$a_ref}; my @b = @{$b_ref};
+   my @result = map { $a[$_] - $b[$_] } 0 .. $#a;
+   return @result;
+}
+
 # Return the difference between two arrays
 # arg: array ; example: ('Error', 'Hold')
 sub array_minus(\@@) {
@@ -10141,8 +10194,8 @@ sub manage_remote_commands($$$$$$$$$) {
             push(@node_commands,      $cmd);
             push(@node_corresponding, $n);
         }
-        my @bad_tmp =
-          sentinelle(10, get_ssh_timeout(), \@node_commands, $string_to_transfer, $base);
+        my @bad_tmp = OAR::Tools::sentinelle(10, OAR::Tools::get_ssh_timeout(),
+            \@node_commands, $string_to_transfer, $base);
         foreach my $b (@bad_tmp) {
             push(@bad, $node_corresponding[$b]);
         }
@@ -10224,7 +10277,7 @@ sub manage_remote_commands($$$$$$$$$) {
             if (defined($pid)) {
 
                 # Kill all taktuk children
-                my ($children, $cmd_name) = get_one_process_children($pid);
+                my ($children, $cmd_name) = OAR::Tools::get_one_process_children($pid);
                 kill(9, @{$children});
             }
         }

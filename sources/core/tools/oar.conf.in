@@ -786,7 +786,7 @@ CPUSET_PATH="/oar"
 # Command to get a process cpuset
 # If unset, OAR (oarsh) will read /proc/self/cpuset.
 #GET_CURRENT_CPUSET_CMD="cat /proc/self/cpuset"
-#GET_CURRENT_CPUSET_CMD="sed -e 's@^/oardocker/node[^/]\+\(/oar/[^/]\+\)/.\+@\1@' /proc/self/cpuset"
+#GET_CURRENT_CPUSET_CMD="sed -e 's@^/oardocker/node[^/]\+\(/oar/[^/]\+\)\(/.\+\)\?@\1@' /proc/self/cpuset"
 # Configuration for module: user, api, node
 
 # Name of the perl script the retrieve monitoring data from compute nodes.
