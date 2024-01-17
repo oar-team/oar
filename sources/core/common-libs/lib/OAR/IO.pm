@@ -6616,7 +6616,7 @@ sub set_resources_state($$$$$) {
               $update_values . "(" . $resource_id . ", '" . $resources_to_change->{$resource_id} .
               "', " . $State_to_num{ $resources_to_change->{$resource_id} } .
               ", '" . $resources_info->{$resource_id}{next_finaud_decision} . "'),";
-	    $resources_to_actually_update = $resources_to_actually_update . $resource_id . ", ";
+	    $resources_to_actually_update = $resources_to_actually_update . $resource_id . ",";
             $insert_values =
               $insert_values .
               "(" . $resource_id . ", " . "'state', '" . $resources_to_change->{$resource_id} .
