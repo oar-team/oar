@@ -27,11 +27,13 @@ stages:
 build-stretch: &build-stretch
   <<: *build
   script:
+    - echo "deb http://archive.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list
+    - echo "deb http://archive.debian.org/debian/ stretch-backports main contrib non-free" >> /etc/apt/sources.list
     - apt-get update && apt-get -y install debhelper -t stretch-backports
     - *build_script
   variables:
     TARGETDIR: "stretch"
-  image: debian:stretch-backports
+  image: debian:stretch
   artifacts: # generate artifacts for files we want to publish
      paths:
       - stretch
