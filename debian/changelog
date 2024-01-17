@@ -14,7 +14,7 @@ oar (2.5.10~g5k30-1) unstable; urgency=medium
     * a1c69dd0 [drawgantt-svg] Fixes for PHP 8
     * 0a0a4d1b [oarsh] Fix workaround for oardocker to find the job cgroup
 
- -- Luke Bertot <luke.bertot@inria.fr> Web, 17 Jan 2024 10:10:00 +0100
+ -- Luke Bertot <luke.bertot@inria.fr>  Wed, 17 Jan 2024 10:10:00 +0100
 
 oar (2.5.10~g5k29-1) unstable; urgency=medium
 
