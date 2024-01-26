@@ -10126,6 +10126,7 @@ sub format_stats(\@\@) {
    my @start = shift;
    my @end = shift;
    my ($time, $usec, $ssec, $cusec, $cssec, $trans) = array_substract(@end, @start);
+   my ($time, $usec, $ssec, $cusec, $cssec) = map sprintf("%.2f",$_), ($time, $usec, $ssec, $cusec, $cssec);
    return "elapsed:${time}s user:${usec}s sys:${ssec}s child_user:${cusec}s child_sys:${cssec}s ; approx ${trans} DB transactions";
 }
 
@@ -10143,6 +10144,70 @@ sub array_minus(\@@) {
     my @b = @_;
     my %e = map { $_ => undef } @b;
     return grep(!exists($e{$_}), @$a);
+}
+
+
+sub get_count_jobs_active_queues($){
+    my $dbh         = shift;
+    my @queues      = get_active_queues($dbh);
+    my $queue_names = join ',', map "\'$_->[0]\'", @queues;
+    my @states      = ( "Running", "Waiting" );
+    my @reservations = ( "None", "Scheduled" );
+
+
+    my $req = <<EOS;
+SELECT queue_name,state,reservation,COUNT(job_id)
+FROM jobs
+WHERE state IN (\'Running\',\'Waiting\')
+AND queue_name IN ( $queue_names )
+GROUP BY state,reservation,queue_name
+ORDER BY queue_name,state
+EOS
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+    my %res = ();
+    foreach my $queue (@queues){
+        foreach ( "Running", "Waiting", "Waiting(NoSched)" ){
+            $res{$queue->[0]}{$_} = 0;
+        }
+    }
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $res{$ref->{'queue_name'}}{$ref->{'state'}}+=$ref->{'count'};
+        if (($ref->{'state'} eq 'Waiting') and ($ref->{'reservation'} eq 'None')) {
+            $res{$ref->{'queue_name'}}{'Waiting(NoSched)'}+=$ref->{'count'};
+        }
+    }
+    $sth->finish();
+    return (%res);
+
+}
+
+sub format_count_jobs_active_queue(%) {
+    my %job_counts = @_;
+    my @res = ();
+
+    foreach my $queue (sort keys %job_counts){
+        my $counts = "Jobs counts in: ". $queue ."=>";
+        foreach my $group (sort keys %{$job_counts{$queue}}) {
+            $counts .= $group . ":" . $job_counts{$queue}{$group} . ",";
+        }
+        chop($counts);
+        push @res, $counts;
+    }
+    return @res;
+}
+
+sub format_count_jobs_of_queue($%) {
+    my $queue      = shift();
+    my %job_counts = @_;
+    my $res        = "";
+
+    foreach my $group (sort keys %{$job_counts{$queue}}) {
+        $res .= $group . ":" . $job_counts{$queue}{$group} . ",";
+    }
+    chop($res);
+    return $res;
 }
 
 # Return an array without the duplicates
