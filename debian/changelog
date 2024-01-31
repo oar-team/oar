@@ -1,3 +1,10 @@
+oar (2.5.10~g5k31-1) unstable; urgency=medium
+
+  * 80fd9f55 [oarsub] Ignore TSTP (^z) signal
+  * 10a92167 [IO][meta_sched] Added number of jobs runnin,waiting, and no-reservation+waiting to log
+
+ -- Luke Bertot <luke.bertot@inria.fr>  Wed, 31 Jan 2024 14:22:09 +0100
+
 oar (2.5.10~g5k30-2) unstable; urgency=medium
 
   * 8e38cb28 [IO] Fixed bug in the closing of resource logs.
