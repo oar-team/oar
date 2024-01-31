@@ -106,6 +106,12 @@ my $Walltime_change_enabled = uc(get_conf_with_default_param("WALLTIME_CHANGE_EN
 oar_info($Module_name, "Starting Meta Scheduler\n", $Session_id);
 my @stats_start = OAR::IO::get_stats($base);
 
+my %start_job_counts = OAR::IO::get_count_jobs_active_queues($base_ro);
+my @job_count_logs = OAR::IO::format_count_jobs_active_queue(%start_job_counts);
+foreach (@job_count_logs){
+oar_info($Module_name,$_ . "\n",$Session_id);
+}
+
 ###########################################################################################################
 # Handle walltime change requests                                                                              #
 ###########################################################################################################
@@ -1526,7 +1532,8 @@ foreach my $queue (@queues) {
 
         my @stats_queue_end = OAR::IO::get_stats($base);
         my $stats_queue_str = OAR::IO::format_stats(@stats_queue_start, @stats_queue_end);
-        oar_info($Module_name, "End of processing for Queue $name ($stats_queue_str)\n", $Session_id);
+        my $start_queue_count_str = OAR::IO::format_count_jobs_of_queue($name,%start_job_counts);
+        oar_info($Module_name, "End of processing for Queue $name ($stats_queue_str ; $start_queue_count_str)\n", $Session_id);
 
     } else {
         oar_info($Module_name, "Queue $name: No job\n", $Session_id);
