@@ -10126,7 +10126,7 @@ sub format_stats(\@\@) {
    my @start = shift;
    my @end = shift;
    my ($time, $usec, $ssec, $cusec, $cssec, $trans) = array_substract(@end, @start);
-   my ($time, $usec, $ssec, $cusec, $cssec) = map sprintf("%.2f",$_), ($time, $usec, $ssec, $cusec, $cssec);
+   ($time, $usec, $ssec, $cusec, $cssec) = map sprintf("%.2f",$_), ($time, $usec, $ssec, $cusec, $cssec);
    return "elapsed:${time}s user:${usec}s sys:${ssec}s child_user:${cusec}s child_sys:${cssec}s ; approx ${trans} DB transactions";
 }
 
