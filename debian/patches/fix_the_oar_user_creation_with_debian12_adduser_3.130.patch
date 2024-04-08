@@ -1,0 +1,24 @@
+[setup] Fix the oar user creation with Debian12 (adduser > 3.130)
+
+Backported from upstream 2.5.10
+
+adduser >= 3.130 changes to way adduser's --disabled-(login|password) options work.
+Need to force the "disabled password flag to '*' instead of '!', so that ssh connection are allowed.
+
+From: Pierre Neyron <pierre.neyron@free.fr>
+
+diff --git a/setup/common.sh.in b/setup/common.sh.in
+index a2eef6f7..bbfdf74e 100644
+--- a/setup/common.sh.in
++++ b/setup/common.sh.in
+@@ -30,6 +30,10 @@ create_oar_user() {
+                         --no-create-home \
+                         --disabled-password \
+                         ${OAROWNER} 2>/dev/null || true
++                # Force the "disabled password flag to '*' instead of '!'.
++                # Required in Debian12 (adduser >= 3.130), which changes to way
++                # adduser's --disabled-(login|password) options work.
++                usermod -p '*' ${OAROWNER} || true
+                 ;;
+             *)
+                 useradd --system \
