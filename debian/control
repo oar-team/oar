@@ -194,6 +194,7 @@ Depends: ${misc:Depends},
          libtie-ixhash-perl,
          libappconfig-perl,
          libsort-naturally-perl,
+         libcgi-fast-perl,
          php,
          php-mysql | php-pgsql
 Suggests: oar-doc
