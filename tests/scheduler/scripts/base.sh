@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 # function set for the test base setup
 
 DEBUG=${DEBUG:-0}

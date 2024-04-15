@@ -29,7 +29,6 @@
 ##  > print "toto = ".get_conf("toto")."\n" if is_conf("toto");
 ##
 ###############################################################################
-# $Id$
 */
 #include <iostream>
 #include <fstream>

@@ -164,9 +164,9 @@ exit(0);
 
 # connect_archive
 # Connects to archive database and returns the base identifier
-# parameters : /
-# return value : base
-# side effects : opens a connection to the archive base specified in ConfLib
+# parameters: /
+# return value: base
+# side effects: opens a connection to the archive base specified in ConfLib
 sub connect_archive() {
     # Connects to the archive database.
     my $dbh = undef;
@@ -203,7 +203,7 @@ sub connect_archive() {
 
 # connect_db
 # Connects to database and returns the base identifier
-# return value : base
+# return value: base
 sub connect_db($$$$$) {
     my $host = shift;
     my $name = shift;
@@ -230,7 +230,7 @@ sub connect_db($$$$$) {
     my $dbh = DBI->connect("DBI:$type:database=$name;host=$host", $user, $pwd, {'InactiveDestroy' => 1, 'PrintError' => $printerror});
     
     if (!defined($dbh)){
-        warning("Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name) : $DBI::errstr\n");
+        warning("Cannot connect to database (type=$Db_type, host=$host, user=$user, database=$name): $DBI::errstr\n");
         if ($Timeout_db_connection < $Max_db_connection_timeout){
             $Timeout_db_connection += 2;
         }
@@ -244,9 +244,9 @@ sub connect_db($$$$$) {
 
 # connect_oar
 # Connects to database and returns the base identifier
-# parameters : /
-# return value : base
-# side effects : opens a connection to the base specified in ConfLib
+# parameters: /
+# return value: base
+# side effects: opens a connection to the base specified in ConfLib
 sub connect_oar() {
     # Connects to the OAR database.
     my $dbh = undef;
@@ -278,9 +278,9 @@ sub connect_oar() {
 
 ## disconnect
 # Disconnect from database
-# parameters : base
-# return value : /
-# side effects : closes a previously opened connection to the specified base
+# parameters: base
+# return value: /
+# side effects: closes a previously opened connection to the specified base
 sub disconnect($) {
     my $dbh = shift;
 
@@ -291,8 +291,8 @@ sub disconnect($) {
 
 ## execute_maxid_query
 # Execute a query to obtain a MAX ID and return the result
-# parameters : base, request
-# return value : The MAX_ID
+# parameters: base, request
+# return value: The MAX_ID
 sub execute_maxid_query( $ $) {
 	my $dbh = shift;
 	my $sql = shift;
@@ -318,8 +318,8 @@ sub get_conf ( $ ) {
 
 ## get_max_id
 # Gets the max ID
-# parameters : base, table, field name
-# return value : max ID
+# parameters: base, table, field name
+# return value: max ID
 sub get_max_id( $ $ $ ){
 	my $dbh = shift;
 	my $table = shift;
@@ -338,8 +338,8 @@ sub get_max_id( $ $ $ ){
 
 ## get_max_job_id
 # Gets the max job ID with state terminated or error (without others states in)
-# parameters : base
-# return value : max job ID
+# parameters: base
+# return value: max job ID
 sub get_max_job_id ( $ ) {
 	my $dbh = shift;
 	my $sth = $dbh->prepare("
@@ -359,8 +359,8 @@ sub get_max_job_id ( $ ) {
 
 ## get_number_rows
 # Retrieves number of rows to archive
-# parameters : base, query
-# return value : number of rows
+# parameters: base, query
+# return value: number of rows
 sub get_number_rows ( $ $ ) {
 	my $dbh = shift;
 	my $sql = shift;
@@ -372,8 +372,8 @@ sub get_number_rows ( $ $ ) {
 
 ## get_tables_list
 # Retrieves the tables list in specified database
-# parameters : base
-# return value : a reference on the array containing the tables list
+# parameters: base
+# return value: a reference on the array containing the tables list
 sub get_tables_list ( $ ) {
 	my $dbh = shift;
 	my @table_list = ();
@@ -387,9 +387,9 @@ sub get_tables_list ( $ ) {
 
 
 ## get_time_to_log
-# Returns the current date formated like : [08 Sep 11 14:47:09.829]
-# parameters : -
-# return value : the current date formated
+# Returns the current date formated like: [08 Sep 11 14:47:09.829]
+# parameters: -
+# return value: the current date formated
 sub get_time_to_log (){
 	my ($seconds, $microseconds) = gettimeofday();
 	$microseconds = int($microseconds / 1000);
@@ -516,7 +516,7 @@ sub launch_archiving {
 			$str = "Archive table \"$table\"\n";
 			info($str);
 			write_log($str);
-			debug("Couple table/primary_key : \"$table\"->$hash_table_to_archive{$table}\n");
+			debug("Couple table/primary_key: \"$table\"->$hash_table_to_archive{$table}\n");
 			
 			## Gets the max tuple to archive according to the table 
 			## Depends on the MAX JOB ID.
@@ -535,7 +535,7 @@ sub launch_archiving {
 						where $table.moldable_job_id = moldable_job_descriptions.moldable_id 
 						and moldable_job_descriptions.moldable_job_id = jobs.job_id
 						and jobs.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
@@ -543,7 +543,7 @@ sub launch_archiving {
 					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
 						FROM $table 
 						where $table.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
@@ -551,7 +551,7 @@ sub launch_archiving {
 					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
 						FROM $table 
 						where $table.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last;
 					};
@@ -560,7 +560,7 @@ sub launch_archiving {
 						FROM $table, event_logs 
 						where $table.event_id = event_logs.event_id 
 						and event_logs.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
@@ -569,7 +569,7 @@ sub launch_archiving {
 						FROM $table, jobs 
 						where $table.file_id = jobs.file_id 
 						and jobs.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
@@ -577,12 +577,12 @@ sub launch_archiving {
 					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
 						FROM $table 
 						where $table.frag_id_job <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
 				/jobs/ && do {	
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $maxJobId)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $maxJobId)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$maxJobId." ";
 					last; 
 					};
@@ -591,7 +591,7 @@ sub launch_archiving {
 						FROM $table, jobs 
 						where $table.job_id = jobs.job_id
 						and jobs.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
@@ -602,7 +602,7 @@ sub launch_archiving {
 						and job_resource_groups.res_group_moldable_id = moldable_job_descriptions.moldable_id 
 						and moldable_job_descriptions.moldable_job_id = jobs.job_id
 						and jobs.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
@@ -612,7 +612,7 @@ sub launch_archiving {
 						where $table.res_group_moldable_id = moldable_job_descriptions.moldable_id 
 						and moldable_job_descriptions.moldable_job_id = jobs.job_id
 						and jobs.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
@@ -621,7 +621,7 @@ sub launch_archiving {
 						FROM $table, jobs 
 						where $table.job_id = jobs.job_id
 						and jobs.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
@@ -629,7 +629,7 @@ sub launch_archiving {
 					$max_table_id_to_archive = execute_maxid_query($base, "SELECT max( $table.$hash_table_to_archive{$table} ) MAX_ID 
 						FROM $table 
 						where $table.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
@@ -638,7 +638,7 @@ sub launch_archiving {
 						FROM $table, jobs 
 						where $table.moldable_job_id = jobs.job_id
 						and jobs.job_id <= $maxJobId");
-					debug("Max ID to archive in \'$table\' : ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
+					debug("Max ID to archive in \'$table\': ($hash_table_to_archive{$table} = $max_table_id_to_archive)\n");
 					$where_clause .= " AND ".$hash_table_to_archive{$table}."<=".$max_table_id_to_archive." ";
 					last; 
 					};
@@ -776,7 +776,7 @@ sub launch_archiving {
 ##
 sub print_list_table {
 	my $i=0;
-	print "\nTables to archive :\n";
+	print "\nTables to archive:\n";
 	foreach my $table (keys(%hash_table_to_archive)){
 		$i++;
 		print"\t- $table\n";
@@ -829,8 +829,8 @@ sub print_version {
 ##
 sub info {
     PRINT_ERROR_THEN_EXIT( '[' . (caller(0))[3] . '] missing text argument') unless @_;
-    #my $prefix = $_[1] ? $_[1] : '=>';
-    my $prefix = $_[1] ? $_[1] : '*';
+    #my $prefix = $_[1] ? $_[1]: '=>';
+    my $prefix = $_[1] ? $_[1]: '*';
     print "$prefix $_[0]" unless $QUIET;
 }
 
@@ -903,8 +903,8 @@ sub warning {
 
 ## write_log
 # Writes output text into the log file
-# parameters : string to write
-# return value : -
+# parameters: string to write
+# return value: -
 sub write_log( $ ) {
 	my $str = shift;
 	if (open(LOG,">>$log_file")){

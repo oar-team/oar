@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 # notify Almighty
 
 use strict;
@@ -11,7 +10,7 @@ use OAR::Version;
 use OAR::Tools;
 use OAR::IO;
 
-my $Old_umask = sprintf("%lo",umask());
+my $Old_umask = sprintf("%lo", umask());
 umask(oct("022"));
 
 init_conf($ENV{OARCONFFILE});
@@ -28,23 +27,26 @@ my $Enable_all;
 my $Disable_all;
 my $List_queues;
 my $sos;
-GetOptions ("version|V" => \$Version,
-            "enable-queue|e=s" => \@Enable_queue,
-            "disable-queue|d=s" => \@Disable_queue,
-            "Enable-all-queues|E" => \$Enable_all,
-            "Disable-all-queues|D" => \$Disable_all,
-            "add-queue=s" => \@Add_queue,
-            "remove-queue=s" => \@Remove_queue,
-            "list-queues|l" => \$List_queues,
-            "enable_queue=s" => \@Enable_queue,
-            "disable_queue=s" => \@Disable_queue,
-            "Enable_all_queues" => \$Enable_all,
-            "Disable_all_queues" => \$Disable_all,
-            "add_queue=s" => \@Add_queue,
-            "remove_queue=s" => \@Remove_queue,
-            "list_queues" => \$List_queues,
-            "help|h" => \$sos
-           ) or exit(1);
+GetOptions(
+    "version|V"            => \$Version,
+    "enable-queue|e=s"     => \@Enable_queue,
+    "disable-queue|d=s"    => \@Disable_queue,
+    "Enable-all-queues|E"  => \$Enable_all,
+    "Disable-all-queues|D" => \$Disable_all,
+    "add-queue=s"          => \@Add_queue,
+    "remove-queue=s"       => \@Remove_queue,
+    "list-queues|l"        => \$List_queues,
+    "enable_queue=s"       => \@Enable_queue,
+    "disable_queue=s"      => \@Disable_queue,
+    "Enable_all_queues"    => \$Enable_all,
+    "Disable_all_queues"   => \$Disable_all,
+    "add_queue=s"          => \@Add_queue,
+    "remove_queue=s"       => \@Remove_queue,
+    "list_queues"          => \$List_queues,
+    "help|h"               => \$sos
+  ) or
+  exit(1);
+
 # Display command help
 sub usage {
     print <<EOS;
@@ -66,56 +68,56 @@ EOS
     exit(1);
 }
 
-if (defined($sos)){
+if (defined($sos)) {
     usage();
     exit(0);
 }
 
-if (defined($Version)){
-    print("OAR version : ".OAR::Version::get_version()."\n");
+if (defined($Version)) {
+    print("OAR version: " . OAR::Version::get_version() . "\n");
     exit(0);
 }
 
 my $base = OAR::IO::connect();
 
-foreach my $q (@Add_queue){
-    my ($queue,$priority,$scheduler) = split(',',$q);
-    if (defined($queue)){
-        $priority = 0 if (!defined($priority));
+foreach my $q (@Add_queue) {
+    my ($queue, $priority, $scheduler) = split(',', $q);
+    if (defined($queue)) {
+        $priority  = 0                                  if (!defined($priority));
         $scheduler = "oar_sched_gantt_with_timesharing" if (!defined($scheduler));
         print("Add queue $queue with the priority $priority and the scheduler $scheduler.\n");
-        OAR::IO::create_a_queue($base,$queue,$scheduler,$priority);
+        OAR::IO::create_a_queue($base, $queue, $scheduler, $priority);
     }
 }
 
-foreach my $q (@Remove_queue){
+foreach my $q (@Remove_queue) {
     print("Remove queue $q.\n");
-    OAR::IO::delete_a_queue($base,$q);
+    OAR::IO::delete_a_queue($base, $q);
 }
 
-foreach my $q (@Enable_queue){
+foreach my $q (@Enable_queue) {
     print("Enable queue $q.\n");
-    OAR::IO::start_a_queue($base,$q);
+    OAR::IO::start_a_queue($base, $q);
 }
 
-foreach my $q (@Disable_queue){
+foreach my $q (@Disable_queue) {
     print("Disable queue $q.\n");
-    OAR::IO::stop_a_queue($base,$q);
+    OAR::IO::stop_a_queue($base, $q);
 }
 
-if (defined($Enable_all)){
+if (defined($Enable_all)) {
     OAR::IO::start_all_queues($base);
     print("Enable all queues.\n");
 }
 
-if (defined($Disable_all)){
+if (defined($Disable_all)) {
     OAR::IO::stop_all_queues($base);
     print("Disable all queues.\n");
 }
 
-if (defined($List_queues)){
+if (defined($List_queues)) {
     my %queues = OAR::IO::get_all_queue_informations($base);
-    foreach my $q (keys(%queues)){
+    foreach my $q (keys(%queues)) {
         print("$q\n");
         print("\tpriority = $queues{$q}->{priority}\n");
         print("\tscheduler = $queues{$q}->{scheduler_policy}\n");
@@ -126,11 +128,12 @@ if (defined($List_queues)){
 OAR::IO::disconnect($base);
 
 my $tag = "Term";
-if (defined($ARGV[0])){
+if (defined($ARGV[0])) {
     $tag = $ARGV[0];
 }
+
 #print("tag = $tag\n");
 
-OAR::Tools::notify_tcp_socket($remote_host,$remote_port,"$tag");
+OAR::Tools::notify_tcp_socket($remote_host, $remote_port, "$tag");
 
 exit(0);

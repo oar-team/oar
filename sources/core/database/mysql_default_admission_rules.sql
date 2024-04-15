@@ -1,5 +1,4 @@
 # Default admission rules for OAR 2
-# $Id$
 
 # Specify the default value for queue parameter
 INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (1, 'YES', '# Set default queue is no queue is set
@@ -75,8 +74,33 @@ if ((grep(/^besteffort$/, @{$type_list})) and ($reservationField ne "None")){
 }
 ');
 
+# A advance-reservation inner job requires an advance-reservation container
+INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (8, 'YES', '# An advance-reservation inner job requires an advance-reservation container
+my %type_hash = map { my ($k,$v) = /^([^=]+)(?:=(.+))?$/; $k => $v } @$type_list;
+
+if (exists($type_hash{inner})) {
+    my $sth = $dbh->prepare("SELECT reservation
+                             FROM jobs
+                             WHERE
+                                 job_id = $type_hash{inner} AND
+                                 state IN(\\'Waiting\\',\\'Hold\\',\\'toLaunch\\',\\'toAckReservation\\',
+                                          \\'Launching\\',\\'Running\\',\\'Suspended\\',\\'Resuming\\') 
+                            ");
+    $sth->execute();
+    my ($container_reservation) = $sth->fetchrow_array();
+
+    if (defined($container_reservation)) {
+        if ($container_reservation eq "None" and not $reservationField eq "None") {
+            die("[ADMISSION RULE] Error: an advance-reservation inner job requires the container to be an advance reservation as well.\\n");
+        }
+    } else {
+        die("[ADMISSION RULE] Error: inner job is requesting an invalid container id.\\n");
+    }
+}
+');
+
 # Force deploy jobs to go on resources with the deploy property
-INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (8, 'YES', '# Tie the deploy job type and resource property together
+INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (9, 'YES', '# Tie the deploy job type and resource property together
 if (grep(/^deploy$/, @{$type_list})){
     if ($jobproperties ne ""){
         $jobproperties = "($jobproperties) AND deploy = \\\'YES\\\'";
@@ -87,7 +111,7 @@ if (grep(/^deploy$/, @{$type_list})){
 ');
 
 # Prevent deploy type jobs on non-entire nodes
-INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (9, 'YES', '# Restrict allowed properties for deploy jobs to force requesting entire nodes
+INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (10, 'YES', '# Restrict allowed properties for deploy jobs to force requesting entire nodes
 my @bad_resources = ("cpu","core","thread","resource_id",);
 if (grep(/^deploy$/, @{$type_list})){
     foreach my $mold (@{$ref_resource_list}){
@@ -105,7 +129,7 @@ if (grep(/^deploy$/, @{$type_list})){
 ');
 
 # Force desktop_computing jobs to go on nodes with the desktop_computing property
-INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (10, 'YES', '# Tie desktop computing job type and resource property together
+INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (11, 'YES', '# Tie desktop computing job type and resource property together
 if (grep(/^desktop_computing$/, @{$type_list})){
     print("[ADMISSION RULE] Added automatically desktop_computing resource constraints\\n");
     if ($jobproperties ne ""){
@@ -124,7 +148,7 @@ if (grep(/^desktop_computing$/, @{$type_list})){
 
 # Limit the number of reservations that a user can do.
 # (overrided on user basis using the file: ~oar/unlimited_reservation.users)
-INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (11, 'YES', '# Limit the number of advance reservations per user
+INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (12, 'YES', '# Limit the number of advance reservations per user
 if ($reservationField eq "toSchedule") {
     my $unlimited=0;
     if (open(FILE, "< $ENV{HOME}/unlimited_reservation.users")) {
@@ -155,7 +179,7 @@ if ($reservationField eq "toSchedule") {
 ');
 
 # Example of how to perform actions given usernames stored in a file
-INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (12, 'NO', '# Example of how to perform actions given usernames stored in a file
+INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (13, 'NO', '# Example of how to perform actions given usernames stored in a file
 open(FILE, "/tmp/users.txt");
 while (($queue_name ne "admin") and ($_ = <FILE>)){
     if ($_ =~ m/^\\s*$user\\s*$/m){
@@ -167,7 +191,7 @@ close(FILE);
 ');
 
 # Limit walltime for interactive jobs
-INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (13, 'YES', '# Limit the walltime for interactive jobs
+INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (14, 'YES', '# Limit the walltime for interactive jobs
 my $max_walltime = OAR::IO::sql_to_duration("12:00:00");
 if (($jobType eq "INTERACTIVE") and ($reservationField eq "None")){ 
     foreach my $mold (@{$ref_resource_list}){
@@ -180,7 +204,7 @@ if (($jobType eq "INTERACTIVE") and ($reservationField eq "None")){
 ');
 
 # specify the default walltime if it is not specified
-INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (14, 'YES', '# Set the default walltime is not specified
+INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (15, 'YES', '# Set the default walltime is not specified
 my $default_wall = OAR::IO::sql_to_duration("2:00:00");
 foreach my $mold (@{$ref_resource_list}){
     if (!defined($mold->[1])){
@@ -191,7 +215,7 @@ foreach my $mold (@{$ref_resource_list}){
 ');
 
 # Check if types given by the user are right
-INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (15, 'YES', '# Check if job types are valid
+INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (16, 'YES', '# Check if job types are valid
 my @types = (
     qr/^container(?:=\\w+)?$/,                 qr/^deploy(?:=standby)?$/,
     qr/^desktop_computing$/,                   qr/^besteffort$/,
@@ -200,6 +224,7 @@ my @types = (
     qr/^inner=\\w+$/,                          qr/^timesharing=(?:(?:\\*|user),(?:\\*|name)|(?:\\*|name),(?:\\*|user))$/,
     qr/^token\\:\\w+\\=\\d+$/,                 qr/^noop(?:=standby)?$/,
     qr/^(?:postpone|deadline|expire)=\\d\\d\\d\\d-\\d\\d-\\d\\d(?:\\s+\\d\\d:\\d\\d(?::\\d\\d)?)?$/,
+    qr/^state=permissive$/,
 );
 foreach my $t ( @{$type_list} ) {
     my $match = 0;
@@ -215,7 +240,7 @@ foreach my $t ( @{$type_list} ) {
 ');
 
 # If resource types are not specified, then we force them to default
-INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (16, 'YES', '# Set resource type to default if not specified
+INSERT IGNORE INTO admission_rules (priority, enabled, rule) VALUES (17, 'YES', '# Set resource type to default if not specified
 foreach my $mold (@{$ref_resource_list}){
     foreach my $r (@{$mold->[0]}){
         my $prop = $r->{property};
@@ -230,4 +255,3 @@ foreach my $mold (@{$ref_resource_list}){
 }
 print("[ADMISSION RULE] Modify resource description with type constraints\\n");
 ');
-

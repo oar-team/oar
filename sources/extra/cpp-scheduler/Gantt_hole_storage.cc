@@ -19,7 +19,6 @@
 #include <time.h>
 
 
-// # $Id$
 // package Gantt_hole_storage;
 // require Exporter;
 // use OAR::Schedulers::ResourceTree;

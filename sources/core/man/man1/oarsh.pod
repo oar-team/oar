@@ -2,7 +2,7 @@
 
 oarsh - remote shell connector for OAR batch scheduler.
 
-oarcp - oarsh compagnon to copy files from a node or to a node.
+oarcp - oarsh companion to copy files from a node or to a node.
 
 =head1 SYNOPSIS
 

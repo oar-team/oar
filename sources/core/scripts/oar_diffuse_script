@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 
 # diffuse command on each nodes
 # Script is run under uid of oar who is sudo

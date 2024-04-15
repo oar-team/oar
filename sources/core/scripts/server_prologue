@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 #
 # This a placeholder script for OAR jobs server side prologue.
 # This script is to be run on OAR server upon job start.

@@ -12,7 +12,7 @@ build: build_shared
 uninstall: uninstall_shared
 	# Nothing to do
 
-install: install_shared 
+install: install_shared
 	install -d $(DESTDIR)/usr/share/oar-keyring
 	install -m 0644 misc/apt_keyring/oar.gpg $(DESTDIR)/usr/share/oar-keyring
 	install -m 0644 misc/apt_keyring/oarmaster.gpg $(DESTDIR)/usr/share/oar-keyring

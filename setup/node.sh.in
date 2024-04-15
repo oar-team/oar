@@ -1,5 +1,5 @@
 install_ssh_host_keys() {
-    if [ ! -r ${OARCONFDIR}/oar_ssh_host_rsa_key ]; then 
+    if [ ! -r ${OARCONFDIR}/oar_ssh_host_rsa_key ]; then
         rm -f ${OARCONFDIR}/oar_ssh_host_rsa_key.pub
 
         if [ -e "${ETCDIR}/ssh/ssh_host_rsa_key" ]; then
@@ -7,16 +7,16 @@ install_ssh_host_keys() {
                 ${ETCDIR}/ssh/ssh_host_rsa_key \
                 ${OARCONFDIR}/oar_ssh_host_rsa_key \
                 0600
-        
+
             install_if_not_exist \
                 ${ETCDIR}/ssh/ssh_host_rsa_key.pub \
-                ${OARCONFDIR}/oar_ssh_host_rsa_key.pub 
+                ${OARCONFDIR}/oar_ssh_host_rsa_key.pub
         fi
 
     fi
 
-    if [ ! -r ${OARCONFDIR}/oar_ssh_host_dsa_key ]; then 
-        rm -f ${OARCONFDIR}/oar_ssh_host_dsa_key.pub 
+    if [ ! -r ${OARCONFDIR}/oar_ssh_host_dsa_key ]; then
+        rm -f ${OARCONFDIR}/oar_ssh_host_dsa_key.pub
 
         if [ -e "${ETCDIR}/ssh/ssh_host_dsa_key" ]; then
             install_if_not_exist \
@@ -27,7 +27,7 @@ install_ssh_host_keys() {
             install_if_not_exist \
                 ${ETCDIR}/ssh/ssh_host_dsa_key.pub \
                 ${OARCONFDIR}/oar_ssh_host_dsa_key.pub
-        fi 
+        fi
     fi
 
     if [ ! "-d ${VARLIBDIR}/oar/.ssh/id_rsa" ] && [ ! "-d ${VARLIBDIR}/oar/.ssh/id_dsa" ]; then
@@ -37,7 +37,7 @@ install_ssh_host_keys() {
     ########
     #   You need to install the ssh keys (private and public) of the oar user
     #   into ${VARLIBDIR}/oar/.ssh.
-    #   A common way is to copy the entire .ssh directory from the server on 
+    #   A common way is to copy the entire .ssh directory from the server on
     #   all the nodes of your cluster.
     ##########################################################################
     "
@@ -46,10 +46,15 @@ install_ssh_host_keys() {
 
 node_setup() {
     install_conffile \
+        ${SHAREDIR}/oar-node-service \
+        ${OARCONFDIR}/oar-node-service \
+        0755
+
+    install_conffile \
         ${SHAREDIR}/epilogue \
         ${OARCONFDIR}/epilogue \
         0755
-    
+
     install_conffile \
         ${SHAREDIR}/prologue \
         ${OARCONFDIR}/prologue \

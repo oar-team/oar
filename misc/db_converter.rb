@@ -1,5 +1,4 @@
 #!/usr/bin/ruby 
-# $Id$
 # db_converter is a simple oar converter from 1.6 table schema to 2.0  
 #
 #####################################################

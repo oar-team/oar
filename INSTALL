@@ -170,7 +170,7 @@ _____________________________
         yum install gcc make tar python-docutils
 
         # Common dependencies
-        yum install Perl Perl-base openssh Perl-DBI perl-Sort-Versions
+        yum install Perl Perl-base openssh Perl-DBI perl-Sort-Versions perl-Capture-Tiny
 
         # MySQL dependencies
         yum install mysql-server mysql perl-DBD-MySQL
@@ -184,7 +184,7 @@ _____________________________
           apt-get install gcc make tar python-docutils
 
           # Common dependencies
-          apt-get install perl perl-base openssh-client openssh-server libdbi-perl libsort-versions-perl
+          apt-get install perl perl-base openssh-client openssh-server libdbi-perl libsort-versions-perl libcapture-tiny-perl
 
           # MySQL dependencies
           apt-get install mysql-server mysql-client libdbd-mysql-perl

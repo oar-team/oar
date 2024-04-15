@@ -3,7 +3,6 @@
 
 namespace OAR::Schedulers::ResourceTree {
 
-// # $Id$
 // package OAR::Schedulers::ResourceTree;
 
 // use warnings;

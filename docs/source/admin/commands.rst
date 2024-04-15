@@ -12,3 +12,7 @@ Admin commands
     commands/oaraccounting
     commands/oarnotify
     commands/oar-database
+    commands/oar_resources_init
+    commands/oar_resources_add
+
+For more details, read the manual pages of the commands.

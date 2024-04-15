@@ -1,0 +1,67 @@
+#!/bin/bash
+#OAR -n test_script
+#OAR -t idempotent
+#OAR -l /nodes=1/core=4,walltime=00:5:00
+#OAR -O test.%jobid%.stdout
+#OAR -E test.%jobid%.stderr
+#OAR --project test
+#OAR --checkpoint 240
+#OAR --notify mail:Bruno.Bzeznik@univ-grenoble-alpes.fr
+
+# Timeout to adapt: 600 is a good value for bigger jobs
+RESUME_TIMEOUT=90
+
+# Handler for checkpointing signal sent by OAR
+handler() { echo "Caught checkpoint signal at: `date`"
+            echo "Checkpointing..."
+            echo -e "$PROG_PID\n$(pwd)" > /var/lib/checkpoints/$OAR_JOB_ID.checkpoint
+          }
+trap handler SIGUSR2
+
+# Load environment
+source /applis/site/nix.sh
+
+# A checkpoint exists, resuming it
+if [ -e checkpoint_ok ]
+then
+  rm -f checkpoint/pidfile
+  sleep 30
+  echo -e "$(pwd)" > /var/lib/checkpoints/$OAR_JOB_ID.resume
+  # Wait for the restore (for pidfile to be created)
+  declare -i c=1
+  while [ \! -e checkpoint/pidfile -a $c -le $RESUME_TIMEOUT ]
+  do
+    sleep 1
+    let c++
+  done
+  if [ $c -eq $RESUME_TIMEOUT ]
+  then
+     echo "ERROR: Timeout on resume!" >&2
+     exit 3
+  fi
+  sleep 5
+  PROG_PID=$(cat checkpoint/pidfile)
+
+# No checkpoint, starting the program
+else
+  nohup stress --cpu 4 --io 4 --vm 2 -v  &
+  PROG_PID=$!
+fi
+
+# Wait for $PROG_PID (`wait` does not work in all cases, and 
+# bash kills the script when a trap occurs within a wait)
+while [ -e /proc/$PROG_PID ]
+do
+  sleep 1
+done
+
+# Now that the process has exited, we have to wait for the checkpoint
+# to be finished. The checkpoint_ok file is removed only before doing
+# a new checkpoint.
+while [ \! -e checkpoint_ok ]
+do
+  sleep 1
+done
+
+# Idempotent job exits with 99 code to be automatically re-submitted
+exit 99

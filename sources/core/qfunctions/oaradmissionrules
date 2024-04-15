@@ -14,7 +14,7 @@ use File::Temp qw/ tempfile /;
 
 my $base;
 my $action;
-my $showopt="short";
+my $showopt = "short";
 my $rule_id;
 my $priority;
 my $enabled;
@@ -69,50 +69,50 @@ EOS
 }
 
 sub print_rule($$) {
-    my $r = shift;
-    my $showopt = shift;
-    my $str_enabled = ($r->{enabled} eq "NO")?"DISABLED/":"";
+    my $r           = shift;
+    my $showopt     = shift;
+    my $str_enabled = ($r->{enabled} eq "NO") ? "DISABLED/" : "";
     if ($showopt eq "ids") {
-        print $r->{id}."\n";
-    }
-    elsif ($showopt eq "short") {
-        my @lines = (split("\n",$r->{rule}),"");
+        print $r->{id} . "\n";
+    } elsif ($showopt eq "short") {
+        my @lines = (split("\n", $r->{rule}), "");
         print <<EOS;
 --- ($str_enabled$r->{priority}) RULE #$r->{id}
 $lines[0]
 ---
 EOS
-    }
-    elsif ($showopt eq "full") {
+    } elsif ($showopt eq "full") {
         print <<EOS;
 --- ($str_enabled$r->{priority}) RULE #$r->{id}
 $r->{rule}
 ---
 EOS
-    }
-    elsif ($showopt eq "no-header") {
+    } elsif ($showopt eq "no-header") {
         if (defined($filename)) {
             my $f;
             my $fh;
             if ($filename eq "") {
-                ($fh, $f) = tempfile("OAR-admission-rule.$r->{id}.XXXXXX", TMPDIR => 1, UNLINK => 0) or die "Error: cannot create temp file\n";
+                ($fh, $f) =
+                  tempfile("OAR-admission-rule.$r->{id}.XXXXXX", TMPDIR => 1, UNLINK => 0) or
+                  die "Error: cannot create temp file\n";
             } else {
                 $f = $filename;
                 $f =~ s/%%/$r->{id}/;
-                (-e $f) and die "Error: cannot write rule #$r->{id} to file $f, file already exists\n";
+                (-e $f) and
+                  die "Error: cannot write rule #$r->{id} to file $f, file already exists\n";
                 open($fh, ">", $f) or die "Error: could not open $f\n";
             }
             print $fh $r->{rule};
             close($fh);
             print "Admission rule #$r->{id} written to $f\n";
-        }
-        else {
+        } else {
             print $r->{rule};
         }
     }
 }
 
 sub get_all_from_db() {
+
     # $enabled is the global variable here (--Y|--N)
     my @rules = OAR::IO::list_admission_rules($base, $enabled);
     return @rules;
@@ -120,7 +120,7 @@ sub get_all_from_db() {
 
 sub get_from_db($) {
     my $rule_id = shift;
-    my $r = OAR::IO::get_admission_rule($base,$rule_id);
+    my $r       = OAR::IO::get_admission_rule($base, $rule_id);
     if (not defined($r)) {
         die "Error: could not retrieve admission rule from database\n";
     }
@@ -129,31 +129,32 @@ sub get_from_db($) {
 
 sub edit($$) {
     my $rule_id = shift;
-    my $rule = shift;
-    my ($fh, $filename) = tempfile("OAR-admission-rule.".((defined($rule_id))?$rule_id:"new")."XXXXXX", TMPDIR => 1, UNLINK => 1) or die "Error: cannot create temp file\n";
+    my $rule    = shift;
+    my ($fh, $filename) = tempfile(
+        "OAR-admission-rule." . ((defined($rule_id)) ? $rule_id : "new") . "XXXXXX",
+        TMPDIR => 1,
+        UNLINK => 1
+      ) or
+      die "Error: cannot create temp file\n";
     if (defined($rule)) {
         print $fh $rule or die "Error: cannot write current rule to temp file\n";
     }
     close $fh or die "Error: cannot close temp file\n";
-    if ($edit eq "") { 
+    if ($edit eq "") {
         if (exists($ENV{EDITOR})) {
             $edit = $ENV{EDITOR};
-        }
-        elsif (qx/which editor/ ne "") {
+        } elsif (qx/which editor/ ne "") {
             $edit = "editor";
-        }
-        else {
+        } else {
             $edit = "vi";
         }
     }
     system($edit, $filename);
     if ($? == -1) {
         die "Error: failed to execute: $!\n";
-    }
-    elsif ($? & 127) {
+    } elsif ($? & 127) {
         die "Editor process died with signal " . ($? & 127) . "\n";
-    }
-    elsif (($? >> 8) != 0) {
+    } elsif (($? >> 8) != 0) {
         die "Editor process exited with value " . ($? >> 8) . "\n";
     }
     return $filename;
@@ -170,51 +171,52 @@ sub read_file($) {
 }
 
 sub update_rule($$$$) {
-    my $rule_id = shift;
+    my $rule_id  = shift;
     my $priority = shift;
-    my $enabled = shift;
-    my $rule = shift;
-    my $r = OAR::IO::update_admission_rule($base, $rule_id, $priority, $enabled, $rule);
+    my $enabled  = shift;
+    my $rule     = shift;
+    my $r        = OAR::IO::update_admission_rule($base, $rule_id, $priority, $enabled, $rule);
     defined($r) or die "Error: could not update rule #$rule_id in database\n";
 }
 
 sub add_rule($$$) {
     my $priority = shift;
-    my $enabled = shift;
-    my $rule = shift;
-    my $r = OAR::IO::add_admission_rule($base, $priority, $enabled, $rule);
+    my $enabled  = shift;
+    my $rule     = shift;
+    my $r        = OAR::IO::add_admission_rule($base, $priority, $enabled, $rule);
     defined($r) or die "Error: could not add rule in database\n";
-    return($r);
+    return ($r);
 }
 
 sub delete_rule($) {
     my $rule_id = shift;
-    my $r = OAR::IO::delete_admission_rule($base, $rule_id);
+    my $r       = OAR::IO::delete_admission_rule($base, $rule_id);
     defined($r) or die "Error: admission rule #$rule_id could not be deleted\n";
 }
 
 Getopt::Long::Configure("gnu_getopt");
 
-GetOptions( 
-            "show-all|S" => sub { $action = shift; },
-            "show|s=i" => sub { $action = shift; $rule_id = shift; },
-            "new|n" => sub { $action = shift; },
-            "modify|m=i" => sub { $action = shift; $rule_id = shift; },
-            "delete|d=i" => sub { $action = shift; $rule_id = shift; },
-            "id|I" =>  sub { $showopt = shift; },
-            "no-header|H" =>  sub { $showopt = shift; },
-            "full|f" =>  sub { $showopt = shift; },
-            "edit|e:s" => sub { shift; $edit = shift; },
-            "from-file|r=s" => sub { shift; $filename = shift; },
-            "to-file|w:s" => sub { shift; $filename = shift; },
-            "priority|P=i" => \$priority,
-            "enabled|Y" => sub { $enabled = 1; },
-            "disabled|N" => sub { $enabled = 0; },
-            "version|V" => sub { print("OAR version : ".OAR::Version::get_version()."\n"); exit(0) },
-            "help|h"   => sub { print usage(); exit(0); }
-          ) or die "\n".usage();
+GetOptions(
+    "show-all|S"    => sub { $action  = shift; },
+    "show|s=i"      => sub { $action  = shift; $rule_id = shift; },
+    "new|n"         => sub { $action  = shift; },
+    "modify|m=i"    => sub { $action  = shift; $rule_id = shift; },
+    "delete|d=i"    => sub { $action  = shift; $rule_id = shift; },
+    "id|I"          => sub { $showopt = shift; },
+    "no-header|H"   => sub { $showopt = shift; },
+    "full|f"        => sub { $showopt = shift; },
+    "edit|e:s"      => sub { shift; $edit     = shift; },
+    "from-file|r=s" => sub { shift; $filename = shift; },
+    "to-file|w:s"   => sub { shift; $filename = shift; },
+    "priority|P=i"  => \$priority,
+    "enabled|Y"     => sub { $enabled = 1; },
+    "disabled|N"    => sub { $enabled = 0; },
+    "version|V"     => sub { print("OAR version: " . OAR::Version::get_version() . "\n"); exit(0) },
+    "help|h"        => sub { print usage();                                               exit(0); }
+  ) or
+  die "\n" . usage();
 
-defined($action) or die "Error: syntax error\n\n".usage();
+defined($action) or die "Error: syntax error\n\n" . usage();
 
 $base = OAR::IO::connect();
 
@@ -222,52 +224,53 @@ if ($action eq "show-all") {
     foreach my $r (get_all_from_db()) {
         print_rule($r, $showopt);
     }
-}
-elsif ($action eq "show") {
-    (defined $enabled) and die "Error: syntax error\n\n".usage();
+} elsif ($action eq "show") {
+    (defined $enabled) and die "Error: syntax error\n\n" . usage();
     if (defined($filename)) {
-        $showopt="no-header";
-    } 
+        $showopt = "no-header";
+    }
     my $r = get_from_db($rule_id);
     print_rule($r, $showopt);
-}
-elsif ($action eq "new") {
+} elsif ($action eq "new") {
     my $r;
     my $rule = "";
     if (defined($edit) and defined($filename)) {
-        die "Error: you cannot use both --edit and --from-file at a same time\n\n".usage();
+        die "Error: you cannot use both --edit and --from-file at a same time\n\n" . usage();
     }
     if (not defined($edit) and not defined($filename)) {
-        $edit="";
+        $edit = "";
     }
     if (not defined($filename)) {
         $filename = edit($rule_id, $rule);
     }
     $rule = read_file($filename);
-    my $rule_id = add_rule(defined($priority)?$priority:0, defined($enabled)?$enabled:1, $rule);
+    my $rule_id =
+      add_rule(defined($priority) ? $priority : 0, defined($enabled) ? $enabled : 1, $rule);
     print "New admission rule created: #$rule_id\n";
-}
-elsif ($action eq "modify") {
+} elsif ($action eq "modify") {
     my $r;
     my $rule = "";
-    $r = get_from_db($rule_id);
+    $r    = get_from_db($rule_id);
     $rule = $r->{rule};
-    (defined($edit) and defined($filename)) and die "Error: you cannot use both --edit and --from-file at a same time\n\n".usage();
+    (defined($edit) and defined($filename)) and
+      die "Error: you cannot use both --edit and --from-file at a same time\n\n" . usage();
     if (defined($edit)) {
         $filename = edit($rule_id, $rule);
     }
     if (defined($filename)) {
         $rule = read_file($filename);
     }
-    (defined($priority) or defined($enabled) or defined($edit) or defined($filename)) or die "Error: no modification was requested\n\n".usage();
-    update_rule($rule_id, defined($priority)?$priority:$r->{priority}, defined($enabled)?$enabled:(($r->{enabled} eq 'NO')?0:1), $rule);
+    (defined($priority) or defined($enabled) or defined($edit) or defined($filename)) or
+      die "Error: no modification was requested\n\n" . usage();
+    update_rule(
+        $rule_id,
+        defined($priority) ? $priority : $r->{priority},
+        defined($enabled) ? $enabled : (($r->{enabled} eq 'NO') ? 0 : 1), $rule);
     print "Admission rule modified: #$rule_id\n";
-}
-elsif ($action eq "delete") {
+} elsif ($action eq "delete") {
     delete_rule($rule_id);
     print "Admission rule deleted: #$rule_id\n";
-}
-else {
+} else {
     die "Unknown action !\n";
 }
 

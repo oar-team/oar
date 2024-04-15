@@ -17,15 +17,15 @@ build: build_shared
 install: install_shared
 	install -d $(DESTDIR)$(CGIDIR)
 	install -m 0755 $(SRCDIR)/drawgantt.cgi $(DESTDIR)$(CGIDIR)
-	
+
 	install -d $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons
-	install -m 0644  $(SRCDIR)/Icons/*.png $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons 
-	
+	install -m 0644  $(SRCDIR)/Icons/*.png $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons
+
 uninstall: uninstall_shared
 	rm -f \
 	    $(DESTDIR)$(CGIDIR)/drawgantt.cgi \
 	    $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons/*.png \
-	
+
 	-rmdir \
 	    $(DESTDIR)$(OARHOMEDIR)/drawgantt-files/cache \
 	    $(DESTDIR)$(WWWDIR)/drawgantt-files/Icons \

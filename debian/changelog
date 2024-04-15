@@ -1,9 +1,119 @@
-oar (2.5.8-2) unstable; urgency=medium
+oar (2.5.10-2) unstable; urgency=medium
 
-  * Revert to stretch behavior for Storable::dclone perl function (Closes:
-    #942467)
+  [ Pierre Neyron ]
+  * oar-web-status: Fix missing dependency to libcgi-fast-perl (Closes:
+    #1068711)
 
- -- Vincent Danjean <vdanjean@debian.org>  Thu, 17 Oct 2019 20:31:05 +0200
+ -- Vincent Danjean <vdanjean@debian.org>  Wed, 10 Apr 2024 13:41:34 +0200
+
+oar (2.5.10-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 10 Jul 2023 14:55:03 +0200
+
+oar (2.5.10~rc3-1) unstable; urgency=medium
+
+  * Release candidate 3
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 17 Apr 2023 23:16:37 +0200
+
+oar (2.5.10~rc2-1) unstable; urgency=medium
+
+  * Release candidate 2
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sat, 15 Apr 2023 21:55:52 +0200
+
+oar (2.5.10~rc1-1) unstable; urgency=medium
+
+  * Release candidate 1
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sat, 15 Apr 2023 14:09:22 +0200
+
+oar (2.5.10~g5k7-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Samir Noir <samir.noir@inria.fr>  Thu, 01 Jul 2021 12:30:57 +0000
+
+oar (2.5.10~g5k6-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Samir Noir <samir.noir@inria.fr>  Wed, 30 Jun 2021 08:53:34 +0000
+
+oar (2.5.10~g5k5-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various improvements)
+
+ -- Samir Noir <samir.noir@inria.fr>  Tue, 29 Jun 2021 08:05:13 +0000
+
+oar (2.5.10~g5k4-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various improvements)
+
+ -- Samir Noir <samir.noir@inria.fr>  Mon, 21 Jun 2021 13:01:36 +0000
+
+oar (2.5.10~g5k3-1) unstable; urgency=medium
+
+  * Pre-release for G5K (new features)
+
+ -- Samir Noir <samir.noir@inria.fr>  Fri, 16 Apr 2021 12:43:23 +0000
+
+oar (2.5.10~g5k2-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Samir Noir <samir.noir@inria.fr>  Fri, 02 Apr 2021 08:14:17 +0000
+
+oar (2.5.10~g5k1-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Samir Noir <samir.noir@inria.fr>  Tue, 30 Mar 2021 15:55:26 +0000
+
+oar (2.5.9-1) unstable; urgency=medium
+
+  * New release
+  * Fix various bugs/cleanup found by lintian
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 11 Jan 2021 16:44:43 +0100
+
+oar (2.5.9~g5k6-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 13 Apr 2020 17:07:29 +0200
+
+oar (2.5.9~g5k5-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sun, 29 Mar 2020 22:20:50 +0200
+
+oar (2.5.9~g5k4-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 26 Feb 2020 17:16:07 +0100
+
+oar (2.5.9~g5k3-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sun, 13 Oct 2019 21:13:52 +0200
+
+oar (2.5.9~g5k2-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 26 Sep 2019 16:49:46 +0200
+
+oar (2.5.9~g5k1-1) unstable; urgency=medium
+
+  * Pre-release for G5K (add DISABLE_SUSPECTED_NODES_REPAIR)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 12 Jul 2019 17:10:50 +0200
 
 oar (2.5.8-1) unstable; urgency=medium
 

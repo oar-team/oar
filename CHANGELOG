@@ -1,6 +1,136 @@
 OAR CHANGELOG
 =============
 
+version 2.5.10:
+--------------
+
+  - [oarnodesetting] Allow setting the suspected state
+  - [oarstat] Allow to see other users' initial_request
+  - [oarsub] ensure the inline job key is in a valid format, by adding \n
+  - [oarsub] remove ssh inline keys from initial_request
+  - [scheduler] add the SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS_THRESHOLD
+    option: advance reservations in a near future can use the same resources
+    order as batch job, taking into account the standby and besteffort jobs)
+  - [oarstat] Add a machine parseable output for -p option
+  - [oarstat] Add a machine parseable output for -e (events) option
+  - [oarstat] Exit with an error if -p and --sql options are used together
+  - [oarnodes] Factorize SQL query used to get resources
+  - [oarnodes] Factorize SQL query to get nodes' events
+  - [oarnodes] Optimize OAR's resources querying (option -r)
+  - [oarnodes] Optimize nodes' states querying
+  - [oarnodes] Update usage and man page
+  - [oarsub] add a reservation end time possibility to -r option
+  - [oarsub] factorize the reservation parsing in interactive condition
+  - [oarsub] be more flexible about the reservation dates parsing
+  - [oarsub] add the 'now' keyword support to reservation request
+  - [man] rework oarsub man page
+  - [oarsub] update usage
+  - [oarnodesetting] allow for unsetting the value of resource properties
+  - [oarsub] rename OARSUB_NODE_EXEC_FILE to INTERACTIVE_JOB_HOOK_EXEC_FILE
+  - [oarexec] add PASSIVE_JOB_HOOK_EXEC_FILE
+  - [NodeChangeState] fix DB transaction error when resubmitting a job
+  - [NodeChangeState] do not resubmit jobs for deploy/cosystem and if
+    server_prologue error
+  - [NodeChangeState] on prologue/epilogue error, only set the first node to
+    suspected
+  - [NodeChangeState] Do not suspect nodes for prologue/epilogue error of
+    deploy/cosystem jobs
+  - [oarsub] add the advance reservation validation hook feature
+  - [oarnode] fix oarnode --sql if not resources to show
+  - [Hulot] Add debug info regarding timeouts
+  - [sarko] fix debug message for job frag
+  - [accounting] change the behavior of accounting to be more efficient
+  - [leon] optimize SQL query of get_to_kill_jobs subroutine
+  - [MetaSched] Optimize querying of the last wake up for a list of node
+  - [IO.pm] Add constants to store often used OAR's job states
+  - [Hulot] Fix unknown method oar_warning
+  - [job_resource_manager] add support for AMD gpus
+  - [oarsh] add support of AMD gpus
+  - [oardodo] parametrize the OOM killer setup of oardodo
+  - [NodeChangeState] factorize the resources state changing
+  - [NodeChangeState] correctly lock and make transaction with PostgreSQL
+  - [IO.pm] factorize jobs fragging made by NodeChangeState
+  - [IO.pm] Add an lock_table_exclusive subroutine, for postgresql
+  - [oarnodes] fix machine parseables output by returning an empty set
+  - [oarnodes] fix uninitialized value with -r option
+  - [oarnodes] fix issue when using non existing nodes in arguments
+  - [oar.conf] annotate configuration lines with modules it is used for
+  - [oarwalltime] always allow admins to perform walltime reduction
+  - [oarapi] add a environment variable to configure the max cycle of cgi
+  - [IO.pm] do not specify a file name for stderr/stdout for interactive jobs
+  - [judas] allow a custom instance name in notification mail subjects
+  - [ssh] Remove deprecated option in sshd config
+  - [core/scripts] add oar-node start/stop scripts to launch with systemd
+  - [setup] Add systemd services unit for oar-node and oar-server
+  - [Makefiles] Add support for systemd
+  - [oar-database] Add option to skip the installation of the default admission
+    rules when creating a new OAR database
+  - [finaud/hulot] fix a race condition resulting in nodes being suspected when
+    put in standby by hulot while finaud is running
+  - [monika] show job events in job stats
+  - [monika] add nodes filtering
+  - [oarsub] add a -v switch (usable multiple times) to select verbosity
+  - [misc] remove desktop_computing possibility in oarsub and API
+  - [oarsub] add # before each outputed string (except the job ids) and better
+    format of information and error messages
+  - [oar.conf/bipbip] add DEPLOY_COSYSTEM_JOB_EXEC_SYSTEM option
+  - [oarsub] Use systemd-run when running processes on the frontend for
+    deploy/cosystem jobs
+  - [criu checkpoint] added a timeout to exit when the resume fails
+  - [oarapi] replace workdir by directory in OAR's rest API
+  - [all] change the log format and make it configurable and various logs
+    messages improvements
+  - [oarstat] add jobs events to the gantt output (--gantt/-g)
+  - [oarstat] make machine parseable output detailed view without using -f
+  - [oarstat] add missing fields and uniq some when calling with --gantt
+  - [oarstat] add a new output format '3' fixing several field names
+  - [job_resource_manager] write env file without variable references
+  - [oarwalltime] allow request cancellation
+  - [oarwalltime] add --whole option
+  - [oarwalltime] add a timeout for walltime change requests
+  - [oarnodes/API] add functionality to provide the detailed jobs occupation on nodes
+  - [api] better returned messages and add an OAR_IN_API env variable
+  - [IO] make job creation with add_micheline_subjob() more consistent
+  - [oarsub] enhance -C option to be more user friendly
+  - [IO.pm] optimize get_gantt_jobs_to_launch() SQL query
+  - [oarapi] fix an error in logs due to redefined Dump() subroutine
+  - [tools] add the pam_oar_adopt script
+
+version 2.5.9:
+--------------
+
+  - [scheduler] add the SCHEDULER_RESOURCE_ORDER_ADV_RESERVATIONS option, so
+    that the scheduling of advance reservations is not impacted by the current
+    state of the resources (e.g. nodes in standby, current besteffort jobs)
+  - [admission rules] add an admission rule to restrict advance reservation
+    inner jobs to use container jobs that are advance reservations as well
+  - [schedulers] fix issues with the scheduling of a inner job before its
+    container
+  - [schedulers] waiting inner job in container that vanished are set to error
+  - [oarexec] add an option to have inner jobs killed along with their container
+  - [oarexec] do not run inner jobs before their container is already running
+  - [oarwalltime] make walltime change respect a possibly defined job deadline
+  - [oarwalltime] add an option to disable the walltime reduction
+  - [oarwalltime] fix oarwalltime the per queue configuration
+  - [oarsub/scheduler] fix a bug with the recent Perl max recursion depth limit
+  - [drawgantt] show the timezone in the dates
+  - [oarexec] fix oarsub shell termination when the job is killed
+  - [database] add an index to the resource_log table
+  - [oar_resource_add] add support for reparing the resource properties
+  - [oarexec] add support to disable the auto-repair of suspected nodes
+  - [job_resource_manager/oarsh] add the COMPUTE_THREAD_SIBLINGS option, to let
+    OAR automatically set the HT thread siblings if not set in the resources
+    hierarchy with a thread resource, or in the resource cpuset field
+  - [job_resource_manager] rework code, support more cgroup subsystems
+  - [oarsh] add support to let oarsh create a sub cgroup with either a subset of
+    the cpuset or of the devices in the shell opened on the node. See an
+    example of usage with GNU Parallel in the website documentation
+  - [oarsub] add the OARSUB_NODE_EXEC_FILE configuration to run a custom command
+    on the head node of the job before the job shell
+  - [oarsub] make oarsub accept the submission of a noop job with no script
+  - [oarstat] fix JSON/YAML/XML output when no job to display
+  - [oarstat] oarstat -j can now use the OAR_JOB_ID environment variable
+  - [oarstat] fix YAML display with the YAML::Syck library
 
 version 2.5.8:
 --------------
@@ -10,7 +140,7 @@ version 2.5.8:
     running job. See the oarwalltime command and oar.conf
   - [scheduler] fix the besteffort + deploy VS adv. reservation case
   - [scheduler] add the state=permissive job type, allowing jobs to be scheduled
-    and run (if noop or cosystem as well only) regardless of the aliveness of 
+    and run (if noop or cosystem as well only) regardless of the aliveness of
     resources
   - [oarsub/scheduler] fix warning "Use of uninitialized value $resource_value"
   - [oarsub] fix unknown error message in case of job termination + typos
@@ -43,15 +173,15 @@ version 2.5.7:
 
 This version mainly brings a security fix for the oarsh command. It is highly
 recommended to upgrade (server, frontend(s) and nodes), since all previous
-versions of OAR are affected. 
+versions of OAR are affected.
 
   - [oarsh] fix a security hole when passing option to OpenSSH. See oar.conf to
     adapt settings to your setup, if required (OARSH_* variables)
-  - [oarsh] dropped the mechanism to select whether to use oarsh or fall back 
+  - [oarsh] dropped the mechanism to select whether to use oarsh or fall back
     to ssh, given a list of hostname patterns
   - [oarsub] fix the job-key information of the manual page
   - [oarsub] handle cases where trailing spaces were breaking oarsub script directives
-  - [api] added an example of Apache configuration for the authentication 
+  - [api] added an example of Apache configuration for the authentication
   - [documentation] improve the SSH keys setup explanations for OAR installation
 
 version 2.5.6:
@@ -72,7 +202,7 @@ version 2.5.6:
   - [oaradmissionrules] fix bug: changing a rule priority does not enable it
   - [oar_resources_init] fix node read from standard input
   - [oarnodecheck] use /var/lib/oar instead of /etc/oar for working files
-  - [logs] several cosmetic fixes 
+  - [logs] several cosmetic fixes
   - [api] add colmet extraction function
   - [api] proposed apache configuration now uses a virtual host on port 6668
   - [drawgantt-svg] fix the possibly very long delay when zooming
@@ -80,9 +210,9 @@ version 2.5.6:
   - [drawgantt-svg] rework configuration for the default display
   - [drawgantt-svg] allow displaying resources of type != default
   - [drawgantt-svg] improve support for use as a widget in custom HTML pages
-        (multisite, etc) 
+        (multisite, etc)
   - [monika] fix bugs with recent Perl/Perl CGI versions
-  - [monika] fix harmless bug in configuration 
+  - [monika] fix harmless bug in configuration
   - [visualization] remove overlib.js (license issue), this breaks the legacy
          drawgantt (which is not supported anymore)
   - [misc] remove some old development codes from sources
@@ -95,7 +225,7 @@ version 2.5.5:
   - [iolib] fix deadlock with TRUNCATE in postgresql
   - [almighty] add SCHEDULER_MIN_TIME_BETWEEN_2_CALLS:
         the scheduler is launched at max every t seconds (t=5 by default), this
-        avoids the scheduler to cause starvation with regard to the other 
+        avoids the scheduler to cause starvation with regard to the other
         modules
   - [scheduler] fix some memory leaks.
   - [scheduler] add a cache to the resources tree computation: improve
@@ -118,14 +248,14 @@ version 2.5.5:
   - [drawgantt-svg] new version with aggreation of resources and more.
   - [monika] add thread to the hidden properties.
   - [api] fastcgi config now using suexec
-  - [api] now using apache environment variables when headers are not available 
+  - [api] now using apache environment variables when headers are not available
   - [api] optimization of /jobs query response time (especially efficient for
         mysql based installations)
-  - [api] security fix: HTML outputs which did not break on errors 
+  - [api] security fix: HTML outputs which did not break on errors
 
 version 2.5.4:
 --------------
-  
+
   - [api] Implemented GET /resources/<property>/jobs to get jobs running on
         resources, grouped by a given property.
   - [api] Implemented HTTP_X_API_PATH_PREFIX header variable to prefix all
@@ -138,8 +268,8 @@ version 2.5.4:
   - [api] Rewritten/commented apache config file.
   - [kamelot] BUGFIX: fix hierarchies manipulation (remove toplevel resource).
   - [accounting] Fixed a memory leak and a rare case of bad consumption count.
-  - [oar.conf] Replace the MAX_CONCURRENT_JOB_TERMINATIONS option by 
-        MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING 
+  - [oar.conf] Replace the MAX_CONCURRENT_JOB_TERMINATIONS option by
+        MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING
   - [almighty] Rewrote the handling of starting and finishing jobs: limit
         bipbip processes to MAX_CONCURRENT_JOBS_STARTING_OR_TERMINATING
         to avoid overloading the server.
@@ -191,10 +321,10 @@ version 2.5.4:
             oarsub --notify "[END,ERROR]mail:name@domain.com" -I
   - [admission rules] Added priority to rules that allows to manage more easily
         the rules execution order.
-  - [admission rules] Added a enable/disable flag to rules to allow activating 
+  - [admission rules] Added a enable/disable flag to rules to allow activating
         or deactivating rules without having to comment the code.
   - [oaradmin] The oaradmin rules command is now disabled since it does not
-        handle priority and enable flags. 
+        handle priority and enable flags.
   - [oaradmin] The oaradmin conf command is disabled.
   - [oar_resources_add] Added the oar_resources_add command to help adding
         resources and replace the oaradmin resources command.
@@ -226,10 +356,10 @@ version 2.5.3:
     the jobs finish.
   - Bug fix in ssh key feature in oarsub.
   - Added --compact, -c option to oarstat (compact view or array jobs).
-  - Improvements of the API: media upload from html forms, listing of files, 
+  - Improvements of the API: media upload from html forms, listing of files,
     security fixes, add of new configuration options, listing of the scheduled
     nodes into jobs, fixed bad reinitialization of the limit parameter,
-    stress_factor, accounting... 
+    stress_factor, accounting...
     See OAR-DOCUMENTATION-API-USER for more informations.
   - CGROUP: handle cgroup hierarchy already mounted by the OS like in Fedora 18
     (by systemd in /sys/fs/cgroup) in job_resource_manager_cgroups.pl.
@@ -251,14 +381,14 @@ version 2.5.3:
     checkpointed.
   - Add the variable $jobproperties_applied_after_validation. It can be used in
     an admission rule to add a constraint after the validation of the job. Ex:
-    
+
         $jobproperties_applied_after_validation = "maintenance='off'";
-    
+
     So, even if all the ressources have "maintenance='on'", the new jobs will be
     accepted but not scheduled now.
   - Add the oardel option --force-terminate-finishing-job: to use when a job is
     stuck in the Finishing state.
-  - Bug #15911: Energy saving now waits SCHEDULER_NODE_MANAGER_IDLE_TIME for 
+  - Bug #15911: Energy saving now waits SCHEDULER_NODE_MANAGER_IDLE_TIME for
     nodes that have been woken up, even if they didn't run any job.
   - Simplify job dependencies: do not check the exit code of the jobs in
     dependencies.
@@ -295,7 +425,7 @@ version 2.5.2:
   - oarstat: order the output by job_id.
   - Speedup oarnodes.
   - Fix a spelling error in the oaradmin manpage.
-  - Bugfix #14122 : the oar-node init.d script wasn't executing
+  - Bugfix #14122: the oar-node init.d script wasn't executing
     start_oar_node/stop_oar_node during the 'restart' action.
   - Allow the dash  character into the --notify "exec:..." oarsub option.
   - Remove some old stuffs from the tarball:
@@ -314,10 +444,10 @@ version 2.5.1:
   - Bugfix #11065: oar_resource_init fix (add a space)
   - Bug 10999: memory leak into Hulot when used with postgresql. The leak has
     been minimized, but it is still there (DBD::Pg bug)
-  - Almighty cleans ipcs used by oar on exit 
-  - Bugfix #10641 and #10999 : Hulot is automatically and periodically restarted
+  - Almighty cleans ipcs used by oar on exit
+  - Bugfix #10641 and #10999: Hulot is automatically and periodically restarted
   - Feature request #10565: add the possibility to check the aliveness of the
-    nodes of a job at the end of this one (pingchecker) 
+    nodes of a job at the end of this one (pingchecker)
   - REST API heavily updated: new data structures with paginated results,
     desktop computing functions, rspec tests, oaradmin resources management,
     admission rules edition, relative/absolutes uris fixed
@@ -423,13 +553,13 @@ version 2.4.3:
   - Oarnodecheck improvements: node is not checked if a job is already running
   - New oaradmin option: --auto-offset
   - Feature request #10565: add the possibility to check the aliveness of the
-    nodes of a job at the end of this one (pingchecker) 
+    nodes of a job at the end of this one (pingchecker)
 
 version 2.4.2:
 --------------
   - New "Hulot" module for intelligent and configurable energy saving
   - Bug #9906: fix bad optimization in the gantt lib (so bad scheduling
- 
+
 version 2.4.1:
 --------------
   - Bug #9038: Security flaw in oarsub --notify option
@@ -448,16 +578,16 @@ version 2.4.0:
   - Bug #8791: added CHECK_NODES_WITH_RUNNING_JOB=no to prevent from checking
     occupied nodes
   - Fix bug in oarnodesetting command generated by oar_resources_init (detect_resources)
-  - Added a --state option to oarstat to only get the status of specified jobs 
+  - Added a --state option to oarstat to only get the status of specified jobs
     (optimized query, to allow scripting)
   - Added a REST API for OAR and OARGRID
   - Added JSON support into oarnodes, oarstat and oarsub
   - New Makefile adapted to build packages as non-root user
   - add the command "oar_resources_init" to easily detect and initialize the
     whole resources of a cluster.
-  - "oaradmin version" : now retrieve the most recent database schema number
+  - "oaradmin version": now retrieve the most recent database schema number
   - Fix rights on the "schema" table in postgresql.
-  - Bug #7509: fix bug in add_micheline_subjob for array jobs + jobtypes 
+  - Bug #7509: fix bug in add_micheline_subjob for array jobs + jobtypes
   - Ctrl-C was not working anymore in oarsub.
     It seems that the signal handler does not handle the previous syntax
     ($SIG = 'qdel')
@@ -473,7 +603,7 @@ version 2.4.0:
         oarsub -I -l {prop=1}/nodes=1/core=1+{prop=2}/nodes=4/core=2
   - Bug #7634: test if the resource property value is effectively defined
     otherwise print a ''
-  - Optional script to take into account cpu/core topology of the nodes at boot 
+  - Optional script to take into account cpu/core topology of the nodes at boot
     time (to activate inside oarnodesetting_ssh)
   - Bug #7174: Cleaned default PATH from "./" into oardodo
   - Bug #7674: remove the computation of the scheduler_priority field for
@@ -483,20 +613,20 @@ version 2.4.0:
     submitted script. Fix also some parsing errors.
   - Bug #7962: enable resource property "cm_availability" to be manipulated by
     the oarnodesetting command
-  - Added the (standby) information to a node state in oarnodes when it's state 
+  - Added the (standby) information to a node state in oarnodes when it's state
 	is Absent and cm_availability != 0
   - Changed the name of cm_availability to available_upto which is more relevant
-  - add a --maintenance option to oarnodesetting that sets the state of a resource 
+  - add a --maintenance option to oarnodesetting that sets the state of a resource
     to Absent and its available_upto to 0 if maintenance is on and resets previous
     values if maintenance is off.
   - added a --signal option to oardel that allow a user to send a signal to one of
     his jobs
   - added a name field in the schema table that will refer to the OAR version name
   - added a table containing scheduler name, script and description
-  - Bug #8559: Almighty: Moved OAREXEC_XXXX management code out of the queue for 
+  - Bug #8559: Almighty: Moved OAREXEC_XXXX management code out of the queue for
     immediate action, to prevent potential problems in case of scheduler timeouts.
-  - oarnodes, oarstat and the REST API are no more making retry connections to the 
-    database in case of failure, but exit with an error instead. The retry behavior 
+  - oarnodes, oarstat and the REST API are no more making retry connections to the
+    database in case of failure, but exit with an error instead. The retry behavior
     is left for daemons.
   - improved packaging (try to install files in more standard places)
   - improved init script for Almighty (into deb and rpm packages)
@@ -519,9 +649,9 @@ version 2.3.4:
 --------------
   - add the command "oar_resources_init" to easily detect and initialize the
     whole resources of a cluster.
-  - "oaradmin version" : now retrieve the most recent database schema number
+  - "oaradmin version": now retrieve the most recent database schema number
   - Fix rights on the "schema" table in postgresql.
-  - Bug #7509: fix bug in add_micheline_subjob for array jobs + jobtypes 
+  - Bug #7509: fix bug in add_micheline_subjob for array jobs + jobtypes
   - Ctrl-C was not working anymore in oarsub.
     It seems that the signal handler does not handle the previous syntax
     ($SIG = 'qdel')
@@ -539,13 +669,13 @@ version 2.3.4:
 
 version 2.3.3:
 --------------
-  - Fix default admission rules: case unsensitive check for properties used in 
+  - Fix default admission rules: case unsensitive check for properties used in
     oarsub
-  - Add new oaradmin subcommand : oaradmin conf. Useful to edit conf files and 
+  - Add new oaradmin subcommand: oaradmin conf. Useful to edit conf files and
     keep changes in a Subversion repository.
   - Kill correctly each taktuk command children in case of a timeout.
-  - New feature: array jobs (option --array)  (on oarsub, oarstat oardel, 
-    oarhold and oarresume) and file-based parametric array jobs 
+  - New feature: array jobs (option --array)  (on oarsub, oarstat oardel,
+    oarhold and oarresume) and file-based parametric array jobs
     (oarsub --array-param-file)
     /!\ in this version the DB scheme has changed. If you want to upgrade your
     installation from a previous 2.3 release then you have to execute in your
@@ -568,7 +698,7 @@ version 2.3.2:
     in their state
   - Fix oarproperty: property names are lowercase
   - Fix OAR_JOB_PROPERTIES_FILE: do not display system properties
-  - Add a new user command: oarprint which allow to pretty print resource 
+  - Add a new user command: oarprint which allow to pretty print resource
     properties of a job
   - Debug temporary job UID feature
   - Add 'kill -9' on subprocesses that reached a timeout (avoid Perl to
@@ -607,14 +737,14 @@ version 2.3.1:
   - Add job walltime (in seconds) in parameter of prologue and epilogue on
     compute nodes.
   - oarnodes does not show system properties anymore.
-  - New feature: container job type now allows to submit inner jobs for a 
+  - New feature: container job type now allows to submit inner jobs for a
     scheduling within the container job
   - Monika refactoring and now in the oar packaging.
-  - Added a table schema in the db with the field version, reprensenting the 
+  - Added a table schema in the db with the field version, reprensenting the
     version of the db schema.
-  - Added a field DB_PORT in the oar config file. 
+  - Added a field DB_PORT in the oar config file.
   - Bug #5518: add right initialization of the job user name.
-  - Add new oaradmin command. This will permit to create resources and 
+  - Add new oaradmin command. This will permit to create resources and
     manage admission rules more easily.
   - Bug #5692: change source code into a right Perl 5.10 syntax.
 
@@ -635,7 +765,7 @@ version 2.2.12:
     allocated to a reservations are definitively set once the validated is
     done and won't change in next scheduler's pass.
   - Fix DrawGantt to not display besteffort jobs in the future which is
-    meaningless. 
+    meaningless.
 
 version 2.2.11:
 ---------------
@@ -655,57 +785,7 @@ version 2.2.11:
   - Feature Request #4874: check system names when renaming properties
   - DrawGantt can export charts to be reused to build a global multi-OAR view
     (e.g. DrawGridGantt).
-  - Bug #4990: DrawGantt now uses the database localtime as its time reference. 
-
-version 2.2.10:
----------------
-
-  - Job dependencies: if the required jobs do not have an exit code == 0 and in
-    the state Terminated then the schedulers refuse to schedule this job.
-  - Add the possibility to disable the halt command on nodes with
-    cm_availability value.
-  - Enhance oarsub "-S" option (more #OAR parsed).
-  - Add the possibility to use oarsh without configuring the CPUSETs (can be
-    useful for users that don't want to configure there ssh keys)
-
-version 2.2.9:
---------------
-
-  - Bug 4225: Dump only 1 data structure when using -X or -Y or -D.
-  - Bug fix in Finishing sequence (Suspect right nodes).
-
-version 2.2.8:
---------------
-
-  - Bug 4159: remove unneeded Dump print from oarstat.
-  - Bug 4158: replace XML::Simple module by XML::Dumper one.
-  - Bug fix for reservation (recalculate the right walltime).
-  - Print job dependencies in oarstat.
-
-version 2.2.7:
---------------
-
-
-version 2.2.11:
----------------
-
-  - Fix Debian package dependency on a CGI web server.
-  - Fix little bug: remove notification (scheduled start time) for Interactive
-    reservation.
-  - Fix bug in reservation: take care of the SCHEDULER_JOB_SECURITY_TIME for
-    reservations to check.
-  - Fix bug: add a lock around the section which creates and feed the OAR
-    cpuset.
-  - Taktuk command line API has changed (we need taktuk >= 3.6).
-  - Fix extra ' in the name of output files when using a job name.
-  - Bug #4740: open the file in oarsub with user privileges (-S option)
-  - Bug #4787: check if the remote socket is defined (problem of timing with
-    nmap)
-  - Feature Request #4874: check system names when renaming properties
-  - DrawGantt can export charts to be reused to build a global multi-OAR view 
-    (e.g. DrawGridGantt).
-  - Bug #4990: DrawGantt now uses the database localtime as its time reference. 
-
+  - Bug #4990: DrawGantt now uses the database localtime as its time reference.
 
 version 2.2.10:
 ---------------
@@ -763,10 +843,10 @@ version 2.2.5:
     from the beginning of the reservation)
   - bug 4013: now Dead, Suspected and Absent resources have different colors in
     drawgantt with a popup on them.
-  
+
 version 2.2.4:
 --------------
-  
+
   - Redirect third party commands into oar.log (easier to debug).
   - Add user info into drawgantt interface.
   - Some bug fixes.
@@ -867,15 +947,15 @@ version 2.0.0:
     and to reserve them like others.
   - Now you can connect to your jobs (not only for reservations).
   - Add "cosystem" job type (execute and do nothing for these jobs).
-  - New scheduler : "oar_sched_gantt_with_timesharing". You can specify jobs
+  - New scheduler: "oar_sched_gantt_with_timesharing". You can specify jobs
     with the type "timesharing" that indicates that this scheduler can launch
     more than 1 job on a resource at a time. It is possible to restrict this
     feature with words "user and name". For example, '-t
     timesharing=user,name' indicates that only a job from the same user with
     the same name can be launched in the same time than it.
   - Add PostGresSQL support. So there is a choice to make between MySQL and
-    PostgresSQL. 
-  - New approach for the scheduling : administrators have to insert into the
+    PostgresSQL.
+  - New approach for the scheduling: administrators have to insert into the
     databases descriptions about resources and not nodes. Resources have a
     network address (physical node) and properties. For example, if you have
     dual-processor, then you can create 2 different resources with the same
@@ -887,36 +967,35 @@ version 2.0.0:
     process.
   - Support '#OAR -p ...' options in user script.
   - Add in oar.conf:
-      * DB_BASE_PASSWD_RO : for security issues, it is possible to execute
+      * DB_BASE_PASSWD_RO: for security issues, it is possible to execute
         request with parts specified by users with a read only account (like
         "-p" option).
-      * OARSUB_DEFAULT_RESOURCES : when nothing is specified with the oarsub
+      * OARSUB_DEFAULT_RESOURCES: when nothing is specified with the oarsub
         command then OAR takes this default resource description.
-      * OAREXEC_DEBUG_MODE : turn on or off debug mode in oarexec (create
+      * OAREXEC_DEBUG_MODE: turn on or off debug mode in oarexec (create
         /tmp/oar/oar.log on nodes).
-      * FINAUD_FREQUENCY : indicates the frequency when OAR launchs Finaud
+      * FINAUD_FREQUENCY: indicates the frequency when OAR launchs Finaud
         (search dead nodes).
-      * SCHEDULER_TIMEOUT : indicates to the scheduler the amount of time
+      * SCHEDULER_TIMEOUT: indicates to the scheduler the amount of time
         after what it must end itself.
-      * SCHEDULER_JOB_SECURITY_TIME : time between each job.
-      * DEAD_SWITCH_TIME : after this time Absent and Suspected resources are
+      * SCHEDULER_JOB_SECURITY_TIME: time between each job.
+      * DEAD_SWITCH_TIME: after this time Absent and Suspected resources are
         turned on the Dead state.
-      * PROLOGUE_EPILOGUE_TIMEOUT : the possibility to specify a different
+      * PROLOGUE_EPILOGUE_TIMEOUT: the possibility to specify a different
         timeout for prologue and epilogue (PROLOGUE_EPILOGUE_TIMEOUT).
-      * PROLOGUE_EXEC_FILE : you can specify the path of the prologue script
+      * PROLOGUE_EXEC_FILE: you can specify the path of the prologue script
         executed on nodes.
-      * EPILOGUE_EXEC_FILE : you can specify the path of the epilogue script
+      * EPILOGUE_EXEC_FILE: you can specify the path of the epilogue script
         executed on nodes.
-      * GENERIC_COMMAND : a specific script may be used instead of ping to
+      * GENERIC_COMMAND: a specific script may be used instead of ping to
         check aliveness of nodes. The script must return bad nodes on STDERR
         (1 line for a bad node and it must have exactly the same name that
         OAR has given in argument of the command).
-      * JOBDEL_SOFTWALLTIME : time after a normal frag that the system waits
+      * JOBDEL_SOFTWALLTIME: time after a normal frag that the system waits
         to retry to frag the job.
-      * JOBDEL_WALLTIME : time after a normal frag that the system waits
+      * JOBDEL_WALLTIME: time after a normal frag that the system waits
         before to delete the job arbitrary and suspects nodes.
-      * LOG_FILE : specify the path of OAR log file (default :
-        /var/log/oar.log).
+      * LOG_FILE: specify the path of OAR log file (default: /var/log/oar.log).
 
   - Add wait() in pingchecker to avoid zombies.
   - Better code modularization.

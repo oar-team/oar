@@ -9,8 +9,6 @@ Protocol 2
 # HostKeys for protocol version 2
 HostKey %%OARCONFDIR%%/oar_ssh_host_rsa_key
 #HostKey %%OARCONFDIR%%/oar_ssh_host_dsa_key
-#Privilege Separation is turned on for security
-UsePrivilegeSeparation yes
 
 # Lifetime and size of ephemeral version 1 server key
 #KeyRegenerationInterval 3600
@@ -52,7 +50,7 @@ PrintLastLog yes
 KeepAlive yes
 TCPKeepAlive yes
 
-AcceptEnv OAR_CPUSET OAR_JOB_USER
+AcceptEnv OAR_CPUSET OAR_USER_CPUSET OAR_USER_GPUDEVICE OAR_JOB_USER 
 PermitUserEnvironment yes
 #UseLogin no
 AllowUsers %%OAROWNER%%

@@ -18,6 +18,8 @@ The I<new walltime> is to be passed in the format [+-]h:m:s. If no sign is used,
 The value is a new walltime absolute value (like passed to oarsub). If prefixed
 by +, the request is an increase of the walltime by the passed value. If
 prefixed by -, it is a decrease request.
+A walltime change request that has not been yet accepted by the scheduler can be
+cancelled by passing the '+0' value.
 
 Walltime changes can only be requested for a running job.
 
@@ -47,11 +49,19 @@ I<Read your site's documentation or ask your administrator to know the configure
 
 =item B<--force>
 
-Request walltime increase to be applied at once: immediately and not incrementally.
+Request walltime increase to be trialed or applied immediately regardless of any otherwise configured delay.
+
+=item B<--whole>
+
+Request walltime increase to be trialed or applied wholly at once, or not applied otherwise.
 
 =item B<--delay-next-jobs>
 
 Request walltime increase to possibly delay next batch jobs (but not advance reservations), if required to fit in the resources allocation. Warning: this implies delaying any other batch jobs, including the ones from other users. Using this option may be prohibited.
+
+=item B<--timeout>
+
+Specify a timeout (in seconds) after which the walltime change request will be aborted if not already accepted by the scheduler. By default, there is no timeout unless a default timeout is set by the administrator.
 
 =item B<-h, --help>
 
@@ -70,7 +80,7 @@ All changes are logged. Changes using the force or delay-next-jobs options are a
 
 I<Please mind the walltime of the job and do not rely too much on that functionality.>
 
-The shell environment variables of the job are not updated (OAR_JOB_WALLTIME, OAR_JOB_WALLTIME_SECONDS). 
+The shell environment variables of the job are not updated (OAR_JOB_WALLTIME, OAR_JOB_WALLTIME_SECONDS).
 
 Walltime change events for a job are listed in the I<oarstat> output.
 

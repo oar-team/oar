@@ -71,6 +71,7 @@ my $db_ro_pass;
 my $db_admin_user;
 my $db_admin_pass;
 my $db_is_local;
+my $no_admission_rules;
 my $action;
 my $conffile;
 
@@ -141,10 +142,10 @@ Options:
      --db-name=DB_NAME              Set the database name
      --db-ro-user=DB_RO_USER        Set the read-only database user 
      --db-ro-pass=DB_RO_PASS        Set the read-only database pass 
-
      --db-is-local                  The database is local, the script can use the local admin account to execute command (PostgreSQL) or the unix socket (MySQL)
      --db-admin-user=DB_ADMIN_USER  Set the database admin user to create the database. Only used with the --create action
      --db-admin-pass=DB_ADMIN_PASS  Set the database admin password to create the database. Only used with the --create action
+     --no-admission-rules           Do not populate the admission rules table with the default rules
  -y, --force-yes                    Force oar-database to continue without prompt even if it could be harmful
  -f, --force-sql                    Force the execution even if a SQL command fails
  -d, --debug                        Print debug information
@@ -177,7 +178,11 @@ sub init_database() {
     print "Initializing database '$db_name'...\n";
     &$exec_sql_file($DEFAULT_STRUCTURE) == 0       or die "Failed to execute $DEFAULT_STRUCTURE.\n";
     &$exec_sql_file($DEFAULT_DATA) == 0            or die "Failed to execute $DEFAULT_DATA.\n";
-    &$exec_sql_file($DEFAULT_ADMISSION_RULES) == 0 or die "Failed to execute $DEFAULT_ADMISSION_RULES.\n";
+    if (defined($no_admission_rules)) {
+        print "Skip admission rules.\n"
+    } else {
+        &$exec_sql_file($DEFAULT_ADMISSION_RULES) == 0 or die "Failed to execute $DEFAULT_ADMISSION_RULES.\n";
+    }
 }
 
 sub reset_database() {
@@ -205,9 +210,9 @@ sub upgrade_database() {
             if ($DEFAULT_UPGRADES{$current_version}) {
                 my ($to_version, $to_file) = @{$DEFAULT_UPGRADES{$current_version}};
                 print "Uprgading from '$current_version' to '$to_version'...\n";
-	    	    &$exec_sql_file($to_file) == 0 or die "Failed to upgrade the database from $current_version to $to_file with $to_file\n.";
+                &$exec_sql_file($to_file) == 0 or die "Failed to upgrade the database from $current_version to $to_file with $to_file\n.";
             } else {
-               	die "Unable to upgrade from the version '$current_version'\n";
+                die "Unable to upgrade from the version '$current_version'\n";
             }
             $current_version = get_current_schema_version();
         }
@@ -462,7 +467,8 @@ GetOptions ("help|h"                => \$usage,
             "db-name=s"             => \$db_name,
             "db-admin-user=s"       => \$db_admin_user,
             "db-admin-pass=s"       => \$db_admin_pass,
-            "db-is-local"           => \$db_is_local
+            "db-is-local"           => \$db_is_local,
+            "no-admission-rules"    => \$no_admission_rules,
 );
 
 

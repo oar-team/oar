@@ -1,0 +1,12 @@
+[Unit]
+Description=OAR compute node script
+After=oar-node.service
+
+[Service]
+ExecStart=%%OARCONFDIR%%/oar-node-service start
+ExecStop=%%OARCONFDIR%%/oar-node-service stop
+RemainAfterExit=yes
+Type=oneshot
+
+[Install]
+WantedBy=oar.target

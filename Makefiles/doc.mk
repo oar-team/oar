@@ -3,7 +3,7 @@ SRCDIR=
 
 include Makefiles/shared/shared.mk
 
-clean: clean_shared 
+clean: clean_shared
 	$(MAKE) -C docs clean
 
 build: build_shared
@@ -15,7 +15,7 @@ install: build  build-html-doc install_shared
 	install -d $(DESTDIR)$(DOCDIR)/scripts/job_resource_manager
 
 	install -m 0644 sources/core/tools/job_resource_manager.pl $(DESTDIR)$(DOCDIR)/scripts/job_resource_manager/
-	
+
 	install -m 0644 sources/core/scripts/oar_prologue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
 	install -m 0644 sources/core/scripts/oar_epilogue $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/
 	install -m 0644 sources/core/scripts/oar_prologue_local $(DESTDIR)$(DOCDIR)/scripts/prologue_epilogue/

@@ -7,7 +7,15 @@ export OARDO_UNINSTALL = $(MAKE) -f Makefiles/oardo/oardo.mk uninstall
 SHARED_INSTALL   = $(MAKE) -f Makefiles/shared/common_target.mk install
 SHARED_UNINSTALL = $(MAKE) -f Makefiles/shared/common_target.mk uninstall
 
-# == 
+# Detect if system is using systemd
+SYSTEMD_INIT? = $(shell if [ `ps --no-headers -o comm 1` = "systemd" ]; then \
+				echo "true"; \
+			else \
+				echo "false"; \
+			fi; \
+	   	)
+
+# ==
 TARGET_DIST?=$(shell if [ -f /etc/debian_version ]; then echo "debian"; fi; \
 	             if [ -f /etc/redhat-release ]; then echo "redhat"; fi; \
 	      )
@@ -20,9 +28,9 @@ ifeq "$(SETUP_TYPE)" "deb"
 include Makefiles/shared/dist/debian-deb.mk
 else
 include Makefiles/shared/dist/debian-tgz.mk
-endif 
+endif
 
-endif 
+endif
 # == debian
 
 # == redhat
@@ -32,9 +40,9 @@ ifeq "$(SETUP_TYPE)" "rpm"
 include Makefiles/shared/dist/redhat-rpm.mk
 else
 include Makefiles/shared/dist/redhat-tgz.mk
-endif 
+endif
 
-endif 
+endif
 # == redhat
 
 include Makefiles/shared/dist/common.mk
@@ -67,6 +75,7 @@ MODULE_SETUP_TARGET_FILES  = $(addprefix $(DESTDIR)$(OARDIR)/setup/,$(notdir $(b
 TEMPLATE_SOURCE_FILES=$(filter %.in, $(PROCESS_TEMPLATE_FILES) \
                                      $(MANDIR_FILES) \
                                      $(INITDIR_FILES) \
+                                     $(SYSTEMDDIR_FILES) \
                                      $(DEFAULTDIR_FILES) \
                                      $(LOGROTATEDIR_FILES) \
                                      $(CRONDIR_FILES) \
@@ -124,7 +133,7 @@ $(TEMPLATE_BUILDED_FILES) : %: %.in
 	    s#%%SETUP_TYPE%%#$(SETUP_TYPE)#g;;\
 	    s#%%TARGET_DIST%%#$(TARGET_DIST)#g;;\
 	    s#%%OARDOPATH%%#/bin:/sbin:/usr/bin:/usr/sbin:$(BINDIR):$(SBINDIR):$(OARDIR)/oardodo#;;\
-	    " "$@.in" > $@ 
+	    " "$@.in" > $@
 
 clean_templates:
 	-rm -f $(TEMPLATE_BUILDED_FILES)
@@ -166,7 +175,7 @@ install_perllib:
 	cp -r $(OAR_PERLLIB)/* $(DESTDIR)$(PERLLIBDIR)/
 
 uninstall_perllib:
-	
+
 	(cd $(OAR_PERLLIB) && find . -type f -exec rm -f $(DESTDIR)$(PERLLIBDIR)/{} \;)
 else
 install_perllib:
@@ -210,7 +219,7 @@ SOURCE_MANDIR_FILES = $(filter %.pod, $(patsubst %.pod.in, %.pod, $(MANDIR_FILES
 BUILD_MANDIR_FILES = $(patsubst %.pod, %.1, $(SOURCE_MANDIR_FILES)) $(filter %.1,$(MANDIR_FILES))
 TARGET_MANDIR_FILES = $(addprefix $(DESTDIR)$(MANDIR)/man1, $(notdir $(BUILD_MANDIR_FILES)))
 
-install_man1: 
+install_man1:
 	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(MANDIR)/man1" SOURCE_FILES="$(BUILD_MANDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 uninstall_man1:
@@ -253,13 +262,23 @@ uninstall_examples:
 	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)" SOURCE_FILES="$(SHAREDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 #
-# INITDIR_FILES
+# INITDIR_FILES / SYSTEMDDIR_FILES
 #
+
+ifeq "$(SYSTEMD_INIT)" "true"
+install_init:
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/systemd" SOURCE_FILES="$(SYSTEMDDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+uninstall_init:
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/systemd" SOURCE_FILES="$(SYSTEMDDIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+else
 install_init:
 	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/init.d" SOURCE_FILES="$(INITDIR_FILES)" TARGET_FILE_RIGHTS=0755
 
 uninstall_init:
 	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/init.d" SOURCE_FILES="$(INITDIR_FILES)" TARGET_FILE_RIGHTS=0755
+endif
 
 
 #
@@ -277,11 +296,16 @@ uninstall_cron:
 #
 # DEFAULTDIR_FILES
 #
+ifneq "$(SYSTEMD_INIT)" "true"
 install_default:
 	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/default" SOURCE_FILES="$(DEFAULTDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 uninstall_default:
 	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(SHAREDIR)/default" SOURCE_FILES="$(DEFAULTDIR_FILES)" TARGET_FILE_RIGHTS=0644
+else
+install_default:
+uninstall_default:
+endif
 
 
 #

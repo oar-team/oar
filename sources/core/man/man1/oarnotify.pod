@@ -46,8 +46,8 @@ List all queues and there status.
 =item B<tag_to_Almighty>
 
 The non exhaustive list of these tags is:
- - "Term" : ask OAR server to launch the scheduler
- - "Finaud" : ask OAR server to launch the check of empty and Suspected nodes
+ - "Term": ask OAR server to launch the scheduler
+ - "Finaud": ask OAR server to launch the check of empty and Suspected nodes
 
 =back
 

@@ -9,7 +9,7 @@
 if [ -n "$OAR_SERVER_NO_START_STOP" -a -z "$OAR_SERVER_FORCE_START_STOP" ]; then
 	echo "oar-server disabled from %%DEFAULTDIR%%/oar-server"
 	exit 0
-fi 	
+fi
 
 # Additional options that are passed to the Daemon.
 DAEMON_OPTS=""

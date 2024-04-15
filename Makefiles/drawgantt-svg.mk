@@ -25,7 +25,7 @@ uninstall: uninstall_shared
 	    $(DESTDIR)$(WWWDIR)/drawgantt-svg/drawgantt.php \
 	    $(DESTDIR)$(WWWDIR)/drawgantt-svg/drawgantt-svg.php \
 	    $(DESTDIR)$(WWWDIR)/drawgantt-svg/index.php
-	
+
 	-rmdir \
 	    $(DESTDIR)$(WWWDIR)/drawgantt-svg
 

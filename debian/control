@@ -3,14 +3,15 @@ Maintainer: Pierre Neyron <pierre.neyron@free.fr>
 Uploaders: Vincent Danjean <vdanjean@debian.org>
 Section: utils
 Priority: optional
-Build-Depends: debhelper-compat (= 12),
+Build-Depends: debhelper-compat (= 13),
                po-debconf,
                perl,
                python3-sphinx
-Standards-Version: 4.3.0
+Standards-Version: 4.6.2
 Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
 Vcs-Browser: https://github.com/oar-team/oar
 Homepage: http://oar.imag.fr/
+Rules-Requires-Root: no
 
 Package: liboar-perl
 Architecture: any
@@ -19,7 +20,8 @@ Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
-         libdbi-perl
+         libdbi-perl,
+         libcapture-tiny-perl
 Suggests: oar-server,
           oar-user,
           oar-node,
@@ -57,7 +59,6 @@ Depends: ${misc:Depends},
          ${perl:Depends},
          openssh-client,
          cron,
-         lsb-base,
          libsort-versions-perl,
          libdbi-perl,
          oar-common (= ${binary:Version}),
@@ -119,7 +120,6 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          openssh-client,
          openssh-server,
-         lsb-base (>= 3.0-6),
          oar-common (= ${binary:Version})
 Suggests: oar-doc,
           xauth
@@ -194,6 +194,8 @@ Depends: ${misc:Depends},
          libtie-ixhash-perl,
          libappconfig-perl,
          libsort-naturally-perl,
+         libutf8-all-perl,
+         libcgi-fast-perl,
          php,
          php-mysql | php-pgsql
 Suggests: oar-doc

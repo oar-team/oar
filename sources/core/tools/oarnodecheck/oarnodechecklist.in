@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 
 OARUSER=%%OAROWNER%%
 eval CHECKLOGDIR=~$OARUSER/checklogs

@@ -56,5 +56,5 @@ Admin Documentation
 Other Documentations
 ====================
 
-    See the contribs section of OAR website: http://oar.imag.fr/wiki:contribs (and feel free to contribute !).
+    See the documentation section of OAR website: http://oar.imag.fr/documentation
 

@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 
 usage() {
 	echo "Usage: `basename $0` [-e <method>] <node file>"

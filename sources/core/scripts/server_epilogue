@@ -1,5 +1,4 @@
 #!/bin/bash
-# $Id$
 #
 # This a placeholder script for OAR jobs server side epilogue.
 # This script is to be run on OAR server upon job termination.

@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 
 use strict;
 use warnings;
@@ -9,27 +8,29 @@ use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 use Getopt::Long;
 use OAR::Version;
 
-my $Old_umask = sprintf("%lo",umask());
+my $Old_umask = sprintf("%lo", umask());
 umask(oct("022"));
 
-Getopt::Long::Configure ("gnu_getopt");
+Getopt::Long::Configure("gnu_getopt");
 my $Version;
 my $Help;
 my $Delete_windows_before;
 my $Reinitialize;
-GetOptions (
-    "reinitialize" => \$Reinitialize,
+GetOptions(
+    "reinitialize"    => \$Reinitialize,
     "delete-before=i" => \$Delete_windows_before,
-    "help|h" => \$Help,
-    "version|V" => \$Version
-           ) or exit(1);
-if (defined($Version)){
-    print("OAR version : ".OAR::Version::get_version()."\n") ;
+    "help|h"          => \$Help,
+    "version|V"       => \$Version
+  ) or
+  exit(1);
+
+if (defined($Version)) {
+    print("OAR version: " . OAR::Version::get_version() . "\n");
     exit(0);
 }
 
-if (defined($Help)){
-     print <<EOS;
+if (defined($Help)) {
+    print <<EOS;
 Usage: $0 [-h] [-V] [--reinitialize | --delete_before]
 Feed accounting table to make usage statistics.
 Options:
@@ -46,7 +47,7 @@ EOS
 # Default window size
 my $windowSize = 86400;
 init_conf($ENV{OARCONFFILE});
-if (is_conf("ACCOUNTING_WINDOW")){
+if (is_conf("ACCOUNTING_WINDOW")) {
     $windowSize = get_conf("ACCOUNTING_WINDOW");
 }
 
@@ -57,23 +58,23 @@ if (not defined($base)) {
 }
 
 my $lockName = "ACCOUNTING";
-OAR::IO::get_lock($base,$lockName,3600); # Only for mysql
-if (OAR::IO::get_database_type() eq "Pg"){
-    OAR::IO::lock_table($base, ["accounting"]); # begin transaction
-    $base->do("LOCK TABLE accounting IN EXCLUSIVE MODE");
+OAR::IO::get_lock($base, $lockName, 3600);    # Only for mysql
+if (OAR::IO::get_database_type() eq "Pg") {
+    OAR::IO::lock_table($base, ["accounting"]);    # begin transaction
+    OAR::IO::lock_table_exclusive($base, ["accounting"]);
 }
-if (defined($Reinitialize)){
+if (defined($Reinitialize)) {
     print("Deleting all records from the acounting table...\n");
     OAR::IO::delete_all_from_accounting($base);
-}elsif (defined($Delete_windows_before)){
+} elsif (defined($Delete_windows_before)) {
     print("Deleting records older than $Delete_windows_before seconds ago...\n");
     $Delete_windows_before = OAR::IO::get_date($base) - $Delete_windows_before;
-    OAR::IO::delete_accounting_windows_before($base,$Delete_windows_before);
-}else{
-    OAR::IO::check_accounting_update($base,$windowSize);
+    OAR::IO::delete_accounting_windows_before($base, $Delete_windows_before);
+} else {
+    OAR::IO::check_accounting_update($base, $windowSize);
 }
 OAR::IO::unlock_table($base) if (OAR::IO::get_database_type() eq "Pg");
-OAR::IO::release_lock($base,$lockName);
+OAR::IO::release_lock($base, $lockName);
 
 OAR::IO::disconnect($base);
 

@@ -1,0 +1,10 @@
+[Unit]
+Description=Criu for OAR daemon
+After=sshd.service
+
+[Service]
+ExecStart=/usr/local/sbin/criu-daemon
+PIDFile=/var/run/criu-daemon
+
+[Install]
+WantedBy=default.target
