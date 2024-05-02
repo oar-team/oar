@@ -10153,6 +10153,11 @@ sub get_count_jobs_active_queues($){
     my $queue_names = join ',', map "\'$_->[0]\'", @queues;
     my @states      = ( "Running", "Waiting" );
     my @reservations = ( "None", "Scheduled" );
+    my %res = ();
+
+    if (@queues == 0){
+	    return (%res);
+    }
 
 
     my $req = <<EOS;
@@ -10166,7 +10171,6 @@ EOS
 
     my $sth = $dbh->prepare($req);
     $sth->execute();
-    my %res = ();
     foreach my $queue (@queues){
         foreach ( "Running", "Waiting", "Waiting(NoSched)" ){
             $res{$queue->[0]}{$_} = 0;
