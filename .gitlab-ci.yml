@@ -58,12 +58,6 @@ build-buster:arm64:
   tags:
     - grid5000-docker-arm64
 
-build-buster:ppc64:
-  <<: *build-buster
-  image: ppc64le/debian:buster
-  tags:
-    - grid5000-docker-ppc64
-
 .build-bullseye: &build-bullseye
   <<: *build
   variables:
