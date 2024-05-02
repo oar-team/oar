@@ -1,3 +1,10 @@
+oar (2.5.10~g5k32-1) unstable; urgency=medium
+
+  * fdf90bef [oarexec] Echo received data if transfered hash is invalid
+  * b68e1735 [IO] Fixed: job counter fails when no queue is active
+
+ -- Luke Bertot <luke.bertot@inria.fr>  Thu, 02 May 2024 15:13:53 +0200
+
 oar (2.5.10~g5k31-2) unstable; urgency=medium
 
   * 54ef7202 [IO] Fixed bug introduced in 10a92167
