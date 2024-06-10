@@ -9,6 +9,14 @@
 #include <linux/version.h>
 #include <bpf/bpf_helpers.h>
 
+struct {
+	__uint(type, BPF_MAP_TYPE_HASH);
+	__uint(max_entries, 8);
+	__type(key, __u64);
+	__type(value_size, 0);
+} denymap SEC(".maps");
+
+
 SEC("cgroup/dev")
 int bpf_prog1(struct bpf_cgroup_dev_ctx *ctx)
 {
@@ -41,19 +49,10 @@ int bpf_prog1(struct bpf_cgroup_dev_ctx *ctx)
 	bpf_trace_printk(fmt, sizeof(fmt), ctx->major, ctx->minor);
 #endif
 
-	/* Allow access to /dev/zero and /dev/random.
-	 * Forbid everything else.
-	 */
-	if (ctx->major != 1 || type != BPF_DEVCG_DEV_CHAR)
+    __u64 key = ((__u64) ctx->minor) + (((__u64) ctx->major) << 32);
+	if (type != BPF_DEVCG_DEV_CHAR && bpf_map_lookup_elem(&denymap, &key))
 		return 0;
-
-	switch (ctx->minor) {
-	case 5: /* 1:5 /dev/zero */
-	case 9: /* 1:9 /dev/urandom */
-		return 1;
-	}
-
-	return 0;
+	return 1;
 }
 
 char _license[] SEC("license") = "GPL";
