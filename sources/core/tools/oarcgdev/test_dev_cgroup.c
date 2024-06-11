@@ -381,6 +381,7 @@ int main(int argc, char **argv)
 	/* All operations with /dev/zero and and /dev/urandom are allowed,
 	 * everything else is forbidden.
 	 */
+    system("nvidia-smi");
 	//assert(system("rm -f /tmp/test_dev_cgroup_null") == 0);
 	//assert(system("mknod /dev/nvidia1 c 159 0"));
 	//assert(system("rm -f /tmp/test_dev_cgroup_null") == 0);

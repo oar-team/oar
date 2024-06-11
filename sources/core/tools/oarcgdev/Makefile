@@ -10,10 +10,8 @@ run: test_dev_cgroup
 	@echo ========================
 	sudo ls -l /sys/fs/bpf
 	sudo rm -f /sys/fs/bpf/toto42
-	sudo rm -f /dev/nvidia1
 	@echo ========================
 	sudo ./test_dev_cgroup
 	@echo ========================
 	sudo ls -l /sys/fs/bpf
 	sudo rm -fv /sys/fs/bpf/toto42
-	sudo rm -fv /dev/nvidia1
