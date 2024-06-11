@@ -13,7 +13,7 @@ struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__uint(max_entries, 8);
 	__type(key, __u64);
-	__type(value_size, 0);
+	__type(value, __u8);
 } denymap SEC(".maps");
 
 
@@ -21,7 +21,6 @@ SEC("cgroup/dev")
 int bpf_prog1(struct bpf_cgroup_dev_ctx *ctx)
 {
 	short type = ctx->access_type & 0xFFFF;
-#ifdef DEBUG
 	short access = ctx->access_type >> 16;
 	char fmt[] = "  %d:%d    \n";
 
@@ -47,8 +46,8 @@ int bpf_prog1(struct bpf_cgroup_dev_ctx *ctx)
 		fmt[10] = 'm';
 
 	bpf_trace_printk(fmt, sizeof(fmt), ctx->major, ctx->minor);
-#endif
 
+    return 1;
     __u64 key = ((__u64) ctx->minor) + (((__u64) ctx->major) << 32);
 	if (type != BPF_DEVCG_DEV_CHAR && bpf_map_lookup_elem(&denymap, &key))
 		return 0;

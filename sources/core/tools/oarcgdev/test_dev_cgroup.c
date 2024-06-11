@@ -307,6 +307,11 @@ int bpf_prog_test_load(const char *file, enum bpf_prog_type type,
 	if (err)
 		goto err_out;
 
+    if ((err = bpf_program__pin(prog, "/sys/fs/bpf/toto42")) < 0 ) {
+		printf("Failed to pin program\n");
+		goto err_out;
+	}
+
 	*pobj = obj;
 	*prog_fd = bpf_program__fd(prog);
 
@@ -315,29 +320,25 @@ err_out:
 	bpf_object__close(obj);
 	return err;
 }
-
-int bpf_test_load_program(enum bpf_prog_type type, const struct bpf_insn *insns,
-			  size_t insns_cnt, const char *license,
-			  __u32 kern_version, char *log_buf,
-			  size_t log_buf_sz)
-{
-	LIBBPF_OPTS(bpf_prog_load_opts, opts,
-		.kern_version = kern_version,
-		.prog_flags = BPF_F_TEST_RND_HI32,
-		.log_level = extra_prog_load_log_flags,
-		.log_buf = log_buf,
-		.log_size = log_buf_sz,
-	);
-
-	return bpf_prog_load(type, NULL, license, insns, insns_cnt, &opts);
-}
 /* testing_helpers */
+
+/* from get_cgroup_id_user.c */
+static int bpf_find_map(struct bpf_object *obj, const char *name)
+{
+	struct bpf_map *map;
+
+	map = bpf_object__find_map_by_name(obj, name);
+	if (!map)
+		return -1;
+	return bpf_map__fd(map);
+}
+/* from get_cgroup_id_user.c */
 
 int main(int argc, char **argv)
 {
 	struct bpf_object *obj;
 	int error = EXIT_FAILURE;
-	int prog_fd, cgroup_fd;
+	int prog_fd, denymap_fd, cgroup_fd;
 	__u32 prog_cnt;
 
 	/* Use libbpf 1.0 API mode */
@@ -348,6 +349,16 @@ int main(int argc, char **argv)
 		printf("Failed to load DEV_CGROUP program\n");
 		goto out;
 	}
+
+	denymap_fd = bpf_find_map(obj, "denymap");
+	if (denymap_fd < 0) {
+		printf("Failed to find map\n");
+		goto out;
+	}
+
+//    __u64 key = ((__u64) 1) + (((__u64) 159) << 32);
+//    __u8 value = 0;
+//    bpf_map_update_elem(denymap_fd, &key, &value, 0);
 
 	cgroup_fd = cgroup_setup_and_join(TEST_CGROUP);
 	if (cgroup_fd < 0) {
@@ -371,7 +382,7 @@ int main(int argc, char **argv)
 	 * everything else is forbidden.
 	 */
 	//assert(system("rm -f /tmp/test_dev_cgroup_null") == 0);
-	//assert(system("mknod /tmp/test_dev_cgroup_null c 1 3"));
+	//assert(system("mknod /dev/nvidia1 c 159 0"));
 	//assert(system("rm -f /tmp/test_dev_cgroup_null") == 0);
 
 	///* /dev/zero is whitelisted */
