@@ -1,17 +1,19 @@
-all: test_dev_cgroup
+all: oarcgdev
 
-test_dev_cgroup: dev_cgroup.o test_dev_cgroup.c
-	gcc -g -O0 -rdynamic -Wall -Werror test_dev_cgroup.c -lelf -lz -lbpf -o test_dev_cgroup
+oarcgdev: oarcgdev-ebpf.o oarcgdev.c
+	gcc -g -O0 -rdynamic -Wall -Werror oarcgdev.c -lelf -lz -lbpf -o oarcgdev
 
-dev_cgroup.o: dev_cgroup.c
-	clang -I /usr/include/*-linux-gnu/ -O2 -target bpf -c dev_cgroup.c -mcpu=v3 -g -o dev_cgroup.o
+oarcgdev-ebpf.o: oarcgdev-ebpf.c
+	clang -I /usr/include/*-linux-gnu/ -O2 -target bpf -c oarcgdev-ebpf.c -mcpu=v3 -g -o oarcgdev-ebpf.o
 
-run: test_dev_cgroup
+run: oarcgdev
+	@echo 'Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` to see output of the BPF programs.'
 	@echo ========================
 	sudo ls -l /sys/fs/bpf
 	sudo rm -f /sys/fs/bpf/toto42
 	@echo ========================
-	sudo ./test_dev_cgroup
+	sudo ./oarcgdev arg1 arg2 /dev/nvidia1 /dev/nvidia3
 	@echo ========================
 	sudo ls -l /sys/fs/bpf
 	sudo rm -fv /sys/fs/bpf/toto42
+	@echo ========================
