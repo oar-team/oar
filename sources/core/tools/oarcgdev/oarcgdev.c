@@ -378,6 +378,7 @@ int main(int argc, char **argv)
 			return error;
 		}
 		denykeys[i] = make_denykey(type, major(s.st_rdev), minor(s.st_rdev));
+		/* sanity check: make sure our device encoding respects Linux's one */
 		assert((denykeys[i] & ~(0xful << 60)) == s.st_rdev);
 	}
 
@@ -398,7 +399,11 @@ int main(int argc, char **argv)
 
 	__u8 denyvalue = 0;
 	for (int i = 0; i < (argc - 3); i++) {
-		bpf_map_update_elem(denymap_fd, &denykeys[i], &denyvalue, 0);
+		if (bpf_map_update_elem(denymap_fd, &denykeys[i], &denyvalue, 0)) {
+			printf("Failed to write in map\n");
+			goto out;
+		}
+
 	}
 
 	cgroup_fd = cgroup_setup_and_join(TEST_CGROUP);

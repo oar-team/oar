@@ -1,6 +1,6 @@
 #include <linux/bpf.h>
 
-__u64 make_denykey(__u16 type, __u16 major, __u32 minor) {
+static inline __u64 make_denykey(__u16 type, __u16 major, __u32 minor) {
 	__u64 denykey;
 	/* major/minor encoding is reverse engineered from bits/sysmacros.h */
 	denykey  = (((__u64) (major & 0x00000ffful)) <<  8);
