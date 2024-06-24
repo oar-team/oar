@@ -278,18 +278,6 @@ int cgroup_setup_and_join(const char *path) {
 
 /* cgroup_helpers */
 
-/* from get_cgroup_id_user.c */
-static int bpf_find_map(struct bpf_object *obj, const char *name)
-{
-	struct bpf_map *map;
-
-	map = bpf_object__find_map_by_name(obj, name);
-	if (!map)
-		return -1;
-	return bpf_map__fd(map);
-}
-/* from get_cgroup_id_user.c */
-
 /*
  * Usage: oarcgdev <bpffs_filename> <cgroup_path> <dev> [<dev> [<dev> [...]]]
  * Where dev is in the form: devtype:major:minor
@@ -369,11 +357,15 @@ int main(int argc, char **argv)
 
 	prog_fd = bpf_program__fd(prog);
 
-	denymap_fd = bpf_find_map(obj, "denymap");
-	if (denymap_fd < 0) {
+	struct bpf_map *map;
+
+	if (!(map = bpf_object__find_map_by_name(obj, "denymap"))) {
 		printf("Failed to find map\n");
-		goto out;
+		bpf_object__close(obj);
+		return -ENOENT;
 	}
+
+	denymap_fd = bpf_map__fd(map);
 
 	__u8 denyvalue = 0;
 	for (int i = 0; i < (argc - 3); i++) {
@@ -381,7 +373,6 @@ int main(int argc, char **argv)
 			printf("Failed to write in map\n");
 			goto out;
 		}
-
 	}
 
 	cgroup_fd = cgroup_setup_and_join(TEST_CGROUP);
