@@ -4,20 +4,13 @@
 
 #define _GNU_SOURCE
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <sys/time.h>
 
-#include <linux/bpf.h>
 #include <bpf/bpf.h>
 #include <bpf/libbpf.h>
 #include <sys/sysmacros.h>
-
-//#include "cgroup_helpers.h"
-//#include "testing_helpers.h"
 
 #include "oarcgdev-common.h"
 
@@ -25,17 +18,10 @@
 
 #define TEST_CGROUP "/test-bpf-based-device-cgroup/"
 
-#define DEV_DELIM ":"
-
-/* cgroup_helpers */
-#include <sched.h>
 #include <linux/limits.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <sys/mount.h>
-#include <fcntl.h>
 #include <sys/stat.h>
-#include <ftw.h>
 
 #define clean_errno() (errno == 0 ? "None" : strerror(errno))
 #define log_err(MSG, ...) fprintf(stderr, "(%s:%d: errno: %s) " MSG "\n", \
