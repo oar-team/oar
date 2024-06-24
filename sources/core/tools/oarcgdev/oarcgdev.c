@@ -278,55 +278,6 @@ int cgroup_setup_and_join(const char *path) {
 
 /* cgroup_helpers */
 
-/* testing_helpers */
-int extra_prog_load_log_flags = 0;
-
-int bpf_prog_test_load(const char *file, enum bpf_prog_type type,
-		       struct bpf_object **pobj, int *prog_fd)
-{
-	LIBBPF_OPTS(bpf_object_open_opts, opts,
-		.kernel_log_level = extra_prog_load_log_flags,
-	);
-	struct bpf_object *obj;
-	struct bpf_program *prog;
-	__u32 flags;
-	int err;
-
-	obj = bpf_object__open_file(file, &opts);
-	if (!obj)
-		return -errno;
-
-	prog = bpf_object__next_program(obj, NULL);
-	if (!prog) {
-		err = -ENOENT;
-		goto err_out;
-	}
-
-	if (type != BPF_PROG_TYPE_UNSPEC)
-		bpf_program__set_type(prog, type);
-
-	flags = bpf_program__flags(prog) | BPF_F_TEST_RND_HI32;
-	bpf_program__set_flags(prog, flags);
-
-	err = bpf_object__load(obj);
-	if (err)
-		goto err_out;
-
-    if ((err = bpf_program__pin(prog, "/sys/fs/bpf/toto42")) < 0 ) {
-		printf("Failed to pin program\n");
-		goto err_out;
-	}
-
-	*pobj = obj;
-	*prog_fd = bpf_program__fd(prog);
-
-	return 0;
-err_out:
-	bpf_object__close(obj);
-	return err;
-}
-/* testing_helpers */
-
 /* from get_cgroup_id_user.c */
 static int bpf_find_map(struct bpf_object *obj, const char *name)
 {
@@ -349,6 +300,7 @@ int main(int argc, char **argv)
 	int error = EXIT_FAILURE;
 	int prog_fd, denymap_fd, cgroup_fd;
 	__u64 denykeys[32];
+	int extra_prog_load_log_flags = 0;
 
 	if (argc < 4) {
 		fprintf(stderr, "Error: %s requires at least 3 parameters\n", argv[0]);
@@ -385,11 +337,37 @@ int main(int argc, char **argv)
 	/* Use libbpf 1.0 API mode */
 	libbpf_set_strict_mode(LIBBPF_STRICT_ALL);
 
-	if (bpf_prog_test_load(DEV_CGROUP_PROG, BPF_PROG_TYPE_CGROUP_DEVICE,
-			  &obj, &prog_fd)) {
-		printf("Failed to load DEV_CGROUP program\n");
-		goto out;
+	LIBBPF_OPTS(bpf_object_open_opts, opts,
+		.kernel_log_level = extra_prog_load_log_flags,
+	);
+	struct bpf_program *prog;
+
+	obj = bpf_object__open_file(DEV_CGROUP_PROG, &opts);
+	if (!obj) {
+		printf("Failed to open program\n");
+		return -errno;
 	}
+
+	prog = bpf_object__next_program(obj, NULL);
+	if (!prog) {
+		printf("Failed to get program\n");
+		return -ENOENT;
+	}
+
+	bpf_program__set_type(prog, BPF_PROG_TYPE_CGROUP_DEVICE);
+	if ((error = bpf_object__load(obj))) {
+		printf("Failed to load program\n");
+		bpf_object__close(obj);
+		return(error);
+	}
+
+	if ((error = bpf_program__pin(prog, "/sys/fs/bpf/toto42")) < 0 ) {
+		printf("Failed to pin program\n");
+		bpf_object__close(obj);
+		return(error);
+	}
+
+	prog_fd = bpf_program__fd(prog);
 
 	denymap_fd = bpf_find_map(obj, "denymap");
 	if (denymap_fd < 0) {
