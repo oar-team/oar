@@ -14,10 +14,12 @@ run: oarcgdev
 	@echo 'Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` to see output of the BPF programs.'
 	@echo ========================
 	sudo ls -l /sys/fs/bpf
-	sudo rm -f /sys/fs/bpf/toto42
 	@echo ========================
-	sudo ./oarcgdev arg1 arg2 /dev/nvidia1 /dev/nvidia3
+	sudo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartUnit ss oar-user-jobid.slice fail
+	sudo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager SetUnitProperties 'sba(sv)' oar-user-jobid.slice 1 1 AllowedCPUs ay 1 6
+	@echo ========================
+	sudo ./oarcgdev /sys/fs/bpf/oar-user-jobid /sys/fs/cgroup/oar.slice/oar-user.slice/oar-user-jobid.slice /dev/nvidia1 /dev/nvidia3
 	@echo ========================
 	sudo ls -l /sys/fs/bpf
-	sudo rm -fv /sys/fs/bpf/toto42
+	sudo rm -v /sys/fs/bpf/oar-user-jobid 
 	@echo ========================
