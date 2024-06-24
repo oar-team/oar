@@ -12,7 +12,7 @@
 
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
-	__uint(max_entries, 8);
+	__uint(max_entries, 128);
 	__type(key, __u64);
 	__type(value, __u8);
 } denymap SEC(".maps");
