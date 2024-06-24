@@ -1,5 +1,9 @@
 #include <linux/bpf.h>
 
+#define MAP_MAX_DEVS 128
+#define MAP_NAME denymap
+#define MAP_NAME_STR "denymap"
+
 static inline __u64 make_denykey(__u16 type, __u16 major, __u32 minor) {
 	__u64 denykey;
 	/* major/minor encoding is reverse engineered from bits/sysmacros.h */

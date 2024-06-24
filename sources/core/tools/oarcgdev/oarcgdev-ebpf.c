@@ -15,10 +15,10 @@ struct {
 	__uint(max_entries, 128);
 	__type(key, __u64);
 	__type(value, __u8);
-} denymap SEC(".maps");
+} MAP_NAME SEC(".maps");
 
 SEC("cgroup/dev")
-int bpf_prog1(struct bpf_cgroup_dev_ctx *ctx)
+int oarcgdev(struct bpf_cgroup_dev_ctx *ctx)
 {
 	short type = ctx->access_type & 0xffff;
 	short access = ctx->access_type >> 16;
