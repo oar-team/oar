@@ -1,10 +1,3 @@
-/* Copyright (c) 2017 Facebook
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of version 2 of the GNU General Public
- * License as published by the Free Software Foundation.
- */
-
 #include <linux/bpf.h>
 #include <linux/version.h>
 #include <bpf/bpf_helpers.h>
@@ -12,7 +5,7 @@
 
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
-	__uint(max_entries, 128);
+	__uint(max_entries, MAP_MAX_DEVS);
 	__type(key, __u64);
 	__type(value, __u8);
 } MAP_NAME SEC(".maps");
@@ -21,6 +14,7 @@ SEC("cgroup/dev")
 int oarcgdev(struct bpf_cgroup_dev_ctx *ctx)
 {
 	short type = ctx->access_type & 0xffff;
+#ifdef TEST
 	short access = ctx->access_type >> 16;
 	char fmt[] = "  %d:%d     %s";
 
@@ -41,15 +35,19 @@ int oarcgdev(struct bpf_cgroup_dev_ctx *ctx)
 		fmt[9] = 'w';
 	if (access & BPF_DEVCG_ACC_MKNOD)
 		fmt[10] = 'm';
+#else
+    char fmt[] = "  %d:%d  ";
+#endif
 
-	__u64 denykey = make_denykey(ctx->access_type & 0xffff, ctx->major, ctx->minor);
-	//char debugfmt[] = "denykey: 0x%lx";
-	//bpf_trace_printk(debugfmt, sizeof(debugfmt), denykey);
+	__u64 denykey = make_denykey(type, ctx->major, ctx->minor);
+
 	if (bpf_map_lookup_elem(&denymap, &denykey)) {
 		bpf_trace_printk(fmt, sizeof(fmt), ctx->major, ctx->minor, "DENY");
 		return 0;
 	}
+#ifdef TEST
 	bpf_trace_printk(fmt, sizeof(fmt), ctx->major, ctx->minor, "ALLOW");
+#endif
 	return 1;
 }
 
