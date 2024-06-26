@@ -1,13 +1,13 @@
 all: oarcgdev
 
-oarcgdev: oarcgdev-ebpf.o oarcgdev.c
+oarcgdev: oarcgdev.bpf oarcgdev.c
 	gcc -DTEST -g -O0 -rdynamic -Wall -Werror oarcgdev.c -lelf -lz -lbpf -o oarcgdev
 
-oarcgdev-ebpf.o: oarcgdev-ebpf.c
-	clang -I /usr/include/*-linux-gnu/ -O2 -target bpf -c oarcgdev-ebpf.c -mcpu=v3 -g -o oarcgdev-ebpf.o
+oarcgdev.bpf: oarcgdev-ebpf.c
+	clang -I /usr/include/*-linux-gnu/ -O2 -target bpf -c oarcgdev-ebpf.c -mcpu=v3 -g -o oarcgdev.bpf
 
 clean:
-	rm oarcgdev oarcgdev-ebpf.o
+	rm oarcgdev oarcgdev.bpf
 
 
 run: clean oarcgdev
