@@ -13,7 +13,9 @@
 #include "oarcgdev-common.h"
 
 #define print_error(MSG, ...) fprintf(stderr, MSG "\n", ##__VA_ARGS__)
-#define BPF_PROG_PATH "./oarcgdev-ebpf.o"
+#ifndef BPF_PROG_PATH
+#define BPF_PROG_PATH "./oarcgdev.bpf"
+#endif
 #define ARGS_FIRST_DEV 2
 
 
