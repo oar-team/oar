@@ -16,7 +16,6 @@ struct {
 	__type(value, __u8);
 } denymap SEC(".maps");
 
-
 SEC("cgroup/dev")
 int bpf_prog1(struct bpf_cgroup_dev_ctx *ctx)
 {
@@ -47,9 +46,10 @@ int bpf_prog1(struct bpf_cgroup_dev_ctx *ctx)
 
 	bpf_trace_printk(fmt, sizeof(fmt), ctx->major, ctx->minor);
 
-    return 1;
-    __u64 key = ((__u64) ctx->minor) + (((__u64) ctx->major) << 32);
-	if (type != BPF_DEVCG_DEV_CHAR && bpf_map_lookup_elem(&denymap, &key))
+//	if (type == BPF_DEVCG_DEV_CHAR && ctx->minor == 1 && ctx->major == 195)
+//		return 0;
+	__u64 key = ((__u64) ctx->minor) + (((__u64) ctx->major) << 32);
+	if (type == BPF_DEVCG_DEV_CHAR && bpf_map_lookup_elem(&denymap, &key))
 		return 0;
 	return 1;
 }
