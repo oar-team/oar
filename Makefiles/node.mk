@@ -32,9 +32,14 @@ include Makefiles/shared/shared.mk
 
 build: build_shared
 	$(MAKE) -f Makefiles/man.mk build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -g -O0 -rdynamic -Wall -Werror -lelf -lz -lbpf -D BPF_PROG_PATH=$(OARDIR)/oarcgdev.bpf -o $(SRCDIR)/tools/oarcgdev/oarcgdev.c
+	clang -I /usr/include/*-linux-gnu/ -O2 -target bpf -mcpu=v3 -g -o $(SRCDIR)/tools/oarcgdev/oarcgdev.bpf -c $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf.c
+
 
 clean: clean_shared
 	$(MAKE) -f Makefiles/man.mk clean
+	-rm $(SRCDIR)/tools/oarcgdev/oarcgdev
+	-rm $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf
 
 install: install_shared
 	install -d $(DESTDIR)$(OARCONFDIR)/check.d
