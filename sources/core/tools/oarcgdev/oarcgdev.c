@@ -13,7 +13,7 @@
 #include "oarcgdev-common.h"
 
 #define print_error(MSG, ...) fprintf(stderr, MSG "\n", ##__VA_ARGS__)
-#define DEV_CGROUP_PROG "./oarcgdev-ebpf.o"
+#define BPF_PROG_PATH "./oarcgdev-ebpf.o"
 #define ARGS_FIRST_DEV 2
 
 
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 		.kernel_log_level = extra_prog_load_log_flags,
 	);
 
-	if (!(obj = bpf_object__open_file(DEV_CGROUP_PROG, &opts))) {
+	if (!(obj = bpf_object__open_file(BPF_PROG_PATH, &opts))) {
 		print_error("Failed to open BPF object");
 		return -errno;
 	}
