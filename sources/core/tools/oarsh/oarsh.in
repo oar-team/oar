@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 # In sshd_config you must have this line:
 #     AcceptEnv OAR_CPUSET OAR_JOB_USER
 
@@ -17,12 +17,12 @@ OPENSSH_OPTSTR="1246ab:c:e:fgi:kl:m:no:p:qstvxACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy
 # Filtered out OpenSSH options: -a -A -i -l -o -p -E -F -G -I -w
 OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
 # Forced OpenSSH configuration options
-OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=%%OARHOMEDIR%%/.ssh/known_hosts"
+OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=/var/lib/oar/.ssh/known_hosts"
 CPUSET_PATH=
 # User defined cpuset or device to define a sub cgroup in the destination host (e.g. use case where oarsh runs on only one of the reserved GPU)
-# Separator can be indifferently ',' '.' ':' or '+'. GNU Parallel does not like ','.
-export OAR_USER_CPUSET=${OAR_USER_CPUSET//[.:+]/,}
-export OAR_USER_GPUDEVICE=${OAR_USER_GPUDEVICE//[.:+]/,}
+# Separator can be indifferently ',' '.' or '+'. GNU Parallel does not like ','.
+export OAR_USER_CPUSET=${OAR_USER_CPUSET//[.+]/,}
+export OAR_USER_GPUDEVICE=${OAR_USER_GPUDEVICE//[.+]/,}
 
 # If you set this variable to something different from 0 then oarsh will act
 # like a normal ssh without CPUSET restriction
@@ -130,7 +130,7 @@ if [ -n "$OARSH_DEBUG" ]; then
 fi
 
 # Add security option for X11 forwarding
-XAUTH_LOCATION="%%XAUTHCMDPATH%%"
+XAUTH_LOCATION="/usr/bin/xauth"
 if [ -x "$XAUTH_LOCATION" ]; then
     OARSH_OPENSSH_DEFAULT_OPTIONS="$OARSH_OPENSSH_DEFAULT_OPTIONS -o XAuthLocation=$XAUTH_LOCATION"
 else
@@ -206,7 +206,8 @@ if [ "$CPUSET_PATH" != "" ]; then
             OAR_CPUSET=$(bash -c "$GET_CURRENT_CPUSET_CMD")
         else
             # cpuset must be of the form /oar/username_jobid, this trims any possible sub cpuset directory
-            OAR_CPUSET=$(grep -o -e "^/oar/[^/]\+" /proc/self/cpuset)
+            #OAR_CPUSET=$(grep -o -e "^/oar.slice/oar-U[^.].slice/[^/]\+" /proc/self/cpuset)
+            OAR_CPUSET=$(sed -e 's#^/[^/]\+/[^/]\+/\([^-]\+\)-\([^/]\+\)-\([^/]\+\)\.slice/.*$#/\1/\2_\3#' /proc/self/cpuset)
         fi
         if [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH/" ]; then
             JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
