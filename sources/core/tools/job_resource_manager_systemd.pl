@@ -1,5 +1,5 @@
 # The job_resource_manager_cgroups script is a perl script that oar server
-# DEploys on nodes to manage cpusets, users, job keys, ...
+# deploys on nodes to manage cpusets, users, job keys, ...
 #
 # In this script some cgroup Linux features are incorporated:
 #     - [cpuset]  Restrict the job processes to use only the reserved cores;
@@ -107,11 +107,6 @@ my $Cgroup_directory_collection_links = "/dev/oar_cgroups_links";
 # Max uptime for automatic reboot (disabled if 0)
 my $max_uptime = 259200;
 
-#my $max_uptime = 600;
-my $Enable_systemd = "NO";
-if (-e "/etc/oar/use_systemd") {
-    $Enable_systemd = "YES";
-}
 ###############################################################################
 # Script configuration end
 ###############################################################################
@@ -119,6 +114,7 @@ if (-e "/etc/oar/use_systemd") {
 my $Old_umask = sprintf("%lo", umask());
 umask(oct("022"));
 
+my $Log_level;
 my $Cpuset_lock_file = "$ENV{HOME}/cpuset.lock.";
 my $Cpuset;
 
@@ -160,10 +156,9 @@ my $Cpuset;
 # Compute uptime
 my $uptime = 0;
 open UPTIME, "/proc/uptime" or die "Couldn't open /proc/uptime!";
-($uptime, my $junk) = split(/\./, <UPTIME>);
+($uptime, ) = split(/\./, <UPTIME>);
 close UPTIME;
 
-my $Log_level;
 my $tmp = "";
 while (<STDIN>) {
     $tmp .= $_;
@@ -192,7 +187,7 @@ if (-e "/etc/oar/disable_numa_nodes") {
 
 my $Cpuset_path_job;
 my @Cpuset_cpus;
-my $Systemd_prefix         = "oar.";
+my $Systemd_prefix         = "oar";
 my $Oardocker_node_cg_path = "";
 
 # Get the data structure only for this node
@@ -210,15 +205,11 @@ if (defined($Cpuset->{cpuset_path})) {
 }
 
 print_log(3, "$ARGV[0]");
-
-###############################################################################
-# Node initialization: run on all the nodes of the job before the job starts
-###############################################################################
-
 if ($ARGV[0] eq "init") {
-
-    ### Initialize cpuset or systemd slice for this node ###
-
+###############################################################################
+    # Node initialization: run on all the nodes of the job before the job starts
+###############################################################################
+    # Initialize cpuset for this node
     # First, create the tmp oar directory
     if (
         !(  ((-d $Cpuset->{oar_tmp_directory}) and (-O $Cpuset->{oar_tmp_directory})) or
@@ -231,93 +222,7 @@ if ($ARGV[0] eq "init") {
     if (defined($Cpuset_path_job)) {
 
         # SYSTEMD
-        if ($Enable_systemd eq "YES") {
-
-            # Using systemd, no cpuset init required
-            #
-            print_log(3, "Using systemd");
-
-            # Replace "-" and "." from cpuset name as systemd interprets them
-            $Cpuset->{name} =~ s/\-/_/g;
-            $Cpuset->{name} =~ s/\./_/g;
-            $Cpuset->{name} = $Systemd_prefix . $Cpuset->{name};
-
-            # CGROUPS V1
-        } else {
-            if (open(LOCKFILE, "> $Cpuset->{oar_tmp_directory}/job_manager_lock_file")) {
-                flock(LOCKFILE, LOCK_EX) or exit_myself(17, "flock failed: $!");
-                if (!(-r $Cgroup_directory_collection_links . '/cpuset/tasks')) {
-                    my @cgroup_list = ("cpuset", "cpu", "cpuacct", "devices", "freezer");
-                    push(@cgroup_list, "memory")     if ($Enable_mem_cg eq "YES");
-                    push(@cgroup_list, "blkio")      if ($Enable_blkio_cg eq "YES");
-                    push(@cgroup_list, "net_cls")    if ($Enable_net_cls_cg eq "YES");
-                    push(@cgroup_list, "perf_event") if ($Enable_perf_event_cg eq "YES");
-                    if (!(-r $OS_cgroups_path . '/cpuset/tasks')) {
-                        system_with_log(
-                            'set -e
-              oardodo mkdir -p ' . $Cgroup_mount_point . '
-              oardodo mount -t cgroup -o ' .
-                              join(',', @cgroup_list) . ' none ' . $Cgroup_mount_point . '
-              oardodo rm -f /dev/cpuset
-              oardodo ln -s ' . $Cgroup_mount_point . ' /dev/cpuset
-              oardodo mkdir -p ' . $Cgroup_directory_collection_links . '
-              for cg in ' . join(' ', @cgroup_list) . '; do
-              oardodo ln -s ' .
-                              $Cgroup_mount_point . ' ' . $Cgroup_directory_collection_links . '/$cg
-              done'
-                          ) and
-                          exit_myself(4, "Failed to mount cgroup pseudo filesystem");
-                    } else {
-
-                        # Cgroups already mounted by the OS
-                        system_with_log(
-                            'set -e
-              oardodo rm -f /dev/cpuset
-              oardodo ln -s ' .
-                              $OS_cgroups_path . '/cpuset' . $Oardocker_node_cg_path . ' /dev/cpuset
-              oardodo mkdir -p ' . $Cgroup_directory_collection_links . '
-              for cg in ' . join(' ', @cgroup_list) . '; do
-              oardodo ln -s ' . $OS_cgroups_path . '/$cg' . $Oardocker_node_cg_path .
-                              ' ' . $Cgroup_directory_collection_links . '/$cg
-              done'
-                          ) and
-                          exit_myself(4, "Failed to link existing OS cgroup pseudo filesystem");
-                    }
-                }
-                if (!(-d $Cgroup_directory_collection_links . '/cpuset/' . $Cpuset->{cpuset_path}))
-                {
-                    # Populate default oar cgroup
-                    system_with_log(
-                        'set -e
-            for d in ' . $Cgroup_directory_collection_links . '/*; do
-            oardodo mkdir -p $d/' . $Cpuset->{cpuset_path} . '
-            oardodo chown -R oar $d/' . $Cpuset->{cpuset_path} . '
-            /bin/echo 0 | cat > $d/' . $Cpuset->{cpuset_path} . '/notify_on_release
-            done
-            /bin/echo 0 | cat > ' . $Cgroup_directory_collection_links .
-                          '/cpuset/' . $Cpuset->{cpuset_path} . '/cpuset.cpu_exclusive
-            cat ' . $Cgroup_directory_collection_links .
-                          '/cpuset/cpuset.mems > ' . $Cgroup_directory_collection_links .
-                          '/cpuset/' . $Cpuset->{cpuset_path} . '/cpuset.mems
-            cat ' . $Cgroup_directory_collection_links .
-                          '/cpuset/cpuset.cpus > ' . $Cgroup_directory_collection_links .
-                          '/cpuset/' . $Cpuset->{cpuset_path} . '/cpuset.cpus'
-                      ) and
-                      exit_myself(4, "Failed to create cgroup $Cpuset->{cpuset_path}");
-                    if ($Enable_blkio_cg eq "YES") {
-                        system_with_log(
-                            '/bin/echo 1000 | cat > ' . $Cgroup_directory_collection_links .
-                              '/blkio/' . $Cpuset->{cpuset_path} . '/blkio.weight') and
-                          exit_myself(4, "Failed to create cgroup $Cpuset->{cpuset_path}");
-                    }
-                }
-                flock(LOCKFILE, LOCK_UN) or exit_myself(17, "flock failed: $!");
-                close(LOCKFILE);
-            } else {
-                exit_myself(16,
-                    "Failed to open or create $Cpuset->{oar_tmp_directory}/job_manager_lock_file");
-            }
-        }
+        print_log(3, "Using systemd, cgroup fs already in place");
 
         ### Cgroup or systemd slice creation ###
 
@@ -332,125 +237,52 @@ if ($ARGV[0] eq "init") {
 # also including intervals (e.g. the thread siblings list could be '1-3').
 # No need to sort or transform intervals, e.g. "1,5-8,2,6" is ok. Retrieving the actual content of the file
 # after setting it will give "1-2,5-8"
-            my $job_cpuset_cpus = join(",", @Cpuset_cpus);
+            my systemd_allowed_cpus_str;
             if (exists($Cpuset->{'compute_thread_siblings'}) and
                 lc($Cpuset->{'compute_thread_siblings'}) eq "yes") {
 
    # If COMPUTE_THREAD_SIBLINGS="yes" in oar.conf, that means that the OAR DB has not info about the
    # HT threads siblings, so we have compute it here.
-                my $job_cpuset_cpus =
-                  system_with_log('for i in ' .
-                      join(" ", map { s/,/ /gr } @Cpuset_cpus) .
-                      '; do cat /sys/devices/system/cpu/cpu$i/topology/thread_siblings_list; done | paste -sd, -'
-                  );
+                #TODO Fix cpu list with HT
+                systemd_allowed_cpus_str = system_with_lo(sprintf($Hwloc_cpus_cmd, $Cpuset->{nodes}->{$hostname});
+            } else {
+                #TODO Fix cpu list without HT
+                systemd_allowed_cpus_str = system_with_lo(sprintf($Hwloc_cpus_cmd, $Cpuset->{nodes}->{$hostname});
             }
-
-            # SYSTEMD
-            if ($Enable_systemd eq "YES") {
+            my systemd_allowed_memory_nodes_str = system_with_log(sprintf($Hwloc_memorynodes_cmd, $Cpuset->{cpu}));
 
                 # Create transcient systemd slice and set properties
                 print_log(3, "Creating " . $Cpuset->{name} . ".slice transcient systemd slice");
                 system_with_log(
-                    'oardodo systemd-run --uid=' . $Cpuset->{user} . ' --slice ' . $Cpuset->{name} .
-                      ' --unit ' . $Cpuset->{name} . ' -p Delegate=yes sleep infinity') and
-                  exit_myself(5, "Failed to create transcient systemd slice $Cpuset->{name}");
+                    'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                    . 'org.freedesktop.systemd1.Manager StartUnit ss oar-' . $Cpuset->{user} . '-' . $Cpuset->{jobid} . '.slice fail'
+                  ) and exit_myself(5, "Failed to create systemd slice $Cpuset->{name}");
+
                 system_with_log(
-                    'oardodo systemctl set-property ' . $Cpuset->{name} . '.slice \
-                           AllowedCPUs="' . $job_cpuset_cpus . '" \
-                           AllowedMemoryNodes=""'
+                    'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                      'org.freedesktop.systemd1.Manager SetUnitProperties 'sba(sv)' oar-' . $Cpuset->{user} . '.slice 1 2' .
+                      'AllowedCPUs ' . $systemd_allowed_cpus_str .
+                      'AllowedMemoryNodes ' . $systemd_allowed_memory_nodes_str .
                   ) and
                   exit_myself(5, "Failed to set cpu properties of systemd slice $Cpuset->{name}");
 
                 # Setting numa nodes property
+                #TODO rewrite this to use the systemd dbus api
                 if ($Cpuset_cg_mem_nodes eq "cpu") {
                     print_log(3, "Setting memory nodes of systemd slice $Cpuset->{name}");
                     system_with_log(
-                        'set -e
-            MEM=
-            for c in ' . "@Cpuset_cpus" . '; do
-              for n in /sys/devices/system/node/node* ; do
-              if [ -r "$n/cpu$c" ]; then
-                MEM=$(basename $n | sed s/node//g),$MEM
-              fi
-              done
-            done
-            oardodo systemctl set-property ' . $Cpuset->{name} . '.slice \
-              AllowedMemoryNodes="$MEM"'
                       ) and
                       exit_myself(5,
                         "Failed to feed the mem nodes of systemd slice $Cpuset->{name}");
+                } elsif ($Cpuset_cg_mem_nodes eq "all") {
+                    #nothing to do
                 }
-
-                # CGROUP V1
-            } else {
-                my $job_cpuset_cpus_cmd =
-                  '/bin/echo ' .
-                  $job_cpuset_cpus . ' | cat > ' . $Cgroup_directory_collection_links .
-                  '/cpuset/' . $Cpuset_path_job . '/cpuset.cpus';
-                system_with_log(
-                    'set -e
-          for d in ' . $Cgroup_directory_collection_links . '/*; do
-            oardodo mkdir -p $d/' . $Cpuset_path_job . '
-            oardodo chown -R oar $d/' . $Cpuset_path_job . '
-            /bin/echo 0 | cat > $d/' . $Cpuset_path_job . '/notify_on_release
-          done
-          /bin/echo 0 | cat > ' . $Cgroup_directory_collection_links .
-                      '/cpuset/' . $Cpuset_path_job . '/cpuset.cpu_exclusive
-          ' . $job_cpuset_cpus_cmd
-                  ) and
-                  exit_myself(5, "Failed to create and feed the cpuset cpus $Cpuset_path_job");
-                if ($Cpuset_cg_mem_nodes eq "all") {
-                    system_with_log('cat ' . $Cgroup_directory_collection_links .
-                          '/cpuset/cpuset.mems > ' . $Cgroup_directory_collection_links .
-                          '/cpuset/' . $Cpuset_path_job . '/cpuset.mems') and
-                      exit_myself(5, "Failed to feed the mem nodes to cpuset $Cpuset_path_job");
-                } else {
-                    system_with_log(
-                        'set -e
-            for d in ' . $Cgroup_directory_collection_links . '/*; do
-              MEM=
-              for c in ' . "@Cpuset_cpus" . '; do
-                for n in /sys/devices/system/node/node* ; do
-                if [ -r "$n/cpu$c" ]; then
-                  MEM=$(basename $n | sed s/node//g),$MEM
-                fi
-                done
-              done
-            done
-            echo $MEM > ' . $Cgroup_directory_collection_links .
-                          '/cpuset/' . $Cpuset_path_job . '/cpuset.mems'
-                      ) and
-                      exit_myself(5, "Failed to feed the mem nodes to cpuset $Cpuset_path_job");
-                }
-            }
-            flock(LOCK, LOCK_UN) or die "flock failed: $!\n";
-            close(LOCK);
-        } else {
-            exit_myself(16, "[cpuset_manager] Error opening $Cpuset_lock_file");
-        }
-
-        ### Special features ###
-
-        my $node_cpus_file = $Cgroup_directory_collection_links . "/cpuset/cpuset.cpus";
-        my $job_cpus_file =
-          $Cgroup_directory_collection_links . "/cpuset/" . $Cpuset_path_job . "/cpuset.cpus";
 
         # Set cgroups cpus file location for the systemd feature
-        if ($Enable_systemd eq "YES") {
+        my $node_cpus_file = $OS_cgroups_path . '/cpuset.cpus.effective';
+        my $job_cpus_file  = $OS_cgroups_path . '/oar.slice/oar-' . $Cpuset->{user} . '.slice/oar-'
+        . $Cpuset->{user} . '-' . $Cpuset->{jobid} . '.slice/cpuset.cpus';
 
-            # cgroup v2
-            $node_cpus_file = $OS_cgroups_path . '/cpuset.cpus.effective';
-            $job_cpus_file  = $OS_cgroups_path . '/' . $Cpuset->{name} . '.slice/cpuset.cpus';
-
-            # cgroup v1
-            if (not -e $job_cpus_file) {
-                print_log(2,
-                    "Warning: cgroups v2 files not found, guessing cgroup v1 hierarchy...");
-                $node_cpus_file = $OS_cgroups_path . '/cpuset/cpuset.cpus';
-                $job_cpus_file =
-                  $OS_cgroups_path . '/systemd/' . $Cpuset->{name} . '.slice/cpuset.cpus';
-            }
-        }
 
 # Compute the actual job cpus (@Cpuset_cpus may not have the HT included, depending on the OAR resources definiton)
         my @job_cpus;
