@@ -68,10 +68,10 @@ sub system_with_log($);
 # Script configuration start
 ###############################################################################
 # Put YES if you want to use the memory cgroup
-my $Enable_mem_cg = "YES";
+my $Enable_mem_cg = "NO";
 
 # Put YES if you want to use the device cgroup (supports nvidia devices only for now)
-my $Enable_devices_cg = "YES";
+my $Enable_devices_cg = "NO";
 
 # Put YES if you want to use the blkio cgroup
 my $Enable_blkio_cg = "NO";
@@ -96,9 +96,6 @@ my @Tmp_dir_to_clear = ('/tmp/.', '/dev/shm/.', '/var/tmp/.');
 
 # SSD trim command path
 my $Fstrim_cmd = "/sbin/fstrim";
-
-# Groups location for OAR, if not mounted by the system
-my $Cgroup_mount_point = "/dev/oar_cgroups";
 
 # Directory where the cgroup mount points are linked to. Useful to have each
 # cgroups in the same place with the same hierarchy.
@@ -165,6 +162,9 @@ while (<STDIN>) {
 }
 $Cpuset = eval($tmp);
 
+use Data::Dumper;
+print Dumper($Cpuset);
+
 if (!defined($Cpuset->{log_level})) {
     exit_myself(2, "Bad SSH hashtable transfered");
 }
@@ -186,23 +186,18 @@ if (-e "/etc/oar/disable_numa_nodes") {
 }
 
 my $Cpuset_path_job;
-my @Cpuset_cpus;
+my @Cpuset_list;
 my $Systemd_prefix         = "oar";
-my $Oardocker_node_cg_path = "";
 
 # Get the data structure only for this node
 if (defined($Cpuset->{cpuset_path})) {
-    if (-e $OS_cgroups_path . '/cpuset/oardocker') {
-
-        # We are in oardocker, set the oardocker_node_path to /oardocker/<node_name>
-        $Oardocker_node_cg_path = "/oardocker/$ENV{TAKTUK_HOSTNAME}";
-        print_log(3, "Oardocker_node_cg_path=$Oardocker_node_cg_path");
-    }
-    $Cpuset_path_job = $Cpuset->{cpuset_path} . '/' . $Cpuset->{name};
     foreach my $l (@{ $Cpuset->{nodes}->{ $ENV{TAKTUK_HOSTNAME} } }) {
-        push(@Cpuset_cpus, split(/[,\s]+/, $l));
+        push(@Cpuset_list, split(/[+,\s]+/, $l));
+        #push(@Cpuset_list, map {"core:$_"} split(/[,\s]+/, $l));
     }
 }
+
+my $Enable_systemd = 1;
 
 print_log(3, "$ARGV[0]");
 if ($ARGV[0] eq "init") {
@@ -219,7 +214,7 @@ if ($ARGV[0] eq "init") {
             "Directory $Cpuset->{oar_tmp_directory} does not exist and cannot be created");
     }
 
-    if (defined($Cpuset_path_job)) {
+    if (defined($Cpuset->{cpuset_path})) {
 
         # SYSTEMD
         print_log(3, "Using systemd, cgroup fs already in place");
@@ -228,63 +223,49 @@ if ($ARGV[0] eq "init") {
 
 # Be careful with the physical_package_id. Is it corresponding to the memory bank?
 # Locking around the creation of the cpuset for that user, to prevent race condition during the dirty-user-based cleanup
-        if (open(LOCK, ">", $Cpuset_lock_file . $Cpuset->{user})) {
+        if (open(LOCK, '>', $Cpuset_lock_file . $Cpuset->{user})) {
             flock(LOCK, LOCK_EX) or die "flock failed: $!\n";
 
-# @Cpuset_cpus is an array of string containing either "1" or "1,17,33,49" if multiple logicial cpus / threads
-# are set in the cpuset field of the OAR DB (but not interval, e.g. '1-3').
-# The cpuset.cpus special file can be set using an unorder, redondant list of comma separated values, possibly
-# also including intervals (e.g. the thread siblings list could be '1-3').
-# No need to sort or transform intervals, e.g. "1,5-8,2,6" is ok. Retrieving the actual content of the file
-# after setting it will give "1-2,5-8"
-            my systemd_allowed_cpus_str;
-            if (exists($Cpuset->{'compute_thread_siblings'}) and
-                lc($Cpuset->{'compute_thread_siblings'}) eq "yes") {
+            # Create transcient systemd slice and set properties
+            print_log(3, "Creating " . $Cpuset->{name} . ".slice transcient systemd slice");
+            system_with_log(
+                'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                . 'org.freedesktop.systemd1.Manager StartUnit ss oar-' . $Cpuset->{user} . '-' . $Cpuset->{job_id} . '.slice fail'
+            ) and exit_myself(5, "Failed to create systemd slice $Cpuset->{name}");
 
-   # If COMPUTE_THREAD_SIBLINGS="yes" in oar.conf, that means that the OAR DB has not info about the
-   # HT threads siblings, so we have compute it here.
-                #TODO Fix cpu list with HT
-                systemd_allowed_cpus_str = system_with_lo(sprintf($Hwloc_cpus_cmd, $Cpuset->{nodes}->{$hostname});
-            } else {
-                #TODO Fix cpu list without HT
-                systemd_allowed_cpus_str = system_with_lo(sprintf($Hwloc_cpus_cmd, $Cpuset->{nodes}->{$hostname});
+
+            #my $systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list);
+            my $systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
+            print "-->> $systemd_allowed_cpus_cmd\n";
+            my $systemd_allowed_cpus_str = `$systemd_allowed_cpus_cmd`;
+            chomp($systemd_allowed_cpus_str);
+            if ($Cpuset_cg_mem_nodes eq 'cpu') {
+                #my $systemd_allowed_memory_nodes_cmd = 'hwloc-calc --nof systemd-dbus-api ' . join(' ', @Cpuset_list);
+            	my $systemd_allowed_memory_nodes_cmd = 'hwloc-calc --cof systemd-dbus-api --no ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
+            	my $systemd_allowed_memory_nodes_str = `$systemd_allowed_memory_nodes_cmd`;
+            	chomp($systemd_allowed_memory_nodes_str);
+            	system_with_log(
+                    'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1'
+                    . ' org.freedesktop.systemd1.Manager SetUnitProperties \'sba(sv)\' oar-' . $Cpuset->{user} . '-' . $Cpuset->{job_id} . '.slice 1 2'
+                    . ' AllowedCPUs ' . $systemd_allowed_cpus_str
+                    . ' AllowedMemoryNodes ' . $systemd_allowed_memory_nodes_str
+                ) and exit_myself(5, "Failed to set cpu properties of systemd slice $Cpuset->{name}");
+            } elsif ($Cpuset_cg_mem_nodes eq 'all') {
+            	system_with_log(
+                    'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                    . ' org.freedesktop.systemd1.Manager SetUnitProperties \'sba(sv)\' oar-' . $Cpuset->{user} . '-' . $Cpuset->{job_id} . '.slice 1 2'
+                    . ' AllowedCPUs ' . $systemd_allowed_cpus_str
+                ) and exit_myself(5, "Failed to set cpu properties of systemd slice $Cpuset->{name}");
             }
-            my systemd_allowed_memory_nodes_str = system_with_log(sprintf($Hwloc_memorynodes_cmd, $Cpuset->{cpu}));
-
-                # Create transcient systemd slice and set properties
-                print_log(3, "Creating " . $Cpuset->{name} . ".slice transcient systemd slice");
-                system_with_log(
-                    'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
-                    . 'org.freedesktop.systemd1.Manager StartUnit ss oar-' . $Cpuset->{user} . '-' . $Cpuset->{jobid} . '.slice fail'
-                  ) and exit_myself(5, "Failed to create systemd slice $Cpuset->{name}");
-
-                system_with_log(
-                    'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
-                      'org.freedesktop.systemd1.Manager SetUnitProperties 'sba(sv)' oar-' . $Cpuset->{user} . '.slice 1 2' .
-                      'AllowedCPUs ' . $systemd_allowed_cpus_str .
-                      'AllowedMemoryNodes ' . $systemd_allowed_memory_nodes_str .
-                  ) and
-                  exit_myself(5, "Failed to set cpu properties of systemd slice $Cpuset->{name}");
-
-                # Setting numa nodes property
-                #TODO rewrite this to use the systemd dbus api
-                if ($Cpuset_cg_mem_nodes eq "cpu") {
-                    print_log(3, "Setting memory nodes of systemd slice $Cpuset->{name}");
-                    system_with_log(
-                      ) and
-                      exit_myself(5,
-                        "Failed to feed the mem nodes of systemd slice $Cpuset->{name}");
-                } elsif ($Cpuset_cg_mem_nodes eq "all") {
-                    #nothing to do
-                }
+        }
 
         # Set cgroups cpus file location for the systemd feature
         my $node_cpus_file = $OS_cgroups_path . '/cpuset.cpus.effective';
-        my $job_cpus_file  = $OS_cgroups_path . '/oar.slice/oar-' . $Cpuset->{user} . '.slice/oar-'
-        . $Cpuset->{user} . '-' . $Cpuset->{jobid} . '.slice/cpuset.cpus';
+        system_with_log("cat $node_cpus_file");
+        my $job_cpus_file  = $OS_cgroups_path . '/oar.slice/oar-' . $Cpuset->{user} . '.slice/oar-' . $Cpuset->{user} . '-' . $Cpuset->{job_id} . '.slice/cpuset.cpus.effective';
+        system_with_log("cat $node_cpus_file");
 
-
-# Compute the actual job cpus (@Cpuset_cpus may not have the HT included, depending on the OAR resources definiton)
+# Compute the actual job cpus (@Cpuset_list may not have the HT included, depending on the OAR resources definiton)
         my @job_cpus;
         if (open(CPUS, $job_cpus_file)) {
             my $str = <CPUS>;
@@ -295,6 +276,7 @@ if ($ARGV[0] eq "init") {
         } else {
             exit_myself(5, "Failed to retrieve the cpu list of the job $job_cpus_file");
         }
+        print "job cpus: " . join(", ", @job_cpus) . "\n";
 
         # Get all the cpus of the node
         my @node_cpus;
@@ -307,50 +289,30 @@ if ($ARGV[0] eq "init") {
         } else {
             exit_myself(5, "Failed to retrieve the cpu list of the node $node_cpus_file");
         }
+        print "node cpus: " . join(", ", @node_cpus) . "\n";
 
         # Tag network packets from processes of this job
         if ($Enable_net_cls_cg eq "YES") {
-
+            # CGROUP v1
+            # system_with_log('/bin/echo ' .
+            #      $Cpuset->{job_id} . ' | cat > ' . $Cgroup_directory_collection_links .
+            #      '/net_cls/' . $Cpuset_path_job . '/net_cls.classid') and
+            #  exit_myself(5, "Failed to tag network packets of the cgroup $Cpuset_path_job");
             # SYSTEMD
-            if ($Enable_systemd eq "YES") {
-                print_log(2, "No support for network packets tagging with systemd feature");
+            print_log(2, "No support for network packets tagging with systemd feature");
 
-                # CGROUP v1
-            } else {
-                system_with_log('/bin/echo ' .
-                      $Cpuset->{job_id} . ' | cat > ' . $Cgroup_directory_collection_links .
-                      '/net_cls/' . $Cpuset_path_job . '/net_cls.classid') and
-                  exit_myself(5, "Failed to tag network packets of the cgroup $Cpuset_path_job");
-            }
         }
 
         # Put a share for IO disk corresponding of the ratio between the number
         # of cpus of this cgroup and the number of cpus of the node
         if ($Enable_blkio_cg eq "YES") {
+        # Not yet tested! (check if it works and if it has not the problems of the TODO bellow with cgroup v1)
+            my $IO_ratio = sprintf("%.0f", (($#job_cpus + 1) / ($#node_cpus + 1) * 10000));
+            system_with_log(
+                'oardodo systemctl set-property ' . $Cpuset->{name} . '.slice '
+                . 'IOWeight=' . $IO_ratio
+            ) and exit_myself(5, "Failed to set IOweight of systemd slice $Cpuset->{name}");
 
-            # SYSTEMD
-            if ($Enable_systemd eq "YES") {
-
-# Not yet tested! (check if it works and if it has not the problems of the TODO bellow with cgroup v1)
-                my $IO_ratio = sprintf("%.0f", (($#job_cpus + 1) / ($#node_cpus + 1) * 10000));
-                system_with_log(
-                    'oardodo systemctl set-property ' . $Cpuset->{name} . '.slice \           
-                         IOWeight=' . $IO_ratio
-                  ) and
-                  exit_myself(5, "Failed to set IOweight of systemd slice $Cpuset->{name}");
-
-                # CGROUP v1
-            } else {
-                my $IO_ratio = sprintf("%.0f", (($#job_cpus + 1) / ($#node_cpus + 1) * 1000));
-
-                # TODO: Need to do more tests to validate so remove this feature
-                #       Some values are not working when echoing, force value to 1000 for now.
-                $IO_ratio = 1000;
-                system_with_log(
-                    '/bin/echo ' . $IO_ratio . ' | cat > ' . $Cgroup_directory_collection_links .
-                      '/blkio/' . $Cpuset_path_job . '/blkio.weight') and
-                  exit_myself(5, "Failed to set the blkio.weight to $IO_ratio");
-            }
         }
 
         # Manage GPU devices
