@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # In sshd_config you must have this line:
 #     AcceptEnv OAR_CPUSET OAR_JOB_USER
 
@@ -209,6 +209,7 @@ if [ -n "$CPUSET_PATH" ]; then
             # cpuset must be of the form /oar/username_jobid, extract it from the cgroup path, supposedliy
             # if not sub task: /oar.slice/oar-Uxxx.slice/oar-uXXX-jYYY.slice/oar-uXXX-jYYY-sZZZ.scope
             # or if sub task:  /oar.slice/oar-Uxxx.slice/oar-uXXX-jYYY.slice/oar-uXXX-jYYY-tZZZ.slice/oar-uXXX-jYYY-tTTT-sZZZ.scope
+            cat /proc/self/cpuset
             OAR_CPUSET=$(sed -ne "s#.*$CPUSET_PATH.slice/[^/]\+$CPUSET_PATH-u\([[:digit:]]\+\)-j\([[:digit:]]\+\)\.slice/.*#\1_\2#p" /proc/self/cpuset)
             OAR_CPUSET=$CPUSET_PATH/$(id -un "${OAR_CPUSET%_*}")_${OAR_CPUSET##*_}
         fi

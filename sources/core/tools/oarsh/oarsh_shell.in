@@ -7,6 +7,8 @@
 # (not possible with oarsub), it creates a cgroup sub directory for cpuset
 # resp. devices with the requested subset of cpusets or gpudevices allocated.
 
+set -e
+set -o pipefail
 DEFAULT_SHELL=/bin/bash
 XAUTH_LOCATION="/usr/bin/xauth"
 CGROUP_MOUNT_POINT=$(grep cgroup2 /proc/mounts | cut -d\  -f2)
@@ -22,6 +24,8 @@ JOBENVFILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.env"
 JOB_ID=${OAR_CPUSET##*_}
 JOB_USER=${OAR_CPUSET%_*}
 JOB_USER=${JOB_USER##*/}
+OAR_CG=${OAR_CPUSET#/}
+OAR_CG=${OAR_CG%%/*}
 
 OLDUMASK=$(umask)
 umask 0022
@@ -46,31 +50,21 @@ add_process_to_cpuset() {
         SYSTEMD_ALLOWED_CPUS_STR=$(hwloc-calc --cof systemd-dbus-api "$OAR_USER_CPUSET" | sed -e 's/^AllowedCPUs //')
         if [ -n "$SYSTEMD_ALLOWED_CPUS_STR" ]; then
             TASK_ID="-t$RANDOM"
-            if oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartUnit ss oar-u$JOB_USER_ID-j$JOB_ID$TASK_ID.slice fail && \
-            oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager SetUnitProperties 'sba(sv)' oar-u$JOB_USER_ID-j$JOB_ID$TASK_ID.slice 1 1 AllowedCPUs $SYSTEMD_ALLOWED_CPUS_STR
-            then
-                : # Everthing went fine
-            else
-                # It mostly failed because the OAR_USER_CPUSET is not a subset of the job's cpuset
-                # We do not want OAR to fail and the resource to become suspected here
-                echo "Warning: Failed to set user cpuset as requested by OAR_USER_CPUSET=$OAR_USER_CPUSET, use the default one" 1>&2
-                # Fallback to no OAR_USER_CPUSET defined
-                OAR_USER_CPUSET=""
-                TASK_ID=""
-            fi
+            oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartUnit ss $OAR_CG-u$JOB_USER_ID-j$JOB_ID$TASK_ID.slice fail
+            while oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListJobs | grep -q "$OAR_CG-u$JOB_USER_ID-j$JOB_ID$TASK_ID"; do
+                sleep 1
+            done
+            oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager SetUnitProperties 'sba(sv)' $OAR_CG-u$JOB_USER_ID-j$JOB_ID$TASK_ID.slice 1 1 AllowedCPUs $SYSTEMD_ALLOWED_CPUS_STR
         else
             # OAR_USER_CPUSET is defined but syntax is incorrect
             echo "Warning: Failed to set user cpuset as requested by OAR_USER_CPUSET=$OAR_USER_CPUSET, use the default one" 1>&2
             OAR_USER_CPUSET=""
         fi
     fi
-    # Feed at least cpuset (security)
-    # OAR_USER_CPUSET is mostly undefined:
-    # Only oarsh lets the user define it optionally
-    # It is never defined when OAR shell is called by oarsub
-    # When executing the shell for oarsub, it feeds the job's default cgroup cgroup.procs
-
-    oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartTransientUnit 'ssa(sv)a(sa(sv))' oar-u$JOB_USER_ID-j$JOB_ID$TASK_ID-s$RANDOM.scope fail 3 Delegate b 1 PIDs au $# "$@" Slice s oar-u$JOB_USER_ID-j$JOB_ID$TASK_ID.slice 0 || return 1
+    oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartTransientUnit 'ssa(sv)a(sa(sv))' oar-u$JOB_USER_ID-j$JOB_ID$TASK_ID-s$RANDOM.scope fail 3 Delegate b 1 PIDs au $# "$@" Slice s oar-u$JOB_USER_ID-j$JOB_ID$TASK_ID.slice 0
+    while oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListJobs | grep -q "$OAR_CG-u$JOB_USER_ID-j$JOB_ID$TASK_ID"; do
+        sleep 1
+    done
 
     if [ -r "$CGROUP_MOUNT_POINT/devices/$CPUSETNAME/cgroup.procs" ]; then
         if [ -n "$OAR_USER_GPUDEVICE" ]; then
