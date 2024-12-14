@@ -199,6 +199,8 @@ if (defined($Cpuset->{cpuset_path})) {
 
 my $Enable_systemd = 1;
 
+my $Cpuset_user_id = getpwnam($Cpuset->{user});
+
 print_log(3, "$ARGV[0]");
 if ($ARGV[0] eq "init") {
 ###############################################################################
@@ -227,11 +229,11 @@ if ($ARGV[0] eq "init") {
             flock(LOCK, LOCK_EX) or die "flock failed: $!\n";
 
             # Create transcient systemd slice and set properties
-            print_log(3, "Creating " . $Cpuset->{name} . ".slice transcient systemd slice");
+            print_log(3, "Creating $Cpuset->{name}.slice transcient systemd slice");
             system_with_log(
                 'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
-                . 'org.freedesktop.systemd1.Manager StartUnit ss oar-' . $Cpuset->{user} . '-' . $Cpuset->{job_id} . '.slice fail'
-            ) and exit_myself(5, "Failed to create systemd slice $Cpuset->{name}");
+                . "org.freedesktop.systemd1.Manager StartUnit ss oar-u$Cpuset_user_id-j$Cpuset->{job_id}.slice fail"
+            ) and exit_myself(5, "Failed to create systemd slice for $Cpuset->{name}");
 
 
             #my $systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list);
@@ -246,23 +248,25 @@ if ($ARGV[0] eq "init") {
             	chomp($systemd_allowed_memory_nodes_str);
             	system_with_log(
                     'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1'
-                    . ' org.freedesktop.systemd1.Manager SetUnitProperties \'sba(sv)\' oar-' . $Cpuset->{user} . '-' . $Cpuset->{job_id} . '.slice 1 2'
-                    . ' AllowedCPUs ' . $systemd_allowed_cpus_str
-                    . ' AllowedMemoryNodes ' . $systemd_allowed_memory_nodes_str
-                ) and exit_myself(5, "Failed to set cpu properties of systemd slice $Cpuset->{name}");
+                    . ' org.freedesktop.systemd1.Manager SetUnitProperties'
+                    . " 'sba(sv)' oar-u$Cpuset_user_id-j$Cpuset->{job_id}.slice 1 2"
+                    . " AllowedCPUs $systemd_allowed_cpus_str"
+                    . " AllowedMemoryNodes $systemd_allowed_memory_nodes_str"
+                ) and exit_myself(5, "Failed to set cpu properties of systemd slice for $Cpuset->{name}");
             } elsif ($Cpuset_cg_mem_nodes eq 'all') {
             	system_with_log(
                     'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
-                    . ' org.freedesktop.systemd1.Manager SetUnitProperties \'sba(sv)\' oar-' . $Cpuset->{user} . '-' . $Cpuset->{job_id} . '.slice 1 2'
-                    . ' AllowedCPUs ' . $systemd_allowed_cpus_str
-                ) and exit_myself(5, "Failed to set cpu properties of systemd slice $Cpuset->{name}");
+                    . ' org.freedesktop.systemd1.Manager SetUnitProperties'
+                    . " 'sba(sv)' oar-u$Cpuset_user_id-j$Cpuset->{job_id}.slice 1 2"
+                    . " AllowedCPUs $systemd_allowed_cpus_str"
+                ) and exit_myself(5, "Failed to set cpu properties of systemd slice for $Cpuset->{name}");
             }
         }
 
         # Set cgroups cpus file location for the systemd feature
         my $node_cpus_file = $OS_cgroups_path . '/cpuset.cpus.effective';
         system_with_log("cat $node_cpus_file");
-        my $job_cpus_file  = $OS_cgroups_path . '/oar.slice/oar-' . $Cpuset->{user} . '.slice/oar-' . $Cpuset->{user} . '-' . $Cpuset->{job_id} . '.slice/cpuset.cpus.effective';
+        my $job_cpus_file  = $OS_cgroups_path . "/oar.slice/oar-u$Cpuset_user_id.slice/oar-u$Cpuset_user_id-j$Cpuset->{job_id}.slice/cpuset.cpus.effective";
         system_with_log("cat $node_cpus_file");
 
 # Compute the actual job cpus (@Cpuset_list may not have the HT included, depending on the OAR resources definiton)
@@ -879,8 +883,7 @@ EOF
                 exit(0);
             }
 
-            my $useruid = getpwnam($Cpuset->{user});
-            if (not defined($useruid)) {
+            if (not defined($Cpuset_user_id)) {
                 print_log(3,
                     "Cannot get information from user '$Cpuset->{user}' job #'$Cpuset->{job_id}'");
             }
@@ -888,9 +891,9 @@ EOF
             if (open(IPCMSG, "< /proc/sysvipc/msg")) {
                 <IPCMSG>;
                 while (<IPCMSG>) {
-                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
+                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$Cpuset_user_id(?:\s+\d+){6}/) {
                         $ipcrm_args .= " -q $1";
-                        print_log(3, "Found IPC MSG for user $useruid: $1.");
+                        print_log(3, "Found IPC MSG for user $Cpuset_user_id: $1.");
                     }
                 }
                 close(IPCMSG);
@@ -900,9 +903,9 @@ EOF
             if (open(IPCSHM, "< /proc/sysvipc/shm")) {
                 <IPCSHM>;
                 while (<IPCSHM>) {
-                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$useruid(?:\s+\d+){6}/) {
+                    if (/^\s*\d+\s+(\d+)(?:\s+\d+){5}\s+$Cpuset_user_id(?:\s+\d+){6}/) {
                         $ipcrm_args .= " -m $1";
-                        print_log(3, "Found IPC SHM for user $useruid: $1.");
+                        print_log(3, "Found IPC SHM for user $Cpuset_user_id: $1.");
                     }
                 }
                 close(IPCSHM);
@@ -912,9 +915,9 @@ EOF
             if (open(IPCSEM, "< /proc/sysvipc/sem")) {
                 <IPCSEM>;
                 while (<IPCSEM>) {
-                    if (/^\s*[\d\-]+\s+(\d+)(?:\s+\d+){2}\s+$useruid(?:\s+\d+){5}/) {
+                    if (/^\s*[\d\-]+\s+(\d+)(?:\s+\d+){2}\s+$Cpuset_user_id(?:\s+\d+){5}/) {
                         $ipcrm_args .= " -s $1";
-                        print_log(3, "Found IPC SEM for user $useruid: $1.");
+                        print_log(3, "Found IPC SEM for user $Cpuset_user_id: $1.");
                     }
                 }
                 close(IPCSEM);
