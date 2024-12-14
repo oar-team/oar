@@ -87,9 +87,6 @@ my $Enable_perf_event_cg = "NO";
 # "cpu": only the memory nodes associated to cpus which are in the job
 my $Cpuset_cg_mem_nodes = "cpu";
 
-# Where the OS mounts by itself the cgroups
-my $OS_cgroups_path = "/sys/fs/cgroup";
-
 # Directories where files of the job user will be deleted after the end of the
 # job if there is not other running job of the same user on the node
 my @Tmp_dir_to_clear = ('/tmp/.', '/dev/shm/.', '/var/tmp/.');
@@ -162,9 +159,6 @@ while (<STDIN>) {
 }
 $Cpuset = eval($tmp);
 
-use Data::Dumper;
-print Dumper($Cpuset);
-
 if (!defined($Cpuset->{log_level})) {
     exit_myself(2, "Bad SSH hashtable transfered");
 }
@@ -187,7 +181,9 @@ if (-e "/etc/oar/disable_numa_nodes") {
 
 my $Cpuset_path_job;
 my @Cpuset_list;
-my $Systemd_prefix         = "oar";
+# Systemd prefix is typically "oar" (CPUSET_PATH is typically "/oar")
+my $Systemd_prefix = $Cpuset->{cpuset_path};
+$Systemd_prefix =~ s#^/##;
 
 # Get the data structure only for this node
 if (defined($Cpuset->{cpuset_path})) {
@@ -200,6 +196,23 @@ if (defined($Cpuset->{cpuset_path})) {
 my $Enable_systemd = 1;
 
 my $Cpuset_user_id = getpwnam($Cpuset->{user});
+
+my $Systemd_oar_slice = "$Systemd_prefix";
+my $Systemd_user_slice = "$Systemd_oar_slice-u$Cpuset_user_id";
+my $Systemd_job_slice = "$Systemd_user_slice-j$Cpuset->{job_id}";
+
+my $Systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
+my $Systemd_allowed_memory_nodes_cmd = 'hwloc-calc --cof systemd-dbus-api --no ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
+
+my $Cgroup_root_path = `grep cgroup2 /proc/mounts | cut -d' '  -f2`;
+chomp $Cgroup_root_path;
+
+my $Cgroup_oar_path = "$Cgroup_root_path/$Systemd_oar_slice.slice";
+my $Cgroup_user_path = "$Cgroup_oar_path/$Systemd_user_slice.slice";
+my $Cgroup_job_path = "$Cgroup_user_path/$Systemd_job_slice.slice";
+
+my $Cgroup_oar_cpus_path = "$Cgroup_root_path/cpuset.cpus.effective";
+my $Cgroup_job_cpus_path  = "$Cgroup_job_path/cpuset.cpus.effective";
 
 print_log(3, "$ARGV[0]");
 if ($ARGV[0] eq "init") {
@@ -217,83 +230,68 @@ if ($ARGV[0] eq "init") {
     }
 
     if (defined($Cpuset->{cpuset_path})) {
-
         # SYSTEMD
         print_log(3, "Using systemd, cgroup fs already in place");
 
-        ### Cgroup or systemd slice creation ###
-
-# Be careful with the physical_package_id. Is it corresponding to the memory bank?
-# Locking around the creation of the cpuset for that user, to prevent race condition during the dirty-user-based cleanup
+        # Be careful with the physical_package_id. Is it corresponding to the memory bank?
+        # Locking around the creation of the cpuset for that user, to prevent race condition during the dirty-user-based cleanup
         if (open(LOCK, '>', $Cpuset_lock_file . $Cpuset->{user})) {
             flock(LOCK, LOCK_EX) or die "flock failed: $!\n";
 
-            # Create transcient systemd slice and set properties
-            print_log(3, "Creating $Cpuset->{name}.slice transcient systemd slice");
+            print_log(3, "Creating $Cpuset->{name} systemd slice");
             system_with_log(
                 'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
-                . "org.freedesktop.systemd1.Manager StartUnit ss oar-u$Cpuset_user_id-j$Cpuset->{job_id}.slice fail"
-            ) and exit_myself(5, "Failed to create systemd slice for $Cpuset->{name}");
-
-
-            #my $systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list);
-            my $systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
-            print "-->> $systemd_allowed_cpus_cmd\n";
-            my $systemd_allowed_cpus_str = `$systemd_allowed_cpus_cmd`;
+                . "org.freedesktop.systemd1.Manager StartUnit ss $Systemd_job_slice.slice fail"
+                . ' && while oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1'
+                . " org.freedesktop.systemd1.Manager ListJobs | grep -q $Systemd_job_slice; do sleep 1; done"
+            ) and exit_myself(5, "Failed to create systemd slice $Systemd_job_slice.slice");
+            my $systemd_allowed_cpus_str = `$Systemd_allowed_cpus_cmd`;
             chomp($systemd_allowed_cpus_str);
             if ($Cpuset_cg_mem_nodes eq 'cpu') {
-                #my $systemd_allowed_memory_nodes_cmd = 'hwloc-calc --nof systemd-dbus-api ' . join(' ', @Cpuset_list);
-            	my $systemd_allowed_memory_nodes_cmd = 'hwloc-calc --cof systemd-dbus-api --no ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
-            	my $systemd_allowed_memory_nodes_str = `$systemd_allowed_memory_nodes_cmd`;
+            	my $systemd_allowed_memory_nodes_str = `$Systemd_allowed_memory_nodes_cmd`;
             	chomp($systemd_allowed_memory_nodes_str);
             	system_with_log(
                     'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1'
                     . ' org.freedesktop.systemd1.Manager SetUnitProperties'
-                    . " 'sba(sv)' oar-u$Cpuset_user_id-j$Cpuset->{job_id}.slice 1 2"
+                    . " 'sba(sv)' $Systemd_job_slice.slice 1 2"
                     . " AllowedCPUs $systemd_allowed_cpus_str"
                     . " AllowedMemoryNodes $systemd_allowed_memory_nodes_str"
-                ) and exit_myself(5, "Failed to set cpu properties of systemd slice for $Cpuset->{name}");
+                ) and exit_myself(5, "Failed to set AllowedCPUs and AllowedMemoryNodes properties of systemd $Systemd_job_slice.slice");
             } elsif ($Cpuset_cg_mem_nodes eq 'all') {
             	system_with_log(
                     'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
                     . ' org.freedesktop.systemd1.Manager SetUnitProperties'
-                    . " 'sba(sv)' oar-u$Cpuset_user_id-j$Cpuset->{job_id}.slice 1 2"
+                    . " 'sba(sv)' $Systemd_prefix-u$Cpuset_user_id-j$Cpuset->{job_id}.slice 1 2"
                     . " AllowedCPUs $systemd_allowed_cpus_str"
-                ) and exit_myself(5, "Failed to set cpu properties of systemd slice for $Cpuset->{name}");
+                ) and exit_myself(5, "Failed to set AllowedCPUs property of systemd $Systemd_job_slice.slice");
+            } else {
+                exit_myself(5, "Unsupported cg mem nodes spec: $Cpuset_cg_mem_nodes");
             }
         }
 
-        # Set cgroups cpus file location for the systemd feature
-        my $node_cpus_file = $OS_cgroups_path . '/cpuset.cpus.effective';
-        system_with_log("cat $node_cpus_file");
-        my $job_cpus_file  = $OS_cgroups_path . "/oar.slice/oar-u$Cpuset_user_id.slice/oar-u$Cpuset_user_id-j$Cpuset->{job_id}.slice/cpuset.cpus.effective";
-        system_with_log("cat $node_cpus_file");
-
-# Compute the actual job cpus (@Cpuset_list may not have the HT included, depending on the OAR resources definiton)
+        # Compute the actual job cpus (@Cpuset_list may not have the HT included, depending on the OAR resources definiton)
         my @job_cpus;
-        if (open(CPUS, $job_cpus_file)) {
+        if (open(CPUS, $Cgroup_job_cpus_path)) {
             my $str = <CPUS>;
             chop($str);
             $str =~ s/\-/\.\./g;
             @job_cpus = eval($str);
             close(CPUS);
         } else {
-            exit_myself(5, "Failed to retrieve the cpu list of the job $job_cpus_file");
+            exit_myself(5, "Failed to retrieve the cpu list of the job from $Cgroup_job_cpus_path");
         }
-        print "job cpus: " . join(", ", @job_cpus) . "\n";
 
         # Get all the cpus of the node
         my @node_cpus;
-        if (open(CPUS, $node_cpus_file)) {
+        if (open(CPUS, $Cgroup_oar_cpus_path)) {
             my $str = <CPUS>;
             chop($str);
             $str =~ s/\-/\.\./g;
             @node_cpus = eval($str);
             close(CPUS);
         } else {
-            exit_myself(5, "Failed to retrieve the cpu list of the node $node_cpus_file");
+            exit_myself(5, "Failed to retrieve the cpu list of the node from $Cgroup_oar_cpus_path");
         }
-        print "node cpus: " . join(", ", @node_cpus) . "\n";
 
         # Tag network packets from processes of this job
         if ($Enable_net_cls_cg eq "YES") {
@@ -742,151 +740,57 @@ EOF
         }
     }
 
-    # Kill tasks on this node
-
-    # SYSTEMD
-    if ($Enable_systemd eq "YES") {
-
-        # Replace "-" and "." from cpuset name as systemd interprets them
-        $Cpuset->{name} =~ s/\-/_/g;
-        $Cpuset->{name} =~ s/\./_/g;
-        $Cpuset->{name} = $Systemd_prefix . $Cpuset->{name};
-
-        # Cleaning
+    if (defined($Cpuset->{cpuset_path})) {
+        # SYSTEMD
+        # Kill tasks on this node
         print_log(2, "Systemd cleaning...");
 
-        # (disabled as it caused timeouts... need more test with frozen cgroups)
-        #system_with_log('oardodo systemctl thaw '.$Cpuset->{name}.'.slice')
-        #  and exit_myself(6,'Failed to thaw processes of '.$Cpuset->{name}.'.slice');
+        # Locking around the cleanup of the cpuset for that user, to prevent a creation to occur at the same time
+        # which would allow race condition for the dirty-user-based clean-up mechanism
+        if (open(LOCK, ">", $Cpuset_lock_file . $Cpuset->{user})) {
+            flock(LOCK, LOCK_EX) or die "flock failed: $!\n";
 
-        system_with_log('oardodo systemctl kill -s 9 ' . $Cpuset->{name} . '.slice') and
-          exit_myself(6, 'Failed to kill processes of ' . $Cpuset->{name} . '.slice');
-
-        system_with_log('oardodo systemctl stop ' . $Cpuset->{name} . '.slice; sleep 5') and
-          exit_myself(6, 'Failed to stop ' . $Cpuset->{name} . '.slice');
-
- # TODO: add a check of the slice to wait for it to be actualy inactive (and remove the sleep above)
-
-        # CGROUPv1
-    } elsif (defined($Cpuset_path_job)) {
-        system_with_log(
-            'echo THAWED > ' .
-              $Cgroup_directory_collection_links . '/freezer/' . $Cpuset_path_job . '/freezer.state
-          for d in ' . $Cgroup_directory_collection_links . '/cpuset/' . $Cpuset_path_job .
-              '/* ' . $Cgroup_directory_collection_links . '/cpuset/' . $Cpuset_path_job . '; do
-            if [ -d $d ]; then
-              PROCESSES=$(cat $d/tasks)
-              while [ "$PROCESSES" != "" ]; do
-                oardodo kill -9 $PROCESSES > /dev/null 2>&1
-                PROCESSES=$(cat $d/tasks)
-              done
-            fi
-          done');
-    }
-
-# Locking around the cleanup of the cpuset for that user, to prevent a creation to occure at the same time
-# which would allow race condition for the dirty-user-based clean-up mechanism
-    if (open(LOCK, ">", $Cpuset_lock_file . $Cpuset->{user})) {
-        flock(LOCK, LOCK_EX) or die "flock failed: $!\n";
-
-        # Cgroup cleaning
-        # SYSTEMD
-        if ($Enable_systemd eq "YES") {
-
-            # Systemd should already have cleaned the cgroups
-            # CGROUPv1
-        } elsif (defined($Cpuset_path_job)) {
+            # (disabled as it caused timeouts... need more test with frozen cgroups)
+            #system_with_log('oardodo systemctl thaw '.$Cpuset->{name}.'.slice')
+            #  and exit_myself(6,'Failed to thaw processes of '.$Cpuset->{name}.'.slice');
+            print_log(3, "Thawing $Cpuset->{name} systemd slice (resuming)");
             system_with_log(
-                'if [ -w ' . $Cgroup_directory_collection_links .
-                  '/cpuset/' . $Cpuset_path_job . '/memory.force_empty ]; then
-                             echo 0 > ' . $Cgroup_directory_collection_links .
-                  '/cpuset/' . $Cpuset_path_job . '/memory.force_empty
-                           fi
-                           for d in ' .
-                  $Cgroup_directory_collection_links . '/cpuset/' . $Cpuset_path_job .
-                  '/* ' . $Cgroup_directory_collection_links . '/cpuset/' . $Cpuset_path_job . '; do
-                             if [ -d $d ]; then
-                               [ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty
-                               while ! oardodo rmdir $d ; do
-                                 cat $d/tasks | xargs -n1 ps -fh -p 1>&2
-                                 echo retry in 1s... 1>&2
-                                 sleep 1
-                               done
-                             fi
-                           done
-                           for d in ' .
-                  $Cgroup_directory_collection_links . '/*/' . $Cpuset_path_job .
-                  '/* ' . $Cgroup_directory_collection_links . '/*/' . $Cpuset_path_job . '; do
-                             if [ -d $d ]; then
-                               [ -w $d/memory.force_empty ] && echo 0 > $d/memory.force_empty
-                               oardodo rmdir $d > /dev/null 2>&1
-                             fi
-                           done')
+                'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                . "org.freedesktop.systemd1.Manager ThawUnit s $Systemd_job_slice.slice"
+            ) and exit_myself(6, "Failed to Thaw systemd $Systemd_job_slice.slice");
 
-              # Uncomment this line if you want to use several network_address properties
-              # which are the same physical computer (linux kernel)
-              # and exit(0)
-              and exit_myself(6, "Failed to delete the cpuset $Cpuset_path_job");
+            print_log(3, "Killing $Cpuset->{name} systemd slice (killing processes)");
+            system_with_log(
+                'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                . "org.freedesktop.systemd1.Manager KillUnit ssi $Systemd_job_slice.slice all 9"
+            ) and exit_myself(6, "Failed to kill systemd $Systemd_job_slice.slice");
+
+            print_log(3, "Stopping $Cpuset->{name} systemd slice (removing)");
+            system_with_log(
+                'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                . "org.freedesktop.systemd1.Manager StopUnit ss $Systemd_job_slice.slice fail"
+                . ' && while oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1'
+                . " org.freedesktop.systemd1.Manager ListJobs | grep -q $Systemd_job_slice; do sleep 1; done"
+            ) and exit_myself(6, "Failed to stop systemd $Systemd_job_slice.slice");
         }
 
        # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
-        my @cpusets       = ();
-        my @other_cpusets = ();
-
-        # Get the number of other jobs for the user and for others
-        # SYSTEMD
-        if ($Enable_systemd eq "YES") {
-            @cpusets = system_with_log("systemctl list-units oar." .
-                  $Cpuset->{user} . "_*.slice --plain --legend=0 --state=active");
-            @other_cpusets =
-              system_with_log("systemctl list-units oar.*.slice --plain --legend=0 --state=active");
-
-            # CGROUPv1
-        } elsif (defined($Cpuset_path_job)) {
-            if (
-                opendir(
-                    DIR,
-                    $Cgroup_directory_collection_links . '/cpuset/' . $Cpuset->{cpuset_path} . '/')
-            ) {
-                @cpusets = grep { /^$Cpuset->{user}_\d+$/ } readdir(DIR);
-                closedir DIR;
-            } else {
-                exit_myself(18,
-                    "Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}"
-                );
-            }
-            if (
-                opendir(
-                    DIR,
-                    $Cgroup_directory_collection_links . '/cpuset/' . $Cpuset->{cpuset_path} . '/')
-            ) {
-                @other_cpusets = grep { /^.*_\d+$/ } readdir(DIR);
-                closedir DIR;
-            } else {
-                exit_myself(18,
-                    "Can't opendir: $Cgroup_directory_collection_links/cpuset/$Cpuset->{cpuset_path}"
-                );
-            }
+        my $systemd_oar_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_oar_slice-u*-*' | cut -d' ' -f2`;
+        if ($systemd_oar_units < 1 and
+            $max_uptime > 0 and
+            $uptime > $max_uptime and
+            not -e "/etc/oar/dont_reboot") {
+            print_log(3, "Max uptime reached, rebooting node.");
+            system_with_log('oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager Reboot');
+            exit(0);
         }
 
-        if ($#cpusets < 0) {
-
-            # No other jobs on this node at this time
-
-            # Reboot if uptime > max_uptime
-            if ($#other_cpusets < 0 and
-                $uptime > $max_uptime and
-                $max_uptime > 0 and
-                not -e "/etc/oar/dont_reboot") {
-                print_log(3, "Max uptime reached, rebooting node.");
-                system("/usr/lib/oar/oardodo/oardodo /sbin/reboot");
-                exit(0);
-            }
-
-            if (not defined($Cpuset_user_id)) {
-                print_log(3,
-                    "Cannot get information from user '$Cpuset->{user}' job #'$Cpuset->{job_id}'");
-            }
+        my $systemd_user_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_user_slice-*' | cut -d' ' -f2`;
+        if ($systemd_user_units < 1) {
+            system_with_log(
+                'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                . "org.freedesktop.systemd1.Manager StopUnit ss $Systemd_user_slice.slice fail"
+            ) and exit_myself(6, "Failed to stop systemd $Systemd_user_slice.slice");
             my $ipcrm_args = "";
             if (open(IPCMSG, "< /proc/sysvipc/msg")) {
                 <IPCMSG>;
