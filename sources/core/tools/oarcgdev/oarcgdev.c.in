@@ -145,5 +145,6 @@ int main(int argc, char **argv)
 	system("nvidia-smi");
 #endif
 	error = 0;
+    bpf_object__close(obj);
 	return error;
 }
