@@ -2,6 +2,8 @@
 # In sshd_config you must have this line:
 #     AcceptEnv OAR_CPUSET OAR_JOB_USER
 
+set -e
+set -o pipefail
 OLDUMASK=$(umask)
 umask 0022
 
