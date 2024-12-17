@@ -14,7 +14,7 @@
 
 #define print_error(MSG, ...) fprintf(stderr, MSG "\n", ##__VA_ARGS__)
 #ifndef BPF_PROG_PATH
-#define BPF_PROG_PATH "./oarcgdev.bpf"
+#define BPF_PROG_PATH "%%OARDIR%%/oarcgdev.bpf"
 #endif
 #define ARGS_FIRST_DEV 2
 
