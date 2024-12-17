@@ -149,7 +149,7 @@ my $Cpuset;
 
 # Compute uptime
 my $uptime = 0;
-open UPTIME, "/proc/uptime" or die "Couldn't open /proc/uptime!";
+open UPTIME, "/proc/uptime" or exit_myself(1, 'Failed to open /proc/uptime');
 ($uptime, ) = split(/\./, <UPTIME>);
 close UPTIME;
 
@@ -204,8 +204,12 @@ my $Systemd_job_slice = "$Systemd_user_slice-j$Cpuset->{job_id}";
 my $Systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
 my $Systemd_allowed_memory_nodes_cmd = 'hwloc-calc --cof systemd-dbus-api --no ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
 
-my $Cgroup_root_path = `grep cgroup2 /proc/mounts | cut -d' '  -f2`;
-chomp $Cgroup_root_path;
+my $Cgroup_root_path;
+open MOUNTS, '/proc/mounts' or exit_myself(3, 'Failed to open /proc/mounts.');
+while (<MOUNTS>) {
+    last if ($Cgroup_root_path) = /^cgroup2 ([^ ]+) .*/;
+}
+close MOUNTS;
 
 my $Cgroup_oar_path = "$Cgroup_root_path/$Systemd_oar_slice.slice";
 my $Cgroup_user_path = "$Cgroup_oar_path/$Systemd_user_slice.slice";
@@ -240,10 +244,10 @@ if ($ARGV[0] eq "init") {
 
             print_log(3, "Creating $Cpuset->{name} systemd slice");
             system_with_log(
-                'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
                 . "org.freedesktop.systemd1.Manager StartUnit ss $Systemd_job_slice.slice fail"
                 . ' && while oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1'
-                . " org.freedesktop.systemd1.Manager ListJobs | grep -q $Systemd_job_slice; do sleep 1; done"
+                . " org.freedesktop.systemd1.Manager ListJobs | grep -q $Systemd_job_slice; do sleep 0.1; done"
             ) and exit_myself(5, "Failed to create systemd slice $Systemd_job_slice.slice");
             my $systemd_allowed_cpus_str = `$Systemd_allowed_cpus_cmd`;
             chomp($systemd_allowed_cpus_str);
@@ -251,7 +255,7 @@ if ($ARGV[0] eq "init") {
             	my $systemd_allowed_memory_nodes_str = `$Systemd_allowed_memory_nodes_cmd`;
             	chomp($systemd_allowed_memory_nodes_str);
             	system_with_log(
-                    'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1'
+                    'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1'
                     . ' org.freedesktop.systemd1.Manager SetUnitProperties'
                     . " 'sba(sv)' $Systemd_job_slice.slice 1 2"
                     . " AllowedCPUs $systemd_allowed_cpus_str"
@@ -259,9 +263,9 @@ if ($ARGV[0] eq "init") {
                 ) and exit_myself(5, "Failed to set AllowedCPUs and AllowedMemoryNodes properties of systemd $Systemd_job_slice.slice");
             } elsif ($Cpuset_cg_mem_nodes eq 'all') {
             	system_with_log(
-                    'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                    'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
                     . ' org.freedesktop.systemd1.Manager SetUnitProperties'
-                    . " 'sba(sv)' $Systemd_prefix-u$Cpuset_user_id-j$Cpuset->{job_id}.slice 1 2"
+                    . " 'sba(sv)' $Systemd_job_slice.slice 1 1"
                     . " AllowedCPUs $systemd_allowed_cpus_str"
                 ) and exit_myself(5, "Failed to set AllowedCPUs property of systemd $Systemd_job_slice.slice");
             } else {
@@ -308,228 +312,52 @@ if ($ARGV[0] eq "init") {
         # Put a share for IO disk corresponding of the ratio between the number
         # of cpus of this cgroup and the number of cpus of the node
         if ($Enable_blkio_cg eq "YES") {
-        # Not yet tested! (check if it works and if it has not the problems of the TODO bellow with cgroup v1)
-            my $IO_ratio = sprintf("%.0f", (($#job_cpus + 1) / ($#node_cpus + 1) * 10000));
+        # Not yet tested! (check if it works and if it has not the problems of the TODO below with cgroup v1)
+            my $ioweight = sprintf("%d", ($#job_cpus + 1)  * 10000 / ($#node_cpus + 1));
             system_with_log(
-                'oardodo systemctl set-property ' . $Cpuset->{name} . '.slice '
-                . 'IOWeight=' . $IO_ratio
-            ) and exit_myself(5, "Failed to set IOweight of systemd slice $Cpuset->{name}");
-
+                'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                . ' org.freedesktop.systemd1.Manager SetUnitProperties'
+                . " 'sba(sv)' $Systemd_prefix-u$Cpuset_user_id-j$Cpuset->{job_id}.slice 1 1"
+                . " IOWeight $ioweight"
+            ) and exit_myself(5, "Failed to set IOWweight property of systemd $Systemd_job_slice.slice");
         }
 
         # Manage GPU devices
         if ($Enable_devices_cg eq "YES") {
 
-            opendir(my ($dh), "/dev") or
-              exit_myself(5, "Failed to open /dev directory for Enable_devices_cg feature");
+            my @deny_dev_array;
+            # Nvidia GPUs
+            opendir(my $dh, "/dev") or exit_myself(5, "Failed opening /dev");
+            push(@deny_dev_array, map { "/dev/$_" } grep { /^nvidia\d+$/ } readdir($dh));
+            close($dh);
 
-            # Get the list of NVIDIA or AMD GPU devices
-            my $nvidia_gpus   = 0;                                # nvidia flag
-            my @devices       = ();
-            my @other_devices = ();
-            my @files         = grep { /nvidia/ } readdir($dh);
-            foreach (@files) {
-                if ($_ =~ /nvidia(\d+)/) {
-                    $nvidia_gpus = 1;
-                    print_log(3, "Found Nvidia device /dev/nvidia" . $1);
-                    push(@devices, $1);
-                } else {
-                    push(@other_devices, "/dev/" . $_);
-                }
+            # Nvidia vGPUs (MIG)
+            # https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#dev-based-nvidia-capabilities
+            # nvidia-cap1 and nvidia-cap2 should always be denied (config and monitor)
+            if (opendir(my $dh, "/dev/nvidia-caps")) {
+                push(@deny_dev_array, map { "/dev/nvidia-caps/$_" } readdir($dh));
+                close($dh);
             }
 
-            # Get the list of AMD (or other types) GPU devices
-            # if we don't get nvidia devices, we suppose that we have AMD devices
-            my $amd_gpus = 0;    # AMD flag
-            if ($nvidia_gpus == 0) {
-                @files = grep { /dev\/dri/ } readdir($dh);
-                foreach (@files) {
-                    if ($_ =~ /card(\d+)/) {
-                        $amd_gpus = 1;
-                        print_log(3, "Found GPU device /dev/dri/card" . $1);
-                        push(@devices, $1);
-                    } else {
-                        push(@other_devices, "/dev/dri/" . $_);
-                    }
+            # AMD GPUs
+            if (opendir(my $dh, "/dev/dri")) {
+                push(@deny_dev_array, map { "/dev/dri/$_" } grep { /^(?:card|renderD)\d+$/ } readdir($dh));
+                close($dh);
+            }
+
+            my %deny_dev_hash = map { $_ => 1 } @deny_dev_array;
+
+            foreach my $r (@{ $Cpuset->{'resources'} }) {
+                if (($r->{type} eq "default") and
+                    ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
+                    ($r->{'cgdev'} ne '')) {
+                     foreach my $dev (split(/[,+\s]+/, $r->{'cgdev'})) {
+                         delete(%deny_dev_hash{$dev});
+                     }
                 }
             }
-            closedir($dh);
-
-            # SYSTEMD
-            if ($Enable_systemd eq "YES") {
-                my $gpu_device_prefix = "";
-                if ($nvidia_gpus == 1) {
-                    $gpu_device_prefix = "/dev/nvidia";
-                    push(@other_devices, "/dev/nvidia-caps/nvidia-cap1");
-                    push(@other_devices, "/dev/nvidia-caps/nvidia-cap2");
-                } elsif ($amd_gpus == 1) {
-
-                    # Not tested!
-                    $gpu_device_prefix = "/dev/drm/card";
-                } else {
-                    print_log(3, "No GPU devices found");
-                }
-                if ($nvidia_gpus == 1 or $amd_gpus == 1) {
-                    my $systemd_devices = "DevicePolicy=closed ";
-                    foreach my $r (@{ $Cpuset->{'resources'} }) {
-                        if (($r->{type} eq "default") and
-                            ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
-                            ($r->{'gpudevice'} ne '')) {
-                            @devices = grep { $_ == $r->{'gpudevice'} } @devices;
-                        }
-                    }
-                    foreach my $dev (@devices) {
-                        $systemd_devices .=
-                          'DeviceAllow="' . $gpu_device_prefix . '' . $dev . ' rwm"' . " ";
-                        print_log(3,
-                            "Allowing $gpu_device_prefix" .
-                              "$dev device into systemd slice $Cpuset->{name}");
-                    }
-                    foreach my $dev (@other_devices) {
-                        $systemd_devices .= 'DeviceAllow="' . $dev . ' rwm"' . " ";
-                        print_log(3, "Allowing $dev device into systemd slice $Cpuset->{name}");
-                    }
-                    system_with_log('oardodo systemctl set-property ' .
-                          $Cpuset->{name} . '.slice ' . $systemd_devices) and
-                      exit_myself(
-                        5,
-                        "Failed to set devices filtering of systemd slice $Cpuset->{name} : \"$systemd_devices\""
-                      );
-                }
-
-                # CGROUP v1
-            } else {
-
-                # Nvidia GPU
-                my @devices_deny = @devices;
-                if ($#devices_deny > -1) {
-
-                    # now remove from denied devices our reserved devices
-                    foreach my $r (@{ $Cpuset->{'resources'} }) {
-                        if (($r->{type} eq "default") and
-                            ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
-                            ($r->{'gpudevice'} ne '')) {
-                            @devices_deny = grep { $_ != $r->{'gpudevice'} } @devices_deny;
-                        }
-                    }
-                    print_log(3, "Deny NVIDIA GPUs: @devices_deny");
-                    my $devices_cgroup = $Cgroup_directory_collection_links .
-                      "/devices/" . $Cpuset_path_job . "/devices.deny";
-                    foreach my $dev (@devices_deny) {
-                        system_with_log("oardodo /bin/echo 'c 195:$dev rwm' > $devices_cgroup") and
-                          exit_myself(5, "Failed to set the devices.deny to c 195:$dev rwm");
-                    }
-                }
-
-                # Nvidia MIG
-                my $have_nvidia = 1;
-                @devices_deny = ();
-                opendir($dh, "/proc/driver/nvidia/capabilities") or $have_nvidia = 0;
-                if ($have_nvidia == 1) {
-                    @files = grep { /gpu/ } readdir($dh);
-                    foreach (@files) {
-                        if ($_ =~ /gpu(\d+)/) {
-                            my $gpudev = $1;
-                            opendir(my ($mdh), "/proc/driver/nvidia/capabilities/gpu$gpudev/mig");
-                            my @mfiles = grep { /gi/ } readdir($mdh);
-                            foreach (@mfiles) {
-                                if ($_ =~ /gi(\d+)/) {
-                                    push(@devices_deny, "$gpudev:$1");
-                                }
-                            }
-                            closedir($mdh);
-                        }
-                    }
-                    print_log(3, "MIGs list : @devices_deny");
-                    closedir($dh);
-                    if ($#devices_deny > -1) {
-
-                        # now remove from denied migs our reserved migs
-                        foreach my $r (@{ $Cpuset->{'resources'} }) {
-                            if (($r->{type} eq "default") and
-                                ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
-                                ($r->{'migdevice'} ne '')) {
-                                @devices_deny =
-                                  grep { $_ ne $r->{'gpudevice'} . ":" . $r->{'migdevice'} }
-                                  @devices_deny;
-                            }
-                        }
-                        print_log(3, "Deny NVIDIA MIGs: @devices_deny");
-                        my $devices_cgroup = $Cgroup_directory_collection_links .
-                          "/devices/" . $Cpuset_path_job . "/devices.deny";
-                        foreach my $dev (@devices_deny) {
-                            my ($gpu, $mig) = split /:/, $dev;
-                            open(my $fh, '<',
-                                "/proc/driver/nvidia/capabilities/gpu$gpu/mig/gi$mig/access") or
-                              exit_myself(
-                                5,
-                                "Failed to open /proc/driver/nvidia/capabilities/gpu$gpu/mig/gi$mig/access"
-                              );
-                            my $major;
-                            my $minor;
-                            while (<$fh>) {
-                                chomp;
-                                my ($key, $val) = split /: /, $_;
-                                if ($key eq "DeviceFileMinor") {
-                                    $minor = $val;
-                                }
-                            }
-                            close($fh);
-                            open($fh, '<', "/proc/devices") or
-                              exit_myself(5, "Failed to open /proc/devices");
-                            while (<$fh>) {
-                                chomp;
-                                if ($_ =~ / *(\d+) nvidia-caps$/) {
-                                    $major = $1;
-                                }
-                            }
-                            close($fh);
-                            print_log(3,
-                                "oardodo /bin/echo 'c $major:$minor rwm' > $devices_cgroup");
-                            system_with_log(
-                                "oardodo /bin/echo 'c $major:$minor rwm' > $devices_cgroup") and
-                              exit_myself(5,
-                                "Failed to set the MIG devices.deny to c $major:$minor rwm");
-                        }
-                    }
-                }    # End if ($have_nvidia == 1)
-
-                # Other GPU
-                if (opendir($dh, "/dev/dri")) {
-                    @devices_deny = ();
-                    @files        = grep { /renderD/ } readdir($dh);
-                    foreach (@files) {
-                        if ($_ =~ /renderD(\d+)/) {
-                            push(@devices_deny, $1 - 128);
-                        }
-                    }
-                    closedir($dh);
-                    if ($#devices_deny > -1) {
-
-                        # now remove from denied devices our reserved devices
-                        foreach my $r (@{ $Cpuset->{'resources'} }) {
-                            if (($r->{type} eq "default") and
-                                ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
-                                ($r->{'gpudevice'} ne '')) {
-                                @devices_deny = grep { $_ != $r->{'gpudevice'} } @devices_deny;
-                            }
-                        }
-                        print_log(3, "Deny other GPUs: @devices_deny");
-                        my $devices_cgroup = $Cgroup_directory_collection_links .
-                          "/devices/" . $Cpuset_path_job . "/devices.deny";
-                        foreach my $dev (@devices_deny) {
-                            system_with_log("oardodo /bin/echo 'c 226:$dev rwm' > $devices_cgroup")
-                              and
-                              exit_myself(5, "Failed to set the devices.deny to c 226:$dev rwm");
-                            my $renderdev = $dev + 128;
-                            system_with_log(
-                                "oardodo /bin/echo 'c 226:$renderdev rwm' > $devices_cgroup") and
-                              exit_myself(5,
-                                "Failed to set the devices.deny to c 226:$renderdev rwm");
-                        }
-                    }
-                }
-            }
+            system_with_log("oardodo /usr/sbin/oarcgdev $Cgroup_job_path " . join(" ", keys(%deny_dev_hash)))
+                and exit_myself(5, "Failed to deny access to devices in $Systemd_job_slice.slice");
         }    # if ($Enable_devices_cg eq "YES")
 
         # Assign the corresponding share of memory if memory cgroup enabled.
@@ -755,40 +583,40 @@ EOF
             #  and exit_myself(6,'Failed to thaw processes of '.$Cpuset->{name}.'.slice');
             print_log(3, "Thawing $Cpuset->{name} systemd slice (resuming)");
             system_with_log(
-                'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
                 . "org.freedesktop.systemd1.Manager ThawUnit s $Systemd_job_slice.slice"
             ) and exit_myself(6, "Failed to Thaw systemd $Systemd_job_slice.slice");
 
             print_log(3, "Killing $Cpuset->{name} systemd slice (killing processes)");
             system_with_log(
-                'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
                 . "org.freedesktop.systemd1.Manager KillUnit ssi $Systemd_job_slice.slice all 9"
             ) and exit_myself(6, "Failed to kill systemd $Systemd_job_slice.slice");
 
             print_log(3, "Stopping $Cpuset->{name} systemd slice (removing)");
             system_with_log(
-                'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
                 . "org.freedesktop.systemd1.Manager StopUnit ss $Systemd_job_slice.slice fail"
                 . ' && while oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1'
-                . " org.freedesktop.systemd1.Manager ListJobs | grep -q $Systemd_job_slice; do sleep 1; done"
+                . " org.freedesktop.systemd1.Manager ListJobs | grep -q $Systemd_job_slice; do sleep 0.1; done"
             ) and exit_myself(6, "Failed to stop systemd $Systemd_job_slice.slice");
         }
 
        # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
-        my $systemd_oar_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_oar_slice-u*-*' | cut -d' ' -f2`;
+        my $systemd_oar_units = `oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_oar_slice-u*-*' | cut -d' ' -f2`;
         if ($systemd_oar_units < 1 and
             $max_uptime > 0 and
             $uptime > $max_uptime and
             not -e "/etc/oar/dont_reboot") {
             print_log(3, "Max uptime reached, rebooting node.");
-            system_with_log('oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager Reboot');
+            system_with_log('oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager Reboot');
             exit(0);
         }
 
-        my $systemd_user_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_user_slice-*' | cut -d' ' -f2`;
+        my $systemd_user_units = `oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_user_slice-*' | cut -d' ' -f2`;
         if ($systemd_user_units < 1) {
             system_with_log(
-                'oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
                 . "org.freedesktop.systemd1.Manager StopUnit ss $Systemd_user_slice.slice fail"
             ) and exit_myself(6, "Failed to stop systemd $Systemd_user_slice.slice");
             my $ipcrm_args = "";
