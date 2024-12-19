@@ -162,17 +162,17 @@ sub qstat {
         my $structure =
           OAR::Monika::db_io::get_resources_data_structure_current_job($dbh, $currentJobId);
         my @wanted_resources;
-        foreach my $rp (@{$structure->[0]->[0]}) {
-          my $property = $rp->{'property'};
-          my @hierarchy;
-          foreach my $r (@{$rp->{'resources'}}) {
-            push(@hierarchy, "$r->{resource}=$r->{value}");
-          }
-          push(@wanted_resources, "{$property}/" . join("/", @hierarchy));
+        foreach my $rp (@{ $structure->[0]->[0] }) {
+            my $property = $rp->{'property'};
+            my @hierarchy;
+            foreach my $r (@{ $rp->{'resources'} }) {
+                push(@hierarchy, "$r->{resource}=$r->{value}");
+            }
+            push(@wanted_resources, "{$property}/" . join("/", @hierarchy));
         }
-        my $string = "-l \"" . join("+", @wanted_resources);
-        my $walltime         = $structure->[0]->[1];
-        my $sec = $walltime % 60;
+        my $string   = "-l \"" . join("+", @wanted_resources);
+        my $walltime = $structure->[0]->[1];
+        my $sec      = $walltime % 60;
         $walltime /= 60;
         my $min = $walltime % 60;
         $walltime = int($walltime / 60);
