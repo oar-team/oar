@@ -7,10 +7,6 @@
 #                 attached to the cores (see the command "numactl -H")
 #     - [cpu]     Nothing is done with this cgroup feature. By default each
 #                 cgroup have cpu.shares=1024 (no priority)
-#     - [cpuacct] Allow to have an accounting of the cpu times used by the
-#                 job processes
-#     - [freezer] Permit to suspend or resume the job processes.
-#                 This is used by the suspend/resume of OAR (oarhold/oarresume)
 #     - [memory]  Permit to restrict the amount of RAM that can be used by the
 #                 job processes (ratio of job_nb_cores / total_nb_cores).
 #                 This is useful for OOM problems (kill only tasks inside the
@@ -32,20 +28,8 @@
 #                 There are some interesting accounting data available.
 #                 You can ENABLE this feature by putting 'my $Enable_blkio_cg =
 #                 "YES";' in the following code
-#     - [net_cls] Tag each network packet from processes of this job with the
-#                 class id = $OAR_JOB_ID.
-#                 You can ENABLE this feature by putting 'my $Enable_net_cls_cg
-#                 = "YES";' in the following code.
-#     - [perf_event] You can ENABLE this feature by putting
-#                 'my $Enable_perf_event_cg = "YES";' in the following code.
 #     - [max_uptime] You can set '$max_uptime = <seconds>' to automaticaly
 #                 reboot the node at the end of the last job past this uptime
-#     - [systemd] You can ENABLE systemd support, which includes cgroupv2
-#                 support. When activated, the cpuset code is disabled and
-#                 replaced by systemd calls. To enable it, you need to create
-#                 an empty file '/etc/oar/use_systemd' on the nodes to be
-#                 managed by systemd, or set-up $Enable_systemd = "YES" for
-#                 using systemd by default on every nodes.
 # Usage:
 # This script is deployed from the server and executed as oar on the nodes
 # ARGV[0] can have two different values:
@@ -75,12 +59,6 @@ my $Enable_devices_cg = "NO";
 
 # Put YES if you want to use the blkio cgroup
 my $Enable_blkio_cg = "NO";
-
-# Put YES if you want to use the net_cls cgroup
-my $Enable_net_cls_cg = "NO";
-
-# Put YES if you want to use the perf_event cgroup
-my $Enable_perf_event_cg = "NO";
 
 # Set which memory nodes should be given to any job in the cpuset cgroup
 # "all": all the memory nodes, even if the cpu which the memory node is attached to is not in the job
@@ -297,76 +275,73 @@ if ($ARGV[0] eq "init") {
             exit_myself(5, "Failed to retrieve the cpu list of the node from $Cgroup_oar_cpus_path");
         }
 
-        # Tag network packets from processes of this job
-        if ($Enable_net_cls_cg eq "YES") {
-            # CGROUP v1
-            # system_with_log('/bin/echo ' .
-            #      $Cpuset->{job_id} . ' | cat > ' . $Cgroup_directory_collection_links .
-            #      '/net_cls/' . $Cpuset_path_job . '/net_cls.classid') and
-            #  exit_myself(5, "Failed to tag network packets of the cgroup $Cpuset_path_job");
-            # SYSTEMD
-            print_log(2, "No support for network packets tagging with systemd feature");
-
-        }
-
         # Put a share for IO disk corresponding of the ratio between the number
         # of cpus of this cgroup and the number of cpus of the node
         if ($Enable_blkio_cg eq "YES") {
-        # Not yet tested! (check if it works and if it has not the problems of the TODO below with cgroup v1)
-            my $ioweight = sprintf("%d", ($#job_cpus + 1)  * 10000 / ($#node_cpus + 1));
+            # Not yet tested! (check if it works and if it has not the problems reported with cgroup v1).
+            # Default value is 100 = IOWeight(1 logical cpu), max value is 10000 = IOWeight(all logical cpus)
+            my $ioweight = int($#job_cpus * 9900 / $#node_cpus + 100);
             system_with_log(
                 'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
                 . ' org.freedesktop.systemd1.Manager SetUnitProperties'
                 . " 'sba(sv)' $Systemd_prefix-u$Cpuset_user_id-j$Cpuset->{job_id}.slice 1 1"
-                . " IOWeight $ioweight"
+                . " IOWeight t $ioweight"
             ) and exit_myself(5, "Failed to set IOWweight property of systemd $Systemd_job_slice.slice");
         }
 
         # Manage GPU devices
         if ($Enable_devices_cg eq "YES") {
-
-            my @deny_dev_array;
-            # Nvidia GPUs
-            opendir(my $dh, "/dev") or exit_myself(5, "Failed opening /dev");
-            push(@deny_dev_array, map { "/dev/$_" } grep { /^nvidia\d+$/ } readdir($dh));
-            close($dh);
-
-            # Nvidia vGPUs (MIG)
-            # https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#dev-based-nvidia-capabilities
-            # nvidia-cap1 and nvidia-cap2 should always be denied (config and monitor)
-            if (opendir(my $dh, "/dev/nvidia-caps")) {
-                push(@deny_dev_array, map { "/dev/nvidia-caps/$_" } readdir($dh));
+            if (grep { ($_->{type} eq "default") and
+                ($_->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
+                exists($_->{'gpudevice'}) and
+                ($_->{'gpudevice'} ne '') } @{ $Cpuset->{'resources'} }) {
+                print_log(5, "GPU found on node $ENV{TAKTUK_HOSTNAME}");
+                my @deny_dev_array;
+                # Nvidia GPUs
+                opendir(my $dh, "/dev") or exit_myself(5, "Failed opening /dev");
+                push(@deny_dev_array, map { "/dev/$_" } grep { /^nvidia\d+$/ } readdir($dh));
                 close($dh);
-            }
 
-            # AMD GPUs
-            if (opendir(my $dh, "/dev/dri")) {
-                push(@deny_dev_array, map { "/dev/dri/$_" } grep { /^(?:card|renderD)\d+$/ } readdir($dh));
-                close($dh);
-            }
-
-            my %deny_dev_hash = map { $_ => 1 } @deny_dev_array;
-
-            foreach my $r (@{ $Cpuset->{'resources'} }) {
-                if (($r->{type} eq "default") and
-                    ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
-                    ($r->{'cgdev'} ne '')) {
-                     foreach my $dev (split(/[,+\s]+/, $r->{'cgdev'})) {
-                         delete(%deny_dev_hash{$dev});
-                     }
+                # Nvidia vGPUs (MIG)
+                # https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#dev-based-nvidia-capabilities
+                # nvidia-cap1 and nvidia-cap2 should always be denied (config and monitor)
+                if (opendir(my $dh, "/dev/nvidia-caps")) {
+                    push(@deny_dev_array, map { "/dev/nvidia-caps/$_" } grep { /^nvidia-cap\d+$/ } readdir($dh));
+                    close($dh);
                 }
+
+                # AMD GPUs
+                if (opendir(my $dh, "/dev/dri")) {
+                    push(@deny_dev_array, map { "/dev/dri/$_" } grep { /^(?:card|renderD)\d+$/ } readdir($dh));
+                    close($dh);
+                }
+
+                my %deny_dev_hash = map { $_ => 1 } @deny_dev_array;
+
+                foreach my $r (@{ $Cpuset->{'resources'} }) {
+                    if (($r->{type} eq "default") and
+                        ($r->{network_address} eq "$ENV{TAKTUK_HOSTNAME}") and
+                        exists($r->{'gpudevice'}) and
+                        ($r->{'gpudevice'} ne '')) {
+                        foreach my $dev (split(/[,+\s]+/, $r->{'gpudevice'})) {
+                            delete(%deny_dev_hash{$dev});
+                        }
+                    }
+                }
+                system_with_log("oardodo /usr/sbin/oarcgdev $Cgroup_job_path " . join(" ", keys(%deny_dev_hash)))
+                    and exit_myself(5, "Failed to deny access to devices in $Systemd_job_slice.slice");
+            } else {
+                print_log(5, "No GPU on node $ENV{TAKTUK_HOSTNAME}");
             }
-            system_with_log("oardodo /usr/sbin/oarcgdev $Cgroup_job_path " . join(" ", keys(%deny_dev_hash)))
-                and exit_myself(5, "Failed to deny access to devices in $Systemd_job_slice.slice");
         }    # if ($Enable_devices_cg eq "YES")
 
         # Assign the corresponding share of memory if memory cgroup enabled.
         if ($Enable_mem_cg eq "YES") {
-            my $mem_global_kb;
+            my $mem_total;
             if (open(MEM, "/proc/meminfo")) {
-                while (my $line = <MEM>) {
-                    if ($line =~ /^MemTotal:\s+(\d+)\skB$/) {
-                        $mem_global_kb = $1 * 1024;
+                while (<MEM>) {
+                    if (/^MemTotal:\s+(\d+)\skB$/) {
+                        $mem_total = $1 * 1024;
                         last;
                     }
                 }
@@ -374,27 +349,17 @@ if ($ARGV[0] eq "init") {
             } else {
                 exit_myself(5, "Failed to retrieve the global memory from /proc/meminfo");
             }
-            exit_myself(5, "Failed to parse /proc/meminfo to retrive MemTotal")
-              if (!defined($mem_global_kb));
-            my $mem_kb = sprintf("%.0f", (($#job_cpus + 1) / ($#node_cpus + 1) * $mem_global_kb));
-
-            # SYSTEMD
-            if ($Enable_systemd eq "YES") {
-                print_log(2,
-                    "Warning: systemd is a work in progress, some features may be missing");
-                system_with_log('oardodo systemctl set-property ' .
-                      $Cpuset->{name} . '.slice MemoryMax=' . $mem_kb . 'K') and
-                  exit_myself(5,
-                    "Failed to set MemoryMax of systemd slice $Cpuset->{name}: $mem_kb" . "K");
-
-                # CGROUPS V1
-            } else {
-                system_with_log(
-                    '/bin/echo ' . $mem_kb . ' | cat > ' . $Cgroup_directory_collection_links .
-                      '/memory/' . $Cpuset_path_job . '/memory.limit_in_bytes') and
-                  exit_myself(5, "Failed to set the memory.limit_in_bytes to $mem_kb");
+            if (!defined($mem_total)) {
+                exit_myself(5, "Failed to parse /proc/meminfo to retrive MemTotal")
             }
+            my $mem = int(($#job_cpus + 1) * $mem_total / ($#node_cpus + 1));
 
+            system_with_log(
+                'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
+                . ' org.freedesktop.systemd1.Manager SetUnitProperties'
+                . " 'sba(sv)' $Systemd_prefix-u$Cpuset_user_id-j$Cpuset->{job_id}.slice 1 1"
+                . " MemoryMax t $mem"
+            ) and exit_myself(5, "Failed to set MemoryMax property of systemd $Systemd_job_slice.slice");
         }    # End else ($Enable_mem_cg eq "YES")
 
         # Create file used in the user jobs (environment variables, node files, ...)
@@ -603,7 +568,8 @@ EOF
         }
 
        # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
-        my $systemd_oar_units = `oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_oar_slice-u*-*' | cut -d' ' -f2`;
+        my $systemd_oar_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_oar_slice-u*-*' | cut -d' ' -f2`;
+	print_log(3, "Systemd_oar_units: $systemd_oar_units");
         if ($systemd_oar_units < 1 and
             $max_uptime > 0 and
             $uptime > $max_uptime and
@@ -613,7 +579,8 @@ EOF
             exit(0);
         }
 
-        my $systemd_user_units = `oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_user_slice-*' | cut -d' ' -f2`;
+        my $systemd_user_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_user_slice-*' | cut -d' ' -f2`;
+	print_log(3, "Systemd_user_units: $systemd_user_units");
         if ($systemd_user_units < 1) {
             system_with_log(
                 'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
