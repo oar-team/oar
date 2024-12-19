@@ -2,6 +2,8 @@
 # In sshd_config you must have this line:
 #     AcceptEnv OAR_CPUSET OAR_JOB_USER
 
+set -e
+set -o pipefail
 OLDUMASK=$(umask)
 umask 0022
 
@@ -20,9 +22,9 @@ OPENSSH_OPTSTR_FILTERED="1246b:c:e:fgkm:nqstvxCD:KL:MNO:PQ:R:S:TVW:XYy"
 OARSH_OPENSSH_DEFAULT_OPTIONS="-oProxyCommand=none -oPermitLocalCommand=no -oUserKnownHostsFile=%%OARHOMEDIR%%/.ssh/known_hosts"
 CPUSET_PATH=
 # User defined cpuset or device to define a sub cgroup in the destination host (e.g. use case where oarsh runs on only one of the reserved GPU)
-# Separator can be indifferently ',' '.' ':' or '+'. GNU Parallel does not like ','.
-export OAR_USER_CPUSET=${OAR_USER_CPUSET//[.:+]/,}
-export OAR_USER_GPUDEVICE=${OAR_USER_GPUDEVICE//[.:+]/,}
+# Separator can be indifferently ',' '.' or '+'. GNU Parallel does not like ','.
+export OAR_USER_CPUSET=${OAR_USER_CPUSET//[.+]/,}
+export OAR_USER_GPUDEVICE=${OAR_USER_GPUDEVICE//[.+]/,}
 
 # If you set this variable to something different from 0 then oarsh will act
 # like a normal ssh without CPUSET restriction
@@ -200,15 +202,20 @@ if [ -r $TMP_JOB_KEY_FILE ]; then
     exit 4
 fi
 
-if [ "$CPUSET_PATH" != "" ]; then
+if [ -n "$CPUSET_PATH" ]; then
     if [ -r /proc/self/cpuset ]; then
+        unset OAR_CPUSET
         if [ -n "$GET_CURRENT_CPUSET_CMD" ]; then
             OAR_CPUSET=$(bash -c "$GET_CURRENT_CPUSET_CMD")
         else
-            # cpuset must be of the form /oar/username_jobid, this trims any possible sub cpuset directory
-            OAR_CPUSET=$(grep -o -e "^/oar/[^/]\+" /proc/self/cpuset)
+            # cpuset must be of the form /oar/username_jobid, extract it from the cgroup path, supposedliy
+            # if not sub task: /oar.slice/oar-Uxxx.slice/oar-uXXX-jYYY.slice/oar-uXXX-jYYY-sZZZ.scope
+            # or if sub task:  /oar.slice/oar-Uxxx.slice/oar-uXXX-jYYY.slice/oar-uXXX-jYYY-tZZZ.slice/oar-uXXX-jYYY-tTTT-sZZZ.scope
+            cat /proc/self/cpuset
+            OAR_CPUSET=$(sed -ne "s#.*$CPUSET_PATH.slice/[^/]\+$CPUSET_PATH-u\([[:digit:]]\+\)-j\([[:digit:]]\+\)\.slice/.*#\1_\2#p" /proc/self/cpuset)
+            OAR_CPUSET=$CPUSET_PATH/$(id -un "${OAR_CPUSET%_*}")_${OAR_CPUSET##*_}
         fi
-        if [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH" ] || [ "${OAR_CPUSET%/*}" == "$CPUSET_PATH/" ]; then
+        if [ -n "${OAR_CPUSET##*/}" ]; then
             JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
             if [ -r $JOB_KEY_FILE ]; then
                 umask $OLDUMASK
@@ -233,43 +240,32 @@ if [ -n "$OAR_JOB_ID" ]; then
         echo "oarsh: Invalid job id: $OAR_JOB_ID" 1>&2
         exit 5
     fi
-    if [ ! -x "$OARSH_OARSTAT_CMD" ]; then
-        echo "oarsh: Cannot connect using job id from this host." 1>&2
-        exit 5
-    fi
-    STR=$($OARSH_OARSTAT_CMD -fj $OAR_JOB_ID | \
-            while read l; do
-                if [ "$l" != "" ]; then
-                    if [ "${l##cpuset_name*}" = "" ] ;then
-                        echo "OAR_CPUSET="${l/*cpuset_name = /}
-                    fi
-                fi
-            done)
-
-    eval $STR
-
-    if [ "$OAR_CPUSET" = "" ]; then
-        echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2
-        exit 5
-    else
-        if [ "$OAR_CPUSET" != "$OARDO_USER"_"$OAR_JOB_ID" ]; then
-            echo "oarsh: Permission denied, seems like job $OAR_JOB_ID is not yours." 1>&2
+    if [ -n "$CPUSET_PATH" ]; then
+        if [ ! -x "$OARSH_OARSTAT_CMD" ]; then
+            echo "oarsh: Cannot connect using job id from this host." 1>&2
             exit 5
         fi
-    fi
+        OAR_CPUSET=$CPUSET_PATH/$($OARSH_OARSTAT_CMD -fj "$OAR_JOB_ID" | sed -ne 's/^\s*cpuset_name\s*=\s*\(\w\+\).*$/\1/p')
 
+        if [ "$OAR_CPUSET" == "$CPUSET_PATH/" ]; then
+            echo "oarsh: Cannot retrieve the job cpuset name for job id: $OAR_JOB_ID" 1>&2
+            exit 5
+        else
+            if [ "$OAR_CPUSET" != "${CPUSET_PATH}/${OARDO_USER}_${OAR_JOB_ID}" ]; then
+                echo "oarsh: Permission denied, seems like job $OAR_JOB_ID is not yours." 1>&2
+                exit 5
+            fi
+        fi
+    else
+        OAR_CPUSET="undef"
+    fi
     # Check if we must use a tmp user id for this job
     if [ "$OAR_JOB_USER" = "" ]; then
         OAR_JOB_USER=$OARDO_USER
     fi
-    if [ "$CPUSET_PATH" != "" ]; then
-        OAR_CPUSET="$CPUSET_PATH/$OAR_CPUSET"
-    else
-        OAR_CPUSET="undef"
-    fi
     export OAR_JOB_USER
     export OAR_CPUSET
-    umask $OLDUMASK
+    umask "$OLDUMASK"
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
     echo "oarsh: Failed to connect using cpuset environment" 1>&2
     exit 5
