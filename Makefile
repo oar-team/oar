@@ -142,6 +142,10 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/common.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common
 
+	# oar-common-legacy
+	mkdir -p $(PACKAGES_DIR)/oar-common-legacy/var/lib/oar
+	$(MAKE) -f Makefiles/common.mk OARSH_LEGACY=1 $(P_ACTION) \
+	    DESTDIR=$(PACKAGES_DIR)/oar-common-legacy
 
 	# liboar-perl
 	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar
@@ -153,7 +157,6 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/server.mk $(P_ACTION)\
     SHAREDIR=/usr/share/oar/oar-server \
                 DESTDIR=$(PACKAGES_DIR)/oar-server
-
 	$(MAKE) -f Makefiles/database.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-server \
     SHAREDIR=/usr/share/oar/oar-server \
