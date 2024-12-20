@@ -6,8 +6,6 @@ OARDIR_BINFILES=$(SRCDIR)/tools/oarnodecheck/oarnodecheckrun.in
 BINDIR_FILES=$(SRCDIR)/tools/oarnodecheck/oarnodechecklist.in \
 	     $(SRCDIR)/tools/oarnodecheck/oarnodecheckquery.in
 
-SBINDIR_FILES=$(SRCDIR)/tools/pam_oar_adopt
-
 SHAREDIR_FILES= $(SRCDIR)/scripts/prologue \
 		$(SRCDIR)/scripts/epilogue \
 		$(SRCDIR)/tools/sshd_config.in \
@@ -32,22 +30,15 @@ include Makefiles/shared/shared.mk
 
 build: build_shared
 	$(MAKE) -f Makefiles/man.mk build
-	gcc -g -O0 -rdynamic -Wall -Werror  $(SRCDIR)/tools/oarcgdev/oarcgdev.c -lelf -lz -lbpf -o $(SRCDIR)/tools/oarcgdev/oarcgdev
-	clang -I /usr/include/*-linux-gnu/ -O2 -target bpf -mcpu=v3 -g -c $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf.c -o $(SRCDIR)/tools/oarcgdev/oarcgdev.bpf
 
 clean: clean_shared
 	$(MAKE) -f Makefiles/man.mk clean
-	-rm $(SRCDIR)/tools/oarcgdev/oarcgdev
-	-rm $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf
 
 install: install_shared
 	install -d $(DESTDIR)$(OARCONFDIR)/check.d
-
 	install -d $(DESTDIR)$(DOCDIR)/oarnodecheck
 	install -m 0644 $(SRCDIR)/tools/oarnodecheck/README $(DESTDIR)$(DOCDIR)/oarnodecheck
 	install -m 0644 $(SRCDIR)/tools/oarnodecheck/template $(DESTDIR)$(DOCDIR)/oarnodecheck
-	install -m 0700 $(SRCDIR)/tools/oarcgdev/oarcgdev $(DESTDIR)$(OARDIR)/oarcgdev
-	install -m 0700 $(SRCDIR)/tools/oarcgdev/oarcgdev.bpf $(DESTDIR)$(OARDIR)/oarcgdev.bpf
 
 uninstall: uninstall_shared
 
