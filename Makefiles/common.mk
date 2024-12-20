@@ -1,8 +1,10 @@
 MODULE=common
 SRCDIR=sources/core
 
-OARDIR_BINFILES = $(SRCDIR)/tools/oarsh/oarsh_shell.in \
-	          $(SRCDIR)/tools/oarsh/oarsh.in \
+OARSH_DIR := $(if $(OARSH_LEGACY),oarsh-legacy,oarsh)
+
+OARDIR_BINFILES = $(SRCDIR)/tools/$(OARSH_DIR)/oarsh_shell.in \
+	          $(SRCDIR)/tools/$(OARSH_DIR)/oarsh.in \
                   $(SRCDIR)/qfunctions/oarnodesetting \
 		  $(SRCDIR)/tools/sentinelle.pl
 
@@ -16,11 +18,9 @@ SHAREDIR_FILES = $(SRCDIR)/tools/oar.conf.in \
 
 LOGROTATEDIR_FILES = setup/logrotate.d/oar-common.in
 
-PROCESS_TEMPLATE_FILES = $(SRCDIR)/tools/oarsh/oarcp.in \
+PROCESS_TEMPLATE_FILES = $(SRCDIR)/tools/$(OARSH_DIR)/oarcp.in \
 			 $(SRCDIR)/tools/oardodo.c.in \
 			 $(SRCDIR)/tools/oardo.c.in
-
-
 
 include Makefiles/shared/shared.mk
 
