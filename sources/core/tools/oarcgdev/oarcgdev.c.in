@@ -119,31 +119,6 @@ int main(int argc, char **argv)
 		return error;
 	}
 
-#ifdef TEST
-	char cgroup_procs_path[PATH_MAX + 1];
-	pid_t pid = getpid();
-
-	snprintf(cgroup_procs_path, sizeof(cgroup_procs_path),
-		 "%s/cgroup.procs", cgroup_path);
-
-	int cgroup_procs_fd = open(cgroup_procs_path, O_WRONLY);
-	if (cgroup_procs_fd < 0) {
-		print_error("Failed to open cgroup procs");
-		error = -errno;
-		bpf_object__close(obj);
-		return error;
-	}
-
-	if (dprintf(cgroup_procs_fd, "%d\n", pid) < 0) {
-		print_error("Failed to joining process to cgroup");
-		error = -errno;
-		bpf_object__close(obj);
-		return error;
-	}
-
-	close(cgroup_procs_fd);
-	system("nvidia-smi");
-#endif
 	error = 0;
     bpf_object__close(obj);
 	return error;
