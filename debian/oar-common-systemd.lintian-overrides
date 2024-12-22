@@ -1,0 +1,2 @@
+# The INSTALL file contains also the Debian configuration instructions
+oar-common binary: package-contains-upstream-installation-documentation

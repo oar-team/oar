@@ -6,7 +6,9 @@ Priority: optional
 Build-Depends: debhelper-compat (= 13),
                po-debconf,
                perl,
-               python3-sphinx
+               python3-sphinx,
+               clang,
+               libbpf-dev
 Standards-Version: 4.6.2
 Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
 Vcs-Browser: https://github.com/oar-team/oar
@@ -32,7 +34,8 @@ Description: OAR batch scheduler common library package
  .
  This package installs the common libraries of the OAR batch scheduler
 
-Package: oar-common
+Package: oar-common-legacy
+Provides: oar-common
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
@@ -41,6 +44,7 @@ Depends: ${misc:Depends},
          liboar-perl (= ${binary:Version}),
          adduser,
          ucf
+Conflicts: oar-common-systemd
 Suggests: oar-server,
           oar-user,
           oar-node,
@@ -49,7 +53,30 @@ Description: OAR batch scheduler common package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
  .
- This package installs the common part of the OAR batch scheduler
+ This package installs the common part of the OAR batch scheduler, legacy version
+
+Package: oar-common-systemd
+Provides: oar-common
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         ${perl:Depends},
+         liboar-perl (= ${binary:Version}),
+         adduser,
+         ucf,
+         hwloc-nox | hwloc,
+         libbpf1
+Conflicts: oar-common-legacy
+Suggests: oar-server,
+          oar-user,
+          oar-node,
+          oar-doc
+Description: OAR batch scheduler common package
+ OAR is a versatile resource and task manager (also called a batch scheduler)
+ for clusters and other computing infrastructures
+ .
+ This package installs the common part of the OAR batch scheduler, using systemd
 
 Package: oar-server
 Architecture: any
@@ -61,7 +88,7 @@ Depends: ${misc:Depends},
          cron,
          libsort-versions-perl,
          libdbi-perl,
-         oar-common (= ${binary:Version}),
+         oar-common-legacy (= ${binary:Version}) | oar-common-systemd (= ${binary:Version}),
          oar-server-pgsql (= ${binary:Version}) | oar-server-mysql (= ${binary:Version}),
          perl (<< 5.17) | libterm-ui-perl
 Recommends: libxml-dumper-perl,
@@ -120,7 +147,7 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          openssh-client,
          openssh-server,
-         oar-common (= ${binary:Version})
+         oar-common-legacy (= ${binary:Version}) | oar-common-systemd (= ${binary:Version})
 Suggests: oar-doc,
           xauth
 Description: OAR batch scheduler node package
@@ -136,7 +163,7 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
          libdbi-perl,
-         oar-common (= ${binary:Version}),
+         oar-common-legacy (= ${binary:Version}) | oar-common-systemd (= ${binary:Version}),
          oar-user-pgsql (= ${binary:Version}) | oar-user-mysql (= ${binary:Version})
 Recommends: libxml-dumper-perl,
             libyaml-perl,

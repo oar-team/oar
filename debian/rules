@@ -53,8 +53,10 @@ override_dh_auto_install:
 	# disable the automatic installation of this cron, by default
 	#cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/cron.d/oar-node > debian/oar-node.cron.d
 
-	## oar-common
-	cat $(CURDIR)/$(INSTALLDIR)/oar-common/usr/share/oar/oar-common/logrotate.d/oar-common > debian/oar-common.logrotate
+	## oar-common-legacy
+	cat $(CURDIR)/$(INSTALLDIR)/oar-common-legacy/usr/share/oar/oar-common/logrotate.d/oar-common > debian/oar-common-legacy.logrotate
+	## oar-common-systemd
+	cat $(CURDIR)/$(INSTALLDIR)/oar-common-systemd/usr/share/oar/oar-common/logrotate.d/oar-common > debian/oar-common-systemd.logrotate
 	## oar-web-status
 	# (poar) use libjs-jquery instead of the embedded one.
 	# -- poar is not in the debian packaging (still an experimental feature)
@@ -80,7 +82,8 @@ override_dh_clean:
 	$(RM) debian/oar-node.service
 	$(RM) debian/oar-server.default
 	$(RM) debian/oar-node.default
-	$(RM) debian/oar-common.logrotate
+	$(RM) debian/oar-common-legacy.logrotate
+	$(RM) debian/oar-common-systemd.logrotate
 	$(RM) debian/oar-server.cron.d
 	$(RM) debian/oar-node.cron.d
 
@@ -97,8 +100,10 @@ override_dh_fixperms:
 	chmod +x debian/oar-server/usr/share/oar/oar-server/server_prologue
 	chmod +x debian/oar-server/usr/share/oar/oar-server/shut_down_nodes.sh
 	chmod +x debian/oar-server/usr/share/oar/oar-server/wake_up_nodes.sh
-	chmod +x debian/oar-common/usr/share/oar/oar-common/oarnodesetting_ssh
-	chmod +x debian/oar-common/usr/share/oar/oar-common/update_cpuset_id.sh
+	chmod +x debian/oar-common-legacy/usr/share/oar/oar-common/oarnodesetting_ssh
+	chmod +x debian/oar-common-systemd/usr/share/oar/oar-common/oarnodesetting_ssh
+	chmod +x debian/oar-common-legacy/usr/share/oar/oar-common/update_cpuset_id.sh
+	chmod +x debian/oar-common-systemd/usr/share/oar/oar-common/update_cpuset_id.sh
 	chmod +x debian/oar-web-status/usr/share/oar/oar-web-status/userInfos.cgi
 	chmod +x debian/oar-restful-api/usr/share/oar/oar-api/stress_factor.sh
 	chmod +x debian/oar-node/usr/share/oar/oar-node/epilogue
