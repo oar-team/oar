@@ -20,7 +20,9 @@ LOGROTATEDIR_FILES = setup/logrotate.d/oar-common.in
 
 PROCESS_TEMPLATE_FILES = $(SRCDIR)/tools/$(OARSH_DIR)/oarcp.in \
 			 $(SRCDIR)/tools/oardodo.c.in \
-			 $(SRCDIR)/tools/oardo.c.in
+			 $(SRCDIR)/tools/oardo.c.in \
+			 $(SRCDIR)/tools/oarcgdev/oarcgdev.c.in
+
 
 include Makefiles/shared/shared.mk
 

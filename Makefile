@@ -142,7 +142,6 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/common.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common
 
-
 	# liboar-perl
 	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar
 	$(MAKE) -f Makefiles/common-libs.mk $(P_ACTION) \
@@ -153,17 +152,22 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/server.mk $(P_ACTION)\
     SHAREDIR=/usr/share/oar/oar-server \
                 DESTDIR=$(PACKAGES_DIR)/oar-server
-
 	$(MAKE) -f Makefiles/database.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-server \
     SHAREDIR=/usr/share/oar/oar-server \
 		DOCDIR=/usr/share/doc/oar-server
 
-	# oar-node
+	# oar-node-systemd
 	mkdir -p $(PACKAGES_DIR)/oar-node/var/lib/oar
 	mkdir -p $(PACKAGES_DIR)/oar-node/etc/init.d
 	$(MAKE) -f Makefiles/node.mk $(P_ACTION)\
-                DESTDIR=$(PACKAGES_DIR)/oar-node
+                DESTDIR=$(PACKAGES_DIR)/oar-node-systemd
+
+	# oar-node-legacy
+	mkdir -p $(PACKAGES_DIR)/oar-node/var/lib/oar
+	mkdir -p $(PACKAGES_DIR)/oar-node/etc/init.d
+	$(MAKE) -f Makefiles/node.mk OARSH_LEGACY=1 $(P_ACTION)\
+                DESTDIR=$(PACKAGES_DIR)/oar-node-legacy
 
 	# oar-user
 	mkdir -p $(PACKAGES_DIR)/oar-user/var/lib/oar
