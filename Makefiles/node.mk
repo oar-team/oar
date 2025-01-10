@@ -30,7 +30,11 @@ DEFAULTDIR_FILES = setup/default/oar-node.in \
 
 include Makefiles/shared/shared.mk
 
-build: build_shared
+build-oarcgdev:
+	gcc -g -O0 -rdynamic -Wall -Werror  $(SRCDIR)/tools/oarcgdev/oarcgdev.c -lelf -lz -lbpf -o $(SRCDIR)/tools/oarcgdev/oarcgdev
+	clang -I /usr/include/*-linux-gnu/ -O2 -target bpf -mcpu=v3 -g -c $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf.c -o $(SRCDIR)/tools/oarcgdev/oarcgdev.bpf
+
+build: build_shared $(if $(OARSH_LEGACY),,build-oarcgdev)
 	$(MAKE) -f Makefiles/man.mk build
 	gcc -g -O0 -rdynamic -Wall -Werror  $(SRCDIR)/tools/oarcgdev/oarcgdev.c -lelf -lz -lbpf -o $(SRCDIR)/tools/oarcgdev/oarcgdev
 	clang -I /usr/include/*-linux-gnu/ -O2 -target bpf -mcpu=v3 -g -c $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf.c -o $(SRCDIR)/tools/oarcgdev/oarcgdev.bpf
@@ -40,14 +44,15 @@ clean: clean_shared
 	-rm $(SRCDIR)/tools/oarcgdev/oarcgdev
 	-rm $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf
 
-install: install_shared
-	install -d $(DESTDIR)$(OARCONFDIR)/check.d
+install-oarcgdev:
+	install -m 0700 $(SRCDIR)/tools/oarcgdev/oarcgdev $(DESTDIR)$(OARDIR)/oarcgdev
+	install -m 0700 $(SRCDIR)/tools/oarcgdev/oarcgdev.bpf $(DESTDIR)$(OARDIR)/oarcgdev.bpf
 
+install: install_shared $(if $(OARSH_LEGACY),,install-oarcgdev)
+	install -d $(DESTDIR)$(OARCONFDIR)/check.d
 	install -d $(DESTDIR)$(DOCDIR)/oarnodecheck
 	install -m 0644 $(SRCDIR)/tools/oarnodecheck/README $(DESTDIR)$(DOCDIR)/oarnodecheck
 	install -m 0644 $(SRCDIR)/tools/oarnodecheck/template $(DESTDIR)$(DOCDIR)/oarnodecheck
-	install -m 0700 $(SRCDIR)/tools/oarcgdev/oarcgdev $(DESTDIR)$(OARDIR)/oarcgdev
-	install -m 0700 $(SRCDIR)/tools/oarcgdev/oarcgdev.bpf $(DESTDIR)$(OARDIR)/oarcgdev.bpf
 
 uninstall: uninstall_shared
 
