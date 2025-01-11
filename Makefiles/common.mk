@@ -1,7 +1,7 @@
 MODULE=common
 SRCDIR=sources/core
 
-OARSH_DIR := $(if $(OARSH_LEGACY),oarsh-legacy,oarsh)
+OARSH_DIR := $(if $(OARSH_LEGACY),oarsh-legacy,oarsh-systemd)
 
 OARDIR_BINFILES = $(SRCDIR)/tools/$(OARSH_DIR)/oarsh_shell.in \
 	          $(SRCDIR)/tools/$(OARSH_DIR)/oarsh.in \

@@ -158,14 +158,14 @@ $(P_TARGETS):
 		DOCDIR=/usr/share/doc/oar-server
 
 	# oar-node-systemd
-	mkdir -p $(PACKAGES_DIR)/oar-node/var/lib/oar
-	mkdir -p $(PACKAGES_DIR)/oar-node/etc/init.d
+	mkdir -p $(PACKAGES_DIR)/oar-node-systemd/var/lib/oar
+	mkdir -p $(PACKAGES_DIR)/oar-node-systemd/etc/init.d
 	$(MAKE) -f Makefiles/node.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-node-systemd
 
 	# oar-node-legacy
-	mkdir -p $(PACKAGES_DIR)/oar-node/var/lib/oar
-	mkdir -p $(PACKAGES_DIR)/oar-node/etc/init.d
+	mkdir -p $(PACKAGES_DIR)/oar-node-legacy/var/lib/oar
+	mkdir -p $(PACKAGES_DIR)/oar-node-legacy/etc/init.d
 	$(MAKE) -f Makefiles/node.mk OARSH_LEGACY=1 $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-node-legacy
 
