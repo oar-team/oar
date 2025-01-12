@@ -45,7 +45,7 @@ install: install_shared
 	$(OARDO_INSTALL) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 
 	install -d $(DESTDIR)$(BINDIR)
-	install -m 0755 $(SRCDIR)/tools/oarsh/oarcp $(DESTDIR)$(BINDIR)/
+	install -m 0755 $(SRCDIR)/tools/$(OARSH_DIR)/oarcp $(DESTDIR)$(BINDIR)/
 	install -m 0755 $(SRCDIR)/qfunctions/oarprint $(DESTDIR)$(BINDIR)
 
 	install -d $(DESTDIR)$(OARDIR)/oardodo
