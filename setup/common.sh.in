@@ -156,6 +156,12 @@ common_setup() {
         ${OARCONFDIR}/update_cpuset_id.sh \
         0755
 
+    if [ -n "OARSH_LEGACY" ]; then
+        ln -sf ${OARCONFDIR}/job_resource_manager_cgroups.pl ${OARCONFDIR}/job_resource_manager.pl
+    else
+        ln -sf ${OARCONFDIR}/job_resource_manager_systemd.pl ${OARCONFDIR}/job_resource_manager.pl
+    fi
+
     set_rights ${BINDIR}/oarsh           6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
     set_rights ${SBINDIR}/oarnodesetting 6750 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
 

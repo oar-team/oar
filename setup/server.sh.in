@@ -23,13 +23,18 @@ create_phoenix_home() {
 
 server_setup() {
     install_conffile \
-        ${SHAREDIR}/job_resource_manager.pl \
-        ${OARCONFDIR}/job_resource_manager.pl \
+        ${SHAREDIR}/job_resource_manager_cpuset.pl \
+        ${OARCONFDIR}/job_resource_manager_cpuset.pl \
         0644
 
     install_conffile \
         ${SHAREDIR}/job_resource_manager_cgroups.pl \
         ${OARCONFDIR}/job_resource_manager_cgroups.pl \
+        0644
+
+    install_conffile \
+        ${SHAREDIR}/job_resource_manager_systemd.pl \
+        ${OARCONFDIR}/job_resource_manager_systemd.pl \
         0644
 
     install_conffile \
