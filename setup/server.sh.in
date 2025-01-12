@@ -38,8 +38,13 @@ server_setup() {
         0644
 
     install_conffile \
-        ${SHAREDIR}/suspend_resume_manager.pl \
-        ${OARCONFDIR}/suspend_resume_manager.pl \
+        ${SHAREDIR}/suspend_resume_manager_cpuset.pl \
+        ${OARCONFDIR}/suspend_resume_manager_cpuset.pl \
+        0644
+
+    install_conffile \
+        ${SHAREDIR}/suspend_resume_manager_systemd.pl \
+        ${OARCONFDIR}/suspend_resume_manager_systemd.pl \
         0644
 
     install_conffile \

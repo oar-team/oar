@@ -158,8 +158,10 @@ common_setup() {
 
     if [ -n "OARSH_LEGACY" ]; then
         ln -sf ${OARCONFDIR}/job_resource_manager_cgroups.pl ${OARCONFDIR}/job_resource_manager.pl
+        ln -sf ${OARCONFDIR}/suspend_resume_manager_cgroups.pl ${OARCONFDIR}/suspend_resume_manager.pl
     else
         ln -sf ${OARCONFDIR}/job_resource_manager_systemd.pl ${OARCONFDIR}/job_resource_manager.pl
+        ln -sf ${OARCONFDIR}/suspend_resume_manager_systemd.pl ${OARCONFDIR}/suspend_resume_manager.pl
     fi
 
     set_rights ${BINDIR}/oarsh           6755 ${OARDO_DEFAULTUSER} ${OARDO_DEFAULTGROUP}
