@@ -137,10 +137,15 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/doc.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-doc
 
-	# oar-common
-	mkdir -p $(PACKAGES_DIR)/oar-common/var/lib/oar
+	# oar-common-systemd
+	mkdir -p $(PACKAGES_DIR)/oar-common-systemd/var/lib/oar
 	$(MAKE) -f Makefiles/common.mk $(P_ACTION) \
-	    DESTDIR=$(PACKAGES_DIR)/oar-common
+	    DESTDIR=$(PACKAGES_DIR)/oar-common-systemd
+
+	# oar-common-legacy
+	mkdir -p $(PACKAGES_DIR)/oar-common-legacy/var/lib/oar
+	$(MAKE) -f Makefiles/common.mk OARSH_LEGACY=1 $(P_ACTION) \
+	    DESTDIR=$(PACKAGES_DIR)/oar-common-legacy
 
 	# liboar-perl
 	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar
