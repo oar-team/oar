@@ -1,0 +1,130 @@
+#!/bin/bash
+#
+# pam_oar_adopt is a PAM module that adopts processes launched under ssh
+# connections made by users. The processes will be moved inside the correct
+# job cgroup, if the user owns all cores of a node in one OAR job.
+# If user has multiple jobs on node or one job with only a part of available
+# cores, an error is thrown. In that case, `oarsh` must be used.
+#
+set -eu
+
+CGROUP_MOUNT_POINT="/dev/oar_cgroups_links"
+OAR_CPUSETS_BASE="$CGROUP_MOUNT_POINT/cpuset/oar"
+USER_UID_MIN=1000
+
+
+get_oar_cpusets_of_user() {
+    readarray OAR_CPUSETS < <( cd "$OAR_CPUSETS_BASE" && ls -d "$1"_* 2>/dev/null )
+    OAR_CPUSET=${OAR_CPUSETS[0]}
+}
+
+pam_account() {
+	if [ -z "$PAM_USER" ]; then
+		echo "Please launch this module via PAM"
+		exit 1
+	fi
+
+	# We exit if the pam service is su, we don't want to have the error
+	# message when using su.
+	if [ "$PAM_SERVICE" = "su-l" ]; then
+		exit 0
+	fi
+
+	# Exit if the user id is inferior than 1000 (system user), indeed there is
+	# no need to do OAR cgroups machinery in that case.
+	if [ "$(getent passwd "$PAM_USER" | cut -d: -f3)" -lt "$USER_UID_MIN" ]; then
+		exit 0
+	fi
+
+	get_vars "$PAM_USER"
+	test_pam_activation
+
+	# Four cases:
+	# - the connecting user is oar or root, we fail silently (since we are in 'sufficient' mode)
+	# - the user has no cgroups (= no jobs) on node
+	# - the user has more than one cgroup or one but without all cores
+	# - the user has one cgroup with all cores
+	if [ "$PAM_USER" = "oar" ] || [ "$PAM_USER" = "root" ]; then
+		exit 1
+	elif [ -z "$OAR_CPUSET" ]; then
+		echo "No running job for user $PAM_USER on this node." >&2
+		exit 1
+	elif [ "${#OAR_CPUSETS}" -ne 1 ]; then
+		cat << EOF >&2
+Cannot connect to node using 'ssh' because you appear to have more than one job on the node.
+Make sure to only have one job on the node, or use 'oarsh' to connect to a specific job.
+EOF
+		exit 1
+    elif [ "$(< "$OAR_CPUSETS_BASE/$OAR_CPUSET"/cpuset.cpus)" != "$ALL_CPUSET_CPUS" ]; then
+		cat << EOF >&2
+Cannot connect to node using 'ssh' because not all its compute resources (e.g. CPU cores or threads) are assigned to the job which reserves it.
+Reserve the whole node, or use 'oarsh' instead.
+EOF
+		exit 1
+	else
+		exit 0
+	fi
+}
+
+pam_session() {
+	if [ -z "$PAM_TYPE" ]; then
+		echo "Please launch this module via PAM"
+		exit 1
+	fi
+
+	# Exit if not a login
+	if [ "$PAM_TYPE" != "open_session" ]; then
+		exit 0
+	fi
+
+	get_vars "${PAM_RUSER:-$PAM_USER}"
+
+	# We could not find a running OAR job for this user on this node. It probably means that
+	# the user connecting is either root or oar (for example because of oarsh).
+	# We do nothing in that case.
+	if [ -z "$OAR_CPUSET" ]; then
+		exit 0
+	fi
+
+	# To have job's environment variables, we create a symkink to the already
+	# created (by oarsh) environment file. pam_env while then load it.
+	ln -fs "/var/lib/oar/$OAR_CPUSET.env" /var/lib/oar/pam.env
+
+	PIDS="$(ps -o ppid= $$)"
+	for pid in $PIDS; do
+		for cg in "$CGROUP_MOUNT_POINT"/*; do
+			echo "$pid" > "$cg/oar/$OAR_CPUSET/tasks"
+		done
+	done
+}
+
+test_pam_activation() {
+	# We test if the pam module should perform verification. This file is created
+	# by g5k-postinstall when required (i.e. node is running a non user deployed
+	# std env).
+	if [ ! -f "/etc/oar/pam_activated" ]; then
+		exit 0
+	fi
+}
+
+get_vars() {
+	get_oar_cpusets_of_user "$1"
+	ALL_CPUSET_CPUS=$(< ${OAR_CPUSETS_BASE}/cpuset.cpus)
+}
+
+[ $# -eq 0 ] && echo "Please provide PAM mode" && exit 1
+
+while getopts ":as" opt; do
+	case $opt in
+		"s")
+			pam_session
+			;;
+		"a")
+			pam_account
+			;;
+		*)
+			echo "Unknown mode"
+			exit 1
+			;;
+	esac
+done
