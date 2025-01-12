@@ -51,19 +51,18 @@ add_process_to_cpuset() {
     shift
 
     # Add all processes to the OAR job cgroups
-    TASK_ID=""
     if [ -n "$OAR_USER_CPUSET" ] || [ -n "$OAR_USER_GPUDEVICE" ]; then
         SYSTEMD_SUBJOB_SLICE=${SYSTEMD_JOB_SLICE%.slice}-t$RANDOM.slice
         CGROUP_SUBJOB_PATH=$CGROUP_JOB_PATH/$SYSTEMD_SUBJOB_SLICE
         SYSTEMD_PROC_SCOPE=${SYSTEMD_SUBJOB_SLICE%.slice}-p$RANDOM.scope
-        oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartUnit ss $SYSTEMD_SUBJOB_SLICE fail
+        oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartUnit ss "$SYSTEMD_SUBJOB_SLICE" fail
         while oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListJobs | grep -q "$SYSTEMD_SUBJOB_SLICE"; do
             sleep 0.1
         done
         if [ -n "$OAR_USER_CPUSET" ]; then
-            SYSTEMD_ALLOWED_CPUS_STR=$(hwloc-calc --cof systemd-dbus-api "$OAR_USER_CPUSET" | sed -e 's/^AllowedCPUs //')
+            readarry SYSTEMD_ALLOWED_CPUS_STR < <(hwloc-calc --cof systemd-dbus-api "$OAR_USER_CPUSET" | sed -e 's/^AllowedCPUs //')
             if [ -n "$SYSTEMD_ALLOWED_CPUS_STR" ]; then
-                oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager SetUnitProperties 'sba(sv)' $SYSTEMD_SUBJOB_SLICE 1 1 AllowedCPUs $SYSTEMD_ALLOWED_CPUS_STR
+                oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager SetUnitProperties 'sba(sv)' "$SYSTEMD_SUBJOB_SLICE" 1 1 AllowedCPUs "${SYSTEMD_ALLOWED_CPUS_STR[@]}"
             else
                 # OAR_USER_CPUSET is defined but syntax is incorrect
                 echo "Warning: Failed to set user cpuset as requested by OAR_USER_CPUSET=$OAR_USER_CPUSET, use the default one" 1>&2
@@ -73,16 +72,16 @@ add_process_to_cpuset() {
         if [ -n "$OAR_USER_GPUDEVICE" ]; then
             OAR_USER_GPUDEVICE=${OAR_USER_GPUDEVICE//+/ }
             OAR_USER_GPUDEVICE=${OAR_USER_GPUDEVICE//,/ }
-            declare -a DEV_DENY DEV_ALLOW
+            declare -a DEV_DENY
             for f in /dev/nvidia[0-9]* /dev/dri/card[0-9]* /dev/dri/renderD[0-9]* /dev/nvidia-caps/*; do
                 if [[ " $OAR_USER_GPUDEVICE " ==  !(* $f *) ]]; then
-                    DEV_DENY+=($f)
+                    DEV_DENY+=( "$f" )
                 fi
             done
-            oardodo /usr/sbin/oarcgdev $CGROUP_SUBJOB_PATH "${DEV_DENY[@]}"
+            oardodo /usr/sbin/oarcgdev "$CGROUP_SUBJOB_PATH" "${DEV_DENY[@]}"
         fi
     fi
-    oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartTransientUnit 'ssa(sv)a(sa(sv))' ${SYSTEMD_PROC_SCOPE} fail 3 Delegate b 1 PIDs au $# "$@" Slice s ${SYSTEMD_PROC_SCOPE%-p*}.slice 0
+    oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartTransientUnit 'ssa(sv)a(sa(sv))' "${SYSTEMD_PROC_SCOPE}" fail 3 Delegate b 1 PIDs au $# "$@" Slice s "${SYSTEMD_PROC_SCOPE%-p*}".slice 0
     while oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListJobs | grep -q "$SYSTEMD_PROC_SCOPE"; do
         sleep 0.1
     done
@@ -95,13 +94,13 @@ if [ "$OAR_JOB_USER" = "" ]; then
     fi
     # It must be oar
     if [ "$OAR_CPUSET" != "" ]; then
-        add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 62
-        [ -r "$JOBENVFILE" ] && . $JOBENVFILE
+        add_process_to_cpuset "$OAR_CPUSET" "$$" "$PPID" || exit 62
+        [ -r "$JOBENVFILE" ] && . "$JOBENVFILE"
     fi
     $OARDIR/oardodo/oardodo renice 0 $$ $PPID > /dev/null 2>&1
     export SHELL=$DEFAULT_SHELL
 
-    umask $OLDUMASK
+    umask "$OLDUMASK"
     exec $DEFAULT_SHELL "$@"
     echo "oarsh: exec failed" 1>&2
     exit 66
@@ -110,23 +109,23 @@ else
         echo "oarsh: OAR_CPUSET variable is empty; Is your sshd right configured with 'AcceptEnv OAR_CPUSET OAR_JOB_USER' on all computing nodes?" 1>&2
         exit 63
     fi
-    add_process_to_cpuset $OAR_CPUSET $$ $PPID || exit 62
+    add_process_to_cpuset "$OAR_CPUSET" "$$" "$PPID" || exit 62
 
     #Manage display
     if [ -n "$DISPLAY" ]; then
         if [ -x "$XAUTH_LOCATION" ]; then
-            $XAUTH_LOCATION -q extract - ${DISPLAY#localhost} | OARDO_BECOME_USER=${OAR_JOB_USER} $OARDIR/oardodo/oardodo $XAUTH_LOCATION merge -
-            [ "${OAR_JOB_USER}" != "$OAR_JOB_USER" ] && OARDO_BECOME_USER=${OAR_JOB_USER} $OARDIR/oardodo/oardodo bash --noprofile --norc -c 'chmod 660 $HOME/.Xauthority'
+            "$XAUTH_LOCATION" -q extract - "${DISPLAY#localhost}" | OARDO_BECOME_USER="${OAR_JOB_USER}" $OARDIR/oardodo/oardodo "$XAUTH_LOCATION" merge -
+            [ "${OAR_JOB_USER}" != "$OAR_JOB_USER" ] && OARDO_BECOME_USER="${OAR_JOB_USER}" $OARDIR/oardodo/oardodo bash --noprofile --norc -c 'chmod 660 $HOME/.Xauthority'
         fi
     fi
     #Change tty owner
-    TTY=$(tty) && test -e $TTY && $OARDIR/oardodo/oardodo chown $OAR_JOB_USER:oar $TTY && $OARDIR/oardodo/oardodo chmod 660 $TTY
+    TTY=$(tty) && test -e "$TTY" && $OARDIR/oardodo/oardodo chown "$OAR_JOB_USER":oar "$TTY" && $OARDIR/oardodo/oardodo chmod 660 "$TTY"
     $OARDIR/oardodo/oardodo renice 0 $$ $PPID > /dev/null 2>&1
-    [ -r "$JOBENVFILE" ] && . $JOBENVFILE
+    [ -r "$JOBENVFILE" ] && . "$JOBENVFILE"
     if [ "$1" = "" ]; then
         # Simulate initial login
         export OARDO_BECOME_USER=$OAR_JOB_USER
-        umask $OLDUMASK
+        umask "$OLDUMASK"
         exec $OARDIR/oardodo/oardodo
         #exec oardodo su - $OAR_JOB_USER
         echo "oarsh: exec failed" 1>&2
@@ -134,7 +133,7 @@ else
     else
         export OARDO_BECOME_USER=$OAR_JOB_USER
         export OARDO_USE_USER_SHELL=1
-        umask $OLDUMASK
+        umask "$OLDUMASK"
         exec $OARDIR/oardodo/oardodo "$@"
         echo "oarsh: exec failed" 1>&2
         exit 66
