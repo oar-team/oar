@@ -6,7 +6,7 @@
 # If user has multiple jobs on node or one job with only a part of available
 # cores, an error is thrown. In that case, `oarsh` must be used.
 #
-set -eu
+set -e
 
 CGROUP_MOUNT_POINT="/dev/oar_cgroups_links"
 OAR_CPUSETS_BASE="$CGROUP_MOUNT_POINT/cpuset/oar"
@@ -15,7 +15,7 @@ USER_UID_MIN=1000
 
 get_oar_cpusets_of_user() {
     readarray OAR_CPUSETS < <( cd "$OAR_CPUSETS_BASE" && ls -d "$1"_* 2>/dev/null )
-    OAR_CPUSET=${OAR_CPUSETS[0]}
+    OAR_CPUSET="${OAR_CPUSETS[0]%[[:space:]]}"
 }
 
 pam_account() {
@@ -49,7 +49,7 @@ pam_account() {
 	elif [ -z "$OAR_CPUSET" ]; then
 		echo "No running job for user $PAM_USER on this node." >&2
 		exit 1
-	elif [ "${#OAR_CPUSETS}" -ne 1 ]; then
+	elif [ ${#OAR_CPUSETS[*]} -ne 1 ]; then
 		cat << EOF >&2
 Cannot connect to node using 'ssh' because you appear to have more than one job on the node.
 Make sure to only have one job on the node, or use 'oarsh' to connect to a specific job.
