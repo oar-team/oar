@@ -21,30 +21,21 @@ create_phoenix_home() {
     chown ${OAROWNER}:${OAROWNERGROUP} ${OARHOMEDIR}/phoenix
 }
 
+
 server_setup() {
+    if [ -z $OAR_CGV1 ]; then
+        CGV1_OR_SYSTEMD=systemd
+    else
+        CGV1_OR_SYSTEMD=cgroup
+    fi
     install_conffile \
-        ${SHAREDIR}/job_resource_manager_cpuset.pl \
-        ${OARCONFDIR}/job_resource_manager_cpuset.pl \
+        ${SHAREDIR}/job_resource_manager_${CGV1_OR_SYSTEMD}.pl \
+        ${OARCONFDIR}/job_resource_manager.pl \
         0644
 
     install_conffile \
-        ${SHAREDIR}/job_resource_manager_cgroups.pl \
-        ${OARCONFDIR}/job_resource_manager_cgroups.pl \
-        0644
-
-    install_conffile \
-        ${SHAREDIR}/job_resource_manager_systemd.pl \
-        ${OARCONFDIR}/job_resource_manager_systemd.pl \
-        0644
-
-    install_conffile \
-        ${SHAREDIR}/suspend_resume_manager_cpuset.pl \
-        ${OARCONFDIR}/suspend_resume_manager_cpuset.pl \
-        0644
-
-    install_conffile \
-        ${SHAREDIR}/suspend_resume_manager_systemd.pl \
-        ${OARCONFDIR}/suspend_resume_manager_systemd.pl \
+        ${SHAREDIR}/suspend_resume_manager_${CGV1_OR_SYSTEMD}.pl \
+        ${OARCONFDIR}/suspend_resume_manager.pl \
         0644
 
     install_conffile \

@@ -1,7 +1,7 @@
 MODULE=common
 SRCDIR=sources/core
 
-OARSH_DIR := $(if $(OARSH_LEGACY),oarsh-legacy,oarsh)
+OARSH_DIR := $(if $(OAR_CGV1),oarsh-legacy,oarsh)
 
 OARDIR_BINFILES = $(SRCDIR)/tools/$(OARSH_DIR)/oarsh_shell.in \
 	          $(SRCDIR)/tools/$(OARSH_DIR)/oarsh.in \
@@ -33,8 +33,10 @@ clean: clean_shared
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(BINDIR)/oarsh
 	$(OARDO_CLEAN) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 	-rm -f $(SRCDIR)/tools/oardodo
-	-rm $(SRCDIR)/tools/oarcgdev/oarcgdev
-	-rm $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf
+ifndef OAR_CGV1
+	-rm -f $(SRCDIR)/tools/oarcgdev/oarcgdev
+	-rm -f $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf
+endif
 
 build: build_shared
 	$(MAKE) -f Makefiles/man.mk build
@@ -42,9 +44,10 @@ build: build_shared
 	$(OARDO_BUILD) CMD_WRAPPER=$(OARDIR)/oarnodesetting CMD_TARGET=$(DESTDIR)$(SBINDIR)/oarnodesetting
 
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $(SRCDIR)/tools/oardodo $(SRCDIR)/tools/oardodo.c
-
-	gcc -g -O0 -rdynamic -Wall -Werror  $(SRCDIR)/tools/oarcgdev/oarcgdev.c -lelf -lz -lbpf -o $(SRCDIR)/tools/oarcgdev/oarcgdev
-	clang -I /usr/include/*-linux-gnu/ -O2 -target bpf -mcpu=v3 -g -c $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf.c -o $(SRCDIR)/tools/oarcgdev/oarcgdev.bpf
+ifndef OAR_CGV1
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(SRCDIR)/tools/oarcgdev/oarcgdev.c -lelf -lz -lbpf -o $(SRCDIR)/tools/oarcgdev/oarcgdev
+	clang -I /usr/include/$(shell gcc -print-multiarch) -O2 -target bpf -mcpu=v3 -g -c $(SRCDIR)/tools/oarcgdev/oarcgdev-ebpf.c -o $(SRCDIR)/tools/oarcgdev/oarcgdev.bpf
+endif
 
 install: install_shared
 
@@ -60,8 +63,10 @@ install: install_shared
 
 	cp -f $(DESTDIR)$(MANDIR)/man1/oarsh.1 $(DESTDIR)$(MANDIR)/man1/oarcp.1
 
+ifndef OAR_CGV1
 	install -m 0700 $(SRCDIR)/tools/oarcgdev/oarcgdev $(DESTDIR)$(OARDIR)/oarcgdev
 	install -m 0700 $(SRCDIR)/tools/oarcgdev/oarcgdev.bpf $(DESTDIR)$(OARDIR)/oarcgdev.bpf
+endif
 
 uninstall: uninstall_shared
 	$(OARDO_UNINSTALL) CMD_WRAPPER=$(OARDIR)/oarsh CMD_TARGET=$(DESTDIR)$(BINDIR)/oarsh
@@ -69,6 +74,10 @@ uninstall: uninstall_shared
 	rm -f $(DESTDIR)$(MANDIR)/man1/oarcp.1
 	rm -rf $(DESTDIR)$(OARDIR)/oardodo
 	rm -rf $(DESTDIR)$(EXAMPLEDIR)
+ifndef OAR_CGV1
+	rm -f $(DESTDIR)$(OARDIR)/oarcgdev
+	rm -f $(DESTDIR)$(OARDIR)/oarcgdev.bpf
+endif
 
 
 .PHONY: install setup uninstall build clean
