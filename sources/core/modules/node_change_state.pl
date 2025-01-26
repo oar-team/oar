@@ -286,7 +286,9 @@ foreach my $i (@events_to_check) {
                     my $suspend_data_hash = {
                         name             => $cpuset_name,
                         job_id           => $i->{job_id},
-                        oarexec_pid_file => OAR::Tools::get_oar_pid_file_name($i->{job_id}), };
+                        job_user           => $job->{job_user},
+                        oarexec_pid_file => OAR::Tools::get_oar_pid_file_name($i->{job_id}),
+                    };
                     if (defined($cpuset_nodes)) {
                         my $taktuk_cmd  = get_conf("TAKTUK_CMD");
                         my $openssh_cmd = get_conf("OPENSSH_CMD");

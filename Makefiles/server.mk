@@ -38,9 +38,11 @@ MANDIR_FILES = $(SRCDIR)/man/man1/Almighty.1 \
 
 SBINDIR_FILES = $(SRCDIR)/server/sbin/oar-server.in
 
-SHAREDIR_FILES = $(SRCDIR)/tools/job_resource_manager.pl \
-                   $(SRCDIR)/tools/job_resource_manager_cgroups.pl \
-		   $(SRCDIR)/tools/suspend_resume_manager.pl \
+SHAREDIR_FILES = $(SRCDIR)/tools/job_resource_manager_cpuset.pl \
+		   $(SRCDIR)/tools/job_resource_manager_cgroups.pl \
+		   $(SRCDIR)/tools/job_resource_manager_systemd.pl \
+		   $(SRCDIR)/tools/suspend_resume_manager_cgroups.pl \
+		   $(SRCDIR)/tools/suspend_resume_manager_systemd.pl \
 		   $(SRCDIR)/tools/oarmonitor_sensor.pl \
 		   $(SRCDIR)/scripts/server_epilogue \
 		   $(SRCDIR)/scripts/server_prologue \

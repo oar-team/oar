@@ -73,6 +73,8 @@ Array jobs can neither be Interactive (-I) nor a reservation (-r).
 
 Submit a parametric array job. Each non-empty line of "FILE" defines the parameters for a subjob. All the subjobs have the same characteristics (script, requirements) and can be identified by an environment variable $OAR_ARRAY_INDEX.   '#' is the comment sign.
 
+Parameters are given as arguments to the command.
+
 Parametric array jobs can neither be Interactive (-I) nor a reservation (-r).
 
 =item B<-S, --scanscript>

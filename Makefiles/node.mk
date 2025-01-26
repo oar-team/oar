@@ -6,8 +6,6 @@ OARDIR_BINFILES=$(SRCDIR)/tools/oarnodecheck/oarnodecheckrun.in
 BINDIR_FILES=$(SRCDIR)/tools/oarnodecheck/oarnodechecklist.in \
 	     $(SRCDIR)/tools/oarnodecheck/oarnodecheckquery.in
 
-SBINDIR_FILES=$(SRCDIR)/tools/pam_oar_adopt
-
 SHAREDIR_FILES= $(SRCDIR)/scripts/prologue \
 		$(SRCDIR)/scripts/epilogue \
 		$(SRCDIR)/tools/sshd_config.in \
@@ -38,10 +36,9 @@ clean: clean_shared
 
 install: install_shared
 	install -d $(DESTDIR)$(OARCONFDIR)/check.d
-
 	install -d $(DESTDIR)$(DOCDIR)/oarnodecheck
-	install -m 0644 sources/core/tools/oarnodecheck/README $(DESTDIR)$(DOCDIR)/oarnodecheck
-	install -m 0644 sources/core/tools/oarnodecheck/template $(DESTDIR)$(DOCDIR)/oarnodecheck
+	install -m 0644 $(SRCDIR)/tools/oarnodecheck/README $(DESTDIR)$(DOCDIR)/oarnodecheck
+	install -m 0644 $(SRCDIR)/tools/oarnodecheck/template $(DESTDIR)$(DOCDIR)/oarnodecheck
 
 uninstall: uninstall_shared
 

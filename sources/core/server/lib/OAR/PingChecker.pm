@@ -1,5 +1,8 @@
 package OAR::PingChecker;
 require Exporter;
+our (@ISA, @EXPORT, @EXPORT_OK);
+@ISA       = qw(Exporter);
+@EXPORT_OK = qw(ping_hosts sentinelle_hosts test_hosts);
 
 use strict;
 use Data::Dumper;
@@ -8,11 +11,6 @@ use OAR::Modules::Judas
 use OAR::Conf qw(init_conf dump_conf get_conf is_conf);
 use IPC::Open3;
 use OAR::Tools;
-
-require Exporter;
-our (@ISA, @EXPORT, @EXPORT_OK);
-@ISA       = qw(Exporter);
-@EXPORT_OK = qw(ping_hosts sentinelle_hosts test_hosts);
 
 my $Module_name = "PingChecker";
 my $Session_id  = $$;

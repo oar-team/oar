@@ -21,6 +21,7 @@ use Fcntl;
 use OAR::Schedulers::ResourceTree;
 use OAR::Tools;
 use POSIX qw(strftime);
+use POSIX qw(sysconf);
 
 # suitable Data::Dumper configuration for serialization
 $Data::Dumper::Purity   = 1;
@@ -2542,7 +2543,7 @@ EOS
     chop($query_jobs);
     $dbh->do($query_jobs);
 
-    #retreive job_ids thanks to array_id value
+    #retrieve job_ids thanks to array_id value
     my $query_job_ids =
       $dbh->prepare("SELECT job_id FROM jobs WHERE array_id = $array_id ORDER BY job_id ASC");
     $query_job_ids->execute();
@@ -6598,13 +6599,15 @@ sub set_resources_state($$$$$) {
     my $resources_to_heal   = shift;
     my $session_id          = shift;
 
-    my $update_values = '';
-    my $insert_values = '';
-    my $date          = get_date($dbh);
-    my $exit_code     = 1;
-    my $need_update   = 0;
+    my $update_values                = '';
+    my $resources_to_actually_update = '';
+    my $insert_values                = '';
+    my $date                         = get_date($dbh);
+    my $exit_code                    = 1;
+    my $need_update                  = 0;
     my %debug_info;
     my @jobs_to_frag;
+
     foreach my $resource_id (keys %$resources_to_change) {
         if ($resources_info->{$resource_id}->{state} ne $resources_to_change->{$resource_id} or
             $resources_info->{$resource_id}->{finaud_decision} ne
@@ -6614,6 +6617,7 @@ sub set_resources_state($$$$$) {
               $update_values . "(" . $resource_id . ", '" . $resources_to_change->{$resource_id} .
               "', " . $State_to_num{ $resources_to_change->{$resource_id} } .
               ", '" . $resources_info->{$resource_id}{next_finaud_decision} . "'),";
+            $resources_to_actually_update = $resources_to_actually_update . $resource_id . ",";
             $insert_values =
               $insert_values .
               "(" . $resource_id . ", " . "'state', '" . $resources_to_change->{$resource_id} .
@@ -6656,6 +6660,7 @@ sub set_resources_state($$$$$) {
     }
 
     chop($update_values);
+    chop($resources_to_actually_update);
     chop($insert_values);
 
     if ($need_update eq 1) {
@@ -6673,7 +6678,7 @@ sub set_resources_state($$$$$) {
                     WHERE
                         date_stop = 0
                         AND attribute = \'state\'
-                        AND resource_id IN " . "(" . join(", ", keys(%$resources_to_change)) . ")");
+                        AND resource_id IN " . "(" . $resources_to_actually_update . ")");
         $dbh->do(
             "  INSERT INTO resource_logs (resource_id,attribute,value,date_start,finaud_decision)
                     VALUES " . $insert_values . "
@@ -10083,6 +10088,60 @@ sub inserts_from_file($$$) {
     $dbh->do($query);
 }
 
+sub get_stats($) {
+    my $dbh = shift;
+
+    my $pid = $$;    # Current process ID
+
+    # Read the contents of /proc/pid/stat
+    open my $stat_fh, '<', "/proc/$pid/stat" or die "Cannot open /proc/$pid/stat: $!";
+    my $stat_line = <$stat_fh>;
+    close $stat_fh;
+
+    # Extract cutime and cstime from the stat line
+    my ($utime, $stime, $cutime, $cstime) = (split ' ', $stat_line)[ 13, 14, 15, 16 ];
+
+    # Convert clock ticks to seconds
+    my $clock_ticks_per_second    = sysconf(&POSIX::_SC_CLK_TCK);
+    my $user_seconds              = $utime / $clock_ticks_per_second;
+    my $system_seconds            = $stime / $clock_ticks_per_second;
+    my $cumulative_user_seconds   = $cutime / $clock_ticks_per_second;
+    my $cumulative_system_seconds = $cstime / $clock_ticks_per_second;
+
+    my $transactions;
+    if ($Db_type eq "mysql") {
+        $transactions = 0;    # unsupported AFAIK
+    } else {
+        my $dbname = get_conf("DB_BASE_NAME");
+        my $query  = "SELECT xact_commit FROM pg_stat_database WHERE datname = '$dbname'";
+        my $sth    = $dbh->prepare($query);
+        $sth->execute();
+        my $result = $sth->fetchrow_hashref;
+        $transactions = $result->{xact_commit};
+    }
+    return (time(), $user_seconds, $system_seconds, $cumulative_user_seconds,
+        $cumulative_system_seconds, $transactions);
+}
+
+sub format_stats(\@\@) {
+    my @start = shift;
+    my @end   = shift;
+    my ($time, $usec, $ssec, $cusec, $cssec, $trans) = array_substract(@end, @start);
+    ($time, $usec, $ssec, $cusec, $cssec) = map sprintf("%.2f", $_),
+      ($time, $usec, $ssec, $cusec, $cssec);
+    return
+      "elapsed:${time}s user:${usec}s sys:${ssec}s child_user:${cusec}s child_sys:${cssec}s ; approx ${trans} DB transactions";
+}
+
+sub array_substract (\@\@) {
+    my $a_ref  = shift;
+    my $b_ref  = shift;
+    my @a      = @{$a_ref};
+    my @b      = @{$b_ref};
+    my @result = map { $a[$_] - $b[$_] } 0 .. $#a;
+    return @result;
+}
+
 # Return the difference between two arrays
 # arg: array ; example: ('Error', 'Hold')
 sub array_minus(\@@) {
@@ -10090,6 +10149,72 @@ sub array_minus(\@@) {
     my @b = @_;
     my %e = map { $_ => undef } @b;
     return grep(!exists($e{$_}), @$a);
+}
+
+sub get_count_jobs_active_queues($) {
+    my $dbh          = shift;
+    my @queues       = get_active_queues($dbh);
+    my $queue_names  = join ',', map "\'$_->[0]\'", @queues;
+    my @states       = ("Running", "Waiting");
+    my @reservations = ("None",    "Scheduled");
+    my %res          = ();
+
+    if (@queues == 0) {
+        return (%res);
+    }
+
+    my $req = <<EOS;
+SELECT queue_name,state,reservation,COUNT(job_id)
+FROM jobs
+WHERE state IN (\'Running\',\'Waiting\')
+AND queue_name IN ( $queue_names )
+GROUP BY state,reservation,queue_name
+ORDER BY queue_name,state
+EOS
+
+    my $sth = $dbh->prepare($req);
+    $sth->execute();
+    foreach my $queue (@queues) {
+        foreach ("Running", "Waiting", "Waiting(NoSched)") {
+            $res{ $queue->[0] }{$_} = 0;
+        }
+    }
+    while (my $ref = $sth->fetchrow_hashref()) {
+        $res{ $ref->{'queue_name'} }{ $ref->{'state'} } += $ref->{'count'};
+        if (($ref->{'state'} eq 'Waiting') and ($ref->{'reservation'} eq 'None')) {
+            $res{ $ref->{'queue_name'} }{'Waiting(NoSched)'} += $ref->{'count'};
+        }
+    }
+    $sth->finish();
+    return (%res);
+
+}
+
+sub format_count_jobs_active_queue(%) {
+    my %job_counts = @_;
+    my @res        = ();
+
+    foreach my $queue (sort keys %job_counts) {
+        my $counts = "Jobs counts in: " . $queue . "=>";
+        foreach my $group (sort keys %{ $job_counts{$queue} }) {
+            $counts .= $group . ":" . $job_counts{$queue}{$group} . ",";
+        }
+        chop($counts);
+        push @res, $counts;
+    }
+    return @res;
+}
+
+sub format_count_jobs_of_queue($%) {
+    my $queue      = shift();
+    my %job_counts = @_;
+    my $res        = "";
+
+    foreach my $group (sort keys %{ $job_counts{$queue} }) {
+        $res .= $group . ":" . $job_counts{$queue}{$group} . ",";
+    }
+    chop($res);
+    return $res;
 }
 
 # Return an array without the duplicates

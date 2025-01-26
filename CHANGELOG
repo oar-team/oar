@@ -1,6 +1,18 @@
 OAR CHANGELOG
 =============
 
+version 2.6.0:
+--------------
+
+  - [oarsh] Add support for cgroupv2/systemd
+  - [job_resource_manager] Add support for cgroupv2/systemd
+  - [Monika] Fix display of wanted resources
+  - [all] Fix for Perl exporter (Perl 5.39.1)
+  - [oarsub] Ignore ^Z from termial (SIGTSTP)
+  - [API] Remove cycle limits
+  - [IO.pm] Fix issue with resource_log
+  - [IO.pm/MetaSched] Add functions to allow scheduling perf statistics
+
 version 2.5.10:
 --------------
 

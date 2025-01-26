@@ -114,6 +114,9 @@ my $array_job_nb;
 my $array_param_file;
 my $array_params_ref;
 
+# ignore ^Z signal
+$SIG{'TSTP'} = 'IGNORE';
+
 #to catch ^C signal
 $SIG{INT}  = \&signal_handler;
 $SIG{HUP}  = \&signal_handler;
