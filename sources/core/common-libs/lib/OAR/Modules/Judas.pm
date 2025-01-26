@@ -1,5 +1,8 @@
 package OAR::Modules::Judas;
 require Exporter;
+our (@ISA, @EXPORT, @EXPORT_OK);
+@ISA       = qw(Exporter);
+@EXPORT_OK = qw(oar_warn oar_info oar_debug oar_error send_log_by_email set_current_log_category);
 
 # this module allows to log on a file and stdout with three different level
 
@@ -12,11 +15,6 @@ use POSIX qw(strftime);
 use Time::HiRes qw(gettimeofday);
 use OAR::IO;
 use OAR::Tools;
-
-require Exporter;
-our (@ISA, @EXPORT, @EXPORT_OK);
-@ISA       = qw(Exporter);
-@EXPORT_OK = qw(oar_warn oar_info oar_debug oar_error send_log_by_email set_current_log_category);
 
 $| = 1;
 my $CURRENT_LOG_CAT;

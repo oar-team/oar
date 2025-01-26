@@ -203,10 +203,10 @@ sub append_string_to_user_file($$$$){
 
 # Retrieve job information from bipbip
 my $Job;
+my $tmp = "";
 eval {
     $SIG{ALRM} = sub { die "alarm\n" };
     alarm(OAR::Tools::get_bipbip_ssh_hashtable_send_timeout());
-    my $tmp = "";
     while (<STDIN>){
         $tmp .= $_;
     }
@@ -218,6 +218,9 @@ if( $@ ){
     exit(30);
 }
 if (!defined($Job->{job_id})){
+    print("[oarexec] received dump\n");
+    print("[oarexec] $tmp\n");
+    print("[oarexec] end of dump\n");
     print("[oarexec] invalid job hashtable transfered\n");
     exit(31);
 }

@@ -142,7 +142,6 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/common.mk $(P_ACTION) \
 	    DESTDIR=$(PACKAGES_DIR)/oar-common
 
-
 	# liboar-perl
 	mkdir -p $(PACKAGES_DIR)/liboar-perl/var/lib/oar
 	$(MAKE) -f Makefiles/common-libs.mk $(P_ACTION) \
@@ -153,7 +152,6 @@ $(P_TARGETS):
 	$(MAKE) -f Makefiles/server.mk $(P_ACTION)\
     SHAREDIR=/usr/share/oar/oar-server \
                 DESTDIR=$(PACKAGES_DIR)/oar-server
-
 	$(MAKE) -f Makefiles/database.mk $(P_ACTION)\
                 DESTDIR=$(PACKAGES_DIR)/oar-server \
     SHAREDIR=/usr/share/oar/oar-server \
@@ -193,6 +191,6 @@ $(P_TARGETS):
 	    DESTDIR=$(PACKAGES_DIR)/oar-restful-api
 
 	# keyring
-	$(MAKE) -f Makefiles/keyring.mk $(P_ACTION) \
-	    DESTDIR=$(PACKAGES_DIR)/oar-keyring
+	#$(MAKE) -f Makefiles/keyring.mk $(P_ACTION) \
+	#    DESTDIR=$(PACKAGES_DIR)/oar-keyring
 
