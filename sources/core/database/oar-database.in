@@ -448,7 +448,7 @@ GetOptions ("help|h"                => \$usage,
             "debug|d"               => \$debug,
             "force-sql|f"           => \$force_sql,
             "force-yes|y"           => \$force_yes,
-            "upgrade|s"             => sub { $action = 'upgrade' },
+            "upgrade|u"             => sub { $action = 'upgrade' },
             "setup|s"               => sub { $action = 'upgrade' }, #  keep "--setup" for backward compatibility
             "reset|r"               => sub { $action = 'reset' },
             "create|c"              => sub { $action = 'create' },
