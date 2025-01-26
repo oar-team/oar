@@ -1,2 +1,5 @@
 # The INSTALL file contains also the Debian configuration instructions
 oar-common binary: package-contains-upstream-installation-documentation
+# Inhibit oarcgdev ebpf errors
+oar-common binary: binary-from-other-architecture [usr/lib/oar/oarcgdev.bpf]
+oar-common binary: unstripped-binary-or-object [usr/lib/oar/oarcgdev.bpf]
