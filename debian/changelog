@@ -1,3 +1,9 @@
+oar (2.6.0~rc1-1) unstable; urgency=medium
+
+  * Release candidate 1
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sun, 26 Jan 2025 20:07:49 +0100
+
 oar (2.5.10-2) unstable; urgency=medium
 
   [ Pierre Neyron ]
