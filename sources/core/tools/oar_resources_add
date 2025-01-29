@@ -6,6 +6,8 @@ CORES=4
 THREADS=1
 GPUS=
 HOST_PREFIX="node-"
+CPUSET_PREFIX=
+NO_CPUSET_PREFIX=
 YAML=
 CREATE_PROPERTIES=1
 USE_THREADS=
@@ -42,6 +44,8 @@ Options:
     --gputopo <list>            topology of the gpus: ordered list of the gpudevice ids
     --host-prefix <str>         hostname prefix (default: "node-")
     --host-suffix <str>         hostname suffix (e.g. ".domain")
+    --cpuset-prefix <str>       use a custom cpuset resource prefix instead of node: (or pu: if threads)
+    --no-cpuset-prefix          no cpuset resource prefix, just a number
     -a, --auto-offset           guess next host/cpu/core/thread/gpu ids
     -p, --no-create-properties  do not generate oarproperty commands
     -A, --append <str>          append a text string (extra properties)
@@ -66,7 +70,7 @@ debug() {
   [ -n "$DEBUG" ] && echo "DEBUG: $@" 1>&2
 }
 
-LONG_OPTS="hosts:,cpus:,cores:,threads:,gpus:,host-prefix:,host-suffix:,host0:,cpu0:,core0:,thread0:,gpu0:,cpuset:,cpusets:,cputopo:,gpudevices:,gputopo:,append:,use-threads,write-to:,auto-offset,yaml,no-create-properties,repair,help,debug"
+LONG_OPTS="hosts:,cpus:,cores:,threads:,gpus:,host-prefix:,host-suffix:,cpuset-prefix:,host0:,cpu0:,core0:,thread0:,gpu0:,cpuset:,cpusets:,cputopo:,gpudevices:,gputopo:,append:,use-threads,write-to:,auto-offset,yaml,no-create-properties,repair,no-cpuset-prefix,help,debug"
 SHORT_OPTS="H:C:c:t:g:P:S:A:o:TRaYph"
 args=$(getopt -l $LONG_OPTS -o $SHORT_OPTS -q -- "$@")
 [ $? -gt 0 ] && die "Syntax error, $(getopt -l $LONG_OPTS -o $SHORT_OPTS -Q -- "$@" 2>&1)."
@@ -107,6 +111,13 @@ while [ $# -ge 1 ]; do
   -S|--host-suffix)
     HOST_SUFFIX=$2
     shift
+    ;;
+  --cpuset-prefix)
+    CPUSET_PREFIX=$2
+    shift
+    ;;
+  --no-cpuset-prefix)
+    NO_CPUSET_PREFIX=1
     ;;
   --host0)
     HOST0=$2
@@ -205,6 +216,14 @@ debug "GPUS=$GPUS"
 CPUSETS=${CPUSETS:-$((CPUS*CORES*THREADS))}
 debug "CPUSETS=$CPUSETS"
 
+if [ -z "$NO_CPUSET_PREFIX" -a -z "$CPUSET_PREFIX" ]; then
+    if [ -n "$USE_THREADS" ]; then
+        CPUSET_PREFIX="pu:"
+    else
+        CPUSET_PREFIX="core:"
+    fi
+fi
+
 declare -a CPUTOPO
 if [ -n "$CPUTOPO" ]; then
   if [ "$CPUTOPO" == "RR" ]; then
@@ -292,7 +311,7 @@ gpu=0
 _gpu=0
 
 if [ -z "$USE_THREADS" ]; then
-  # Force #threads=1 for the loop below to work. 
+  # Force #threads=1 for the loop below to work.
   THREADS=1
 fi
 
@@ -361,15 +380,15 @@ EOF
           else
             if [ -z "$DO_REPAIR" ]; then
               if [ -z "$USE_THREADS" ]; then
-                echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p cpuset=${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+                echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p cpuset=$CPUSET_PREFIX${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
               else
-                echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+                echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=$CPUSET_PREFIX${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
               fi
             else
               if [ -z "$USE_THREADS" ]; then
-                echo "oarnodesetting --sql \"network_address = $hostname and cpuset = ${CPUTOPO[$cpuset]}\" -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+                echo "oarnodesetting --sql \"network_address = $hostname and cpuset = $CPUSET_PREFIX${CPUTOPO[$cpuset]}\" -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
               else
-                echo "oarnodesetting --sql \"network_address = $hostname and cpuset = ${CPUTOPO[$cpuset]}\" -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+                echo "oarnodesetting --sql \"network_address = $hostname and cpuset = $CPUSET_PREFIX${CPUTOPO[$cpuset]}\" -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
               fi
             fi
           fi
