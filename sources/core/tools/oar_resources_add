@@ -41,6 +41,7 @@ Options:
     --cpusets <#>               # of cpusets/host (useful for fake setups only)
     --cputopo <list|RR>         topology of the cpus: ordered list of the cpuset ids or RR for round robin
     --gpudevices <#>            # of gpu devices/host (useful for fake setups only)
+    --gpudevices-prefix  <str>  path prefix to use for the GPU device (e.g.: /dev/nvidia)
     --gputopo <list>            topology of the gpus: ordered list of the gpudevice ids
     --host-prefix <str>         hostname prefix (default: "node-")
     --host-suffix <str>         hostname suffix (e.g. ".domain")
@@ -70,7 +71,7 @@ debug() {
   [ -n "$DEBUG" ] && echo "DEBUG: $@" 1>&2
 }
 
-LONG_OPTS="hosts:,cpus:,cores:,threads:,gpus:,host-prefix:,host-suffix:,cpuset-prefix:,host0:,cpu0:,core0:,thread0:,gpu0:,cpuset:,cpusets:,cputopo:,gpudevices:,gputopo:,append:,use-threads,write-to:,auto-offset,yaml,no-create-properties,repair,no-cpuset-prefix,help,debug"
+LONG_OPTS="hosts:,cpus:,cores:,threads:,gpus:,host-prefix:,host-suffix:,cpuset-prefix:,gpudevice-prefix:,host0:,cpu0:,core0:,thread0:,gpu0:,cpuset:,cpusets:,cputopo:,gpudevices:,gputopo:,append:,use-threads,write-to:,auto-offset,yaml,no-create-properties,repair,no-cpuset-prefix,help,debug"
 SHORT_OPTS="H:C:c:t:g:P:S:A:o:TRaYph"
 args=$(getopt -l $LONG_OPTS -o $SHORT_OPTS -q -- "$@")
 [ $? -gt 0 ] && die "Syntax error, $(getopt -l $LONG_OPTS -o $SHORT_OPTS -Q -- "$@" 2>&1)."
@@ -118,6 +119,10 @@ while [ $# -ge 1 ]; do
     ;;
   --no-cpuset-prefix)
     NO_CPUSET_PREFIX=1
+    ;;
+  --gpudevice-prefix)
+    GPUDEVICE_PREFIX=$2
+    shift
     ;;
   --host0)
     HOST0=$2
@@ -380,15 +385,15 @@ EOF
           else
             if [ -z "$DO_REPAIR" ]; then
               if [ -z "$USE_THREADS" ]; then
-                echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p cpuset=$CPUSET_PREFIX${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+                echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p cpuset=$CPUSET_PREFIX${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=$GPUDEVICE_PREFIX${GPUTOPO[$gpudevice]} }$APPEND"
               else
-                echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=$CPUSET_PREFIX${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+                echo "oarnodesetting -a -h $hostname -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) -p cpuset=$CPUSET_PREFIX${CPUTOPO[$cpuset]} ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=$GPUDEVICE_PREFIX${GPUTOPO[$gpudevice]} }$APPEND"
               fi
             else
               if [ -z "$USE_THREADS" ]; then
-                echo "oarnodesetting --sql \"network_address = $hostname and cpuset = $CPUSET_PREFIX${CPUTOPO[$cpuset]}\" -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+                echo "oarnodesetting --sql \"network_address = $hostname and cpuset = $CPUSET_PREFIX${CPUTOPO[$cpuset]}\" -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=$GPUDEVICE_PREFIX${GPUTOPO[$gpudevice]} }$APPEND"
               else
-                echo "oarnodesetting --sql \"network_address = $hostname and cpuset = $CPUSET_PREFIX${CPUTOPO[$cpuset]}\" -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=${GPUTOPO[$gpudevice]} }$APPEND"
+                echo "oarnodesetting --sql \"network_address = $hostname and cpuset = $CPUSET_PREFIX${CPUTOPO[$cpuset]}\" -p host=$hostname -p cpu=$((cpu+CPU0)) -p core=$((core+CORE0)) -p thread=$((thread+THREAD0)) ${DO_GPUS:+-p gpu=$((gpu+GPU0)) -p gpudevice=$GPUDEVICE_PREFIX${GPUTOPO[$gpudevice]} }$APPEND"
               fi
             fi
           fi
