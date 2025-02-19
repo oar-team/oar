@@ -177,8 +177,8 @@ my $Systemd_oar_slice = "$Systemd_prefix";
 my $Systemd_user_slice = "$Systemd_oar_slice-u$Cpuset_user_id";
 my $Systemd_job_slice = "$Systemd_user_slice-j$Cpuset->{job_id}";
 
-my $Systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
-my $Systemd_allowed_memory_nodes_cmd = 'hwloc-calc --cof systemd-dbus-api --no ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
+my $Systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list);
+my $Systemd_allowed_memory_nodes_cmd = 'hwloc-calc --nof systemd-dbus-api ' . join(' ', @Cpuset_list);
 
 my $Cgroup_root_path;
 open MOUNTS, '/proc/mounts' or exit_myself(3, 'Failed to open /proc/mounts.');

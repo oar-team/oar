@@ -60,7 +60,7 @@ add_process_to_cpuset() {
             sleep 0.1
         done
         if [ -n "$OAR_USER_CPUSET" ]; then
-            readarry SYSTEMD_ALLOWED_CPUS_STR < <(hwloc-calc --cof systemd-dbus-api "$OAR_USER_CPUSET" | sed -e 's/^AllowedCPUs //')
+            readarray SYSTEMD_ALLOWED_CPUS_STR < <(hwloc-calc --cof systemd-dbus-api "$OAR_USER_CPUSET")
             if [ -n "$SYSTEMD_ALLOWED_CPUS_STR" ]; then
                 oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager SetUnitProperties 'sba(sv)' "$SYSTEMD_SUBJOB_SLICE" 1 1 AllowedCPUs "${SYSTEMD_ALLOWED_CPUS_STR[@]}"
             else
