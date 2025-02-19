@@ -20,7 +20,7 @@ $Hash = eval($tmp);
 #           oarexec_pid_file => "file which contains the oarexec pid"
 #         }
 #
-if (not defined($Hash->{job_user}) or not defined($Hash->{job_id}) {
+if (not defined($Hash->{job_user}) or not defined($Hash->{job_id})) {
     print("[suspend_resume_manager] Bad SSH hashtable transfered\n");
     exit(2);
 }
