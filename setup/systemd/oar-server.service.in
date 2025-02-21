@@ -13,3 +13,4 @@ Type=forking
 
 [Install]
 WantedBy=multi-user.target
+Also=oar-server.timer

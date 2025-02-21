@@ -12,7 +12,8 @@ SHAREDIR_FILES= $(SRCDIR)/scripts/prologue \
 		$(SRCDIR)/scripts/oar-node-service
 
 MANDIR_FILES = $(SRCDIR)/man/man1/oarnodechecklist.1 \
-	       $(SRCDIR)/man/man1/oarnodecheckquery.1
+	       $(SRCDIR)/man/man1/oarnodecheckquery.1 \
+	       $(SRCDIR)/man/man1/oar-node.1
 
 INITDIR_FILES = setup/init.d/oar-node.in
 

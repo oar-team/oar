@@ -1,0 +1,9 @@
+[Unit]
+Description=OAR accounting timer
+Documentation=man:oar-server(1)
+
+[Timer]
+OnCalendar=*-*-* *:00:00
+
+[Install]
+WantedBy=oar-server.service

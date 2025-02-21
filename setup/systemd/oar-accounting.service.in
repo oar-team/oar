@@ -1,0 +1,8 @@
+[Unit]
+Description=OAR accounting service
+Documentation=man:oar-server(1)
+After=oar-server.service
+
+[Service]
+User=root
+ExecStart=%%SBINDIR%%/oaraccounting

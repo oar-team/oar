@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 import requests
 import json
 from natsort import natsorted
