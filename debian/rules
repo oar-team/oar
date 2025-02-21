@@ -45,7 +45,7 @@ override_dh_auto_install:
 	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/cron.d/oar-server > debian/oar-server.cron.d
 	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/systemd/oar-server.service > debian/oar-server.service
 	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/systemd/oar-server.timer > debian/oar-server.timer
-	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/systemd/oar-accounting.service > debian/oar-accounting.service
+	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/systemd/oar-accounting.service > debian/oar-server.oar-accounting.service
 
 	## oar-node
 	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/systemd/oar-node.service > debian/oar-node.service
@@ -69,6 +69,7 @@ override_dh_auto_install:
 	dh_install -i
 	dh_installsystemd --name=oar
 	dh_installsystemd --name=oar-node-script
+	dh_installsystemd --name=oar-accounting
 
 override_dh_clean:
 	dh_clean
