@@ -9,7 +9,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-sphinx,
                clang,
                libbpf-dev
-Standards-Version: 4.6.2
+Standards-Version: 4.7.1
 Vcs-Git: https://github.com/oar-team/oar.git/ -b debian.org
 Vcs-Browser: https://github.com/oar-team/oar
 Homepage: http://oar.imag.fr/
