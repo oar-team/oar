@@ -662,7 +662,7 @@ sub exit_myself($$) {
     my $exit_code = shift;
     my $str       = shift;
 
-    warn("[job_resource_manager_systemd][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][ERROR] $str\n");
+    warn("[job_resource_manager][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][ERROR] $str\n");
     exit($exit_code);
 }
 
@@ -673,7 +673,7 @@ sub print_log($$) {
 
     if ($l <= $Log_level) {
         print(
-            "[job_resource_manager_systemd][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][DEBUG] $str\n"
+            "[job_resource_manager][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][INFO] $str\n"
         );
     }
 }
