@@ -215,6 +215,7 @@ Architecture: all
 Section: doc
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
+         ${sphinxdoc:Depends},
          libjs-jquery,
          libjs-underscore
 Description: OAR batch scheduler documentation package

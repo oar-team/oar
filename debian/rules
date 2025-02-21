@@ -33,7 +33,7 @@ export TARGET_DIST=debian
 CFLAGS += -Wall
 
 %:
-	dh $@
+	dh $@ --with sphinxdoc
 
 override_dh_auto_build:
 	dh_auto_build -- -e packages-build   PACKAGES_DIR=$(CURDIR)/$(INSTALLDIR)
