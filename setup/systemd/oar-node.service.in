@@ -1,6 +1,7 @@
 [Unit]
 Description=OAR compute node
 After=multi-user.target
+Documentation=man:oar-node(1)
 
 [Service]
 ExecStart=/usr/sbin/sshd -f %%OARCONFDIR%%/sshd_config

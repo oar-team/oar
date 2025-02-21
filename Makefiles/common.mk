@@ -12,6 +12,7 @@ SBINDIR_FILES=$(SRCDIR)/tools/$(OARSH_DIR)/pam_oar_adopt
 
 MANDIR_FILES = $(SRCDIR)/man/man1/oarsh.1 \
 	       $(SRCDIR)/man/man1/oarprint.1 \
+	       $(SRCDIR)/man/man1/pam_oar_adopt.1 \
 	       $(SRCDIR)/man/man1/oarnodesetting.1
 
 SHAREDIR_FILES = $(SRCDIR)/tools/oar.conf.in \
