@@ -12,8 +12,8 @@ Hosts are read one per line from hostfile (must be readable by user oar) or
 STDIN (if hostfile is -).
 
 Options:
-  -H          handle HyperThreading
-  -T          use the thread property for HyperThreading (imply -H)
+  -H          handle HyperThreading/SMT (default unless -l is used)
+  -T          use the thread property for HyperThreading/SMT (imply -H)
   -o <file>   script filename
   -x          execute the script at the end and remove it
   -y          assume "yes" as answer to all prompts and run non-interactively
@@ -22,6 +22,8 @@ Options:
   -n <path>   path to the oarnodesetting command
   -p <path>   path to the oarproperty command
   -c <path>   path to the oar.conf file
+  -m          no memcpu property (default if -l is used)
+  -l          legacy mode: disable the use of hwloc
   -h          display this message
 
 EOF
@@ -29,7 +31,7 @@ EOF
 }
 
 parse_opts() {
-    while getopts "c:e:p:n:o:xyHTvh" opt; do
+    while getopts "c:e:p:n:o:xyHTlvmh" opt; do
         case $opt in
         c)
             OARCONFFILE=$OPTARG
@@ -60,7 +62,13 @@ parse_opts() {
             ;;
         T)
             WITH_HT=1
-            WITH_THREAD_PROPERTY=1
+            unset NO_THREAD_PROPERTY
+            ;;
+        l)
+            NO_HWLOC=1
+            ;;
+        m)
+            unset WITH_MEMCPU
             ;;
         h)
     				usage
@@ -79,11 +87,13 @@ OARCONFFILE="/etc/oar/oar.conf"
 OPENSSH_CMD="/usr/bin/ssh"
 OARPROPERTY_CMD="oarproperty"
 OARNODESETTING_CMD="oarnodesetting"
+NO_THREAD_PROPERTY=1
+WITH_MEMCPU=1
 
 parse_opts "$@"
 shift $((OPTIND-1))
 HOSTFILE=$1
-shift 
+shift
 OPTIND=1
 parse_opts "$@"
 
@@ -131,117 +141,157 @@ if [ -n "$SCRIPT_FILE" ]; then
         fi
         echo -n > $SCRIPT_FILE || exit 4
     fi
-else 
+else
     SCRIPT_FILE=$(mktemp -p "" ${0##*/}.XXXXX)
 fi
 
 # Add properties
 echo "$OARPROPERTY_CMD -a cpu || true" > $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -a core || true" >> $SCRIPT_FILE
-[ -n "$WITH_HT" -a -n "$WITH_THREAD_PROPERTY" ] && echo "$OARPROPERTY_CMD -a thread || true" >> $SCRIPT_FILE
+[ -n "$WITH_HT" -a -z "$NO_THREAD_PROPERTY" ] && echo "$OARPROPERTY_CMD -a thread || true" >> $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -c -a host || true" >> $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -a mem || true" >> $SCRIPT_FILE
+[ -n "$WITH_MEMCPU" ] && echo "$OARPROPERTY_CMD -a memcpu || true" >> $SCRIPT_FILE
 
 # Init CPU id
 CPU=$($OARNODESETTING_CMD --last-property-value cpu 2> /dev/null)
-[ -n "$CPU" ] || CPU=0 
+[ -n "$CPU" ] || CPU=0
 # Init CORE id
 CORE=$($OARNODESETTING_CMD --last-property-value core 2> /dev/null)
 [ -n "$CORE" ] || CORE=0
 # Init THREAD id
-if [ -n "$WITH_HT" -a -n "$WITH_THREAD_PROPERTY" ]; then
+if [ -n "$WITH_HT" -a -z "$NO_THREAD_PROPERTY" ]; then
     THREAD=$($OARNODESETTING_CMD --last-property-value thread 2> /dev/null)
 fi
 [ -n "$THREAD" ] || THREAD=0
 
 while read -u 4 host; do
-    echo -n "#   Checking $host ... "
+    echo -n "#   Fetching info from $host ... "
 
-    # Store stderr and redirect it to /dev/null
-    exec 3>&2
-    exec 2> /dev/null
-
-    mem=$($OPENSSH_CMD $host cat /proc/meminfo | perl -ane 'print "$F[1]" if /^MemTotal/')
-
-    # Get CORE info in the form:
-    # cpu:core
-    # cpu:core
-    # cpu:core
-    # ...
-    # of if WITH_TH:
-    # cpu:core:thread
-    # cpu:core:thread
-    # cpu:core:thread
-    # ...
-    if [ -z "$WITH_HT" ]; then
-        if [ "`$OPENSSH_CMD $host cat /proc/cpuinfo|grep 'physical id'`" != "" ]; then
-            DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $processor = $F[1] } elsif ($F[0] eq "physical id") { $physical_id = $F[1]; $topo->{$physical_id}->{$processor} = 1 }; END{ foreach $physical_id (sort({$a <=> $b} keys(%$topo))) { foreach $processor (sort({$a<=>$b} keys(%{$topo->{$physical_id}}))) { print "$physical_id:$processor\n" } } }')
-        else
-            DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $topo->{$F[1]} = 1 }; END{ foreach $processor (sort ({$a <=> $b} keys(%$topo))) { print "$processor:$processor\n" } }')
-        fi
+    if [ -z "$NO_HWLOC" ]; then
+        while IFS= read -r line; do
+            if [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)$ ]]; then
+                MEM=${BASH_REMATCH[1]}
+                if [ "${BASH_REMATCH[2]}" != "GB" ]; then
+                    echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
+                fi
+            elif [[ $line =~ ^[[:space:]]+Package[[:space:]]L#[[:digit:]]+$ ]]; then
+                ((CPU++))
+            elif [[ $line =~ ^[[:space:]]+NUMANode[[:space:]]L#[[:digit:]]+[[:space:]]\(P#[[:digit:]]+[[:space:]]([[:digit:]]+)(.+)\)$ ]]; then
+                MEMCPU=${BASH_REMATCH[1]}
+                if [ "${BASH_REMATCH[2]}" != "GB" ]; then
+                    echo "Warning: CPU memory unit is ${BASH_REMATCH[2]}, not GB"
+                fi
+            elif [[ $line =~ ^[[:space:]]+Core[[:space:]]L#([[:digit:]]+)$ ]]; then
+                ((CORE++))
+                if [ -n "$NO_THREAD_PROPERTY" ]; then
+                    CPUSET="core:${BASH_REMATCH[1]}"
+                    echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$CPUSET -p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
+                fi
+            elif [[ $line =~ ^[[:space:]]+PU[[:space:]]L#([[:digit:]]+)[[:space:]]\(P#[[:digit:]]+\)$ ]]; then
+                if [ -n "$NO_THREAD_PROPERTY" ]; then
+                    echo "Error: got SMT information, while not requested" 1>&2
+                    exit 1
+                fi
+                ((THREAD++))
+                CPUSET="pu:${BASH_REMATCH[1]}"
+                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$CPUSET -p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
+            elif [[ $line =~ ^[[:space:]]+Core[[:space:]]L#[[:digit:]]+[[:space:]]\+[[:space:]]PU[[:space:]]L#([[:digit:]]+)[[:space:]]\(P#[[:digit:]]+\)$ ]]; then
+                if [ -n "$NO_THREAD_PROPERTY" ]; then
+                    echo "Error: got SMT information, while not requested" 1>&2
+                    exit 1
+                fi
+                ((CORE++))
+                ((THREAD++))
+                CPUSET="pu:${BASH_REMATCH[1]}"
+                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$CPUSET -p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
+            fi
+        done < <($OPENSSH_CMD $host hwloc-ls ${NO_THREAD_PROPERTY:+--no-smt} --no-io --no-caches)
     else
-        DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $processor = $F[1] } elsif ($F[0] eq "physical id") { $physical_id = $F[1] } elsif ($F[0] eq "core id") { $core_id=$F[1]; $topo->{$physical_id}->{$core_id}->{$processor} = 1 }; END{ foreach $physical_id (sort({$a <=> $b} keys(%$topo))) { foreach $core_id (sort({$a <=> $b} keys (%{$topo->{$physical_id}}))) { foreach $processor (sort({$a<=>$b} keys(%{$topo->{$physical_id}->{$core_id}}))) { print "$physical_id:$core_id:$processor\n" } } } }')
-    fi
+        # Store stderr and redirect it to /dev/null
+        exec 3>&2
+        exec 2> /dev/null
+        mem=$($OPENSSH_CMD $host cat /proc/meminfo | perl -ane 'print "$F[1]" if /^MemTotal/')
 
-    # Restore stderr
-    exec 2>&3
+        # Get CORE info in the form:
+        # cpu:core
+        # cpu:core
+        # cpu:core
+        # ...
+        # of if WITH_TH:
+        # cpu:core:thread
+        # cpu:core:thread
+        # cpu:core:thread
+        # ...
+        if [ -z "$WITH_HT" ]; then
+            if [ "`$OPENSSH_CMD $host cat /proc/cpuinfo|grep 'physical id'`" != "" ]; then
+                DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $processor = $F[1] } elsif ($F[0] eq "physical id") { $physical_id = $F[1]; $topo->{$physical_id}->{$processor} = 1 }; END{ foreach $physical_id (sort({$a <=> $b} keys(%$topo))) { foreach $processor (sort({$a<=>$b} keys(%{$topo->{$physical_id}}))) { print "$physical_id:$processor\n" } } }')
+            else
+                DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $topo->{$F[1]} = 1 }; END{ foreach $processor (sort ({$a <=> $b} keys(%$topo))) { print "$processor:$processor\n" } }')
+            fi
+        else
+            DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $processor = $F[1] } elsif ($F[0] eq "physical id") { $physical_id = $F[1] } elsif ($F[0] eq "core id") { $core_id=$F[1]; $topo->{$physical_id}->{$core_id}->{$processor} = 1 }; END{ foreach $physical_id (sort({$a <=> $b} keys(%$topo))) { foreach $core_id (sort({$a <=> $b} keys (%{$topo->{$physical_id}}))) { foreach $processor (sort({$a<=>$b} keys(%{$topo->{$physical_id}->{$core_id}}))) { print "$physical_id:$core_id:$processor\n" } } } }')
+        fi
 
-    if [ -z "$mem" ] || [ -z "$DATA" ]; then
-        echo "KO"
-        cat 1>&2 <<EOF
+        # Restore stderr
+        exec 2>&3
+
+        if [ -z "$mem" ] || [ -z "$DATA" ]; then
+            echo "KO"
+            cat 1>&2 <<EOF
 Error: cannot retrieve info from node $host. Please check that the ssh connection as oar is ok, e.g.:
 $ $OPENSSH_CMD $host cat /proc/cpuinfo
- 
-EOF
-        exit 5
-    fi
 
-    ((mem = $mem / 1024 / 1024 + 1))
-    if [ -z "$WITH_HT" ]; then
-        prev_cpu="-1"
-        for l in $DATA; do
-            cpu=${l%%:*}
-            core=${l##*:}
-            [ "$cpu" != "$prev_cpu" ] && ((CPU++))
-            ((CORE++))
-            prev_cpu=$cpu
-            echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $SCRIPT_FILE
-        done
-    else
-        prev_cpu="-1"
-        prev_core="-1"
-        tmp_cpuset=""
-        cpu=""
-        core=""
-        for l in $DATA; do
-            cpu=${l%%:*}
-            ll=${l#*:}
-            core=${ll%%:*}
-            thread=${l##*:}
-            if [ -z "$WITH_THREAD_PROPERTY" ]; then
-                if [ "$core" != "$prev_core" ]; then
-                    if [ -n "$tmp_cpuset" ]; then
-                        echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $SCRIPT_FILE
+EOF
+            exit 5
+        fi
+
+        ((mem = $mem / 1024 / 1024 + 1))
+        if [ -z "$WITH_HT" ]; then
+            prev_cpu="-1"
+            for l in $DATA; do
+                cpu=${l%%:*}
+                core=${l##*:}
+                [ "$cpu" != "$prev_cpu" ] && ((CPU++))
+                ((CORE++))
+                prev_cpu=$cpu
+                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $SCRIPT_FILE
+            done
+        else
+            prev_cpu="-1"
+            prev_core="-1"
+            tmp_cpuset=""
+            cpu=""
+            core=""
+            for l in $DATA; do
+                cpu=${l%%:*}
+                ll=${l#*:}
+                core=${ll%%:*}
+                thread=${l##*:}
+                if [ -n "$NO_THREAD_PROPERTY" ]; then
+                    if [ "$core" != "$prev_core" ]; then
+                        if [ -n "$tmp_cpuset" ]; then
+                            echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $SCRIPT_FILE
+                        fi
+                        tmp_cpuset="$thread"
+                    else
+                        tmp_cpuset="$tmp_cpuset,$thread"
                     fi
-                    tmp_cpuset="$thread"
-                else
-                    tmp_cpuset="$tmp_cpuset,$thread"
                 fi
+                [ "$cpu" != "$prev_cpu" ] && ((CPU++))
+                [ "$core" != "$prev_core" ] && ((CORE++))
+                ((THREAD++))
+                if [ -z "$NO_THREAD_PROPERTY" ]; then
+                    echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $SCRIPT_FILE
+                fi
+                prev_cpu=$cpu
+                prev_core=$core
+            done
+            if [ -n "$NO_THREAD_PROPERTY" ]; then
+                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $SCRIPT_FILE
             fi
-            [ "$cpu" != "$prev_cpu" ] && ((CPU++))
-            [ "$core" != "$prev_core" ] && ((CORE++))
-            ((THREAD++))
-            if [ -n "$WITH_THREAD_PROPERTY" ]; then
-                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $SCRIPT_FILE
-            fi
-            prev_cpu=$cpu
-            prev_core=$core
-        done
-        if [ -z "$WITH_THREAD_PROPERTY" ]; then
-            echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $SCRIPT_FILE
         fi
     fi
-    echo "OK"
 done
 echo -ne "# Done\n\n"
 

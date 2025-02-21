@@ -177,8 +177,8 @@ my $Systemd_oar_slice = "$Systemd_prefix";
 my $Systemd_user_slice = "$Systemd_oar_slice-u$Cpuset_user_id";
 my $Systemd_job_slice = "$Systemd_user_slice-j$Cpuset->{job_id}";
 
-my $Systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
-my $Systemd_allowed_memory_nodes_cmd = 'hwloc-calc --cof systemd-dbus-api --no ' . join(' ', @Cpuset_list) . ' | sed -e \'s/^AllowedCPUs //\'';
+my $Systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list);
+my $Systemd_allowed_memory_nodes_cmd = 'hwloc-calc --nof systemd-dbus-api ' . join(' ', @Cpuset_list);
 
 my $Cgroup_root_path;
 open MOUNTS, '/proc/mounts' or exit_myself(3, 'Failed to open /proc/mounts.');
@@ -566,8 +566,10 @@ EOF
         }
 
        # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
-        my $systemd_oar_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_oar_slice-u*-*' | cut -d' ' -f2`;
-	print_log(3, "Systemd_oar_units: $systemd_oar_units");
+        my $systemd_oar_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_oar_slice-u*-*'`;
+        $systemd_oar_units =~ s/^[^\s]+\s+(\d+).*$/$1/;
+        chomp $systemd_oar_units;
+        print_log(4, "Systemd_oar_units: $systemd_oar_units");
         if ($systemd_oar_units < 1 and
             $max_uptime > 0 and
             $uptime > $max_uptime and
@@ -577,8 +579,10 @@ EOF
             exit(0);
         }
 
-        my $systemd_user_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_user_slice-*' | cut -d' ' -f2`;
-	print_log(3, "Systemd_user_units: $systemd_user_units");
+        my $systemd_user_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_user_slice-*'`;
+        $systemd_user_units =~ s/^[^\s]+\s+(\d+).*$/$1/;
+        chomp $systemd_user_units;
+        print_log(4, "Systemd_user_units: $systemd_user_units");
         if ($systemd_user_units < 1) {
             system_with_log(
                 'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
@@ -658,7 +662,7 @@ sub exit_myself($$) {
     my $exit_code = shift;
     my $str       = shift;
 
-    warn("[job_resource_manager_systemd][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][ERROR] $str\n");
+    warn("[job_resource_manager][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][ERROR] $str\n");
     exit($exit_code);
 }
 
@@ -669,7 +673,7 @@ sub print_log($$) {
 
     if ($l <= $Log_level) {
         print(
-            "[job_resource_manager_systemd][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][DEBUG] $str\n"
+            "[job_resource_manager][$Cpuset->{job_id}][$ENV{TAKTUK_HOSTNAME}][INFO] $str\n"
         );
     }
 }
