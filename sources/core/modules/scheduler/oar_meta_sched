@@ -1717,6 +1717,7 @@ foreach my $j (OAR::IO::get_jobs_in_state($base, "Resuming")) {
                 my $suspend_data_hash = {
                     name             => $cpuset_name,
                     job_id           => $j->{job_id},
+                    job_user         => $j->{job_user},
                     oarexec_pid_file => OAR::Tools::get_oar_pid_file_name($j->{job_id}), };
                 if (defined($cpuset_nodes)) {
                     my $taktuk_cmd   = get_conf("TAKTUK_CMD");
