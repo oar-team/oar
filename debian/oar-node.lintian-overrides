@@ -1,0 +1,5 @@
+# script template to be copied an modified before being executed, so no exec perm
+script-not-executable [usr/share/oar/oar-node/oar-node-service]
+# target explicitly used by upstream
+systemd-service-file-refers-to-unusual-wantedby-target oar.target [usr/lib/systemd/system/oar-node-script.service]
+systemd-service-file-refers-to-unusual-wantedby-target oar.target [usr/lib/systemd/system/oar-node.service]
