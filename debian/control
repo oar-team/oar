@@ -43,12 +43,13 @@ Depends: ${misc:Depends},
          liboar-perl (= ${binary:Version}),
          adduser,
          ucf,
-         hwloc-nox | hwloc,
+         hwloc-nox (>= 2.12) | hwloc (>= 2.12),
          libbpf1
 Suggests: oar-server,
           oar-user,
           oar-node,
-          oar-doc
+          oar-doc,
+          libpam-modules
 Description: OAR batch scheduler common package
  OAR is a versatile resource and task manager (also called a batch scheduler)
  for clusters and other computing infrastructures
