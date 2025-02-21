@@ -4,6 +4,7 @@ Documentation=man:oar-server(1)
 
 [Timer]
 OnCalendar=*-*-* *:00:00
+Unit=oar-accounting.service
 
 [Install]
 WantedBy=oar-server.service
