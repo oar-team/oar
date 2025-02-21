@@ -566,8 +566,10 @@ EOF
         }
 
        # dirty-user-based cleanup: do cleanup only if that is the last job of the user on that host.
-        my $systemd_oar_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_oar_slice-u*-*' | cut -d' ' -f2`;
-	print_log(3, "Systemd_oar_units: $systemd_oar_units");
+        my $systemd_oar_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_oar_slice-u*-*'`;
+        $systemd_oar_units =~ s/^[^\s]+\s+(\d+).*$/$1/;
+        chomp $systemd_oar_units;
+        print_log(4, "Systemd_oar_units: $systemd_oar_units");
         if ($systemd_oar_units < 1 and
             $max_uptime > 0 and
             $uptime > $max_uptime and
@@ -577,8 +579,10 @@ EOF
             exit(0);
         }
 
-        my $systemd_user_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_user_slice-*' | cut -d' ' -f2`;
-	print_log(3, "Systemd_user_units: $systemd_user_units");
+        my $systemd_user_units = `oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListUnitsByPatterns 'asas' 0 1 '$Systemd_user_slice-*'`;
+        $systemd_user_units =~ s/^[^\s]+\s+(\d+).*$/$1/;
+        chomp $systemd_user_units;
+        print_log(4, "Systemd_user_units: $systemd_user_units");
         if ($systemd_user_units < 1) {
             system_with_log(
                 'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
