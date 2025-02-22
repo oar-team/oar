@@ -1,4 +1,4 @@
-oar (2.6.0~rc1-1) unstable; urgency=medium
+oar (2.6.0-1) unstable; urgency=medium
 
   This version of OAR supports Cgroups v2 via Systemd. Please remove any kernel
   command line parameters previously added on OAR nodes to enable Cgroups v1.
