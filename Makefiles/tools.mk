@@ -5,7 +5,7 @@ OARDIR_BINFILES = $(SRCDIR)/qfunctions/oaradmin/oaradmin.rb \
 		  $(SRCDIR)/qfunctions/oaradmin/oar_modules.rb \
 		  $(SRCDIR)/qfunctions/oaradmin/oaradmin_modules.rb
 
-MANDIR_FILES = $(SRCDIR)/man/man1/oaradmin.1
+MAN8DIR_FILES = $(SRCDIR)/man/man1/oaradmin.8
 
 include Makefiles/shared/shared.mk
 

@@ -1,7 +1,7 @@
 MODULE=database
 SRCDIR=sources/core
 
-MANDIR_FILES = $(SRCDIR)/man/man1/oar-database.pod.in
+MAN8DIR_FILES = $(SRCDIR)/man/man8/oar-database.pod.in
 
 SBINDIR_FILES = $(SRCDIR)/database/oar-database.in
 

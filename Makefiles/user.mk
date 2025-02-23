@@ -9,7 +9,7 @@ OARDIR_BINFILES = $(SRCDIR)/qfunctions/oarnodes \
 		  $(SRCDIR)/qfunctions/oarhold \
 		  $(SRCDIR)/qfunctions/oarresume
 
-MANDIR_FILES = $(SRCDIR)/man/man1/oardel.1 \
+MAN1DIR_FILES = $(SRCDIR)/man/man1/oardel.1 \
 	       $(SRCDIR)/man/man1/oarnodes.1 \
 	       $(SRCDIR)/man/man1/oarresume.1 \
 	       $(SRCDIR)/man/man1/oarstat.1 \
