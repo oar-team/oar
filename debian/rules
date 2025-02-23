@@ -44,16 +44,16 @@ override_dh_auto_install:
 	## oar-server
 	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/cron.d/oar-server > debian/oar-server.cron.d
 	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/systemd/oar-server.service > debian/oar-server.service
-	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/systemd/oar-server.timer > debian/oar-server.timer
+	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/systemd/oar-accounting.timer > debian/oar-server.oar-accounting.timer
 	cat $(CURDIR)/$(INSTALLDIR)/oar-server/usr/share/oar/oar-server/systemd/oar-accounting.service > debian/oar-server.oar-accounting.service
 
 	## oar-node
+	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/cron.d/oar-node > debian/oar-node.cron.d
 	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/systemd/oar-node.service > debian/oar-node.service
 	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/systemd/oar-node-script.service > debian/oar-node.oar-node-script.service
+	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/systemd/oar-nodecheck.timer > debian/oar-node.oar-nodecheck.timer
+	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/systemd/oar-nodecheck.service > debian/oar-node.oar-nodecheck.service
 	cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/systemd/oar.target > debian/oar-node.oar.target
-
-	# disable the automatic installation of this cron, by default
-	#cat $(CURDIR)/$(INSTALLDIR)/oar-node/usr/share/oar/oar-node/cron.d/oar-node > debian/oar-node.cron.d
 
 	## oar-common
 	cat $(CURDIR)/$(INSTALLDIR)/oar-common/usr/share/oar/oar-common/logrotate.d/oar-common > debian/oar-common.logrotate
@@ -70,6 +70,7 @@ override_dh_auto_install:
 	dh_installsystemd --name=oar
 	dh_installsystemd --name=oar-node-script
 	dh_installsystemd --name=oar-accounting
+	dh_installsystemd --name=oar-nodecheck
 
 override_dh_clean:
 	dh_clean
@@ -79,8 +80,13 @@ override_dh_clean:
 	# Cleaning package
 	$(RM) debian/oar-server.init
 	$(RM) debian/oar-server.service
+	$(RM) debian/oar-server.oar-accounting.service
+	$(RM) debian/oar-server.oar-accounting.timer
 	$(RM) debian/oar-node.init
 	$(RM) debian/oar-node.service
+	$(RM) debian/oar-node.oar-node-script.service
+	$(RM) debian/oar-node.oar-nodecheck.service
+	$(RM) debian/oar-node.oar-nodecheck.timer
 	$(RM) debian/oar-server.default
 	$(RM) debian/oar-node.default
 	$(RM) debian/oar-common.logrotate
