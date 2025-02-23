@@ -55,7 +55,7 @@ DEFAULTDIR_FILES = setup/default/oar-server.in
 INITDIR_FILES = setup/init.d/oar-server.in
 
 SYSTEMDDIR_FILES = setup/systemd/oar-server.service.in \
-				   setup/systemd/oar-server.timer \
+				   setup/systemd/oar-accounting.timer \
 				   setup/systemd/oar-accounting.service.in
 
 CRONDIR_FILES = setup/cron.d/oar-server.in

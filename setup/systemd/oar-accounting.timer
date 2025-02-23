@@ -1,0 +1,9 @@
+[Unit]
+Description=OAR accounting timer
+Documentation=man:oaraccounting(8)
+
+[Timer]
+OnCalendar=*-*-* *:00:00
+
+[Install]
+WantedBy=timer.target

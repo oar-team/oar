@@ -1,8 +1,7 @@
 #
 # cron.d/oar-node -- schedules periodic checks of the local node by running
 # every scripts of the /etc/oar/check.d directory, if any.
-# 
-# $Id: oar-node.cron.d 1235 2008-03-18 10:03:12Z neyron $
+#
 
 # By default, run every hours
-0 * * * * %%ROOTUSER%% [ -x %%SBINDIR%%/oarnodecheckrun ] && %%SBINDIR%%/oarnodecheckrun
+0 * * * * %%ROOTUSER%% if [ ! -d /run/systemd/system ] && [ -x %%SBINDIR%%/oarnodecheckrun ]; then %%SBINDIR%%/oarnodecheckrun; fi
