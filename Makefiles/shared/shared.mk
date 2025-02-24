@@ -51,13 +51,13 @@ all:
 
 setup: setup_shared
 
-SHARED_ACTIONS=perllib oardata oarbin doc man1 bin sbin examples setup_scripts init logrotate default cron cgi www
+SHARED_ACTIONS=perllib oardata oarbin doc man1 man8 bin sbin examples setup_scripts init logrotate default cron cgi www
 
 
-clean_shared: clean_templates clean_man1 clean_setup_scripts
+clean_shared: clean_templates clean_man1 clean_man8 clean_setup_scripts
 	$(RM) -f setup/templates/header-*.sh.in
 	$(RM) -f setup/templates/header-*.sh
-build_shared: build_templates build_man1 build_setup_scripts
+build_shared: build_templates build_man1 build_man8 build_setup_scripts
 
 install_shared: $(patsubst %, install_%,$(SHARED_ACTIONS)) install_setup_scripts
 setup_shared: run_setup_scripts
@@ -73,7 +73,8 @@ MODULE_SETUP_BUILDED_FILES  = $(patsubst %.in, %.out, $(MODULE_SETUP_SOURCE_FILE
 MODULE_SETUP_TARGET_FILES  = $(addprefix $(DESTDIR)$(OARDIR)/setup/,$(notdir $(basename $(MODULE_SETUP_SOURCE_FILES))))
 
 TEMPLATE_SOURCE_FILES=$(filter %.in, $(PROCESS_TEMPLATE_FILES) \
-                                     $(MANDIR_FILES) \
+                                     $(MAN1DIR_FILES) \
+                                     $(MAN8DIR_FILES) \
                                      $(INITDIR_FILES) \
                                      $(SYSTEMDDIR_FILES) \
                                      $(DEFAULTDIR_FILES) \
@@ -212,26 +213,48 @@ install_doc:
 uninstall_doc:
 	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(DOCDIR)" SOURCE_FILES="$(DOCDIR_FILES)" TARGET_FILE_RIGHTS=0644
 
+
 #
-# MANDIR_FILES
+# MAN1DIR_FILES
 #
-SOURCE_MANDIR_FILES = $(filter %.pod, $(patsubst %.pod.in, %.pod, $(MANDIR_FILES)))
-BUILD_MANDIR_FILES = $(patsubst %.pod, %.1, $(SOURCE_MANDIR_FILES)) $(filter %.1,$(MANDIR_FILES))
-TARGET_MANDIR_FILES = $(addprefix $(DESTDIR)$(MANDIR)/man1, $(notdir $(BUILD_MANDIR_FILES)))
+SOURCE_MAN1DIR_FILES = $(filter %.pod, $(patsubst %.pod.in, %.pod, $(MAN1DIR_FILES)))
+BUILD_MAN1DIR_FILES = $(patsubst %.pod, %.1, $(SOURCE_MAN1DIR_FILES)) $(filter %.1,$(MAN1DIR_FILES))
+TARGET_MAN1DIR_FILES = $(addprefix $(DESTDIR)$(MANDIR)/man1, $(notdir $(BUILD_MAN1DIR_FILES)))
 
 install_man1:
-	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(MANDIR)/man1" SOURCE_FILES="$(BUILD_MANDIR_FILES)" TARGET_FILE_RIGHTS=0644
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(MANDIR)/man1" SOURCE_FILES="$(BUILD_MAN1DIR_FILES)" TARGET_FILE_RIGHTS=0644
 
 uninstall_man1:
-	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(MANDIR)/man1" SOURCE_FILES="$(BUILD_MANDIR_FILES)" TARGET_FILE_RIGHTS=0644
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(MANDIR)/man1" SOURCE_FILES="$(BUILD_MAN1DIR_FILES)" TARGET_FILE_RIGHTS=0644
 
-build_man1: $(BUILD_MANDIR_FILES)
+build_man1: $(BUILD_MAN1DIR_FILES)
 
 clean_man1:
-	-rm -f $(BUILD_MANDIR_FILES)
+	-rm -f $(BUILD_MAN1DIR_FILES)
 
 %.1: %.pod
 	pod2man --section=1 --release="$(notdir $(basename $<))" --center "OAR commands" --name="$(notdir $(basename $<))" "$<" > $@
+
+#
+# MAN8DIR_FILES
+#
+SOURCE_MAN8DIR_FILES = $(filter %.pod, $(patsubst %.pod.in, %.pod, $(MAN8DIR_FILES)))
+BUILD_MAN8DIR_FILES = $(patsubst %.pod, %.8, $(SOURCE_MAN8DIR_FILES)) $(filter %.8,$(MAN8DIR_FILES))
+TARGET_MAN8DIR_FILES = $(addprefix $(DESTDIR)$(MANDIR)/man8, $(notdir $(BUILD_MAN8DIR_FILES)))
+
+install_man8:
+	$(SHARED_INSTALL) TARGET_DIR="$(DESTDIR)$(MANDIR)/man8" SOURCE_FILES="$(BUILD_MAN8DIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+uninstall_man8:
+	$(SHARED_UNINSTALL) TARGET_DIR="$(DESTDIR)$(MANDIR)/man8" SOURCE_FILES="$(BUILD_MAN8DIR_FILES)" TARGET_FILE_RIGHTS=0644
+
+build_man8: $(BUILD_MAN8DIR_FILES)
+
+clean_man8:
+	-rm -f $(BUILD_MAN8DIR_FILES)
+
+%.8: %.pod
+	pod2man --section=8 --release="$(notdir $(basename $<))" --center "OAR commands" --name="$(notdir $(basename $<))" "$<" > $@
 
 
 #

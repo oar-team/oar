@@ -24,17 +24,17 @@ OARSCHEDULER_BINFILES = $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesha
 		        $(SRCDIR)/modules/scheduler/oar_sched_gantt_with_timesharing_and_fairsharing_and_placeholder
 OARCONFDIR_BINFILES = $(SRCDIR)/tools/oar_phoenix.pl
 
-MANDIR_FILES = $(SRCDIR)/man/man1/Almighty.1 \
-	       $(SRCDIR)/man/man1/oaraccounting.1 \
-	       $(SRCDIR)/man/man1/oarmonitor.1 \
-	       $(SRCDIR)/man/man1/oarnotify.1 \
-	       $(SRCDIR)/man/man1/oarproperty.1 \
-	       $(SRCDIR)/man/man1/oaradmissionrules.1 \
-	       $(SRCDIR)/man/man1/oarremoveresource.1 \
-	       $(SRCDIR)/man/man1/oar-server.1 \
-	       $(SRCDIR)/man/man1/oar_resources_init.1 \
-	       $(SRCDIR)/man/man1/oar_resources_add.1 \
-	       $(SRCDIR)/man/man1/oar_phoenix.1
+MAN8DIR_FILES = $(SRCDIR)/man/man8/Almighty.8 \
+	       $(SRCDIR)/man/man8/oaraccounting.8 \
+	       $(SRCDIR)/man/man8/oarmonitor.8 \
+	       $(SRCDIR)/man/man8/oarnotify.8 \
+	       $(SRCDIR)/man/man8/oarproperty.8 \
+	       $(SRCDIR)/man/man8/oaradmissionrules.8 \
+	       $(SRCDIR)/man/man8/oarremoveresource.8 \
+	       $(SRCDIR)/man/man8/oar-server.8 \
+	       $(SRCDIR)/man/man8/oar_resources_init.8 \
+	       $(SRCDIR)/man/man8/oar_resources_add.8 \
+	       $(SRCDIR)/man/man8/oar_phoenix.8
 
 SBINDIR_FILES = $(SRCDIR)/server/sbin/oar-server.in
 
@@ -55,7 +55,7 @@ DEFAULTDIR_FILES = setup/default/oar-server.in
 INITDIR_FILES = setup/init.d/oar-server.in
 
 SYSTEMDDIR_FILES = setup/systemd/oar-server.service.in \
-				   setup/systemd/oar-server.timer \
+				   setup/systemd/oar-accounting.timer \
 				   setup/systemd/oar-accounting.service.in
 
 CRONDIR_FILES = setup/cron.d/oar-server.in
