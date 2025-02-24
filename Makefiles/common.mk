@@ -10,10 +10,10 @@ OARDIR_BINFILES = $(SRCDIR)/tools/$(OARSH_DIR)/oarsh_shell.in \
 
 SBINDIR_FILES=$(SRCDIR)/tools/$(OARSH_DIR)/pam_oar_adopt
 
-MANDIR_FILES = $(SRCDIR)/man/man1/oarsh.1 \
-	       $(SRCDIR)/man/man1/oarprint.1 \
-	       $(SRCDIR)/man/man1/pam_oar_adopt.1 \
-	       $(SRCDIR)/man/man1/oarnodesetting.1
+MAN1DIR_FILES = $(SRCDIR)/man/man1/oarsh.1 \
+	       $(SRCDIR)/man/man1/oarprint.1
+MAN8DIR_FILES = $(SRCDIR)/man/man8/pam_oar_adopt.8 \
+	       $(SRCDIR)/man/man8/oarnodesetting.8
 
 SHAREDIR_FILES = $(SRCDIR)/tools/oar.conf.in \
                    $(SRCDIR)/tools/oarnodesetting_ssh.in \

@@ -6,12 +6,12 @@
 # a problem.
 
 # Print to stderr if CHECKLOGFILE is not defined yet (e.g. as the script is
-# not called from oarnodecheckcron the CHECKLOGFILE environment varialbe is
+# not called from oarnodecheckcron the CHECKLOGFILE environment variable is
 # not defined)
 [ -n "$CHECKLOGFILE" ] || CHECKLOGFILE=/dev/stderr
 
 ###############################################################################
-# EDIT SCRIPT BELOW
+# YOUR CHECK SCRIPT GOES BELOW
 
 # Example of check
 [ -d /var/lib/oar ] || echo "OAR runtime directory (/var/lib/oar) does not exist)" > $CHECKLOGFILE 

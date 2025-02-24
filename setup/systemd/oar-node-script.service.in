@@ -1,7 +1,7 @@
 [Unit]
 Description=OAR compute node script
 After=oar-node.service
-Documentation=man:oar-node(1)
+Documentation=man:oar-node(8)
 
 [Service]
 ExecStart=%%OARCONFDIR%%/oar-node-service start

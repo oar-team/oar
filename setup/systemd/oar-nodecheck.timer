@@ -1,0 +1,9 @@
+[Unit]
+Description=OAR nodecheck timer
+Documentation=man:oarnodecheckrun(8)
+
+[Timer]
+OnCalendar=*-*-* *:00:00
+
+[Install]
+WantedBy=timer.target

@@ -1,38 +1,47 @@
 #!/bin/bash
 
+set -e
+
 CHECKLOGDIR=%%OARHOMEDIR%%/checklogs
 CHECKSCRIPTDIR=%%OARCONFDIR%%/check.d
 CPUSET_DIR=/dev/cpuset/oar
-LOCKFILE=%%OARHOMEDIR%%/$(basename $0).lock
+CGROUP_MOUNT_POINT="$(sed -ne 's/^cgroup2 \([^ ]\+\) .*/\1/p' /proc/mounts)/oar.slice"
+LOCKFILE=%%OARHOMEDIR%%/$(basename "$0").lock
 STAMPFILE=%%OARHOMEDIR%%/oarnodecheckrun.lastrun
 
 if ! [ -r $CHECKLOGDIR ]; then
   echo 1>&2 "Error: Checklogs directory does not exist ($CHECKLOGDIR) !"
   exit 1
-fi 
+fi
 
 if ! [ -r $CHECKSCRIPTDIR ]; then
   echo 1>&2 "Error: Checkscripts directory does not exist ($CHECKSCRIPTDIR) !"
   exit 1
-fi 
+fi
 
 shopt -s nullglob
 
 # If there is any running job then exit.
-ls $CPUSET_DIR/*/tasks 2>/dev/null | grep -E "^.*_[0-9]*/tasks$" >/dev/null \
-  && exit 0
+# - cpuset version:
+for f in "$CPUSET_DIR"/*/tasks; do
+   exit 0
+done
+# - cgroupv2 version:
+for f in "$CGROUP_MOUNT_POINT"/oar.slice/*.slice; do
+   exit 0
+done
 
 # If there is another instance running then exit.
-[ -f $LOCKFILE ] && exit 0
+[ -f "$LOCKFILE" ] && exit 0
 # Else take the lock and stamp this run.
-touch $LOCKFILE $STAMPFILE
+touch "$LOCKFILE" "$STAMPFILE"
 
-cd $CHECKSCRIPTDIR
+pushd "$CHECKSCRIPTDIR"
 for f in *; do
-  [ -x $f ] && CHECKLOGFILE=$CHECKLOGDIR/$f.$(date +%F.%T) ./$f
+  [ -x "$f" ] && CHECKLOGFILE="$CHECKLOGDIR/$f.$(date +%F.%T)" ./"$f"
 done
-cd - > /dev/null
+popd
 
 # Release the lock.
-rm -f $LOCKFILE
+rm -f "$LOCKFILE"
 
