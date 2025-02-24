@@ -1,10 +1,9 @@
 MODULE=node
 SRCDIR=sources/core
 
-OARDIR_BINFILES=$(SRCDIR)/tools/oarnodecheck/oarnodecheckrun.in
-
-BINDIR_FILES=$(SRCDIR)/tools/oarnodecheck/oarnodechecklist.in \
-	     $(SRCDIR)/tools/oarnodecheck/oarnodecheckquery.in
+SBINDIR_FILES=$(SRCDIR)/tools/oarnodecheck/oarnodecheckrun.in \
+		$(SRCDIR)/tools/oarnodecheck/oarnodechecklist.in \
+		$(SRCDIR)/tools/oarnodecheck/oarnodecheckquery.in
 
 SHAREDIR_FILES= $(SRCDIR)/scripts/prologue \
 		$(SRCDIR)/scripts/epilogue \
