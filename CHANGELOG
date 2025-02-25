@@ -37,7 +37,7 @@ Finally, cgroupv1 activation is not required anymore. Related directives in the
 kernel command line can now be removed (on OAR nodes).
 
 version 2.5.10:
---------------
+---------------
 
   - [oarnodesetting] Allow setting the suspected state
   - [oarstat] Allow to see other users' initial_request
@@ -267,7 +267,7 @@ version 2.5.5:
         the scheduler speed by reducing the number of SQL queries.
   - [scheduler] backport the expire/postpone/deadline job types.
   - [scheduler] rename the placeholder job types: placeholder/allowed.
-  - [scheduler] fix timesharing (adv reservation and *_placeholder schedulers).
+  - [scheduler] fix timesharing (adv reservation and \*_placeholder schedulers).
   - [scheduler] allows noop/cosystem/deploy jobs to start on resources in
         standby, no wake-up is triggered (requires activating energy saving).
   - [oarsub] use jobkey (-k) if the OAR_JOB_KEY_FILE env variable is set.
