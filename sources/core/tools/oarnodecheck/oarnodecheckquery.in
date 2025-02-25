@@ -2,7 +2,7 @@
 
 CHECKLOGDIR=%%OARHOMEDIR%%/checklogs
 CHECKSCRIPTDIR=%%OARCONFDIR%%/check.d
-OARNODECHECKRUN=%%OARDIR%%/oarnodecheckrun
+OARNODECHECKRUN=%%SBINDIR%%/oarnodecheckrun
 OARDODO=%%OARDIR%%/oardodo/oardodo
 STAMPFILE=%%OARHOMEDIR%%/oarnodecheckrun.lastrun
 DELAY=3600 # seconds
