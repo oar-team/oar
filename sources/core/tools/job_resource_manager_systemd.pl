@@ -177,8 +177,8 @@ my $Systemd_oar_slice = "$Systemd_prefix";
 my $Systemd_user_slice = "$Systemd_oar_slice-u$Cpuset_user_id";
 my $Systemd_job_slice = "$Systemd_user_slice-j$Cpuset->{job_id}";
 
-my $Systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api ' . join(' ', @Cpuset_list);
-my $Systemd_allowed_memory_nodes_cmd = 'hwloc-calc --nof systemd-dbus-api ' . join(' ', @Cpuset_list);
+my $Systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api --pi ' . join(' ', @Cpuset_list);
+my $Systemd_allowed_memory_nodes_cmd = 'hwloc-calc --nof systemd-dbus-api --pi ' . join(' ', @Cpuset_list);
 
 my $Cgroup_root_path;
 open MOUNTS, '/proc/mounts' or exit_myself(3, 'Failed to open /proc/mounts.');
@@ -227,10 +227,12 @@ if ($ARGV[0] eq "init") {
             ) and exit_myself(5, "Failed to create systemd slice $Systemd_job_slice.slice");
             my $systemd_allowed_cpus_str = `$Systemd_allowed_cpus_cmd`;
             chomp($systemd_allowed_cpus_str);
+            exit_myself(5, "Unexpected output from $Systemd_allowed_cpus_cmd") if ($systemd_allowed_cpus_str !~ /^ay 0x[[:xdigit:]]{4}( 0x[[:xdigit:]]{2})+$/);
             if ($Cpuset_cg_mem_nodes eq 'cpu') {
-            	my $systemd_allowed_memory_nodes_str = `$Systemd_allowed_memory_nodes_cmd`;
-            	chomp($systemd_allowed_memory_nodes_str);
-            	system_with_log(
+                my $systemd_allowed_memory_nodes_str = `$Systemd_allowed_memory_nodes_cmd`;
+                chomp($systemd_allowed_memory_nodes_str);
+                exit_myself(5, "Unexpected output from $Systemd_allowed_memory_nodes_cmd") if ($systemd_allowed_memory_nodes_str !~ /^ay 0x[[:xdigit:]]{4}( 0x[[:xdigit:]]{2})+$/);
+                system_with_log(
                     'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1'
                     . ' org.freedesktop.systemd1.Manager SetUnitProperties'
                     . " 'sba(sv)' $Systemd_job_slice.slice 1 2"
@@ -238,7 +240,7 @@ if ($ARGV[0] eq "init") {
                     . " AllowedMemoryNodes $systemd_allowed_memory_nodes_str"
                 ) and exit_myself(5, "Failed to set AllowedCPUs and AllowedMemoryNodes properties of systemd $Systemd_job_slice.slice");
             } elsif ($Cpuset_cg_mem_nodes eq 'all') {
-            	system_with_log(
+                system_with_log(
                     'oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 '
                     . ' org.freedesktop.systemd1.Manager SetUnitProperties'
                     . " 'sba(sv)' $Systemd_job_slice.slice 1 1"

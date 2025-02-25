@@ -166,7 +166,7 @@ fi
 [ -n "$THREAD" ] || THREAD=0
 
 while read -u 4 host; do
-    echo -n "#   Fetching info from $host ... "
+    echo -n "# Fetching info from $host... "
 
     if [ -z "$NO_HWLOC" ]; then
         while IFS= read -r line; do
@@ -175,20 +175,20 @@ while read -u 4 host; do
                 if [ "${BASH_REMATCH[2]}" != "GB" ]; then
                     echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
                 fi
-            elif [[ $line =~ ^[[:space:]]+Package[[:space:]]L#[[:digit:]]+$ ]]; then
+            elif [[ $line =~ ^[[:space:]]+Package[[:space:]]P#[[:digit:]]+$ ]]; then
                 ((CPU++))
-            elif [[ $line =~ ^[[:space:]]+NUMANode[[:space:]]L#[[:digit:]]+[[:space:]]\(P#[[:digit:]]+[[:space:]]([[:digit:]]+)(.+)\)$ ]]; then
+            elif [[ $line =~ ^[[:space:]]+NUMANode[[:space:]]P#[[:digit:]]+[[:space:]]\(([[:digit:]]+)(.+)\)$ ]]; then
                 MEMCPU=${BASH_REMATCH[1]}
                 if [ "${BASH_REMATCH[2]}" != "GB" ]; then
                     echo "Warning: CPU memory unit is ${BASH_REMATCH[2]}, not GB"
                 fi
-            elif [[ $line =~ ^[[:space:]]+Core[[:space:]]L#([[:digit:]]+)$ ]]; then
+            elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#([[:digit:]]+)$ ]]; then
                 ((CORE++))
                 if [ -n "$NO_THREAD_PROPERTY" ]; then
                     CPUSET="core:${BASH_REMATCH[1]}"
                     echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$CPUSET -p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
                 fi
-            elif [[ $line =~ ^[[:space:]]+PU[[:space:]]L#([[:digit:]]+)[[:space:]]\(P#[[:digit:]]+\)$ ]]; then
+            elif [[ $line =~ ^[[:space:]]+PU[[:space:]]P#([[:digit:]]+)$ ]]; then
                 if [ -n "$NO_THREAD_PROPERTY" ]; then
                     echo "Error: got SMT information, while not requested" 1>&2
                     exit 1
@@ -196,7 +196,7 @@ while read -u 4 host; do
                 ((THREAD++))
                 CPUSET="pu:${BASH_REMATCH[1]}"
                 echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$CPUSET -p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
-            elif [[ $line =~ ^[[:space:]]+Core[[:space:]]L#[[:digit:]]+[[:space:]]\+[[:space:]]PU[[:space:]]L#([[:digit:]]+)[[:space:]]\(P#[[:digit:]]+\)$ ]]; then
+            elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#[[:digit:]]+[[:space:]]\+[[:space:]]PU[[:space:]]P#([[:digit:]]+)$ ]]; then
                 if [ -n "$NO_THREAD_PROPERTY" ]; then
                     echo "Error: got SMT information, while not requested" 1>&2
                     exit 1
@@ -206,7 +206,7 @@ while read -u 4 host; do
                 CPUSET="pu:${BASH_REMATCH[1]}"
                 echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$CPUSET -p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
             fi
-        done < <($OPENSSH_CMD $host hwloc-ls ${NO_THREAD_PROPERTY:+--no-smt} --no-io --no-caches)
+        done < <($OPENSSH_CMD $host hwloc-ls ${NO_THREAD_PROPERTY:+--no-smt} -p --no-io --no-caches)
     else
         # Store stderr and redirect it to /dev/null
         exec 3>&2
