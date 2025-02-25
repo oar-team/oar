@@ -66,4 +66,5 @@ node_setup() {
         0600 ${OAROWNER}
 
     install_ssh_host_keys
+    install -d -o ${OAROWNER} -g ${OAROWNERGROUP} -m 0755 ${OARHOMEDIR}/checklogs
 }
