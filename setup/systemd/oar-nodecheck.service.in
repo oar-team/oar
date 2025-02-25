@@ -5,4 +5,4 @@ After=oar-node.service
 
 [Service]
 User=root
-ExecStart=[ -x %%SBINDIR%%/oarnodecheckrun ] && %%SBINDIR%%/oarnodecheckrun
+ExecStart=%%SBINDIR%%/oarnodecheckrun

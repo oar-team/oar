@@ -6,4 +6,4 @@ Documentation=man:oaraccounting(8)
 OnCalendar=*-*-* *:00:00
 
 [Install]
-WantedBy=timer.target
+WantedBy=timers.target
