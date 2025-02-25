@@ -5,4 +5,4 @@ After=oar-server.service
 
 [Service]
 User=root
-ExecStart=[ -x %%SBINDIR%%/oaraccounting ] && %%SBINDIR%%/oaraccounting
+ExecStart=%%SBINDIR%%/oaraccounting

@@ -1,47 +1,55 @@
 #!/bin/bash
-
 set -e
-
-CHECKLOGDIR=%%OARHOMEDIR%%/checklogs
-CHECKSCRIPTDIR=%%OARCONFDIR%%/check.d
-CPUSET_DIR=/dev/cpuset/oar
-CGROUP_MOUNT_POINT="$(sed -ne 's/^cgroup2 \([^ ]\+\) .*/\1/p' /proc/mounts)/oar.slice"
-LOCKFILE=%%OARHOMEDIR%%/$(basename "$0").lock
-STAMPFILE=%%OARHOMEDIR%%/oarnodecheckrun.lastrun
-
-if ! [ -r $CHECKLOGDIR ]; then
-  echo 1>&2 "Error: Checklogs directory does not exist ($CHECKLOGDIR) !"
-  exit 1
-fi
-
-if ! [ -r $CHECKSCRIPTDIR ]; then
-  echo 1>&2 "Error: Checkscripts directory does not exist ($CHECKSCRIPTDIR) !"
-  exit 1
-fi
-
+set -o pipefail
 shopt -s nullglob
 
-# If there is any running job then exit.
-# - cpuset version:
-for f in "$CPUSET_DIR"/*/tasks; do
-   exit 0
-done
-# - cgroupv2 version:
-for f in "$CGROUP_MOUNT_POINT"/oar.slice/*.slice; do
-   exit 0
-done
+OARHOMEDIR=%%OARHOMEDIR%%
+CHECKSCRIPTDIR=%%OARCONFDIR%%/check.d
+CHECKLOGDIR=$OARHOMEDIR/checklogs
 
-# If there is another instance running then exit.
-[ -f "$LOCKFILE" ] && exit 0
-# Else take the lock and stamp this run.
-touch "$LOCKFILE" "$STAMPFILE"
+# If no check script directory or if it is empty of any executable script, do nothing
+[ -d $CHECKSCRIPTDIR ] || exit 0
 
-pushd "$CHECKSCRIPTDIR"
-for f in *; do
-  [ -x "$f" ] && CHECKLOGFILE="$CHECKLOGDIR/$f.$(date +%F.%T)" ./"$f"
-done
-popd
+mapfile -t CHECKSCRIPTS < <( find $CHECKSCRIPTDIR -maxdepth 1 -type f -executable )
+[ "${#CHECKSCRIPTS}" -gt 0 ] || exit 0
 
-# Release the lock.
-rm -f "$LOCKFILE"
+# If no check-log directory, this is an error
+if [ ! -d $CHECKLOGDIR ]; then
+  echo 1>&2 "Checklogs directory ($CHECKLOGDIR) does not exist, please fix."
+  exit 1
+fi
+
+# If there is any running job then exit
+# Legacy CPUSET/CGroupV1 version
+OAR_CPUSET_DIR=/dev/cpuset/oar
+if [ -d "$OAR_CPUSET_DIR" ]; then
+    for f in "$OAR_CPUSET_DIR"/*/tasks; do
+        echo 1>&2 "A job is running, do nothing".
+        exit 0
+    done
+fi
+# CGroupV2 version
+OAR_CGV2_DIR="$(sed -ne 's/^cgroup2 \([^ ]\+\) .*/\1/p' /proc/mounts)/oar.slice"
+if [ -d "$OAR_CGV2_DIR" ]; then
+    for f in "$OAR_CGV2_DIR"/oar-*.slice; do
+        echo 1>&2 "A job is running, do nothing".
+        exit 0
+    done
+fi
+
+LOCKFILE=$OARHOMEDIR/${0##*/}.lock
+STAMPFILE=$OARHOMEDIR/oarnodecheckrun.lastrun
+# Code from man flock(1)
+(
+    if ! flock -n 9; then
+        echo 1>&2 "Another instance is running, do nothing."
+        exit 0
+    fi
+    touch "$STAMPFILE"
+    cd "$CHECKSCRIPTDIR"
+    for f in "${CHECKSCRIPTS[@]}"; do 
+        CHECKLOGFILE="$CHECKLOGDIR/${f##*/}."$(date +%F.%T) ./"${f##*/}"
+    done
+) 9> "$LOCKFILE"
+
 

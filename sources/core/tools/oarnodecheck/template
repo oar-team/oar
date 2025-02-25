@@ -13,5 +13,5 @@
 ###############################################################################
 # YOUR CHECK SCRIPT GOES BELOW
 
-# Example of check
-[ -d /var/lib/oar ] || echo "OAR runtime directory (/var/lib/oar) does not exist)" > $CHECKLOGFILE 
+# Example of check: does the oar user exist ?
+id oar >& /dev/null || "OAR user not found on the system)" > $CHECKLOGFILE
