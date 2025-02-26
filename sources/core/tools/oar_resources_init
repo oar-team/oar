@@ -12,9 +12,9 @@ Hosts are read one per line from hostfile (must be readable by user oar) or
 STDIN (if hostfile is -).
 
 Options:
-  -H          handle HyperThreading/SMT (default unless -l is used)
-  -T          use the thread property for HyperThreading/SMT (imply -H)
-  -n          use the numa and numamem properties
+  -t          create the thread hierarchy level (HyperThreading/SMT)
+  -n          create the numa hierarchy level and numamem properties
+  -g          create the gpu hierarchy level and gpudevice properties (but not populated)
   -o <file>   script filename
   -x          execute the script at the end and remove it
   -y          assume "yes" as answer to all prompts and run non-interactively
@@ -23,8 +23,6 @@ Options:
   -s <path>   path to the oarnodesetting command
   -p <path>   path to the oarproperty command
   -c <path>   path to the oar.conf file
-  -g          create the gpu and gpudevice properties (but not populated)
-  -l          legacy mode: disable the use of hwloc
   -D          enable debug mode
   -h          display this message
 
@@ -33,7 +31,7 @@ EOF
 }
 
 parse_opts() {
-    while getopts "c:e:p:s:o:xyHTlvngDh" opt; do
+    while getopts "c:e:p:s:o:xytngvDh" opt; do
         case $opt in
         c)
             OARCONFFILE=$OPTARG
@@ -59,15 +57,8 @@ parse_opts() {
         y)
             NON_INTERACTIVE=1
             ;;
-        H)
-            WITH_HT=1
-            ;;
-        T)
-            WITH_HT=1
+        t)
             WITH_THREAD=1
-            ;;
-        l)
-            NO_HWLOC=1
             ;;
         n)
             WITH_NUMA=1
@@ -98,7 +89,6 @@ OARNODESETTING_CMD="oarnodesetting"
 unset WITH_THREAD
 unset WITH_NUMA
 unset WITH_GPU
-unset WITH_HT # unset: ignore hyper-threading, only the 1st thread of each core is stored in the OAR database.
 
 parse_opts "$@"
 shift $((OPTIND-1))
@@ -158,7 +148,7 @@ fi
 # Add properties
 echo "$OARPROPERTY_CMD -a cpu 2> /dev/null || true" > $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -a core 2> /dev/null || true" >> $SCRIPT_FILE
-[ -n "$WITH_HT" -a -n "$WITH_THREAD" ] && echo "$OARPROPERTY_CMD -a thread 2> /dev/null || true" >> $SCRIPT_FILE
+[ -n "$WITH_THREAD" ] && echo "$OARPROPERTY_CMD -a thread 2> /dev/null || true" >> $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -c -a host 2> /dev/null || true" >> $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -a mem 2> /dev/null || true" >> $SCRIPT_FILE
 [ -n "$WITH_NUMA" ] && echo "$OARPROPERTY_CMD -a numa 2> /dev/null || true" >> $SCRIPT_FILE
@@ -178,144 +168,58 @@ fi
 CORE=$($OARNODESETTING_CMD --last-property-value core 2> /dev/null)
 [ -n "$CORE" ] || CORE=0
 # Init THREAD id
-if [ -n "$WITH_HT" -a -n "$WITH_THREAD" ]; then
+if [ -n "$WITH_THREAD" ]; then
     THREAD=$($OARNODESETTING_CMD --last-property-value thread 2> /dev/null)
 fi
 [ -n "$THREAD" ] || THREAD=0
 
 write_oarnodesetting() {
     if [ -n "${CPUSET[*]}" ]; then
-    [ -n "$DEBUG" ] && ( IFS=, ; echo "DEBUG|found: host=$host cpu=$CPU ${WITH_NUMA:+numa=$NUMA }core=$CORE ${WITH_THREAD:+thread=$THREAD }cpuset=${CPUSET[*]} ${WITH_GPU:+gpudevice='' }mem=$MEM ${WITH_NUMA:+numamem=$NUMAMEM}" )
-        ( IFS=, ; echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU ${WITH_NUMA:+-p numa=$NUMA }-p core=$CORE ${WITH_THREAD:+-p thread=$THREAD}-p cpuset=${CPUSET[*]} ${WITH_GPU:+-p gpudevice=''}-p mem=$MEM ${WITH_NUMA:+-p numamem=$NUMAMEM}" >> "$SCRIPT_FILE" )
+    [ -n "$DEBUG" ] && ( IFS=, ; echo "DEBUG|found: host=$host cpu=$CPU${WITH_NUMA:+ numa=$NUMA} core=$CORE${WITH_THREAD:+ thread=$THREAD} cpuset=${CPUSET[*]} mem=$MEM${WITH_NUMA:+ numamem=$NUMAMEM}" )
+        ( IFS=, ; echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU${WITH_NUMA:+ -p numa=$NUMA} -p core=$CORE${WITH_THREAD:+ -p thread=$THREAD} -p cpuset=${CPUSET[*]} -p mem=$MEM${WITH_NUMA:+ -p numamem=$NUMAMEM}${WITH_GPU:+ -p gpudevice=''}" >> "$SCRIPT_FILE" )
         unset CPUSET
     fi
 }
 while read -u 4 host; do
     echo "# Fetching info from $host... "
-    if [ -z "$NO_HWLOC" ]; then
-        while IFS= read -r line; do
-            [ -n "$DEBUG" ] && echo "DEBUG|read: $line"
-            if [[ $line =~ ^[[:space:]]+PU[[:space:]]P#([[:digit:]]+)$ ]]; then
-                ((THREAD++))
-                CPUSET+=( "${BASH_REMATCH[1]}" )
-                [ -n "$WITH_THREAD" ] && write_oarnodesetting # with threads: write as soon as a PU is found
-            elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#[[:digit:]]+[[:space:]]\+[[:space:]]PU[[:space:]]P#([[:digit:]]+)$ ]]; then
-                ((CORE++))
-                ((THREAD++))
-                CPUSET+=( "${BASH_REMATCH[1]}" )
-                [ -n "$WITH_THREAD" ] && write_oarnodesetting # with threads: write as soon as a PU is found
-            else
-                [ -z "$WITH_THREAD" ] && write_oarnodesetting # without threads: write all PUs after a new core/cpu/package/... is found
-                if [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)$ ]]; then
-                    MEM=${BASH_REMATCH[1]}
-                    if [ "${BASH_REMATCH[2]}" != "GB" ]; then
-                        echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
-                    fi
-                elif [[ $line =~ ^[[:space:]]+Package[[:space:]]P#[[:digit:]]+$ ]]; then
-                    ((CPU++))
-                elif [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)[[:space:]]\+[[:space:]]Package[[:space:]]P#[[:digit:]]+$ ]]; then
-                    MEM=${BASH_REMATCH[1]}
-                    if [ "${BASH_REMATCH[2]}" != "GB" ]; then
-                        echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
-                    fi
-                    ((CPU++))
-                elif [[ $line =~ ^[[:space:]]+NUMANode[[:space:]]P#[[:digit:]]+[[:space:]]\(([[:digit:]]+)(.+)\)$ ]]; then
-                    NUMAMEM=${BASH_REMATCH[1]}
-                    if [ "${BASH_REMATCH[2]}" != "GB" ]; then
-                        echo "Warning: CPU memory unit is ${BASH_REMATCH[2]}, not GB"
-                    fi
-                    ((NUMA++))
-                elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#[[:digit:]]+$ ]]; then
-                    ((CORE++))
-                fi
-            fi
-        done < <($OPENSSH_CMD $host hwloc-ls -p --no-io --no-caches)
-        [ -z "$WITH_THREAD" ] && write_oarnodesetting # without threads: latest found PUs may still have to be written (if no other line after the last PU line)
-    else
-        # Store stderr and redirect it to /dev/null
-        exec 3>&2
-        exec 2> /dev/null
-        mem=$($OPENSSH_CMD $host cat /proc/meminfo | perl -ane 'print "$F[1]" if /^MemTotal/')
-
-        # Get CORE info in the form:
-        # cpu:core
-        # cpu:core
-        # cpu:core
-        # ...
-        # of if WITH_TH:
-        # cpu:core:thread
-        # cpu:core:thread
-        # cpu:core:thread
-        # ...
-        if [ -z "$WITH_HT" ]; then
-            if [ "`$OPENSSH_CMD $host cat /proc/cpuinfo|grep 'physical id'`" != "" ]; then
-                DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $processor = $F[1] } elsif ($F[0] eq "physical id") { $physical_id = $F[1]; $topo->{$physical_id}->{$processor} = 1 }; END{ foreach $physical_id (sort({$a <=> $b} keys(%$topo))) { foreach $processor (sort({$a<=>$b} keys(%{$topo->{$physical_id}}))) { print "$physical_id:$processor\n" } } }')
-            else
-                DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $topo->{$F[1]} = 1 }; END{ foreach $processor (sort ({$a <=> $b} keys(%$topo))) { print "$processor:$processor\n" } }')
-            fi
+    while IFS= read -r line; do
+        [ -n "$DEBUG" ] && echo "DEBUG|read: $line"
+        if [[ $line =~ ^[[:space:]]+PU[[:space:]]P#([[:digit:]]+)$ ]]; then
+            ((THREAD++))
+            CPUSET+=( "${BASH_REMATCH[1]}" )
+            [ -n "$WITH_THREAD" ] && write_oarnodesetting # with threads: write as soon as a PU is found
+        elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#[[:digit:]]+[[:space:]]\+[[:space:]]PU[[:space:]]P#([[:digit:]]+)$ ]]; then
+            ((CORE++))
+            ((THREAD++))
+            CPUSET+=( "${BASH_REMATCH[1]}" )
+            [ -n "$WITH_THREAD" ] && write_oarnodesetting # with threads: write as soon as a PU is found
         else
-            DATA=$($OPENSSH_CMD $host cat /proc/cpuinfo| perl -F'/\s*:\s*/' -ane 'chomp $F[1]; if ($F[0] eq "processor") { $processor = $F[1] } elsif ($F[0] eq "physical id") { $physical_id = $F[1] } elsif ($F[0] eq "core id") { $core_id=$F[1]; $topo->{$physical_id}->{$core_id}->{$processor} = 1 }; END{ foreach $physical_id (sort({$a <=> $b} keys(%$topo))) { foreach $core_id (sort({$a <=> $b} keys (%{$topo->{$physical_id}}))) { foreach $processor (sort({$a<=>$b} keys(%{$topo->{$physical_id}->{$core_id}}))) { print "$physical_id:$core_id:$processor\n" } } } }')
-        fi
-
-        # Restore stderr
-        exec 2>&3
-
-        if [ -z "$mem" ] || [ -z "$DATA" ]; then
-            echo "KO"
-            cat 1>&2 <<EOF
-Error: cannot retrieve info from node $host. Please check that the ssh connection as oar is ok, e.g.:
-$ $OPENSSH_CMD $host cat /proc/cpuinfo
-
-EOF
-            exit 5
-        fi
-
-        ((mem = $mem / 1024 / 1024 + 1))
-        if [ -z "$WITH_HT" ]; then
-            prev_cpu="-1"
-            for l in $DATA; do
-                cpu=${l%%:*}
-                core=${l##*:}
-                [ "$cpu" != "$prev_cpu" ] && ((CPU++))
+            [ -z "$WITH_THREAD" ] && write_oarnodesetting # without threads: write all PUs after a new core/cpu/package/... is found
+            if [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)$ ]]; then
+                MEM=${BASH_REMATCH[1]}
+                if [ "${BASH_REMATCH[2]}" != "GB" ]; then
+                    echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
+                fi
+            elif [[ $line =~ ^[[:space:]]+Package[[:space:]]P#[[:digit:]]+$ ]]; then
+                ((CPU++))
+            elif [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)[[:space:]]\+[[:space:]]Package[[:space:]]P#[[:digit:]]+$ ]]; then
+                MEM=${BASH_REMATCH[1]}
+                if [ "${BASH_REMATCH[2]}" != "GB" ]; then
+                    echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
+                fi
+                ((CPU++))
+            elif [[ $line =~ ^[[:space:]]+NUMANode[[:space:]]P#[[:digit:]]+[[:space:]]\(([[:digit:]]+)(.+)\)$ ]]; then
+                NUMAMEM=${BASH_REMATCH[1]}
+                if [ "${BASH_REMATCH[2]}" != "GB" ]; then
+                    echo "Warning: CPU memory unit is ${BASH_REMATCH[2]}, not GB"
+                fi
+                ((NUMA++))
+            elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#[[:digit:]]+$ ]]; then
                 ((CORE++))
-                prev_cpu=$cpu
-                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$core -p mem=$mem" >> $SCRIPT_FILE
-            done
-        else
-            prev_cpu="-1"
-            prev_core="-1"
-            tmp_cpuset=""
-            cpu=""
-            core=""
-            for l in $DATA; do
-                cpu=${l%%:*}
-                ll=${l#*:}
-                core=${ll%%:*}
-                thread=${l##*:}
-                if [ -z "$WITH_THREAD" ]; then
-                    if [ "$core" != "$prev_core" ]; then
-                        if [ -n "$tmp_cpuset" ]; then
-                            echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $SCRIPT_FILE
-                        fi
-                        tmp_cpuset="$thread"
-                    else
-                        tmp_cpuset="$tmp_cpuset,$thread"
-                    fi
-                fi
-                [ "$cpu" != "$prev_cpu" ] && ((CPU++))
-                [ "$core" != "$prev_core" ] && ((CORE++))
-                ((THREAD++))
-                if [ -n "$WITH_THREAD" ]; then
-                    echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $SCRIPT_FILE
-                fi
-                prev_cpu=$cpu
-                prev_core=$core
-            done
-            if [ -n "$WITH_THREAD" ]; then
-                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $SCRIPT_FILE
             fi
         fi
-    fi
+    done < <($OPENSSH_CMD $host hwloc-ls -p --no-io --no-caches)
+    [ -z "$WITH_THREAD" ] && write_oarnodesetting # without threads: latest found PUs may still have to be written (if no other line after the last PU line)
 done
 echo -ne "# Done\n\n"
 
