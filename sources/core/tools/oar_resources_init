@@ -190,12 +190,12 @@ while read -u 4 host; do
             [ -n "$DEBUG" ] && echo "DEBUG|read: $line"
             if [[ $line =~ ^[[:space:]]+PU[[:space:]]P#([[:digit:]]+)$ ]]; then
                 ((THREAD++))
-                CPUSET+=( "pu:${BASH_REMATCH[1]}" )
+                CPUSET+=( "${BASH_REMATCH[1]}" )
                 [ -n "$WITH_THREAD" ] && write_oarnodesetting # with threads: write as soon as a PU is found
             elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#[[:digit:]]+[[:space:]]\+[[:space:]]PU[[:space:]]P#([[:digit:]]+)$ ]]; then
                 ((CORE++))
                 ((THREAD++))
-                CPUSET+=( "pu:${BASH_REMATCH[1]}" )
+                CPUSET+=( "${BASH_REMATCH[1]}" )
                 [ -n "$WITH_THREAD" ] && write_oarnodesetting # with threads: write as soon as a PU is found
             else
                 [ -z "$WITH_THREAD" ] && write_oarnodesetting # without threads: write all PUs after a new core/cpu/package/... is found
