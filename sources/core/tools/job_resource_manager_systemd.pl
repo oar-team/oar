@@ -225,6 +225,7 @@ if ($ARGV[0] eq "init") {
                 . ' && while oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1'
                 . " org.freedesktop.systemd1.Manager ListJobs | grep -q $Systemd_job_slice; do sleep 0.1; done"
             ) and exit_myself(5, "Failed to create systemd slice $Systemd_job_slice.slice");
+            system_with_log("oardodo test -d $Cgroup_job_path") and exit_myself(5, "Failed to create systemd slice $Systemd_job_slice.slice");
             my $systemd_allowed_cpus_str = `$Systemd_allowed_cpus_cmd`;
             chomp($systemd_allowed_cpus_str);
             exit_myself(5, "Unexpected output from $Systemd_allowed_cpus_cmd") if ($systemd_allowed_cpus_str !~ /^ay 0x[[:xdigit:]]{4}( 0x[[:xdigit:]]{2})+$/);
