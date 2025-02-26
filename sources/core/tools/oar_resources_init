@@ -146,12 +146,12 @@ else
 fi
 
 # Add properties
-echo "$OARPROPERTY_CMD -a cpu || true" > $SCRIPT_FILE
-echo "$OARPROPERTY_CMD -a core || true" >> $SCRIPT_FILE
-[ -n "$WITH_HT" -a -z "$NO_THREAD_PROPERTY" ] && echo "$OARPROPERTY_CMD -a thread || true" >> $SCRIPT_FILE
-echo "$OARPROPERTY_CMD -c -a host || true" >> $SCRIPT_FILE
-echo "$OARPROPERTY_CMD -a mem || true" >> $SCRIPT_FILE
-[ -n "$WITH_MEMCPU" ] && echo "$OARPROPERTY_CMD -a memcpu || true" >> $SCRIPT_FILE
+echo "$OARPROPERTY_CMD -a cpu 2> /dev/null || true" > $SCRIPT_FILE
+echo "$OARPROPERTY_CMD -a core 2> /dev/null || true" >> $SCRIPT_FILE
+[ -n "$WITH_HT" -a -z "$NO_THREAD_PROPERTY" ] && echo "$OARPROPERTY_CMD -a thread 2> /dev/null || true" >> $SCRIPT_FILE
+echo "$OARPROPERTY_CMD -c -a host 2> /dev/null || true" >> $SCRIPT_FILE
+echo "$OARPROPERTY_CMD -a mem 2> /dev/null || true" >> $SCRIPT_FILE
+[ -n "$WITH_MEMCPU" ] && echo "$OARPROPERTY_CMD -a memcpu 2> /dev/null || true" >> $SCRIPT_FILE
 
 # Init CPU id
 CPU=$($OARNODESETTING_CMD --last-property-value cpu 2> /dev/null)
