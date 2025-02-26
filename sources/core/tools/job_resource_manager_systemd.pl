@@ -167,7 +167,6 @@ $Systemd_prefix =~ s#^/##;
 if (defined($Cpuset->{cpuset_path})) {
     foreach my $l (@{ $Cpuset->{nodes}->{ $ENV{TAKTUK_HOSTNAME} } }) {
         push(@Cpuset_list, split(/[+,\s]+/, $l));
-        #push(@Cpuset_list, map {"core:$_"} split(/[,\s]+/, $l));
     }
 }
 
@@ -177,8 +176,9 @@ my $Systemd_oar_slice = "$Systemd_prefix";
 my $Systemd_user_slice = "$Systemd_oar_slice-u$Cpuset_user_id";
 my $Systemd_job_slice = "$Systemd_user_slice-j$Cpuset->{job_id}";
 
-my $Systemd_allowed_cpus_cmd = 'hwloc-calc --cof systemd-dbus-api --pi ' . join(' ', @Cpuset_list);
-my $Systemd_allowed_memory_nodes_cmd = 'hwloc-calc --nof systemd-dbus-api --pi ' . join(' ', @Cpuset_list);
+my $Hwloc_pu = join(' ', map { "pu:$_" } @Cpuset_list);
+my $Systemd_allowed_cpus_cmd = "hwloc-calc --cof systemd-dbus-api --pi $Hwloc_pu";
+my $Systemd_allowed_memory_nodes_cmd = "hwloc-calc --nof systemd-dbus-api --pi $Hwloc_pu";
 
 my $Cgroup_root_path;
 open MOUNTS, '/proc/mounts' or exit_myself(3, 'Failed to open /proc/mounts.');
@@ -226,10 +226,12 @@ if ($ARGV[0] eq "init") {
                 . " org.freedesktop.systemd1.Manager ListJobs | grep -q $Systemd_job_slice; do sleep 0.1; done"
             ) and exit_myself(5, "Failed to create systemd slice $Systemd_job_slice.slice");
             system_with_log("oardodo test -d $Cgroup_job_path") and exit_myself(5, "Failed to create systemd slice $Systemd_job_slice.slice");
+            print_log(4, "Systemd allowed cpus command: $Systemd_allowed_cpus_cmd");
             my $systemd_allowed_cpus_str = `$Systemd_allowed_cpus_cmd`;
             chomp($systemd_allowed_cpus_str);
             exit_myself(5, "Unexpected output from $Systemd_allowed_cpus_cmd") if ($systemd_allowed_cpus_str !~ /^ay 0x[[:xdigit:]]{4}( 0x[[:xdigit:]]{2})+$/);
             if ($Cpuset_cg_mem_nodes eq 'cpu') {
+                print_log(4, "Systemd allowed memory nodes command: $Systemd_allowed_memory_nodes_cmd");
                 my $systemd_allowed_memory_nodes_str = `$Systemd_allowed_memory_nodes_cmd`;
                 chomp($systemd_allowed_memory_nodes_str);
                 exit_myself(5, "Unexpected output from $Systemd_allowed_memory_nodes_cmd") if ($systemd_allowed_memory_nodes_str !~ /^ay 0x[[:xdigit:]]{4}( 0x[[:xdigit:]]{2})+$/);

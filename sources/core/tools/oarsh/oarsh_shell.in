@@ -61,13 +61,20 @@ add_process_to_cpuset() {
             sleep 0.1
         done
         if [ -n "$OAR_USER_CPUSET" ]; then
-            SYSTEMD_ALLOWED_CPUS_STR=$(hwloc-calc --cof systemd-dbus-api --pi "$OAR_USER_CPUSET" 2>/dev/null)
-            if [[ "$SYSTEMD_ALLOWED_CPUS_STR" =~ ^ay\ 0x[[:xdigit:]]{4}(\ 0x[[:xdigit:]]{2})+$ ]]; then
-                # shellcheck disable=SC2086
-                oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager SetUnitProperties 'sba(sv)' "$SYSTEMD_SUBJOB_SLICE" 1 1 AllowedCPUs $SYSTEMD_ALLOWED_CPUS_STR
+            if [[ "$OAR_USER_CPUSET" =~ ^[[:digit:][[:digit:][:space:],+]*[[:digit:]]$ ]]; then
+                IFS=" " read -r -a OAR_USER_CPUSET_ARRAY <<< "${OAR_USER_CPUSET//[+,]/ }"
+                SYSTEMD_ALLOWED_CPUS_STR=$(hwloc-calc --cof systemd-dbus-api --pi "${OAR_USER_CPUSET_ARRAY[@]/#/pu:}" 2>/dev/null)
+                if [[ "$SYSTEMD_ALLOWED_CPUS_STR" =~ ^ay\ 0x[[:xdigit:]]{4}(\ 0x[[:xdigit:]]{2})+$ ]]; then
+                    # shellcheck disable=SC2086
+                    oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager SetUnitProperties 'sba(sv)' "$SYSTEMD_SUBJOB_SLICE" 1 1 AllowedCPUs $SYSTEMD_ALLOWED_CPUS_STR
+                else
+                    # OAR_USER_CPUSET is defined but syntax is incorrect
+                    echo "Warning: Failed to set OAR_USER_CPUSET=$OAR_USER_CPUSET, use the job's cpuset" 1>&2
+                    OAR_USER_CPUSET=""
+                fi
             else
                 # OAR_USER_CPUSET is defined but syntax is incorrect
-                echo "Warning: Failed to set user cpuset as requested by OAR_USER_CPUSET=$OAR_USER_CPUSET, use the default one" 1>&2
+                echo "Warning: Bad syntax for OAR_USER_CPUSET=$OAR_USER_CPUSET, use the job's cpuset" 1>&2
                 OAR_USER_CPUSET=""
             fi
         fi
