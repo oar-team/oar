@@ -62,7 +62,7 @@ parse_opts() {
             ;;
         T)
             WITH_HT=1
-            unset NO_THREAD_PROPERTY
+            WITH_THREAD=1
             ;;
         l)
             NO_HWLOC=1
@@ -87,8 +87,9 @@ OARCONFFILE="/etc/oar/oar.conf"
 OPENSSH_CMD="/usr/bin/ssh"
 OARPROPERTY_CMD="oarproperty"
 OARNODESETTING_CMD="oarnodesetting"
-NO_THREAD_PROPERTY=1
+unset WITH_THREAD
 WITH_MEMCPU=1
+unset WITH_HT # unset: ignore hyper-threading, only the 1st thread of each core is stored in the OAR database.
 
 parse_opts "$@"
 shift $((OPTIND-1))
@@ -148,7 +149,7 @@ fi
 # Add properties
 echo "$OARPROPERTY_CMD -a cpu 2> /dev/null || true" > $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -a core 2> /dev/null || true" >> $SCRIPT_FILE
-[ -n "$WITH_HT" -a -z "$NO_THREAD_PROPERTY" ] && echo "$OARPROPERTY_CMD -a thread 2> /dev/null || true" >> $SCRIPT_FILE
+[ -n "$WITH_HT" -a -n "$WITH_THREAD" ] && echo "$OARPROPERTY_CMD -a thread 2> /dev/null || true" >> $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -c -a host 2> /dev/null || true" >> $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -a mem 2> /dev/null || true" >> $SCRIPT_FILE
 [ -n "$WITH_MEMCPU" ] && echo "$OARPROPERTY_CMD -a memcpu 2> /dev/null || true" >> $SCRIPT_FILE
@@ -160,59 +161,56 @@ CPU=$($OARNODESETTING_CMD --last-property-value cpu 2> /dev/null)
 CORE=$($OARNODESETTING_CMD --last-property-value core 2> /dev/null)
 [ -n "$CORE" ] || CORE=0
 # Init THREAD id
-if [ -n "$WITH_HT" -a -z "$NO_THREAD_PROPERTY" ]; then
+if [ -n "$WITH_HT" -a -n "$WITH_THREAD" ]; then
     THREAD=$($OARNODESETTING_CMD --last-property-value thread 2> /dev/null)
 fi
 [ -n "$THREAD" ] || THREAD=0
 
+write_oarnodesetting() {
+    if [ -n "${CPUSET[*]}" ]; then
+        echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE ${WITH_THREAD:+-p thread=$THREAD}-p cpuset='${CPUSET[*]}' -p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
+        unset CPUSET
+    fi
+}
 while read -u 4 host; do
     echo -n "# Fetching info from $host... "
 
     if [ -z "$NO_HWLOC" ]; then
         while IFS= read -r line; do
-            if [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)$ ]]; then
-                MEM=${BASH_REMATCH[1]}
-                if [ "${BASH_REMATCH[2]}" != "GB" ]; then
-                    echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
-                fi
-            elif [[ $line =~ ^[[:space:]]+Package[[:space:]]P#[[:digit:]]+$ ]]; then
-                ((CPU++))
-            elif [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)[[:space:]]\+[[:space:]]Package[[:space:]]P#[[:digit:]]+$ ]]; then
-                MEM=${BASH_REMATCH[1]}
-                if [ "${BASH_REMATCH[2]}" != "GB" ]; then
-                    echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
-                fi
-                ((CPU++))
-            elif [[ $line =~ ^[[:space:]]+NUMANode[[:space:]]P#[[:digit:]]+[[:space:]]\(([[:digit:]]+)(.+)\)$ ]]; then
-                MEMCPU=${BASH_REMATCH[1]}
-                if [ "${BASH_REMATCH[2]}" != "GB" ]; then
-                    echo "Warning: CPU memory unit is ${BASH_REMATCH[2]}, not GB"
-                fi
-            elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#([[:digit:]]+)$ ]]; then
-                ((CORE++))
-                if [ -n "$NO_THREAD_PROPERTY" ]; then
-                    CPUSET="core:${BASH_REMATCH[1]}"
-                    echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$CPUSET -p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
-                fi
-            elif [[ $line =~ ^[[:space:]]+PU[[:space:]]P#([[:digit:]]+)$ ]]; then
-                if [ -n "$NO_THREAD_PROPERTY" ]; then
-                    echo "Error: got SMT information, while not requested" 1>&2
-                    exit 1
-                fi
+            if [[ $line =~ ^[[:space:]]+PU[[:space:]]P#([[:digit:]]+)$ ]]; then
                 ((THREAD++))
-                CPUSET="pu:${BASH_REMATCH[1]}"
-                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$CPUSET -p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
+                CPUSET+=( "pu:${BASH_REMATCH[1]}" )
+                [ -n "$WITH_THREAD" ] && write_oarnodesetting
             elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#[[:digit:]]+[[:space:]]\+[[:space:]]PU[[:space:]]P#([[:digit:]]+)$ ]]; then
-                if [ -n "$NO_THREAD_PROPERTY" ]; then
-                    echo "Error: got SMT information, while not requested" 1>&2
-                    exit 1
-                fi
                 ((CORE++))
                 ((THREAD++))
-                CPUSET="pu:${BASH_REMATCH[1]}"
-                echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$CPUSET -p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
+                CPUSET+=( "pu:${BASH_REMATCH[1]}" )
+                [ -n "$WITH_THREAD" ] && write_oarnodesetting
+            else
+                [ -z "$WITH_THREAD" ] && write_oarnodesetting
+                if [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)$ ]]; then
+                    MEM=${BASH_REMATCH[1]}
+                    if [ "${BASH_REMATCH[2]}" != "GB" ]; then
+                        echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
+                    fi
+                elif [[ $line =~ ^[[:space:]]+Package[[:space:]]P#[[:digit:]]+$ ]]; then
+                    ((CPU++))
+                elif [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)[[:space:]]\+[[:space:]]Package[[:space:]]P#[[:digit:]]+$ ]]; then
+                    MEM=${BASH_REMATCH[1]}
+                    if [ "${BASH_REMATCH[2]}" != "GB" ]; then
+                        echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
+                    fi
+                    ((CPU++))
+                elif [[ $line =~ ^[[:space:]]+NUMANode[[:space:]]P#[[:digit:]]+[[:space:]]\(([[:digit:]]+)(.+)\)$ ]]; then
+                    MEMCPU=${BASH_REMATCH[1]}
+                    if [ "${BASH_REMATCH[2]}" != "GB" ]; then
+                        echo "Warning: CPU memory unit is ${BASH_REMATCH[2]}, not GB"
+                    fi
+                elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#[[:digit:]]+$ ]]; then
+                    ((CORE++))
+                fi
             fi
-        done < <($OPENSSH_CMD $host hwloc-ls ${NO_THREAD_PROPERTY:+--no-smt} -p --no-io --no-caches)
+        done < <($OPENSSH_CMD $host hwloc-ls -p --no-io --no-caches)
     else
         # Store stderr and redirect it to /dev/null
         exec 3>&2
@@ -274,7 +272,7 @@ EOF
                 ll=${l#*:}
                 core=${ll%%:*}
                 thread=${l##*:}
-                if [ -n "$NO_THREAD_PROPERTY" ]; then
+                if [ -z "$WITH_THREAD" ]; then
                     if [ "$core" != "$prev_core" ]; then
                         if [ -n "$tmp_cpuset" ]; then
                             echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $SCRIPT_FILE
@@ -287,13 +285,13 @@ EOF
                 [ "$cpu" != "$prev_cpu" ] && ((CPU++))
                 [ "$core" != "$prev_core" ] && ((CORE++))
                 ((THREAD++))
-                if [ -z "$NO_THREAD_PROPERTY" ]; then
+                if [ -n "$WITH_THREAD" ]; then
                     echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p thread=$THREAD -p cpuset=$thread -p mem=$mem" >> $SCRIPT_FILE
                 fi
                 prev_cpu=$cpu
                 prev_core=$core
             done
-            if [ -n "$NO_THREAD_PROPERTY" ]; then
+            if [ -n "$WITH_THREAD" ]; then
                 echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE -p cpuset=$tmp_cpuset -p mem=$mem" >> $SCRIPT_FILE
             fi
         fi
