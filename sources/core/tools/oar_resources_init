@@ -14,17 +14,18 @@ STDIN (if hostfile is -).
 Options:
   -H          handle HyperThreading/SMT (default unless -l is used)
   -T          use the thread property for HyperThreading/SMT (imply -H)
+  -n          use the numa and numamem properties
   -o <file>   script filename
   -x          execute the script at the end and remove it
   -y          assume "yes" as answer to all prompts and run non-interactively
   -v          print the generated script
   -e <path>   path to the ssh command
-  -n <path>   path to the oarnodesetting command
+  -s <path>   path to the oarnodesetting command
   -p <path>   path to the oarproperty command
   -c <path>   path to the oar.conf file
-  -m          no memcpu property (default if -l is used)
   -g          create the gpu and gpudevice properties (but not populated)
   -l          legacy mode: disable the use of hwloc
+  -D          enable debug mode
   -h          display this message
 
 EOF
@@ -32,7 +33,7 @@ EOF
 }
 
 parse_opts() {
-    while getopts "c:e:p:n:o:xyHTlvmgDh" opt; do
+    while getopts "c:e:p:s:o:xyHTlvngDh" opt; do
         case $opt in
         c)
             OARCONFFILE=$OPTARG
@@ -40,7 +41,7 @@ parse_opts() {
         e)
             OPENSSH_CMD=$OPTARG
             ;;
-        n)
+        s)
             OARNODESETTING_CMD=$OPTARG
             ;;
         p)
@@ -68,8 +69,8 @@ parse_opts() {
         l)
             NO_HWLOC=1
             ;;
-        m)
-            unset WITH_MEMCPU
+        n)
+            WITH_NUMA=1
             ;;
         g)
             WITH_GPU=1
@@ -95,7 +96,7 @@ OPENSSH_CMD="/usr/bin/ssh"
 OARPROPERTY_CMD="oarproperty"
 OARNODESETTING_CMD="oarnodesetting"
 unset WITH_THREAD
-WITH_MEMCPU=1
+unset WITH_NUMA
 unset WITH_GPU
 unset WITH_HT # unset: ignore hyper-threading, only the 1st thread of each core is stored in the OAR database.
 
@@ -160,13 +161,19 @@ echo "$OARPROPERTY_CMD -a core 2> /dev/null || true" >> $SCRIPT_FILE
 [ -n "$WITH_HT" -a -n "$WITH_THREAD" ] && echo "$OARPROPERTY_CMD -a thread 2> /dev/null || true" >> $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -c -a host 2> /dev/null || true" >> $SCRIPT_FILE
 echo "$OARPROPERTY_CMD -a mem 2> /dev/null || true" >> $SCRIPT_FILE
-[ -n "$WITH_MEMCPU" ] && echo "$OARPROPERTY_CMD -a memcpu 2> /dev/null || true" >> $SCRIPT_FILE
+[ -n "$WITH_NUMA" ] && echo "$OARPROPERTY_CMD -a numa 2> /dev/null || true" >> $SCRIPT_FILE
+[ -n "$WITH_NUMA" ] && echo "$OARPROPERTY_CMD -a numamem 2> /dev/null || true" >> $SCRIPT_FILE
 [ -n "$WITH_GPU" ] && echo "$OARPROPERTY_CMD -a gpu 2> /dev/null || true" >> $SCRIPT_FILE
 [ -n "$WITH_GPU" ] && echo "$OARPROPERTY_CMD -c -a gpudevice 2> /dev/null || true" >> $SCRIPT_FILE
 
 # Init CPU id
 CPU=$($OARNODESETTING_CMD --last-property-value cpu 2> /dev/null)
 [ -n "$CPU" ] || CPU=0
+# Init NUMA id
+if [ -n "$WITH_NUMA" ]; then
+    NUMA=$($OARNODESETTING_CMD --last-property-value numa 2> /dev/null)
+fi
+[ -n "$NUMA" ] || NUMA=0
 # Init CORE id
 CORE=$($OARNODESETTING_CMD --last-property-value core 2> /dev/null)
 [ -n "$CORE" ] || CORE=0
@@ -178,8 +185,8 @@ fi
 
 write_oarnodesetting() {
     if [ -n "${CPUSET[*]}" ]; then
-    [ -n "$DEBUG" ] && ( IFS=, ; echo "DEBUG|found: host=$host cpu=$CPU core=$CORE ${WITH_THREAD:+thread=$THREAD }cpuset=${CPUSET[*]} ${WITH_GPU:+gpudevice='' }mem=$MEM ${WITH_MEMCPU:+memcpu=$MEMCPU}" )
-        ( IFS=, ; echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE ${WITH_THREAD:+-p thread=$THREAD}-p cpuset=${CPUSET[*]} ${WITH_GPU:+-p gpudevice=''}-p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE" )
+    [ -n "$DEBUG" ] && ( IFS=, ; echo "DEBUG|found: host=$host cpu=$CPU ${WITH_NUMA:+numa=$NUMA }core=$CORE ${WITH_THREAD:+thread=$THREAD }cpuset=${CPUSET[*]} ${WITH_GPU:+gpudevice='' }mem=$MEM ${WITH_NUMA:+numamem=$NUMAMEM}" )
+        ( IFS=, ; echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU ${WITH_NUMA:+-p numa=$NUMA }-p core=$CORE ${WITH_THREAD:+-p thread=$THREAD}-p cpuset=${CPUSET[*]} ${WITH_GPU:+-p gpudevice=''}-p mem=$MEM ${WITH_NUMA:+-p numamem=$NUMAMEM}" >> "$SCRIPT_FILE" )
         unset CPUSET
     fi
 }
@@ -213,10 +220,11 @@ while read -u 4 host; do
                     fi
                     ((CPU++))
                 elif [[ $line =~ ^[[:space:]]+NUMANode[[:space:]]P#[[:digit:]]+[[:space:]]\(([[:digit:]]+)(.+)\)$ ]]; then
-                    MEMCPU=${BASH_REMATCH[1]}
+                    NUMAMEM=${BASH_REMATCH[1]}
                     if [ "${BASH_REMATCH[2]}" != "GB" ]; then
                         echo "Warning: CPU memory unit is ${BASH_REMATCH[2]}, not GB"
                     fi
+                    ((NUMA++))
                 elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#[[:digit:]]+$ ]]; then
                     ((CORE++))
                 fi
