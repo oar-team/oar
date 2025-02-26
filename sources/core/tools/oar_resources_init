@@ -177,6 +177,12 @@ while read -u 4 host; do
                 fi
             elif [[ $line =~ ^[[:space:]]+Package[[:space:]]P#[[:digit:]]+$ ]]; then
                 ((CPU++))
+            elif [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)[[:space:]]\+[[:space:]]Package[[:space:]]P#[[:digit:]]+$ ]]; then
+                MEM=${BASH_REMATCH[1]}
+                if [ "${BASH_REMATCH[2]}" != "GB" ]; then
+                    echo "Warning: host memory unit is ${BASH_REMATCH[2]}, not GB"
+                fi
+                ((CPU++))
             elif [[ $line =~ ^[[:space:]]+NUMANode[[:space:]]P#[[:digit:]]+[[:space:]]\(([[:digit:]]+)(.+)\)$ ]]; then
                 MEMCPU=${BASH_REMATCH[1]}
                 if [ "${BASH_REMATCH[2]}" != "GB" ]; then
