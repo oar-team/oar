@@ -32,7 +32,7 @@ EOF
 }
 
 parse_opts() {
-    while getopts "c:e:p:n:o:xyHTlvmgh" opt; do
+    while getopts "c:e:p:n:o:xyHTlvmgDh" opt; do
         case $opt in
         c)
             OARCONFFILE=$OPTARG
@@ -74,13 +74,16 @@ parse_opts() {
         g)
             WITH_GPU=1
             ;;
+        D)
+            DEBUG=1
+            ;;
         h)
-    				usage
+            usage
             exit 0
             ;;
         \?)
             echo -e "Error: invalid option: -$OPTARG\n\n" >&2
-    				usage 1>&2
+            usage 1>&2
             exit 1
           ;;
       esac
@@ -175,26 +178,27 @@ fi
 
 write_oarnodesetting() {
     if [ -n "${CPUSET[*]}" ]; then
-        echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE ${WITH_THREAD:+-p thread=$THREAD}-p cpuset='${CPUSET[*]}' ${WITH_GPU:+-p gpudevice=''}-p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE"
+    [ -n "$DEBUG" ] && ( IFS=, ; echo "DEBUG|found: host=$host cpu=$CPU core=$CORE ${WITH_THREAD:+thread=$THREAD }cpuset=${CPUSET[*]} ${WITH_GPU:+gpudevice='' }mem=$MEM ${WITH_MEMCPU:+memcpu=$MEMCPU}" )
+        ( IFS=, ; echo "$OARNODESETTING_CMD -a -h $host -p host=$host -p cpu=$CPU -p core=$CORE ${WITH_THREAD:+-p thread=$THREAD}-p cpuset=${CPUSET[*]} ${WITH_GPU:+-p gpudevice=''}-p mem=$MEM ${WITH_MEMCPU:+-p memcpu=$MEMCPU}" >> "$SCRIPT_FILE" )
         unset CPUSET
     fi
 }
 while read -u 4 host; do
-    echo -n "# Fetching info from $host... "
-
+    echo "# Fetching info from $host... "
     if [ -z "$NO_HWLOC" ]; then
         while IFS= read -r line; do
+            [ -n "$DEBUG" ] && echo "DEBUG|read: $line"
             if [[ $line =~ ^[[:space:]]+PU[[:space:]]P#([[:digit:]]+)$ ]]; then
                 ((THREAD++))
                 CPUSET+=( "pu:${BASH_REMATCH[1]}" )
-                [ -n "$WITH_THREAD" ] && write_oarnodesetting
+                [ -n "$WITH_THREAD" ] && write_oarnodesetting # with threads: write as soon as a PU is found
             elif [[ $line =~ ^[[:space:]]+Core[[:space:]]P#[[:digit:]]+[[:space:]]\+[[:space:]]PU[[:space:]]P#([[:digit:]]+)$ ]]; then
                 ((CORE++))
                 ((THREAD++))
                 CPUSET+=( "pu:${BASH_REMATCH[1]}" )
-                [ -n "$WITH_THREAD" ] && write_oarnodesetting
+                [ -n "$WITH_THREAD" ] && write_oarnodesetting # with threads: write as soon as a PU is found
             else
-                [ -z "$WITH_THREAD" ] && write_oarnodesetting
+                [ -z "$WITH_THREAD" ] && write_oarnodesetting # without threads: write all PUs after a new core/cpu/package/... is found
                 if [[ $line =~ ^Machine[[:space:]]\(([[:digit:]]+)([^[:space:]]+).*\)$ ]]; then
                     MEM=${BASH_REMATCH[1]}
                     if [ "${BASH_REMATCH[2]}" != "GB" ]; then
@@ -218,6 +222,7 @@ while read -u 4 host; do
                 fi
             fi
         done < <($OPENSSH_CMD $host hwloc-ls -p --no-io --no-caches)
+        [ -z "$WITH_THREAD" ] && write_oarnodesetting # without threads: latest found PUs may still have to be written (if no other line after the last PU line)
     else
         # Store stderr and redirect it to /dev/null
         exec 3>&2
