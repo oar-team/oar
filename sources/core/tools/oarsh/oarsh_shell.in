@@ -80,7 +80,7 @@ add_process_to_cpuset() {
                     DEV_DENY+=( "$f" )
                 fi
             done
-            oardodo /usr/sbin/oarcgdev "$CGROUP_SUBJOB_PATH" "${DEV_DENY[@]}"
+            oardodo /usr/lib/oar/oarcgdev "$CGROUP_SUBJOB_PATH" "${DEV_DENY[@]}"
         fi
     fi
     oardodo busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartTransientUnit 'ssa(sv)a(sa(sv))' "${SYSTEMD_PROC_SCOPE}" fail 3 Delegate b 1 PIDs au $# "$@" Slice s "${SYSTEMD_PROC_SCOPE%-p*}".slice 0

@@ -329,7 +329,7 @@ if ($ARGV[0] eq "init") {
                         }
                     }
                 }
-                system_with_log("oardodo /usr/sbin/oarcgdev $Cgroup_job_path " . join(" ", keys(%deny_dev_hash)))
+                system_with_log("oardodo /usr/lib/oar/oarcgdev $Cgroup_job_path " . join(" ", keys(%deny_dev_hash)))
                     and exit_myself(5, "Failed to deny access to devices in $Systemd_job_slice.slice");
             } else {
                 print_log(5, "No GPU on node $ENV{TAKTUK_HOSTNAME}");
