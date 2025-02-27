@@ -4,15 +4,15 @@ oar-database - manage OAR database.
 
 =head1 SYNOPSIS
 
-B<oar-database> I<--create> [I<OPTIONS>] 
+B<oar-database> I<--create> [I<OPTIONS>]
 
-B<oar-database> I<--drop> [I<OPTIONS>] 
+B<oar-database> I<--drop> [I<OPTIONS>]
 
-B<oar-database> I<--upgrade> [I<OPTIONS>] 
+B<oar-database> I<--upgrade> [I<OPTIONS>]
 
-B<oar-database> I<--reset> [I<OPTIONS>] 
+B<oar-database> I<--reset> [I<OPTIONS>]
 
-B<oar-database> I<--check> [I<OPTIONS>] 
+B<oar-database> I<--check> [I<OPTIONS>]
 
 =head1 DESCRIPTION
 
@@ -90,7 +90,7 @@ Set database backend admin password.
 
 =head2 OAR database parameters
 
-If not specified, OAR database parameters are taken from I<OAR_CONF_FILE>. Please prefer setting the configurations in that file instead of using these options. 
+If not specified, OAR database parameters are taken from I<OAR_CONF_FILE>. Please prefer setting the configurations in that file instead of using these options.
 
 =over
 
@@ -178,7 +178,7 @@ will create the oar database and the oar user on the postgresql system hosted by
 
 =head1 FILES
 
-=over 
+=over
 
 =item %%OARDIR%%/database/mysql_structure.sql, %%OARDIR%%/database/pg_structure.sql
 
@@ -201,7 +201,7 @@ SQL instruction for emptying an existing oar database.
 SQL instructions for upgrading an existing database.
 
 =back
- 
+
 =cut
 
 =head1 COPYRIGHTS

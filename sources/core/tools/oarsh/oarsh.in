@@ -32,6 +32,7 @@ OARSH_BYPASS_WHOLE_SECURITY="0"
 ###############################################################################
 
 # Source OAR config file, allowing the administrator to overwrite variables
+# shellcheck disable=SC1090
 . "$OARCONFFILE" || exit 2
 
 # Parse OpenSSH options
@@ -87,11 +88,11 @@ OARSH_USER="${OARSH_USER%@}"
 shift 1
 parse_opts "$@"
 shift $((OPTIND-1))
-REMOTE_CMD="$@"
+REMOTE_CMD="$*"
 
 # Debug output
 if [ -n "$OARSH_DEBUG" ]; then
-  for ((i=0; i < $OARSH_OPTCOUNT; i++)); do
+  for ((i=0; i < OARSH_OPTCOUNT; i++)); do
     echo "debug oarsh: OARSH_OPT[$i]=-${OARSH_OPT[$i]}${OARSH_OPTARG[$i]}" 1>&2
   done
   cat 1>&2 <<EOF
@@ -106,7 +107,7 @@ fi
 # Filter OpenSSH options
 unset OPT
 OPTCOUNT=0
-for ((j=0; j < $OARSH_OPTCOUNT; j++)); do
+for ((j=0; j < OARSH_OPTCOUNT; j++)); do
   unset OPTFOUND
   for ((i=0; i < ${#OPENSSH_OPTSTR_FILTERED}; i++)); do
     if [ "${OPENSSH_OPTSTR_FILTERED:$i:1}" == ":" ]; then
@@ -121,14 +122,14 @@ for ((j=0; j < $OARSH_OPTCOUNT; j++)); do
       fi
     fi
   done
-  if [ -z "$OPTFOUND" -a -n "$OARSH_DEBUG" ]; then
+  if [ -z "$OPTFOUND" ] && [ -n "$OARSH_DEBUG" ]; then
     echo "debug oarsh: filtered out -${OARSH_OPT[$j]} ${OARSH_OPTARG[$j]}" 1>&2
   fi
 done
 
 # Debug output
 if [ -n "$OARSH_DEBUG" ]; then
-  echo "debug oarsh: OPT=${OPT[@]}" 1>&2
+  echo "debug oarsh: OPT=${OPT[*]}" 1>&2
 fi
 
 # Add security option for X11 forwarding
@@ -146,12 +147,13 @@ then
     if [ -x "$XAUTH_LOCATION" ]
     then
         # first, get rid of remaining unused .Xautority.{pid} files if any...
-        for f in $HOME/.Xauthority.*; do
-            [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f $f
+        for f in "$HOME"/.Xauthority.*; do
+            [ -e "/proc/${f#$HOME/.Xauthority.}" ] || rm -f "$f"
         done
         # set the .Xautority.{pid} file as the xauthority file.
         NEW_XAUTHORITY=$HOME/.Xauthority.$$
         # retrieve the X cookie from the user to user oar.
+        # shellcheck disable=SC2153
         OARDO_BECOME_USER=${OARDO_USER} oardodo bash --noprofile --norc -c "$XAUTH_LOCATION extract - ${DISPLAY/#localhost:/:}" | XAUTHORITY=$NEW_XAUTHORITY $XAUTH_LOCATION merge - 2> /dev/null
         export XAUTHORITY=$NEW_XAUTHORITY
         # ssh will push that cookie in the connection.
@@ -162,6 +164,7 @@ fi
 # (oarsh acts like a ssh and can connect on every nodes)
 if [ "$OARSH_BYPASS_WHOLE_SECURITY" != "0" ]; then
     export OAR_CPUSET="undef"
+    # shellcheck disable=SC2086
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
     echo "oarsh: Failed to connect using cpuset environment" 1>&2
     exit 5
@@ -171,21 +174,23 @@ fi
 if [ -n "$OAR_JOB_KEY_FILE" ]
 then
     # first, get rid of remaining unused jobkey files if any...
-    for f in $OAR_RUNTIME_DIRECTORY/oarsh.jobkey.*; do
-        [ -e "/proc/${f#$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.}" ] || rm -f $f
+    for f in "$OAR_RUNTIME_DIRECTORY"/oarsh.jobkey.*; do
+        [ -e "/proc/${f#$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.}" ] || rm -f "$f"
     done
     TMP_JOB_KEY_FILE=$OAR_RUNTIME_DIRECTORY/oarsh.jobkey.$$
     TMPOLDUMASK=$(umask)
     umask 0177
     OARDO_BECOME_USER=${OARDO_USER} oardodo cat "$OAR_JOB_KEY_FILE" > $TMP_JOB_KEY_FILE
+    # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
         echo "oarsh: Failed to read job key: $OAR_JOB_KEY_FILE." 1>&2
         rm -f $TMP_JOB_KEY_FILE
         exit 3
     fi
-    umask $TMPOLDUMASK
+    umask "$TMPOLDUMASK"
 
-    umask $OLDUMASK
+    umask "$OLDUMASK"
+    # shellcheck disable=SC2086
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_USER_CPUSET OAR_USER_GPUDEVICE" -i $TMP_JOB_KEY_FILE "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
     echo "oarsh: Failed to connect using the job key: $OAR_JOB_KEY_FILE" 1>&2
     exit 3
@@ -195,8 +200,9 @@ fi
 # -2- try connection using a job key pushed by OAR for a job using the job key mechanism.
 # (oarsh is run from one of the node of the job)
 TMP_JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/$OARDO_USER.jobkey"
-if [ -r $TMP_JOB_KEY_FILE ]; then
-    umask $OLDUMASK
+if [ -r "$TMP_JOB_KEY_FILE" ]; then
+    umask "$OLDUMASK"
+    # shellcheck disable=SC2086
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_USER_CPUSET OAR_USER_GPUDEVICE" -i $TMP_JOB_KEY_FILE "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
     echo "oarsh: Failed to connect using the cpuset job key: $TMP_JOB_KEY_FILE" 1>&2
     exit 4
@@ -211,21 +217,27 @@ if [ -n "$CPUSET_PATH" ]; then
             # cpuset must be of the form /oar/username_jobid, extract it from the cgroup path, supposedliy
             # if not sub task: /oar.slice/oar-Uxxx.slice/oar-uXXX-jYYY.slice/oar-uXXX-jYYY-sZZZ.scope
             # or if sub task:  /oar.slice/oar-Uxxx.slice/oar-uXXX-jYYY.slice/oar-uXXX-jYYY-tZZZ.slice/oar-uXXX-jYYY-tTTT-sZZZ.scope
-            cat /proc/self/cpuset
             OAR_CPUSET=$(sed -ne "s#.*$CPUSET_PATH.slice/[^/]\+$CPUSET_PATH-u\([[:digit:]]\+\)-j\([[:digit:]]\+\)\.slice/.*#\1_\2#p" /proc/self/cpuset)
-            OAR_CPUSET=$CPUSET_PATH/$(id -un "${OAR_CPUSET%_*}")_${OAR_CPUSET##*_}
+            if [[ $OAR_CPUSET =~ ([[:digit:]]+)_([[:digit:]]+) ]]; then
+                OAR_CPUSET=$(id -un "${BASH_REMATCH[1]}")_${BASH_REMATCH[2]}
+            else
+                OAR_CPUSET=
+            fi
+            OAR_CPUSET=$CPUSET_PATH/$OAR_CPUSET
         fi
         if [ -n "${OAR_CPUSET##*/}" ]; then
             JOB_KEY_FILE="$OAR_RUNTIME_DIRECTORY/${OAR_CPUSET##*/}.jobkey"
             if [ -r $JOB_KEY_FILE ]; then
-                umask $OLDUMASK
+                umask "$OLDUMASK"
+                # shellcheck disable=SC2086
                 exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_USER_CPUSET OAR_USER_GPUDEVICE" -i $JOB_KEY_FILE "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
                 echo "oarsh: Failed to connect using the cpuset job key: $JOB_KEY_FILE" 1>&2
                 exit 4
             fi
             export OAR_CPUSET
             export OAR_JOB_USER=$OARDO_USER
-            umask $OLDUMASK
+            umask "$OLDUMASK"
+            # shellcheck disable=SC2086
             exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
             echo "oarsh: Failed to connect using cpuset environment" 1>&2
             exit 5
@@ -266,13 +278,11 @@ if [ -n "$OAR_JOB_ID" ]; then
     export OAR_JOB_USER
     export OAR_CPUSET
     umask "$OLDUMASK"
+    # shellcheck disable=SC2086
     exec $OPENSSH_CMD $OARSH_OPENSSH_DEFAULT_OPTIONS -oSendEnv="OAR_CPUSET OAR_JOB_USER OAR_USER_CPUSET OAR_USER_GPUDEVICE" "${OPT[@]}" $OARSH_HOST -- "$REMOTE_CMD"
     echo "oarsh: Failed to connect using cpuset environment" 1>&2
     exit 5
 fi
 
-cat 1>&2 <<EOF
-oarsh: Cannot connect. Please set either a job id or a job key in your
-oarsh: environment using the OAR_JOB_ID or the OAR_JOB_KEY_FILE variable.
-EOF
+echo 1>&2 "oarsh: Cannot connect. Please set either a job id or a job key in your environment using the OAR_JOB_ID or the OAR_JOB_KEY_FILE variable."
 exit 6
