@@ -1,8 +1,10 @@
-oar (2.6.0) UNRELEASED; urgency=medium
+oar (2.6.0-1) unstable; urgency=medium
 
+  [ Pierre Neyron ]
   * New upstream release
+  * Switch to systemd and cgroup v2 (need config update for upgrade)
 
- -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 27 Feb 2025 14:52:14 +0100
+ -- Vincent Danjean <vdanjean@debian.org>  Thu, 27 Feb 2025 15:51:20 +0100
 
 oar (2.6.0~rc7-1) unstable; urgency=medium
 
