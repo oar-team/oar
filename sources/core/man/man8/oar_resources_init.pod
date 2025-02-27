@@ -34,13 +34,13 @@ host > cpu > core > thread
 
 The mem property is set along with the hierarchy.
 
-If the B<-m> option is set, it adds the numa level and numamem property. Beware that the numa hierachy level may differ from machine to machine.
+If the B<-m> option is set, it adds the numa level and numamem property. Beware that the numa hierarchy level may differ from machine to machine.
 
-If the B<-g> option is set, it adds the gpu level and gpudevice property. Information for the gpu hiearchy and gpudevice property is however not populated: It can be completed by editing manually the generated script.
+If the B<-g> option is set, it adds the gpu level and gpudevice property. Information for the gpu hierarchy and gpudevice property is however not populated: It can be completed by editing manually the generated script.
 
 Other properties can also be added in the generated script.
 
-After the execution of the script, other B<oarnodesetting> can still still be used to change the resource properties.
+After the execution of the script, other B<oarnodesetting> can still be used to change the resource properties.
 
 =head1 OPTIONS
 

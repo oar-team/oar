@@ -71,7 +71,7 @@ Follows an example of configuration of PAM with pam_adopt_oar on Debian.
 
 =head1 SEE ALSO
 
-oarsh(1)
+oarsh(1), ssh(1), pam(5)
 
 =head1 COPYRIGHTS
 

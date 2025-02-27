@@ -128,7 +128,7 @@ The oar_resource_add tool does not look at the actual hardware topology of the t
 
 =head1 SEE ALSO
 
-oarnodesetting(1), oarproperty(1), oar_resources_init(1), bash(1), hwloc(7), lstopo(1)
+oarnodesetting(8), oarproperty(8), oar_resources_init(8)
 
 =head1 COPYRIGHTS
 
