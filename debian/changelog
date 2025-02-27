@@ -1,3 +1,9 @@
+oar (2.6.0) UNRELEASED; urgency=medium
+
+  * New upstream release
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 27 Feb 2025 14:52:14 +0100
+
 oar (2.6.0~rc7-1) unstable; urgency=medium
 
   * Release candidate 7
