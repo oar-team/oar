@@ -10,7 +10,7 @@ B<oaradmin> version
 
 =head1 DESCRIPTION
 
-This command is used to manage OAR configuration. 
+This command is used to manage OAR configuration.
 
 The command B<oaradmin resources> manages resources in OAR database : add, update and delete many resources in a single command line.
 
@@ -22,13 +22,13 @@ Each subcommand has a long and an optional short form :  B<oaradmin resources> o
 
 =over
 
-=item B<-a> <EXPR> [--cpusetproperty=property] [B<-p> <EXPR>] 
+=item B<-a> <EXPR> [--cpusetproperty=property] [B<-p> <EXPR>]
 
-These options can create and define many resources in OAR database. In a single command line, it is possible to create the whole cluster definition. 
+These options can create and define many resources in OAR database. In a single command line, it is possible to create the whole cluster definition.
 
-With -a option, <EXPR> form is like : (/property=value)+. Several <EXPR> can be used : /property=value/property=value... Property field correspond to the name of a property in OAR database : cpu, core, switch for example. A specific keyword "node" (or "nodes") is use to indicate nodes names. Order of <EXPR> expressions is important : it describes the resources properties hierarchy in the cluster. Properties used in <EXPR> must exist and must be created with oarproperty command before. '/' caracter is mandatory at the beginning of each expression, no space between two expressions. 
+With -a option, <EXPR> form is like : (/property=value)+. Several <EXPR> can be used : /property=value/property=value... Property field correspond to the name of a property in OAR database : cpu, core, switch for example. A specific keyword "node" (or "nodes") is use to indicate nodes names. Order of <EXPR> expressions is important : it describes the resources properties hierarchy in the cluster. Properties used in <EXPR> must exist and must be created with oarproperty command before. '/' caracter is mandatory at the beginning of each expression, no space between two expressions.
 
-Ex : oaradmin resources -a /node=mycluster{12}.local/cpu={2}/core={2}. Number in {} is the number of elements for one element of previous level. So in this example 12 nodes, each node has 2 cpus, each cpu has 2 cores. Oaradmin creates following resources : mycluster1.local cpu=1 core=1, mycluster1.local cpu=1 core=2, mycluster1.local cpu=2 core=3, mycluster1.local cpu=2 core=4, mycluster2.local cpu=3 core=5...
+Ex : oaradmin resources -a /node=mycluster{12}.local/cpu={2}/core={2}. Number in {} is the number of elements for one element of previous level. So in this example 12 nodes, each node has 2 cpus, each cpu has 2 cores. B<oaradmin> creates following resources : mycluster1.local cpu=1 core=1, mycluster1.local cpu=1 core=2, mycluster1.local cpu=2 core=3, mycluster1.local cpu=2 core=4, mycluster2.local cpu=3 core=5...
 
 A second form is useful to name nodes. The expression -a /node=mycluster[1-100].local creates nodes mycluster1.local, mycluster2.local... mycluster100.local. It is possible to specify lists and groups for hosts. Ex : -a /node=mycluster[1-8,10,15,20-30],host_a,host_b/cpu={2}. Of course, in [...] only numeric values are allowed. Expression -a /node=chemistry_cluster[1-10,18],physics_cluster[1-50]/cpu={2} is also possible.
 
@@ -40,19 +40,19 @@ Some expressions does not match or are not allowed :
   -a /node=cluster_a{12},cluster_b[1-10]. {} and [] forms are exclusive.
 
 
---cpusetproperty option is useful to define the property used for numbers cpusets. 
+--cpusetproperty option is useful to define the property used for numbers cpusets.
 Ex : -a /node=mycluster{12}/cpu={2}/core={2} --cpusetproperty=cpu means one cpuset per cpu.
-If the option is not used, one cpuset is created per resource_id. 
+If the option is not used, one cpuset is created per resource_id.
 
 -p option is useful to define other properties that are not in properties hierarchy : memory, project...
 With -p option <EXPR> form is as follows : property=value. Several expressions -p property=value can be used. -p is mandatory at the beginning of each <EXPR>. Ex :
--p mem=1024 -p arch=amd_64 -p infiniband=YES. An operator {%} is available to increment by 1 a property value. Ex : -p ip=192.168.1.{%} 
+-p mem=1024 -p arch=amd_64 -p infiniband=YES. An operator {%} is available to increment by 1 a property value. Ex : -p ip=192.168.1.{%}
 
 Witout -c option, oaradmin print only oarnodesetting commands. No changes are made in OAR database. Use -c option to execute commands and commit changes.
 
 Other examples :
   oaradmin resources -a /switch=sw{5}/node=mycluster{12}.domain/cpu={2}
-  Creates a cluster with 5 switchs, 12 nodes per switch, 2 cpus per node.
+  Creates a cluster with 5 switches, 12 nodes per switch, 2 cpus per node.
 
   oaradmin resources -a /node=mycluster-{%3d250}/cpu={2}
   oaradmin resources -a /node=mycluster-[%3d1-250]/cpu={2}
@@ -64,13 +64,13 @@ Other examples :
 
 This option automatically computes the node, cpu, and core offsets for you based on what is already registered in the OAR database. Node names must be of the form <cluster>-<number><something> for oaradmin to automatically find the good <number>.
 
-=item B<-s> <EXPR> B<-p> <EXPR> 
+=item B<-s> <EXPR> B<-p> <EXPR>
 
-These options update several resources in OAR database. -s <EXPR> defines the condition to select resources and -p <EXPR> defines the data to update on the selected resources. 
+These options update several resources in OAR database. -s <EXPR> defines the condition to select resources and -p <EXPR> defines the data to update on the selected resources.
 
 The <EXPR> form is : property=value. As add feature, property field corresponds to the name of a property in OAR database already created with oarproperty command. With -s option, only one <EXPR> expression can be specified. The boolean operators AND and OR cannot be used. With -p option, several <EXPR> expressions can be used. When digits are used in host names, the expression -s node=mycluster[%3d1-8] must be used instead of -s node=mycluster[001-008].
 
-It is possible to group resources with {x} and {%} operators. {x} defines a group of x elements or means "each x elements". {%} means an increment of 1 to 1. Ex : 
+It is possible to group resources with {x} and {%} operators. {x} defines a group of x elements or means "each x elements". {%} means an increment of 1 to 1. Ex :
 oaradmin resources -s core={4} -p cpu={%}. Creates one cpu each 4 cores. {x} is allowed only in the selected expression. {%} is allowed only with -p option.
 
 Offset can be used in this form : oaradmin resources -s core={4+56} -p cpu={%+56}.
@@ -84,7 +84,7 @@ Other examples :
   oaradmin resources -s v_node={4} -p p_node={%}
   Create one physical node (p_node property) every each 4 virtual nodes (v_node property).
 
-=item B<-d> [<EXPR>] 
+=item B<-d> [<EXPR>]
 
 Delete many resources in OAR database.
 
@@ -92,16 +92,16 @@ Delete many resources in OAR database.
 
 -d <EXPR> delete selected resources by <EXPR> expression. It's form is property=value. As -s option, boolean operators does not match and only one <EXPR> expression can be specified.
 
-Examples : 
+Examples :
   oaradmin resources -d -c
-  oaradmin resources -d node=mycluster[1-100] -c  
+  oaradmin resources -d node=mycluster[1-100] -c
 
 
-=item B<-c> 
+=item B<-c>
 
  Execute commands specified with -a, -s -p... and commit changes in OAR database.
 
-=item B<-h, --help> 
+=item B<-h, --help>
 
 Print help message.
 
@@ -109,20 +109,20 @@ Print help message.
 
 =head2 Options for rules subcommand
 
-Oaradmin does not support managing admission rules anymore. Please look at the oaradminssionrules command instead.
+B<oaradmin> does not support managing admission rules anymore. Please look at the oaradminssionrules command instead.
 
 =head2 Options for conf subcommand
 
-Oaradmin does not support managing the OAR configuration anymore.
+B<oaradmin> does not support managing the OAR configuration anymore.
 
 =head1 NOTES
 
-Oaradmin resources subcommand uses oarnodes outputs with yaml format. So, Perl yaml and Ruby yaml packages must be installed.
+B<oaradmin> resources subcommand uses oarnodes outputs with yaml format. So, Perl yaml and Ruby yaml packages must be installed.
 
 
 =head1 SEE ALSO
 
-oarnodes(1), oarnodesetting(1), oaradmissionrules(1), oar_resources_init(1), oar_resources_add(1), oarproperty(1), oarremoveresource(1), oarsub(1)
+oarnodes(1), oarnodesetting(8), oaradmissionrules(8), oar_resources_init(8), oar_resources_add(8), oarproperty(1), oarremoveresource(8), oarsub(1)
 
 =head1 COPYRIGHTS
 

@@ -6,6 +6,7 @@ version 2.6.0:
 
   - [oarsh_shell] Add support for cgroupv2/systemd and use hwloc
   - [job_resource_manager] Add support for cgroupv2/systemd and use hwloc
+  - [oarcgde] Add the oarcgdev tool to manage devices blacklist in cgroupv2
   - [suspend_resume_manager] Add support for cgroupv2/systemd
   - [Monika] Fix display of wanted resources
   - [all] Fix for Perl exporter (Perl 5.39.1)
@@ -14,27 +15,28 @@ version 2.6.0:
   - [IO.pm] Fix issue with resource_log
   - [IO.pm/MetaSched] Add functions to allow scheduling perf statistics
   - [oaraccounting] Now use a systemd timer
-  - [pam_adopt_oar] Add pam script to enable ssh connection to jobs
-  - [oar_resources_init] Add support to use hwloc to list resources
+  - [pam_adopt_oar] Add PAM script to enable ssh connection to jobs
+  - [oar_resources_init] Now use hwloc to find resources on nodes
   - [oar_resources_add] Add support for resources in the hwloc format
-  - [man] Move administrator's commands to section 8
+  - [man] Move administrator's commands to section 8 and some rewrittings
   - [cron] Provide both cron and systemd timers (oaraccounting, oarnodecheck)
   - [oarnodecheck] Add support of cgroupv2/systemd, refactor
 
 Starting from OAR 2.6, a new mechanism using cgroupv2/systemd and hwloc is in
-place to map OAR resources do physical compute resources (cores, GPUs) on
-nodes.
+place to map OAR resources do physical compute resources (cores, GPUs) on nodes
+and manage the processes of jobs.
 
 As a consequence, on an existing installation, the cpuset property of the OAR
-resources will need some changes to adopt the hwloc description of the
-machines. The oar_resource_init script can be used to look at the expected
-values for the cpuset resource property.
+resources may need some changes to adopt the hwloc description of the machines.
+The oar_resource_init script can be used to look at the expected values for the
+cpuset resource property.
 
 Regarding the gpudevice resource property: it must now contain the list of the
 special devices (e.g.: /dev/nvidia0) associated to a resource.
 
-Finally, cgroupv1 activation is not required anymore. Related directives in the
-kernel command line can now be removed (on OAR nodes).
+Finally, cgroupv1 activation is not need anymore, only the unified cgroupv2
+file hierarchy is required now. Thus, cgroupv1 related directives in the
+kernel command line can be removed on OAR nodes.
 
 version 2.5.10:
 ---------------
@@ -386,7 +388,7 @@ version 2.5.3:
 --------------
   - Add the "Name" field on the main Monika page. This is easier for the users
     to find there jobs.
-  - Add MAX_CONCURRENT_JOB_TERMINATIONS into the oar.conf ofthe master. This
+  - Add MAX_CONCURRENT_JOB_TERMINATIONS into the oar.conf of the master. This
     limits the number of concurrent processes launched by the Almighty when the
     the jobs finish.
   - Bug fix in ssh key feature in oarsub.
@@ -395,7 +397,7 @@ version 2.5.3:
     security fixes, add of new configuration options, listing of the scheduled
     nodes into jobs, fixed bad reinitialization of the limit parameter,
     stress_factor, accounting...
-    See OAR-DOCUMENTATION-API-USER for more informations.
+    See OAR-DOCUMENTATION-API-USER for more information.
   - CGROUP: handle cgroup hierarchy already mounted by the OS like in Fedora 18
     (by systemd in /sys/fs/cgroup) in job_resource_manager_cgroups.pl.
   - Bug fix oar-database: fix the reset function for mysql.
@@ -419,7 +421,7 @@ version 2.5.3:
 
         $jobproperties_applied_after_validation = "maintenance='off'";
 
-    So, even if all the ressources have "maintenance='on'", the new jobs will be
+    So, even if all the resources have "maintenance='on'", the new jobs will be
     accepted but not scheduled now.
   - Add the oardel option --force-terminate-finishing-job: to use when a job is
     stuck in the Finishing state.
@@ -444,7 +446,7 @@ version 2.5.2:
   - Bug #13939: the job_resource_manager.pl and job_resource_manager_cgroups.pl
                 now deletes the user files in /tmp, /var/tmp and /dev/shm at
                 the end of the jobs.
-  - Bugfix: in oardodo.c, the preprocessed variables was not defined correclty.
+  - Bugfix: in oardodo.c, the preprocessed variables was not defined correctly.
   - Finaud: fix race condition when there was a PINGCHECKER error jsut before
     another problem. The node became Alive again when the PINGCHECKER said OK
     BUT there was another error to resolve.
@@ -498,7 +500,7 @@ version 2.5.1:
     if plenty of jobs have to be launched at the same time.
   - Fix problem when deleting a job in the Suspended state (oarexec was stopped
     by a SIGSTOP so it was not able to handle the delete operation)
-  - Make the USER_SIGNAL feature of oardel multi job independant and remove the
+  - Make the USER_SIGNAL feature of oardel multi job independent and remove the
     temporary file at the end of the job
   - Monika: display if the job is of timesharing type or not
             add in the job listing the initial_request (is there a reason to
@@ -535,7 +537,7 @@ version 2.5.1:
        {"resource":"/cpu=1", "command":"sleep", "param_file":"60\n90\n30"}
 
     This submits 3 sleep jobs with differents sleep values.
-  - Remove any reference to gridlibs and gridapi as these components are obselete
+  - Remove any reference to gridlibs and gridapi as these components are obsolete
   - Add stdout and stderr files of each job in oarstat output.
   - API now supports fastcgi (big performance raise!)
   - Add "-f" option to oarnodesetting to read hostnames from a file.
@@ -553,7 +555,7 @@ version 2.5.1:
   - Implement a new script 'oar-database' to manage the oar database.
     oar_mysql_init & oar_psql_init are dropped.
   - Huge code reorganisation to allow a better packaging and system integration
-  - Drop the oarsub/oarstat 2.3 version that was kept for compatiblity issues
+  - Drop the oarsub/oarstat 2.3 version that was kept for compatibility issues
     during the 2.4.x branch.
   - By default the oar scheduler is now
     'oar_sched_gantt_with_timesharing_and_fairsharing' and the following values
@@ -912,7 +914,7 @@ version 2.2:
     the whole node is assigned then it kills all jobs from the user if all cpus
     are assigned.
   - the same thing can be done with cpuset_manager_PAM.pl as the script used to
-    configure the cpuset. More efficent if cpusets are configured.
+    configure the cpuset. More efficient if cpusets are configured.
   - debug cm_availability feature to switch on and off nodes automatically
     depending on waiting jobs.
   - reservations now take care of cm_availability field
@@ -1035,13 +1037,13 @@ version 2.0.0:
   - Add wait() in pingchecker to avoid zombies.
   - Better code modularization.
   - Remove node install part to launch jobs. So it is easier to upgrade from
-    one version to an other (oarnodesetting must already be installed on each
+    one version to another (oarnodesetting must already be installed on each
     nodes if we want to use it).
   - Users can specify a method to be notified (mail or script).
   - Add cpuset support
   - Add prologue and epilogue script to be executed on the OAR server before
     and after launching a job.
-  - Add dependancy support between jobs ("-a" option in oarsub).
+  - Add dependency support between jobs ("-a" option in oarsub).
   - In oarsub you can specify the launching directory ("-d" option).
   - In oarsub you can specify a job name ("-n" option).
   - In oarsub you can specify stdout and stderr file names.

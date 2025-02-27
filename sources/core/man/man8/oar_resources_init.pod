@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-oar_resource_init - Connect to a list of hosts to gather system information and create the corresponding OAR resources.
+oar_resources_init - Connect to a list of hosts to gather system information and create the corresponding OAR resources.
 
 =head1 SYNOPSIS
 
@@ -10,13 +10,13 @@ B<oar_resource_init>  [options] <hostfile>
 
 =head1 DESCRIPTION
 
-Hosts are read one per line from B<hostfile> (must be readable by user oar) or STDIN (if B<hostfile> is -).
+Hosts are read one per line from B<hostfile> (must be readable by the oar user) or STDIN if B<hostfile> is -.
 
-Every host in B<hostfile> must have the "oar-node" service started (the command connects to the hosts via SSH on the port 6667).
+The "oar-node" service must be started on all hosts (B<oar_resources_init> connects to hosts on OAR's dedicated SSH service).
 
-The command either generates a script which could be executed afterward, or directly executes the OAR commands (oarnodesetting and oarproperty).
+The command can either just generate a script (allowing modification before execution), or directly run the OAR commands (oarnodesetting and oarproperty).
 
-The following OAR resource hierarchy is assumed: 
+The following OAR resource hierarchy is assumed:
 
 =over
 
@@ -24,7 +24,7 @@ host > cpu > core
 
 =back
 
-Or if the B<-T> option is set:
+If the B<-t> option is set, it adds the thread level:
 
 =over
 
@@ -34,19 +34,29 @@ host > cpu > core > thread
 
 The mem property is set along with the hierarchy.
 
-Other properties are not set, however the generated script can be modified to do so, or the oarnodesetting command can be used to set them afterward.
+If the B<-m> option is set, it adds the numa level and numamem property. Beware that the numa hierarchy level may differ from machine to machine.
+
+If the B<-g> option is set, it adds the gpu level and gpudevice property. Information for the gpu hierarchy and gpudevice property is however not populated: It can be completed by editing manually the generated script.
+
+Other properties can also be added in the generated script.
+
+After the execution of the script, other B<oarnodesetting> can still be used to change the resource properties.
 
 =head1 OPTIONS
 
-=over 
+=over
 
-=item B<-H>
+=item B<-t>
 
-Handle HyperThreading. Unless B<-T> is used, every logical cpus (threads) belonging to a same core will be assigned to the cpuset internal property, separated by commas.
+Create the thread hierarchy level (HyperThreading/SMT).
 
-=item B<-T>
+=item B<-n>
 
-Use the thread property for HyperThreading (imply -H).
+Create the numa hierarchy level and numamem properties.
+
+=item B<-g>
+
+Create the gpu hierarchy level and gpudevice properties (but not populated).
 
 =item B<-o> [file]
 
@@ -68,7 +78,7 @@ Print the generated script.
 
 Path to the ssh command.
 
-=item B<-n> [path]
+=item B<-s> [path]
 
 Path to the oarnodesetting command.
 
@@ -80,6 +90,10 @@ Path to the oarproperty command.
 
 Path to the oar.conf file.
 
+=item B<-D>
+
+Enable the debug mode for the parsing of hwloc's output.
+
 =item B<-h>
 
 Print the command usage.
@@ -88,10 +102,10 @@ Print the command usage.
 
 =head1 SEE ALSO
 
-oarnodesetting(1), oarproperty(1), oar_resources-add(1), oarremoveresource(1), bash(1)
+oarnodesetting(8), oarproperty(8), oar_resources_add(8), oarremoveresource(8), lstopo(1)
 
 =head1 COPYRIGHTS
 
- Copyright 2003-2016 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ Copyright 2003-2025 Laboratoire d'Informatique de Grenoble (http://www.liglab.fr). This software is licensed under the GNU General Public License Version 2 or above. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =cut
