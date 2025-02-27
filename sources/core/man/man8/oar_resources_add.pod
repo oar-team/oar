@@ -90,6 +90,10 @@ Or, given the RR value, try to match a round-robin distribution of the core ids,
 
 # of gpudevices on host (mainly useful for development purposes when one wants to emulate more GPUs than systems really have).
 
+=item B<--gpudevice-prefix> <str>
+
+Path prefix to use for the path of the device file of the GPU (e.g.: /dev/nvidia).
+
 =item B<--gputopo> <list>
 
 Provide the topology for the CPUs/GPUs affinity (see hwloc), given a ordered list of the Linux GPU device ids.
