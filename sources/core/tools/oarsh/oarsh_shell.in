@@ -46,7 +46,7 @@ add_process_to_cpuset() {
     CGROUP_JOB_PATH=$CGROUP_USER_PATH/$SYSTEMD_JOB_SLICE
 
     if [ ! -e "$CGROUP_JOB_PATH/cgroup.procs" ]; then
-        echo "oarsh: Cannot find the job's cgroup: $CGROUP_JOB_PATH" 1>&2
+        echo "oarsh: Cannot find the job's cgroup ($CGROUP_JOB_PATH), is the target host part of the job?" 1>&2
         exit 61
     fi
     shift
