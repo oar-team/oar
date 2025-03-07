@@ -55,7 +55,7 @@ session required                        pam_permit.so
 session required        pam_unix.so
 session [success=ok default=ignore]     pam_ldap.so minimum_uid=1000
 session optional        pam_systemd.so
-session required   pam_exec.so stdout /usr/local/sbin/pam_oar_adopt -s
+session required   pam_exec.so stdout /usr/sbin/pam_oar_adopt -s
 session optional   pam_env.so readenv=1 envfile=/var/lib/oar/pam.env
 ```
 
@@ -72,6 +72,6 @@ session required                        pam_permit.so
 # and here are more per-package modules (the "Additional" block)
 session required        pam_unix.so
 session [success=ok default=ignore]     pam_ldap.so minimum_uid=1000
-session required   pam_exec.so seteuid stdout /usr/local/sbin/pam_oar_adopt -s
+session required   pam_exec.so seteuid stdout /usr/sbin/pam_oar_adopt -s
 session optional   pam_env.so readenv=1 envfile=/var/lib/oar/pam.env
 ```
