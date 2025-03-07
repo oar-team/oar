@@ -1,4 +1,4 @@
-oar (2.6.0-2) UNRELEASED; urgency=medium
+oar (2.6.0-2) unstable; urgency=medium
 
   [ Pierre Neyron ]
   * Move pam_oar_adopt back to the oar-node package. Closes: #1099442.
