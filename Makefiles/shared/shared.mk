@@ -7,6 +7,8 @@ export OARDO_UNINSTALL = $(MAKE) -f Makefiles/oardo/oardo.mk uninstall
 SHARED_INSTALL   = $(MAKE) -f Makefiles/shared/common_target.mk install
 SHARED_UNINSTALL = $(MAKE) -f Makefiles/shared/common_target.mk uninstall
 
+OARSH_DIR := $(if $(OAR_CGV1),oarsh-legacy,oarsh)
+
 # Detect if system is using systemd
 SYSTEMD_INIT? = $(shell if [ `ps --no-headers -o comm 1` = "systemd" ]; then \
 				echo "true"; \

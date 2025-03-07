@@ -1,19 +1,14 @@
 MODULE=common
 SRCDIR=sources/core
 
-OARSH_DIR := $(if $(OAR_CGV1),oarsh-legacy,oarsh)
-
 OARDIR_BINFILES = $(SRCDIR)/tools/$(OARSH_DIR)/oarsh_shell.in \
 	          $(SRCDIR)/tools/$(OARSH_DIR)/oarsh.in \
                   $(SRCDIR)/qfunctions/oarnodesetting \
 		  $(SRCDIR)/tools/sentinelle.pl
 
-SBINDIR_FILES=$(SRCDIR)/tools/$(OARSH_DIR)/pam_oar_adopt
-
 MAN1DIR_FILES = $(SRCDIR)/man/man1/oarsh.1 \
 	       $(SRCDIR)/man/man1/oarprint.1
-MAN8DIR_FILES = $(SRCDIR)/man/man8/pam_oar_adopt.8 \
-	       $(SRCDIR)/man/man8/oarnodesetting.8
+MAN8DIR_FILES = $(SRCDIR)/man/man8/oarnodesetting.8
 
 SHAREDIR_FILES = $(SRCDIR)/tools/oar.conf.in \
                    $(SRCDIR)/tools/oarnodesetting_ssh.in \
