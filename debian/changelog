@@ -1,9 +1,14 @@
 oar (2.6.0-2) UNRELEASED; urgency=medium
 
+  [ Pierre Neyron ]
   * Move pam_oar_adopt back to the oar-node package. Closes: #1099442.
   * 2.6.0 also closes: #1039291: oar-node and oar-server now have systemd
     service files.
   * 2.6.0 also closes: #1049242: incriminated oar.gpg is not packaged anymore.
+
+  [ Vincent Danjean ]
+  * add breaks/replaces on oar-common (= 2.6.0-1) in case someone installed
+    this version (where pam_oar_adopt was moved)
 
  -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 06 Mar 2025 09:02:14 +0100
 
