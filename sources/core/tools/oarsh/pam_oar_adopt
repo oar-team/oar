@@ -1,10 +1,14 @@
 #!/bin/bash
 #
-# pam_oar_adopt is a PAM module that adopts processes launched under ssh
-# connections made by users. The processes will be moved inside the correct
-# job cgroup, if the user owns all cores of a node in one OAR job.
-# If user has multiple jobs on node or one job with only a part of available
-# cores, an error is thrown. In that case, `oarsh` must be used.
+# pam_oar_adopt is a OAR's PAM script to use with the pam_exec and pam_env
+# modules.
+#
+# pam_oar_adopt adopts processes created upon ssh connections if a valid OAR
+# job exists for the user. The processes are moved in the correct OAR job
+# cgroup and the OAR jobs environment variables are set. This is done only if
+# the user owns all compute resources of the host in one and only one OAR job.
+# In other cases, the ssh connection is refused (exit code 1): using oarsh
+# becomes necessary.
 #
 set -e
 
@@ -13,7 +17,36 @@ OAR_CGROUP_BASE="$CGROUP_MOUNT_POINT/oar.slice"
 USER_UID_MIN=1000
 
 get_oar_cgroups_of_user() {
-    USER_UID=$(id -u "$1")
+    # Exit if the PAM service is not sshd (e.g. su, su-l, sudo, sudo-i, ...)
+    if [ "$PAM_SERVICE" != "sshd" ]; then
+        exit 0
+    fi
+
+    OAR_USER="${PAM_RUSER:-$PAM_USER}"
+
+    if [ -z "$OAR_USER" ]; then
+        echo "Please launch this module via PAM." 1>&2
+        exit 1
+    fi
+
+    readarray -d: -t PASSWD_ENT < <(getent passwd "$OAR_USER")
+    USER_UID=${PASSWD_ENT[2]}
+
+    # Exit if the user id is inferior than 1000 (system user), indeed there is
+    # no need to do OAR cgroups machinery in that case.
+    if [ "$USER_UID" -lt "$USER_UID_MIN" ]; then
+        exit 0
+    fi
+
+    # Exit if oar.slice does not exist (job_resource_manager did not run yet, not job run since last reboot)
+    if [ ! -d "$OAR_CGROUP_BASE" ]; then
+        cat <<EOF 1>&2
+No running job found for $OAR_USER on this node.
+
+EOF
+        exit 1
+    fi
+
     readarray -t OAR_SLICES < <( cd "$OAR_CGROUP_BASE" && ls -d "oar-u$USER_UID.slice/oar-u$USER_UID"-j*.slice 2>/dev/null )
     OAR_SLICE=${OAR_SLICES[0]}
 }
@@ -21,36 +54,15 @@ get_oar_cgroups_of_user() {
 pam_account() {
     pam_oar_adopt_enabled_or_exit
 
-    OAR_USER="${PAM_RUSER:-$PAM_USER}"
-    if [ -z "$OAR_USER" ]; then
-        echo "Please launch this module via PAM." 1>&2
-        exit 1
-    fi
+    get_oar_cgroups_of_user
 
-    # We exit if the pam service is su, we don't want to have the error
-    # message when using su.
-    if [ "$PAM_SERVICE" = "su-l" ]; then
-        exit 0
-    fi
-
-    # Exit if the user id is inferior than 1000 (system user), indeed there is
-    # no need to do OAR cgroups machinery in that case.
-    if [ "$(getent passwd "$OAR_USER" | cut -d: -f3)" -lt "$USER_UID_MIN" ]; then
-        exit 0
-    fi
-
-    get_oar_cgroups_of_user "$OAR_USER"
-
-    # Four cases:
-    # - the connecting user is oar or root, we fail silently (since we are in 'sufficient' mode)
+    # Three cases:
     # - the user has no cgroups (= no jobs) on node
     # - the user has more than one cgroup or one but without all cores
     # - the user has one cgroup with all cores
-    if [ "$OAR_USER" = "oar" ] || [ "$OAR_USER" = "root" ]; then
-        exit 1
-    elif [ -z "$OAR_SLICE" ]; then
+    if [ -z "$OAR_SLICE" ]; then
         cat <<EOF 1>&2
-No running job found for user $OAR_USER on this node.
+No running job found for $OAR_USER on this node.
 
 EOF
         exit 1
@@ -76,14 +88,9 @@ EOF
 }
 
 pam_session() {
-    if [ ! -d /var/lib/oar ]; then
-        echo "OAR directory not found: /var/lib/oar." 1>&2
-        exit 1
-    fi
-
-    rm -f /var/lib/oar/pam.env
-
     pam_oar_adopt_enabled_or_exit
+
+    get_oar_cgroups_of_user
 
     if [ -z "$PAM_TYPE" ]; then
         echo "Please launch this module via PAM." 1>&2
@@ -95,9 +102,6 @@ pam_session() {
         exit 0
     fi
 
-    OAR_USER="${PAM_RUSER:-$PAM_USER}"
-    get_oar_cgroups_of_user "$OAR_USER"
-
     # We could not find a running OAR job for this user on this node. It probably means that
     # the user connecting is either root or oar (for example because of oarsh).
     # We do nothing in that case.
@@ -105,10 +109,20 @@ pam_session() {
         exit 0
     fi
 
+    if [ ! -d /var/lib/oar ]; then
+        echo "OAR directory not found: /var/lib/oar." 1>&2
+        exit 1
+    fi
+
     # To have the job environment variables, we create a symkink to the already
     # created job environment file and let pam_env load it.
     OAR_JOB_ENV=${OAR_SLICE%.slice}
     OAR_JOB_ENV=/var/lib/oar/${OAR_USER}_${OAR_JOB_ENV#*-j}.env
+    if [ ! -e "$OAR_JOB_ENV" ]; then
+        echo "Could not find job env file." 1>&2
+        exit 1
+    fi
+
     ln -fs "$OAR_JOB_ENV" /var/lib/oar/pam.env
 
     readarray -t PIDS < <(ps -o ppid= $$)
