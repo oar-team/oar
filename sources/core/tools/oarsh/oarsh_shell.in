@@ -32,7 +32,7 @@ umask 0022
 # Add PIDS into the job cgroups
 add_process_to_cpuset() {
     [ "$1" = "undef" ] && return
-    CGROUP_MOUNT_POINT=$(sed -ne 's/^cgroup2 \([^ ]\+\) .*/\1/p' /proc/mounts)
+    CGROUP_MOUNT_POINT=$(sed -ne 's/^[^ ]\+ \([^ ]\+\) cgroup2 .*/\1/p' /proc/mounts)
     CGROUP_OAR_PATH=$CGROUP_MOUNT_POINT${OAR_CPUSET%/*}.slice
     JOB_ID=${OAR_CPUSET##*_}
     JOB_USER=${OAR_CPUSET##*/}

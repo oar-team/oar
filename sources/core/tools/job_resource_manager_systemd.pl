@@ -183,7 +183,7 @@ my $Systemd_allowed_memory_nodes_cmd = "hwloc-calc --nof systemd-dbus-api --pi $
 my $Cgroup_root_path;
 open MOUNTS, '/proc/mounts' or exit_myself(3, 'Failed to open /proc/mounts.');
 while (<MOUNTS>) {
-    last if ($Cgroup_root_path) = /^cgroup2 ([^ ]+) .*/;
+    last if ($Cgroup_root_path) = /^[^ ]+ ([^ ]+) cgroup2 .*$/;
 }
 close MOUNTS;
 
