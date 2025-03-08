@@ -636,12 +636,9 @@ EOF
             }
             print_log(3, "Purging @Tmp_dir_to_clear.");
             system_with_log(
-                'for d in ' . "@Tmp_dir_to_clear" . '; do
-                         oardodo find $d -user ' . $Cpuset->{user} . ' -delete
-                         [ -x ' .
-                  $Fstrim_cmd . ' ] && oardodo ' . $Fstrim_cmd . ' $d > /dev/null 2>&1
-                       done
-                      ');
+                "for d in @Tmp_dir_to_clear; do oardodo find " . '$d' . " -user $Cpuset->{user} -delete; "
+                . "[ -x $Fstrim_cmd ] && oardodo $Fstrim_cmd " . '$d > /dev/null 2>&1; done'
+            );
         } else {
             print_log(3,
                 "Not purging SysV IPC and /tmp as $Cpuset->{user} still has a job running on this host."
