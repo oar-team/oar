@@ -62,7 +62,7 @@ install_conffile() {
 
 
 install_deb_conffile() {
-    local src dst rights owner tmpfile package
+    local src dst rights owner package
     src=$1
     dst=$2
     rights=$3
@@ -80,18 +80,14 @@ install_deb_conffile() {
     if [ -n "$owner" ]; then
         chown $owner $dst
     fi
-    
-    if [ -f "$tmpfile" ]; then
-        rm -f "$tmpfile"
-    fi
 }
 
 install_rpm_conffile() {
     # I've not found ucf or equivalent to install config file during postinst
-    # in the rpm world. So the config file are nstalled manually in the spec
+    # in the rpm world. So the config file are installed manually in the spec
     # file.
 
-    local src dst rights owner tmpfile
+    local src dst rights owner
     src=$1
     dst=$2
     rights=$3
@@ -106,7 +102,7 @@ install_rpm_conffile() {
 }
 
 install_if_not_exist() {
-    local src dst rights owner
+    local src dst rights owner tmpfile
     src=$1
     dst=$2
     rights=$3
