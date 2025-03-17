@@ -18,6 +18,9 @@ case "$1" in
         else
             echo "$MSG"
         fi
+        # Remove very old config files
+        rm -f /etc/apache2/conf.d/oar-api.conf || true
+        rm -f /etc/apache2/conf.d/oar-restful-api.conf || true
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

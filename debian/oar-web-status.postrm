@@ -8,12 +8,11 @@ set -e
 
 case "$1" in
   remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-      rm -f /etc/apache2/conf.d/oar-web-status.conf || true
-      rm -f /etc/apache2/conf-available/oar-web-status.conf || true
-      #rm -f /usr/share/oar-web-status/drawgantt-svg/index.php || true
+      true
         ;;
   purge)
-      rm -f /etc/apache2/conf.d/oar-web-status.conf || true
+      # symlink to /etc/oar/apache2/oar-web-status.conf installed by postinst
+      rm -f /etc/apache2/conf-available/oar-web-status.conf || true
       #rm -f /usr/share/oar-web-status/drawgantt-svg/index.php || true
             # remove possible conffile
             for conffile in /etc/oar/monika.conf /etc/oar/drawgantt-config.inc.php /etc/oar/apache2/oar-web-status.conf; do

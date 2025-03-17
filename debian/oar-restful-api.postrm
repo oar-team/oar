@@ -9,11 +9,10 @@ set -e
 
 case "$1" in
     remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-        rm -f /etc/apache2/conf.d/oar-api.conf || true
-        rm -f /etc/apache2/conf.d/oar-restful-api.conf || true
-        rm -f /etc/apache2/conf-available/oar-restful-api.conf || true
+        true
         ;;
     purge)
+        rm -f /etc/apache2/conf-available/oar-restful-api.conf || true
         # Remove the possible conffiles 
         for conffile in /etc/oar/apache2/oar-restful-api.conf \
                         /etc/oar/api_html_header.pl \
