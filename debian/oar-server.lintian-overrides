@@ -1,0 +1,2 @@
+# oar-admin does not exist anymore, hence the breaks-without-version
+breaks-without-version oar-admin

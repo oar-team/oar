@@ -1,0 +1,37 @@
+#! /bin/sh
+set -e
+#set -x
+
+. /usr/share/debconf/confmodule
+
+. /usr/lib/oar/setup/server.sh
+
+PACKAGE=oar-server
+
+errorinit() {
+	cat <<EOF
+oar-server has been unable to start, probably because a configuration or a
+database setup is required. Please fix it and manually restart the oar-server
+daemon using ´service start oar-server´.
+EOF
+}
+
+case "$1" in
+    configure)
+        server_setup
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0
+
+

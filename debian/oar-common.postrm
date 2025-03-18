@@ -1,0 +1,103 @@
+#! /bin/sh
+# postrm script for oar-common
+#
+# see: dh_installdeb(1)
+
+set -e
+#set -x 
+
+OAROWNER=oar
+OAROWNERGROUP=oar
+
+case "$1" in
+	remove|disappear)
+	    chsh -s /bin/bash $OAROWNER
+            ;;
+        upgrade|failed-upgrade|abort-install|abort-upgrade)
+	    ;;
+	purge)
+
+            # find first and last SYSTEM_UID numbers
+            for LINE in `grep SYSTEM_UID /etc/adduser.conf | grep -v "^#"`; do
+                case $LINE in
+                    FIRST_SYSTEM_UID*)
+                        FIRST_SYSTEM_UID=`echo $LINE | cut -f2 -d '='`
+                        ;;
+                    LAST_SYSTEM_UID*)
+                        LAST_SYSTEM_UID=`echo $LINE | cut -f2 -d '='`
+                        ;;
+                    *)
+                        ;;
+                esac
+            done
+            # Remove system account if necessary
+            CREATEDUSER="$OAROWNER"
+            if [ -n "$FIRST_SYSTEM_UID" ] && [ -n "$LAST_SYSTEM_UID" ]; then
+                if USERID=`getent passwd $CREATEDUSER | cut -f 3 -d ':'`; then
+                    if [ -n "$USERID" ]; then
+                        if [ "$FIRST_SYSTEM_UID" -le "$USERID" ] && \
+                            [ "$USERID" -le "$LAST_SYSTEM_UID" ]; then
+                        echo -n "Removing $CREATEDUSER system user.."
+                        deluser --quiet $CREATEDUSER || true
+                        echo "..done"
+                    fi
+                fi
+            fi
+        fi
+        # Remove system group if necessary
+        CREATEDGROUP=$OAROWNERGROUP
+        FIRST_USER_GID=$(grep ^USERS_GID /etc/adduser.conf | cut -f2 -d '=')
+        if [ -n "$FIRST_USER_GID" ]; then
+            if GROUPGID=$(getent group $CREATEDGROUP | cut -f 3 -d ':'); then
+                if [ -n "$GROUPGID" ]; then
+                    if [ "$FIRST_USER_GID" -gt "$GROUPGID" ]; then
+                        echo -n "Removing $CREATEDGROUP group.."
+                        delgroup --only-if-empty $CREATEDGROUP || true
+                        echo "..done"
+                    fi
+                fi
+            fi
+        fi
+
+        # Remove the possible conffiles 
+        for conffile in /etc/oar/oar.conf \
+                        /etc/oar/oarnodesetting_ssh \
+                        /etc/oar/update_cpuset_id.sh; do 
+            # we mimic dpkg as closely as possible, so we remove configuration
+            # files with dpkg backup extensions too:
+            ### Some of the following is from Tore Anderson:
+            for ext in '~' '%' .bak .dpkg-tmp .dpkg-new .dpkg-old .dpkg-dist .ucf-old .ucf-new .ucf-dist;  do
+                    rm -f $conffile$ext
+            done
+            # remove the configuration file itself
+            rm -f $conffile
+            # and finally clear it out from the ucf database
+            if which ucf >/dev/null; then
+                    ucf --purge $conffile
+            fi
+            if which ucfr >/dev/null; then
+                    ucfr --purge oar-common $conffile
+            fi
+        done
+
+        for ext in .0 .1.gz .2.gz .3.gz .4.gz .5.gz .6.gz .7.gz; do
+            rm -f /var/log/oar.log$ext
+        done
+        rm -f /var/log/oar.log
+        rm -rf /var/run/oar
+        rm -f /var/lib/oar/.bash_oar
+        rm -f /var/lib/oar/.bash_profile
+        rm -f /var/lib/oar/.bashrc
+        rm -f /var/lib/oar/.batch_job_bashrc
+        rm -rf /var/lib/oar/.ssh
+        rmdir /var/lib/oar || true
+        rmdir /etc/oar || true
+        ;;
+  *)
+    echo "postrm called with unknown argument \`$1'" >&2
+    exit 1
+esac
+
+#DEBHELPER#
+
+exit 0

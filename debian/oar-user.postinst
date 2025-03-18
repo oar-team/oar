@@ -1,0 +1,29 @@
+#! /bin/sh
+set -e
+#set -x
+
+. /usr/share/debconf/confmodule
+
+. /usr/lib/oar/setup/user.sh
+
+PACKAGE=oar-user
+
+case "$1" in
+    configure)
+        user_setup
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0
+
+

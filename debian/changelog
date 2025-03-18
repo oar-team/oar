@@ -1,0 +1,534 @@
+oar (2.6.0-2) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * Move pam_oar_adopt back to the oar-node package. Closes: #1099442.
+  * 2.6.0 also closes: #1039291: oar-node and oar-server now have systemd
+    service files.
+  * 2.6.0 also closes: #1049242: incriminated oar.gpg is not packaged anymore.
+
+  [ Vincent Danjean ]
+  * add breaks/replaces on oar-common (= 2.6.0-1) in case someone installed
+    this version (where pam_oar_adopt was moved)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 06 Mar 2025 09:02:14 +0100
+
+oar (2.6.0-1) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * New upstream release
+  * Switch to systemd and cgroup v2 (need config update for upgrade)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Thu, 27 Feb 2025 15:51:20 +0100
+
+oar (2.6.0~rc7-1) unstable; urgency=medium
+
+  * Release candidate 7
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 27 Feb 2025 13:23:54 +0100
+
+oar (2.6.0~rc6-1) unstable; urgency=medium
+
+  * Release candidate 6
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 25 Feb 2025 20:10:32 +0100
+
+oar (2.6.0~rc5-1) unstable; urgency=medium
+
+  * Release candidate 5
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 24 Feb 2025 11:04:33 +0100
+
+oar (2.6.0~rc4-1) unstable; urgency=medium
+
+  * Release candidate 4
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 21 Feb 2025 23:20:27 +0100
+
+oar (2.6.0~rc3-1) unstable; urgency=medium
+
+  * Release candidate 3
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 21 Feb 2025 20:48:31 +0100
+
+oar (2.6.0~rc2-1) unstable; urgency=medium
+
+  * Release candidate 2
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 21 Feb 2025 01:57:28 +0100
+
+oar (2.6.0~rc1-1) unstable; urgency=medium
+
+  * Release candidate 1
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sun, 26 Jan 2025 20:07:49 +0100
+
+oar (2.5.10-2) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * oar-web-status: Fix missing dependency to libcgi-fast-perl (Closes:
+    #1068711)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Wed, 10 Apr 2024 13:41:34 +0200
+
+oar (2.5.10-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 10 Jul 2023 14:55:03 +0200
+
+oar (2.5.10~rc3-1) unstable; urgency=medium
+
+  * Release candidate 3
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 17 Apr 2023 23:16:37 +0200
+
+oar (2.5.10~rc2-1) unstable; urgency=medium
+
+  * Release candidate 2
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sat, 15 Apr 2023 21:55:52 +0200
+
+oar (2.5.10~rc1-1) unstable; urgency=medium
+
+  * Release candidate 1
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sat, 15 Apr 2023 14:09:22 +0200
+
+oar (2.5.10~g5k7-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Samir Noir <samir.noir@inria.fr>  Thu, 01 Jul 2021 12:30:57 +0000
+
+oar (2.5.10~g5k6-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Samir Noir <samir.noir@inria.fr>  Wed, 30 Jun 2021 08:53:34 +0000
+
+oar (2.5.10~g5k5-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various improvements)
+
+ -- Samir Noir <samir.noir@inria.fr>  Tue, 29 Jun 2021 08:05:13 +0000
+
+oar (2.5.10~g5k4-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various improvements)
+
+ -- Samir Noir <samir.noir@inria.fr>  Mon, 21 Jun 2021 13:01:36 +0000
+
+oar (2.5.10~g5k3-1) unstable; urgency=medium
+
+  * Pre-release for G5K (new features)
+
+ -- Samir Noir <samir.noir@inria.fr>  Fri, 16 Apr 2021 12:43:23 +0000
+
+oar (2.5.10~g5k2-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Samir Noir <samir.noir@inria.fr>  Fri, 02 Apr 2021 08:14:17 +0000
+
+oar (2.5.10~g5k1-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Samir Noir <samir.noir@inria.fr>  Tue, 30 Mar 2021 15:55:26 +0000
+
+oar (2.5.9-1) unstable; urgency=medium
+
+  * New release
+  * Fix various bugs/cleanup found by lintian
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 11 Jan 2021 16:44:43 +0100
+
+oar (2.5.9~g5k6-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 13 Apr 2020 17:07:29 +0200
+
+oar (2.5.9~g5k5-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sun, 29 Mar 2020 22:20:50 +0200
+
+oar (2.5.9~g5k4-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 26 Feb 2020 17:16:07 +0100
+
+oar (2.5.9~g5k3-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Sun, 13 Oct 2019 21:13:52 +0200
+
+oar (2.5.9~g5k2-1) unstable; urgency=medium
+
+  * Pre-release for G5K (various fixes)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 26 Sep 2019 16:49:46 +0200
+
+oar (2.5.9~g5k1-1) unstable; urgency=medium
+
+  * Pre-release for G5K (add DISABLE_SUSPECTED_NODES_REPAIR)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 12 Jul 2019 17:10:50 +0200
+
+oar (2.5.8-1) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * New upstream release
+  * Remove patches as they were applied upstream
+  [ Vincent Danjean ]
+  * Switch to dh 12
+  * Bump Standards-Version (no change needed)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Fri, 04 Jan 2019 21:06:58 +0100
+
+oar (2.5.8~rc8-3) unstable; urgency=medium
+
+  * Really fix Makefile for parallel builds (Closes: #916304)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Thu, 13 Dec 2018 22:17:30 +0100
+
+oar (2.5.8~rc8-2) unstable; urgency=medium
+
+  * Refresh packaging
+  * Bash snipsets to be sourced are not binaries
+  * Fix Makefile dependencies for parallel builds
+
+ -- Vincent Danjean <vdanjean@debian.org>  Fri, 07 Dec 2018 15:28:18 +0100
+
+oar (2.5.8~rc8-1) unstable; urgency=medium
+
+  * New upstream release candidate
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 01 Oct 2018 21:08:58 +0200
+
+oar (2.5.8~rc7-1) unstable; urgency=medium
+
+  * New upstream release candidate
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 21 Sep 2018 00:00:34 +0200
+
+oar (2.5.8~rc6-1) unstable; urgency=medium
+
+  * New upstream release candidate
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 22 Jun 2018 16:11:30 +0200
+
+oar (2.5.8~rc5-1) unstable; urgency=medium
+
+  * New upstream release candidate
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Thu, 05 Oct 2017 18:57:18 +0200
+
+oar (2.5.8~rc4-1) unstable; urgency=medium
+
+  * New upstream release candidate
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 26 Jun 2017 22:34:39 +0200
+
+oar (2.5.8~rc3-1) unstable; urgency=medium
+
+  * New upstream release candidate
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 28 Feb 2017 22:41:23 +0100
+
+oar (2.5.8~rc2-1) unstable; urgency=medium
+
+  * New upstream release candidate
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 09 Jan 2017 14:29:15 +0100
+
+oar (2.5.8~rc1-1) unstable; urgency=medium
+
+  * New upstream release candidate
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 02 Jan 2017 17:23:44 +0100
+
+oar (2.5.7-3) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * Fix recommends/suggests in oar-server-mysql: any variant of mysql can
+    do (Closes: #848477)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 19 Dec 2016 14:47:53 +0100
+
+oar (2.5.7-2) unstable; urgency=high
+
+  * enabling hardening flags
+  * urgency still set to high as 2.5.7-1 is not yet in testing
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 04 Apr 2016 22:47:00 +0200
+
+oar (2.5.7-1) unstable; urgency=high
+
+  * New upstream release, which encompasses a fix for a vulnerability in the
+    oarsh command (CVE-2016-1235; Closes: #819952)
+  * Make liboar-perl a dependency of oar-common, because the oarnodesetting
+    command of the oar-node package also needs the Perl libs
+  * Change php dependencies for the transition to php7.0
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 04 Apr 2016 20:11:21 +0200
+
+oar (2.5.6-2) unstable; urgency=medium
+
+  * correctly rebuild amd64 packages (due to a error, uploaded binary
+    packages for 2.5.6-1 was a work in progress)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Thu, 18 Feb 2016 09:45:32 +0100
+
+oar (2.5.6-1) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * New upstream release
+  * Rework Debian README file for oar-api (api setup)
+  * Source-less javascript were removed upstream, no need for dfsg now
+  * Change dependences of oar-restful-api, can be in main again
+  * Remove patch applied upstream
+  * Add recommends to libyaml-syck-perl (provide faster YAML functions)
+  * Fix copyright, accordingly to upstream changes
+
+  [ Vincent Danjean ]
+  * Apply suggestion from 'cme fix/edit dpkg'
+  * Remove Philippe as Uploader (not working on this project anymore)
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 16 Feb 2016 14:20:58 +0100
+
+oar (2.5.5+dfsg.1-1) unstable; urgency=medium
+
+  * remove source-less javascript files from tar.gz
+  * add a README.source to warn about an uscan bug
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 21 Sep 2015 16:45:32 +0200
+
+oar (2.5.5-2) unstable; urgency=medium
+
+  * Rework the sections of the packages (mainly set to utils instead of science)
+  * Set the archive area/section of the oar-restful-api package to contrib/net,
+    since it depends on non-free packages (Closes: #798820)
+  * Remove the oar-api transitional dummy package
+  * Fix typos in oar-restful-api README.Debian file
+  * Remove the overlib.js files from sources, because overLIB is not actually
+    used and has copyright issues (broken URL in the copyright notice)
+  * Fix upstream contact and remove overLIB artistic license in the copyright
+    file
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 18 Sep 2015 15:18:47 +0200
+
+oar (2.5.5-1) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * New upstream release
+  * Fix oar-common, oar-web-status and oar-restful-api unowned files after
+    purge (Closes: #674657)
+  * Fix oar-web-status and oar-restful-api webapps setup for apache 2.4
+  * Set libyaml-perl as a dependance for oar-restful-api and remove
+    libxml-simple-perl from the recommends
+  * Add python-sphinx to the build dependencies
+  * Replace embedded jquery.js and underscore.js in oar-doc with a symlink to
+    the copy provided by the libjs-* packages
+  * Fix minor spelling issues in oarsub man page
+  * Fix lintian issues or add overrides
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 07 Sep 2015 23:17:12 +0200
+
+oar (2.5.4-2) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * Fix oar-node pid file location (Closes: #772564)
+  * Fix errors with the TRUNCATE SQL request which is incompatible with MySQL
+    and causes deadlocks with PostgreSQL (Closes: #773790)
+  * Fix errors with advance reservation when moldable jobs are used
+    (Closes: #775957)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Fri, 13 Feb 2015 11:03:53 +0100
+
+oar (2.5.4-1) unstable; urgency=medium
+
+  * New upstream release. No change from rc12
+
+ -- Vincent Danjean <vdanjean@debian.org>  Fri, 24 Oct 2014 17:11:45 +0200
+
+oar (2.5.4~rc12-1) unstable; urgency=medium
+
+  * New upstream release
+  * Fix oaraccounting bug (Closes: #678976)
+  * Remove Ruby dependencies (Closes: #732540)
+  * Force depends to OpenSSH's ssh
+  * Remove patch fix-oar-server-init.d: applied upstream
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Fri, 24 Oct 2014 15:09:46 +0200
+
+oar (2.5.4~rc8-2) unstable; urgency=medium
+
+  * stop oar-server and oar-node on upgrade from an old version
+    (their prerm script did not stop their service)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Thu, 16 Oct 2014 14:36:45 +0200
+
+oar (2.5.4~rc8-1) unstable; urgency=medium
+
+  [ Pierre Neyron ]
+  * New upstream release
+  * Drop tools with dependencies to Ruby (oaradmin, drawgantt legacy)
+  * Bump Standard-Version (no change needed)
+  * Remove unused patches (applied upstream)
+  * Fix oar-server (oar-database) depends to libterm-ui-perl
+
+  [ Vincent Danjean ]
+  * Bump Standards-Version
+  * (re)start service on upgrade/start
+  * add a Breaks: to the old oar-admin package. The database schema has
+    been modified so old utilities did not work anymore
+
+ -- Vincent Danjean <vdanjean@debian.org>  Wed, 15 Oct 2014 10:31:17 +0200
+
+oar (2.5.3-3) unstable; urgency=low
+
+  * Fix oar-user dependency on oar-user-mysql or oar-user-postgresql
+  * Fix prologues and epilogues configuration files permissions:
+    add patch to set mod 0755
+  * Fix oarsub copyright in pod (man), this corrects the "FTBFS with perl 5.18: POD failure" reported by Debian
+    (Closes: #720431)
+  * Fix the database structure version: must be 2.5.2
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Mon, 09 Sep 2013 00:03:38 +0200
+
+oar (2.5.3-2) unstable; urgency=low
+
+  * Fix clean-up of oar-server and oar-web-status after remove/purge
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Tue, 02 Jul 2013 11:07:39 +0200
+
+oar (2.5.3-1) unstable; urgency=low
+
+  [ Philippe Le Brouster ]
+  * Remove the patches merged in upstream.
+
+  [ Pierre Neyron ]
+  * Imported Upstream version 2.5.3
+  * Add drawgantt-svg to oar-web-status package
+  * Set Pierre Neyron as Maintainer
+  * Add Philippe Le Brouster as Uploader
+
+ -- Pierre Neyron <pierre.neyron@free.fr>  Wed, 26 Jun 2013 18:15:04 +0200
+
+oar (2.5.2-4.1) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * Replace transitional ruby packages with real ones.
+    (Closes: #735745)
+
+ -- Christian Hofstaedtler <zeha@debian.org>  Thu, 13 Feb 2014 00:36:35 +0100
+
+oar (2.5.2-4) unstable; urgency=low
+
+  [ Pierre Neyron ]
+  * Set Pierre Neyron as Maintainer
+  * Add Philippe Le Brouster as Uploader
+  * Fix piupart reported error: package uses files from /usr/share/doc
+    (Closes: #722621)
+  * Fix database schema version: 2.5.2
+  * Fix dependencies to the database backend packages
+  * Fix packages post scripts: purge /etc/oar, /var/lib/oar
+  * Fix oardo.c compilation warning
+  * Fix prologues and epilogues configuration files permissions
+
+  [ Vincent Danjean ]
+  * Bump Standard-Version (no change needed)
+  * Add header to new quilt patches
+
+ -- Vincent Danjean <vdanjean@debian.org>  Fri, 20 Sep 2013 14:17:34 +0200
+
+oar (2.5.2-3.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix "FTBFS with perl 5.18: POD failure":
+    add patch to add encoding to POD
+    (Closes: #720431)
+
+ -- gregor herrmann <gregoa@debian.org>  Fri, 30 Aug 2013 17:42:06 +0200
+
+oar (2.5.2-3) unstable; urgency=low
+
+  * Remove the desktop-computing packaging because it is no more supported
+    (Closes: #676220).
+  * Remove the conffiles  when purging the binary packages (Closes: #674657).
+  * Override dh_compress to prevent debhelper to compress examples.
+  * Use ucfr to register conffile.
+  * Remove the ssh keys when purgin oar-node
+
+ -- Philippe Le Brouster <plb@nebkha.net>  Tue, 26 Jun 2012 12:23:42 +0200
+
+oar (2.5.2-2) unstable; urgency=low
+
+  * Rebuild for the debian archive. (Closes: #663558)
+
+ -- Philippe Le Brouster <plb@nebkha.net>  Thu, 24 May 2012 12:47:49 +0200
+
+oar (2.5.2-1) unstable; urgency=low
+
+  * Imported Upstream version 2.5.2.
+  * Remove the patch 0001-Fix-a-spelling-error-in-the-oaradmin-manpage (no
+    more needed).
+  * Update the debian copyright file.
+  * Switch to debhelper 9.
+  * Update properly CFLAGS
+  * Override lintian warning: hardening-no-stackprotector
+  * Add Vincent Danjean as Uploaders.
+
+ -- Philippe Le Brouster <plb@nebkha.net>  Wed, 23 May 2012 17:00:53 +0200
+
+oar (2.5.1-4) unstable; urgency=low
+
+  * Add lintian overrides for empty binary packages.
+  * Add lintian overrides for the install file.
+  * Improve the short descriptions.
+  * Fix a spelling error in oaradmin manpage.
+
+ -- Philippe Le Brouster <plb@nebkha.net>  Fri, 06 Apr 2012 13:40:16 +0200
+
+oar (2.5.1-3) unstable; urgency=low
+
+  * Fix the debian watch file.
+  * oar-server-mysql: Remove phpmyadmin as suggestion.
+  * Fix the dependencies on libdbi-perl.
+  * Fix the binaries conflict between oar-user-{mysql,pgsql}.
+  * Improve the short descriptions.
+
+ -- Philippe Le Brouster <plb@nebkha.net>  Mon, 02 Apr 2012 13:25:10 +0200
+
+oar (2.5.1-2) unstable; urgency=low
+
+  * First upload to the debian archive (Closes: #663558)
+  * Bump the standards version.
+  * Change the oar-api package description.
+
+ -- Philippe Le Brouster <plb@nebkha.net>  Mon, 12 Mar 2012 13:02:11 +0100
+
+oar (2.5.1-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Fri, 13 Jan 2012 18:15:09 +0100
+
+oar (2.5.0+rc2-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+  * Remove the symlink creation for the apache2 configuration. (already done
+    by the setup scripts).
+
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Mon, 19 Dec 2011 22:59:22 +0100
+
+oar (2.5.0+rc1-1) UNRELEASED; urgency=low
+
+  * Initial Release.
+
+ -- Philippe Le Brouster <philippe.le-brouster@imag.fr>  Thu, 08 Dec 2011 11:06:45 +0100
