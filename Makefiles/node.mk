@@ -9,7 +9,8 @@ SBINDIR_FILES=$(SRCDIR)/tools/oarnodecheck/oarnodecheckrun.in \
 SHAREDIR_FILES= $(SRCDIR)/scripts/prologue \
 		$(SRCDIR)/scripts/epilogue \
 		$(SRCDIR)/tools/sshd_config.in \
-		$(SRCDIR)/scripts/oar-node-service
+		$(SRCDIR)/scripts/oar-node-service \
+		$(SRCDIR)/tools/$(OARSH_DIR)/pam_oar_adopt.conf
 
 MAN8DIR_FILES = $(SRCDIR)/man/man8/oarnodecheckrun.8 \
 				$(SRCDIR)/man/man8/pam_oar_adopt.8

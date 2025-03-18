@@ -24,9 +24,11 @@ Please note that while using ssh is very convenient, B<oarsh> provides extra fea
 
 =head1 CONFIGURATION
 
-To B<enable> this feature, one must configure B<pam_oar_adopt> in PAM and make sure the B</etc/oar/pam_oar_adopt_enabled> file exists on nodes. Removing this file allows one to disable B<pam_oar_adopt> (let I<ssh> return to its normal behavior) without requiring to undo the whole PAM configuration.
+To B<enable> this feature, one must configure B<pam_oar_adopt> in PAM and activate it in its configuration file (B</etc/oar/pam_oar_adopt.conf>).
 
-Also make sure the B<ssh> service (on port 22, not OAR's dedicated ssh service on port 6667) enables PAM. B</etc/ssh/sshd_config> must contain:
+=head2 PAM CONFIGURATION
+
+Make sure the B<ssh> service (on port 22, not OAR's dedicated ssh service on port 6667) enables PAM. B</etc/ssh/sshd_config> must contain:
 
  UsePAM yes
 
@@ -38,14 +40,55 @@ Follows an example of configuration of PAM with B<pam_oar_adopt>:
 
 The following can be set as the first PAM directive in common-account:
 
- account required      pam_exec.so quiet debug stdout /usr/sbin/pam_oar_adopt -a
+ account required      pam_exec.so quiet stdout /usr/sbin/pam_oar_adopt -a
 
 =item B</etc/pam.d/common-session> and B</etc/pam.d/common-session-noninteractive>
 
 The following can be set as the last PAM directives in common-session and common-session-noninteractive:
 
- session required   pam_exec.so stdout /usr/sbin/pam_oar_adopt -s
+ session required   pam_exec.so quiet stdout /usr/sbin/pam_oar_adopt -s
  session optional   pam_env.so readenv=1 envfile=/var/lib/oar/pam.env
+
+=back
+
+On Debian-like systems, one can also use the B<pam-auth-update> command to configure PAM and, by default, this PAM profile is installed with the oar-node package.
+
+=head2 PAM_OAR_ADOPT CONFIGURATION
+
+The B</etc/oar/pam_oar_adopt.conf> file contains the following configuration options:
+
+=over
+
+=item B<MODE>
+weather B<pam_oar_adopt> is enabled or not. Possible values are:
+
+=over
+
+=item B<enforced>: B<pam_oar_adopt> is enabled and will prevent any ssh connection to nodes that are not properly reserved.
+
+=item B<disabled>: B<pam_oar_adopt> is disabled.
+
+=back
+
+By default, B<pam_oar_adopt> is disabled.
+
+[DEPRECATED] For compatibility reasons, if the B<MODE> is not set and the B</etc/oar/pam_oar_adopt_enabled> file is present, then B<pam_oar_adopt> is enabled.
+
+=item B<WARN>
+
+In B<disabled> mode, B<pam_oar_adopt> will warn users about what would have been done if it was enabled. Possible values are:
+
+=over
+
+=item B<yes>: warn users (default).
+
+=item B<no>: do not warn users about B<pam_oar_adopt> doing nothing.
+
+=back
+
+=item B<USER_UID_MIN>
+
+In B<enforced> mode, B<pam_oar_adopt> will ignore (not prevent) ssh connections from users with a UID lower than B<USER_UID_MIN>. This is useful to allow system users to connect to nodes without being part of a job. The default value is 1000.
 
 =back
 
