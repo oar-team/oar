@@ -16,42 +16,53 @@ CGROUP_MOUNT_POINT=$(sed -ne 's/^[^ ]\+ \([^ ]\+\) cgroup2 .*/\1/p' /proc/mounts
 OAR_CGROUP_BASE="$CGROUP_MOUNT_POINT/oar.slice"
 USER_UID_MIN=1000
 
+FORBID_MESSAGE="%s\n"
+WARN_MESSAGE="[pam_oar_adopt is disabled, warn only]\n%s\n"
+
 exit_with_warning_or_error() {
     if [ "$MODE" = "enforced" ]; then
-	printf "$1\n\n" 1>&2
-	exit 1
+        # shellcheck disable=SC2059
+        printf "$FORBID_MESSAGE" "$1" 1>&2
+        exit 1
     elif [ "$WARN" = true ]; then
-	printf "pam_oar_adopt disabled, warns only: %s\n" "$1"
+        # shellcheck disable=SC2059
+        printf "$WARN_MESSAGE" "$1"
     fi
     exit 0
 }
 
 pam_oar_adopt_load_config() {
-    if [ -f "/etc/oar/pam_oar_adopt_enabled" ]; then
-        MODE="enforced"
-    else
-        MODE="disabled"
+    MODE=disabled
+
+    if [ -f /etc/oar/pam_oar_adopt_enabled ]; then
+        MODE=enforced
     fi
+
     WARN=true
 
-    if [ -r /etc/oar/pam_oar_adopt.conf ]; then
+    if [ ! -f /etc/oar/pam_oar_adopt_enabled ] && [ -r /etc/oar/pam_oar_adopt.conf ]; then
+        # shellcheck disable=SC1091
         . /etc/oar/pam_oar_adopt.conf
     fi
 
-    case "$MODE" in
-        enforced|disabled) ;;
-	*)
-	    echo "Invalid value for MODE in /etc/oar/pam_oar_adopt.conf." 1>&2
-	    exit 0
-	    ;;
+    case "${MODE,,}" in
+        enforced|disabled)
+            MODE=${MODE,,}
+            ;;
+        *)
+            echo "Invalid value for MODE in /etc/oar/pam_oar_adopt.conf." 1>&2
+            exit 0
+            ;;
     esac
+
     case "${WARN,,}" in
-	1|yes|on|true) WARN=true ;;
-	0|no|off|false) WARN=false ;;
-	*)
-	    echo "Invalid value for WARN in /etc/oar/pam_oar_adopt.conf." 1>&2
-	    WARN=true
-	    ;;
+        true|false)
+            WARN=${WARN,,}
+            ;;
+        *)
+            echo "Invalid value for WARN in /etc/oar/pam_oar_adopt.conf." 1>&2
+            WARN=true
+            ;;
     esac
 }
 
@@ -79,7 +90,7 @@ get_oar_cgroups_of_user() {
 
     if [ ! -d "$OAR_CGROUP_BASE" ]; then
         # Exit if oar.slice does not exist (job_resource_manager did not run yet, not job run since last reboot)
-        exit_with_warning_or_error "No running job found for $OAR_USER on this node."
+        exit_with_warning_or_error "Forbidden: no running job found for $OAR_USER on this node."
     fi
 
     readarray -t OAR_SLICES < <( cd "$OAR_CGROUP_BASE" && ls -d "oar-u$USER_UID.slice/oar-u$USER_UID"-j*.slice 2>/dev/null )
@@ -96,14 +107,14 @@ pam_account() {
     # - the user has more than one cgroup or one but without all cores
     # - the user has one cgroup with all cores
     if [ -z "$OAR_SLICE" ]; then
-        exit_with_warning_or_error "No running job found for $OAR_USER on this node."
+        exit_with_warning_or_error "Forbidden: no running job found for $OAR_USER on this node."
     elif [ ${#OAR_SLICES[*]} -ne 1 ]; then
-        exit_with_warning_or_error "Cannot connect to node using 'ssh', because it appears there are more than one
-job on running on the node. Make sure to only have one job on the node, or use
-'oarsh' to connect to a specific job."
+        exit_with_warning_or_error "Forbidden: cannot connect to node using 'ssh', because it appears there are
+more than one job on running on the node. Make sure to only have one job on the
+node, or use 'oarsh' to connect to a specific job."
     elif [ "$(< "$OAR_CGROUP_BASE/$OAR_SLICE"/cpuset.cpus.effective)" != "$(< "${OAR_CGROUP_BASE}"/cpuset.cpus.effective)" ]; then
-        exit_with_warning_or_error "Cannot connect to node using 'ssh' because not all its compute resources
-(e.g. CPU cores or threads) are assigned to the job which reserves it.
+        exit_with_warning_or_error "Forbidden: cannot connect to node using 'ssh' because not all its compute
+resources (e.g. CPU cores or threads) are assigned to the job which reserves it.
 Reserve the whole node, or use 'oarsh' instead."
     else
         exit 0
@@ -138,8 +149,9 @@ pam_session() {
 
     if [ "$MODE" != enforced ]; then
         if [ "$WARN" = true ]; then
-	    printf "pam_oar_adopt disabled, not adding job into cgroup.\n"
-	fi
+            # shellcheck disable=SC2059
+            printf "$WARN_MESSAGE" "Not adding job into cgroup."
+        fi
         return 0
     fi
     # We are in enforced mode here, handling cgroup assignment
