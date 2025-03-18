@@ -18,7 +18,11 @@ set -e
 
 
 case "$1" in
-    remove|upgrade|deconfigure)
+    remove|deconfigure)
+	pam-auth-update --package --remove oar-node
+    ;;
+
+    upgrade)
     ;;
 
     failed-upgrade)

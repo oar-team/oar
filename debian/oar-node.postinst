@@ -11,6 +11,7 @@ PACKAGE=oar-node
 case "$1" in
     configure)
         node_setup
+	pam-auth-update --package
         ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

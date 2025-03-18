@@ -1,0 +1,11 @@
+Name: Allows one to use plain ssh on fully reserved oar nodes
+Default: yes
+Priority: 512
+Account-Type: Additional
+Account:
+	required	pam_exec.so quiet stdout /usr/sbin/pam_oar_adopt -a
+Session-Interactive-Only: no
+Session-Type: Additional
+Session:
+	required	pam_exec.so quiet stdout /usr/sbin/pam_oar_adopt -s
+	optional	pam_env.so readenv=1 envfile=/var/lib/oar/pam.env
