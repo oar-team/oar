@@ -2,6 +2,7 @@ oar (2.6.1~rc1-1) unstable; urgency=medium
 
   * Release candidate 1
   * Install and setup PAM profile in oar-node package
+  * remove patch move-pam-oar-adopt-to-oar-node: applied upstream
 
  -- Vincent Danjean <vdanjean@debian.org>  Tue, 18 Mar 2025 16:53:19 +0100
 
