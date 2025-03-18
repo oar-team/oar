@@ -1,129 +1,185 @@
 #!/bin/bash
 #
-# pam_oar_adopt is a PAM module that adopts processes launched under ssh
-# connections made by users. The processes will be moved inside the correct
-# job cgroup, if the user owns all cores of a node in one OAR job.
-# If user has multiple jobs on node or one job with only a part of available
-# cores, an error is thrown. In that case, `oarsh` must be used.
+# pam_oar_adopt is a OAR's PAM script to use with the pam_exec and pam_env
+# modules.
+#
+# pam_oar_adopt adopts processes created upon ssh connections if a valid OAR
+# job exists for the user. The processes are moved in the correct OAR job
+# cgroup and the OAR jobs environment variables are set. This is done only if
+# the user owns all compute resources of the host in one and only one OAR job.
+# In other cases, the ssh connection is refused (exit code 1): using oarsh
+# becomes necessary.
 #
 set -e
 
-CGROUP_MOUNT_POINT=$(grep cgroup2 /proc/mounts | cut -d\  -f2)
+CGROUP_MOUNT_POINT=$(sed -ne 's/^[^ ]\+ \([^ ]\+\) cgroup2 .*/\1/p' /proc/mounts)
 OAR_CGROUP_BASE="$CGROUP_MOUNT_POINT/oar.slice"
 USER_UID_MIN=1000
 
+exit_with_warning_or_error() {
+    if [ "$MODE" = "enforced" ]; then
+	printf "$1\n\n" 1>&2
+	exit 1
+    elif [ "$WARN" = true ]; then
+	printf "pam_oar_adopt disabled, warns only: %s\n" "$1"
+    fi
+    exit 0
+}
+
+pam_oar_adopt_load_config() {
+    if [ -f "/etc/oar/pam_oar_adopt_enabled" ]; then
+        MODE="enforced"
+    else
+        MODE="disabled"
+    fi
+    WARN=true
+
+    if [ -r /etc/oar/pam_oar_adopt.conf ]; then
+        . /etc/oar/pam_oar_adopt.conf
+    fi
+
+    case "$MODE" in
+        enforced|disabled) ;;
+	*)
+	    echo "Invalid value for MODE in /etc/oar/pam_oar_adopt.conf." 1>&2
+	    exit 0
+	    ;;
+    esac
+    case "${WARN,,}" in
+	1|yes|on|true) WARN=true ;;
+	0|no|off|false) WARN=false ;;
+	*)
+	    echo "Invalid value for WARN in /etc/oar/pam_oar_adopt.conf." 1>&2
+	    WARN=true
+	    ;;
+    esac
+}
 
 get_oar_cgroups_of_user() {
-    readarray OAR_SLICES < <( cd "$OAR_CGROUP_BASE" && ls -d oar-u*.slice/oar-u*-j*.slice 2>/dev/null )
-    OAR_SLICE=${OAR_SLICES[0]%[[:space:]]}
-    OAR_CPUSET=${OAR_SLICE%.slice}
-    OAR_CPUSET=${OAR_CPUSET#*/oar-u}
-    OAR_CPUSET=${OAR_CPUSET/-j/_}
+    # Exit if the PAM service is not sshd (e.g. su, su-l, sudo, sudo-i, ...)
+    if [ "$PAM_SERVICE" != "sshd" ]; then
+        exit 0
+    fi
+
+    OAR_USER="${PAM_RUSER:-$PAM_USER}"
+
+    if [ -z "$OAR_USER" ]; then
+        echo "Please launch this module via PAM." 1>&2
+        exit 1
+    fi
+
+    readarray -d: -t PASSWD_ENT < <(getent passwd "$OAR_USER")
+    USER_UID=${PASSWD_ENT[2]}
+
+    # Exit if the user id is inferior than 1000 (system user), indeed there is
+    # no need to do OAR cgroups machinery in that case.
+    if [ "$USER_UID" -lt "$USER_UID_MIN" ]; then
+        exit 0
+    fi
+
+    if [ ! -d "$OAR_CGROUP_BASE" ]; then
+        # Exit if oar.slice does not exist (job_resource_manager did not run yet, not job run since last reboot)
+        exit_with_warning_or_error "No running job found for $OAR_USER on this node."
+    fi
+
+    readarray -t OAR_SLICES < <( cd "$OAR_CGROUP_BASE" && ls -d "oar-u$USER_UID.slice/oar-u$USER_UID"-j*.slice 2>/dev/null )
+    OAR_SLICE=${OAR_SLICES[0]}
 }
 
 pam_account() {
-	if [ -z "$PAM_USER" ]; then
-		echo "Please launch this module via PAM"
-		exit 1
-	fi
+    pam_oar_adopt_load_config
 
-	# We exit if the pam service is su, we don't want to have the error
-	# message when using su.
-	if [ "$PAM_SERVICE" = "su-l" ]; then
-		exit 0
-	fi
+    get_oar_cgroups_of_user
 
-	# Exit if the user id is inferior than 1000 (system user), indeed there is
-	# no need to do OAR cgroups machinery in that case.
-	if [ "$(getent passwd "$PAM_USER" | cut -d: -f3)" -lt "$USER_UID_MIN" ]; then
-		exit 0
-	fi
-
-	get_oar_cgroups_of_user "$PAM_USER"
-	test_pam_activation
-
-	# Four cases:
-	# - the connecting user is oar or root, we fail silently (since we are in 'sufficient' mode)
-	# - the user has no cgroups (= no jobs) on node
-	# - the user has more than one cgroup or one but without all cores
-	# - the user has one cgroup with all cores
-	if [ "$PAM_USER" = "oar" ] || [ "$PAM_USER" = "root" ]; then
-		exit 1
-	elif [ -z "$OAR_SLICE" ]; then
-		echo "No running job for user $PAM_USER on this node." >&2
-		exit 1
-	elif [ ${#OAR_SLICES[*]} -ne 1 ]; then
-		cat << EOF >&2
-Cannot connect to node using 'ssh' because you appear to have more than one job on the node.
-Make sure to only have one job on the node, or use 'oarsh' to connect to a specific job.
-EOF
-		exit 1
-    elif [ "$(< "$OAR_CPUSETS_BASE/$OAR_SLICE"/cpuset.cpus.effective)" != "$(< "${OAR_CPUSETS_BASE}"/cpuset.cpus.effective)" ]; then
-		cat << EOF >&2
-Cannot connect to node using 'ssh' because not all its compute resources (e.g. CPU cores or threads) are assigned to the job which reserves it.
-Reserve the whole node, or use 'oarsh' instead.
-EOF
-		exit 1
-	else
-		exit 0
-	fi
+    # Three cases:
+    # - the user has no cgroups (= no jobs) on node
+    # - the user has more than one cgroup or one but without all cores
+    # - the user has one cgroup with all cores
+    if [ -z "$OAR_SLICE" ]; then
+        exit_with_warning_or_error "No running job found for $OAR_USER on this node."
+    elif [ ${#OAR_SLICES[*]} -ne 1 ]; then
+        exit_with_warning_or_error "Cannot connect to node using 'ssh', because it appears there are more than one
+job on running on the node. Make sure to only have one job on the node, or use
+'oarsh' to connect to a specific job."
+    elif [ "$(< "$OAR_CGROUP_BASE/$OAR_SLICE"/cpuset.cpus.effective)" != "$(< "${OAR_CGROUP_BASE}"/cpuset.cpus.effective)" ]; then
+        exit_with_warning_or_error "Cannot connect to node using 'ssh' because not all its compute resources
+(e.g. CPU cores or threads) are assigned to the job which reserves it.
+Reserve the whole node, or use 'oarsh' instead."
+    else
+        exit 0
+    fi
 }
 
 pam_session() {
-	if [ -z "$PAM_TYPE" ]; then
-		echo "Please launch this module via PAM"
-		exit 1
+    pam_oar_adopt_load_config
+
+    get_oar_cgroups_of_user
+
+    if [ -z "$PAM_TYPE" ]; then
+        echo "Please launch this module via PAM." 1>&2
+        exit 1
+    fi
+
+    # Exit if not a login
+    if [ "$PAM_TYPE" != "open_session" ]; then
+        exit 0
+    fi
+
+    # We could not find a running OAR job for this user on this node. It probably means that
+    # the user connecting is either root or oar (for example because of oarsh).
+    # We do nothing in that case.
+    if [ -z "$OAR_SLICE" ]; then
+        exit 0
+    fi
+
+    if [ ! -d /var/lib/oar ]; then
+        exit_with_warning_or_error "OAR directory not found: /var/lib/oar."
+    fi
+
+    if [ "$MODE" != enforced ]; then
+        if [ "$WARN" = true ]; then
+	    printf "pam_oar_adopt disabled, not adding job into cgroup.\n"
 	fi
+        return 0
+    fi
+    # We are in enforced mode here, handling cgroup assignment
 
-	# Exit if not a login
-	if [ "$PAM_TYPE" != "open_session" ]; then
-		exit 0
-	fi
+    # To have the job environment variables, we create a symkink to the already
+    # created job environment file and let pam_env load it.
+    OAR_JOB_ENV=${OAR_SLICE%.slice}
+    OAR_JOB_ENV=/var/lib/oar/${OAR_USER}_${OAR_JOB_ENV#*-j}.env
+    if [ ! -e "$OAR_JOB_ENV" ]; then
+        echo "OAR directory not found: /var/lib/oar." 1>&2
+        exit 1
+    fi
 
-	get_oar_cgroups_of_user "${PAM_RUSER:-$PAM_USER}"
+    ln -fs "$OAR_JOB_ENV" /var/lib/oar/pam.env
 
-	# We could not find a running OAR job for this user on this node. It probably means that
-	# the user connecting is either root or oar (for example because of oarsh).
-	# We do nothing in that case.
-	if [ -z "$OAR_SLICE" ]; then
-		exit 0
-	fi
-
-	# To have job's environment variables, we create a symkink to the already
-	# created (by oarsh) environment file. pam_env while then load it.
-	ln -fs "/var/lib/oar/$OAR_CPUSET.env" /var/lib/oar/pam.env
-
-    readarray PIDS < <(ps -o ppid= $$)
-    OAR_SCOPE="${OAR_SLICE#*/}"
-    OAR_SCOPE="$OAR_SCOPE%.slice}-p$RANDOM.scope"
-    busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartTransientUnit 'ssa(sv)a(sa(sv))' "${SYSTEMD_PROC_SCOPE}" fail 3 Delegate b 1 PIDs au ${#PIDS[*]} "${PIDS[@]}" Slice s "${SYSTEMD_PROC_SCOPE%-p*}".slice 0
-    while oardodo busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListJobs | grep -q "$SYSTEMD_PROC_SCOPE"; do
+    readarray -t PIDS < <(ps -o ppid= $$)
+    SYSTEMD_PROC_SCOPE="${OAR_SLICE#*/}"
+    SYSTEMD_PROC_SCOPE="${SYSTEMD_PROC_SCOPE%.slice}-p$RANDOM.scope"
+    busctl call -q org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager StartTransientUnit 'ssa(sv)a(sa(sv))' "${SYSTEMD_PROC_SCOPE}" fail 3 Delegate b 1 PIDs au ${#PIDS[*]} "${PIDS[@]// /}" Slice s "${SYSTEMD_PROC_SCOPE%-p*}".slice 0
+    while busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager ListJobs | grep -q "$SYSTEMD_PROC_SCOPE"; do
         sleep 0.1
     done
 }
 
-test_pam_activation() {
-	# We test if the pam module should perform verification. This file is created
-	# by g5k-postinstall when required (i.e. node is running a non user deployed
-	# std env).
-	if [ ! -f "/etc/oar/pam_activated" ]; then
-		exit 0
-	fi
-}
-
-[ $# -eq 0 ] && echo "Please provide PAM mode" && exit 1
+if [ $# -eq 0 ]; then
+   echo "Please provide the PAM mode." 1>&2
+   exit 1
+fi
 
 while getopts ":as" opt; do
-	case $opt in
-		"s")
-			pam_session
-			;;
-		"a")
-			pam_account
-			;;
-		*)
-			echo "Unknown mode"
-			exit 1
-			;;
-	esac
+    case $opt in
+        "s")
+            pam_session
+            ;;
+        "a")
+            pam_account
+            ;;
+        *)
+            echo "Unknown PAM mode." 1>&2
+            exit 1
+            ;;
+    esac
 done

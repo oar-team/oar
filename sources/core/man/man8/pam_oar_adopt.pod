@@ -1,77 +1,106 @@
 =head1 NAME
 
-pam_oar_adopt - pam_exec script to enable connecting to jobs via ssh
+pam_oar_adopt - OAR's pam_exec script to manage ssh connections to OAR nodes
 
 =head1 SYNOPSIS
 
-B<pam_oar_adopt -a> for PAM auth
+B<pam_oar_adopt -a> for PAM account
 
 B<pam_oar_adopt -s> for PAM session
 
 =head1 DESCRIPTION
 
-PAM can be configured to have users' `ssh` (real `ssh`, not via `oarsh`) connect nodes and place the created processes in the job's cgroup.
+This script is part of the OAR resources and jobs manager software.
 
-This uses `pam_exec.so` with the `pam_oar_adopt` script
+PAM can be configured to let users B<ssh> (basic ssh, not via B<oarsh>) to OAR nodes and place the created processes in the job's cgroup. It will also prevent any ssh connection to nodes that are not properly reserved.
 
-If a user reserved a node, PAM will find out the job's cgroup and place the process in it. It will also load the job's environment variables.
+This uses the B<pam_exec> module with the B<pam_oar_adopt> script and the B<pam_env> module.
 
-If a user tries to connect to a node that he did not reserve or reserved multiple times (e.g. 2 different jobs reserving each a subset of the node's cores), nothing will be done (`ssh` may fail if configured so via `pam_access.so`).
+Once enabled, if a user has reserved a node and then connects to it using ssh, PAM will find out the job's B<cgroup> and place the ssh remote process in it. It will also load the job's environment variables.
 
+If a user tries to ssh to a node that is either not reserved, or not reserved in full (all compute resources of the node must be reserved) or reserved multiple times (e.g. 2 different jobs reserving each a subset of the node's compute resources, or using the timesharing job type), the connection will fail.
 
-=head1 EXAMPLES
+Please note that while using ssh is very convenient, B<oarsh> provides extra features to connect to jobs.
 
-Follows an example of configuration of PAM with pam_adopt_oar on Debian.
+=head1 CONFIGURATION
+
+To B<enable> this feature, one must configure B<pam_oar_adopt> in PAM and activate it in its configuration file (B</etc/oar/pam_oar_adopt.conf>).
+
+=head2 PAM CONFIGURATION
+
+Make sure the B<ssh> service (on port 22, not OAR's dedicated ssh service on port 6667) enables PAM. B</etc/ssh/sshd_config> must contain:
+
+ UsePAM yes
+
+Follows an example of configuration of PAM with B<pam_oar_adopt>:
 
 =over
 
 =item B</etc/pam.d/common-account>
 
- account sufficient      pam_exec.so quiet debug stdout /usr/sbin/pam_oar_adopt -a
- account sufficient      pam_access.so accessfile=/etc/security/access.conf
- account required        pam_access.so accessfile=/var/lib/oar/access.conf
+The following can be set as the first PAM directive in common-account:
 
- account sufficient      pam_ldap.so
- account required        pam_unix.so
+ account required      pam_exec.so quiet stdout /usr/sbin/pam_oar_adopt -a
 
-=item B</etc/pam.d/common-session>
+=item B</etc/pam.d/common-session> and B</etc/pam.d/common-session-noninteractive>
 
- # here are the per-package modules (the "Primary" block)
- session [default=1]                     pam_permit.so
- # here's the fallback if no module succeeds
- session requisite                       pam_deny.so
- # prime the stack with a positive return value if there isn't one already;
- # this avoids us returning an error just because nothing sets a success code
- # since the modules above will each just jump around
- session required                        pam_permit.so
- # and here are more per-package modules (the "Additional" block)
- session required        pam_unix.so
- session [success=ok default=ignore]     pam_ldap.so minimum_uid=1000
- session optional        pam_systemd.so
- session required   pam_exec.so stdout /usr/local/sbin/pam_oar_adopt -s
- session optional   pam_env.so readenv=1 envfile=/var/lib/oar/pam.env
+The following can be set as the last PAM directives in common-session and common-session-noninteractive:
 
-=item B</etc/pam.d/common-session-noninteractive>
-
- # here are the per-package modules (the "Primary" block)
- session [default=1]                     pam_permit.so
- # here's the fallback if no module succeeds
- session requisite                       pam_deny.so
- # prime the stack with a positive return value if there isn't one already;
- # this avoids us returning an error just because nothing sets a success code
- # since the modules above will each just jump around
- session required                        pam_permit.so
- # and here are more per-package modules (the "Additional" block)
- session required        pam_unix.so
- session [success=ok default=ignore]     pam_ldap.so minimum_uid=1000
- session required   pam_exec.so seteuid stdout /usr/local/sbin/pam_oar_adopt -s
+ session required   pam_exec.so quiet stdout /usr/sbin/pam_oar_adopt -s
  session optional   pam_env.so readenv=1 envfile=/var/lib/oar/pam.env
 
 =back
 
+On Debian-like systems, one can also use the B<pam-auth-update> command to configure PAM and, by default, this PAM profile is installed with the oar-node package.
+
+=head2 PAM_OAR_ADOPT CONFIGURATION
+
+The B</etc/oar/pam_oar_adopt.conf> file contains the following configuration options:
+
+=over
+
+=item B<MODE>
+weather B<pam_oar_adopt> is enabled or not. Possible values are:
+
+=over
+
+=item B<enforced>: B<pam_oar_adopt> is enabled and will prevent any ssh connection to nodes that are not properly reserved.
+
+=item B<disabled>: B<pam_oar_adopt> is disabled.
+
+=back
+
+By default, B<pam_oar_adopt> is disabled.
+
+[DEPRECATED] For compatibility reasons, if the B<MODE> is not set and the B</etc/oar/pam_oar_adopt_enabled> file is present, then B<pam_oar_adopt> is enabled.
+
+=item B<WARN>
+
+In B<disabled> mode, B<pam_oar_adopt> will warn users about what would have been done if it was enabled. Possible values are:
+
+=over
+
+=item B<yes>: warn users (default).
+
+=item B<no>: do not warn users about B<pam_oar_adopt> doing nothing.
+
+=back
+
+=item B<USER_UID_MIN>
+
+In B<enforced> mode, B<pam_oar_adopt> will ignore (not prevent) ssh connections from users with a UID lower than B<USER_UID_MIN>. This is useful to allow system users to connect to nodes without being part of a job. The default value is 1000.
+
+=back
+
+=head1 NOTES
+
+It is a good practice to prevent users to connect to OAR nodes outside of jobs (except system users: at least root and the B<oar> user).
+
+Configuring B<pam_oar_adopt> does it, but it can also be enforced using B<pam_access> or the AllowedUsers directive in B</etc/ssh/sshd_config>.
+
 =head1 SEE ALSO
 
-oarsh(1), ssh(1), pam(5)
+pam(7), pam.conf(5), pam.d(5), pam_exec(8), pam_env(7), pam_access(8), ssh(1), sshd_config(5), oarsh(1)
 
 =head1 COPYRIGHTS
 
