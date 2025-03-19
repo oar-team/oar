@@ -4,17 +4,18 @@
 # see: dh_installdeb(1)
 
 set -e
-#set -x 
+#set -x
 
 case "$1" in
 	remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
 	  true
         ;;
 	purge)
-            # Remove the possible conffiles 
+            # Remove the possible conffiles
             for conffile in /etc/oar/epilogue \
                             /etc/oar/prologue \
-                            /etc/oar/sshd_config; do 
+                            /etc/oar/pam_oar_adopt.conf \
+                            /etc/oar/sshd_config; do
                 # we mimic dpkg as closely as possible, so we remove configuration
                 # files with dpkg backup extensions too:
                 ### Some of the following is from Tore Anderson:
