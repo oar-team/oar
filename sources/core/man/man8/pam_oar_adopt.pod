@@ -72,7 +72,7 @@ weather B<pam_oar_adopt> is enabled or not. Possible values are:
 
 By default, B<pam_oar_adopt> is disabled.
 
-[DEPRECATED] For compatibility reasons, if the B<MODE> is not set and the B</etc/oar/pam_oar_adopt_enabled> file is present, then B<pam_oar_adopt> is enabled.
+[DEPRECATED] For compatibility reasons, if the B</etc/oar/pam_oar_adopt_enabled> file exists, regardless of B</etc/oar/pam_oar_adopt.conf>, then B<pam_oar_adopt> is enabled.
 
 =item B<WARN>
 
