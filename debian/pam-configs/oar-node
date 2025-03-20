@@ -1,4 +1,4 @@
-Name: Allows one to use plain ssh on fully reserved oar nodes
+Name: Allows one to use plain ssh on a fully reserved OAR node
 Default: yes
 Priority: 512
 Account-Type: Additional
