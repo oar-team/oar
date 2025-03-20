@@ -32,17 +32,18 @@ exit_with_warning_or_error() {
 }
 
 pam_oar_adopt_load_config() {
+    # default values
     MODE=disabled
-
-    if [ -f /etc/oar/pam_oar_adopt_enabled ]; then
-        MODE=enforced
-    fi
-
     WARN=true
 
-    if [ ! -f /etc/oar/pam_oar_adopt_enabled ] && [ -r /etc/oar/pam_oar_adopt.conf ]; then
+    if [ -r /etc/oar/pam_oar_adopt.conf ]; then
         # shellcheck disable=SC1091
         . /etc/oar/pam_oar_adopt.conf
+    fi
+
+    if [ -f /etc/oar/pam_oar_adopt_enabled ]; then
+        # if the file exists, force the mode to enforced
+        MODE=enforced
     fi
 
     case "${MODE,,}" in
