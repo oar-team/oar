@@ -51,6 +51,11 @@ node_setup() {
         0755
 
     install_conffile \
+        ${SHAREDIR}/pam_oar_adopt.conf \
+        ${OARCONFDIR}/pam_oar_adopt.conf \
+        0644
+
+    install_conffile \
         ${SHAREDIR}/epilogue \
         ${OARCONFDIR}/epilogue \
         0755
