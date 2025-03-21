@@ -4,16 +4,14 @@ OAR CHANGELOG
 version 2.6.1:
 --------------
 
+  - [pam_oar_adopt] Make it easier to install and configure the oar-node PAM profile
+  - [pam_oar_adopt] Fix and improve the script
   - [pam_oar_adopt] Move pam_oar_adopt back to the oar-node package
-  - [pam_oar_adopt] Fix oarsh-legacy README
-  - [pam_oar_adopt] Rework pam_oar_adopt: fix and improve.
-  - [pam_oar_adopt] Rework pam_oar_adopt man page
+  - [pam_oar_adopt] Rework man page
   - [job_resource_manager_systemd/pam_oar_adopt] Make OAR env compatible with pam_env
   - [job_resource_manager_systemd] 1 liner log message for tmp clean-up
   - [job_resource_manager_systemd/oarsh] Fix cgroup v2 path extraction
-  - [pam_oar_adopt] Rework again
   - [setup] cleanup script
-  - [pam] rewrite pam_oar_adopt and its documentation
 
 version 2.6.0:
 --------------
