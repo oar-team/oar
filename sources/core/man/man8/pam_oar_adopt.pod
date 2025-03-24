@@ -98,7 +98,7 @@ It is a good practice to prevent users to connect to OAR nodes outside of jobs (
 
 Configuring B<pam_oar_adopt> does it, but it can also be enforced using B<pam_access> or the AllowedUsers directive in B</etc/ssh/sshd_config>.
 
-Conversly, in an installation where either of OAR's deploy or cosystem job types is used, which requires the oar-node package to also be installed on the deploy or cosystem frontend, it is usually normal to let any user ssh to that frontend regardless of jobs. As a result on such a frontend, B<pam_oar_adopt> should not be installed (on Debian-like systems, one may use B<pam-auth-update> to deactivate the oar-node PAM profile).
+Conversely, in an installation where either of OAR's deploy or cosystem job types is used, which requires the oar-node package to also be installed on the deploy or cosystem frontend, it is usually normal to let any user ssh to that frontend regardless of jobs. As a result on such a frontend, B<pam_oar_adopt> should not be installed (on Debian-like systems, one may use B<pam-auth-update> to deactivate the oar-node PAM profile).
 
 =head1 SEE ALSO
 
