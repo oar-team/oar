@@ -1,3 +1,10 @@
+oar (2.6.1-1) unstable; urgency=medium
+
+  * New upstream release
+  * Improved support for pam-oar-adopt (fix bugs and config)
+
+ -- Vincent Danjean <vdanjean@debian.org>  Mon, 24 Mar 2025 14:50:27 +0100
+
 oar (2.6.1~rc2-1) unstable; urgency=medium
 
   * Release candidate 2
