@@ -22,20 +22,20 @@ version 2.6.0:
   - [suspend_resume_manager] Add support for cgroupv2/systemd
   - [Monika] Fix display of wanted resources
   - [all] Fix for Perl exporter (Perl 5.39.1)
-  - [oarsub] Ignore ^Z from termial (SIGTSTP)
+  - [oarsub] Ignore ^Z from terminal (SIGTSTP)
   - [API] Remove cycle limits
   - [IO.pm] Fix issue with resource_log
   - [IO.pm/MetaSched] Add functions to allow scheduling perf statistics
   - [oaraccounting] Now use a systemd timer
-  - [pam_adopt_oar] Add PAM script to enable ssh connection to jobs
+  - [pam_adopt_oar] Add PAM script to enable SSH connection to jobs
   - [oar_resources_init] Now use hwloc to find resources on nodes
   - [oar_resources_add] Add support for resources in the hwloc format
-  - [man] Move administrator's commands to section 8 and some rewrittings
+  - [man] Move administrator's commands to section 8 and some rewritings
   - [cron] Provide both cron and systemd timers (oaraccounting, oarnodecheck)
-  - [oarnodecheck] Add support of cgroupv2/systemd, refactor
+  - [oarnodecheck] Add support for cgroupv2/systemd, refactor
 
 Starting from OAR 2.6, a new mechanism using cgroupv2/systemd and hwloc is in
-place to map OAR resources do physical compute resources (cores, GPUs) on nodes
+place to map OAR resources to physical compute resources (cores, GPUs) on nodes
 and manage the processes of jobs.
 
 As a consequence, on an existing installation, the cpuset property of the OAR
@@ -43,11 +43,11 @@ resources may need some changes to adopt the hwloc description of the machines.
 The oar_resource_init script can be used to look at the expected values for the
 cpuset resource property.
 
-Regarding the gpudevice resource property: it must now contain the list of the
-special devices (e.g.: /dev/nvidia0) associated to a resource.
+Regarding the gpudevice resource property, it must now contain the list of
+special devices (e.g., /dev/nvidia0) associated with a resource.
 
-Finally, cgroupv1 activation is not need anymore, only the unified cgroupv2
-file hierarchy is required now. Thus, cgroupv1 related directives in the
+Finally, cgroupv1 activation is not needed anymore, only the unified cgroupv2
+file hierarchy is required now. Thus, cgroupv1-related directives in the
 kernel command line can be removed on OAR nodes.
 
 version 2.5.10:
