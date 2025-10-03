@@ -6,7 +6,7 @@ you must be able to launch in bash 'source /etc/oar.conf' and have variables
 assigned).
 Each configuration tag found in /etc/oar.conf is now described:
 
-  - Database type : you can use a MySQL or a PostgreSQL database (tags are
+  - Database type : you can use a MySQL/MariaDB or a PostgreSQL database (tags are
     "mysql" or "Pg")::
 
       DB_TYPE=Pg
