@@ -96,7 +96,9 @@ EOF
 # OAR bash environnement file for only the batch job users
 #
 
-source ~/.bashrc
+if [ -f ~/.bashrc ]; then
+    source ~/.bashrc
+fi
 
 EOF
     touch ${OARHOMEDIR}/.bash_profile
