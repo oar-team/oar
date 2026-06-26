@@ -4,6 +4,7 @@ Uploaders: Vincent Danjean <vdanjean@debian.org>
 Section: utils
 Priority: optional
 Build-Depends: debhelper-compat (= 13),
+               dh-sequence-installsysusers,
                po-debconf,
                perl,
                python3-sphinx,
@@ -41,7 +42,6 @@ Depends: ${misc:Depends},
          ${shlibs:Depends},
          ${perl:Depends},
          liboar-perl (= ${binary:Version}),
-         adduser,
          ucf,
          hwloc-nox (>= 2.12) | hwloc (>= 2.12),
          libbpf1
