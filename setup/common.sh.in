@@ -3,7 +3,7 @@ create_oar_group() {
         echo -n "Adding group ${OAROWNERGROUP}.."
         case "$TARGET_DIST" in
             "debian")
-                addgroup --quiet --system ${OAROWNERGROUP} 2>/dev/null || true
+                systemd-sysusers ${DPKG_ROOT:+--root="$DPKG_ROOT"} oar-common.conf
                 ;;
             *)
                 groupadd --system ${OAROWNERGROUP} 2>/dev/null  >/dev/null || true
@@ -23,17 +23,7 @@ create_oar_user() {
         echo -n "Adding system user ${OAROWNER}.."
         case "$TARGET_DIST" in
             "debian")
-                adduser --quiet \
-                        --system \
-                        --ingroup ${OAROWNERGROUP} \
-                        --shell /bin/bash \
-                        --no-create-home \
-                        --disabled-password \
-                        ${OAROWNER} 2>/dev/null || true
-                # Force the "disabled password flag to '*' instead of '!'.
-                # Required in Debian12 (adduser >= 3.130), which changes to way
-                # adduser's --disabled-(login|password) options work.
-                usermod -p '*' ${OAROWNER} || true
+                systemd-sysusers ${DPKG_ROOT:+--root="$DPKG_ROOT"} oar-common.conf
                 ;;
             *)
                 useradd --system \
@@ -55,10 +45,7 @@ create_oar_user() {
     # Adjust the file and directory permissions
     case "$SETUP_TYPE" in
         "deb")
-            if ! dpkg-statoverride --list ${OARHOMEDIR} >/dev/null; then
-                chown $OAROWNER:$OAROWNERGROUP $OARHOMEDIR
-                chmod u=rwx,g=rxs,o= $OARHOMEDIR
-            fi
+            systemd-tmpfiles ${DPKG_ROOT:+--root="$DPKG_ROOT"} --create oar-common.conf
             ;;
         *)
             chown $OAROWNER:$OAROWNERGROUP $OARHOMEDIR
